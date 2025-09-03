@@ -1,0 +1,286 @@
+-- Sample Schema for Testing
+-- SQLite Memory MCP Server Schema
+
+-- Tables table
+CREATE TABLE IF NOT EXISTS tables (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  identifier TEXT NOT NULL UNIQUE,
+  description TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Nodes table  
+CREATE TABLE IF NOT EXISTS nodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  table_id INTEGER NOT NULL,
+  content TEXT NOT NULL,
+  title TEXT,
+  description TEXT,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
+  UNIQUE(table_id, content)
+);
+
+-- Attribute types table (JSON Schema 표준 타입 정의)
+CREATE TABLE IF NOT EXISTS attribute_types (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  identifier TEXT NOT NULL UNIQUE,
+  json_type TEXT NOT NULL, -- JSON Schema primitive types: string, number, integer, boolean, array, object, null
+  format TEXT, -- JSON Schema format: date, time, date-time, email, uri, uuid, etc.
+  description TEXT,
+  validation_schema TEXT, -- JSON Schema for validation rules
+  reference_config TEXT, -- Reference resolution configuration (for format='reference' only)
+  default_value TEXT, -- Default value in JSON format
+  examples TEXT, -- JSON array of example values
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Attributes table
+CREATE TABLE IF NOT EXISTS attributes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  table_id INTEGER NOT NULL,
+  identifier TEXT NOT NULL,
+  attribute_type_id INTEGER NOT NULL,
+  description TEXT,
+  is_required BOOLEAN NOT NULL DEFAULT FALSE,
+  metadata TEXT, -- Additional attribute-specific configuration
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
+  FOREIGN KEY (attribute_type_id) REFERENCES attribute_types(id) ON DELETE RESTRICT,
+  UNIQUE(table_id, identifier)
+);
+
+-- Node attributes table
+CREATE TABLE IF NOT EXISTS node_attributes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  node_id INTEGER NOT NULL,
+  attribute_id INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+  FOREIGN KEY (attribute_id) REFERENCES attributes(id) ON DELETE CASCADE,
+  UNIQUE(node_id, attribute_id)
+);
+
+-- Docs table (테이블 사용처 메모 및 자유 형식 게시판)
+CREATE TABLE IF NOT EXISTS docs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  table_id INTEGER NOT NULL,
+  category TEXT NOT NULL CHECK (category IN ('usage', 'guide', 'example', 'spec', 'general')),
+  version INTEGER NOT NULL DEFAULT 1,
+  content TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
+  UNIQUE(table_id, category, version)
+);
+
+-- Templates table (attribute_type_id 기반 검색식 관리)
+-- NOTE: 검색식은 요구사항 변경, 성능 최적화 등으로 수정 가능성 높음
+CREATE TABLE IF NOT EXISTS templates (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  identifier TEXT NOT NULL,
+  table_id INTEGER NOT NULL,
+  attribute_type_id INTEGER NOT NULL,
+  search_query TEXT NOT NULL, -- 검색식 템플릿 (SQL WHERE 조건 또는 JSON 쿼리)
+  template_type TEXT DEFAULT 'filter', -- 'filter', 'sort', 'aggregate', 'validation'
+  description TEXT,
+  examples TEXT, -- JSON array of usage examples
+  version INTEGER NOT NULL DEFAULT 1, -- 버전 관리 (수정 가능성 대비)
+  -- 사용 피드백 카운트 (사용 후기)
+  success_count INTEGER NOT NULL DEFAULT 0, -- 원하는 결과를 얻음 카운트
+  failure_count INTEGER NOT NULL DEFAULT 0, -- 원하는 결과를 못얻음 카운트
+  total_usage_count INTEGER NOT NULL DEFAULT 0, -- 전체 사용 횟수
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
+  FOREIGN KEY (attribute_type_id) REFERENCES attribute_types(id) ON DELETE CASCADE,
+  UNIQUE(table_id, attribute_type_id, identifier, version)
+);
+
+-- Node relations table (노드 간 관계 정의)
+CREATE TABLE IF NOT EXISTS node_relations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  table_id INTEGER NOT NULL,
+  -- Source node: either internal node_id or external repository identifier
+  source_node_id INTEGER, -- Internal node reference
+  source_external_id TEXT DEFAULT 'internal', -- External reference format: 'repository_name:node_identifier' or 'internal'
+  -- Target node: either internal node_id or external repository identifier  
+  target_node_id INTEGER, -- Internal node reference
+  target_external_id TEXT DEFAULT 'internal', -- External reference format: 'repository_name:node_identifier' or 'internal'
+  -- Relation information
+  relation_type_id INTEGER NOT NULL,
+  properties TEXT, -- JSON: additional relation properties
+  strength INTEGER DEFAULT 50, -- 0-100, relation strength
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
+  FOREIGN KEY (source_node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+  FOREIGN KEY (target_node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+  FOREIGN KEY (relation_type_id) REFERENCES relation_types(id) ON DELETE CASCADE,
+  -- Ensure proper identifier usage: if using internal, external_id should be 'internal'
+  CHECK ((source_node_id IS NOT NULL AND source_external_id = 'internal') OR 
+         (source_node_id IS NULL AND source_external_id != 'internal')),
+  CHECK ((target_node_id IS NOT NULL AND target_external_id = 'internal') OR 
+         (target_node_id IS NULL AND target_external_id != 'internal')),
+  UNIQUE(table_id, source_node_id, source_external_id, target_node_id, target_external_id, relation_type_id)
+);
+
+-- Relation types table (관계 유형 정의)
+CREATE TABLE IF NOT EXISTS relation_types (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  identifier TEXT NOT NULL UNIQUE,
+  description TEXT,
+  category TEXT, -- 'structural', 'semantic', 'reference', 'hierarchy'
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =================================================================================
+-- UPDATE TRIGGERS - Automatically manage updated_at timestamps
+-- =================================================================================
+
+-- Tables table update trigger
+CREATE TRIGGER IF NOT EXISTS update_tables_updated_at
+    AFTER UPDATE ON tables
+    FOR EACH ROW
+BEGIN
+    UPDATE tables SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Nodes table update trigger  
+CREATE TRIGGER IF NOT EXISTS update_nodes_updated_at
+    AFTER UPDATE ON nodes
+    FOR EACH ROW
+BEGIN
+    UPDATE nodes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Attribute types table update trigger
+CREATE TRIGGER IF NOT EXISTS update_attribute_types_updated_at
+    AFTER UPDATE ON attribute_types
+    FOR EACH ROW
+BEGIN
+    UPDATE attribute_types SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Attributes table update trigger
+CREATE TRIGGER IF NOT EXISTS update_attributes_updated_at
+    AFTER UPDATE ON attributes
+    FOR EACH ROW
+BEGIN
+    UPDATE attributes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Node attributes table update trigger
+CREATE TRIGGER IF NOT EXISTS update_node_attributes_updated_at
+    AFTER UPDATE ON node_attributes
+    FOR EACH ROW
+BEGIN
+    UPDATE node_attributes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Docs table update trigger
+CREATE TRIGGER IF NOT EXISTS update_docs_updated_at
+    AFTER UPDATE ON docs
+    FOR EACH ROW
+BEGIN
+    UPDATE docs SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Templates table update trigger
+CREATE TRIGGER IF NOT EXISTS update_templates_updated_at
+    AFTER UPDATE ON templates
+    FOR EACH ROW
+BEGIN
+    UPDATE templates SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Node relations table update trigger
+CREATE TRIGGER IF NOT EXISTS update_node_relations_updated_at
+    AFTER UPDATE ON node_relations
+    FOR EACH ROW
+BEGIN
+    UPDATE node_relations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- Relation types table update trigger
+CREATE TRIGGER IF NOT EXISTS update_relation_types_updated_at
+    AFTER UPDATE ON relation_types
+    FOR EACH ROW
+BEGIN
+    UPDATE relation_types SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
+-- =================================================================================
+-- DEFAULT DATA
+-- =================================================================================
+
+INSERT OR IGNORE INTO attribute_types (identifier, json_type, format, description, validation_schema, reference_config, default_value, examples) VALUES 
+  ('string', 'string', NULL, 'Basic string type', NULL, NULL, '""', '["hello", "world"]'),
+  ('boolean', 'boolean', NULL, 'Boolean true/false', NULL, NULL, 'false', '[true, false]'),
+  ('integer', 'integer', NULL, 'Integer number', '{"minimum": 0}', NULL, '0', '[1, 42, 100]'),
+  ('number', 'number', NULL, 'Decimal number', NULL, NULL, '0.0', '[1.5, 3.14, 100.0]'),
+  ('date', 'string', 'date', 'Date in YYYY-MM-DD format', '{"pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$"}', NULL, '"2024-01-01"', '["2024-01-01", "2023-12-31"]'),
+  ('datetime', 'string', 'date-time', 'ISO 8601 datetime', NULL, NULL, '"2024-01-01T00:00:00Z"', '["2024-01-01T12:00:00Z", "2023-12-31T23:59:59Z"]'),
+  ('email', 'string', 'email', 'Email address', NULL, NULL, '"user@example.com"', '["user@domain.com", "test@example.org"]'),
+  ('uri', 'string', 'uri', 'URI/URL', NULL, NULL, '"https://example.com"', '["https://example.com", "http://localhost:3000"]'),
+  ('uuid', 'string', 'uuid', 'UUID identifier', '{"pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"}', NULL, '"00000000-0000-0000-0000-000000000000"', '["123e4567-e89b-12d3-a456-426614174000"]'),
+  ('text', 'string', NULL, 'Long text content', '{"minLength": 0}', NULL, '""', '["Short text", "Lorem ipsum dolor sit amet..."]'),
+  ('json', 'object', NULL, 'JSON object', NULL, NULL, '{}', '[{"key": "value"}, {"name": "John", "age": 30}]'),
+  ('array', 'array', NULL, 'JSON array', NULL, NULL, '[]', '[["item1", "item2"], [1, 2, 3]]'),
+  ('reference', 'object', 'reference', 'External reference with caching', 
+   '{"type": "object", "properties": {"id": {"type": "string"}, "last_response": {"type": "object"}, "fetched_at": {"type": "string", "format": "date-time"}, "cache_status": {"type": "string", "enum": ["valid", "stale", "invalid"]}}, "required": ["id"]}',
+   '{"source": "external_service", "endpoint": "/api/users/{id}", "method": "GET", "resolver": "user_resolver", "ttl": 3600}',
+   '{"id": "user_42", "last_response": null, "fetched_at": null, "cache_status": "invalid"}', 
+   '[{"id": "user_42", "last_response": {"name": "John", "email": "john@example.com"}, "fetched_at": "2024-01-01T12:00:00Z", "cache_status": "valid"}]');
+
+-- Insert default relation types
+INSERT OR IGNORE INTO relation_types (identifier, description, category) VALUES 
+  ('depends_on', 'Direct dependency', 'structural'),
+  ('related_to', 'Related entity', 'semantic'),
+  ('extends', 'Extension relationship', 'hierarchy'),
+  ('implements', 'Implementation relationship', 'structural'),
+  ('references', 'Reference relationship', 'reference'),
+  ('parent_of', 'Parent-child relationship', 'hierarchy'),
+  ('linked_to', 'Bidirectional link', 'semantic');
+
+-- =================================================================================
+-- PERFORMANCE INDEXES
+-- =================================================================================
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS idx_nodes_table_content ON nodes(table_id, content);
+CREATE INDEX IF NOT EXISTS idx_attribute_types_identifier ON attribute_types(identifier);
+CREATE INDEX IF NOT EXISTS idx_attribute_types_json_type ON attribute_types(json_type);
+CREATE INDEX IF NOT EXISTS idx_attributes_table_identifier ON attributes(table_id, identifier);
+CREATE INDEX IF NOT EXISTS idx_attributes_type ON attributes(attribute_type_id);
+CREATE INDEX IF NOT EXISTS idx_docs_table_category ON docs(table_id, category);
+CREATE INDEX IF NOT EXISTS idx_docs_version ON docs(version);
+CREATE INDEX IF NOT EXISTS idx_docs_category ON docs(category);
+CREATE INDEX IF NOT EXISTS idx_docs_active ON docs(is_active);
+-- Partial index to enforce only one active doc per table+category
+CREATE UNIQUE INDEX IF NOT EXISTS idx_docs_unique_active 
+ON docs(table_id, category) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_templates_table_type ON templates(table_id, attribute_type_id);
+CREATE INDEX IF NOT EXISTS idx_templates_identifier ON templates(identifier);
+CREATE INDEX IF NOT EXISTS idx_templates_type ON templates(template_type);
+CREATE INDEX IF NOT EXISTS idx_templates_active ON templates(is_active);
+CREATE INDEX IF NOT EXISTS idx_templates_version ON templates(version);
+CREATE INDEX IF NOT EXISTS idx_templates_success_rate ON templates(success_count, failure_count);
+CREATE INDEX IF NOT EXISTS idx_templates_usage_count ON templates(total_usage_count);
+CREATE INDEX IF NOT EXISTS idx_node_attributes_node ON node_attributes(node_id);
+CREATE INDEX IF NOT EXISTS idx_node_attributes_attr ON node_attributes(attribute_id);
+CREATE INDEX IF NOT EXISTS idx_node_relations_source ON node_relations(source_node_id);
+CREATE INDEX IF NOT EXISTS idx_node_relations_target ON node_relations(target_node_id);
+CREATE INDEX IF NOT EXISTS idx_node_relations_source_ext ON node_relations(source_external_id);
+CREATE INDEX IF NOT EXISTS idx_node_relations_target_ext ON node_relations(target_external_id);
+CREATE INDEX IF NOT EXISTS idx_node_relations_type ON node_relations(relation_type_id);
+CREATE INDEX IF NOT EXISTS idx_node_relations_table ON node_relations(table_id);
