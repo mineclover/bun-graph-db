@@ -1,0 +1,188 @@
+import type { Database } from 'bun:sqlite'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { Table } from '@/domain/entities/Table.js'
+import type { TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+
+interface TableRow {
+  id: string
+  identifier: string
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+export class SqliteTableRepository implements ITableRepository {
+  constructor(private readonly db: Database) {}
+
+  async save(table: Table): Promise<void> {
+    const query = `
+      INSERT OR REPLACE INTO tables (id, identifier, description, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+    `
+    
+    const tableData = table.toDatabase()
+    
+    try {
+      this.db.run(query, [
+        tableData.id,
+        tableData.identifier,
+        tableData.description,
+        tableData.created_at,
+        tableData.updated_at
+      ])
+    } catch (error) {
+      throw new DatabaseException(`Failed to save table: ${error}`)
+    }
+  }
+
+  async findById(id: TableId): Promise<Table | null> {
+    const query = `
+      SELECT id, identifier, description, created_at, updated_at
+      FROM tables
+      WHERE id = ?
+    `
+    
+    try {
+      const row = this.db.query<TableRow, [string]>(query).get(id)
+      return row ? this.mapRowToEntity(row) : null
+    } catch (error) {
+      throw new DatabaseException(`Failed to find table by id: ${error}`)
+    }
+  }
+
+  async findByIdentifier(identifier: string): Promise<Table | null> {
+    const query = `
+      SELECT id, identifier, description, created_at, updated_at
+      FROM tables
+      WHERE identifier = ?
+    `
+    
+    try {
+      const row = this.db.query<TableRow, [string]>(query).get(identifier)
+      return row ? this.mapRowToEntity(row) : null
+    } catch (error) {
+      throw new DatabaseException(`Failed to find table by identifier: ${error}`)
+    }
+  }
+
+  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<Table>> {
+    const { limit = 10, offset = 0 } = options
+    
+    const dataQuery = `
+      SELECT id, identifier, description, created_at, updated_at
+      FROM tables
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `
+    
+    const countQuery = `SELECT COUNT(*) as count FROM tables`
+    
+    try {
+      const rows = this.db.query<TableRow, [number, number]>(dataQuery).all(limit, offset)
+      const countResult = this.db.query<{ count: number }, []>(countQuery).get()
+      const total = countResult?.count || 0
+      
+      const tables = rows.map(row => this.mapRowToEntity(row))
+      
+      return {
+        data: tables,
+        total,
+        hasMore: offset + limit < total
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to find all tables: ${error}`)
+    }
+  }
+
+  async delete(id: TableId): Promise<void> {
+    const query = `DELETE FROM tables WHERE id = ?`
+    
+    try {
+      const result = this.db.run(query, [id])
+      if (result.changes === 0) {
+        throw new DatabaseException(`Table with id ${id} not found`)
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to delete table: ${error}`)
+    }
+  }
+
+  async exists(identifier: string): Promise<boolean> {
+    const query = `SELECT 1 FROM tables WHERE identifier = ? LIMIT 1`
+    
+    try {
+      const row = this.db.query<{ 1: number }, [string]>(query).get(identifier)
+      return row !== null
+    } catch (error) {
+      throw new DatabaseException(`Failed to check table existence: ${error}`)
+    }
+  }
+
+  async count(): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM tables`
+    
+    try {
+      const result = this.db.query<{ count: number }, []>(query).get()
+      return result?.count || 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to count tables: ${error}`)
+    }
+  }
+
+  async saveMany(tables: Table[]): Promise<void> {
+    if (tables.length === 0) return
+    
+    const query = `
+      INSERT OR REPLACE INTO tables (id, identifier, description, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+    `
+    
+    try {
+      const stmt = this.db.prepare(query)
+      
+      this.db.transaction(() => {
+        for (const table of tables) {
+          const tableData = table.toDatabase()
+          stmt.run(
+            tableData.id,
+            tableData.identifier,
+            tableData.description,
+            tableData.created_at,
+            tableData.updated_at
+          )
+        }
+      })()
+    } catch (error) {
+      throw new DatabaseException(`Failed to save multiple tables: ${error}`)
+    }
+  }
+
+  async findByIds(ids: TableId[]): Promise<Table[]> {
+    if (ids.length === 0) return []
+    
+    const placeholders = ids.map(() => '?').join(',')
+    const query = `
+      SELECT id, identifier, description, created_at, updated_at
+      FROM tables
+      WHERE id IN (${placeholders})
+    `
+    
+    try {
+      const rows = this.db.query<TableRow, string[]>(query).all(...ids)
+      return rows.map(row => this.mapRowToEntity(row))
+    } catch (error) {
+      throw new DatabaseException(`Failed to find tables by ids: ${error}`)
+    }
+  }
+
+  private mapRowToEntity(row: TableRow): Table {
+    return Table.fromDatabase(
+      row.id,
+      row.identifier,
+      row.description,
+      new Date(row.created_at),
+      new Date(row.updated_at)
+    )
+  }
+}

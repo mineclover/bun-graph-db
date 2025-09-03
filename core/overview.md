@@ -39,8 +39,14 @@ bun-url-db는 **AI 친화적인 테이블 기반 구조화된 지식 그래프 �
 - **JSON 출력**: 테이블 데이터를 표준 JSON 형식으로 export
 - **스키마 출력**: JSON Schema 표준으로 테이블 구조 export
 
-### 4. 웹 연동 계획
-**서버 기반 아키텍처**: HTTP MCP 서버로서 웹 애플리케이션, 대시보드, API 연동 등 다양한 웹 콘텐츠와의 통합을 계획하고 있습니다.
+### 4. GraphQL 서버 구현
+**GraphQL API 서버**: SQLite 스키마를 기반으로 한 완전한 GraphQL 서버를 구현합니다. 이 GraphQL 서버는 [mcp-graphql](https://github.com/blurrah/mcp-graphql)을 통해 MCP(Model Context Protocol)로 변환되어 AI 도구들과의 통합을 지원합니다.
+
+**구현 목표**:
+- SQLite 데이터베이스 구조를 GraphQL 스키마로 완전 매핑
+- 타입 안전성과 실시간 데이터 조회를 지원하는 현대적인 GraphQL API
+- 헥사고날 아키텍처와 모듈화를 통한 확장 가능하고 유지보수하기 쉬운 구조
+- GraphQL → MCP 변환을 통한 AI 도구 생태계와의 원활한 통합
 
 ## 🏗️ Core Architecture
 

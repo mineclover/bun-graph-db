@@ -1,0 +1,53 @@
+# Common scalars and types
+scalar DateTime
+
+# Error handling
+type Error {
+  message: String!
+  code: String!
+  field: String
+}
+
+# Base types from SQLite schema
+type Query {
+  # Health check
+  health: HealthStatus!
+}
+
+type Mutation {
+  # Placeholder to extend in other schemas
+  _empty: String
+}
+
+type Subscription {
+  # Real-time updates
+  tableCreated: Table!
+  tableUpdated: Table!
+  tableDeleted: TableDeletedEvent!
+  
+  nodeCreated: Node!
+  nodeUpdated: Node!
+  nodeDeleted: NodeDeletedEvent!
+}
+
+# Health status
+type HealthStatus {
+  status: String!
+  timestamp: DateTime!
+  database: Boolean!
+  version: String!
+}
+
+# Event types for subscriptions
+type TableDeletedEvent {
+  id: ID!
+  identifier: String!
+  deletedAt: DateTime!
+}
+
+type NodeDeletedEvent {
+  id: ID!
+  tableId: ID!
+  content: String!
+  deletedAt: DateTime!
+}

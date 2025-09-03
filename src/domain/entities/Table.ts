@@ -1,0 +1,117 @@
+import { DomainException } from '@/shared/exceptions/DomainException.js'
+import type { TableId, TimestampedEntity } from '@/shared/types/common.js'
+
+export class Table implements TimestampedEntity {
+  private constructor(
+    private readonly _id: TableId,
+    private readonly _identifier: string,
+    private _description: string | null,
+    private readonly _createdAt: Date,
+    private _updatedAt: Date
+  ) {}
+
+  // Factory method for creating new tables
+  static create(identifier: string, description?: string): Table {
+    if (!identifier || identifier.trim().length === 0) {
+      throw new DomainException('Table identifier cannot be empty')
+    }
+
+    if (identifier.length > 100) {
+      throw new DomainException('Table identifier cannot exceed 100 characters')
+    }
+
+    // Simple validation for identifier format
+    if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(identifier)) {
+      throw new DomainException('Table identifier must start with a letter and contain only alphanumeric characters, underscores, and hyphens')
+    }
+
+    return new Table(
+      crypto.randomUUID() as TableId,
+      identifier,
+      description || null,
+      new Date(),
+      new Date()
+    )
+  }
+
+  // Factory method for reconstructing from database
+  static fromDatabase(
+    id: string,
+    identifier: string,
+    description: string | null,
+    createdAt: Date,
+    updatedAt: Date
+  ): Table {
+    return new Table(
+      id as TableId,
+      identifier,
+      description,
+      createdAt,
+      updatedAt
+    )
+  }
+
+  // Business methods
+  updateDescription(newDescription: string | null): void {
+    if (newDescription !== null && newDescription.trim().length === 0) {
+      throw new DomainException('Description cannot be empty string')
+    }
+
+    if (newDescription !== null && newDescription.length > 1000) {
+      throw new DomainException('Description cannot exceed 1000 characters')
+    }
+
+    this._description = newDescription
+    this._updatedAt = new Date()
+  }
+
+  // Check if this table can be safely deleted
+  canBeDeleted(): boolean {
+    // Business rule: tables can be deleted if they have no nodes
+    // This would be validated by checking the repository
+    return true
+  }
+
+  // Getters (immutable access to internal state)
+  get id(): TableId {
+    return this._id
+  }
+
+  get identifier(): string {
+    return this._identifier
+  }
+
+  get description(): string | null {
+    return this._description
+  }
+
+  get createdAt(): Date {
+    return new Date(this._createdAt)
+  }
+
+  get updatedAt(): Date {
+    return new Date(this._updatedAt)
+  }
+
+  // Equality comparison
+  equals(other: Table): boolean {
+    return this._id === other._id
+  }
+
+  // Serialization for persistence
+  toDatabase(): {
+    id: string
+    identifier: string
+    description: string | null
+    created_at: string
+    updated_at: string
+  } {
+    return {
+      id: this._id,
+      identifier: this._identifier,
+      description: this._description,
+      created_at: this._createdAt.toISOString(),
+      updated_at: this._updatedAt.toISOString()
+    }
+  }
+}
