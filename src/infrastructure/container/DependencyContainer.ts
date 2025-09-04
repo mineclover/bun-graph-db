@@ -8,6 +8,7 @@ import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNod
 import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/SqliteNodeAttributeRepository.js'
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { SqliteNodeSearchRepository } from '@/infrastructure/database/sqlite/SqliteNodeSearchRepository.js'
+import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
 import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
 import { ConsoleLogger } from '@/infrastructure/logging/ConsoleLogger.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
@@ -15,6 +16,7 @@ import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-ty
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
+import { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import { LogLevel } from '@/application/ports/ILogger.js'
@@ -73,6 +75,9 @@ export class DependencyContainer {
     const relationTypeRepository = new SqliteRelationTypeRepository(database)
     this.register<IRelationTypeRepository>('relationTypeRepository', relationTypeRepository)
 
+    const graphRepository = new SqliteGraphRepository(database)
+    this.register('graphRepository', graphRepository)
+
     // Services  
     const logger = new ConsoleLogger(
       process.env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.INFO,
@@ -101,6 +106,9 @@ export class DependencyContainer {
 
     const createRelationTypeUseCase = new CreateRelationTypeUseCase(relationTypeRepository, logger)
     this.register('createRelationTypeUseCase', createRelationTypeUseCase)
+
+    const searchRelatedNodesUseCase = new SearchRelatedNodesUseCase(nodeRepository, nodeRelationRepository, graphRepository, tableRepository, logger)
+    this.register('searchRelatedNodesUseCase', searchRelatedNodesUseCase)
   }
 
   register<T>(name: string, instance: T): void {
@@ -174,6 +182,10 @@ export class DependencyContainer {
 
   getCreateRelationTypeUseCase(): CreateRelationTypeUseCase {
     return this.resolve('createRelationTypeUseCase')
+  }
+
+  getSearchRelatedNodesUseCase(): SearchRelatedNodesUseCase {
+    return this.resolve('searchRelatedNodesUseCase')
   }
 
   // Health check for container

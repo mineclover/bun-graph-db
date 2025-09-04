@@ -11,6 +11,8 @@ import type {
   RangeValue
 } from '@/domain/value-objects/SearchFilter.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
+import type { RelationFilter, RelationDirection, RelationDepth } from '@/domain/value-objects/RelationQuery.js'
+import { RelationSearchPatternParser } from '@/domain/value-objects/RelationQuery.js'
 
 export interface AttributeTypeInfo {
   identifier: string

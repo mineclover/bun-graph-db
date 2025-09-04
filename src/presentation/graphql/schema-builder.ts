@@ -24,6 +24,7 @@ import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
+import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 
 interface ResolverDependencies {
@@ -41,6 +42,7 @@ interface ResolverDependencies {
   searchNodesUseCase: SearchNodesUseCase
   createRelationUseCase: CreateRelationUseCase
   createRelationTypeUseCase: CreateRelationTypeUseCase
+  searchRelatedNodesUseCase: SearchRelatedNodesUseCase
   logger: ILogger
 }
 
@@ -81,6 +83,7 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
   const relationResolver = new RelationResolver(
     deps.createRelationUseCase,
     deps.createRelationTypeUseCase,
+    deps.searchRelatedNodesUseCase,
     deps.nodeRelationRepository,
     deps.relationTypeRepository,
     deps.nodeRepository,
@@ -126,7 +129,12 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       // Relation queries
       nodeRelation: (_: unknown, args: any) => relationResolver.nodeRelation(args),
       relationTypes: (_: unknown, args: any) => relationResolver.relationTypes(),
-      relationType: (_: unknown, args: any) => relationResolver.relationType(args)
+      relationType: (_: unknown, args: any) => relationResolver.relationType(args),
+
+      // Graph relationship queries
+      searchRelatedNodes: (_: unknown, args: any) => relationResolver.searchRelatedNodes(args),
+      findPathsBetweenNodes: (_: unknown, args: any) => relationResolver.findPathsBetweenNodes(args),
+      getDependencyChain: (_: unknown, args: any) => relationResolver.getDependencyChain(args)
     },
 
     Mutation: {

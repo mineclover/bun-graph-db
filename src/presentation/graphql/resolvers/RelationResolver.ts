@@ -1,5 +1,6 @@
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
+import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
@@ -8,6 +9,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
 import { NodeRelationDto, RelationTypeDto, CreateRelationOutput, CreateRelationTypeOutput } from '@/application/dtos/RelationDto.js'
 import { NodeDto } from '@/application/dtos/NodeDto.js'
+import type { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
 import type { NodeRelationId, RelationTypeId, NodeId, TableId } from '@/shared/types/common.js'
 
@@ -29,10 +31,32 @@ interface CreateRelationTypeInput {
   category?: string
 }
 
+interface SearchRelatedNodesInput {
+  tableId: string
+  sourceNodeIds?: string[]
+  relationFilters?: Array<{
+    relationTypes?: string[]
+    properties?: Record<string, any>
+    direction: RelationDirection
+    depth: number
+  }>
+  pathQueries?: Array<{
+    startNodeIds?: string[]
+    endNodeIds?: string[]
+    relationTypes?: string[]
+    maxDepth?: number
+    shortestPath?: boolean
+  }>
+  nodeFilters?: Record<string, any>
+  limit?: number
+  offset?: number
+}
+
 export class RelationResolver {
   constructor(
     private readonly createRelationUseCase: CreateRelationUseCase,
     private readonly createRelationTypeUseCase: CreateRelationTypeUseCase,
+    private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase,
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly nodeRepository: INodeRepository,
@@ -67,6 +91,93 @@ export class RelationResolver {
       return relationType ? RelationTypeDto.fromEntity(relationType) : null
     } catch (error) {
       this.logger.error('Failed to find relation type by id', { id: args.id, error })
+      throw error
+    }
+  }
+
+  // Advanced graph query resolvers
+  async searchRelatedNodes(args: { input: SearchRelatedNodesInput }): Promise<any> {
+    try {
+      const result = await this.searchRelatedNodesUseCase.execute({
+        tableId: args.input.tableId,
+        sourceNodeIds: args.input.sourceNodeIds,
+        relationFilters: args.input.relationFilters?.map(f => ({
+          relationTypes: f.relationTypes,
+          properties: f.properties,
+          direction: f.direction,
+          depth: f.depth as any // Convert number to RelationDepth enum
+        })),
+        pathQueries: args.input.pathQueries,
+        nodeFilters: args.input.nodeFilters,
+        limit: args.input.limit,
+        offset: args.input.offset
+      })
+
+      return {
+        nodes: result.nodes.map(n => ({
+          node: n,
+          attributes: {}, // TODO: Extract attributes from node
+          sourceNodeId: null,
+          targetNodeId: null,
+          relationTypeId: null,
+          properties: null,
+          strength: null
+        })),
+        relations: result.relations || [],
+        paths: result.paths || [],
+        total: result.total,
+        hasMore: result.hasMore
+      }
+    } catch (error) {
+      this.logger.error('Failed to search related nodes', { input: args.input, error })
+      throw error
+    }
+  }
+
+  async findPathsBetweenNodes(args: {
+    tableId: string
+    startNodeIds: string[]
+    endNodeIds: string[]
+    maxDepth?: number
+    relationTypes?: string[]
+  }): Promise<Array<{
+    startNodeId: string
+    endNodeId: string
+    path: string[]
+    length: number
+  }>> {
+    try {
+      return await this.searchRelatedNodesUseCase.getDependencies(
+        args.tableId,
+        args.startNodeIds[0], // Simplified for now
+        'OUTGOING' as RelationDirection,
+        args.relationTypes
+      ) as any // TODO: Implement proper path finding
+    } catch (error) {
+      this.logger.error('Failed to find paths between nodes', { args, error })
+      throw error
+    }
+  }
+
+  async getDependencyChain(args: {
+    tableId: string
+    nodeId: string
+    direction?: RelationDirection
+    relationTypes?: string[]
+  }): Promise<Array<{
+    nodeId: string
+    level: number
+    relationPath: string[]
+  }>> {
+    try {
+      return await this.searchRelatedNodesUseCase.getDependencies(
+        args.tableId,
+        args.nodeId,
+        args.direction,
+        args.relationTypes
+      )
+    } catch (error) {
+      this.logger.error('Failed to get dependency chain', { args, error })
       throw error
     }
   }
