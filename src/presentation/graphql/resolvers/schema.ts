@@ -2,6 +2,7 @@ import type { ITableRepository } from '@/domain/repositories/ITableRepository.js
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
 import type { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
+import type { GraphQLParent, ExportTableArgs, ExportAllTablesArgs, ImportSchemaArgs } from '../types/GraphQLTypes.js'
 
 interface SchemaResolverDependencies {
   tableRepository: ITableRepository
@@ -15,7 +16,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
 
   return {
     Query: {
-      exportTable: async (_: any, args: { tableId: string, options?: any }) => {
+      exportTable: async (_: GraphQLParent, args: ExportTableArgs) => {
         try {
           const { tableId, options = {} } = args
           return await schemaExportUseCase.exportTable(tableId, options)
@@ -25,7 +26,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
         }
       },
 
-      exportAllTables: async (_: any, args: { options?: any }) => {
+      exportAllTables: async (_: GraphQLParent, args: ExportAllTablesArgs) => {
         try {
           const { options = {} } = args
           return await schemaExportUseCase.exportAllTables(options)
@@ -37,7 +38,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
     },
 
     Mutation: {
-      importSchema: async (_: any, args: { exportData: any, options?: any }) => {
+      importSchema: async (_: GraphQLParent, args: ImportSchemaArgs) => {
         try {
           const { exportData, options = {} } = args
           return await schemaImportUseCase.importSchema(exportData, options)

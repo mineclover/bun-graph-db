@@ -18,8 +18,8 @@ interface CreateAttributeTypeInput {
   description?: string
   validationSchema?: object
   referenceConfig?: object
-  defaultValue?: any
-  examples?: any[]
+  defaultValue?: unknown
+  examples?: unknown[]
 }
 
 interface CreateAttributeInput {

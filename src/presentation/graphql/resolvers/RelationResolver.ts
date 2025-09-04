@@ -21,7 +21,7 @@ interface CreateRelationInput {
   targetNodeId?: string
   targetExternalId?: string
   relationTypeId: string
-  properties?: Record<string, any>
+  properties?: Record<string, unknown>
   strength?: number
   confidence?: number
 }
@@ -37,7 +37,7 @@ interface SearchRelatedNodesInput {
   sourceNodeIds?: string[]
   relationFilters?: Array<{
     relationTypes?: string[]
-    properties?: Record<string, any>
+    properties?: Record<string, unknown>
     direction: RelationDirection
     depth: number
   }>
@@ -48,7 +48,7 @@ interface SearchRelatedNodesInput {
     maxDepth?: number
     shortestPath?: boolean
   }>
-  nodeFilters?: Record<string, any>
+  nodeFilters?: Record<string, unknown>
   limit?: number
   offset?: number
 }

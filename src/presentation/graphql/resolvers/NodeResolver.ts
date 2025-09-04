@@ -18,7 +18,7 @@ interface CreateNodeInput {
   content: string
   title?: string
   description?: string
-  attributes?: Array<{ attributeId: string; value: any }>
+  attributes?: Array<{ attributeId: string; value: unknown }>
 }
 
 interface UpdateNodeInput {
@@ -57,7 +57,7 @@ export class NodeResolver {
 
       // Get node attributes
       const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(args.id as NodeId)
-      const attributeValues: Record<string, any> = {}
+      const attributeValues: Record<string, unknown> = {}
 
       for (const nodeAttr of nodeAttributes) {
         const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
@@ -83,7 +83,7 @@ export class NodeResolver {
 
       // Get node attributes
       const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.getId())
-      const attributeValues: Record<string, any> = {}
+      const attributeValues: Record<string, unknown> = {}
 
       for (const nodeAttr of nodeAttributes) {
         const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
@@ -127,7 +127,7 @@ export class NodeResolver {
       const nodesWithAttributes = await Promise.all(
         result.data.map(async (node) => {
           const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.getId())
-          const attributeValues: Record<string, any> = {}
+          const attributeValues: Record<string, unknown> = {}
 
           for (const nodeAttr of nodeAttributes) {
             const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
@@ -159,7 +159,7 @@ export class NodeResolver {
     hasPreviousPage: boolean
     query: {
       originalQuery: string
-      parsedConditions: any
+      parsedConditions: Record<string, unknown>
     }
   }> {
     try {
@@ -194,7 +194,7 @@ export class NodeResolver {
   }> {
     try {
       // Convert GraphQL input to use case input
-      const attributes: Record<string, any> = {}
+      const attributes: Record<string, unknown> = {}
       if (args.input.attributes) {
         for (const attr of args.input.attributes) {
           // Find attribute to get its identifier
@@ -292,7 +292,7 @@ export class NodeResolver {
 
       // Get attributes
       const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(args.id as NodeId)
-      const attributeValues: Record<string, any> = {}
+      const attributeValues: Record<string, unknown> = {}
 
       for (const nodeAttr of nodeAttributes) {
         const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
@@ -354,7 +354,7 @@ export class NodeResolver {
   async setNodeAttribute(args: { 
     nodeId: string
     attributeId: string
-    value: any 
+    value: unknown 
   }): Promise<{
     node: NodeDto | null
     errors: Array<{ message: string; code: string }>
@@ -396,7 +396,7 @@ export class NodeResolver {
 
       // Return updated node with all attributes
       const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(args.nodeId as NodeId)
-      const attributeValues: Record<string, any> = {}
+      const attributeValues: Record<string, unknown> = {}
 
       for (const nodeAttr of nodeAttributes) {
         const attr = await this.attributeRepository.findById(nodeAttr.getAttributeId())

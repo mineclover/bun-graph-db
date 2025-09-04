@@ -5,6 +5,65 @@ import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
 import type { GraphQLSchema } from 'graphql'
 import { join } from 'path'
 
+// Import type definitions
+import type {
+  GraphQLParent,
+  GraphQLContext,
+  // Query argument types
+  TableArgs,
+  TableByIdentifierArgs,
+  TablesArgs,
+  AttributeArgs,
+  AttributeByIdentifierArgs,
+  AttributesArgs,
+  NodeArgs,
+  NodeByContentArgs,
+  NodesArgs,
+  SearchNodesArgs,
+  NodeRelationArgs,
+  NodeRelationsArgs,
+  SearchRelatedNodesArgs,
+  FindPathsBetweenNodesArgs,
+  GetDependencyChainArgs,
+  RelationTypeArgs,
+  AnalyzeNodesArgs,
+  GetPerformanceMetricsArgs,
+  GetTestSuiteStatusArgs,
+  AggregateDataArgs,
+  GetSystemHealthArgs,
+  AdvancedSearchArgs,
+  ExportTableArgs,
+  ExportAllTablesArgs,
+  // Mutation argument types
+  CreateTableArgs,
+  UpdateTableArgs,
+  DeleteTableArgs,
+  CreateAttributeTypeArgs,
+  UpdateAttributeTypeArgs,
+  DeleteAttributeTypeArgs,
+  CreateAttributeArgs,
+  UpdateAttributeArgs,
+  DeleteAttributeArgs,
+  CreateNodeArgs,
+  UpdateNodeArgs,
+  DeleteNodeArgs,
+  SetNodeAttributeArgs,
+  CreateRelationArgs,
+  DeleteRelationArgs,
+  CreateRelationTypeArgs,
+  CreateAlertRuleArgs,
+  UpdateAlertRuleArgs,
+  DeleteAlertRuleArgs,
+  ClearCacheArgs,
+  OptimizeDatabaseArgs,
+  ImportSchemaArgs,
+  // Parent types
+  TableParent,
+  AttributeParent,
+  NodeParent,
+  NodeRelationParent
+} from './types/GraphQLTypes.js'
+
 // Import resolvers
 import { TableResolver } from './resolvers/TableResolver.js'
 import { AttributeResolver } from './resolvers/AttributeResolver.js'
@@ -140,49 +199,49 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       }),
 
       // Table queries
-      table: (_: unknown, args: any) => tableResolver.table(args),
-      tableByIdentifier: (_: unknown, args: any) => tableResolver.tableByIdentifier(args),
-      tables: (_: unknown, args: any) => tableResolver.tables(args),
+      table: (_: GraphQLParent, args: TableArgs) => tableResolver.table(args),
+      tableByIdentifier: (_: GraphQLParent, args: TableByIdentifierArgs) => tableResolver.tableByIdentifier(args),
+      tables: (_: GraphQLParent, args: TablesArgs) => tableResolver.tables(args),
 
       // Attribute type queries
-      attributeType: (_: unknown, args: any) => attributeResolver.attributeType(args),
-      attributeTypeByIdentifier: (_: unknown, args: any) => attributeResolver.attributeTypeByIdentifier(args),
-      attributeTypes: (_: unknown, args: any) => attributeResolver.attributeTypes(),
+      attributeType: (_: GraphQLParent, args: AttributeArgs) => attributeResolver.attributeType(args),
+      attributeTypeByIdentifier: (_: GraphQLParent, args: AttributeByIdentifierArgs) => attributeResolver.attributeTypeByIdentifier(args),
+      attributeTypes: (_: GraphQLParent) => attributeResolver.attributeTypes(),
 
       // Attribute queries
-      attribute: (_: unknown, args: any) => attributeResolver.attribute(args),
-      attributes: (_: unknown, args: any) => attributeResolver.attributes(args),
+      attribute: (_: GraphQLParent, args: AttributeArgs) => attributeResolver.attribute(args),
+      attributes: (_: GraphQLParent, args: AttributesArgs) => attributeResolver.attributes(args),
 
       // Node queries
-      node: (_: unknown, args: any) => nodeResolver.node(args),
-      nodeByContent: (_: unknown, args: any) => nodeResolver.nodeByContent(args),
-      nodes: (_: unknown, args: any) => nodeResolver.nodes(args),
-      searchNodes: (_: unknown, args: any) => nodeResolver.searchNodes(args),
+      node: (_: GraphQLParent, args: NodeArgs) => nodeResolver.node(args),
+      nodeByContent: (_: GraphQLParent, args: NodeByContentArgs) => nodeResolver.nodeByContent(args),
+      nodes: (_: GraphQLParent, args: NodesArgs) => nodeResolver.nodes(args),
+      searchNodes: (_: GraphQLParent, args: SearchNodesArgs) => nodeResolver.searchNodes(args),
 
       // Relation queries
-      nodeRelation: (_: unknown, args: any) => relationResolver.nodeRelation(args),
-      nodeRelations: (_: unknown, args: any) => relationResolver.nodeRelations(args),
-      relationTypes: (_: unknown, args: any) => relationResolver.relationTypes(),
-      relationType: (_: unknown, args: any) => relationResolver.relationType(args),
+      nodeRelation: (_: GraphQLParent, args: NodeRelationArgs) => relationResolver.nodeRelation(args),
+      nodeRelations: (_: GraphQLParent, args: NodeRelationsArgs) => relationResolver.nodeRelations(args),
+      relationTypes: (_: GraphQLParent) => relationResolver.relationTypes(),
+      relationType: (_: GraphQLParent, args: RelationTypeArgs) => relationResolver.relationType(args),
 
       // Graph relationship queries
-      searchRelatedNodes: (_: unknown, args: any) => relationResolver.searchRelatedNodes(args),
-      findPathsBetweenNodes: (_: unknown, args: any) => relationResolver.findPathsBetweenNodes(args),
-      getDependencyChain: (_: unknown, args: any) => relationResolver.getDependencyChain(args),
+      searchRelatedNodes: (_: GraphQLParent, args: SearchRelatedNodesArgs) => relationResolver.searchRelatedNodes(args),
+      findPathsBetweenNodes: (_: GraphQLParent, args: FindPathsBetweenNodesArgs) => relationResolver.findPathsBetweenNodes(args),
+      getDependencyChain: (_: GraphQLParent, args: GetDependencyChainArgs) => relationResolver.getDependencyChain(args),
 
       // Analytics queries
-      analyzeNodes: (_: unknown, args: any) => analyticsResolver.analyzeNodes(args),
-      getPerformanceMetrics: (_: unknown, args: any) => analyticsResolver.getPerformanceMetrics(args),
-      getTestSuiteStatus: (_: unknown, args: any) => analyticsResolver.getTestSuiteStatus(args),
-      aggregateData: (_: unknown, args: any) => analyticsResolver.aggregateData(args),
-      getSystemHealth: (_: unknown, args: any) => analyticsResolver.getSystemHealth(args),
+      analyzeNodes: (_: GraphQLParent, args: AnalyzeNodesArgs) => analyticsResolver.analyzeNodes(args),
+      getPerformanceMetrics: (_: GraphQLParent, args: GetPerformanceMetricsArgs) => analyticsResolver.getPerformanceMetrics(args),
+      getTestSuiteStatus: (_: GraphQLParent, args: GetTestSuiteStatusArgs) => analyticsResolver.getTestSuiteStatus(args),
+      aggregateData: (_: GraphQLParent, args: AggregateDataArgs) => analyticsResolver.aggregateData(args),
+      getSystemHealth: (_: GraphQLParent, args: GetSystemHealthArgs) => analyticsResolver.getSystemHealth(args),
 
       // Advanced search queries
-      advancedSearch: (_: unknown, args: any) => advancedSearchResolver.advancedSearch(args),
-      getSearchPerformanceMetrics: (_: unknown, args: any) => advancedSearchResolver.getPerformanceMetrics(args),
-      getMonitoringMetrics: (_: unknown, args: any) => advancedSearchResolver.getMonitoringMetrics(args),
-      getSystemStatus: (_: unknown, args: any) => advancedSearchResolver.getSystemStatus(args),
-      getAlertRules: (_: unknown, args: any) => advancedSearchResolver.getAlertRules(args),
+      advancedSearch: (_: GraphQLParent, args: AdvancedSearchArgs) => advancedSearchResolver.advancedSearch(args),
+      getSearchPerformanceMetrics: (_: GraphQLParent, args: GetPerformanceMetricsArgs) => advancedSearchResolver.getPerformanceMetrics(args),
+      getMonitoringMetrics: (_: GraphQLParent, args: GetPerformanceMetricsArgs) => advancedSearchResolver.getMonitoringMetrics(args),
+      getSystemStatus: (_: GraphQLParent, args: GetSystemHealthArgs) => advancedSearchResolver.getSystemStatus(args),
+      getAlertRules: (_: GraphQLParent) => advancedSearchResolver.getAlertRules({}),
 
       // Schema export queries
       exportTable: schemaResolvers.Query.exportTable,
@@ -193,37 +252,37 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       _empty: () => null,
 
       // Table mutations
-      createTable: (_: unknown, args: any) => tableResolver.createTable(args),
-      updateTable: (_: unknown, args: any) => tableResolver.updateTable(args),
-      deleteTable: (_: unknown, args: any) => tableResolver.deleteTable(args),
+      createTable: (_: GraphQLParent, args: CreateTableArgs) => tableResolver.createTable(args),
+      updateTable: (_: GraphQLParent, args: UpdateTableArgs) => tableResolver.updateTable(args),
+      deleteTable: (_: GraphQLParent, args: DeleteTableArgs) => tableResolver.deleteTable(args),
 
       // Attribute type mutations
-      createAttributeType: (_: unknown, args: any) => attributeResolver.createAttributeType(args),
-      updateAttributeType: (_: unknown, args: any) => attributeResolver.updateAttributeType(args),
-      deleteAttributeType: (_: unknown, args: any) => attributeResolver.deleteAttributeType(args),
+      createAttributeType: (_: GraphQLParent, args: CreateAttributeTypeArgs) => attributeResolver.createAttributeType(args),
+      updateAttributeType: (_: GraphQLParent, args: UpdateAttributeTypeArgs) => attributeResolver.updateAttributeType(args),
+      deleteAttributeType: (_: GraphQLParent, args: DeleteAttributeTypeArgs) => attributeResolver.deleteAttributeType(args),
 
       // Attribute mutations
-      createAttribute: (_: unknown, args: any) => attributeResolver.createAttribute(args),
-      updateAttribute: (_: unknown, args: any) => attributeResolver.updateAttribute(args),
-      deleteAttribute: (_: unknown, args: any) => attributeResolver.deleteAttribute(args),
+      createAttribute: (_: GraphQLParent, args: CreateAttributeArgs) => attributeResolver.createAttribute(args),
+      updateAttribute: (_: GraphQLParent, args: UpdateAttributeArgs) => attributeResolver.updateAttribute(args),
+      deleteAttribute: (_: GraphQLParent, args: DeleteAttributeArgs) => attributeResolver.deleteAttribute(args),
 
       // Node mutations
-      createNode: (_: unknown, args: any) => nodeResolver.createNode(args),
-      updateNode: (_: unknown, args: any) => nodeResolver.updateNode(args),
-      deleteNode: (_: unknown, args: any) => nodeResolver.deleteNode(args),
-      setNodeAttribute: (_: unknown, args: any) => nodeResolver.setNodeAttribute(args),
+      createNode: (_: GraphQLParent, args: CreateNodeArgs) => nodeResolver.createNode(args),
+      updateNode: (_: GraphQLParent, args: UpdateNodeArgs) => nodeResolver.updateNode(args),
+      deleteNode: (_: GraphQLParent, args: DeleteNodeArgs) => nodeResolver.deleteNode(args),
+      setNodeAttribute: (_: GraphQLParent, args: SetNodeAttributeArgs) => nodeResolver.setNodeAttribute(args),
 
       // Relation mutations
-      createRelation: (_: unknown, args: any) => relationResolver.createRelation(args),
-      deleteRelation: (_: unknown, args: any) => relationResolver.deleteRelation(args),
-      createRelationType: (_: unknown, args: any) => relationResolver.createRelationType(args),
+      createRelation: (_: GraphQLParent, args: CreateRelationArgs) => relationResolver.createRelation(args),
+      deleteRelation: (_: GraphQLParent, args: DeleteRelationArgs) => relationResolver.deleteRelation(args),
+      createRelationType: (_: GraphQLParent, args: CreateRelationTypeArgs) => relationResolver.createRelationType(args),
 
       // Advanced search mutations
-      createAlertRule: (_: unknown, args: any) => advancedSearchResolver.createAlertRule(args),
-      updateAlertRule: (_: unknown, args: any) => advancedSearchResolver.updateAlertRule(args),
-      deleteAlertRule: (_: unknown, args: any) => advancedSearchResolver.deleteAlertRule(args),
-      clearCache: (_: unknown, args: any) => advancedSearchResolver.clearCache(args),
-      optimizeDatabase: (_: unknown, args: any) => advancedSearchResolver.optimizeDatabase(args),
+      createAlertRule: (_: GraphQLParent, args: CreateAlertRuleArgs) => advancedSearchResolver.createAlertRule(args),
+      updateAlertRule: (_: GraphQLParent, args: UpdateAlertRuleArgs) => advancedSearchResolver.updateAlertRule(args),
+      deleteAlertRule: (_: GraphQLParent, args: DeleteAlertRuleArgs) => advancedSearchResolver.deleteAlertRule(args),
+      clearCache: (_: GraphQLParent, args: ClearCacheArgs) => advancedSearchResolver.clearCache(args),
+      optimizeDatabase: (_: GraphQLParent, args: OptimizeDatabaseArgs) => advancedSearchResolver.optimizeDatabase(args),
 
       // Schema import mutations
       importSchema: schemaResolvers.Mutation.importSchema
@@ -240,29 +299,29 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
 
     // Field resolvers
     Table: {
-      nodeCount: (parent: any) => tableResolver.nodeCount(parent),
-      attributeCount: (parent: any) => tableResolver.attributeCount(parent)
+      nodeCount: (parent: TableParent) => tableResolver.nodeCount(parent),
+      attributeCount: (parent: TableParent) => tableResolver.attributeCount(parent)
       // TODO: Add relationship resolvers (attributes, nodes)
     },
 
     Attribute: {
-      attributeType: (parent: any) => attributeResolver.attributeType_field(parent),
-      table: (parent: any) => attributeResolver.table_field(parent)
+      attributeType: (parent: AttributeParent) => attributeResolver.attributeType_field(parent),
+      table: (parent: AttributeParent) => attributeResolver.table_field(parent)
     },
 
     Node: {
-      table: (parent: any) => nodeResolver.table_field(parent),
-      attributeCount: (parent: any) => nodeResolver.attributeCount_field(parent),
-      outgoingRelations: (parent: any) => relationResolver.outgoingRelations_field(parent),
-      incomingRelations: (parent: any) => relationResolver.incomingRelations_field(parent),
-      relationCount: (parent: any) => relationResolver.relationCount_field(parent)
+      table: (parent: NodeParent) => nodeResolver.table_field(parent),
+      attributeCount: (parent: NodeParent) => nodeResolver.attributeCount_field(parent),
+      outgoingRelations: (parent: NodeParent) => relationResolver.outgoingRelations_field(parent),
+      incomingRelations: (parent: NodeParent) => relationResolver.incomingRelations_field(parent),
+      relationCount: (parent: NodeParent) => relationResolver.relationCount_field(parent)
     },
 
     NodeRelation: {
-      table: (parent: any) => relationResolver.table_field(parent),
-      sourceNode: (parent: any) => relationResolver.sourceNode_field(parent),
-      targetNode: (parent: any) => relationResolver.targetNode_field(parent),
-      relationType: (parent: any) => relationResolver.relationType_field(parent)
+      table: (parent: NodeRelationParent) => relationResolver.table_field(parent),
+      sourceNode: (parent: NodeRelationParent) => relationResolver.sourceNode_field(parent),
+      targetNode: (parent: NodeRelationParent) => relationResolver.targetNode_field(parent),
+      relationType: (parent: NodeRelationParent) => relationResolver.relationType_field(parent)
     }
   }
 
