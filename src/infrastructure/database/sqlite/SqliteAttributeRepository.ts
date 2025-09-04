@@ -1,6 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
+import { AttributeType } from '@/domain/entities/AttributeType.js'
 import type { AttributeId, AttributeTypeId, TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
@@ -12,6 +13,20 @@ interface AttributeRow {
   description: string | null
   is_required: boolean
   metadata: string | null
+  created_at: string
+  updated_at: string
+}
+
+interface AttributeTypeRow {
+  id: number
+  identifier: string
+  json_type: string
+  format: string | null
+  description: string | null
+  validation_schema: string | null
+  reference_config: string | null
+  default_value: string | null
+  examples: string | null
   created_at: string
   updated_at: string
 }
@@ -310,6 +325,24 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     }
   }
 
+  async getAttributeTypeForAttribute(attributeId: AttributeId): Promise<AttributeType | null> {
+    const query = `
+      SELECT at.id, at.identifier, at.json_type, at.format, at.description,
+             at.validation_schema, at.reference_config, at.default_value,
+             at.examples, at.created_at, at.updated_at
+      FROM attribute_types at
+      INNER JOIN attributes a ON a.attribute_type_id = at.id
+      WHERE a.id = ?
+    `
+    
+    try {
+      const row = this.db.query<AttributeTypeRow, [string]>(query).get(attributeId)
+      return row ? this.mapAttributeTypeRowToEntity(row) : null
+    } catch (error) {
+      throw new DatabaseException(`Failed to get attribute type for attribute: ${error}`)
+    }
+  }
+
   private mapRowToEntity(row: AttributeRow): Attribute {
     return Attribute.fromDatabase(
       row.id.toString(),
@@ -319,6 +352,22 @@ export class SqliteAttributeRepository implements IAttributeRepository {
       row.description,
       row.is_required,
       row.metadata,
+      new Date(row.created_at),
+      new Date(row.updated_at)
+    )
+  }
+
+  private mapAttributeTypeRowToEntity(row: AttributeTypeRow): AttributeType {
+    return AttributeType.fromDatabase(
+      row.id.toString(),
+      row.identifier,
+      row.json_type,
+      row.format,
+      row.description,
+      row.validation_schema,
+      row.reference_config,
+      row.default_value,
+      row.examples,
       new Date(row.created_at),
       new Date(row.updated_at)
     )

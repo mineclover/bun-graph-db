@@ -7,12 +7,14 @@ import { SqliteAttributeRepository } from '@/infrastructure/database/sqlite/Sqli
 import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
 import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/SqliteNodeAttributeRepository.js'
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
+import { SqliteNodeSearchRepository } from '@/infrastructure/database/sqlite/SqliteNodeSearchRepository.js'
 import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
 import { ConsoleLogger } from '@/infrastructure/logging/ConsoleLogger.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import { LogLevel } from '@/application/ports/ILogger.js'
@@ -65,6 +67,9 @@ export class DependencyContainer {
     const nodeRelationRepository = new SqliteNodeRelationRepository(database)
     this.register<INodeRelationRepository>('nodeRelationRepository', nodeRelationRepository)
 
+    const nodeSearchRepository = new SqliteNodeSearchRepository(database)
+    this.register('nodeSearchRepository', nodeSearchRepository)
+
     const relationTypeRepository = new SqliteRelationTypeRepository(database)
     this.register<IRelationTypeRepository>('relationTypeRepository', relationTypeRepository)
 
@@ -87,6 +92,9 @@ export class DependencyContainer {
 
     const createNodeUseCase = new CreateNodeUseCase(nodeRepository, nodeAttributeRepository, tableRepository, attributeRepository, logger)
     this.register('createNodeUseCase', createNodeUseCase)
+
+    const searchNodesUseCase = new SearchNodesUseCase(nodeRepository, nodeSearchRepository, attributeRepository, tableRepository, logger)
+    this.register('searchNodesUseCase', searchNodesUseCase)
 
     const createRelationUseCase = new CreateRelationUseCase(nodeRelationRepository, relationTypeRepository, nodeRepository, tableRepository, logger)
     this.register('createRelationUseCase', createRelationUseCase)
@@ -146,6 +154,10 @@ export class DependencyContainer {
 
   getCreateNodeUseCase(): CreateNodeUseCase {
     return this.resolve('createNodeUseCase')
+  }
+
+  getSearchNodesUseCase(): SearchNodesUseCase {
+    return this.resolve('searchNodesUseCase')
   }
 
   getNodeRelationRepository(): INodeRelationRepository {

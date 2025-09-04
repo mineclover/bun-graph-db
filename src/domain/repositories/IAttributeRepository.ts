@@ -1,4 +1,5 @@
 import type { Attribute } from '@/domain/entities/Attribute.js'
+import type { AttributeType } from '@/domain/entities/AttributeType.js'
 import type { AttributeId, AttributeTypeId, TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
 
 export interface IAttributeRepository {
@@ -16,4 +17,5 @@ export interface IAttributeRepository {
   saveMany(attributes: Attribute[]): Promise<void>
   findByIds(ids: AttributeId[]): Promise<Attribute[]>
   findRequiredByTableId(tableId: TableId): Promise<Attribute[]>
+  getAttributeTypeForAttribute(attributeId: AttributeId): Promise<AttributeType | null>
 }

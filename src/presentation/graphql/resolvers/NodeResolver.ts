@@ -1,4 +1,5 @@
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
@@ -26,9 +27,21 @@ interface UpdateNodeInput {
   description?: string
 }
 
+interface SearchNodesInput {
+  tableId: string
+  query?: string
+  limit?: number
+  offset?: number
+  sortBy?: Array<{
+    field: string
+    direction: 'asc' | 'desc'
+  }>
+}
+
 export class NodeResolver {
   constructor(
     private readonly createNodeUseCase: CreateNodeUseCase,
+    private readonly searchNodesUseCase: SearchNodesUseCase,
     private readonly nodeRepository: INodeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly attributeRepository: IAttributeRepository,
@@ -135,6 +148,41 @@ export class NodeResolver {
       }
     } catch (error) {
       this.logger.error('Failed to find nodes', { args, error })
+      throw error
+    }
+  }
+
+  async searchNodes(args: { input: SearchNodesInput }): Promise<{
+    nodes: NodeDto[]
+    totalCount: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+    query: {
+      originalQuery: string
+      parsedConditions: any
+    }
+  }> {
+    try {
+      const result = await this.searchNodesUseCase.execute({
+        tableId: args.input.tableId,
+        query: args.input.query,
+        limit: args.input.limit,
+        offset: args.input.offset,
+        sortBy: args.input.sortBy
+      })
+
+      return {
+        nodes: result.nodes,
+        totalCount: result.total,
+        hasNextPage: result.hasMore,
+        hasPreviousPage: (args.input.offset || 0) > 0,
+        query: {
+          originalQuery: result.query.originalQuery,
+          parsedConditions: result.query.parsed
+        }
+      }
+    } catch (error) {
+      this.logger.error('Failed to search nodes', { input: args.input, error })
       throw error
     }
   }

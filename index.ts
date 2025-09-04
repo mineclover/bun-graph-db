@@ -19,6 +19,7 @@ const schema = buildGraphQLSchema({
   createAttributeTypeUseCase: container.getCreateAttributeTypeUseCase(),
   createAttributeUseCase: container.getCreateAttributeUseCase(),
   createNodeUseCase: container.getCreateNodeUseCase(),
+  searchNodesUseCase: container.getSearchNodesUseCase(),
   createRelationUseCase: container.getCreateRelationUseCase(),
   createRelationTypeUseCase: container.getCreateRelationTypeUseCase(),
   logger: container.getLogger()

@@ -21,6 +21,7 @@ import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTa
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
@@ -37,6 +38,7 @@ interface ResolverDependencies {
   createAttributeTypeUseCase: CreateAttributeTypeUseCase
   createAttributeUseCase: CreateAttributeUseCase
   createNodeUseCase: CreateNodeUseCase
+  searchNodesUseCase: SearchNodesUseCase
   createRelationUseCase: CreateRelationUseCase
   createRelationTypeUseCase: CreateRelationTypeUseCase
   logger: ILogger
@@ -68,6 +70,7 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
 
   const nodeResolver = new NodeResolver(
     deps.createNodeUseCase,
+    deps.searchNodesUseCase,
     deps.nodeRepository,
     deps.nodeAttributeRepository,
     deps.attributeRepository,
@@ -118,6 +121,7 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       node: (_: unknown, args: any) => nodeResolver.node(args),
       nodeByContent: (_: unknown, args: any) => nodeResolver.nodeByContent(args),
       nodes: (_: unknown, args: any) => nodeResolver.nodes(args),
+      searchNodes: (_: unknown, args: any) => nodeResolver.searchNodes(args),
 
       // Relation queries
       nodeRelation: (_: unknown, args: any) => relationResolver.nodeRelation(args),
