@@ -32,14 +32,20 @@ export class CreateTableUseCase {
       // Save to repository
       await this.tableRepository.save(table)
 
+      // Retrieve the saved table with the generated ID
+      const savedTable = await this.tableRepository.findByIdentifier(input.identifier)
+      if (!savedTable) {
+        throw new Error('Failed to retrieve saved table')
+      }
+
       this.logger.info('Table created successfully', { 
-        id: table.id, 
-        identifier: table.identifier 
+        id: savedTable.id, 
+        identifier: savedTable.identifier 
       })
 
       // Return DTO
       return {
-        table: TableDto.fromEntity(table)
+        table: TableDto.fromEntity(savedTable)
       }
     } catch (error) {
       this.logger.error('Failed to create table', { 

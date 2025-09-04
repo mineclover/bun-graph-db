@@ -9,7 +9,11 @@ const container = DependencyContainer.getInstance()
 // Build GraphQL schema with dependencies
 const schema = buildGraphQLSchema({
   tableRepository: container.getTableRepository(),
+  attributeTypeRepository: container.getAttributeTypeRepository(),
+  attributeRepository: container.getAttributeRepository(),
   createTableUseCase: container.getCreateTableUseCase(),
+  createAttributeTypeUseCase: container.getCreateAttributeTypeUseCase(),
+  createAttributeUseCase: container.getCreateAttributeUseCase(),
   logger: container.getLogger()
 })
 

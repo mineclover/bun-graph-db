@@ -13,11 +13,14 @@ export const getDatabasePath = (): string => {
   const dir = path.substring(0, path.lastIndexOf('/'))
   if (dir) {
     try {
-      require('fs').mkdirSync(dir, { recursive: true })
+      const fs = require('fs')
+      fs.mkdirSync(dir, { recursive: true })
+      console.log(`Database directory ensured: ${dir}`)
     } catch (error) {
-      // Directory might already exist, that's okay
+      console.warn(`Could not create directory ${dir}:`, error)
     }
   }
   
+  console.log(`Database path: ${path}`)
   return path
 }

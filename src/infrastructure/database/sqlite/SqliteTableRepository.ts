@@ -5,7 +5,7 @@ import type { TableId, PaginationOptions, PaginatedResult } from '@/shared/types
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface TableRow {
-  id: string
+  id: number
   identifier: string
   description: string | null
   created_at: string
@@ -16,23 +16,46 @@ export class SqliteTableRepository implements ITableRepository {
   constructor(private readonly db: Database) {}
 
   async save(table: Table): Promise<void> {
-    const query = `
-      INSERT OR REPLACE INTO tables (id, identifier, description, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?)
-    `
-    
     const tableData = table.toDatabase()
     
-    try {
-      this.db.run(query, [
-        tableData.id,
-        tableData.identifier,
-        tableData.description,
-        tableData.created_at,
-        tableData.updated_at
-      ])
-    } catch (error) {
-      throw new DatabaseException(`Failed to save table: ${error}`)
+    if (tableData.id === null || tableData.id === 'null') {
+      // Insert new table (let SQLite auto-generate ID)
+      const query = `
+        INSERT INTO tables (identifier, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?)
+      `
+      
+      try {
+        const result = this.db.run(query, [
+          tableData.identifier,
+          tableData.description,
+          tableData.created_at,
+          tableData.updated_at
+        ])
+        
+        console.log('New table created with ID:', result.lastInsertRowid)
+      } catch (error) {
+        console.error('Save error:', error)
+        throw new DatabaseException(`Failed to save table: ${error}`)
+      }
+    } else {
+      // Update existing table
+      const query = `
+        UPDATE tables 
+        SET identifier = ?, description = ?, updated_at = ?
+        WHERE id = ?
+      `
+      
+      try {
+        this.db.run(query, [
+          tableData.identifier,
+          tableData.description,
+          tableData.updated_at,
+          tableData.id
+        ])
+      } catch (error) {
+        throw new DatabaseException(`Failed to update table: ${error}`)
+      }
     }
   }
 
@@ -178,7 +201,7 @@ export class SqliteTableRepository implements ITableRepository {
 
   private mapRowToEntity(row: TableRow): Table {
     return Table.fromDatabase(
-      row.id,
+      row.id.toString(),
       row.identifier,
       row.description,
       new Date(row.created_at),

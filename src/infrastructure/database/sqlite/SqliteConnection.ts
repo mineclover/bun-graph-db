@@ -49,8 +49,14 @@ export class SqliteConnection {
       const schemaPath = join(process.cwd(), 'core', 'schema.sql')
       const schema = readFileSync(schemaPath, 'utf-8')
       
-      this.db!.exec(schema)
+      // Execute schema in a transaction for safety
+      this.db!.transaction(() => {
+        this.db!.exec(schema)
+      })()
+      
+      console.log('Database schema initialized successfully')
     } catch (error) {
+      console.error('Failed to initialize database schema:', error)
       throw new DatabaseException(`Failed to initialize database schema: ${error}`)
     }
   }
