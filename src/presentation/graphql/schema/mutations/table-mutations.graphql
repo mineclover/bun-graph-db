@@ -13,5 +13,7 @@ extend type Mutation {
   
   deleteTable(
     id: ID!
+    force: Boolean = false
+    cascadeDelete: Boolean = false
   ): DeleteTablePayload!
 }

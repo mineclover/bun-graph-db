@@ -1,6 +1,7 @@
 import type { DIContainer } from '../DIContainer.js'
 import { UseCaseTokens, RepositoryTokens, CommonTokens } from '../tokens/index.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
+import { DeleteTableUseCase } from '@/application/use-cases/tables/DeleteTable.js'
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
@@ -27,6 +28,19 @@ export function registerUseCaseModule(container: DIContainer): void {
       return new CreateTableUseCase(repository, logger)
     },
     [RepositoryTokens.TABLE_REPOSITORY, CommonTokens.LOGGER]
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.DELETE_TABLE_USE_CASE,
+    async (c) => {
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
+      const relationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
+      const logger = await c.resolve(CommonTokens.LOGGER)
+      return new DeleteTableUseCase(tableRepository, nodeRepository, attributeRepository, relationRepository, logger)
+    },
+    [RepositoryTokens.TABLE_REPOSITORY, RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY, RepositoryTokens.NODE_RELATION_REPOSITORY, CommonTokens.LOGGER]
   )
 
   // Attribute use cases

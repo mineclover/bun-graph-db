@@ -68,4 +68,12 @@ type UpdateTablePayload implements OperationResult {
 type DeleteTablePayload implements OperationResult {
   success: Boolean!
   errors: [Error!]!
+  deletedDependencies: TableDependencyInfo
+}
+
+# Table dependency information for deletion
+type TableDependencyInfo {
+  nodeCount: Int!
+  attributeCount: Int!
+  relationCount: Int!
 }

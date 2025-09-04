@@ -1,4 +1,5 @@
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
+import type { DeleteTableUseCase } from '@/application/use-cases/tables/DeleteTable.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { 
@@ -11,6 +12,7 @@ import type {
 export class TableMutations {
   constructor(
     private readonly createTableUseCase: CreateTableUseCase,
+    private readonly deleteTableUseCase: DeleteTableUseCase,
     private readonly tableRepository: ITableRepository,
     private readonly logger: ILogger
   ) {}
@@ -73,27 +75,48 @@ export class TableMutations {
 
   async deleteTable(_: GraphQLParent, args: DeleteTableArgs) {
     try {
-      this.logger.info('Deleting table', { id: args.id })
+      this.logger.info('Deleting table with safety checks', { 
+        id: args.id,
+        force: args.force,
+        cascadeDelete: args.cascadeDelete
+      })
       
-      const existingTable = await this.tableRepository.findById(args.id)
-      if (!existingTable) {
-        return {
-          success: false,
-          errors: [{ message: 'Table not found', code: 'TABLE_NOT_FOUND' }]
-        }
-      }
+      const dependencies = await this.deleteTableUseCase.execute({
+        id: args.id,
+        force: args.force,
+        cascadeDelete: args.cascadeDelete
+      })
 
-      await this.tableRepository.delete(args.id)
+      this.logger.info('Table deletion completed successfully', {
+        id: args.id,
+        hadDependencies: dependencies.hasData,
+        nodeCount: dependencies.nodeCount,
+        attributeCount: dependencies.attributeCount,
+        relationCount: dependencies.relationCount
+      })
 
       return {
         success: true,
-        errors: []
+        errors: [],
+        deletedDependencies: {
+          nodeCount: dependencies.nodeCount,
+          attributeCount: dependencies.attributeCount,
+          relationCount: dependencies.relationCount
+        }
       }
     } catch (error) {
       this.logger.error('Error deleting table', { error, id: args.id })
+      
+      // Enhanced error reporting for safety violations
+      const errorCode = error.message.includes('Cannot delete table') 
+        ? 'TABLE_HAS_DEPENDENCIES' 
+        : error.message.includes('not found')
+        ? 'TABLE_NOT_FOUND'
+        : 'DELETE_TABLE_ERROR'
+
       return {
         success: false,
-        errors: [{ message: error.message, code: 'DELETE_TABLE_ERROR' }]
+        errors: [{ message: error.message, code: errorCode }]
       }
     }
   }

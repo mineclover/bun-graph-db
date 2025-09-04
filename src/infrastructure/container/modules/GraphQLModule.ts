@@ -99,11 +99,12 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.TABLE_MUTATIONS,
     async (c) => {
       const createTableUseCase = await c.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE)
+      const deleteTableUseCase = await c.resolve(UseCaseTokens.DELETE_TABLE_USE_CASE)
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new TableMutations(createTableUseCase, tableRepository, logger)
+      return new TableMutations(createTableUseCase, deleteTableUseCase, tableRepository, logger)
     },
-    [UseCaseTokens.CREATE_TABLE_USE_CASE, RepositoryTokens.TABLE_REPOSITORY, CommonTokens.LOGGER]
+    [UseCaseTokens.CREATE_TABLE_USE_CASE, UseCaseTokens.DELETE_TABLE_USE_CASE, RepositoryTokens.TABLE_REPOSITORY, CommonTokens.LOGGER]
   )
 
   container.registerSingleton(

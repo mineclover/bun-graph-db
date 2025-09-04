@@ -229,11 +229,56 @@ export class QueryTemplate {
   }
 
   validateVariables(variables: Record<string, unknown>): boolean {
-    if (!this.variablesSchema || !this.variablesSchema.required) return true
+    if (!this.variablesSchema) return true
     
-    return this.variablesSchema.required.every(requiredField => 
-      variables.hasOwnProperty(requiredField) && variables[requiredField] !== undefined
-    )
+    // Check required fields
+    if (this.variablesSchema.required) {
+      const missingRequired = this.variablesSchema.required.filter(requiredField => 
+        !variables.hasOwnProperty(requiredField) || variables[requiredField] === undefined
+      )
+      if (missingRequired.length > 0) {
+        return false
+      }
+    }
+    
+    // Check type validation for each property
+    if (this.variablesSchema.properties) {
+      for (const [key, propSchema] of Object.entries(this.variablesSchema.properties)) {
+        if (variables.hasOwnProperty(key) && variables[key] !== undefined) {
+          const value = variables[key]
+          
+          // Type checking
+          if (!this.validateVariableType(value, propSchema.type)) {
+            return false
+          }
+          
+          // Enum validation
+          if (propSchema.enum && !propSchema.enum.includes(value)) {
+            return false
+          }
+        }
+      }
+    }
+    
+    return true
+  }
+  
+  private validateVariableType(value: unknown, expectedType: string): boolean {
+    switch (expectedType) {
+      case 'string':
+        return typeof value === 'string'
+      case 'number':
+      case 'integer':
+        return typeof value === 'number' && (expectedType === 'number' || Number.isInteger(value))
+      case 'boolean':
+        return typeof value === 'boolean'
+      case 'array':
+        return Array.isArray(value)
+      case 'object':
+        return typeof value === 'object' && value !== null && !Array.isArray(value)
+      default:
+        return true // Unknown type, allow it
+    }
   }
 
   isApplicableToTable(tableIdentifier: string): boolean {
