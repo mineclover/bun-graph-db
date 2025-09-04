@@ -39,6 +39,7 @@ type NodeRelation {
   relationType: RelationType!
   properties: JSON
   strength: Int!
+  confidence: Int!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -80,7 +81,8 @@ input CreateRelationInput {
   targetExternalId: String
   relationTypeId: ID!
   properties: JSON
-  strength: Int = 50
+  strength: Int = 1
+  confidence: Int = 1
 }
 
 input CreateRelationTypeInput {
@@ -333,6 +335,7 @@ extend type Query {
   
   # Relations
   nodeRelation(id: ID!): NodeRelation
+  nodeRelations(tableId: ID!): [NodeRelation!]!
   relationTypes: [RelationType!]!
   relationType(id: ID!): RelationType
 }
