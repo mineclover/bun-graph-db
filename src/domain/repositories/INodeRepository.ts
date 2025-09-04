@@ -15,4 +15,5 @@ export interface INodeRepository {
   saveMany(nodes: Node[]): Promise<void>
   findByIds(ids: NodeId[]): Promise<Node[]>
   searchByContent(tableId: TableId, searchTerm: string, options?: PaginationOptions): Promise<PaginatedResult<Node>>
+  executeRawQuery(query: string, params?: any[]): Promise<any[]>
 }

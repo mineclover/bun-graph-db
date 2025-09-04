@@ -17,8 +17,12 @@ import { CreateAttributeUseCase } from '@/application/use-cases/attributes/Creat
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
+import { NodeAnalyticsUseCase } from '@/application/use-cases/analytics/NodeAnalyticsUseCase.js'
+import { AdvancedSearchUseCase } from '@/application/use-cases/search/AdvancedSearchUseCase.js'
 import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
+import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
+import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import { LogLevel } from '@/application/ports/ILogger.js'
 
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
@@ -109,6 +113,18 @@ export class DependencyContainer {
 
     const searchRelatedNodesUseCase = new SearchRelatedNodesUseCase(nodeRepository, nodeRelationRepository, graphRepository, tableRepository, logger)
     this.register('searchRelatedNodesUseCase', searchRelatedNodesUseCase)
+
+    const nodeAnalyticsUseCase = new NodeAnalyticsUseCase(nodeRepository, nodeRelationRepository, tableRepository, logger)
+    this.register('nodeAnalyticsUseCase', nodeAnalyticsUseCase)
+
+    const advancedSearchUseCase = new AdvancedSearchUseCase(nodeRepository, nodeRelationRepository, tableRepository, logger)
+    this.register('advancedSearchUseCase', advancedSearchUseCase)
+
+    const schemaExportUseCase = new SchemaExportUseCase(tableRepository, attributeTypeRepository, attributeRepository, nodeRepository, nodeRelationRepository, relationTypeRepository, logger)
+    this.register('schemaExportUseCase', schemaExportUseCase)
+
+    const schemaImportUseCase = new SchemaImportUseCase(tableRepository, attributeTypeRepository, attributeRepository, nodeRepository, nodeRelationRepository, relationTypeRepository, logger)
+    this.register('schemaImportUseCase', schemaImportUseCase)
   }
 
   register<T>(name: string, instance: T): void {
@@ -186,6 +202,22 @@ export class DependencyContainer {
 
   getSearchRelatedNodesUseCase(): SearchRelatedNodesUseCase {
     return this.resolve('searchRelatedNodesUseCase')
+  }
+
+  getNodeAnalyticsUseCase(): NodeAnalyticsUseCase {
+    return this.resolve('nodeAnalyticsUseCase')
+  }
+
+  getAdvancedSearchUseCase(): AdvancedSearchUseCase {
+    return this.resolve('advancedSearchUseCase')
+  }
+
+  getSchemaExportUseCase(): SchemaExportUseCase {
+    return this.resolve('schemaExportUseCase')
+  }
+
+  getSchemaImportUseCase(): SchemaImportUseCase {
+    return this.resolve('schemaImportUseCase')
   }
 
   // Health check for container

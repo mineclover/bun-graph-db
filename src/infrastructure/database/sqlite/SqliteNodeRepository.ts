@@ -293,6 +293,15 @@ export class SqliteNodeRepository implements INodeRepository {
     }
   }
 
+  async executeRawQuery(query: string, params: any[] = []): Promise<any[]> {
+    try {
+      const rows = this.db.query<any, any[]>(query).all(...params)
+      return rows
+    } catch (error) {
+      throw new DatabaseException(`Failed to execute raw query: ${error}`)
+    }
+  }
+
   private mapRowToEntity(row: NodeRow): Node {
     return Node.fromDatabase(
       row.id.toString(),

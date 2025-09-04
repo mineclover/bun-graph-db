@@ -1,0 +1,223 @@
+# Analytics and Performance Monitoring Types
+
+type NodeMetrics {
+  nodeId: ID!
+  incomingCount: Int!
+  outgoingCount: Int!
+  totalRelations: Int!
+  centrality: Float!
+  clustering: Float!
+  pageRank: Float!
+  createdAt: DateTime!
+  lastActivity: DateTime!
+}
+
+type RelationshipMetrics {
+  relationTypeId: ID!
+  relationTypeName: String!
+  totalCount: Int!
+  averageStrength: Float!
+  distributionByStrength: [StrengthDistribution!]!
+}
+
+type StrengthDistribution {
+  range: String!
+  count: Int!
+}
+
+type TableAnalytics {
+  nodeCount: Int!
+  relationCount: Int!
+  relationTypeCount: Int!
+  averageNodeDegree: Float!
+  maxNodeDegree: Int!
+  minNodeDegree: Int!
+  networkDensity: Float!
+  componentCount: Int!
+  topCentralNodes: [NodeMetrics!]!
+  relationshipBreakdown: [RelationshipMetrics!]!
+  growthTrends: [GrowthTrend!]!
+}
+
+type GrowthTrend {
+  date: String!
+  nodeCount: Int!
+  relationCount: Int!
+}
+
+type QualityScore {
+  metric: String!
+  score: Float!
+  description: String!
+}
+
+type Recommendation {
+  type: RecommendationType!
+  message: String!
+  priority: RecommendationPriority!
+}
+
+enum RecommendationType {
+  OPTIMIZATION
+  QUALITY
+  STRUCTURE
+}
+
+enum RecommendationPriority {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+type NodeAnalyticsResult {
+  tableAnalytics: TableAnalytics!
+  nodeMetrics: [NodeMetrics!]!
+  qualityScores: [QualityScore!]!
+  recommendations: [Recommendation!]!
+}
+
+type PerformanceMetrics {
+  tableId: ID!
+  queryResponseTimes: [ResponseTime!]!
+  indexEfficiency: Float!
+  cacheHitRatio: Float!
+  concurrentOperations: Int!
+  averageQueryTime: Float!
+  slowestQueries: [SlowQuery!]!
+}
+
+type ResponseTime {
+  operationType: String!
+  averageMs: Float!
+  maxMs: Float!
+  minMs: Float!
+  count: Int!
+}
+
+type SlowQuery {
+  queryType: String!
+  duration: Float!
+  timestamp: DateTime!
+  parameters: JSON
+}
+
+type TestSuiteStatus {
+  suiteId: ID!
+  suiteName: String!
+  status: TestStatus!
+  totalTests: Int!
+  passingTests: Int!
+  failingTests: Int!
+  blockedTests: Int!
+  successRate: Float!
+  executionTime: Float!
+  lastRun: DateTime!
+  dependencies: [TestSuiteDependency!]!
+}
+
+type TestSuiteDependency {
+  dependencyId: ID!
+  dependencyName: String!
+  status: TestStatus!
+  blocking: Boolean!
+  reason: String
+}
+
+enum TestStatus {
+  PASSING
+  FAILING
+  FLAKY
+  PENDING
+  BLOCKED
+  SKIPPED
+}
+
+type AggregationResult {
+  field: String!
+  aggregationType: AggregationType!
+  value: Float!
+  groupedBy: [GroupedValue!]!
+}
+
+type GroupedValue {
+  key: String!
+  value: Float!
+  count: Int!
+}
+
+enum AggregationType {
+  COUNT
+  SUM
+  AVG
+  MIN
+  MAX
+}
+
+input NodeAnalyticsInput {
+  tableId: ID!
+  nodeFilters: JSON
+  relationFilters: [RelationFilterInput!]
+  timeRange: TimeRangeInput
+}
+
+input TimeRangeInput {
+  startDate: DateTime
+  endDate: DateTime
+}
+
+input PerformanceAnalysisInput {
+  tableId: ID!
+  timeRange: TimeRangeInput
+  includeSlowQueries: Boolean
+}
+
+input TestSuiteAnalysisInput {
+  tableId: ID!
+  suiteFilters: JSON
+  includeDependencies: Boolean
+}
+
+input AggregationInput {
+  tableId: ID!
+  field: String!
+  aggregationType: AggregationType!
+  groupBy: [String!]
+  filters: JSON
+  timeRange: TimeRangeInput
+}
+
+extend type Query {
+  # Analytics queries
+  analyzeNodes(input: NodeAnalyticsInput!): NodeAnalyticsResult!
+  
+  # Performance monitoring
+  getPerformanceMetrics(input: PerformanceAnalysisInput!): PerformanceMetrics!
+  
+  # Test suite management
+  getTestSuiteStatus(input: TestSuiteAnalysisInput!): [TestSuiteStatus!]!
+  
+  # Aggregation and reporting
+  aggregateData(input: AggregationInput!): [AggregationResult!]!
+  
+  # Real-time status
+  getSystemHealth(tableId: ID!): SystemHealth!
+}
+
+type SystemHealth {
+  status: HealthStatus!
+  databaseSize: String!
+  totalTables: Int!
+  totalNodes: Int!
+  totalRelations: Int!
+  uptime: Float!
+  memoryUsage: Float!
+  activeConnections: Int!
+  lastUpdate: DateTime!
+}
+
+enum HealthStatus {
+  HEALTHY
+  WARNING
+  CRITICAL
+  DOWN
+}
