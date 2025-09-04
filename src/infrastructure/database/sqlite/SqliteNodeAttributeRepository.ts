@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
-import type { NodeId, AttributeId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { NodeId, AttributeId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface NodeAttributeRow {

@@ -1,5 +1,5 @@
 import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
-import type { NodeId, AttributeId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { NodeId, AttributeId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 
 export interface INodeAttributeRepository {
   save(nodeAttribute: NodeAttribute): Promise<void>

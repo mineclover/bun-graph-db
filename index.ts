@@ -1,37 +1,18 @@
 import { createYoga } from 'graphql-yoga'
-import { buildGraphQLSchema } from './src/presentation/graphql/schema-builder.js'
-import { DependencyContainer } from './src/infrastructure/container/DependencyContainer.js'
+import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder.js'
+import { ContainerBootstrap } from './src/infrastructure/container/ContainerBootstrap.js'
+import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens.js'
 import { graphqlConfig } from './src/config/graphql.js'
+import type { ILogger } from './src/application/ports/ILogger.js'
 
 // Initialize dependency container
-const container = DependencyContainer.getInstance()
+const container = await ContainerBootstrap.createContainer()
 
-// Build GraphQL schema with dependencies
-const schema = buildGraphQLSchema({
-  tableRepository: container.getTableRepository(),
-  attributeTypeRepository: container.getAttributeTypeRepository(),
-  attributeRepository: container.getAttributeRepository(),
-  nodeRepository: container.getNodeRepository(),
-  nodeAttributeRepository: container.getNodeAttributeRepository(),
-  nodeRelationRepository: container.getNodeRelationRepository(),
-  relationTypeRepository: container.getRelationTypeRepository(),
-  queryTemplateRepository: container.getQueryTemplateRepository(),
-  createTableUseCase: container.getCreateTableUseCase(),
-  createAttributeTypeUseCase: container.getCreateAttributeTypeUseCase(),
-  createAttributeUseCase: container.getCreateAttributeUseCase(),
-  createNodeUseCase: container.getCreateNodeUseCase(),
-  searchNodesUseCase: container.getSearchNodesUseCase(),
-  createRelationUseCase: container.getCreateRelationUseCase(),
-  createRelationTypeUseCase: container.getCreateRelationTypeUseCase(),
-  searchRelatedNodesUseCase: container.getSearchRelatedNodesUseCase(),
-  nodeAnalyticsUseCase: container.getNodeAnalyticsUseCase(),
-  advancedSearchUseCase: container.getAdvancedSearchUseCase(),
-  schemaExportUseCase: container.getSchemaExportUseCase(),
-  schemaImportUseCase: container.getSchemaImportUseCase(),
-  logger: container.getLogger()
-})
+// Build GraphQL schema with the new schema builder
+const schemaBuilder = new GraphQLSchemaBuilder(container)
+const schema = await schemaBuilder.build()
 
-const logger = container.getLogger()
+const logger = await container.resolve<ILogger>(CommonTokens.LOGGER)
 
 const yoga = createYoga({
   schema,

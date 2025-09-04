@@ -1,4 +1,4 @@
-import type { GraphQLConfig } from '@/shared/types/common.js'
+import type { GraphQLConfig } from '@/core/types/CommonTypes.js'
 
 export const graphqlConfig: GraphQLConfig = {
   port: Number.parseInt(process.env.GRAPHQL_PORT || '4000'),

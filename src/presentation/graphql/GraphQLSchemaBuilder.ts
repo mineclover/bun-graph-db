@@ -4,6 +4,8 @@ import { mergeTypeDefs } from '@graphql-tools/merge'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
 import type { GraphQLSchema } from 'graphql'
 import { join } from 'path'
+import type { DIContainer } from '../../infrastructure/container/DIContainer.js'
+import { GraphQLTokens } from '../../infrastructure/container/tokens/index.js'
 
 // Import resolver classes
 import type { 
@@ -51,7 +53,40 @@ export interface GraphQLDependencies {
   relationFieldResolvers: RelationFieldResolvers
 }
 
-export function buildGraphQLSchema(deps: GraphQLDependencies): GraphQLSchema {
+export class GraphQLSchemaBuilder {
+  constructor(private container: DIContainer) {}
+
+  async build(): Promise<GraphQLSchema> {
+    const deps = await this.resolveDependencies()
+    return this.buildSchema(deps)
+  }
+
+  private async resolveDependencies(): Promise<GraphQLDependencies> {
+    return {
+      // Query resolvers
+      tableQueries: await this.container.resolve(GraphQLTokens.TABLE_QUERIES),
+      nodeQueries: await this.container.resolve(GraphQLTokens.NODE_QUERIES),
+      attributeQueries: await this.container.resolve(GraphQLTokens.ATTRIBUTE_QUERIES),
+      relationQueries: await this.container.resolve(GraphQLTokens.RELATION_QUERIES),
+      analyticsQueries: await this.container.resolve(GraphQLTokens.ANALYTICS_QUERIES),
+      templateQueries: await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES),
+      
+      // Mutation resolvers
+      tableMutations: await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS),
+      nodeMutations: await this.container.resolve(GraphQLTokens.NODE_MUTATIONS),
+      attributeMutations: await this.container.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS),
+      relationMutations: await this.container.resolve(GraphQLTokens.RELATION_MUTATIONS),
+      templateMutations: await this.container.resolve(GraphQLTokens.TEMPLATE_MUTATIONS),
+      
+      // Field resolvers
+      tableFieldResolvers: await this.container.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS),
+      nodeFieldResolvers: await this.container.resolve(GraphQLTokens.NODE_FIELD_RESOLVERS),
+      attributeFieldResolvers: await this.container.resolve(GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS),
+      relationFieldResolvers: await this.container.resolve(GraphQLTokens.RELATION_FIELD_RESOLVERS)
+    }
+  }
+
+  private buildSchema(deps: GraphQLDependencies): GraphQLSchema {
   // Load GraphQL schema files from the new structure
   const typesArray = loadFilesSync(join(process.cwd(), 'src/presentation/graphql/schema'), {
     extensions: ['graphql'],
@@ -206,4 +241,20 @@ export function buildGraphQLSchema(deps: GraphQLDependencies): GraphQLSchema {
   deps.templateMutations.setSchema(schema)
 
   return schema
+  }
+}
+
+// Keep the function export for backward compatibility
+export function buildGraphQLSchema(deps: GraphQLDependencies): GraphQLSchema {
+  const builder = new (class extends GraphQLSchemaBuilder {
+    constructor() {
+      super(null as any) // This is for backward compatibility only
+    }
+    
+    buildSchema(dependencies: GraphQLDependencies): GraphQLSchema {
+      return super.buildSchema(dependencies)
+    }
+  })()
+  
+  return builder.buildSchema(deps)
 }

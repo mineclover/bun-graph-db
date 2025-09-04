@@ -7,7 +7,7 @@ import type {
   GetTestSuiteStatusArgs,
   AggregateDataArgs,
   GetSystemHealthArgs
-} from '@/presentation/graphql/types/GraphQLTypes.js'
+} from '@/core/types/GraphQLTypes.js'
 
 export class AnalyticsQueries {
   constructor(

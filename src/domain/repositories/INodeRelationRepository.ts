@@ -6,7 +6,7 @@ import type {
   RelationTypeId, 
   PaginationOptions, 
   PaginatedResult 
-} from '@/shared/types/common.js'
+} from '@/core/types/CommonTypes.js'
 
 export interface INodeRelationRepository {
   save(nodeRelation: NodeRelation): Promise<void>

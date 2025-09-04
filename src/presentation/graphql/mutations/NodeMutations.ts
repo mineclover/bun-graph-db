@@ -8,7 +8,7 @@ import type {
   UpdateNodeArgs,
   DeleteNodeArgs,
   SetNodeAttributeArgs
-} from '@/presentation/graphql/types/GraphQLTypes.js'
+} from '@/core/types/GraphQLTypes.js'
 
 export class NodeMutations {
   constructor(

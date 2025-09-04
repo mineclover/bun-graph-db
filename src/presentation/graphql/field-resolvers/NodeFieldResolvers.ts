@@ -2,7 +2,7 @@ import type { ITableRepository } from '@/domain/repositories/ITableRepository.js
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { NodeParent } from '@/presentation/graphql/types/GraphQLTypes.js'
+import type { NodeParent } from '@/core/types/GraphQLTypes.js'
 
 export class NodeFieldResolvers {
   constructor(

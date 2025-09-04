@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
-import type { RelationTypeId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { RelationTypeId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface RelationTypeRow {

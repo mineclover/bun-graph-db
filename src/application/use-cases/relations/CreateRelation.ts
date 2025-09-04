@@ -5,7 +5,7 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { ConflictException, ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
-import type { TableId, NodeId, RelationTypeId } from '@/shared/types/common.js'
+import type { TableId, NodeId, RelationTypeId } from '@/core/types/CommonTypes.js'
 
 export interface CreateRelationInput {
   tableId: string

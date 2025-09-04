@@ -1,5 +1,5 @@
 import type { RelationType } from '@/domain/entities/RelationType.js'
-import type { RelationTypeId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { RelationTypeId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 
 export interface IRelationTypeRepository {
   save(relationType: RelationType): Promise<void>

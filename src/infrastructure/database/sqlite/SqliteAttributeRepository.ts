@@ -2,7 +2,7 @@ import type { Database } from 'bun:sqlite'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
-import type { AttributeId, AttributeTypeId, TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { AttributeId, AttributeTypeId, TableId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface AttributeRow {

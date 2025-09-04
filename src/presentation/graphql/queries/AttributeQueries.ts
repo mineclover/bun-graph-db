@@ -6,7 +6,7 @@ import type {
   AttributeArgs,
   AttributeByIdentifierArgs,
   AttributesArgs
-} from '@/presentation/graphql/types/GraphQLTypes.js'
+} from '@/core/types/GraphQLTypes.js'
 
 export class AttributeQueries {
   constructor(

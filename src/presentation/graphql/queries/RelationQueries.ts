@@ -10,7 +10,7 @@ import type {
   SearchRelatedNodesArgs,
   FindPathsBetweenNodesArgs,
   GetDependencyChainArgs
-} from '@/presentation/graphql/types/GraphQLTypes.js'
+} from '@/core/types/GraphQLTypes.js'
 
 export class RelationQueries {
   constructor(

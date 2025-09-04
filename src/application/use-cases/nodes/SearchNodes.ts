@@ -4,7 +4,7 @@ import type { ITableRepository } from '@/domain/repositories/ITableRepository.js
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
 import { NodeDto } from '@/application/dtos/NodeDto.js'
-import type { TableId, PaginatedResult } from '@/shared/types/common.js'
+import type { TableId, PaginatedResult } from '@/core/types/CommonTypes.js'
 import { SearchQueryParser, type AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
 import type { SearchQuery } from '@/domain/value-objects/SearchFilter.js'
 

@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { Node } from '@/domain/entities/Node.js'
-import type { NodeId, TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { NodeId, TableId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface NodeRow {

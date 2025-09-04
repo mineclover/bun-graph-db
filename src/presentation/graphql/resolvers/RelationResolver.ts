@@ -11,7 +11,7 @@ import { NodeRelationDto, RelationTypeDto, CreateRelationOutput, CreateRelationT
 import { NodeDto } from '@/application/dtos/NodeDto.js'
 import type { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
-import type { NodeRelationId, RelationTypeId, NodeId, TableId } from '@/shared/types/common.js'
+import type { NodeRelationId, RelationTypeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 
 // Input types matching GraphQL schema
 interface CreateRelationInput {

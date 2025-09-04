@@ -6,7 +6,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { ConflictException, ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
 import type { CreateAttributeInput, CreateAttributeOutput } from '@/application/dtos/AttributeDto.js'
 import { AttributeDto } from '@/application/dtos/AttributeDto.js'
-import type { TableId, AttributeTypeId } from '@/shared/types/common.js'
+import type { TableId, AttributeTypeId } from '@/core/types/CommonTypes.js'
 
 export class CreateAttributeUseCase {
   constructor(

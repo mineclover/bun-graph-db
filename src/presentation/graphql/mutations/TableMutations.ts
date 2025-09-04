@@ -6,7 +6,7 @@ import type {
   CreateTableArgs,
   UpdateTableArgs,
   DeleteTableArgs
-} from '@/presentation/graphql/types/GraphQLTypes.js'
+} from '@/core/types/GraphQLTypes.js'
 
 export class TableMutations {
   constructor(

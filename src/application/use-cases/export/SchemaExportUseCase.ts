@@ -5,7 +5,7 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { TableId } from '@/shared/types/common.js'
+import type { TableId } from '@/core/types/CommonTypes.js'
 
 export interface SchemaExportOptions {
   includeData?: boolean

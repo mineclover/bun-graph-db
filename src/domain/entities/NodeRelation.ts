@@ -1,4 +1,4 @@
-import type { NodeRelationId, TableId, NodeId, RelationTypeId } from '@/shared/types/common.js'
+import type { NodeRelationId, TableId, NodeId, RelationTypeId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export class NodeRelation {

@@ -6,7 +6,12 @@
  * and template-based query execution testing.
  */
 
-import { createDependencyContainer } from '../src/infrastructure/container/DependencyContainer.js'
+import { ContainerBootstrap } from '../src/infrastructure/container/ContainerBootstrap.js'
+import { DIContainer } from '../src/infrastructure/container/DIContainer.js'
+import {
+  RepositoryTokens,
+  UseCaseTokens
+} from '../src/infrastructure/container/tokens/index.js'
 import { AttributeType } from '../src/domain/entities/AttributeType.js'
 import { Table } from '../src/domain/entities/Table.js'
 import { Attribute } from '../src/domain/entities/Attribute.js'
@@ -548,7 +553,11 @@ const TEST_DATASETS: TestDatasetConfig[] = [
 ];
 
 export class TestDatasetSetup {
-  private container = createDependencyContainer()
+  private container: DIContainer
+
+  constructor(container: DIContainer) {
+    this.container = container
+  }
 
   async createTestDatasets(): Promise<void> {
     console.log('🚀 Starting test dataset creation...')
@@ -568,12 +577,12 @@ export class TestDatasetSetup {
   }
 
   private async createTable(config: TestTableConfig): Promise<void> {
-    const tableRepository = this.container.getTableRepository()
-    const attributeTypeRepository = this.container.getAttributeTypeRepository()
-    const attributeRepository = this.container.getAttributeRepository()
-    const nodeRepository = this.container.getNodeRepository()
-    const relationTypeRepository = this.container.getRelationTypeRepository()
-    const relationRepository = this.container.getNodeRelationRepository()
+    const tableRepository = await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY)
+    const attributeTypeRepository = await this.container.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
+    const attributeRepository = await this.container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
+    const nodeRepository = await this.container.resolve(RepositoryTokens.NODE_REPOSITORY)
+    const relationTypeRepository = await this.container.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
+    const relationRepository = await this.container.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
 
     console.log(`  📋 Creating table: ${config.identifier}`)
 
@@ -676,7 +685,7 @@ export class TestDatasetSetup {
   async exportDatasets(): Promise<void> {
     console.log('\n📤 Exporting test datasets...')
     
-    const exportUseCase = this.container.getSchemaExportUseCase()
+    const exportUseCase = await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE)
     const result = await exportUseCase.exportAllTables({
       includeData: true,
       includeRelations: true,
@@ -705,9 +714,10 @@ export class TestDatasetSetup {
 
 // Main execution
 if (import.meta.main) {
-  const setup = new TestDatasetSetup()
-  
   try {
+    const container = await ContainerBootstrap.createContainer()
+    const setup = new TestDatasetSetup(container)
+    
     await setup.cleanupExistingData()
     await setup.createTestDatasets()
     await setup.exportDatasets()

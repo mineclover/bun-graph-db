@@ -1,7 +1,7 @@
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
-import type { QueryTemplateId } from '@/shared/types/common.js'
+import type { QueryTemplateId } from '@/core/types/CommonTypes.js'
 
 export interface ExecuteQueryTemplateInput {
   templateIdentifier: string

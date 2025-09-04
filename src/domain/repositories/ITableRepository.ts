@@ -1,5 +1,5 @@
 import type { Table } from '@/domain/entities/Table.js'
-import type { TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { TableId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 
 // Repository interface (Port) - defines what the domain needs from persistence
 export interface ITableRepository {

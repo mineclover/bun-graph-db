@@ -4,7 +4,7 @@ import type { INodeRelationRepository } from '@/domain/repositories/INodeRelatio
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
-import type { TableId } from '@/shared/types/common.js'
+import type { TableId } from '@/core/types/CommonTypes.js'
 import type { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 
 interface NodeAnalyticsInput {

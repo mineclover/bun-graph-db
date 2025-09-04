@@ -1,4 +1,4 @@
-import type { NodeId, TableId } from '@/shared/types/common.js'
+import type { NodeId, TableId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export class Node {

@@ -7,7 +7,7 @@ import type {
   CreateRelationTypeArgs,
   CreateRelationArgs,
   DeleteRelationArgs
-} from '@/presentation/graphql/types/GraphQLTypes.js'
+} from '@/core/types/GraphQLTypes.js'
 
 export class RelationMutations {
   constructor(

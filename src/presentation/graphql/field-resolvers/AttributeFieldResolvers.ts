@@ -2,7 +2,7 @@ import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeT
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { AttributeParent } from '@/presentation/graphql/types/GraphQLTypes.js'
+import type { AttributeParent } from '@/core/types/GraphQLTypes.js'
 
 export class AttributeFieldResolvers {
   constructor(

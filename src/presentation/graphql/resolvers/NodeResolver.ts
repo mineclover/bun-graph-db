@@ -9,7 +9,7 @@ import { ValidationException, NotFoundException, ConflictException } from '@/sha
 import { NodeDto, NodeAttributeDto } from '@/application/dtos/NodeDto.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
 import { AttributeDto } from '@/application/dtos/AttributeDto.js'
-import type { NodeId, TableId, AttributeId } from '@/shared/types/common.js'
+import type { NodeId, TableId, AttributeId } from '@/core/types/CommonTypes.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 
 // Input types matching GraphQL schema

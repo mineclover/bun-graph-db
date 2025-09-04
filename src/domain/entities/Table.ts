@@ -1,5 +1,5 @@
 import { DomainException } from '@/shared/exceptions/DomainException.js'
-import type { TableId, TimestampedEntity } from '@/shared/types/common.js'
+import type { TableId, TimestampedEntity } from '@/core/types/CommonTypes.js'
 
 export class Table implements TimestampedEntity {
   private constructor(

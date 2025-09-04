@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { Table } from '@/domain/entities/Table.js'
-import type { TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { TableId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface TableRow {

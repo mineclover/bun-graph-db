@@ -1,4 +1,4 @@
-import type { AttributeId, AttributeTypeId, TableId } from '@/shared/types/common.js'
+import type { AttributeId, AttributeTypeId, TableId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export class Attribute {

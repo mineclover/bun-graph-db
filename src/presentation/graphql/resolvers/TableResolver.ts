@@ -6,10 +6,10 @@ import type {
   UpdateTableInput,
   TablesFilter,
   TablesPagination 
-} from '@/shared/types/graphql-types.js'
+} from '@/core/types/GraphQLTypes.js'
 import { ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
-import type { TableId } from '@/shared/types/common.js'
+import type { TableId } from '@/core/types/CommonTypes.js'
 
 export class TableResolver {
   constructor(

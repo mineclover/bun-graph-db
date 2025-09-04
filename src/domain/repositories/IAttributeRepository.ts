@@ -1,6 +1,6 @@
 import type { Attribute } from '@/domain/entities/Attribute.js'
 import type { AttributeType } from '@/domain/entities/AttributeType.js'
-import type { AttributeId, AttributeTypeId, TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { AttributeId, AttributeTypeId, TableId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 
 export interface IAttributeRepository {
   save(attribute: Attribute): Promise<void>

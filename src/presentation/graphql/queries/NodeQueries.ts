@@ -7,7 +7,7 @@ import type {
   NodeByContentArgs,
   NodesArgs,
   SearchNodesArgs
-} from '@/presentation/graphql/types/GraphQLTypes.js'
+} from '@/core/types/GraphQLTypes.js'
 
 export class NodeQueries {
   constructor(

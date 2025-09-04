@@ -1,5 +1,5 @@
 import type { Node } from '@/domain/entities/Node.js'
-import type { NodeId, TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import type { NodeId, TableId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 
 export interface INodeRepository {
   save(node: Node): Promise<void>

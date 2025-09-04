@@ -8,7 +8,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { ConflictException, ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
 import type { CreateNodeInput, CreateNodeOutput } from '@/application/dtos/NodeDto.js'
 import { NodeDto } from '@/application/dtos/NodeDto.js'
-import type { TableId, NodeId, AttributeId } from '@/shared/types/common.js'
+import type { TableId, NodeId, AttributeId } from '@/core/types/CommonTypes.js'
 
 export class CreateNodeUseCase {
   constructor(

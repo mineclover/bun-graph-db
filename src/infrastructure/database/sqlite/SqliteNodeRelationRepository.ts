@@ -8,7 +8,7 @@ import type {
   RelationTypeId, 
   PaginationOptions, 
   PaginatedResult 
-} from '@/shared/types/common.js'
+} from '@/core/types/CommonTypes.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface NodeRelationRow {

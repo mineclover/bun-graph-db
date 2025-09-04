@@ -1,4 +1,4 @@
-import type { DatabaseConfig } from '@/shared/types/common.js'
+import type { DatabaseConfig } from '@/core/types/CommonTypes.js'
 
 export const databaseConfig: DatabaseConfig = {
   path: process.env.DATABASE_PATH || './data/bun-graph-db.sqlite',

@@ -1,40 +1,20 @@
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test'
 import { createYoga } from 'graphql-yoga'
-import { buildGraphQLSchema } from '../src/presentation/graphql/schema-builder.js'
-import { DependencyContainer } from '../src/infrastructure/container/DependencyContainer.js'
+import { GraphQLSchemaBuilder } from '../src/presentation/graphql/GraphQLSchemaBuilder.js'
+import { ContainerBootstrap } from '../src/infrastructure/container/ContainerBootstrap.js'
+import type { DIContainer } from '../src/infrastructure/container/DIContainer.js'
 
 describe('Template-based Node Mutations', () => {
   let yoga: ReturnType<typeof createYoga>
-  let container: DependencyContainer
+  let container: DIContainer
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // Initialize dependency container
-    container = DependencyContainer.getInstance()
+    container = await ContainerBootstrap.createContainer()
     
-    // Build GraphQL schema
-    const schema = buildGraphQLSchema({
-      tableRepository: container.getTableRepository(),
-      attributeTypeRepository: container.getAttributeTypeRepository(),
-      attributeRepository: container.getAttributeRepository(),
-      nodeRepository: container.getNodeRepository(),
-      nodeAttributeRepository: container.getNodeAttributeRepository(),
-      nodeRelationRepository: container.getNodeRelationRepository(),
-      relationTypeRepository: container.getRelationTypeRepository(),
-      queryTemplateRepository: container.getQueryTemplateRepository(),
-      createTableUseCase: container.getCreateTableUseCase(),
-      createAttributeTypeUseCase: container.getCreateAttributeTypeUseCase(),
-      createAttributeUseCase: container.getCreateAttributeUseCase(),
-      createNodeUseCase: container.getCreateNodeUseCase(),
-      searchNodesUseCase: container.getSearchNodesUseCase(),
-      createRelationUseCase: container.getCreateRelationUseCase(),
-      createRelationTypeUseCase: container.getCreateRelationTypeUseCase(),
-      searchRelatedNodesUseCase: container.getSearchRelatedNodesUseCase(),
-      nodeAnalyticsUseCase: container.getNodeAnalyticsUseCase(),
-      advancedSearchUseCase: container.getAdvancedSearchUseCase(),
-      schemaExportUseCase: container.getSchemaExportUseCase(),
-      schemaImportUseCase: container.getSchemaImportUseCase(),
-      logger: container.getLogger()
-    })
+    // Build GraphQL schema with the new schema builder
+    const schemaBuilder = new GraphQLSchemaBuilder(container)
+    const schema = await schemaBuilder.build()
 
     yoga = createYoga({ schema })
   })

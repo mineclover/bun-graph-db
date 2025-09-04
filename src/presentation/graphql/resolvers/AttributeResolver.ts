@@ -9,7 +9,7 @@ import { AttributeTypeDto } from '@/application/dtos/AttributeTypeDto.js'
 import { AttributeDto } from '@/application/dtos/AttributeDto.js'
 import { NodeAttributeDto } from '@/application/dtos/NodeDto.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
-import type { AttributeId, AttributeTypeId, TableId } from '@/shared/types/common.js'
+import type { AttributeId, AttributeTypeId, TableId } from '@/core/types/CommonTypes.js'
 
 // Input types matching GraphQL schema
 interface CreateAttributeTypeInput {

@@ -2,7 +2,7 @@ import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTempl
 import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLSchema } from 'graphql'
-import type { GraphQLParent, GraphQLContext } from '@/presentation/graphql/types/GraphQLTypes.js'
+import type { GraphQLParent, GraphQLContext } from '@/core/types/GraphQLTypes.js'
 
 export class TemplateQueries {
   constructor(
