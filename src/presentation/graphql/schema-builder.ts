@@ -10,6 +10,9 @@ import { TableResolver } from './resolvers/TableResolver.js'
 import { AttributeResolver } from './resolvers/AttributeResolver.js'
 import { NodeResolver } from './resolvers/NodeResolver.js'
 import { RelationResolver } from './resolvers/RelationResolver.js'
+import { AnalyticsResolver } from './resolvers/AnalyticsResolver.js'
+import { AdvancedSearchResolver } from './resolvers/AdvancedSearchResolver.js'
+import { createSchemaResolvers } from './resolvers/schema.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
@@ -25,6 +28,10 @@ import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNod
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
+import type { NodeAnalyticsUseCase } from '@/application/use-cases/analytics/NodeAnalyticsUseCase.js'
+import type { AdvancedSearchUseCase } from '@/application/use-cases/search/AdvancedSearchUseCase.js'
+import type { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
+import type { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 
 interface ResolverDependencies {
@@ -43,6 +50,10 @@ interface ResolverDependencies {
   createRelationUseCase: CreateRelationUseCase
   createRelationTypeUseCase: CreateRelationTypeUseCase
   searchRelatedNodesUseCase: SearchRelatedNodesUseCase
+  nodeAnalyticsUseCase: NodeAnalyticsUseCase
+  advancedSearchUseCase: AdvancedSearchUseCase
+  schemaExportUseCase: SchemaExportUseCase
+  schemaImportUseCase: SchemaImportUseCase
   logger: ILogger
 }
 
@@ -91,6 +102,28 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
     deps.logger
   )
 
+  const analyticsResolver = new AnalyticsResolver(
+    deps.nodeAnalyticsUseCase,
+    deps.nodeRepository,
+    deps.nodeRelationRepository,
+    deps.tableRepository,
+    deps.logger
+  )
+
+  const advancedSearchResolver = new AdvancedSearchResolver(
+    deps.advancedSearchUseCase,
+    deps.nodeRepository,
+    deps.tableRepository,
+    deps.logger
+  )
+
+  const schemaResolvers = createSchemaResolvers({
+    tableRepository: deps.tableRepository,
+    schemaExportUseCase: deps.schemaExportUseCase,
+    schemaImportUseCase: deps.schemaImportUseCase,
+    logger: deps.logger
+  })
+
   const resolvers = {
     // Custom scalars
     DateTime: DateTimeResolver,
@@ -128,13 +161,32 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
 
       // Relation queries
       nodeRelation: (_: unknown, args: any) => relationResolver.nodeRelation(args),
+      nodeRelations: (_: unknown, args: any) => relationResolver.nodeRelations(args),
       relationTypes: (_: unknown, args: any) => relationResolver.relationTypes(),
       relationType: (_: unknown, args: any) => relationResolver.relationType(args),
 
       // Graph relationship queries
       searchRelatedNodes: (_: unknown, args: any) => relationResolver.searchRelatedNodes(args),
       findPathsBetweenNodes: (_: unknown, args: any) => relationResolver.findPathsBetweenNodes(args),
-      getDependencyChain: (_: unknown, args: any) => relationResolver.getDependencyChain(args)
+      getDependencyChain: (_: unknown, args: any) => relationResolver.getDependencyChain(args),
+
+      // Analytics queries
+      analyzeNodes: (_: unknown, args: any) => analyticsResolver.analyzeNodes(args),
+      getPerformanceMetrics: (_: unknown, args: any) => analyticsResolver.getPerformanceMetrics(args),
+      getTestSuiteStatus: (_: unknown, args: any) => analyticsResolver.getTestSuiteStatus(args),
+      aggregateData: (_: unknown, args: any) => analyticsResolver.aggregateData(args),
+      getSystemHealth: (_: unknown, args: any) => analyticsResolver.getSystemHealth(args),
+
+      // Advanced search queries
+      advancedSearch: (_: unknown, args: any) => advancedSearchResolver.advancedSearch(args),
+      getSearchPerformanceMetrics: (_: unknown, args: any) => advancedSearchResolver.getPerformanceMetrics(args),
+      getMonitoringMetrics: (_: unknown, args: any) => advancedSearchResolver.getMonitoringMetrics(args),
+      getSystemStatus: (_: unknown, args: any) => advancedSearchResolver.getSystemStatus(args),
+      getAlertRules: (_: unknown, args: any) => advancedSearchResolver.getAlertRules(args),
+
+      // Schema export queries
+      exportTable: schemaResolvers.Query.exportTable,
+      exportAllTables: schemaResolvers.Query.exportAllTables
     },
 
     Mutation: {
@@ -164,7 +216,17 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       // Relation mutations
       createRelation: (_: unknown, args: any) => relationResolver.createRelation(args),
       deleteRelation: (_: unknown, args: any) => relationResolver.deleteRelation(args),
-      createRelationType: (_: unknown, args: any) => relationResolver.createRelationType(args)
+      createRelationType: (_: unknown, args: any) => relationResolver.createRelationType(args),
+
+      // Advanced search mutations
+      createAlertRule: (_: unknown, args: any) => advancedSearchResolver.createAlertRule(args),
+      updateAlertRule: (_: unknown, args: any) => advancedSearchResolver.updateAlertRule(args),
+      deleteAlertRule: (_: unknown, args: any) => advancedSearchResolver.deleteAlertRule(args),
+      clearCache: (_: unknown, args: any) => advancedSearchResolver.clearCache(args),
+      optimizeDatabase: (_: unknown, args: any) => advancedSearchResolver.optimizeDatabase(args),
+
+      // Schema import mutations
+      importSchema: schemaResolvers.Mutation.importSchema
     },
 
     Subscription: {

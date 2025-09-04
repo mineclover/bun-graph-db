@@ -56,7 +56,7 @@ describe('Node Creation Preview Tests', () => {
       }
     })
     
-    projectTableId = projectResult.data.createProject.table.id
+    projectTableId = projectResult.data.createTable.table.id
 
     // Add some test attributes for context
     await Promise.all([

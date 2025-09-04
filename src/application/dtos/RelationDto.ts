@@ -12,6 +12,7 @@ export interface NodeRelationDto {
   relationTypeId: string
   properties: Record<string, any> | null
   strength: number
+  confidence: number
   createdAt: string
   updatedAt: string
 }
@@ -28,6 +29,7 @@ export class NodeRelationDto {
       relationTypeId: nodeRelation.getRelationTypeId(),
       properties: nodeRelation.getProperties(),
       strength: nodeRelation.getStrength(),
+      confidence: (nodeRelation as any).getConfidence ? (nodeRelation as any).getConfidence() : 1,
       createdAt: nodeRelation.getCreatedAt().toISOString(),
       updatedAt: nodeRelation.getUpdatedAt().toISOString()
     }
@@ -75,6 +77,7 @@ export interface CreateRelationInput {
   relationTypeId: string
   properties?: Record<string, any> | null
   strength?: number
+  confidence?: number
 }
 
 export interface CreateRelationTypeInput {

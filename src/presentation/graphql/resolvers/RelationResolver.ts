@@ -23,6 +23,7 @@ interface CreateRelationInput {
   relationTypeId: string
   properties?: Record<string, any>
   strength?: number
+  confidence?: number
 }
 
 interface CreateRelationTypeInput {
@@ -72,6 +73,19 @@ export class RelationResolver {
     } catch (error) {
       this.logger.error('Failed to find node relation by id', { id: args.id, error })
       throw error
+    }
+  }
+
+  async nodeRelations(args: { tableId: string }): Promise<NodeRelationDto[]> {
+    try {
+      const result = await this.nodeRelationRepository.findByTableId(
+        args.tableId as TableId,
+        { limit: 1000, offset: 0 }
+      )
+      return NodeRelationDto.fromEntities(result.data)
+    } catch (error) {
+      this.logger.error('Failed to find node relations by table id', { tableId: args.tableId, error })
+      return []
     }
   }
 
@@ -196,7 +210,8 @@ export class RelationResolver {
         targetExternalId: args.input.targetExternalId,
         relationTypeId: args.input.relationTypeId,
         properties: args.input.properties,
-        strength: args.input.strength
+        strength: args.input.strength,
+        confidence: args.input.confidence
       })
 
       // Convert the use case output to DTO
@@ -210,6 +225,7 @@ export class RelationResolver {
         relationTypeId: result.relation.relationTypeId,
         properties: result.relation.properties,
         strength: result.relation.strength,
+        confidence: result.relation.confidence || 1,
         createdAt: result.relation.createdAt,
         updatedAt: result.relation.updatedAt
       }
