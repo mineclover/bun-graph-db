@@ -1,0 +1,182 @@
+# Schema Export/Import type definitions
+
+# Export options
+input SchemaExportOptions {
+  includeData: Boolean = true
+  includeRelations: Boolean = true
+  format: String = "json"
+  compression: Boolean = false
+}
+
+# Export result metadata
+type ExportMetadata {
+  exportedAt: String!
+  version: String!
+  source: String!
+  options: JSON
+  checksum: String
+}
+
+# Exported table structure
+type ExportedTable {
+  id: String!
+  identifier: String!
+  description: String
+  metadata: JSON
+  createdAt: String!
+  updatedAt: String!
+  attributes: [ExportedAttribute!]!
+  nodes: [ExportedNode!]!
+  relations: [ExportedRelation!]!
+  statistics: ExportTableStatistics!
+}
+
+type ExportTableStatistics {
+  nodeCount: Int!
+  attributeCount: Int!
+  relationCount: Int!
+}
+
+# Exported attribute structure
+type ExportedAttribute {
+  id: String!
+  identifier: String!
+  name: String!
+  description: String
+  attributeType: ExportedAttributeType!
+  isRequired: Boolean!
+  defaultValue: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ExportedAttributeType {
+  id: String!
+  identifier: String!
+  name: String!
+  dataType: String!
+  allowedValues: [String!]
+  constraints: JSON
+}
+
+# Exported node structure
+type ExportedNode {
+  id: String!
+  content: String!
+  title: String
+  description: String
+  attributes: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Exported relation structure
+type ExportedRelation {
+  id: String!
+  sourceNodeId: String!
+  targetNodeId: String!
+  relationType: ExportedRelationType!
+  properties: JSON
+  strength: Float
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ExportedRelationType {
+  id: String!
+  identifier: String!
+  name: String!
+  description: String
+}
+
+# Global types in export
+type ExportedGlobalRelationType {
+  id: String!
+  identifier: String!
+  name: String!
+  description: String
+  metadata: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ExportedGlobalAttributeType {
+  id: String!
+  identifier: String!
+  name: String!
+  description: String
+  dataType: String!
+  allowedValues: [String!]
+  constraints: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Export statistics
+type ExportStatistics {
+  totalTables: Int!
+  totalNodes: Int!
+  totalRelations: Int!
+  totalAttributes: Int!
+  exportSize: String!
+}
+
+# Complete export result
+type SchemaExportResult {
+  metadata: ExportMetadata!
+  tables: [ExportedTable!]!
+  globalRelationTypes: [ExportedGlobalRelationType!]!
+  globalAttributeTypes: [ExportedGlobalAttributeType!]!
+  statistics: ExportStatistics!
+}
+
+# Import options
+input SchemaImportOptions {
+  overwriteExisting: Boolean = false
+  skipDuplicates: Boolean = true
+  validateData: Boolean = true
+  dryRun: Boolean = false
+  conflictResolution: String = "skip"
+}
+
+# Import statistics
+type ImportStatistics {
+  tablesImported: Int!
+  nodesImported: Int!
+  relationsImported: Int!
+  attributesImported: Int!
+  attributeTypesImported: Int!
+  relationTypesImported: Int!
+  skipped: Int!
+  errors: Int!
+}
+
+# Import error/warning
+type ImportIssue {
+  type: String!
+  message: String!
+  item: JSON
+}
+
+# Import result
+type ImportResult {
+  success: Boolean!
+  statistics: ImportStatistics!
+  errors: [ImportIssue!]!
+  warnings: [ImportIssue!]!
+  executionTime: Float!
+  importedAt: String!
+}
+
+extend type Query {
+  # Export single table
+  exportTable(tableId: String!, options: SchemaExportOptions): SchemaExportResult!
+  
+  # Export all tables
+  exportAllTables(options: SchemaExportOptions): SchemaExportResult!
+}
+
+extend type Mutation {
+  # Import schema data
+  importSchema(exportData: JSON!, options: SchemaImportOptions): ImportResult!
+}

@@ -118,7 +118,8 @@ CREATE TABLE IF NOT EXISTS node_relations (
   -- Relation information
   relation_type_id INTEGER NOT NULL,
   properties TEXT, -- JSON: additional relation properties
-  strength INTEGER DEFAULT 50, -- 0-100, relation strength
+  strength INTEGER DEFAULT 1, -- 0-4, relation strength: 0=invalid, 1=auto_generated, 2=uncertain_but_valid, 3=confident, 4=very_strong
+  confidence INTEGER DEFAULT 1, -- 0-4, relation confidence: 0=probably_wrong, 1=auto_generated, 2=uncertain_but_valid, 3=confident, 4=verified
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
@@ -130,6 +131,9 @@ CREATE TABLE IF NOT EXISTS node_relations (
          (source_node_id IS NULL AND source_external_id != 'internal')),
   CHECK ((target_node_id IS NOT NULL AND target_external_id = 'internal') OR 
          (target_node_id IS NULL AND target_external_id != 'internal')),
+  -- Validate strength and confidence ranges
+  CHECK (strength >= 0 AND strength <= 4),
+  CHECK (confidence >= 0 AND confidence <= 4),
   UNIQUE(table_id, source_node_id, source_external_id, target_node_id, target_external_id, relation_type_id)
 );
 
@@ -218,6 +222,30 @@ CREATE TRIGGER IF NOT EXISTS update_relation_types_updated_at
 BEGIN
     UPDATE relation_types SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
+
+-- =================================================================================
+-- RELATION STRENGTH AND CONFIDENCE CONVENTIONS
+-- =================================================================================
+
+-- Strength Levels (관계 강도):
+-- 0 = Invalid/Broken (무효/깨진 관계)
+-- 1 = Auto Generated (자동 생성) - 기본값
+-- 2 = Uncertain but Valid (긴가민가하지만 유효)
+-- 3 = Confident (확실함)
+-- 4 = Very Strong (매우 강력)
+
+-- Confidence Levels (관계 신뢰도):
+-- 0 = Probably Wrong (아마 틀림)
+-- 1 = Auto Generated (자동 생성) - 기본값
+-- 2 = Uncertain but Valid (긴가민가하지만 유효)
+-- 3 = Confident (확신함)
+-- 4 = Verified (검증됨)
+
+-- Usage Examples:
+-- INSERT INTO node_relations (..., strength, confidence, ...) VALUES (..., 1, 1, ...); -- Auto-generated relation
+-- INSERT INTO node_relations (..., strength, confidence, ...) VALUES (..., 2, 2, ...); -- Weak but valid relation
+-- INSERT INTO node_relations (..., strength, confidence, ...) VALUES (..., 3, 3, ...); -- Strong and confident relation
+-- INSERT INTO node_relations (..., strength, confidence, ...) VALUES (..., 0, 0, ...); -- Invalid/wrong relation
 
 -- =================================================================================
 -- DEFAULT DATA
