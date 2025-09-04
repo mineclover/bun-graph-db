@@ -10,6 +10,7 @@ import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/S
 import { SqliteNodeSearchRepository } from '@/infrastructure/database/sqlite/SqliteNodeSearchRepository.js'
 import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
 import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
+import { SQLiteQueryTemplateRepository } from '@/infrastructure/database/repositories/SQLiteQueryTemplateRepository.js'
 import { ConsoleLogger } from '@/infrastructure/logging/ConsoleLogger.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
@@ -32,6 +33,7 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 
 export class DependencyContainer {
@@ -88,6 +90,9 @@ export class DependencyContainer {
       true
     )
     this.register<ILogger>('logger', logger)
+
+    const queryTemplateRepository = new SQLiteQueryTemplateRepository(database, logger)
+    this.register<IQueryTemplateRepository>('queryTemplateRepository', queryTemplateRepository)
 
     // Use cases
     const createTableUseCase = new CreateTableUseCase(tableRepository, logger)
@@ -190,6 +195,10 @@ export class DependencyContainer {
 
   getRelationTypeRepository(): IRelationTypeRepository {
     return this.resolve<IRelationTypeRepository>('relationTypeRepository')
+  }
+
+  getQueryTemplateRepository(): IQueryTemplateRepository {
+    return this.resolve<IQueryTemplateRepository>('queryTemplateRepository')
   }
 
   getCreateRelationUseCase(): CreateRelationUseCase {

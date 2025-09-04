@@ -71,6 +71,7 @@ import { NodeResolver } from './resolvers/NodeResolver.js'
 import { RelationResolver } from './resolvers/RelationResolver.js'
 import { AnalyticsResolver } from './resolvers/AnalyticsResolver.js'
 import { AdvancedSearchResolver } from './resolvers/AdvancedSearchResolver.js'
+import { QueryTemplateResolver } from './resolvers/QueryTemplateResolver.js'
 import { createSchemaResolvers } from './resolvers/schema.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
@@ -79,6 +80,7 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
@@ -101,6 +103,7 @@ interface ResolverDependencies {
   nodeAttributeRepository: INodeAttributeRepository
   nodeRelationRepository: INodeRelationRepository
   relationTypeRepository: IRelationTypeRepository
+  queryTemplateRepository: IQueryTemplateRepository
   createTableUseCase: CreateTableUseCase
   createAttributeTypeUseCase: CreateAttributeTypeUseCase
   createAttributeUseCase: CreateAttributeUseCase
@@ -176,6 +179,12 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
     deps.logger
   )
 
+  const queryTemplateResolver = new QueryTemplateResolver(
+    deps.queryTemplateRepository,
+    deps.logger,
+    undefined // We'll pass the actual schema later
+  )
+
   const schemaResolvers = createSchemaResolvers({
     tableRepository: deps.tableRepository,
     schemaExportUseCase: deps.schemaExportUseCase,
@@ -243,6 +252,13 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       getSystemStatus: (_: GraphQLParent, args: GetSystemHealthArgs) => advancedSearchResolver.getSystemStatus(args),
       getAlertRules: (_: GraphQLParent) => advancedSearchResolver.getAlertRules({}),
 
+      // Query template queries
+      searchTemplates: (_: GraphQLParent, args: any, context: any) => queryTemplateResolver.searchTemplates(args.input),
+      getTemplate: (_: GraphQLParent, args: any) => queryTemplateResolver.getTemplate(args.id),
+      getTemplateByIdentifier: (_: GraphQLParent, args: any) => queryTemplateResolver.getTemplateByIdentifier(args.identifier),
+      getPopularTemplates: (_: GraphQLParent, args: any) => queryTemplateResolver.getPopularTemplates(args.limit),
+      executeTemplate: (_: GraphQLParent, args: any, context: any) => queryTemplateResolver.executeTemplate(args.input, context),
+
       // Schema export queries
       exportTable: schemaResolvers.Query.exportTable,
       exportAllTables: schemaResolvers.Query.exportAllTables
@@ -276,6 +292,14 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       createRelation: (_: GraphQLParent, args: CreateRelationArgs) => relationResolver.createRelation(args),
       deleteRelation: (_: GraphQLParent, args: DeleteRelationArgs) => relationResolver.deleteRelation(args),
       createRelationType: (_: GraphQLParent, args: CreateRelationTypeArgs) => relationResolver.createRelationType(args),
+
+      // Query template mutations
+      createTemplate: (_: GraphQLParent, args: any) => queryTemplateResolver.createTemplate(args.input),
+      updateTemplate: (_: GraphQLParent, args: any) => queryTemplateResolver.updateTemplate(args.id, args.input),
+      deleteTemplate: (_: GraphQLParent, args: any) => queryTemplateResolver.deleteTemplate(args.id),
+      activateTemplate: (_: GraphQLParent, args: any) => queryTemplateResolver.activateTemplate(args.id),
+      deactivateTemplate: (_: GraphQLParent, args: any) => queryTemplateResolver.deactivateTemplate(args.id),
+      executeTemplate: (_: GraphQLParent, args: any, context: any) => queryTemplateResolver.executeTemplate(args.input, context),
 
       // Advanced search mutations
       createAlertRule: (_: GraphQLParent, args: CreateAlertRuleArgs) => advancedSearchResolver.createAlertRule(args),
@@ -330,8 +354,13 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
     }
   }
 
-  return makeExecutableSchema({
+  const schema = makeExecutableSchema({
     typeDefs,
     resolvers
   })
+
+  // Set the schema reference in the query template resolver
+  ;(queryTemplateResolver as any).schema = schema
+
+  return schema
 }

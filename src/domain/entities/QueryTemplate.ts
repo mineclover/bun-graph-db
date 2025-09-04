@@ -1,4 +1,3 @@
-import type { QueryTemplateId } from '@/shared/types/common.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export interface QueryVariablesSchema {
@@ -12,56 +11,47 @@ export interface QueryVariablesSchema {
   required?: string[]
 }
 
-export interface QueryTemplateMetadata {
-  complexityScore: number // 1-10
-  estimatedTokens?: number
-  estimatedResponseTimeMs?: number
-  tags: string[]
-  searchKeywords: string
-}
-
-export interface QueryTemplateUsage {
-  usageCount: number
-  lastUsedAt?: Date
-}
+export type TemplateType = 'query' | 'mutation' | 'subscription'
 
 export class QueryTemplate {
   constructor(
-    private readonly id: QueryTemplateId | null,
+    private readonly id: string | null,
     private readonly identifier: string,
     private readonly name: string,
-    private readonly description: string,
-    private readonly categoryId: number,
+    private readonly description: string | null,
     private readonly queryText: string,
-    private readonly variablesSchema: QueryVariablesSchema,
-    private readonly defaultVariables: Record<string, unknown>,
-    private readonly metadata: QueryTemplateMetadata,
-    private readonly usage: QueryTemplateUsage,
+    private readonly variablesSchema: QueryVariablesSchema | null,
+    private readonly defaultVariables: Record<string, unknown> | null,
+    private readonly applicableTables: string[] | null,
+    private readonly templateType: TemplateType,
+    private readonly complexityScore: number,
+    private readonly usageCount: number,
     private readonly version: string,
     private readonly isActive: boolean,
-    private readonly isDeprecated: boolean,
-    private readonly deprecatedReason?: string,
-    private readonly replacementTemplateId?: QueryTemplateId,
-    private readonly isPublic: boolean = true,
-    private readonly requiredPermissions: string[] = [],
+    private readonly tags: string[],
     private readonly createdAt: Date,
-    private readonly updatedAt: Date,
-    private readonly createdBy?: string
+    private readonly updatedAt: Date
   ) {
     this.validateIdentifier(identifier)
     this.validateQueryText(queryText)
-    this.validateComplexityScore(metadata.complexityScore)
+    this.validateComplexityScore(complexityScore)
+    this.validateTags(tags)
   }
 
   static create(
     identifier: string,
     name: string,
-    description: string,
-    categoryId: number,
     queryText: string,
-    variablesSchema: QueryVariablesSchema,
-    defaultVariables: Record<string, unknown> = {},
-    metadata: Partial<QueryTemplateMetadata> = {}
+    tags: string[],
+    options?: {
+      description?: string
+      variablesSchema?: QueryVariablesSchema
+      defaultVariables?: Record<string, unknown>
+      applicableTables?: string[]
+      templateType?: TemplateType
+      complexityScore?: number
+      version?: string
+    }
   ): QueryTemplate {
     const now = new Date()
     
@@ -69,29 +59,17 @@ export class QueryTemplate {
       null,
       identifier,
       name,
-      description,
-      categoryId,
+      options?.description || null,
       queryText,
-      variablesSchema,
-      defaultVariables,
-      {
-        complexityScore: metadata.complexityScore || 1,
-        estimatedTokens: metadata.estimatedTokens,
-        estimatedResponseTimeMs: metadata.estimatedResponseTimeMs,
-        tags: metadata.tags || [],
-        searchKeywords: metadata.searchKeywords || ''
-      },
-      {
-        usageCount: 0,
-        lastUsedAt: undefined
-      },
-      '1.0.0',
+      options?.variablesSchema || null,
+      options?.defaultVariables || null,
+      options?.applicableTables || null,
+      options?.templateType || 'query',
+      options?.complexityScore || 1,
+      0,
+      options?.version || '1.0.0',
       true,
-      false,
-      undefined,
-      undefined,
-      true,
-      [],
+      tags,
       now,
       now
     )
@@ -101,64 +79,42 @@ export class QueryTemplate {
     id: string,
     identifier: string,
     name: string,
-    description: string,
-    categoryId: number,
+    description: string | null,
     queryText: string,
-    variablesSchema: string,
-    defaultVariables: string,
+    variablesSchema: string | null,
+    defaultVariables: string | null,
+    applicableTables: string | null,
+    templateType: string,
     complexityScore: number,
-    estimatedTokens: number | null,
-    estimatedResponseTimeMs: number | null,
     usageCount: number,
-    lastUsedAt: string | null,
     version: string,
     isActive: boolean,
-    isDeprecated: boolean,
-    deprecatedReason: string | null,
-    replacementTemplateId: string | null,
-    isPublic: boolean,
-    requiredPermissions: string | null,
     tags: string | null,
-    searchKeywords: string | null,
-    createdAt: Date,
-    updatedAt: Date,
-    createdBy: string | null
+    createdAt: string,
+    updatedAt: string
   ): QueryTemplate {
-    const parsedVariablesSchema = JSON.parse(variablesSchema) as QueryVariablesSchema
-    const parsedDefaultVariables = JSON.parse(defaultVariables) as Record<string, unknown>
+    const parsedVariablesSchema = variablesSchema ? JSON.parse(variablesSchema) as QueryVariablesSchema : null
+    const parsedDefaultVariables = defaultVariables ? JSON.parse(defaultVariables) as Record<string, unknown> : null
+    const parsedApplicableTables = applicableTables ? JSON.parse(applicableTables) as string[] : null
     const parsedTags = tags ? JSON.parse(tags) as string[] : []
-    const parsedRequiredPermissions = requiredPermissions ? JSON.parse(requiredPermissions) as string[] : []
     
     return new QueryTemplate(
-      id as QueryTemplateId,
+      id,
       identifier,
       name,
       description,
-      categoryId,
       queryText,
       parsedVariablesSchema,
       parsedDefaultVariables,
-      {
-        complexityScore,
-        estimatedTokens: estimatedTokens || undefined,
-        estimatedResponseTimeMs: estimatedResponseTimeMs || undefined,
-        tags: parsedTags,
-        searchKeywords: searchKeywords || ''
-      },
-      {
-        usageCount,
-        lastUsedAt: lastUsedAt ? new Date(lastUsedAt) : undefined
-      },
+      parsedApplicableTables,
+      templateType as TemplateType,
+      complexityScore,
+      usageCount,
       version,
       isActive,
-      isDeprecated,
-      deprecatedReason || undefined,
-      replacementTemplateId as QueryTemplateId || undefined,
-      isPublic,
-      parsedRequiredPermissions,
-      createdAt,
-      updatedAt,
-      createdBy || undefined
+      parsedTags,
+      new Date(createdAt),
+      new Date(updatedAt)
     )
   }
 
@@ -176,10 +132,6 @@ export class QueryTemplate {
     if (!queryText || queryText.trim().length === 0) {
       throw new DomainException('Query text cannot be empty', 'VALIDATION_ERROR')
     }
-    
-    if (!queryText.includes('query ')) {
-      throw new DomainException('Query text must be a valid GraphQL query', 'VALIDATION_ERROR')
-    }
   }
 
   private validateComplexityScore(score: number): void {
@@ -188,27 +140,29 @@ export class QueryTemplate {
     }
   }
 
+  private validateTags(tags: string[]): void {
+    if (!tags || tags.length === 0) {
+      throw new DomainException('At least one tag is required', 'VALIDATION_ERROR')
+    }
+  }
+
   // Getters
-  getId(): QueryTemplateId | null { return this.id }
+  getId(): string | null { return this.id }
   getIdentifier(): string { return this.identifier }
   getName(): string { return this.name }
-  getDescription(): string { return this.description }
-  getCategoryId(): number { return this.categoryId }
+  getDescription(): string | null { return this.description }
   getQueryText(): string { return this.queryText }
-  getVariablesSchema(): QueryVariablesSchema { return this.variablesSchema }
-  getDefaultVariables(): Record<string, unknown> { return this.defaultVariables }
-  getMetadata(): QueryTemplateMetadata { return this.metadata }
-  getUsage(): QueryTemplateUsage { return this.usage }
+  getVariablesSchema(): QueryVariablesSchema | null { return this.variablesSchema }
+  getDefaultVariables(): Record<string, unknown> | null { return this.defaultVariables }
+  getApplicableTables(): string[] | null { return this.applicableTables }
+  getTemplateType(): TemplateType { return this.templateType }
+  getComplexityScore(): number { return this.complexityScore }
+  getUsageCount(): number { return this.usageCount }
   getVersion(): string { return this.version }
   getIsActive(): boolean { return this.isActive }
-  getIsDeprecated(): boolean { return this.isDeprecated }
-  getDeprecatedReason(): string | undefined { return this.deprecatedReason }
-  getReplacementTemplateId(): QueryTemplateId | undefined { return this.replacementTemplateId }
-  getIsPublic(): boolean { return this.isPublic }
-  getRequiredPermissions(): string[] { return this.requiredPermissions }
+  getTags(): string[] { return this.tags }
   getCreatedAt(): Date { return this.createdAt }
   getUpdatedAt(): Date { return this.updatedAt }
-  getCreatedBy(): string | undefined { return this.createdBy }
 
   // Business methods
   incrementUsage(): QueryTemplate {
@@ -217,114 +171,123 @@ export class QueryTemplate {
       this.identifier,
       this.name,
       this.description,
-      this.categoryId,
       this.queryText,
       this.variablesSchema,
       this.defaultVariables,
-      this.metadata,
-      {
-        usageCount: this.usage.usageCount + 1,
-        lastUsedAt: new Date()
-      },
+      this.applicableTables,
+      this.templateType,
+      this.complexityScore,
+      this.usageCount + 1,
       this.version,
       this.isActive,
-      this.isDeprecated,
-      this.deprecatedReason,
-      this.replacementTemplateId,
-      this.isPublic,
-      this.requiredPermissions,
+      this.tags,
       this.createdAt,
-      new Date(),
-      this.createdBy
+      new Date()
     )
   }
 
-  deprecate(reason: string, replacementTemplateId?: QueryTemplateId): QueryTemplate {
+  activate(): QueryTemplate {
     return new QueryTemplate(
       this.id,
       this.identifier,
       this.name,
       this.description,
-      this.categoryId,
       this.queryText,
       this.variablesSchema,
       this.defaultVariables,
-      this.metadata,
-      this.usage,
+      this.applicableTables,
+      this.templateType,
+      this.complexityScore,
+      this.usageCount,
       this.version,
-      false, // deactivate
-      true,  // mark as deprecated
-      reason,
-      replacementTemplateId,
-      this.isPublic,
-      this.requiredPermissions,
+      true,
+      this.tags,
       this.createdAt,
-      new Date(),
-      this.createdBy
+      new Date()
+    )
+  }
+
+  deactivate(): QueryTemplate {
+    return new QueryTemplate(
+      this.id,
+      this.identifier,
+      this.name,
+      this.description,
+      this.queryText,
+      this.variablesSchema,
+      this.defaultVariables,
+      this.applicableTables,
+      this.templateType,
+      this.complexityScore,
+      this.usageCount,
+      this.version,
+      false,
+      this.tags,
+      this.createdAt,
+      new Date()
     )
   }
 
   validateVariables(variables: Record<string, unknown>): boolean {
-    if (!this.variablesSchema.required) return true
+    if (!this.variablesSchema || !this.variablesSchema.required) return true
     
     return this.variablesSchema.required.every(requiredField => 
       variables.hasOwnProperty(requiredField) && variables[requiredField] !== undefined
     )
   }
 
+  isApplicableToTable(tableIdentifier: string): boolean {
+    if (!this.applicableTables) return true // null means universal
+    return this.applicableTables.includes(tableIdentifier)
+  }
+
+  hasTag(tag: string): boolean {
+    return this.tags.includes(tag)
+  }
+
+  hasAnyTag(tags: string[]): boolean {
+    return tags.some(tag => this.hasTag(tag))
+  }
+
+  hasAllTags(tags: string[]): boolean {
+    return tags.every(tag => this.hasTag(tag))
+  }
+
   toDatabase(): {
-    id: QueryTemplateId | null
+    id: string | null
     identifier: string
     name: string
-    description: string
-    category_id: number
+    description: string | null
     query_text: string
-    variables_schema: string
-    default_variables: string
+    variables_schema: string | null
+    default_variables: string | null
+    applicable_tables: string | null
+    template_type: string
     complexity_score: number
-    estimated_tokens: number | null
-    estimated_response_time_ms: number | null
     usage_count: number
-    last_used_at: string | null
     version: string
     is_active: boolean
-    is_deprecated: boolean
-    deprecated_reason: string | null
-    replacement_template_id: QueryTemplateId | null
-    is_public: boolean
-    required_permissions: string
     tags: string
-    search_keywords: string
     created_at: string
     updated_at: string
-    created_by: string | null
   } {
     return {
       id: this.id,
       identifier: this.identifier,
       name: this.name,
       description: this.description,
-      category_id: this.categoryId,
       query_text: this.queryText,
-      variables_schema: JSON.stringify(this.variablesSchema),
-      default_variables: JSON.stringify(this.defaultVariables),
-      complexity_score: this.metadata.complexityScore,
-      estimated_tokens: this.metadata.estimatedTokens || null,
-      estimated_response_time_ms: this.metadata.estimatedResponseTimeMs || null,
-      usage_count: this.usage.usageCount,
-      last_used_at: this.usage.lastUsedAt?.toISOString() || null,
+      variables_schema: this.variablesSchema ? JSON.stringify(this.variablesSchema) : null,
+      default_variables: this.defaultVariables ? JSON.stringify(this.defaultVariables) : null,
+      applicable_tables: this.applicableTables ? JSON.stringify(this.applicableTables) : null,
+      template_type: this.templateType,
+      complexity_score: this.complexityScore,
+      usage_count: this.usageCount,
       version: this.version,
       is_active: this.isActive,
-      is_deprecated: this.isDeprecated,
-      deprecated_reason: this.deprecatedReason || null,
-      replacement_template_id: this.replacementTemplateId || null,
-      is_public: this.isPublic,
-      required_permissions: JSON.stringify(this.requiredPermissions),
-      tags: JSON.stringify(this.metadata.tags),
-      search_keywords: this.metadata.searchKeywords,
+      tags: JSON.stringify(this.tags),
       created_at: this.createdAt.toISOString(),
-      updated_at: this.updatedAt.toISOString(),
-      created_by: this.createdBy || null
+      updated_at: this.updatedAt.toISOString()
     }
   }
 }

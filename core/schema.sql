@@ -81,28 +81,38 @@ CREATE TABLE IF NOT EXISTS docs (
   UNIQUE(table_id, category, version)
 );
 
--- Templates table (attribute_type_id 기반 검색식 관리)
--- NOTE: 검색식은 요구사항 변경, 성능 최적화 등으로 수정 가능성 높음
+-- Query Templates table (GraphQL 쿼리/뮤테이션 템플릿 관리)
+-- GraphQL 쿼리를 재사용 가능한 템플릿으로 관리하기 위한 테이블
 CREATE TABLE IF NOT EXISTS templates (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  identifier TEXT NOT NULL,
-  table_id INTEGER NOT NULL,
-  attribute_type_id INTEGER NOT NULL,
-  search_query TEXT NOT NULL, -- 검색식 템플릿 (SQL WHERE 조건 또는 JSON 쿼리)
-  template_type TEXT DEFAULT 'filter', -- 'filter', 'sort', 'aggregate', 'validation'
+  identifier TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
   description TEXT,
-  examples TEXT, -- JSON array of usage examples
-  version INTEGER NOT NULL DEFAULT 1, -- 버전 관리 (수정 가능성 대비)
-  -- 사용 피드백 카운트 (사용 후기)
-  success_count INTEGER NOT NULL DEFAULT 0, -- 원하는 결과를 얻음 카운트
-  failure_count INTEGER NOT NULL DEFAULT 0, -- 원하는 결과를 못얻음 카운트
-  total_usage_count INTEGER NOT NULL DEFAULT 0, -- 전체 사용 횟수
+  
+  -- GraphQL 쿼리 정보
+  query_text TEXT NOT NULL,
+  variables_schema TEXT, -- JSON schema for variables
+  default_variables TEXT, -- Default JSON values
+  
+  -- 적용 가능 테이블 (검색 활용)
+  applicable_tables TEXT, -- JSON array of table identifiers. null = 범용, ["table1", "table2"] = 특정 테이블들
+  
+  -- 메타데이터
+  template_type TEXT DEFAULT 'query', -- 'query', 'mutation', 'subscription'
+  complexity_score INTEGER DEFAULT 1, -- 1-10 (1=simple, 10=complex)
+  
+  -- 사용 통계
+  usage_count INTEGER DEFAULT 0,
+  
+  -- 버전 관리
+  version TEXT DEFAULT '1.0.0',
   is_active BOOLEAN DEFAULT TRUE,
+  
+  -- 태그 기반 검색
+  tags TEXT, -- JSON array for search
+  
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
-  FOREIGN KEY (attribute_type_id) REFERENCES attribute_types(id) ON DELETE CASCADE,
-  UNIQUE(table_id, attribute_type_id, identifier, version)
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Node relations table (노드 간 관계 정의)
@@ -297,13 +307,14 @@ CREATE INDEX IF NOT EXISTS idx_docs_active ON docs(is_active);
 -- Partial index to enforce only one active doc per table+category
 CREATE UNIQUE INDEX IF NOT EXISTS idx_docs_unique_active 
 ON docs(table_id, category) WHERE is_active = TRUE;
-CREATE INDEX IF NOT EXISTS idx_templates_table_type ON templates(table_id, attribute_type_id);
+-- Templates (query templates) indexes
 CREATE INDEX IF NOT EXISTS idx_templates_identifier ON templates(identifier);
 CREATE INDEX IF NOT EXISTS idx_templates_type ON templates(template_type);
 CREATE INDEX IF NOT EXISTS idx_templates_active ON templates(is_active);
 CREATE INDEX IF NOT EXISTS idx_templates_version ON templates(version);
-CREATE INDEX IF NOT EXISTS idx_templates_success_rate ON templates(success_count, failure_count);
-CREATE INDEX IF NOT EXISTS idx_templates_usage_count ON templates(total_usage_count);
+CREATE INDEX IF NOT EXISTS idx_templates_usage ON templates(usage_count DESC);
+CREATE INDEX IF NOT EXISTS idx_templates_applicable ON templates(applicable_tables);
+CREATE INDEX IF NOT EXISTS idx_templates_tags ON templates(tags);
 CREATE INDEX IF NOT EXISTS idx_node_attributes_node ON node_attributes(node_id);
 CREATE INDEX IF NOT EXISTS idx_node_attributes_attr ON node_attributes(attribute_id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_source ON node_relations(source_node_id);
@@ -312,3 +323,4 @@ CREATE INDEX IF NOT EXISTS idx_node_relations_source_ext ON node_relations(sourc
 CREATE INDEX IF NOT EXISTS idx_node_relations_target_ext ON node_relations(target_external_id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_type ON node_relations(relation_type_id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_table ON node_relations(table_id);
+
