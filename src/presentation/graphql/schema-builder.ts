@@ -9,15 +9,20 @@ import { join } from 'path'
 import { TableResolver } from './resolvers/TableResolver.js'
 import { AttributeResolver } from './resolvers/AttributeResolver.js'
 import { NodeResolver } from './resolvers/NodeResolver.js'
+import { RelationResolver } from './resolvers/RelationResolver.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
+import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 
 interface ResolverDependencies {
@@ -26,10 +31,14 @@ interface ResolverDependencies {
   attributeRepository: IAttributeRepository
   nodeRepository: INodeRepository
   nodeAttributeRepository: INodeAttributeRepository
+  nodeRelationRepository: INodeRelationRepository
+  relationTypeRepository: IRelationTypeRepository
   createTableUseCase: CreateTableUseCase
   createAttributeTypeUseCase: CreateAttributeTypeUseCase
   createAttributeUseCase: CreateAttributeUseCase
   createNodeUseCase: CreateNodeUseCase
+  createRelationUseCase: CreateRelationUseCase
+  createRelationTypeUseCase: CreateRelationTypeUseCase
   logger: ILogger
 }
 
@@ -66,6 +75,16 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
     deps.logger
   )
 
+  const relationResolver = new RelationResolver(
+    deps.createRelationUseCase,
+    deps.createRelationTypeUseCase,
+    deps.nodeRelationRepository,
+    deps.relationTypeRepository,
+    deps.nodeRepository,
+    deps.tableRepository,
+    deps.logger
+  )
+
   const resolvers = {
     // Custom scalars
     DateTime: DateTimeResolver,
@@ -98,7 +117,12 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       // Node queries
       node: (_: unknown, args: any) => nodeResolver.node(args),
       nodeByContent: (_: unknown, args: any) => nodeResolver.nodeByContent(args),
-      nodes: (_: unknown, args: any) => nodeResolver.nodes(args)
+      nodes: (_: unknown, args: any) => nodeResolver.nodes(args),
+
+      // Relation queries
+      nodeRelation: (_: unknown, args: any) => relationResolver.nodeRelation(args),
+      relationTypes: (_: unknown, args: any) => relationResolver.relationTypes(),
+      relationType: (_: unknown, args: any) => relationResolver.relationType(args)
     },
 
     Mutation: {
@@ -123,7 +147,12 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       createNode: (_: unknown, args: any) => nodeResolver.createNode(args),
       updateNode: (_: unknown, args: any) => nodeResolver.updateNode(args),
       deleteNode: (_: unknown, args: any) => nodeResolver.deleteNode(args),
-      setNodeAttribute: (_: unknown, args: any) => nodeResolver.setNodeAttribute(args)
+      setNodeAttribute: (_: unknown, args: any) => nodeResolver.setNodeAttribute(args),
+
+      // Relation mutations
+      createRelation: (_: unknown, args: any) => relationResolver.createRelation(args),
+      deleteRelation: (_: unknown, args: any) => relationResolver.deleteRelation(args),
+      createRelationType: (_: unknown, args: any) => relationResolver.createRelationType(args)
     },
 
     Subscription: {
@@ -149,7 +178,17 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
 
     Node: {
       table: (parent: any) => nodeResolver.table_field(parent),
-      attributeCount: (parent: any) => nodeResolver.attributeCount_field(parent)
+      attributeCount: (parent: any) => nodeResolver.attributeCount_field(parent),
+      outgoingRelations: (parent: any) => relationResolver.outgoingRelations_field(parent),
+      incomingRelations: (parent: any) => relationResolver.incomingRelations_field(parent),
+      relationCount: (parent: any) => relationResolver.relationCount_field(parent)
+    },
+
+    NodeRelation: {
+      table: (parent: any) => relationResolver.table_field(parent),
+      sourceNode: (parent: any) => relationResolver.sourceNode_field(parent),
+      targetNode: (parent: any) => relationResolver.targetNode_field(parent),
+      relationType: (parent: any) => relationResolver.relationType_field(parent)
     }
   }
 

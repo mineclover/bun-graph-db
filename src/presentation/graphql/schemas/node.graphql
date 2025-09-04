@@ -83,6 +83,12 @@ input CreateRelationInput {
   strength: Int = 50
 }
 
+input CreateRelationTypeInput {
+  identifier: String!
+  description: String
+  category: String
+}
+
 input NodeSearchFilter {
   tableId: ID
   content: String
@@ -132,6 +138,11 @@ type CreateRelationPayload {
   errors: [Error!]!
 }
 
+type CreateRelationTypePayload {
+  relationType: RelationType
+  errors: [Error!]!
+}
+
 # Connection types
 type NodesConnection {
   nodes: [Node!]!
@@ -168,4 +179,7 @@ extend type Mutation {
   # Relation management
   createRelation(input: CreateRelationInput!): CreateRelationPayload!
   deleteRelation(id: ID!): DeleteNodePayload!
+  
+  # Relation type management
+  createRelationType(input: CreateRelationTypeInput!): CreateRelationTypePayload!
 }

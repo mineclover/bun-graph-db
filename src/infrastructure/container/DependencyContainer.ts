@@ -6,11 +6,15 @@ import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/
 import { SqliteAttributeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeRepository.js'
 import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
 import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/SqliteNodeAttributeRepository.js'
+import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
+import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
 import { ConsoleLogger } from '@/infrastructure/logging/ConsoleLogger.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
+import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import { LogLevel } from '@/application/ports/ILogger.js'
 
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
@@ -18,6 +22,8 @@ import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeT
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 
 export class DependencyContainer {
@@ -56,6 +62,12 @@ export class DependencyContainer {
     const nodeAttributeRepository = new SqliteNodeAttributeRepository(database)
     this.register<INodeAttributeRepository>('nodeAttributeRepository', nodeAttributeRepository)
 
+    const nodeRelationRepository = new SqliteNodeRelationRepository(database)
+    this.register<INodeRelationRepository>('nodeRelationRepository', nodeRelationRepository)
+
+    const relationTypeRepository = new SqliteRelationTypeRepository(database)
+    this.register<IRelationTypeRepository>('relationTypeRepository', relationTypeRepository)
+
     // Services  
     const logger = new ConsoleLogger(
       process.env.NODE_ENV === 'development' ? LogLevel.DEBUG : LogLevel.INFO,
@@ -75,6 +87,12 @@ export class DependencyContainer {
 
     const createNodeUseCase = new CreateNodeUseCase(nodeRepository, nodeAttributeRepository, tableRepository, attributeRepository, logger)
     this.register('createNodeUseCase', createNodeUseCase)
+
+    const createRelationUseCase = new CreateRelationUseCase(nodeRelationRepository, relationTypeRepository, nodeRepository, tableRepository, logger)
+    this.register('createRelationUseCase', createRelationUseCase)
+
+    const createRelationTypeUseCase = new CreateRelationTypeUseCase(relationTypeRepository, logger)
+    this.register('createRelationTypeUseCase', createRelationTypeUseCase)
   }
 
   register<T>(name: string, instance: T): void {
@@ -128,6 +146,22 @@ export class DependencyContainer {
 
   getCreateNodeUseCase(): CreateNodeUseCase {
     return this.resolve('createNodeUseCase')
+  }
+
+  getNodeRelationRepository(): INodeRelationRepository {
+    return this.resolve<INodeRelationRepository>('nodeRelationRepository')
+  }
+
+  getRelationTypeRepository(): IRelationTypeRepository {
+    return this.resolve<IRelationTypeRepository>('relationTypeRepository')
+  }
+
+  getCreateRelationUseCase(): CreateRelationUseCase {
+    return this.resolve('createRelationUseCase')
+  }
+
+  getCreateRelationTypeUseCase(): CreateRelationTypeUseCase {
+    return this.resolve('createRelationTypeUseCase')
   }
 
   // Health check for container

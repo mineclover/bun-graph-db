@@ -6,6 +6,8 @@ export type NodeId = string & { readonly __brand: 'NodeId' }
 export type AttributeId = string & { readonly __brand: 'AttributeId' }
 export type AttributeTypeId = string & { readonly __brand: 'AttributeTypeId' }
 export type RelationId = string & { readonly __brand: 'RelationId' }
+export type RelationTypeId = string & { readonly __brand: 'RelationTypeId' }
+export type NodeRelationId = string & { readonly __brand: 'NodeRelationId' }
 
 // Result pattern for error handling
 export type Result<T, E = Error> = 
