@@ -1,0 +1,307 @@
+import type { Database } from 'bun:sqlite'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import { Node } from '@/domain/entities/Node.js'
+import type { NodeId, TableId, PaginationOptions, PaginatedResult } from '@/shared/types/common.js'
+import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+
+interface NodeRow {
+  id: number
+  table_id: number
+  content: string
+  title: string | null
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+export class SqliteNodeRepository implements INodeRepository {
+  constructor(private readonly db: Database) {}
+
+  async save(node: Node): Promise<void> {
+    const nodeData = node.toDatabase()
+    
+    if (nodeData.id === null || nodeData.id === 'null') {
+      const query = `
+        INSERT INTO nodes (table_id, content, title, description, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `
+      
+      try {
+        const result = this.db.run(query, [
+          nodeData.table_id,
+          nodeData.content,
+          nodeData.title,
+          nodeData.description,
+          nodeData.created_at,
+          nodeData.updated_at
+        ])
+        
+        console.log('New node created with ID:', result.lastInsertRowid)
+      } catch (error) {
+        console.error('Save error:', error)
+        throw new DatabaseException(`Failed to save node: ${error}`)
+      }
+    } else {
+      const query = `
+        UPDATE nodes 
+        SET table_id = ?, content = ?, title = ?, description = ?, updated_at = ?
+        WHERE id = ?
+      `
+      
+      try {
+        this.db.run(query, [
+          nodeData.table_id,
+          nodeData.content,
+          nodeData.title,
+          nodeData.description,
+          nodeData.updated_at,
+          nodeData.id
+        ])
+      } catch (error) {
+        throw new DatabaseException(`Failed to update node: ${error}`)
+      }
+    }
+  }
+
+  async findById(id: NodeId): Promise<Node | null> {
+    const query = `
+      SELECT id, table_id, content, title, description, created_at, updated_at
+      FROM nodes
+      WHERE id = ?
+    `
+    
+    try {
+      const row = this.db.query<NodeRow, [string]>(query).get(id)
+      return row ? this.mapRowToEntity(row) : null
+    } catch (error) {
+      throw new DatabaseException(`Failed to find node by id: ${error}`)
+    }
+  }
+
+  async findByTableIdAndContent(tableId: TableId, content: string): Promise<Node | null> {
+    const query = `
+      SELECT id, table_id, content, title, description, created_at, updated_at
+      FROM nodes
+      WHERE table_id = ? AND content = ?
+    `
+    
+    try {
+      const row = this.db.query<NodeRow, [string, string]>(query).get(tableId, content)
+      return row ? this.mapRowToEntity(row) : null
+    } catch (error) {
+      throw new DatabaseException(`Failed to find node by table and content: ${error}`)
+    }
+  }
+
+  async findByTableId(tableId: TableId, options: PaginationOptions = {}): Promise<PaginatedResult<Node>> {
+    const { limit = 10, offset = 0 } = options
+    
+    const dataQuery = `
+      SELECT id, table_id, content, title, description, created_at, updated_at
+      FROM nodes
+      WHERE table_id = ?
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `
+    
+    const countQuery = `SELECT COUNT(*) as count FROM nodes WHERE table_id = ?`
+    
+    try {
+      const rows = this.db.query<NodeRow, [string, number, number]>(dataQuery).all(tableId, limit, offset)
+      const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(tableId)
+      const total = countResult?.count || 0
+      
+      const nodes = rows.map(row => this.mapRowToEntity(row))
+      
+      return {
+        data: nodes,
+        total,
+        hasMore: offset + limit < total
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to find nodes by table id: ${error}`)
+    }
+  }
+
+  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<Node>> {
+    const { limit = 10, offset = 0 } = options
+    
+    const dataQuery = `
+      SELECT id, table_id, content, title, description, created_at, updated_at
+      FROM nodes
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `
+    
+    const countQuery = `SELECT COUNT(*) as count FROM nodes`
+    
+    try {
+      const rows = this.db.query<NodeRow, [number, number]>(dataQuery).all(limit, offset)
+      const countResult = this.db.query<{ count: number }, []>(countQuery).get()
+      const total = countResult?.count || 0
+      
+      const nodes = rows.map(row => this.mapRowToEntity(row))
+      
+      return {
+        data: nodes,
+        total,
+        hasMore: offset + limit < total
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to find all nodes: ${error}`)
+    }
+  }
+
+  async delete(id: NodeId): Promise<void> {
+    const query = `DELETE FROM nodes WHERE id = ?`
+    
+    try {
+      const result = this.db.run(query, [id])
+      if (result.changes === 0) {
+        throw new DatabaseException(`Node with id ${id} not found`)
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to delete node: ${error}`)
+    }
+  }
+
+  async deleteByTableId(tableId: TableId): Promise<void> {
+    const query = `DELETE FROM nodes WHERE table_id = ?`
+    
+    try {
+      this.db.run(query, [tableId])
+    } catch (error) {
+      throw new DatabaseException(`Failed to delete nodes by table id: ${error}`)
+    }
+  }
+
+  async exists(tableId: TableId, content: string): Promise<boolean> {
+    const query = `SELECT 1 FROM nodes WHERE table_id = ? AND content = ? LIMIT 1`
+    
+    try {
+      const row = this.db.query<{ 1: number }, [string, string]>(query).get(tableId, content)
+      return row !== null
+    } catch (error) {
+      throw new DatabaseException(`Failed to check node existence: ${error}`)
+    }
+  }
+
+  async count(): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM nodes`
+    
+    try {
+      const result = this.db.query<{ count: number }, []>(query).get()
+      return result?.count || 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to count nodes: ${error}`)
+    }
+  }
+
+  async countByTableId(tableId: TableId): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM nodes WHERE table_id = ?`
+    
+    try {
+      const result = this.db.query<{ count: number }, [string]>(query).get(tableId)
+      return result?.count || 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to count nodes by table id: ${error}`)
+    }
+  }
+
+  async saveMany(nodes: Node[]): Promise<void> {
+    if (nodes.length === 0) return
+    
+    const query = `
+      INSERT OR REPLACE INTO nodes (id, table_id, content, title, description, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `
+    
+    try {
+      const stmt = this.db.prepare(query)
+      
+      this.db.transaction(() => {
+        for (const node of nodes) {
+          const nodeData = node.toDatabase()
+          stmt.run(
+            nodeData.id,
+            nodeData.table_id,
+            nodeData.content,
+            nodeData.title,
+            nodeData.description,
+            nodeData.created_at,
+            nodeData.updated_at
+          )
+        }
+      })()
+    } catch (error) {
+      throw new DatabaseException(`Failed to save multiple nodes: ${error}`)
+    }
+  }
+
+  async findByIds(ids: NodeId[]): Promise<Node[]> {
+    if (ids.length === 0) return []
+    
+    const placeholders = ids.map(() => '?').join(',')
+    const query = `
+      SELECT id, table_id, content, title, description, created_at, updated_at
+      FROM nodes
+      WHERE id IN (${placeholders})
+    `
+    
+    try {
+      const rows = this.db.query<NodeRow, string[]>(query).all(...ids)
+      return rows.map(row => this.mapRowToEntity(row))
+    } catch (error) {
+      throw new DatabaseException(`Failed to find nodes by ids: ${error}`)
+    }
+  }
+
+  async searchByContent(tableId: TableId, searchTerm: string, options: PaginationOptions = {}): Promise<PaginatedResult<Node>> {
+    const { limit = 10, offset = 0 } = options
+    
+    const dataQuery = `
+      SELECT id, table_id, content, title, description, created_at, updated_at
+      FROM nodes
+      WHERE table_id = ? AND (content LIKE ? OR title LIKE ? OR description LIKE ?)
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `
+    
+    const countQuery = `
+      SELECT COUNT(*) as count FROM nodes 
+      WHERE table_id = ? AND (content LIKE ? OR title LIKE ? OR description LIKE ?)
+    `
+    
+    const searchPattern = `%${searchTerm}%`
+    
+    try {
+      const rows = this.db.query<NodeRow, [string, string, string, string, number, number]>(dataQuery)
+        .all(tableId, searchPattern, searchPattern, searchPattern, limit, offset)
+      const countResult = this.db.query<{ count: number }, [string, string, string, string]>(countQuery)
+        .get(tableId, searchPattern, searchPattern, searchPattern)
+      const total = countResult?.count || 0
+      
+      const nodes = rows.map(row => this.mapRowToEntity(row))
+      
+      return {
+        data: nodes,
+        total,
+        hasMore: offset + limit < total
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to search nodes: ${error}`)
+    }
+  }
+
+  private mapRowToEntity(row: NodeRow): Node {
+    return Node.fromDatabase(
+      row.id.toString(),
+      row.table_id.toString(),
+      row.content,
+      row.title,
+      row.description,
+      new Date(row.created_at),
+      new Date(row.updated_at)
+    )
+  }
+}

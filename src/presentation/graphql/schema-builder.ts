@@ -8,21 +8,28 @@ import { join } from 'path'
 // Import resolvers
 import { TableResolver } from './resolvers/TableResolver.js'
 import { AttributeResolver } from './resolvers/AttributeResolver.js'
+import { NodeResolver } from './resolvers/NodeResolver.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
+import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 
 interface ResolverDependencies {
   tableRepository: ITableRepository
   attributeTypeRepository: IAttributeTypeRepository
   attributeRepository: IAttributeRepository
+  nodeRepository: INodeRepository
+  nodeAttributeRepository: INodeAttributeRepository
   createTableUseCase: CreateTableUseCase
   createAttributeTypeUseCase: CreateAttributeTypeUseCase
   createAttributeUseCase: CreateAttributeUseCase
+  createNodeUseCase: CreateNodeUseCase
   logger: ILogger
 }
 
@@ -45,6 +52,15 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
     deps.createAttributeTypeUseCase,
     deps.createAttributeUseCase,
     deps.attributeTypeRepository,
+    deps.attributeRepository,
+    deps.tableRepository,
+    deps.logger
+  )
+
+  const nodeResolver = new NodeResolver(
+    deps.createNodeUseCase,
+    deps.nodeRepository,
+    deps.nodeAttributeRepository,
     deps.attributeRepository,
     deps.tableRepository,
     deps.logger
@@ -77,7 +93,12 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
 
       // Attribute queries
       attribute: (_: unknown, args: any) => attributeResolver.attribute(args),
-      attributes: (_: unknown, args: any) => attributeResolver.attributes(args)
+      attributes: (_: unknown, args: any) => attributeResolver.attributes(args),
+
+      // Node queries
+      node: (_: unknown, args: any) => nodeResolver.node(args),
+      nodeByContent: (_: unknown, args: any) => nodeResolver.nodeByContent(args),
+      nodes: (_: unknown, args: any) => nodeResolver.nodes(args)
     },
 
     Mutation: {
@@ -96,7 +117,13 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
       // Attribute mutations
       createAttribute: (_: unknown, args: any) => attributeResolver.createAttribute(args),
       updateAttribute: (_: unknown, args: any) => attributeResolver.updateAttribute(args),
-      deleteAttribute: (_: unknown, args: any) => attributeResolver.deleteAttribute(args)
+      deleteAttribute: (_: unknown, args: any) => attributeResolver.deleteAttribute(args),
+
+      // Node mutations
+      createNode: (_: unknown, args: any) => nodeResolver.createNode(args),
+      updateNode: (_: unknown, args: any) => nodeResolver.updateNode(args),
+      deleteNode: (_: unknown, args: any) => nodeResolver.deleteNode(args),
+      setNodeAttribute: (_: unknown, args: any) => nodeResolver.setNodeAttribute(args)
     },
 
     Subscription: {
@@ -118,6 +145,11 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
     Attribute: {
       attributeType: (parent: any) => attributeResolver.attributeType_field(parent),
       table: (parent: any) => attributeResolver.table_field(parent)
+    },
+
+    Node: {
+      table: (parent: any) => nodeResolver.table_field(parent),
+      attributeCount: (parent: any) => nodeResolver.attributeCount_field(parent)
     }
   }
 
