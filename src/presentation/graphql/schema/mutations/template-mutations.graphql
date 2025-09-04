@@ -1,0 +1,31 @@
+# Query Template Mutation extensions
+
+extend type Mutation {
+  # Template management
+  createTemplate(
+    input: CreateQueryTemplateInput!
+  ): CreateQueryTemplatePayload!
+  
+  updateTemplate(
+    id: ID!
+    input: UpdateQueryTemplateInput!
+  ): UpdateQueryTemplatePayload!
+  
+  deleteTemplate(
+    id: ID!
+  ): DeleteQueryTemplatePayload!
+  
+  # Template state management
+  activateTemplate(
+    id: ID!
+  ): QueryTemplate
+  
+  deactivateTemplate(
+    id: ID!
+  ): QueryTemplate
+  
+  # Template execution
+  executeTemplate(
+    input: ExecuteQueryTemplateInput!
+  ): ExecuteQueryTemplatePayload!
+}

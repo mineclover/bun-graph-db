@@ -1,0 +1,71 @@
+# Table domain types
+
+type Table implements Node {
+  id: ID!
+  identifier: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  attributes: [Attribute!]!
+  nodes: [TableNode!]!
+  
+  # Computed fields
+  nodeCount: Int!
+  attributeCount: Int!
+}
+
+# Input types for table operations
+input CreateTableInput {
+  identifier: String!
+  description: String
+}
+
+input UpdateTableInput {
+  description: String
+}
+
+# Filter for tables
+input TablesFilter {
+  search: String
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Pagination for tables
+input TablesPagination {
+  limit: Int = 10
+  offset: Int = 0
+}
+
+# Connection types for tables
+type TablesConnection implements Connection {
+  nodes: [Table!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+type TableEdge implements Edge {
+  cursor: String!
+  node: Table!
+}
+
+# Operation result types for tables
+type CreateTablePayload implements OperationResult {
+  success: Boolean!
+  table: Table
+  errors: [Error!]!
+}
+
+type UpdateTablePayload implements OperationResult {
+  success: Boolean!
+  table: Table
+  errors: [Error!]!
+}
+
+type DeleteTablePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}

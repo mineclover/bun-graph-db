@@ -36,17 +36,9 @@ export class ExecuteQueryTemplateUseCase {
       throw new NotFoundException(`Query template not found: ${input.templateIdentifier}`)
     }
 
-    // 2. 활성화 및 비추천 상태 확인
+    // 2. 활성화 상태 확인
     if (!template.getIsActive()) {
       throw new ValidationException(`Query template is inactive: ${input.templateIdentifier}`)
-    }
-
-    if (template.getIsDeprecated()) {
-      this.logger.warn('Using deprecated query template', { 
-        identifier: input.templateIdentifier,
-        reason: template.getDeprecatedReason(),
-        replacement: template.getReplacementTemplateId()
-      })
     }
 
     // 3. Variables 처리
@@ -54,7 +46,8 @@ export class ExecuteQueryTemplateUseCase {
     
     // 4. Variables 유효성 검사
     if (!template.validateVariables(variables)) {
-      const required = template.getVariablesSchema().required || []
+      const schema = template.getVariablesSchema()
+      const required = schema?.required || []
       throw new ValidationException(
         `Missing required variables: ${required.filter(field => !variables.hasOwnProperty(field)).join(', ')}`
       )
@@ -63,8 +56,7 @@ export class ExecuteQueryTemplateUseCase {
     // 5. 사용 통계 업데이트 (선택적)
     if (input.trackUsage !== false) {
       try {
-        const updatedTemplate = template.incrementUsage()
-        await this.queryTemplateRepository.save(updatedTemplate)
+        await this.queryTemplateRepository.incrementUsage(template.getId()!)
       } catch (error) {
         // 통계 업데이트 실패는 쿼리 실행을 막지 않음
         this.logger.warn('Failed to update template usage statistics', { error })
@@ -78,8 +70,8 @@ export class ExecuteQueryTemplateUseCase {
       metadata: {
         templateId: template.getId()!,
         templateName: template.getName(),
-        complexityScore: template.getMetadata().complexityScore,
-        estimatedTokens: template.getMetadata().estimatedTokens,
+        complexityScore: template.getComplexityScore(),
+        estimatedTokens: Math.ceil(template.getQueryText().length / 4), // 대략적인 토큰 추정
         version: template.getVersion()
       }
     }

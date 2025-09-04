@@ -1,0 +1,96 @@
+# Analytics domain types
+
+type NodeAnalytics {
+  nodeId: ID!
+  inDegree: Int!
+  outDegree: Int!
+  totalDegree: Int!
+  clusteringCoefficient: Float!
+  betweennessCentrality: Float!
+  pageRank: Float!
+  attributeCount: Int!
+}
+
+type GraphMetrics {
+  totalNodes: Int!
+  totalRelations: Int!
+  averageDegree: Float!
+  density: Float!
+  components: Int!
+  diameter: Int!
+  averagePathLength: Float!
+}
+
+type PerformanceMetrics {
+  queryTime: Float!
+  memoryUsage: Float!
+  cpuUsage: Float!
+  cacheHitRate: Float!
+  throughput: Float!
+  timestamp: DateTime!
+}
+
+type TestSuiteStatus {
+  totalTests: Int!
+  passedTests: Int!
+  failedTests: Int!
+  skippedTests: Int!
+  successRate: Float!
+  lastRun: DateTime!
+  avgExecutionTime: Float!
+}
+
+type AggregationResult {
+  field: String!
+  value: String!
+  count: Int!
+  percentage: Float!
+}
+
+type SystemHealth {
+  status: String!
+  uptime: Float!
+  memoryUsage: Float!
+  diskUsage: Float!
+  databaseConnections: Int!
+  activeQueries: Int!
+  timestamp: DateTime!
+}
+
+# Input types for analytics
+input AnalyzeNodesInput {
+  tableId: ID
+  nodeIds: [ID!]
+  metrics: [AnalyticsMetric!]!
+}
+
+enum AnalyticsMetric {
+  DEGREE
+  CLUSTERING_COEFFICIENT
+  BETWEENNESS_CENTRALITY
+  PAGE_RANK
+  ALL
+}
+
+input AggregateDataInput {
+  tableId: ID!
+  groupBy: String!
+  aggregateFunction: AggregateFunction!
+  filters: [AttributeFilter!]
+}
+
+enum AggregateFunction {
+  COUNT
+  SUM
+  AVG
+  MIN
+  MAX
+  DISTINCT_COUNT
+}
+
+# Operation result types
+type AnalyzeNodesPayload {
+  analytics: [NodeAnalytics!]!
+  graphMetrics: GraphMetrics
+  errors: [Error!]!
+}

@@ -1,0 +1,109 @@
+# Relation domain types
+
+type RelationType implements Node {
+  id: ID!
+  identifier: String!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type NodeRelation implements Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  table: Table!
+  sourceNode: TableNode!
+  targetNode: TableNode!
+  relationType: RelationType!
+}
+
+# Input types for relation type operations
+input CreateRelationTypeInput {
+  identifier: String!
+  name: String!
+  description: String
+}
+
+# Input types for relation operations
+input CreateRelationInput {
+  sourceNodeId: ID!
+  targetNodeId: ID!
+  relationTypeId: ID!
+}
+
+# Filters for relations
+input NodeRelationsFilter {
+  tableId: ID
+  sourceNodeId: ID
+  targetNodeId: ID
+  relationTypeId: ID
+  direction: RelationDirection
+}
+
+input SearchRelatedNodesFilter {
+  sourceNodeId: ID!
+  relationTypeIds: [ID!]
+  direction: RelationDirection = OUTGOING
+  maxDepth: Int = 1
+}
+
+# Graph analysis types
+type NodePath {
+  nodes: [TableNode!]!
+  relations: [NodeRelation!]!
+  length: Int!
+  totalWeight: Float
+}
+
+input FindPathsInput {
+  sourceNodeId: ID!
+  targetNodeId: ID!
+  maxDepth: Int = 3
+  relationTypeIds: [ID!]
+}
+
+input DependencyChainInput {
+  nodeId: ID!
+  direction: RelationDirection = OUTGOING
+  maxDepth: Int = 5
+  relationTypeIds: [ID!]
+}
+
+# Connection types for relations
+type NodeRelationsConnection implements Connection {
+  nodes: [NodeRelation!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+type RelatedNodesConnection implements Connection {
+  nodes: [TableNode!]!
+  relations: [NodeRelation!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for relation types
+type CreateRelationTypePayload implements OperationResult {
+  success: Boolean!
+  relationType: RelationType
+  errors: [Error!]!
+}
+
+# Operation result types for relations
+type CreateRelationPayload implements OperationResult {
+  success: Boolean!
+  relation: NodeRelation
+  errors: [Error!]!
+}
+
+type DeleteRelationPayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}

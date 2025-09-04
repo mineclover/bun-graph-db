@@ -1,0 +1,50 @@
+# Common types and interfaces used across domains
+
+# Base interface for entities
+interface Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Pagination input
+input PaginationInput {
+  limit: Int = 10
+  offset: Int = 0
+}
+
+# Filter input
+input FilterInput {
+  search: String
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Sort input
+enum SortDirection {
+  ASC
+  DESC
+}
+
+input SortInput {
+  field: String!
+  direction: SortDirection!
+}
+
+# Connection interface for pagination
+interface Connection {
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Edge interface for connections
+interface Edge {
+  cursor: String!
+}
+
+# Operation result interface
+interface OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}

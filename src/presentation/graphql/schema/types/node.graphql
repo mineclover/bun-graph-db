@@ -1,0 +1,129 @@
+# Node domain types
+
+type TableNode implements Node {
+  id: ID!
+  content: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  table: Table!
+  attributes: [NodeAttribute!]!
+  outgoingRelations: [NodeRelation!]!
+  incomingRelations: [NodeRelation!]!
+  
+  # Computed fields
+  attributeCount: Int!
+  relationCount: Int!
+}
+
+type NodeAttribute {
+  id: ID!
+  value: String!
+  attribute: Attribute!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Input types for node operations
+input CreateNodeInput {
+  content: String!
+  tableId: ID!
+  attributes: [NodeAttributeInput!]
+}
+
+input UpdateNodeInput {
+  content: String
+}
+
+input NodeAttributeInput {
+  attributeId: ID!
+  value: String!
+}
+
+input SetNodeAttributeInput {
+  nodeId: ID!
+  attributeId: ID!
+  value: String!
+}
+
+# Filter for nodes
+input NodesFilter {
+  search: String
+  tableId: ID
+  hasAttributes: Boolean
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+input SearchNodesFilter {
+  content: String
+  tableId: ID
+  attributeFilters: [AttributeFilter!]
+  relationFilters: [RelationFilter!]
+}
+
+input AttributeFilter {
+  attributeId: ID!
+  value: String!
+  operator: FilterOperator = EQUALS
+}
+
+input RelationFilter {
+  relationTypeId: ID!
+  direction: RelationDirection!
+  targetNodeId: ID
+}
+
+enum FilterOperator {
+  EQUALS
+  CONTAINS
+  STARTS_WITH
+  ENDS_WITH
+  GREATER_THAN
+  LESS_THAN
+}
+
+enum RelationDirection {
+  INCOMING
+  OUTGOING
+  BOTH
+}
+
+# Pagination for nodes
+input NodesPagination {
+  limit: Int = 10
+  offset: Int = 0
+}
+
+# Connection types for nodes
+type NodesConnection implements Connection {
+  nodes: [TableNode!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for nodes
+type CreateNodePayload implements OperationResult {
+  success: Boolean!
+  node: TableNode
+  errors: [Error!]!
+}
+
+type UpdateNodePayload implements OperationResult {
+  success: Boolean!
+  node: TableNode
+  errors: [Error!]!
+}
+
+type DeleteNodePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+type SetNodeAttributePayload implements OperationResult {
+  success: Boolean!
+  nodeAttribute: NodeAttribute
+  errors: [Error!]!
+}

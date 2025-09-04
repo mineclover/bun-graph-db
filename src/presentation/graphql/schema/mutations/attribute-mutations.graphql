@@ -1,0 +1,31 @@
+# Attribute Mutation extensions
+
+extend type Mutation {
+  # Attribute Type management
+  createAttributeType(
+    input: CreateAttributeTypeInput!
+  ): CreateAttributeTypePayload!
+  
+  updateAttributeType(
+    id: ID!
+    input: UpdateAttributeTypeInput!
+  ): UpdateAttributeTypePayload!
+  
+  deleteAttributeType(
+    id: ID!
+  ): DeleteAttributeTypePayload!
+  
+  # Attribute management
+  createAttribute(
+    input: CreateAttributeInput!
+  ): CreateAttributePayload!
+  
+  updateAttribute(
+    id: ID!
+    input: UpdateAttributeInput!
+  ): UpdateAttributePayload!
+  
+  deleteAttribute(
+    id: ID!
+  ): DeleteAttributePayload!
+}

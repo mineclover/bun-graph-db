@@ -1,0 +1,126 @@
+# Attribute domain types
+
+type AttributeType implements Node {
+  id: ID!
+  identifier: String!
+  name: String!
+  description: String
+  dataType: String!
+  constraints: JSON
+  defaultValue: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Attribute implements Node {
+  id: ID!
+  identifier: String!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Relationships
+  attributeType: AttributeType!
+  table: Table!
+}
+
+# Input types for attribute type operations
+input CreateAttributeTypeInput {
+  identifier: String!
+  name: String!
+  description: String
+  dataType: String!
+  constraints: JSON
+  defaultValue: String
+}
+
+input UpdateAttributeTypeInput {
+  name: String
+  description: String
+  constraints: JSON
+  defaultValue: String
+}
+
+# Input types for attribute operations
+input CreateAttributeInput {
+  identifier: String!
+  name: String!
+  description: String
+  attributeTypeId: ID!
+  tableId: ID!
+}
+
+input UpdateAttributeInput {
+  name: String
+  description: String
+}
+
+# Filter for attribute types
+input AttributeTypesFilter {
+  search: String
+  dataType: String
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Filter for attributes
+input AttributesFilter {
+  search: String
+  tableId: ID
+  attributeTypeId: ID
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Connection types for attribute types
+type AttributeTypesConnection implements Connection {
+  nodes: [AttributeType!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Connection types for attributes
+type AttributesConnection implements Connection {
+  nodes: [Attribute!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for attribute types
+type CreateAttributeTypePayload implements OperationResult {
+  success: Boolean!
+  attributeType: AttributeType
+  errors: [Error!]!
+}
+
+type UpdateAttributeTypePayload implements OperationResult {
+  success: Boolean!
+  attributeType: AttributeType
+  errors: [Error!]!
+}
+
+type DeleteAttributeTypePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+# Operation result types for attributes
+type CreateAttributePayload implements OperationResult {
+  success: Boolean!
+  attribute: Attribute
+  errors: [Error!]!
+}
+
+type UpdateAttributePayload implements OperationResult {
+  success: Boolean!
+  attribute: Attribute
+  errors: [Error!]!
+}
+
+type DeleteAttributePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}

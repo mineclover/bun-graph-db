@@ -1,0 +1,24 @@
+# Query Template Query extensions
+
+extend type Query {
+  # Get single template
+  getTemplate(id: ID!): QueryTemplate
+  getTemplateByIdentifier(identifier: String!): QueryTemplate
+  
+  # Search templates
+  searchTemplates(
+    filter: QueryTemplatesFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): QueryTemplatesConnection!
+  
+  # Get popular templates
+  getPopularTemplates(
+    limit: Int = 10
+  ): [QueryTemplate!]!
+  
+  # Execute template (also available as mutation)
+  executeTemplate(
+    input: ExecuteQueryTemplateInput!
+  ): ExecuteQueryTemplatePayload!
+}

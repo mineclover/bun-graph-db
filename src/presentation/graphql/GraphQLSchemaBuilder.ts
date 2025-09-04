@@ -1,0 +1,209 @@
+import { makeExecutableSchema } from '@graphql-tools/schema'
+import { loadFilesSync } from '@graphql-tools/load-files'
+import { mergeTypeDefs } from '@graphql-tools/merge'
+import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
+import type { GraphQLSchema } from 'graphql'
+import { join } from 'path'
+
+// Import resolver classes
+import type { 
+  TableQueries,
+  NodeQueries,
+  AttributeQueries,
+  RelationQueries,
+  AnalyticsQueries,
+  TemplateQueries
+} from './queries/index.js'
+import type { 
+  TableMutations,
+  NodeMutations,
+  AttributeMutations,
+  RelationMutations,
+  TemplateMutations
+} from './mutations/index.js'
+import type { 
+  TableFieldResolvers,
+  NodeFieldResolvers,
+  AttributeFieldResolvers,
+  RelationFieldResolvers
+} from './field-resolvers/index.js'
+
+export interface GraphQLDependencies {
+  // Query resolvers
+  tableQueries: TableQueries
+  nodeQueries: NodeQueries
+  attributeQueries: AttributeQueries
+  relationQueries: RelationQueries
+  analyticsQueries: AnalyticsQueries
+  templateQueries: TemplateQueries
+  
+  // Mutation resolvers
+  tableMutations: TableMutations
+  nodeMutations: NodeMutations
+  attributeMutations: AttributeMutations
+  relationMutations: RelationMutations
+  templateMutations: TemplateMutations
+  
+  // Field resolvers
+  tableFieldResolvers: TableFieldResolvers
+  nodeFieldResolvers: NodeFieldResolvers
+  attributeFieldResolvers: AttributeFieldResolvers
+  relationFieldResolvers: RelationFieldResolvers
+}
+
+export function buildGraphQLSchema(deps: GraphQLDependencies): GraphQLSchema {
+  // Load GraphQL schema files from the new structure
+  const typesArray = loadFilesSync(join(process.cwd(), 'src/presentation/graphql/schema'), {
+    extensions: ['graphql'],
+    recursive: true
+  })
+  
+  const typeDefs = mergeTypeDefs(typesArray)
+
+  const resolvers = {
+    // Custom scalars
+    DateTime: DateTimeResolver,
+    JSON: JSONResolver,
+
+    // Root resolvers
+    Query: {
+      // Health check
+      health: () => ({
+        status: 'OK',
+        timestamp: new Date(),
+        database: true,
+        version: '1.0.0'
+      }),
+
+      // Table queries
+      table: (_: any, args: any) => deps.tableQueries.table(_, args),
+      tableByIdentifier: (_: any, args: any) => deps.tableQueries.tableByIdentifier(_, args),
+      tables: (_: any, args: any) => deps.tableQueries.tables(_, args),
+
+      // Attribute type queries
+      attributeType: (_: any, args: any) => deps.attributeQueries.attributeType(_, args),
+      attributeTypeByIdentifier: (_: any, args: any) => deps.attributeQueries.attributeTypeByIdentifier(_, args),
+      attributeTypes: (_: any) => deps.attributeQueries.attributeTypes(_),
+
+      // Attribute queries
+      attribute: (_: any, args: any) => deps.attributeQueries.attribute(_, args),
+      attributeByIdentifier: (_: any, args: any) => deps.attributeQueries.attributeByIdentifier(_, args),
+      attributes: (_: any, args: any) => deps.attributeQueries.attributes(_, args),
+
+      // Node queries
+      node: (_: any, args: any) => deps.nodeQueries.node(_, args),
+      nodeByContent: (_: any, args: any) => deps.nodeQueries.nodeByContent(_, args),
+      nodes: (_: any, args: any) => deps.nodeQueries.nodes(_, args),
+      searchNodes: (_: any, args: any) => deps.nodeQueries.searchNodes(_, args),
+
+      // Relation queries
+      relationType: (_: any, args: any) => deps.relationQueries.relationType(_, args),
+      relationTypes: (_: any) => deps.relationQueries.relationTypes(_),
+      nodeRelation: (_: any, args: any) => deps.relationQueries.nodeRelation(_, args),
+      nodeRelations: (_: any, args: any) => deps.relationQueries.nodeRelations(_, args),
+      searchRelatedNodes: (_: any, args: any) => deps.relationQueries.searchRelatedNodes(_, args),
+      findPathsBetweenNodes: (_: any, args: any) => deps.relationQueries.findPathsBetweenNodes(_, args),
+      getDependencyChain: (_: any, args: any) => deps.relationQueries.getDependencyChain(_, args),
+
+      // Analytics queries
+      analyzeNodes: (_: any, args: any) => deps.analyticsQueries.analyzeNodes(_, args),
+      getPerformanceMetrics: (_: any, args: any) => deps.analyticsQueries.getPerformanceMetrics(_, args),
+      getTestSuiteStatus: (_: any, args: any) => deps.analyticsQueries.getTestSuiteStatus(_, args),
+      aggregateData: (_: any, args: any) => deps.analyticsQueries.aggregateData(_, args),
+      getSystemHealth: (_: any, args: any) => deps.analyticsQueries.getSystemHealth(_, args),
+
+      // Template queries
+      getTemplate: (_: any, args: any) => deps.templateQueries.getTemplate(_, args),
+      getTemplateByIdentifier: (_: any, args: any) => deps.templateQueries.getTemplateByIdentifier(_, args),
+      searchTemplates: (_: any, args: any) => deps.templateQueries.searchTemplates(_, args),
+      getPopularTemplates: (_: any, args: any) => deps.templateQueries.getPopularTemplates(_, args),
+      executeTemplate: (_: any, args: any, context: any) => deps.templateQueries.executeTemplate(_, args, context)
+    },
+
+    Mutation: {
+      _empty: () => null,
+
+      // Table mutations
+      createTable: (_: any, args: any) => deps.tableMutations.createTable(_, args),
+      updateTable: (_: any, args: any) => deps.tableMutations.updateTable(_, args),
+      deleteTable: (_: any, args: any) => deps.tableMutations.deleteTable(_, args),
+
+      // Attribute type mutations
+      createAttributeType: (_: any, args: any) => deps.attributeMutations.createAttributeType(_, args),
+      updateAttributeType: (_: any, args: any) => deps.attributeMutations.updateAttributeType(_, args),
+      deleteAttributeType: (_: any, args: any) => deps.attributeMutations.deleteAttributeType(_, args),
+
+      // Attribute mutations
+      createAttribute: (_: any, args: any) => deps.attributeMutations.createAttribute(_, args),
+      updateAttribute: (_: any, args: any) => deps.attributeMutations.updateAttribute(_, args),
+      deleteAttribute: (_: any, args: any) => deps.attributeMutations.deleteAttribute(_, args),
+
+      // Node mutations
+      createNode: (_: any, args: any) => deps.nodeMutations.createNode(_, args),
+      updateNode: (_: any, args: any) => deps.nodeMutations.updateNode(_, args),
+      deleteNode: (_: any, args: any) => deps.nodeMutations.deleteNode(_, args),
+      setNodeAttribute: (_: any, args: any) => deps.nodeMutations.setNodeAttribute(_, args),
+
+      // Relation mutations
+      createRelationType: (_: any, args: any) => deps.relationMutations.createRelationType(_, args),
+      createRelation: (_: any, args: any) => deps.relationMutations.createRelation(_, args),
+      deleteRelation: (_: any, args: any) => deps.relationMutations.deleteRelation(_, args),
+
+      // Template mutations
+      createTemplate: (_: any, args: any) => deps.templateMutations.createTemplate(_, args),
+      updateTemplate: (_: any, args: any) => deps.templateMutations.updateTemplate(_, args),
+      deleteTemplate: (_: any, args: any) => deps.templateMutations.deleteTemplate(_, args),
+      activateTemplate: (_: any, args: any) => deps.templateMutations.activateTemplate(_, args),
+      deactivateTemplate: (_: any, args: any) => deps.templateMutations.deactivateTemplate(_, args),
+      executeTemplate: (_: any, args: any, context: any) => deps.templateMutations.executeTemplate(_, args, context)
+    },
+
+    Subscription: {
+      _placeholder: () => null
+    },
+
+    // Field resolvers
+    Table: {
+      attributes: (parent: any) => deps.tableFieldResolvers.attributes(parent),
+      nodes: (parent: any) => deps.tableFieldResolvers.nodes(parent),
+      nodeCount: (parent: any) => deps.tableFieldResolvers.nodeCount(parent),
+      attributeCount: (parent: any) => deps.tableFieldResolvers.attributeCount(parent)
+    },
+
+    Attribute: {
+      attributeType: (parent: any) => deps.attributeFieldResolvers.attributeType(parent),
+      table: (parent: any) => deps.attributeFieldResolvers.table(parent)
+    },
+
+    TableNode: {
+      table: (parent: any) => deps.nodeFieldResolvers.table(parent),
+      attributes: (parent: any) => deps.nodeFieldResolvers.attributes(parent),
+      attributeCount: (parent: any) => deps.nodeFieldResolvers.attributeCount(parent),
+      outgoingRelations: (parent: any) => deps.nodeFieldResolvers.outgoingRelations(parent),
+      incomingRelations: (parent: any) => deps.nodeFieldResolvers.incomingRelations(parent),
+      relationCount: (parent: any) => deps.nodeFieldResolvers.relationCount(parent)
+    },
+
+    NodeAttribute: {
+      attribute: (parent: any) => deps.attributeFieldResolvers.attribute(parent)
+    },
+
+    NodeRelation: {
+      table: (parent: any) => deps.relationFieldResolvers.table(parent),
+      sourceNode: (parent: any) => deps.relationFieldResolvers.sourceNode(parent),
+      targetNode: (parent: any) => deps.relationFieldResolvers.targetNode(parent),
+      relationType: (parent: any) => deps.relationFieldResolvers.relationType(parent)
+    }
+  }
+
+  const schema = makeExecutableSchema({
+    typeDefs,
+    resolvers
+  })
+
+  // Set the schema reference in the template resolvers
+  deps.templateQueries.setSchema(schema)
+  deps.templateMutations.setSchema(schema)
+
+  return schema
+}

@@ -1,0 +1,22 @@
+# Node Mutation extensions
+
+extend type Mutation {
+  # Node management
+  createNode(
+    input: CreateNodeInput!
+  ): CreateNodePayload!
+  
+  updateNode(
+    id: ID!
+    input: UpdateNodeInput!
+  ): UpdateNodePayload!
+  
+  deleteNode(
+    id: ID!
+  ): DeleteNodePayload!
+  
+  # Node attribute management
+  setNodeAttribute(
+    input: SetNodeAttributeInput!
+  ): SetNodeAttributePayload!
+}

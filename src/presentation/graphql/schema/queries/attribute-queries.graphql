@@ -1,0 +1,21 @@
+# Attribute Query extensions
+
+extend type Query {
+  # Attribute Type queries
+  attributeType(id: ID!): AttributeType
+  attributeTypeByIdentifier(identifier: String!): AttributeType
+  attributeTypes(
+    filter: AttributeTypesFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): AttributeTypesConnection!
+  
+  # Attribute queries
+  attribute(id: ID!): Attribute
+  attributeByIdentifier(identifier: String!, tableId: ID!): Attribute
+  attributes(
+    filter: AttributesFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): AttributesConnection!
+}

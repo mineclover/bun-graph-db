@@ -1,0 +1,35 @@
+# Relation Query extensions
+
+extend type Query {
+  # Relation Type queries
+  relationType(id: ID!): RelationType
+  relationTypeByIdentifier(identifier: String!): RelationType
+  relationTypes(
+    filter: FilterInput
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): [RelationType!]!
+  
+  # Node Relation queries
+  nodeRelation(id: ID!): NodeRelation
+  nodeRelations(
+    filter: NodeRelationsFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): NodeRelationsConnection!
+  
+  # Graph relationship queries
+  searchRelatedNodes(
+    filter: SearchRelatedNodesFilter!
+    pagination: PaginationInput
+  ): RelatedNodesConnection!
+  
+  # Graph analysis queries
+  findPathsBetweenNodes(
+    input: FindPathsInput!
+  ): [NodePath!]!
+  
+  getDependencyChain(
+    input: DependencyChainInput!
+  ): RelatedNodesConnection!
+}

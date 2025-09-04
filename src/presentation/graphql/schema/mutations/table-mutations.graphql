@@ -1,0 +1,17 @@
+# Table Mutation extensions
+
+extend type Mutation {
+  # Table management
+  createTable(
+    input: CreateTableInput!
+  ): CreateTablePayload!
+  
+  updateTable(
+    id: ID!
+    input: UpdateTableInput!
+  ): UpdateTablePayload!
+  
+  deleteTable(
+    id: ID!
+  ): DeleteTablePayload!
+}

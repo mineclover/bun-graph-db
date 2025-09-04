@@ -1,0 +1,94 @@
+# Query Template domain types
+
+type QueryTemplate implements Node {
+  id: ID!
+  identifier: String!
+  name: String!
+  description: String
+  query: String!
+  variables: JSON
+  isActive: Boolean!
+  usageCount: Int!
+  createdBy: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  
+  # Validation
+  isValid: Boolean!
+  validationErrors: [String!]!
+}
+
+type QueryTemplateExecution {
+  id: ID!
+  templateId: ID!
+  executedAt: DateTime!
+  duration: Float!
+  resultCount: Int!
+  success: Boolean!
+  errorMessage: String
+}
+
+# Input types for query template operations
+input CreateQueryTemplateInput {
+  identifier: String!
+  name: String!
+  description: String
+  query: String!
+  variables: JSON
+  createdBy: String
+}
+
+input UpdateQueryTemplateInput {
+  name: String
+  description: String
+  query: String
+  variables: JSON
+}
+
+input ExecuteQueryTemplateInput {
+  templateId: ID
+  templateIdentifier: String
+  variables: JSON
+}
+
+# Filter for query templates
+input QueryTemplatesFilter {
+  search: String
+  isActive: Boolean
+  createdBy: String
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Connection types for query templates
+type QueryTemplatesConnection implements Connection {
+  nodes: [QueryTemplate!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for query templates
+type CreateQueryTemplatePayload implements OperationResult {
+  success: Boolean!
+  template: QueryTemplate
+  errors: [Error!]!
+}
+
+type UpdateQueryTemplatePayload implements OperationResult {
+  success: Boolean!
+  template: QueryTemplate
+  errors: [Error!]!
+}
+
+type DeleteQueryTemplatePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+type ExecuteQueryTemplatePayload {
+  success: Boolean!
+  data: JSON
+  execution: QueryTemplateExecution
+  errors: [Error!]!
+}

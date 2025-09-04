@@ -117,8 +117,8 @@ export class QueryTemplateResolver {
       offset: input.offset || 0
     }
 
-    const templates = await this.queryTemplateRepository.search(searchCriteria)
-    return QueryTemplateDtoMapper.toDtoList(templates)
+    const result = await this.queryTemplateRepository.search(searchCriteria)
+    return QueryTemplateDtoMapper.toDtoList(result.items)
   }
 
   /**
@@ -141,12 +141,7 @@ export class QueryTemplateResolver {
    * 인기 템플릿 조회
    */
   async getPopularTemplates(limit: number = 10): Promise<QueryTemplateDto[]> {
-    const templates = await this.queryTemplateRepository.search({
-      isActive: true,
-      orderBy: 'usage_count',
-      orderDirection: 'DESC',
-      limit
-    })
+    const templates = await this.queryTemplateRepository.findPopular(limit)
     return QueryTemplateDtoMapper.toDtoList(templates)
   }
 
@@ -201,11 +196,7 @@ export class QueryTemplateResolver {
 
   private async trackUsage(templateId: string): Promise<void> {
     try {
-      const template = await this.queryTemplateRepository.findById(templateId)
-      if (template) {
-        template.incrementUsage()
-        await this.queryTemplateRepository.save(template)
-      }
+      await this.queryTemplateRepository.incrementUsage(templateId)
     } catch (error) {
       // 실패 무시
       this.logger.warn('Failed to track usage', { templateId, error })
@@ -220,7 +211,7 @@ export class QueryTemplateResolver {
 
     try {
       const template = QueryTemplateDtoMapper.createInputToEntity(input)
-      const savedTemplate = await this.queryTemplateRepository.save(template)
+      const savedTemplate = await this.queryTemplateRepository.create(template)
       
       return QueryTemplateDtoMapper.toDto(savedTemplate)
     } catch (error) {
@@ -248,26 +239,8 @@ export class QueryTemplateResolver {
         })
       }
 
-      // Update fields
-      if (input.name !== undefined) template.update({ name: input.name })
-      if (input.description !== undefined) template.update({ description: input.description })
-      if (input.queryText !== undefined) template.update({ queryText: input.queryText })
-      if (input.variablesSchema !== undefined) template.update({ variablesSchema: input.variablesSchema })
-      if (input.defaultVariables !== undefined) template.update({ defaultVariables: input.defaultVariables })
-      if (input.applicableTables !== undefined) template.update({ applicableTables: input.applicableTables })
-      if (input.templateType !== undefined) template.update({ templateType: input.templateType })
-      if (input.complexityScore !== undefined) template.update({ complexityScore: input.complexityScore })
-      if (input.version !== undefined) template.update({ version: input.version })
-      if (input.isActive !== undefined) {
-        if (input.isActive) {
-          template.activate()
-        } else {
-          template.deactivate()
-        }
-      }
-      if (input.tags !== undefined) template.update({ tags: input.tags })
-
-      const savedTemplate = await this.queryTemplateRepository.save(template)
+      // Use repository update method instead of entity methods
+      const savedTemplate = await this.queryTemplateRepository.update(id, input)
       return QueryTemplateDtoMapper.toDto(savedTemplate)
     } catch (error) {
       this.logger.error('Failed to update template', { id, error })
@@ -308,15 +281,7 @@ export class QueryTemplateResolver {
     this.logger.info('Activating template', { id })
 
     try {
-      const template = await this.queryTemplateRepository.findById(id)
-      if (!template) {
-        throw new GraphQLError('Template not found', {
-          extensions: { code: 'TEMPLATE_NOT_FOUND' }
-        })
-      }
-
-      template.activate()
-      const savedTemplate = await this.queryTemplateRepository.save(template)
+      const savedTemplate = await this.queryTemplateRepository.updateStatus(id, true)
       return QueryTemplateDtoMapper.toDto(savedTemplate)
     } catch (error) {
       this.logger.error('Failed to activate template', { id, error })
@@ -333,88 +298,12 @@ export class QueryTemplateResolver {
     this.logger.info('Deactivating template', { id })
 
     try {
-      const template = await this.queryTemplateRepository.findById(id)
-      if (!template) {
-        throw new GraphQLError('Template not found', {
-          extensions: { code: 'TEMPLATE_NOT_FOUND' }
-        })
-      }
-
-      template.deactivate()
-      const savedTemplate = await this.queryTemplateRepository.save(template)
+      const savedTemplate = await this.queryTemplateRepository.updateStatus(id, false)
       return QueryTemplateDtoMapper.toDto(savedTemplate)
     } catch (error) {
       this.logger.error('Failed to deactivate template', { id, error })
       throw new GraphQLError('Failed to deactivate template', {
         extensions: { code: 'TEMPLATE_DEACTIVATION_FAILED' }
-      })
-    }
-  }
-
-  /**
-   * 템플릿 검색
-   */
-  async searchTemplates(input: SearchTemplatesInput): Promise<QueryTemplateDto[]> {
-    this.logger.info('Searching templates', { input })
-
-    try {
-      const templates = await this.queryTemplateRepository.search(input)
-      return QueryTemplateDtoMapper.toDtoList(templates)
-    } catch (error) {
-      this.logger.error('Failed to search templates', { input, error })
-      throw new GraphQLError('Failed to search templates', {
-        extensions: { code: 'TEMPLATE_SEARCH_FAILED' }
-      })
-    }
-  }
-
-  /**
-   * ID로 템플릿 조회
-   */
-  async getTemplate(id: string): Promise<QueryTemplateDto | null> {
-    this.logger.info('Getting template by ID', { id })
-
-    try {
-      const template = await this.queryTemplateRepository.findById(id)
-      return template ? QueryTemplateDtoMapper.toDto(template) : null
-    } catch (error) {
-      this.logger.error('Failed to get template', { id, error })
-      throw new GraphQLError('Failed to get template', {
-        extensions: { code: 'TEMPLATE_GET_FAILED' }
-      })
-    }
-  }
-
-  /**
-   * Identifier로 템플릿 조회
-   */
-  async getTemplateByIdentifier(identifier: string): Promise<QueryTemplateDto | null> {
-    this.logger.info('Getting template by identifier', { identifier })
-
-    try {
-      const template = await this.queryTemplateRepository.findByIdentifier(identifier)
-      return template ? QueryTemplateDtoMapper.toDto(template) : null
-    } catch (error) {
-      this.logger.error('Failed to get template by identifier', { identifier, error })
-      throw new GraphQLError('Failed to get template by identifier', {
-        extensions: { code: 'TEMPLATE_GET_FAILED' }
-      })
-    }
-  }
-
-  /**
-   * 인기 템플릿 조회
-   */
-  async getPopularTemplates(limit: number = 10): Promise<QueryTemplateDto[]> {
-    this.logger.info('Getting popular templates', { limit })
-
-    try {
-      const templates = await this.queryTemplateRepository.findPopular(limit)
-      return QueryTemplateDtoMapper.toDtoList(templates)
-    } catch (error) {
-      this.logger.error('Failed to get popular templates', { limit, error })
-      throw new GraphQLError('Failed to get popular templates', {
-        extensions: { code: 'TEMPLATE_GET_POPULAR_FAILED' }
       })
     }
   }
