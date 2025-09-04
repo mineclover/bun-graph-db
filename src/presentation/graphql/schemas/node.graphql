@@ -327,8 +327,6 @@ extend type Query {
   # Advanced search with query parsing
   searchNodes(input: SearchNodesInput!): SearchNodesResult!
   
-  # Legacy search (keeping for backward compatibility)
-  searchNodesLegacy(filter: NodeSearchFilter!, pagination: TablesPagination): NodesConnection!
   
   # Pre-creation node information and suggestions
   previewNodeCreation(input: PreviewNodeInput!): NodeCreationPreview!

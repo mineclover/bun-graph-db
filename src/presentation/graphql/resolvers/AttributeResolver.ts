@@ -7,6 +7,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
 import { AttributeTypeDto } from '@/application/dtos/AttributeTypeDto.js'
 import { AttributeDto } from '@/application/dtos/AttributeDto.js'
+import { NodeAttributeDto } from '@/application/dtos/NodeDto.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
 import type { AttributeId, AttributeTypeId, TableId } from '@/shared/types/common.js'
 
@@ -340,6 +341,17 @@ export class AttributeResolver {
       return table ? TableDto.fromEntity(table) : null
     } catch (error) {
       this.logger.error('Failed to resolve table field', { attributeId: attribute.id, error })
+      return null
+    }
+  }
+
+  // Field resolver for NodeAttribute type
+  async nodeAttribute_attribute_field(nodeAttribute: NodeAttributeDto): Promise<AttributeDto | null> {
+    try {
+      const attribute = await this.attributeRepository.findById(nodeAttribute.attributeId as AttributeId)
+      return attribute ? AttributeDto.fromEntity(attribute) : null
+    } catch (error) {
+      this.logger.error('Failed to resolve attribute field for NodeAttribute', { nodeAttributeId: nodeAttribute.attributeId, error })
       return null
     }
   }

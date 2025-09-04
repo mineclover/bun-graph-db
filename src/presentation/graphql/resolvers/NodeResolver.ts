@@ -6,7 +6,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
-import { NodeDto } from '@/application/dtos/NodeDto.js'
+import { NodeDto, NodeAttributeDto } from '@/application/dtos/NodeDto.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
 import { AttributeDto } from '@/application/dtos/AttributeDto.js'
 import type { NodeId, TableId, AttributeId } from '@/shared/types/common.js'
@@ -444,6 +444,16 @@ export class NodeResolver {
     } catch (error) {
       this.logger.error('Failed to resolve attribute count', { nodeId: node.id, error })
       return 0
+    }
+  }
+
+  async attributes_field(node: NodeDto): Promise<NodeAttributeDto[]> {
+    try {
+      const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
+      return NodeAttributeDto.fromEntities(nodeAttributes)
+    } catch (error) {
+      this.logger.error('Failed to resolve node attributes', { nodeId: node.id, error })
+      return []
     }
   }
 }

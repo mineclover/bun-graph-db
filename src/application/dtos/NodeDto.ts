@@ -80,6 +80,7 @@ export interface DeleteNodeOutput {
 
 // NodeAttribute DTO
 export interface NodeAttributeDto {
+  id: string | null
   nodeId: string
   attributeId: string
   value: any
@@ -90,6 +91,7 @@ export interface NodeAttributeDto {
 export class NodeAttributeDto {
   static fromEntity(nodeAttribute: NodeAttribute): NodeAttributeDto {
     return {
+      id: nodeAttribute.getId(),
       nodeId: nodeAttribute.getNodeId(),
       attributeId: nodeAttribute.getAttributeId(),
       value: nodeAttribute.getParsedValue(),

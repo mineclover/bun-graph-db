@@ -311,10 +311,15 @@ export function buildGraphQLSchema(deps: ResolverDependencies): GraphQLSchema {
 
     Node: {
       table: (parent: NodeParent) => nodeResolver.table_field(parent),
+      attributes: (parent: NodeParent) => nodeResolver.attributes_field(parent),
       attributeCount: (parent: NodeParent) => nodeResolver.attributeCount_field(parent),
       outgoingRelations: (parent: NodeParent) => relationResolver.outgoingRelations_field(parent),
       incomingRelations: (parent: NodeParent) => relationResolver.incomingRelations_field(parent),
       relationCount: (parent: NodeParent) => relationResolver.relationCount_field(parent)
+    },
+
+    NodeAttribute: {
+      attribute: (parent: any) => attributeResolver.nodeAttribute_attribute_field(parent)
     },
 
     NodeRelation: {
