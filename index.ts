@@ -1,9 +1,44 @@
 import { createYoga } from 'graphql-yoga'
 import type { ILogger } from './src/application/ports/ILogger.js'
-import { graphqlConfig } from './src/config/graphql.js'
+import { createGraphQLConfig } from './src/config/graphql.js'
 import { ContainerBootstrap } from './src/infrastructure/container/ContainerBootstrap.js'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens.js'
 import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder.js'
+import { parseCliArgs, printHelp, printVersion, mergeWithEnvironment, validateOptions } from './src/utils/cli-parser.js'
+
+// Parse CLI arguments
+const { options, unknown } = parseCliArgs()
+const finalOptions = mergeWithEnvironment(options)
+
+// Handle help and version flags
+if (finalOptions.help) {
+  printHelp()
+  process.exit(0)
+}
+
+if (finalOptions.version) {
+  printVersion()
+  process.exit(0)
+}
+
+// Validate options
+try {
+  validateOptions(finalOptions)
+} catch (error) {
+  console.error('❌ Invalid options:', error instanceof Error ? error.message : error)
+  console.error('Use --help for usage information')
+  process.exit(1)
+}
+
+// Warn about unknown arguments
+if (unknown.length > 0) {
+  console.warn('⚠️  Unknown arguments:', unknown.join(' '))
+}
+
+// Set environment variable if provided via CLI
+if (finalOptions.env) {
+  process.env.NODE_ENV = finalOptions.env
+}
 
 // Initialize dependency container
 const container = await ContainerBootstrap.createContainer()
@@ -13,6 +48,9 @@ const schemaBuilder = new GraphQLSchemaBuilder(container)
 const schema = await schemaBuilder.build()
 
 const logger = await container.resolve<ILogger>(CommonTokens.LOGGER)
+
+// Create GraphQL config with CLI options
+const graphqlConfig = createGraphQLConfig(finalOptions)
 
 const yoga = createYoga({
   schema,
@@ -58,10 +96,30 @@ const yoga = createYoga({
   landingPage: false,
 })
 
+// Import schema route handler
+import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes.js'
+
+// Create schema handler
+const schemaHandler = await createSchemaHandler(container)
+
+// Combined request handler
+const requestHandler = async (request: Request): Promise<Response> => {
+  const url = new URL(request.url)
+  
+  // Handle schema routes first
+  const schemaResponse = await schemaHandler(request)
+  if (schemaResponse) {
+    return schemaResponse
+  }
+  
+  // Handle GraphQL requests
+  return yoga.fetch(request)
+}
+
 const server = Bun.serve({
-  fetch: yoga,
+  fetch: requestHandler,
   port: graphqlConfig.port,
-  hostname: '0.0.0.0',
+  hostname: finalOptions.host || '0.0.0.0',
 })
 
 logger.info(
@@ -70,6 +128,13 @@ logger.info(
 logger.info(
   `📊 GraphiQL available at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`
 )
+logger.info(
+  `📋 Schema endpoints available:`
+)
+logger.info(`   • SDL: http://localhost:${graphqlConfig.port}/schema`)
+logger.info(`   • JSON: http://localhost:${graphqlConfig.port}/schema.json`)
+logger.info(`   • Introspection: http://localhost:${graphqlConfig.port}/introspection.json`)
+logger.info(`   • TypeScript: http://localhost:${graphqlConfig.port}/schema/typescript`)
 logger.info('🏗️  Architecture: Hexagonal with Domain-Driven Design')
 logger.info('🎯 Target: GraphQL → MCP conversion via mcp-graphql')
 
