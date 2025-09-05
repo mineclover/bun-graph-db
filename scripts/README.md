@@ -37,6 +37,22 @@ bun run scripts/setup-test-dataset.ts
 
 ### 🧪 테스트 실행 스크립트 (Test Execution)
 
+**📁 통합된 테스트 구조**: `test/` 디렉토리로 통합 완료 (2025-09-05)
+```
+test/
+├── utils/                           # 테스트 유틸리티
+│   ├── GraphQLTestClient.ts         # GraphQL 테스트 클라이언트
+│   └── TestDataFixtures.ts          # 테스트 데이터 픽스처
+├── unit/                            # 🆕 단위 테스트 (Mock 기반)
+│   └── presentation/graphql/        # GraphQL 리졸버 단위 테스트
+├── unified-test-runner.ts           # 통합 테스트 러너
+├── graphql-comprehensive.test.ts    # 종합 GraphQL 테스트
+├── template-based-node-mutations.test.ts # 🆕 템플릿 기반 테스트
+├── performance.test.ts              # 성능 테스트
+├── relationships.test.ts            # 관계 시스템 테스트
+└── query-validator.ts               # 쿼리 검증 도구
+```
+
 #### `comprehensive-test-runner.ts`
 **목적**: GraphQL API 전체 기능 종합 테스트 실행기
 ```bash
@@ -91,6 +107,40 @@ bun run scripts/run-template-tests.ts
 - 샘플 템플릿 생성
 - 템플릿 기반 뮤테이션 테스트
 - 상세한 테스트 결과 리포트
+
+#### 🗂️ **템플릿 시스템 통합** (2025-09-05)
+**새로운 구조**: 모든 템플릿 관련 리소스가 `templates/` 디렉토리로 이동
+```bash
+# 템플릿 CLI 도구 사용
+bun templates/tools/template-cli.ts load -e development
+bun templates/tools/template-cli.ts list -o table
+bun templates/tools/template-cli.ts validate -t basic-nodes-query
+bun templates/tools/template-cli.ts info -t create-basic-node
+
+# 기존 스크립트는 호환성 유지
+bun run scripts/test-templates.ts
+bun run scripts/run-template-tests.ts
+```
+**주요 기능**:
+- 중앙 집중식 템플릿 관리 시스템
+- 환경별 템플릿 데이터셋 (production/development/migration)
+- JSON Schema 기반 템플릿 검증
+- Hot Reload 개발 환경 지원
+- CLI 기반 템플릿 관리 도구
+
+#### 🆕 **단위 테스트** (test/unit/)
+**목적**: Mock 기반 개별 컴포넌트 단위 테스트
+```bash
+# 사용법
+bun test test/unit/
+bun test test/unit/presentation/graphql/mutations/
+bun test test/unit/presentation/graphql/queries/
+```
+**주요 기능**:
+- GraphQL 리졸버별 독립적 테스트
+- Mock 객체를 통한 격리된 테스트
+- NodeMutations, TableMutations, NodeQueries 단위 테스트
+- 빠른 실행 속도와 정확한 에러 위치 파악
 
 ### 📊 관리 및 검증 스크립트 (Management & Validation)
 
@@ -148,10 +198,24 @@ bun run query:report
 
 ### 3. 기능 테스트
 ```bash
+# 🆕 통합된 테스트 실행 (권장)
+bun run test                         # 통합 테스트 러너로 전체 실행
+bun run test:list                    # 사용 가능한 테스트 확인
+
+# 개별 테스트 실행
+bun run test:bun                     # Bun native 단위 테스트
+bun run test:integration             # GraphQL 통합 테스트
+bun run test:performance             # 성능 테스트
+
 # 특정 쿼리 테스트
 bun run scripts/test-queries.ts minimal 1
 
-# 템플릿 시스템 테스트
+# 🆕 템플릿 시스템 테스트 (새로운 CLI 도구)
+bun templates/tools/template-cli.ts load -e development  # 템플릿 로드
+bun templates/tools/template-cli.ts validate           # 전체 검증
+bun templates/tools/template-cli.ts info -t template-id # 상세 정보
+
+# 기존 템플릿 시스템 테스트 (호환성 유지)
 bun run scripts/test-templates.ts basic-nodes-query
 
 # 종합 기능 테스트
@@ -210,6 +274,13 @@ bun run scripts/setup-test-environment.ts --cleanup
 - **`validate-graphql-api-status.ts`**: refactoring 문서와 동기화 필수
 
 ## 📈 확장 계획
+
+### 🆕 테스트 구조 통합 완료 (2025-09-05)
+- ✅ `tests/` 디렉토리 제거 및 `test/` 디렉토리로 통합
+- ✅ 단위 테스트 추가: Mock 기반 리졸버 테스트
+- ✅ 템플릿 통합 테스트 추가: DI Container 기반 
+- ✅ 통합된 테스트 러너로 모든 테스트 관리
+- ✅ Package.json 스크립트와 완전 통합
 
 ### Phase 2 준비 스크립트 (예정)
 - 관계 시스템 마이그레이션 스크립트

@@ -87,3 +87,34 @@ export interface SearchNodesArgs {
     direction: 'ASC' | 'DESC'
   }
 }
+
+// Schema Export/Import Arguments
+export interface ExportTableArgs {
+  tableId: string
+  options?: {
+    includeData?: boolean
+    includeRelations?: boolean
+    format?: string
+    compression?: boolean
+  }
+}
+
+export interface ExportAllTablesArgs {
+  options?: {
+    includeData?: boolean
+    includeRelations?: boolean
+    format?: string
+    compression?: boolean
+  }
+}
+
+export interface ImportSchemaArgs {
+  exportData: any // JSON data
+  options?: {
+    overwriteExisting?: boolean
+    skipDuplicates?: boolean
+    validateData?: boolean
+    dryRun?: boolean
+    conflictResolution?: string
+  }
+}

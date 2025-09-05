@@ -4,8 +4,22 @@
 
 export type ID = string | number
 
+// Domain-specific ID types
+export type TableId = string
+export type NodeId = string
+export type AttributeId = string
+export type AttributeTypeId = string
+export type RelationId = string
+export type RelationTypeId = string
+export type QueryTemplateId = string
+
 export interface BaseEntity {
   id: ID
+  createdAt: Date
+  updatedAt: Date
+}
+
+export interface TimestampedEntity {
   createdAt: Date
   updatedAt: Date
 }
@@ -20,6 +34,11 @@ export interface PaginatedResult<T> {
   totalCount: number
   hasNextPage: boolean
   hasPreviousPage: boolean
+  // Alternative properties for compatibility
+  data?: T[]
+  items?: T[]
+  total?: number
+  hasMore?: boolean
 }
 
 export interface ErrorInfo {

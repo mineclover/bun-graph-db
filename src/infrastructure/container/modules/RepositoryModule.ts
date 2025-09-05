@@ -1,4 +1,4 @@
-import { SQLiteQueryTemplateRepository } from '@/infrastructure/database/repositories/SQLiteQueryTemplateRepository.js'
+import { SqliteQueryTemplateRepository } from '@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js'
 import { SqliteAttributeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeRepository.js'
 import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeTypeRepository.js'
 import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
@@ -98,7 +98,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SQLiteQueryTemplateRepository(connection, logger)
+      return new SqliteQueryTemplateRepository(connection, logger)
     },
     [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
   )
