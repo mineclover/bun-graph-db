@@ -70,7 +70,7 @@ export class SearchNodesUseCase {
       // Get available attributes for this table
       const attributes = await this.attributeRepository.findByTableId(input.tableId as TableId)
       const attributeInfo: AttributeTypeInfo[] = await Promise.all(
-        attributes.data.map(async (attr: any) => ({
+        (attributes.data || []).map(async (attr: any) => ({
           identifier: attr.getIdentifier(),
           dataType:
             (
@@ -107,20 +107,20 @@ export class SearchNodesUseCase {
       )
 
       // Convert to DTOs
-      const nodeDtos = result.data.map((nodeData) =>
+      const nodeDtos = (result.data || []).map((nodeData) =>
         NodeDto.fromEntity(nodeData.node, nodeData.attributes || {})
       )
 
       this.logger.info('Node search completed', {
         tableId: input.tableId,
-        foundNodes: result.data.length,
+        foundNodes: (result.data || []).length,
         total: result.total,
       })
 
       return {
         nodes: nodeDtos,
-        total: result.total,
-        hasMore: result.hasMore,
+        total: result.total || 0,
+        hasMore: result.hasMore || false,
         query: {
           parsed: searchQuery,
           originalQuery: input.query || '',

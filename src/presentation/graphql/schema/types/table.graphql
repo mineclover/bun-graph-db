@@ -9,10 +9,10 @@ type Table implements Node {
 
   # Relationships
   attributes: [Attribute!]!
-  nodes: [TableNode!]!
+  tableNodes: [TableNode!]!
 
   # Computed fields
-  nodeCount: Int!
+  tableNodeCount: Int!
   attributeCount: Int!
 }
 
@@ -73,7 +73,7 @@ type DeleteTablePayload implements OperationResult {
 
 # Table dependency information for deletion
 type TableDependencyInfo {
-  nodeCount: Int!
+  tableNodeCount: Int!
   attributeCount: Int!
   relationCount: Int!
 }

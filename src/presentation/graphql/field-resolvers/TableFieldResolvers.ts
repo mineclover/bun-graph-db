@@ -27,23 +27,23 @@ export class TableFieldResolvers extends BaseResolver {
     )
   }
 
-  async nodes(parent: TableParent, args?: any, context?: GraphQLContext) {
+  async tableNodes(parent: TableParent, args?: any, context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         const result = await this.nodeRepository.findByTableId(parent.id)
         return result.items
       },
-      'nodes',
+      'tableNodes',
       'Table',
       { tableId: parent.id }
     )
   }
 
-  async nodeCount(parent: TableParent, args?: any, context?: GraphQLContext) {
+  async tableNodeCount(parent: TableParent, args?: any, context?: GraphQLContext) {
     try {
       return await this.nodeRepository.countByTableId(parent.id)
     } catch (error) {
-      this.logger.warn('NodeCount query failed, returning 0', { tableId: parent.id, error })
+      this.logger.warn('TableNodeCount query failed, returning 0', { tableId: parent.id, error })
       return 0
     }
   }

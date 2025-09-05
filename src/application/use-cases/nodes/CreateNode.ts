@@ -83,7 +83,7 @@ export class CreateNodeUseCase {
         for (const [attributeIdentifier, value] of Object.entries(input.attributes)) {
           // Find attribute by identifier for this table
           const attributes = await this.attributeRepository.findByTableId(input.tableId as TableId)
-          const attribute = attributes.data.find(
+          const attribute = attributes.data?.find(
             (attr) => attr.getIdentifier() === attributeIdentifier
           )
 

@@ -209,7 +209,7 @@ export class TemplateMutations extends BaseResolver {
       'executeTemplate'
     )
 
-    return this.handleQuery(
+    return this.handleMutation(
       async () => {
         const result = await this.executeQueryTemplateUseCase.execute({
           templateIdentifier: args.input.templateIdentifier,
