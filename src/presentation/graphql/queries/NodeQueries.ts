@@ -70,15 +70,31 @@ export class NodeQueries extends BaseResolver {
   async nodes(_: GraphQLParent, args: NodesArgs, context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        const result = await this.nodeRepository.findAll(
-          args.pagination || { limit: 10, offset: 0 }
-        )
+        try {
+          const result = await this.nodeRepository.findAll(
+            args.pagination || { limit: 10, offset: 0 }
+          )
 
-        return {
-          nodes: result.items,
-          totalCount: result.total,
-          hasNextPage: result.hasNextPage,
-          hasPreviousPage: result.hasPreviousPage,
+          // Check if result is properly formatted
+          if (!result || !result.items) {
+            this.logger.warn('Invalid result from nodeRepository.findAll', { result })
+            return {
+              nodes: [],
+              totalCount: 0,
+              hasNextPage: false,
+              hasPreviousPage: false,
+            }
+          }
+
+          return {
+            nodes: result.items,
+            totalCount: result.total || 0,
+            hasNextPage: result.hasNextPage || false,
+            hasPreviousPage: result.hasPreviousPage || false,
+          }
+        } catch (error) {
+          this.logger.error('Error in nodes query', { error, args })
+          throw error
         }
       },
       'findAllNodes',
