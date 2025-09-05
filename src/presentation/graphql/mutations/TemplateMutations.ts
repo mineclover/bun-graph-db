@@ -40,7 +40,7 @@ export class TemplateMutations extends BaseResolver {
         const template = QueryTemplate.create(
           args.input.identifier,
           args.input.name,
-          args.input.queryText,
+          args.input.query,
           args.input.tags || ['general'],
           {
             description: args.input.description,
@@ -177,14 +177,16 @@ export class TemplateMutations extends BaseResolver {
   async executeTemplate(
     _: GraphQLParent,
     args: {
-      templateIdentifier: string
-      variables?: Record<string, unknown>
-      trackUsage?: boolean
+      input: {
+        templateIdentifier: string
+        variables?: Record<string, unknown>
+        trackUsage?: boolean
+      }
     },
     context?: GraphQLContext
   ) {
     this.validateArgs(
-      args,
+      args.input,
       [
         BaseResolver.validationRules.required('templateIdentifier', 'Template Identifier'),
         BaseResolver.validationRules.nonEmpty('templateIdentifier', 'Template Identifier'),
@@ -195,9 +197,9 @@ export class TemplateMutations extends BaseResolver {
     return this.handleQuery(
       async () => {
         const result = await this.executeQueryTemplateUseCase.execute({
-          templateIdentifier: args.templateIdentifier,
-          variables: args.variables,
-          trackUsage: args.trackUsage,
+          templateIdentifier: args.input.templateIdentifier,
+          variables: args.input.variables,
+          trackUsage: args.input.trackUsage,
         })
 
         return {

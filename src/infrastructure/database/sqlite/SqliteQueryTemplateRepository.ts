@@ -1,5 +1,5 @@
+import type { Database } from 'bun:sqlite'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { IDatabaseConnection } from '@/core/database/interfaces/IDatabaseConnection.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type {
   IQueryTemplateRepository,
@@ -9,7 +9,7 @@ import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
   constructor(
-    private readonly connection: IDatabaseConnection,
+    private readonly db: Database,
     private readonly logger: ILogger
   ) {}
 
@@ -194,7 +194,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           version, is_active, tags
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
-      const result = await this.connection.execute(query, [
+      const result = this.db.run(query, [
         data.identifier,
         data.name,
         data.description,
@@ -287,7 +287,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
   async delete(id: string): Promise<boolean> {
     try {
       const query = `DELETE FROM templates WHERE id = ?`
-      const result = await this.connection.execute(query, [id])
+      const result = this.db.run(query, [id])
       return result.changes > 0
     } catch (error) {
       this.logger.error('Failed to delete template', { id, error })
@@ -318,7 +318,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         ORDER BY usage_count DESC 
         LIMIT ?
       `
-      const rows = await this.connection.query(query, [limit])
+      const rows = this.db.query<any, [number]>(query).all(limit)
 
       return rows.map((row) =>
         QueryTemplate.fromDatabase(
