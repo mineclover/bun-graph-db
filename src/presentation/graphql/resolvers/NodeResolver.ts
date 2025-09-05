@@ -5,11 +5,13 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
+import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import {
   ConflictException,
   NotFoundException,
@@ -42,7 +44,9 @@ interface SearchNodesInput {
   }>
 }
 
-export class NodeResolver {
+export class NodeResolver extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly createNodeUseCase: CreateNodeUseCase,
     private readonly searchNodesUseCase: SearchNodesUseCase,
@@ -50,12 +54,20 @@ export class NodeResolver {
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
   // Query resolvers
-  async node(args: { id: string }): Promise<NodeDto | null> {
-    try {
+  async node(args: { id: string }, context?: GraphQLContext): Promise<NodeDto | null> {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Node ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Node ID')
+    ], 'node')
+
+    return this.handleQuery(async () => {
       const node = await this.nodeRepository.findById(args.id as NodeId)
       if (!node) return null
 
@@ -71,14 +83,17 @@ export class NodeResolver {
       }
 
       return NodeDto.fromEntity(node, attributeValues)
-    } catch (error) {
-      this.logger.error('Failed to find node by id', { id: args.id, error })
-      throw error
-    }
+    }, 'findNodeById', { id: args.id })
   }
 
-  async nodeByContent(args: { tableId: string; content: string }): Promise<NodeDto | null> {
-    try {
+  async nodeByContent(args: { tableId: string; content: string }, context?: GraphQLContext): Promise<NodeDto | null> {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('tableId', 'Table ID'),
+      BaseResolver.validationRules.required('content', 'Content'),
+      BaseResolver.validationRules.nonEmpty('content', 'Content')
+    ], 'nodeByContent')
+
+    return this.handleQuery(async () => {
       const node = await this.nodeRepository.findByTableIdAndContent(
         args.tableId as TableId,
         args.content
@@ -97,14 +112,7 @@ export class NodeResolver {
       }
 
       return NodeDto.fromEntity(node, attributeValues)
-    } catch (error) {
-      this.logger.error('Failed to find node by content', {
-        tableId: args.tableId,
-        content: args.content,
-        error,
-      })
-      throw error
-    }
+    }, 'findNodeByContent', { tableId: args.tableId, content: args.content })
   }
 
   async nodes(args: {
@@ -189,11 +197,18 @@ export class NodeResolver {
   }
 
   // Mutation resolvers
-  async createNode(args: { input: CreateNodeInput }): Promise<{
-    node: NodeDto | null
+  async createNode(args: { input: CreateNodeInput }, context?: GraphQLContext): Promise<{
+    success: boolean
+    data?: NodeDto | null
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
-    try {
+    this.validateArgs(args.input, [
+      BaseResolver.validationRules.required('tableId', 'Table ID'),
+      BaseResolver.validationRules.required('content', 'Content'),
+      BaseResolver.validationRules.nonEmpty('content', 'Content')
+    ], 'createNode')
+
+    const result = await this.handleMutation(async () => {
       // Convert GraphQL input to use case input
       const attributes: Record<string, unknown> = {}
       if (args.input.attributes) {
@@ -206,7 +221,7 @@ export class NodeResolver {
         }
       }
 
-      const result = await this.createNodeUseCase.execute({
+      const useCaseResult = await this.createNodeUseCase.execute({
         tableId: args.input.tableId,
         content: args.input.content,
         title: args.input.title,
@@ -214,60 +229,13 @@ export class NodeResolver {
         attributes,
       })
 
-      return {
-        node: result.node,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Failed to create node', { input: args.input, error })
+      return useCaseResult.node
+    }, 'createNode', { input: args.input })
 
-      if (error instanceof ValidationException) {
-        return {
-          node: null,
-          errors: [
-            {
-              message: error.message,
-              code: error.code,
-              field: 'content',
-            },
-          ],
-        }
-      }
-
-      if (error instanceof NotFoundException) {
-        return {
-          node: null,
-          errors: [
-            {
-              message: error.message,
-              code: error.code,
-            },
-          ],
-        }
-      }
-
-      if (error instanceof ConflictException) {
-        return {
-          node: null,
-          errors: [
-            {
-              message: error.message,
-              code: error.code,
-              field: 'content',
-            },
-          ],
-        }
-      }
-
-      return {
-        node: null,
-        errors: [
-          {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            code: 'INTERNAL_ERROR',
-          },
-        ],
-      }
+    return {
+      success: result.success,
+      data: result.data,
+      errors: result.errors
     }
   }
 
@@ -326,11 +294,17 @@ export class NodeResolver {
     }
   }
 
-  async deleteNode(args: { id: string }): Promise<{
+  async deleteNode(args: { id: string }, context?: GraphQLContext): Promise<{
     success: boolean
+    data?: boolean
     errors: Array<{ message: string; code: string }>
   }> {
-    try {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Node ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Node ID')
+    ], 'deleteNode')
+
+    const result = await this.handleMutation(async () => {
       const node = await this.nodeRepository.findById(args.id as NodeId)
       if (!node) {
         throw new NotFoundException(`Node with id ${args.id} not found`)
@@ -342,22 +316,13 @@ export class NodeResolver {
       // Delete the node
       await this.nodeRepository.delete(args.id as NodeId)
 
-      return {
-        success: true,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Failed to delete node', { id: args.id, error })
+      return true
+    }, 'deleteNode', { id: args.id })
 
-      return {
-        success: false,
-        errors: [
-          {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR',
-          },
-        ],
-      }
+    return {
+      success: result.success,
+      data: result.data,
+      errors: result.errors
     }
   }
 
@@ -435,33 +400,24 @@ export class NodeResolver {
   }
 
   // Field resolvers
-  async table_field(node: NodeDto): Promise<TableDto | null> {
-    try {
+  async table_field(node: NodeDto, context?: GraphQLContext): Promise<TableDto | null> {
+    return this.handleFieldResolution(async () => {
       const table = await this.tableRepository.findById(node.tableId as TableId)
       return table ? TableDto.fromEntity(table) : null
-    } catch (error) {
-      this.logger.error('Failed to resolve table field', { nodeId: node.id, error })
-      return null
-    }
+    }, 'table', 'Node', { nodeId: node.id })
   }
 
-  async attributeCount_field(node: NodeDto): Promise<number> {
-    try {
+  async attributeCount_field(node: NodeDto, context?: GraphQLContext): Promise<number> {
+    return this.handleFieldResolution(async () => {
       const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
       return nodeAttributes.length
-    } catch (error) {
-      this.logger.error('Failed to resolve attribute count', { nodeId: node.id, error })
-      return 0
-    }
+    }, 'attributeCount', 'Node', { nodeId: node.id }) || 0
   }
 
-  async attributes_field(node: NodeDto): Promise<NodeAttributeDto[]> {
-    try {
+  async attributes_field(node: NodeDto, context?: GraphQLContext): Promise<NodeAttributeDto[]> {
+    return this.handleFieldResolution(async () => {
       const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
       return NodeAttributeDto.fromEntities(nodeAttributes)
-    } catch (error) {
-      this.logger.error('Failed to resolve node attributes', { nodeId: node.id, error })
-      return []
-    }
+    }, 'attributes', 'Node', { nodeId: node.id }) || []
   }
 }
