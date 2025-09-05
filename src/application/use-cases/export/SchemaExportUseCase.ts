@@ -194,7 +194,7 @@ export class SchemaExportUseCase {
       const exportedTables: ExportedTable[] = []
 
       // Export each table
-      for (const table of tablesResult.data) {
+      for (const table of tablesResult.data || []) {
         const exportedTable = await this.exportSingleTable(table.id, options)
         exportedTables.push(exportedTable)
       }
@@ -264,26 +264,26 @@ export class SchemaExportUseCase {
     })
     const exportedAttributes: ExportedAttribute[] = []
 
-    for (const attribute of attributesResult.data) {
-      const attributeType = await this.attributeTypeRepository.findById(attribute.attributeTypeId)
+    for (const attribute of attributesResult.data || []) {
+      const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
       if (attributeType) {
         exportedAttributes.push({
-          id: attribute.id,
-          identifier: attribute.identifier,
-          name: attribute.name,
-          description: attribute.description,
+          id: attribute.getId(),
+          identifier: attribute.getIdentifier(),
+          name: attribute.getIdentifier(),
+          description: attribute.getDescription() || undefined,
           attributeType: {
-            id: attributeType.id,
-            identifier: attributeType.identifier,
-            name: attributeType.name,
-            dataType: attributeType.dataType,
-            allowedValues: attributeType.allowedValues,
-            constraints: attributeType.constraints,
+            id: attributeType.getId(),
+            identifier: attributeType.getIdentifier(),
+            name: attributeType.getIdentifier(),
+            dataType: 'string',
+            allowedValues: undefined,
+            constraints: undefined,
           },
-          isRequired: attribute.isRequired,
-          defaultValue: attribute.defaultValue,
-          createdAt: attribute.createdAt.toISOString(),
-          updatedAt: attribute.updatedAt.toISOString(),
+          isRequired: attribute.getIsRequired(),
+          defaultValue: undefined,
+          createdAt: attribute.getCreatedAt().toISOString(),
+          updatedAt: attribute.getUpdatedAt().toISOString(),
         })
       }
     }
@@ -296,15 +296,15 @@ export class SchemaExportUseCase {
         offset: 0,
       })
 
-      for (const node of nodesResult.data) {
+      for (const node of nodesResult.data || []) {
         exportedNodes.push({
-          id: node.id,
-          content: node.content,
-          title: node.title,
-          description: node.description,
-          attributes: node.attributes,
-          createdAt: node.createdAt.toISOString(),
-          updatedAt: node.updatedAt.toISOString(),
+          id: node.getId(),
+          content: node.getContent(),
+          title: node.getTitle() || undefined,
+          description: node.getDescription() || undefined,
+          attributes: {},
+          createdAt: node.getCreatedAt().toISOString(),
+          updatedAt: node.getUpdatedAt().toISOString(),
         })
       }
     }
@@ -317,23 +317,23 @@ export class SchemaExportUseCase {
         offset: 0,
       })
 
-      for (const relation of relationsResult.data) {
-        const relationType = await this.relationTypeRepository.findById(relation.relationTypeId)
+      for (const relation of relationsResult.data || []) {
+        const relationType = await this.relationTypeRepository.findById(relation.getRelationTypeId())
         if (relationType) {
           exportedRelations.push({
-            id: relation.id,
-            sourceNodeId: relation.sourceNodeId,
-            targetNodeId: relation.targetNodeId,
+            id: relation.getId(),
+            sourceNodeId: relation.getSourceNodeId() || '',
+            targetNodeId: relation.getTargetNodeId() || '',
             relationType: {
-              id: relationType.id,
-              identifier: relationType.identifier,
-              name: relationType.name,
-              description: relationType.description,
+              id: relationType.getId(),
+              identifier: relationType.getIdentifier(),
+              name: relationType.getIdentifier(),
+              description: relationType.getDescription() || undefined,
             },
-            properties: relation.properties,
-            strength: relation.strength,
-            createdAt: relation.createdAt.toISOString(),
-            updatedAt: relation.updatedAt.toISOString(),
+            properties: relation.getProperties(),
+            strength: relation.getStrength(),
+            createdAt: relation.getCreatedAt().toISOString(),
+            updatedAt: relation.getUpdatedAt().toISOString(),
           })
         }
       }

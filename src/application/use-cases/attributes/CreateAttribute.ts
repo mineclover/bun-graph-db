@@ -63,7 +63,7 @@ export class CreateAttributeUseCase {
     )
     if (existingAttribute) {
       throw new ConflictException(
-        `Attribute with identifier '${input.identifier}' already exists for table '${table.getIdentifier()}'`
+        `Attribute with identifier '${input.identifier}' already exists for table '${table.identifier}'`
       )
     }
 

@@ -51,7 +51,7 @@ export class CreateNodeUseCase {
     )
     if (existingNode) {
       throw new ConflictException(
-        `Node with content '${input.content}' already exists in table '${table.getIdentifier()}'`
+        `Node with content '${input.content}' already exists in table '${table.identifier}'`
       )
     }
 

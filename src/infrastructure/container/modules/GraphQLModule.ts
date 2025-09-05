@@ -274,6 +274,7 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.NODE_FIELD_RESOLVERS,
     async (c) => {
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
       const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
       const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
@@ -285,6 +286,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
       return new NodeFieldResolvers(
+        nodeRepository,
         tableRepository,
         nodeAttributeRepository,
         nodeRelationRepository,
@@ -292,6 +294,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       )
     },
     [
+      RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.NODE_RELATION_REPOSITORY,

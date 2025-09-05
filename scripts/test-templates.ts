@@ -16,7 +16,7 @@ const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
 
 // GraphQL client helper
 async function graphqlRequest(query: string, variables?: any): Promise<any> {
-  console.log(`🔍 Executing: ${query.split('{')[0].trim()}`)
+  console.log(`🔍 Executing: ${query.split('{')[0]?.trim() || 'Query'}`)
   if (variables) {
     console.log(`📋 Variables:`, JSON.stringify(variables, null, 2))
   }

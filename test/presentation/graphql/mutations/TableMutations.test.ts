@@ -17,10 +17,10 @@ describe('TableMutations', () => {
   let mockLogger: ILogger
 
   const mockTable: Partial<Table> = {
-    getIdentifier: () => 'test_table',
-    getDescription: () => 'Test table description',
-    getCreatedAt: () => new Date('2024-01-01'),
-    getUpdatedAt: () => new Date('2024-01-01'),
+    identifier: 'test_table',
+    description: 'Test table description',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
   }
 
   const mockDependencies: TableDependencyInfo = {
