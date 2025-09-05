@@ -75,8 +75,10 @@ export class DIContainer {
 
     // Check for circular dependencies
     if (this.resolutionStack.has(token)) {
-      const stackArray = Array.from(this.resolutionStack).map(t => String(t))
-      throw new Error(`Circular dependency detected for token: ${String(token)}\nDependency chain: ${stackArray.join(' -> ')} -> ${String(token)}`)
+      const stackArray = Array.from(this.resolutionStack).map((t) => String(t))
+      throw new Error(
+        `Circular dependency detected for token: ${String(token)}\nDependency chain: ${stackArray.join(' -> ')} -> ${String(token)}`
+      )
     }
 
     const registration = this.registrations.get(token)

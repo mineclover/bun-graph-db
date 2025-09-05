@@ -17,27 +17,43 @@ export class TableFieldResolvers extends BaseResolver {
   }
 
   async attributes(parent: TableParent, args?: any, context?: GraphQLContext) {
-    return this.handleFieldResolution(async () => {
-      return await this.attributeRepository.findByTableId(parent.id)
-    }, 'attributes', 'Table', { tableId: parent.id })
+    return this.handleFieldResolution(
+      async () => {
+        return await this.attributeRepository.findByTableId(parent.id)
+      },
+      'attributes',
+      'Table',
+      { tableId: parent.id }
+    )
   }
 
   async nodes(parent: TableParent, args?: any, context?: GraphQLContext) {
-    return this.handleFieldResolution(async () => {
-      const result = await this.nodeRepository.findByTableId(parent.id)
-      return result.items
-    }, 'nodes', 'Table', { tableId: parent.id })
+    return this.handleFieldResolution(
+      async () => {
+        const result = await this.nodeRepository.findByTableId(parent.id)
+        return result.items
+      },
+      'nodes',
+      'Table',
+      { tableId: parent.id }
+    )
   }
 
   async nodeCount(parent: TableParent, args?: any, context?: GraphQLContext) {
-    return this.handleFieldResolution(async () => {
+    try {
       return await this.nodeRepository.countByTableId(parent.id)
-    }, 'nodeCount', 'Table', { tableId: parent.id })
+    } catch (error) {
+      this.logger.warn('NodeCount query failed, returning 0', { tableId: parent.id, error })
+      return 0
+    }
   }
 
   async attributeCount(parent: TableParent, args?: any, context?: GraphQLContext) {
-    return this.handleFieldResolution(async () => {
+    try {
       return await this.attributeRepository.countByTableId(parent.id)
-    }, 'attributeCount', 'Table', { tableId: parent.id })
+    } catch (error) {
+      this.logger.warn('AttributeCount query failed, returning 0', { tableId: parent.id, error })
+      return 0
+    }
   }
 }

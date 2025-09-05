@@ -1,5 +1,5 @@
-import { readFile, readdir } from 'fs/promises'
-import { join, extname } from 'path'
+import { readdir, readFile } from 'fs/promises'
+import { extname, join } from 'path'
 import type { DomainSchema, LoaderOptions } from './types/DatasetTypes.js'
 
 export class SchemaLoader {
@@ -10,57 +10,65 @@ export class SchemaLoader {
     this.basePath = basePath
   }
 
-  async loadDomainSchema(domain: string, schemaName = 'base-schema', options: LoaderOptions = {}): Promise<DomainSchema> {
+  async loadDomainSchema(
+    domain: string,
+    schemaName = 'base-schema',
+    options: LoaderOptions = {}
+  ): Promise<DomainSchema> {
     const cacheKey = `${domain}/${schemaName}`
-    
+
     if (options.cache && this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!
     }
 
     const schemaPath = join(this.basePath, 'domains', domain, `${schemaName}.json`)
-    
+
     try {
       const content = await readFile(schemaPath, 'utf-8')
       const schema: DomainSchema = JSON.parse(content)
-      
+
       if (options.validate) {
         this.validateSchema(schema)
       }
-      
+
       if (options.cache) {
         this.cache.set(cacheKey, schema)
       }
-      
+
       return schema
     } catch (error) {
-      throw new Error(`Failed to load schema ${cacheKey}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to load schema ${cacheKey}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
   async loadBaseSchema(schemaName: string, options: LoaderOptions = {}): Promise<DomainSchema> {
     const cacheKey = `base/${schemaName}`
-    
+
     if (options.cache && this.cache.has(cacheKey)) {
       return this.cache.get(cacheKey)!
     }
 
     const schemaPath = join(this.basePath, 'base', `${schemaName}.json`)
-    
+
     try {
       const content = await readFile(schemaPath, 'utf-8')
       const schema: DomainSchema = JSON.parse(content)
-      
+
       if (options.validate) {
         this.validateSchema(schema)
       }
-      
+
       if (options.cache) {
         this.cache.set(cacheKey, schema)
       }
-      
+
       return schema
     } catch (error) {
-      throw new Error(`Failed to load base schema ${schemaName}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to load base schema ${schemaName}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
@@ -72,25 +80,25 @@ export class SchemaLoader {
     const result = {
       domains: {} as Record<string, string[]>,
       base: [] as string[],
-      templates: [] as string[]
+      templates: [] as string[],
     }
 
     try {
       // Load domain schemas
       const domainDirs = await readdir(join(this.basePath, 'domains'), { withFileTypes: true })
-      for (const dir of domainDirs.filter(d => d.isDirectory())) {
+      for (const dir of domainDirs.filter((d) => d.isDirectory())) {
         const schemaFiles = await readdir(join(this.basePath, 'domains', dir.name))
         result.domains[dir.name] = schemaFiles
-          .filter(f => extname(f) === '.json')
-          .map(f => f.replace('.json', ''))
+          .filter((f) => extname(f) === '.json')
+          .map((f) => f.replace('.json', ''))
       }
 
       // Load base schemas
       try {
         const baseFiles = await readdir(join(this.basePath, 'base'))
         result.base = baseFiles
-          .filter(f => extname(f) === '.json')
-          .map(f => f.replace('.json', ''))
+          .filter((f) => extname(f) === '.json')
+          .map((f) => f.replace('.json', ''))
       } catch (error) {
         // Base directory might not exist
       }
@@ -99,13 +107,15 @@ export class SchemaLoader {
       try {
         const templateFiles = await readdir(join(this.basePath, 'templates'))
         result.templates = templateFiles
-          .filter(f => extname(f) === '.json')
-          .map(f => f.replace('.json', ''))
+          .filter((f) => extname(f) === '.json')
+          .map((f) => f.replace('.json', ''))
       } catch (error) {
         // Templates directory might not exist
       }
     } catch (error) {
-      throw new Error(`Failed to list schemas: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Failed to list schemas: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
 
     return result
@@ -121,7 +131,7 @@ export class SchemaLoader {
       name: 'Merged Schema',
       description: `Merged from ${schemas.length} schemas`,
       tables: [],
-      relationTypes: []
+      relationTypes: [],
     }
 
     const tableMap = new Map<string, any>()
@@ -136,7 +146,7 @@ export class SchemaLoader {
           // Merge attributes if table already exists
           const existing = tableMap.get(table.identifier)
           const existingAttributeIds = new Set(existing.attributes.map((a: any) => a.identifier))
-          
+
           for (const attr of table.attributes) {
             if (!existingAttributeIds.has(attr.identifier)) {
               existing.attributes.push(attr)
@@ -188,7 +198,9 @@ export class SchemaLoader {
         }
 
         if (attributeIds.has(attr.identifier)) {
-          throw new Error(`Duplicate attribute identifier ${attr.identifier} in table ${table.identifier}`)
+          throw new Error(
+            `Duplicate attribute identifier ${attr.identifier} in table ${table.identifier}`
+          )
         }
         attributeIds.add(attr.identifier)
       }
@@ -209,11 +221,15 @@ export class SchemaLoader {
 
         // Validate table references
         if (!tableIds.has(relationType.sourceTable)) {
-          throw new Error(`Relation type ${relationType.identifier} references unknown source table: ${relationType.sourceTable}`)
+          throw new Error(
+            `Relation type ${relationType.identifier} references unknown source table: ${relationType.sourceTable}`
+          )
         }
 
         if (!tableIds.has(relationType.targetTable)) {
-          throw new Error(`Relation type ${relationType.identifier} references unknown target table: ${relationType.targetTable}`)
+          throw new Error(
+            `Relation type ${relationType.identifier} references unknown target table: ${relationType.targetTable}`
+          )
         }
       }
     }

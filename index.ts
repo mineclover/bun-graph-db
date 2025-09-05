@@ -4,7 +4,13 @@ import { createGraphQLConfig } from './src/config/graphql.js'
 import { ContainerBootstrap } from './src/infrastructure/container/ContainerBootstrap.js'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens.js'
 import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder.js'
-import { parseCliArgs, printHelp, printVersion, mergeWithEnvironment, validateOptions } from './src/utils/cli-parser.js'
+import {
+  mergeWithEnvironment,
+  parseCliArgs,
+  printHelp,
+  printVersion,
+  validateOptions,
+} from './src/utils/cli-parser.js'
 
 // Parse CLI arguments
 const { options, unknown } = parseCliArgs()
@@ -105,13 +111,13 @@ const schemaHandler = await createSchemaHandler(container)
 // Combined request handler
 const requestHandler = async (request: Request): Promise<Response> => {
   const url = new URL(request.url)
-  
+
   // Handle schema routes first
   const schemaResponse = await schemaHandler(request)
   if (schemaResponse) {
     return schemaResponse
   }
-  
+
   // Handle GraphQL requests
   return yoga.fetch(request)
 }
@@ -128,9 +134,7 @@ logger.info(
 logger.info(
   `📊 GraphiQL available at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`
 )
-logger.info(
-  `📋 Schema endpoints available:`
-)
+logger.info(`📋 Schema endpoints available:`)
 logger.info(`   • SDL: http://localhost:${graphqlConfig.port}/schema`)
 logger.info(`   • JSON: http://localhost:${graphqlConfig.port}/schema.json`)
 logger.info(`   • Introspection: http://localhost:${graphqlConfig.port}/introspection.json`)

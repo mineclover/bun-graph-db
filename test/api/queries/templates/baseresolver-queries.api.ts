@@ -1,6 +1,6 @@
 /**
  * BaseResolver Integration Tests for Template Queries
- * 
+ *
  * Validates BaseResolver functionality for Query Template domain:
  * - Template management and execution
  * - Validation rules enforcement
@@ -8,8 +8,8 @@
  * - Error handling and mapping
  */
 
-import { describe, test, expect, beforeAll } from 'bun:test'
-import { GraphQLClient, createDevGraphQLClient } from '../../clients/GraphQLClient.js'
+import { beforeAll, describe, expect, test } from 'bun:test'
+import { createDevGraphQLClient, type GraphQLClient } from '../../clients/GraphQLClient.js'
 
 describe('Template Queries - BaseResolver Integration Tests', () => {
   let client: GraphQLClient
@@ -71,7 +71,7 @@ describe('Template Queries - BaseResolver Integration Tests', () => {
       `
 
       const result = await client.query(query, {
-        input: { templateId: "1", variables: {} }
+        input: { templateId: '1', variables: {} },
       })
 
       // BaseResolver should handle complex template execution
@@ -127,10 +127,12 @@ describe('Template Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "" })
+      const result = await client.query(query, { id: '' })
 
       expect(result.hasErrors).toBe(true)
-      expect(result.data?.errors?.[0]?.message).toMatch(/Unexpected error|Invalid arguments|Template.*ID|required/)
+      expect(result.data?.errors?.[0]?.message).toMatch(
+        /Unexpected error|Invalid arguments|Template.*ID|required/
+      )
       console.log('✅ BaseResolver template ID validation verified')
     })
 
@@ -145,7 +147,7 @@ describe('Template Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { identifier: "test-template" })
+      const result = await client.query(query, { identifier: 'test-template' })
 
       expect(result.status).toBe(200)
       if (result.hasErrors && result.data?.errors?.[0]?.message?.includes('Unexpected error')) {
@@ -170,13 +172,13 @@ describe('Template Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const requests = Array(3).fill(null).map((_, i) => 
-        client.query(query, { id: (i + 1).toString() })
-      )
+      const requests = Array(3)
+        .fill(null)
+        .map((_, i) => client.query(query, { id: (i + 1).toString() }))
 
       const results = await Promise.all(requests)
-      
-      results.forEach(result => {
+
+      results.forEach((result) => {
         expect(result.status).toBe(200)
         expect(result.timing.duration).toBeGreaterThanOrEqual(0)
       })
@@ -199,15 +201,19 @@ describe('Template Queries - BaseResolver Integration Tests', () => {
 
       const iterations = 3
       const results = await Promise.all(
-        Array(iterations).fill(null).map(() => client.query(query, {
-          filter: { isActive: true }
-        }))
+        Array(iterations)
+          .fill(null)
+          .map(() =>
+            client.query(query, {
+              filter: { isActive: true },
+            })
+          )
       )
 
-      const durations = results.map(r => r.timing.duration)
+      const durations = results.map((r) => r.timing.duration)
       const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length
 
-      results.forEach(result => expect(result.status).toBe(200))
+      results.forEach((result) => expect(result.status).toBe(200))
       expect(avgDuration).toBeLessThan(300)
 
       console.log(`✅ BaseResolver template search benchmark: avg=${avgDuration.toFixed(1)}ms`)
@@ -224,7 +230,7 @@ describe('Template Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "" })
+      const result = await client.query(query, { id: '' })
 
       expect(result.hasErrors).toBe(true)
       const error = result.data?.errors?.[0]
@@ -247,7 +253,7 @@ describe('Template Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "999999" })
+      const result = await client.query(query, { id: '999999' })
 
       expect(result.status).toBe(200)
       if (result.hasErrors && result.data?.errors?.[0]?.message?.includes('Unexpected error')) {
@@ -282,11 +288,11 @@ describe('Template Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "1" })
+      const result = await client.query(query, { id: '1' })
 
       // 1. Validate GraphQL layer
       expect(result.status).toBe(200)
-      
+
       // 2. Validate BaseResolver performance tracking
       expect(result.timing.duration).toBeDefined()
       expect(result.timing.duration).toBeLessThan(200)

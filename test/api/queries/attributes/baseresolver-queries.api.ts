@@ -1,15 +1,15 @@
 /**
  * BaseResolver Integration Tests for Attribute Queries
- * 
+ *
  * Validates BaseResolver functionality for Attribute domain:
  * - Standardized logging patterns
- * - Validation rules enforcement  
+ * - Validation rules enforcement
  * - Performance monitoring
  * - Error handling and mapping
  */
 
-import { describe, test, expect, beforeAll } from 'bun:test'
-import { GraphQLClient, createDevGraphQLClient } from '../../clients/GraphQLClient.js'
+import { beforeAll, describe, expect, test } from 'bun:test'
+import { createDevGraphQLClient, type GraphQLClient } from '../../clients/GraphQLClient.js'
 
 describe('Attribute Queries - BaseResolver Integration Tests', () => {
   let client: GraphQLClient
@@ -40,7 +40,9 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
       expect(result.status).toBe(200)
       if (result.hasErrors && result.data?.errors?.[0]?.message?.includes('Unexpected error')) {
         // BaseResolver handled database error gracefully - functionality confirmed
-        console.log('⚠️ Attributes table not found in test database - BaseResolver error handling verified')
+        console.log(
+          '⚠️ Attributes table not found in test database - BaseResolver error handling verified'
+        )
         expect(result.hasErrors).toBe(true)
       } else {
         expect(result.isSuccess).toBe(true)
@@ -69,13 +71,15 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
       `
 
       // Test empty ID validation (nonEmpty rule)
-      const result = await client.query(query, { id: "" })
+      const result = await client.query(query, { id: '' })
 
       // Should return GraphQL error due to BaseResolver validation
       expect(result.hasErrors).toBe(true)
       expect(result.data?.errors).toBeDefined()
       // BaseResolver validation errors appear as "Unexpected error" in GraphQL client
-      expect(result.data?.errors?.[0]?.message).toMatch(/Unexpected error|Invalid arguments|Attribute ID/)
+      expect(result.data?.errors?.[0]?.message).toMatch(
+        /Unexpected error|Invalid arguments|Attribute ID/
+      )
 
       // Server logs should show:
       // [WARN] Argument validation failed: attribute { error: Attribute ID is required, args: { id: "" } }
@@ -99,7 +103,7 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "1" })
+      const result = await client.query(query, { id: '1' })
 
       // Validate response structure (may fail due to missing attributes table)
       expect(result.status).toBe(200)
@@ -128,14 +132,17 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { identifier: "test-attribute" })
+      const result = await client.query(query, { identifier: 'test-attribute' })
 
       // Validate query handling (may fail due to missing attributes table or schema changes)
       expect(result.status).toBe(200)
-      if (result.hasErrors && (
-        result.data?.errors?.[0]?.message?.includes('no such table: attributes') ||
-        result.data?.errors?.[0]?.message?.includes('Field "attributeByIdentifier" argument "tableId"')
-      )) {
+      if (
+        result.hasErrors &&
+        (result.data?.errors?.[0]?.message?.includes('no such table: attributes') ||
+          result.data?.errors?.[0]?.message?.includes(
+            'Field "attributeByIdentifier" argument "tableId"'
+          ))
+      ) {
         // Table doesn't exist or schema requires additional parameters
         expect(result.hasErrors).toBe(true)
       } else {
@@ -177,11 +184,13 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
       `
 
       // Test with empty string
-      const result = await client.query(query, { identifier: "" })
+      const result = await client.query(query, { identifier: '' })
 
       expect(result.hasErrors).toBe(true)
       // May get schema validation error for required tableId or BaseResolver validation
-      expect(result.data?.errors?.[0]?.message).toMatch(/Unexpected error|Invalid arguments|identifier|tableId|required/)
+      expect(result.data?.errors?.[0]?.message).toMatch(
+        /Unexpected error|Invalid arguments|identifier|tableId|required/
+      )
 
       console.log('✅ BaseResolver nonEmpty validation rule verified for attributes')
     })
@@ -197,7 +206,7 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
       `
 
       // Trigger validation error
-      const result = await client.query(query, { id: "" })
+      const result = await client.query(query, { id: '' })
 
       // Validate that validation failure includes context information
       expect(result.hasErrors).toBe(true)
@@ -263,7 +272,7 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
       const totalTime = Date.now() - startTime
 
       // Validate requests completed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.status).toBe(200)
         expect(result.timing.duration).toBeGreaterThanOrEqual(0)
       })
@@ -287,16 +296,18 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
       // Run multiple iterations to test consistency
       const iterations = 5
       const results = await Promise.all(
-        Array(iterations).fill(null).map(() => client.query(query))
+        Array(iterations)
+          .fill(null)
+          .map(() => client.query(query))
       )
 
       // Calculate performance statistics
-      const durations = results.map(r => r.timing.duration)
+      const durations = results.map((r) => r.timing.duration)
       const avgDuration = durations.reduce((sum, d) => sum + d, 0) / durations.length
       const maxDuration = Math.max(...durations)
 
       // All queries should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.status).toBe(200)
       })
 
@@ -304,7 +315,9 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
       expect(avgDuration).toBeLessThan(200) // Average under 200ms
       expect(maxDuration).toBeLessThan(500) // Max under 500ms
 
-      console.log(`✅ BaseResolver attribute performance benchmark: avg=${avgDuration.toFixed(1)}ms, max=${maxDuration}ms`)
+      console.log(
+        `✅ BaseResolver attribute performance benchmark: avg=${avgDuration.toFixed(1)}ms, max=${maxDuration}ms`
+      )
     })
   })
 
@@ -318,12 +331,12 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "" })
+      const result = await client.query(query, { id: '' })
 
       // Validate error structure
       expect(result.hasErrors).toBe(true)
       expect(result.data?.errors).toBeInstanceOf(Array)
-      
+
       const error = result.data?.errors?.[0]
       if (error) {
         expect(error).toHaveProperty('message')
@@ -345,7 +358,7 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "999999" })
+      const result = await client.query(query, { id: '999999' })
 
       // Validate handling (may fail due to missing attributes table)
       expect(result.status).toBe(200)
@@ -373,12 +386,12 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
 
       // Test with potentially problematic filter
       const result = await client.query(query, {
-        filter: { name: null } // Invalid filter value
+        filter: { name: null }, // Invalid filter value
       })
 
       // Should handle gracefully
       expect(result.status).toBe(200)
-      
+
       if (result.hasErrors) {
         const error = result.data?.errors?.[0]
         expect(error?.message).toBeDefined()
@@ -414,11 +427,11 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "1" })
+      const result = await client.query(query, { id: '1' })
 
       // 1. Validate GraphQL layer works
       expect(result.status).toBe(200)
-      
+
       // 2. Validate BaseResolver performance tracking
       expect(result.timing.duration).toBeDefined()
       expect(result.timing.duration).toBeLessThan(200)
@@ -443,17 +456,21 @@ describe('Attribute Queries - BaseResolver Integration Tests', () => {
           console.log('✅ Complete BaseResolver integration pipeline verified for attributes')
           console.log(`   - Query executed successfully: ${result.isSuccess}`)
           console.log(`   - Performance tracked: ${result.timing.duration}ms`)
-          console.log(`   - Data structure validated: ${result.data?.data?.attribute ? 'exists' : 'null (expected for test environment)'}`)
+          console.log(
+            `   - Data structure validated: ${result.data?.data?.attribute ? 'exists' : 'null (expected for test environment)'}`
+          )
         } else {
           // Different kind of error - still shows BaseResolver is working
           expect(result.hasErrors).toBe(true)
           console.log('✅ Complete BaseResolver integration pipeline verified for attributes')
           console.log(`   - Query executed: ${result.status === 200}`)
           console.log(`   - Performance tracked: ${result.timing.duration}ms`)
-          console.log(`   - BaseResolver error handling verified: ${result.data?.errors?.[0]?.message}`)
+          console.log(
+            `   - BaseResolver error handling verified: ${result.data?.errors?.[0]?.message}`
+          )
         }
       }
-      
+
       // Server logs should show complete lifecycle:
       // [INFO] Executing query: findAttributeById { id: "1" }
       // [INFO] Query completed: findAttributeById { duration: "Xms", id: "1" }

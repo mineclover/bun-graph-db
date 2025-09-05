@@ -19,7 +19,7 @@ describe('Template-based Node Mutations', () => {
     const schema = await schemaBuilder.build()
 
     yoga = createYoga({ schema })
-    
+
     // Initialize dataset helper
     datasetHelper = TestDatasetHelper.getInstance()
   })
@@ -33,7 +33,7 @@ describe('Template-based Node Mutations', () => {
     beforeEach(async () => {
       // Load e-commerce domain setup
       domainSetup = await datasetHelper.loadDomainSetup('ecommerce', 'small')
-      
+
       // Setup test table and attributes using dataset helper
       const setup = await datasetHelper.setupTestTable(yoga, 'ecommerce')
       testTableId = setup.tableId
@@ -177,7 +177,6 @@ describe('Template-based Node Mutations', () => {
     })
 
     test('should execute node creation template with variables', async () => {
-
       // Execute the template with specific product data using dataset helper attributes
       const executeResponse = await fetch('http://localhost:4000/graphql', {
         method: 'POST',
@@ -259,7 +258,7 @@ describe('Template-based Node Mutations', () => {
         const productData = {
           name: product.attributes?.name || product.name || product.content,
           price: product.attributes?.price || product.price || 99.99,
-          category: product.attributes?.category || product.category || 'General'
+          category: product.attributes?.category || product.category || 'General',
         }
 
         const response = await fetch('http://localhost:4000/graphql', {

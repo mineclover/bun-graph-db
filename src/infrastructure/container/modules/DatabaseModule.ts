@@ -7,23 +7,20 @@ import { DatabaseTokens } from '../tokens/index.js'
  */
 export function registerDatabaseModule(container: DIContainer): void {
   // Database configuration
-  container.registerSingleton(
-    DatabaseTokens.DATABASE_CONFIG,
-    async () => ({
-      url: ':memory:', // Use in-memory database for testing
-      type: 'sqlite' as const
-    })
-  )
+  container.registerSingleton(DatabaseTokens.DATABASE_CONFIG, async () => ({
+    url: ':memory:', // Use in-memory database for testing
+    type: 'sqlite' as const,
+  }))
 
   // Bun SQLite Database connection
   container.registerSingleton(
     DatabaseTokens.DATABASE_CONNECTION,
     async (c) => {
       const config = await c.resolve(DatabaseTokens.DATABASE_CONFIG)
-      
+
       // Create an in-memory SQLite database for testing
       const db = new Database(':memory:')
-      
+
       // Initialize the database schema
       db.exec(`
         CREATE TABLE IF NOT EXISTS tables (
@@ -71,7 +68,7 @@ export function registerDatabaseModule(container: DIContainer): void {
           (2, 1, 'Test Node 2', 'Second Test Node', 'Another test node', '{}', datetime('now'), datetime('now')),
           (3, 2, 'Sample Node', 'Sample Node Title', 'Sample node description', '{}', datetime('now'), datetime('now'));
       `)
-      
+
       return db
     },
     [DatabaseTokens.DATABASE_CONFIG]

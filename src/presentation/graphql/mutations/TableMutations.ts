@@ -25,39 +25,66 @@ export class TableMutations extends BaseResolver {
   }
 
   async createTable(_: GraphQLParent, args: CreateTableArgs, context?: GraphQLContext) {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('input', 'Create table input'),
-      BaseResolver.validationRules.required('input.identifier', 'Table identifier'),
-      BaseResolver.validationRules.nonEmpty('input.identifier', 'Table identifier')
-    ], 'createTable')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('input', 'Create table input'),
+        BaseResolver.validationRules.required('input.identifier', 'Table identifier'),
+        BaseResolver.validationRules.nonEmpty('input.identifier', 'Table identifier'),
+      ],
+      'createTable'
+    )
 
-    return this.handleMutation(async () => {
+    try {
+      this.logger.info('Executing mutation: createTable', { input: args.input })
+
       const result = await this.createTableUseCase.execute({
         identifier: args.input.identifier,
         description: args.input.description,
       })
 
+      this.logger.info('Mutation completed: createTable', { input: args.input })
+
       return {
         success: !!result,
-        data: result,
+        table: result.table,
         errors: [],
       }
-    }, 'createTable', { input: args.input })
+    } catch (error) {
+      this.logger.error('Mutation failed: createTable', { error, input: args.input })
+
+      const errorCode =
+        error.code ||
+        (error.message?.includes('already exists') ? 'CREATE_TABLE_ERROR' : 'INTERNAL_ERROR')
+      const errorMessage = error.message || 'Unknown error occurred'
+
+      return {
+        success: false,
+        table: null,
+        errors: [{ message: errorMessage, code: errorCode }],
+      }
+    }
   }
 
   async updateTable(_: GraphQLParent, args: UpdateTableArgs, context?: GraphQLContext) {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Table ID'),
-      BaseResolver.validationRules.required('input', 'Update table input'),
-      BaseResolver.validationRules.nonEmpty('id', 'Table ID')
-    ], 'updateTable')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Table ID'),
+        BaseResolver.validationRules.required('input', 'Update table input'),
+        BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
+      ],
+      'updateTable'
+    )
 
-    return this.handleMutation(async () => {
+    try {
+      this.logger.info('Executing mutation: updateTable', { id: args.id, input: args.input })
+
       const existingTable = await this.tableRepository.findById(args.id)
       if (!existingTable) {
         return {
           success: false,
-          data: null,
+          table: null,
           errors: [{ message: 'Table not found', code: 'TABLE_NOT_FOUND' }],
         }
       }
@@ -66,21 +93,41 @@ export class TableMutations extends BaseResolver {
         description: args.input.description,
       })
 
+      this.logger.info('Mutation completed: updateTable', { id: args.id, input: args.input })
+
       return {
         success: !!updatedTable,
-        data: updatedTable,
+        table: updatedTable,
         errors: [],
       }
-    }, 'updateTable', { id: args.id, input: args.input })
+    } catch (error) {
+      this.logger.error('Mutation failed: updateTable', { error, id: args.id, input: args.input })
+
+      return {
+        success: false,
+        table: null,
+        errors: [this.mapToGraphQLError(error, 'updateTable')],
+      }
+    }
   }
 
   async deleteTable(_: GraphQLParent, args: DeleteTableArgs, context?: GraphQLContext) {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Table ID'),
-      BaseResolver.validationRules.nonEmpty('id', 'Table ID')
-    ], 'deleteTable')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Table ID'),
+        BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
+      ],
+      'deleteTable'
+    )
 
-    return this.handleMutation(async () => {
+    try {
+      this.logger.info('Executing mutation: deleteTable', {
+        id: args.id,
+        force: args.force,
+        cascadeDelete: args.cascadeDelete,
+      })
+
       const dependencies = await this.deleteTableUseCase.execute({
         id: args.id,
         force: args.force,
@@ -104,16 +151,24 @@ export class TableMutations extends BaseResolver {
           relationCount: dependencies.relationCount,
         },
       }
-    }, 'deleteTable', { id: args.id, force: args.force, cascadeDelete: args.cascadeDelete }, {
-      successMessage: `Table deleted successfully with ${args.cascadeDelete ? 'cascade' : 'safety checks'}`,
-      errorHandler: (error) => {
-        const errorCode = error.message.includes('Cannot delete table')
-          ? 'TABLE_HAS_DEPENDENCIES'
-          : error.message.includes('not found')
-            ? 'TABLE_NOT_FOUND'
-            : 'DELETE_TABLE_ERROR'
-        return { message: error.message, code: errorCode }
+    } catch (error) {
+      this.logger.error('Mutation failed: deleteTable', {
+        error,
+        id: args.id,
+        force: args.force,
+        cascadeDelete: args.cascadeDelete,
+      })
+
+      const errorCode = error.message.includes('Cannot delete table')
+        ? 'TABLE_HAS_DEPENDENCIES'
+        : error.message.includes('not found')
+          ? 'TABLE_NOT_FOUND'
+          : 'DELETE_TABLE_ERROR'
+
+      return {
+        success: false,
+        errors: [{ message: error.message, code: errorCode }],
       }
-    })
+    }
   }
 }

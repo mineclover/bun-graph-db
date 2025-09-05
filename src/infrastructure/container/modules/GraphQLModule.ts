@@ -36,7 +36,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
         warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
-        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
       return new TableQueries(tableRepository, simpleLogger)
     },
@@ -53,7 +53,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
         warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
-        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
       return new NodeQueries(nodeRepository, searchNodesUseCase, simpleLogger)
     },
@@ -65,13 +65,18 @@ export function registerGraphQLModule(container: DIContainer): void {
     async (c) => {
       const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
       const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new AttributeQueries(attributeRepository, attributeTypeRepository, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new AttributeQueries(attributeRepository, attributeTypeRepository, simpleLogger)
     },
     [
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -81,19 +86,24 @@ export function registerGraphQLModule(container: DIContainer): void {
       const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
       const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
       const searchRelatedNodesUseCase = await c.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE)
-      const logger = await c.resolve(CommonTokens.LOGGER)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
       return new RelationQueries(
         nodeRelationRepository,
         relationTypeRepository,
         searchRelatedNodesUseCase,
-        logger
+        simpleLogger
       )
     },
     [
       RepositoryTokens.NODE_RELATION_REPOSITORY,
       RepositoryTokens.RELATION_TYPE_REPOSITORY,
       UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -106,7 +116,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
         warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
-        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
       return new TemplateQueries(queryTemplateRepository, simpleLogger)
     },
@@ -120,14 +130,19 @@ export function registerGraphQLModule(container: DIContainer): void {
       const createTableUseCase = await c.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE)
       const deleteTableUseCase = await c.resolve(UseCaseTokens.DELETE_TABLE_USE_CASE)
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new TableMutations(createTableUseCase, deleteTableUseCase, tableRepository, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new TableMutations(createTableUseCase, deleteTableUseCase, tableRepository, simpleLogger)
     },
     [
       UseCaseTokens.CREATE_TABLE_USE_CASE,
       UseCaseTokens.DELETE_TABLE_USE_CASE,
       RepositoryTokens.TABLE_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -144,14 +159,16 @@ export function registerGraphQLModule(container: DIContainer): void {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
         warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
-        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new NodeMutations(createNodeUseCase, nodeRepository, nodeAttributeRepository, simpleLogger)
+      return new NodeMutations(
+        createNodeUseCase,
+        nodeRepository,
+        nodeAttributeRepository,
+        simpleLogger
+      )
     },
-    [
-      RepositoryTokens.NODE_REPOSITORY,
-      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
-    ]
+    [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY]
   )
 
   container.registerSingleton(
@@ -163,13 +180,19 @@ export function registerGraphQLModule(container: DIContainer): void {
       const createAttributeUseCase = await c.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE)
       const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
       const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
       return new AttributeMutations(
         createAttributeTypeUseCase,
         createAttributeUseCase,
         attributeTypeRepository,
         attributeRepository,
-        logger
+        simpleLogger
       )
     },
     [
@@ -177,7 +200,6 @@ export function registerGraphQLModule(container: DIContainer): void {
       UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE,
       RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -187,19 +209,24 @@ export function registerGraphQLModule(container: DIContainer): void {
       const createRelationUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_USE_CASE)
       const createRelationTypeUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE)
       const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
       return new RelationMutations(
         createRelationUseCase,
         createRelationTypeUseCase,
         nodeRelationRepository,
-        logger
+        simpleLogger
       )
     },
     [
       UseCaseTokens.CREATE_RELATION_USE_CASE,
       UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE,
       RepositoryTokens.NODE_RELATION_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -210,13 +237,18 @@ export function registerGraphQLModule(container: DIContainer): void {
       const executeQueryTemplateUseCase = await c.resolve(
         UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE
       )
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new TemplateMutations(queryTemplateRepository, executeQueryTemplateUseCase, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new TemplateMutations(queryTemplateRepository, executeQueryTemplateUseCase, simpleLogger)
     },
     [
       RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
       UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -226,10 +258,16 @@ export function registerGraphQLModule(container: DIContainer): void {
     async (c) => {
       const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
       const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new TableFieldResolvers(attributeRepository, nodeRepository, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new TableFieldResolvers(attributeRepository, nodeRepository, simpleLogger)
     },
-    [RepositoryTokens.ATTRIBUTE_REPOSITORY, RepositoryTokens.NODE_REPOSITORY, CommonTokens.LOGGER]
+    [RepositoryTokens.ATTRIBUTE_REPOSITORY, RepositoryTokens.NODE_REPOSITORY]
   )
 
   container.registerSingleton(
@@ -238,19 +276,24 @@ export function registerGraphQLModule(container: DIContainer): void {
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
       const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
       const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
       return new NodeFieldResolvers(
         tableRepository,
         nodeAttributeRepository,
         nodeRelationRepository,
-        logger
+        simpleLogger
       )
     },
     [
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.NODE_RELATION_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -260,19 +303,24 @@ export function registerGraphQLModule(container: DIContainer): void {
       const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
       const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
       return new AttributeFieldResolvers(
         attributeTypeRepository,
         attributeRepository,
         tableRepository,
-        logger
+        simpleLogger
       )
     },
     [
       RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -282,19 +330,24 @@ export function registerGraphQLModule(container: DIContainer): void {
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
       const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
       const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
       return new RelationFieldResolvers(
         tableRepository,
         nodeRepository,
         relationTypeRepository,
-        logger
+        simpleLogger
       )
     },
     [
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.RELATION_TYPE_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 

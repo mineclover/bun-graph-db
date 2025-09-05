@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { DatasetManager, type DomainType, type DatasetSize } from '../../datasets/loaders/index.js'
+import { DatasetManager, type DatasetSize, type DomainType } from '../../datasets/loaders/index.js'
 
 /**
  * Helper class for managing datasets in tests
@@ -27,7 +27,7 @@ export class TestDatasetHelper {
    */
   async loadDomainSetup(domain: DomainType, size: DatasetSize = 'small') {
     const cacheKey = `${domain}-${size}`
-    
+
     if (this.loadedDatasets.has(cacheKey)) {
       return this.loadedDatasets.get(cacheKey)
     }
@@ -48,12 +48,14 @@ export class TestDatasetHelper {
    */
   async getTestTemplates(domain: DomainType, templateType?: 'QUERY' | 'MUTATION' | 'SUBSCRIPTION') {
     try {
-      const templates = await this.datasetManager.templates.loadTemplatesByDomain(domain, { cache: true })
-      
+      const templates = await this.datasetManager.templates.loadTemplatesByDomain(domain, {
+        cache: true,
+      })
+
       if (templateType) {
-        return templates.filter(t => t.templateType === templateType)
+        return templates.filter((t) => t.templateType === templateType)
       }
-      
+
       return templates
     } catch (error) {
       console.warn(`Failed to load templates for ${domain}, returning empty array`)
@@ -69,20 +71,24 @@ export class TestDatasetHelper {
       domain,
       size,
       seed,
-      includeMetadata: true
+      includeMetadata: true,
     })
   }
 
   /**
    * Create table and attributes for testing
    */
-  async setupTestTable(yoga: any, domain: DomainType, tableSuffix?: string): Promise<{
+  async setupTestTable(
+    yoga: any,
+    domain: DomainType,
+    tableSuffix?: string
+  ): Promise<{
     tableId: string
     attributeIds: Record<string, string>
   }> {
     const timestamp = Date.now()
     const suffix = tableSuffix || timestamp.toString()
-    
+
     // Create test table
     const createTableResponse = await yoga.fetch('http://localhost:4000/graphql', {
       method: 'POST',
@@ -101,10 +107,10 @@ export class TestDatasetHelper {
           input: {
             identifier: `test-${domain}-${suffix}`,
             name: `Test ${domain} Table`,
-            description: `Test table for ${domain} domain testing`
-          }
-        }
-      })
+            description: `Test table for ${domain} domain testing`,
+          },
+        },
+      }),
     })
 
     const tableData = await createTableResponse.json()
@@ -134,10 +140,10 @@ export class TestDatasetHelper {
               name: config.name,
               description: config.description,
               dataType: config.dataType,
-              isRequired: config.isRequired
-            }
-          }
-        })
+              isRequired: config.isRequired,
+            },
+          },
+        }),
       })
 
       const attrData = await createAttrResponse.json()
@@ -152,12 +158,17 @@ export class TestDatasetHelper {
   /**
    * Create test nodes with attributes
    */
-  async createTestNodes(yoga: any, tableId: string, nodeConfigs: Array<{
-    content: string
-    title?: string
-    description?: string
-    attributes?: Record<string, any>
-  }>, attributeIds: Record<string, string>): Promise<string[]> {
+  async createTestNodes(
+    yoga: any,
+    tableId: string,
+    nodeConfigs: Array<{
+      content: string
+      title?: string
+      description?: string
+      attributes?: Record<string, any>
+    }>,
+    attributeIds: Record<string, string>
+  ): Promise<string[]> {
     const nodeIds: string[] = []
 
     for (const config of nodeConfigs) {
@@ -185,10 +196,10 @@ export class TestDatasetHelper {
               tableId,
               content: config.content,
               title: config.title,
-              description: config.description
-            }
-          }
-        })
+              description: config.description,
+            },
+          },
+        }),
       })
 
       const nodeData = await createNodeResponse.json()
@@ -220,9 +231,9 @@ export class TestDatasetHelper {
                   variables: {
                     nodeId,
                     attributeId,
-                    value: String(attrValue)
-                  }
-                })
+                    value: String(attrValue),
+                  },
+                }),
               })
             }
           }
@@ -241,7 +252,7 @@ export class TestDatasetHelper {
         name: `Fallback ${domain} Schema`,
         description: 'Minimal fallback schema for testing',
         tables: [],
-        relationTypes: []
+        relationTypes: [],
       },
       fixtures: {
         version: '1.0',
@@ -253,10 +264,10 @@ export class TestDatasetHelper {
           totalNodes: 0,
           totalRelations: 0,
           generated: new Date().toISOString(),
-          description: 'Fallback fixtures for testing'
-        }
+          description: 'Fallback fixtures for testing',
+        },
       },
-      templates: []
+      templates: [],
     }
   }
 
@@ -274,22 +285,22 @@ export class TestDatasetHelper {
           name: 'Product Name',
           description: 'Name of the product',
           dataType: 'STRING',
-          isRequired: true
+          isRequired: true,
         },
         {
           identifier: 'product_price',
           name: 'Product Price',
           description: 'Price of the product',
           dataType: 'DECIMAL',
-          isRequired: true
+          isRequired: true,
         },
         {
           identifier: 'product_category',
           name: 'Product Category',
           description: 'Category of the product',
           dataType: 'STRING',
-          isRequired: false
-        }
+          isRequired: false,
+        },
       ],
       social: [
         {
@@ -297,15 +308,15 @@ export class TestDatasetHelper {
           name: 'Username',
           description: 'User handle',
           dataType: 'STRING',
-          isRequired: true
+          isRequired: true,
         },
         {
           identifier: 'bio',
           name: 'Biography',
           description: 'User biography',
           dataType: 'TEXT',
-          isRequired: false
-        }
+          isRequired: false,
+        },
       ],
       enterprise: [
         {
@@ -313,15 +324,15 @@ export class TestDatasetHelper {
           name: 'Employee ID',
           description: 'Unique employee identifier',
           dataType: 'STRING',
-          isRequired: true
+          isRequired: true,
         },
         {
           identifier: 'department',
           name: 'Department',
           description: 'Employee department',
           dataType: 'STRING',
-          isRequired: true
-        }
+          isRequired: true,
+        },
       ],
       knowledge: [
         {
@@ -329,16 +340,16 @@ export class TestDatasetHelper {
           name: 'Domain',
           description: 'Knowledge domain',
           dataType: 'STRING',
-          isRequired: true
+          isRequired: true,
         },
         {
           identifier: 'complexity_score',
           name: 'Complexity Score',
           description: 'Concept complexity rating',
           dataType: 'INTEGER',
-          isRequired: false
-        }
-      ]
+          isRequired: false,
+        },
+      ],
     }
 
     return configs[domain] || []

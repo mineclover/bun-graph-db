@@ -1,6 +1,6 @@
 /**
  * CLI Argument Parser
- * 
+ *
  * Simple CLI argument parser for server configuration
  */
 
@@ -26,7 +26,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
 
     switch (arg) {
       case '--port':
-      case '-p':
+      case '-p': {
         const portValue = args[++i]
         if (portValue && !isNaN(Number(portValue))) {
           options.port = Number(portValue)
@@ -34,6 +34,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
           throw new Error(`Invalid port value: ${portValue}`)
         }
         break
+      }
 
       case '--host':
       case '-h':
@@ -64,7 +65,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
         if (arg.startsWith('--')) {
           // Handle --key=value format
           const [key, value] = arg.split('=', 2)
-          
+
           switch (key) {
             case '--port':
               if (value && !isNaN(Number(value))) {
@@ -73,7 +74,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
                 throw new Error(`Invalid port value: ${value}`)
               }
               break
-              
+
             case '--host':
               if (value) {
                 options.host = value
@@ -81,7 +82,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
                 throw new Error('Host value is required')
               }
               break
-              
+
             case '--env':
               if (value) {
                 options.env = value
@@ -89,7 +90,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
                 throw new Error('Environment value is required')
               }
               break
-              
+
             default:
               unknown.push(arg)
               break

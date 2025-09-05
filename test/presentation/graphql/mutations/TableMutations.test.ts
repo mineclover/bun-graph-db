@@ -32,7 +32,7 @@ describe('TableMutations', () => {
 
   beforeEach(() => {
     mockCreateTableUseCase = {
-      execute: mock(() => Promise.resolve(mockTable as Table)),
+      execute: mock(() => Promise.resolve({ table: mockTable as Table })),
     } as any
 
     mockDeleteTableUseCase = {
@@ -42,6 +42,7 @@ describe('TableMutations', () => {
     mockTableRepository = {
       findById: mock(() => Promise.resolve(mockTable as Table)),
       update: mock(() => Promise.resolve(mockTable as Table)),
+      save: mock(() => Promise.resolve()),
     } as any
 
     mockLogger = {
@@ -78,11 +79,13 @@ describe('TableMutations', () => {
         identifier: 'new_table',
         description: 'New table description',
       })
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating table', { input: createInput })
+      expect(mockLogger.info).toHaveBeenCalledWith('Executing mutation: createTable', {
+        input: createInput,
+      })
     })
 
     it('should handle creation errors', async () => {
-      const createError = new Error('Table identifier already exists')
+      const createError = { message: 'Table identifier already exists', code: 'CREATE_TABLE_ERROR' }
       mockCreateTableUseCase.execute = mock(() => Promise.reject(createError))
 
       const result = await tableMutations.createTable(
@@ -98,7 +101,7 @@ describe('TableMutations', () => {
         errors: [{ message: 'Table identifier already exists', code: 'CREATE_TABLE_ERROR' }],
       })
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Error creating table', {
+      expect(mockLogger.error).toHaveBeenCalledWith('Mutation failed: createTable', {
         error: createError,
         input: { identifier: 'duplicate_table' },
       })
@@ -124,8 +127,10 @@ describe('TableMutations', () => {
       })
 
       expect(mockTableRepository.findById).toHaveBeenCalledWith('table-1')
-      expect(mockTableRepository.save).toHaveBeenCalled()
-      expect(mockLogger.info).toHaveBeenCalledWith('Updating table', {
+      expect(mockTableRepository.update).toHaveBeenCalledWith('table-1', {
+        description: 'Updated description',
+      })
+      expect(mockLogger.info).toHaveBeenCalledWith('Executing mutation: updateTable', {
         id: 'table-1',
         input: updateInput,
       })
@@ -148,7 +153,7 @@ describe('TableMutations', () => {
         errors: [{ message: 'Table not found', code: 'TABLE_NOT_FOUND' }],
       })
 
-      expect(mockTableRepository.save).not.toHaveBeenCalled()
+      expect(mockTableRepository.update).not.toHaveBeenCalled()
     })
   })
 
@@ -178,7 +183,7 @@ describe('TableMutations', () => {
         force: false,
         cascadeDelete: false,
       })
-      expect(mockLogger.info).toHaveBeenCalledWith('Deleting table with safety checks', {
+      expect(mockLogger.info).toHaveBeenCalledWith('Executing mutation: deleteTable', {
         id: 'table-1',
         force: false,
         cascadeDelete: false,
@@ -210,9 +215,11 @@ describe('TableMutations', () => {
         ],
       })
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Error deleting table', {
+      expect(mockLogger.error).toHaveBeenCalledWith('Mutation failed: deleteTable', {
         error: dependencyError,
         id: 'table-1',
+        force: false,
+        cascadeDelete: undefined,
       })
     })
 

@@ -1,6 +1,6 @@
 /**
  * Environment Configuration for API Tests
- * 
+ *
  * Manages different testing environments and their configurations
  */
 
@@ -83,7 +83,7 @@ export const environments: Record<string, Environment> = {
       'x-api-version': '1.0',
       'x-client': 'api-test-suite',
       'x-environment': 'staging',
-      'Authorization': `Bearer ${process.env.STAGING_API_TOKEN || ''}`,
+      Authorization: `Bearer ${process.env.STAGING_API_TOKEN || ''}`,
     },
     rateLimits: {
       requestsPerSecond: 30,
@@ -108,7 +108,7 @@ export const environments: Record<string, Environment> = {
       'x-api-version': '1.0',
       'x-client': 'api-test-suite-prod',
       'x-environment': 'production',
-      'Authorization': `Bearer ${process.env.PROD_API_TOKEN || ''}`,
+      Authorization: `Bearer ${process.env.PROD_API_TOKEN || ''}`,
     },
     rateLimits: {
       requestsPerSecond: 10, // Conservative for production
@@ -154,7 +154,9 @@ export const environments: Record<string, Environment> = {
 export function getEnvironment(name: string): Environment {
   const env = environments[name]
   if (!env) {
-    throw new Error(`Environment '${name}' not found. Available: ${Object.keys(environments).join(', ')}`)
+    throw new Error(
+      `Environment '${name}' not found. Available: ${Object.keys(environments).join(', ')}`
+    )
   }
   return env
 }
@@ -236,7 +238,7 @@ export function createTestConfig(envName: string) {
  */
 export function getTestTimeouts(envName: string) {
   const env = getEnvironment(envName)
-  
+
   return {
     quick: Math.min(env.timeout / 4, 2500), // Quick tests: max 2.5s
     standard: Math.min(env.timeout / 2, 5000), // Standard tests: max 5s
@@ -248,7 +250,10 @@ export function getTestTimeouts(envName: string) {
 /**
  * Check if feature is enabled in current environment
  */
-export function isFeatureEnabled(feature: keyof Environment['features'], envName?: string): boolean {
+export function isFeatureEnabled(
+  feature: keyof Environment['features'],
+  envName?: string
+): boolean {
   const env = envName ? getEnvironment(envName) : getCurrentEnvironment()
   return env.features[feature]
 }

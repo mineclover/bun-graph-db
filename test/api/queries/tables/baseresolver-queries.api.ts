@@ -1,6 +1,6 @@
 /**
  * BaseResolver Integration Tests for Table Queries
- * 
+ *
  * Validates BaseResolver functionality after Phase 3C integration:
  * - Standardized logging patterns
  * - Validation rules enforcement
@@ -8,8 +8,8 @@
  * - Error handling and mapping
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { GraphQLClient, createDevGraphQLClient } from '../../clients/GraphQLClient.js'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { createDevGraphQLClient, type GraphQLClient } from '../../clients/GraphQLClient.js'
 
 describe('Table Queries - BaseResolver Integration Tests', () => {
   let client: GraphQLClient
@@ -57,13 +57,15 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       `
 
       // Test empty ID validation (nonEmpty rule)
-      const result = await client.query(query, { id: "" })
+      const result = await client.query(query, { id: '' })
 
       // Should return GraphQL error due to BaseResolver validation
       expect(result.hasErrors).toBe(true)
       expect(result.data?.errors).toBeDefined()
       // BaseResolver validation errors appear as "Unexpected error" in GraphQL client
-      expect(result.data?.errors?.[0]?.message).toMatch(/Unexpected error|Invalid arguments|Table ID/)
+      expect(result.data?.errors?.[0]?.message).toMatch(
+        /Unexpected error|Invalid arguments|Table ID/
+      )
 
       // Server logs should show:
       // [WARN] Argument validation failed: table { error: Table ID is required, args: { id: "" } }
@@ -85,14 +87,14 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       `
 
       const startTime = Date.now()
-      const result = await client.query(query, { id: "1" })
+      const result = await client.query(query, { id: '1' })
       const endTime = Date.now()
 
       // Validate successful query
       expect(result.isSuccess).toBe(true)
       expect(result.data?.data?.table).toBeDefined()
-      expect(result.data?.data?.table?.id).toBe("1")
-      expect(result.data?.data?.table?.identifier).toBe("test-table")
+      expect(result.data?.data?.table?.id).toBe('1')
+      expect(result.data?.data?.table?.identifier).toBe('test-table')
 
       // Validate BaseResolver performance tracking
       const clientDuration = endTime - startTime
@@ -116,12 +118,12 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { identifier: "test-table" })
+      const result = await client.query(query, { identifier: 'test-table' })
 
       // Validate successful query through BaseResolver.handleQuery
       expect(result.isSuccess).toBe(true)
       expect(result.data?.data?.tableByIdentifier).toBeDefined()
-      expect(result.data?.data?.tableByIdentifier?.identifier).toBe("test-table")
+      expect(result.data?.data?.tableByIdentifier?.identifier).toBe('test-table')
 
       // Validate response structure consistency
       expect(result.data?.data?.tableByIdentifier?.id).toBeDefined()
@@ -161,11 +163,13 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       `
 
       // Test with empty string
-      const result = await client.query(query, { identifier: "" })
+      const result = await client.query(query, { identifier: '' })
 
       expect(result.hasErrors).toBe(true)
       // BaseResolver validation errors appear as "Unexpected error" in GraphQL client
-      expect(result.data?.errors?.[0]?.message).toMatch(/Unexpected error|Invalid arguments|Table identifier/)
+      expect(result.data?.errors?.[0]?.message).toMatch(
+        /Unexpected error|Invalid arguments|Table identifier/
+      )
 
       console.log('✅ BaseResolver nonEmpty validation rule verified')
     })
@@ -181,7 +185,7 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       `
 
       // Trigger validation error
-      const result = await client.query(query, { id: "" })
+      const result = await client.query(query, { id: '' })
 
       // Validate that validation failure includes context information
       expect(result.hasErrors).toBe(true)
@@ -212,13 +216,15 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       `
 
       const result = await client.query(query, {
-        pagination: { limit: 5, offset: 0 }
+        pagination: { limit: 5, offset: 0 },
       })
 
       // Validate response (may have schema issues with pagination structure)
       if (result.hasErrors) {
         // Skip pagination test if GraphQL schema doesn't support complex pagination
-        console.log('⚠️ Pagination query failed due to schema structure - BaseResolver still functional')
+        console.log(
+          '⚠️ Pagination query failed due to schema structure - BaseResolver still functional'
+        )
         expect(result.hasErrors).toBe(true)
       } else {
         expect(result.isSuccess).toBe(true)
@@ -227,7 +233,7 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
 
       // Validate BaseResolver performance tracking for complex query
       expect(result.timing.duration).toBeLessThan(1000) // Should be under 1 second
-      
+
       // Server logs should show pagination parameters:
       // [INFO] Executing query: findTables { pagination: { limit: 5, offset: 0 } }
       console.log('✅ BaseResolver performance tracking for complex queries verified')
@@ -246,7 +252,7 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       const concurrentRequests = 3
       const requests = Array(concurrentRequests)
         .fill(null)
-        .map((_, index) => client.query(query, { id: index % 2 === 0 ? "1" : "2" }))
+        .map((_, index) => client.query(query, { id: index % 2 === 0 ? '1' : '2' }))
 
       const startTime = Date.now()
       const results = await Promise.all(requests)
@@ -262,7 +268,7 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       expect(totalTime).toBeLessThan(concurrentRequests * 200) // Much faster than sequential
 
       // Each request should have its own performance metrics
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.timing.duration).toBeDefined()
         expect(result.timing.duration).toBeGreaterThanOrEqual(0) // Allow 0ms for very fast queries
       })
@@ -282,17 +288,19 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       // Run multiple iterations to test consistency
       const iterations = 10
       const results = await Promise.all(
-        Array(iterations).fill(null).map(() => client.query(query))
+        Array(iterations)
+          .fill(null)
+          .map(() => client.query(query))
       )
 
       // Calculate performance statistics
-      const durations = results.map(r => r.timing.duration)
+      const durations = results.map((r) => r.timing.duration)
       const avgDuration = durations.reduce((sum, d) => sum + d, 0) / durations.length
       const maxDuration = Math.max(...durations)
       const minDuration = Math.min(...durations)
 
       // All queries should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.isSuccess).toBe(true)
         expect(result.data?.data?.tables?.totalCount).toBeTypeOf('number')
       })
@@ -302,7 +310,9 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       expect(maxDuration).toBeLessThan(500) // Max under 500ms
       expect(maxDuration - minDuration).toBeLessThan(200) // Consistent performance
 
-      console.log(`✅ BaseResolver performance benchmark: avg=${avgDuration.toFixed(1)}ms, max=${maxDuration}ms, min=${minDuration}ms`)
+      console.log(
+        `✅ BaseResolver performance benchmark: avg=${avgDuration.toFixed(1)}ms, max=${maxDuration}ms, min=${minDuration}ms`
+      )
     })
   })
 
@@ -316,12 +326,12 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "" })
+      const result = await client.query(query, { id: '' })
 
       // Validate error structure
       expect(result.hasErrors).toBe(true)
       expect(result.data?.errors).toBeInstanceOf(Array)
-      
+
       const error = result.data?.errors?.[0]
       expect(error).toHaveProperty('message')
       expect(error).toHaveProperty('locations')
@@ -344,7 +354,7 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "999999" })
+      const result = await client.query(query, { id: '999999' })
 
       // Should return null rather than error for non-existent resource
       expect(result.isSuccess).toBe(true)
@@ -368,12 +378,12 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
 
       // Test with potentially problematic filter
       const result = await client.query(query, {
-        filter: { identifier: null } // Invalid filter value
+        filter: { identifier: null }, // Invalid filter value
       })
 
       // Even if filter is problematic, should handle gracefully
       expect(result.status).toBe(200) // GraphQL always returns 200
-      
+
       if (result.hasErrors) {
         const error = result.data?.errors?.[0]
         expect(error?.message).toBeDefined()
@@ -402,7 +412,7 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
         }
       `
 
-      const result = await client.query(query, { id: "1" })
+      const result = await client.query(query, { id: '1' })
 
       // 1. Validate GraphQL layer works
       expect(result.status).toBe(200)
@@ -412,8 +422,8 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       expect(result.timing.duration).toBeDefined()
 
       // 3. Validate data consistency
-      expect(result.data?.data?.table?.id).toBe("1")
-      expect(result.data?.data?.table?.identifier).toBe("test-table")
+      expect(result.data?.data?.table?.id).toBe('1')
+      expect(result.data?.data?.table?.identifier).toBe('test-table')
 
       // 4. Validate performance expectations
       expect(result.timing.duration).toBeLessThan(100) // Fast single record query
@@ -422,7 +432,7 @@ describe('Table Queries - BaseResolver Integration Tests', () => {
       console.log(`   - Query executed successfully: ${result.isSuccess}`)
       console.log(`   - Performance tracked: ${result.timing.duration}ms`)
       console.log(`   - Data retrieved: ${result.data?.data?.table?.identifier}`)
-      
+
       // Server logs should show complete lifecycle:
       // [INFO] Executing query: findTableById { id: "1" }
       // [INFO] Query completed: findTableById { duration: "Xms", id: "1" }

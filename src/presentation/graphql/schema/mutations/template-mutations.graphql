@@ -15,4 +15,11 @@ extend type Mutation {
 
   # Template execution
   executeTemplate(input: ExecuteQueryTemplateInput!): ExecuteQueryTemplatePayload!
+
+  # Template execution with GraphQL
+  executeTemplateWithGraphQL(
+    templateIdentifier: String!
+    variables: JSON
+    trackUsage: Boolean
+  ): TemplateExecutionResult!
 }

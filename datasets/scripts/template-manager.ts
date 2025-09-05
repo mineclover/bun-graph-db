@@ -5,21 +5,26 @@ import { importAllTemplates } from './import-templates-to-server.js'
 
 async function listTemplates() {
   const manager = new DatasetManager()
-  
+
   console.log('📋 Available Templates')
   console.log('=====================\n')
-  
+
   const available = await manager.templates.listAvailableTemplates()
   const stats = await manager.templates.getTemplateStats()
-  
+
   console.log(`📊 Summary: ${stats.totalTemplates} total templates`)
   console.log(`   Average complexity: ${stats.averageComplexity.toFixed(1)}`)
-  console.log(`   Most common tags: ${stats.mostCommonTags.slice(0, 3).map(t => t.tag).join(', ')}\n`)
-  
+  console.log(
+    `   Most common tags: ${stats.mostCommonTags
+      .slice(0, 3)
+      .map((t) => t.tag)
+      .join(', ')}\n`
+  )
+
   Object.entries(available).forEach(([type, files]) => {
     if (files.length > 0) {
       console.log(`🔸 ${type.toUpperCase()}:`)
-      files.forEach(file => {
+      files.forEach((file) => {
         console.log(`   • ${file}`)
       })
       console.log()
@@ -29,21 +34,24 @@ async function listTemplates() {
 
 async function searchTemplates(query: string) {
   const manager = new DatasetManager()
-  
+
   console.log(`🔍 Searching templates for: "${query}"`)
   console.log('=' + '='.repeat(25 + query.length) + '\n')
-  
-  const results = await manager.templates.searchTemplates({
-    textSearch: query
-  }, { cache: false })
-  
+
+  const results = await manager.templates.searchTemplates(
+    {
+      textSearch: query,
+    },
+    { cache: false }
+  )
+
   if (results.length === 0) {
     console.log('❌ No templates found matching the search criteria')
     return
   }
-  
+
   console.log(`✅ Found ${results.length} matching templates:\n`)
-  
+
   results.forEach((template, index) => {
     console.log(`${index + 1}. ${template.name} (${template.identifier})`)
     console.log(`   Type: ${template.templateType} | Complexity: ${template.complexityScore}`)
@@ -55,59 +63,57 @@ async function searchTemplates(query: string) {
 
 async function showComplexityStats() {
   const manager = new DatasetManager()
-  
+
   console.log('📊 Template Complexity Analysis')
   console.log('================================\n')
-  
+
   const simple = await manager.templates.getTemplatesByComplexity('simple')
   const moderate = await manager.templates.getTemplatesByComplexity('moderate')
   const complex = await manager.templates.getTemplatesByComplexity('complex')
   const advanced = await manager.templates.getTemplatesByComplexity('advanced')
-  
+
   console.log(`🟢 Simple (1-3):    ${simple.length} templates`)
   console.log(`🟡 Moderate (3-5):  ${moderate.length} templates`)
   console.log(`🟠 Complex (5-7):   ${complex.length} templates`)
   console.log(`🔴 Advanced (7-10): ${advanced.length} templates`)
-  
+
   if (simple.length > 0) {
     console.log('\\n🟢 Simple Templates:')
-    simple.forEach(t => console.log(`   • ${t.name} (complexity: ${t.complexityScore})`))
+    simple.forEach((t) => console.log(`   • ${t.name} (complexity: ${t.complexityScore})`))
   }
-  
+
   if (advanced.length > 0) {
     console.log('\\n🔴 Advanced Templates:')
-    advanced.forEach(t => console.log(`   • ${t.name} (complexity: ${t.complexityScore})`))
+    advanced.forEach((t) => console.log(`   • ${t.name} (complexity: ${t.complexityScore})`))
   }
 }
 
 async function validateTemplates() {
   const manager = new DatasetManager()
-  
+
   console.log('🔍 Validating Templates')
   console.log('=======================\n')
-  
+
   const available = await manager.templates.listAvailableTemplates()
   let totalTemplates = 0
   let validTemplates = 0
-  let errors: string[] = []
-  
+  const errors: string[] = []
+
   for (const [type, files] of Object.entries(available)) {
     if (files.length === 0) continue
-    
+
     console.log(`📂 Validating ${type} templates...`)
-    
+
     for (const file of files) {
       try {
-        const collection = await manager.templates.loadTemplateCollection(
-          type as any, 
-          file, 
-          { validate: true, cache: false }
-        )
-        
+        const collection = await manager.templates.loadTemplateCollection(type as any, file, {
+          validate: true,
+          cache: false,
+        })
+
         totalTemplates += collection.templates.length
         validTemplates += collection.templates.length
         console.log(`   ✅ ${file}: ${collection.templates.length} templates`)
-        
       } catch (error) {
         const errorMsg = `❌ ${file}: ${error instanceof Error ? error.message : 'Unknown error'}`
         console.log(`   ${errorMsg}`)
@@ -115,27 +121,27 @@ async function validateTemplates() {
       }
     }
   }
-  
+
   console.log(`\\n📊 Validation Summary:`)
   console.log(`   Total templates: ${totalTemplates}`)
   console.log(`   Valid templates: ${validTemplates}`)
   console.log(`   Errors: ${errors.length}`)
-  
+
   if (errors.length > 0) {
     console.log('\\n❌ Validation Errors:')
-    errors.forEach(error => console.log(`   ${error}`))
+    errors.forEach((error) => console.log(`   ${error}`))
   }
 }
 
 async function main() {
   const args = process.argv.slice(2)
   const command = args[0]
-  
+
   switch (command) {
     case 'list':
       await listTemplates()
       break
-      
+
     case 'search':
       if (!args[1]) {
         console.error('❌ Search query required. Usage: template-manager search <query>')
@@ -143,19 +149,19 @@ async function main() {
       }
       await searchTemplates(args[1])
       break
-      
+
     case 'complexity':
       await showComplexityStats()
       break
-      
+
     case 'validate':
       await validateTemplates()
       break
-      
+
     case 'import':
       await importAllTemplates()
       break
-      
+
     case 'help':
     default:
       console.log('📋 Template Manager CLI')
@@ -178,7 +184,7 @@ async function main() {
 
 // Run if called directly
 if (import.meta.main) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('❌ Error:', error instanceof Error ? error.message : error)
     process.exit(1)
   })

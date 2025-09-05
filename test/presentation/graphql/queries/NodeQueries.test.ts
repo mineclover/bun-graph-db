@@ -22,7 +22,14 @@ describe('NodeQueries', () => {
   beforeEach(() => {
     mockNodeRepository = {
       findById: mock(() => Promise.resolve(mockNode as Node)),
-      searchByContent: mock(() => Promise.resolve({ items: [mockNode as Node], total: 1, hasNextPage: false, hasPreviousPage: false })),
+      searchByContent: mock(() =>
+        Promise.resolve({
+          items: [mockNode as Node],
+          total: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        })
+      ),
       findAll: mock(() =>
         Promise.resolve({
           items: [mockNode as Node],
@@ -97,7 +104,11 @@ describe('NodeQueries', () => {
       )
 
       expect(result).toBe(mockNode)
-      expect(mockNodeRepository.searchByContent).toHaveBeenCalledWith('table-1', 'Test Content', undefined)
+      expect(mockNodeRepository.searchByContent).toHaveBeenCalledWith(
+        'table-1',
+        'Test Content',
+        undefined
+      )
       expect(mockLogger.info).toHaveBeenCalledWith('Fetching node by content', {
         content: 'Test Content',
         tableId: 'table-1',
@@ -105,7 +116,9 @@ describe('NodeQueries', () => {
     })
 
     it('should handle content not found', async () => {
-      mockNodeRepository.searchByContent = mock(() => Promise.resolve({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false }))
+      mockNodeRepository.searchByContent = mock(() =>
+        Promise.resolve({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })
+      )
 
       const result = await nodeQueries.nodeByContent(
         {},

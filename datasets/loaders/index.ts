@@ -1,23 +1,24 @@
 // Main entry point for dataset loaders
-import { SchemaLoader } from './SchemaLoader.js'
+
 import { FixtureLoader } from './FixtureLoader.js'
-import { TemplateLoader } from './TemplateLoader.js'
 import { DataGenerator } from './generators/DataGenerator.js'
+import { SchemaLoader } from './SchemaLoader.js'
+import { TemplateLoader } from './TemplateLoader.js'
 import type {
-  DomainSchema,
-  TableSchema,
   AttributeSchema,
-  RelationTypeSchema,
+  DatasetSize,
   DomainFixtures,
+  DomainSchema,
+  DomainType,
   FixtureNode,
   FixtureRelation,
-  QueryTemplate,
-  TemplateCollection,
-  DatasetSize,
-  DomainType,
-  TemplateType,
+  GeneratorOptions,
   LoaderOptions,
-  GeneratorOptions
+  QueryTemplate,
+  RelationTypeSchema,
+  TableSchema,
+  TemplateCollection,
+  TemplateType,
 } from './types/DatasetTypes.js'
 
 export { SchemaLoader, FixtureLoader, TemplateLoader, DataGenerator }
@@ -37,7 +38,7 @@ export type {
   DomainType,
   TemplateType,
   LoaderOptions,
-  GeneratorOptions
+  GeneratorOptions,
 }
 
 // Convenience factory class
@@ -59,7 +60,7 @@ export class DatasetManager {
     const [schema, fixtures, templates] = await Promise.all([
       this.schemas.loadDomainSchema(domain, 'base-schema', { cache: true }),
       this.fixtures.loadFixtures(domain, size, 'sample-data', { cache: true }),
-      this.templates.loadTemplatesByDomain(domain, { cache: true })
+      this.templates.loadTemplatesByDomain(domain, { cache: true }),
     ])
 
     return { schema, fixtures, templates }
@@ -68,7 +69,7 @@ export class DatasetManager {
   // Convenience method to generate and save new datasets
   async generateDataset(options: GeneratorOptions, savePath?: string) {
     const fixtures = await this.generator.generateDomainFixtures(options)
-    
+
     if (savePath) {
       const fs = await import('fs/promises')
       await fs.writeFile(savePath, JSON.stringify(fixtures, null, 2))

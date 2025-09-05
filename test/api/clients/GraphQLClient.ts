@@ -1,6 +1,6 @@
 /**
  * GraphQL Client for Direct API Testing
- * 
+ *
  * Provides GraphQL-specific functionality built on top of HttpClient
  */
 
@@ -50,12 +50,12 @@ export class GraphQLClient {
 
   constructor(options: GraphQLClientOptions = {}) {
     this.endpoint = options.endpoint || '/graphql'
-    
+
     this.httpClient = new HttpClient({
       timeout: options.timeout || 30000,
       defaultHeaders: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
         ...options.headers,
       },
       retries: options.retries || 3,
@@ -64,16 +64,13 @@ export class GraphQLClient {
 
   async execute<T = unknown>(request: GraphQLRequest): Promise<ExecutionResult<T>> {
     const startTime = Date.now()
-    
+
     try {
-      const response = await this.httpClient.post<GraphQLResponse<T>>(
-        this.endpoint,
-        {
-          query: request.query,
-          variables: request.variables || {},
-          operationName: request.operationName,
-        }
-      )
+      const response = await this.httpClient.post<GraphQLResponse<T>>(this.endpoint, {
+        query: request.query,
+        variables: request.variables || {},
+        operationName: request.operationName,
+      })
 
       const result: ExecutionResult<T> = {
         ...response,
@@ -95,7 +92,7 @@ export class GraphQLClient {
   }
 
   async query<T = unknown>(
-    query: string, 
+    query: string,
     variables?: Record<string, unknown>,
     operationName?: string
   ): Promise<ExecutionResult<T>> {
@@ -112,7 +109,7 @@ export class GraphQLClient {
 
   // Batch execution for multiple operations
   async batch<T = unknown>(requests: GraphQLRequest[]): Promise<ExecutionResult<T>[]> {
-    const promises = requests.map(request => this.execute<T>(request))
+    const promises = requests.map((request) => this.execute<T>(request))
     return Promise.all(promises)
   }
 
@@ -122,18 +119,21 @@ export class GraphQLClient {
     concurrency: number = 10
   ): Promise<ExecutionResult<T>[]> {
     const results: ExecutionResult<T>[] = []
-    
+
     for (let i = 0; i < requests.length; i += concurrency) {
       const batch = requests.slice(i, i + concurrency)
       const batchResults = await this.batch<T>(batch)
       results.push(...batchResults)
     }
-    
+
     return results
   }
 
   // Subscription support (for WebSocket-based subscriptions)
-  subscribe(subscription: string, variables?: Record<string, unknown>): AsyncIterable<GraphQLResponse> {
+  subscribe(
+    subscription: string,
+    variables?: Record<string, unknown>
+  ): AsyncIterable<GraphQLResponse> {
     // Implementation would depend on WebSocket client
     throw new Error('Subscription support not implemented yet')
   }
@@ -163,8 +163,8 @@ export class GraphQLClient {
         p95: this.calculatePercentile(timings, 0.95),
         p99: this.calculatePercentile(timings, 0.99),
       },
-      success: results.filter(r => r.isSuccess).length,
-      errors: results.filter(r => r.hasErrors).length,
+      success: results.filter((r) => r.isSuccess).length,
+      errors: results.filter((r) => r.hasErrors).length,
     }
   }
 
@@ -187,7 +187,7 @@ export class GraphQLClient {
 
     for (let i = 0; i < concurrent; i++) {
       if (rampUpInterval > 0) {
-        await new Promise(resolve => setTimeout(resolve, rampUpInterval))
+        await new Promise((resolve) => setTimeout(resolve, rampUpInterval))
       }
 
       const worker = this.runWorker(request, duration)
@@ -195,8 +195,8 @@ export class GraphQLClient {
     }
 
     const workerResults = await Promise.allSettled(workers)
-    
-    workerResults.forEach(result => {
+
+    workerResults.forEach((result) => {
       if (result.status === 'fulfilled') {
         results.push(result.value)
       }
@@ -208,14 +208,17 @@ export class GraphQLClient {
       duration: totalDuration,
       concurrent,
       totalRequests: results.length,
-      successfulRequests: results.filter(r => r.isSuccess).length,
-      failedRequests: results.filter(r => !r.isSuccess).length,
+      successfulRequests: results.filter((r) => r.isSuccess).length,
+      failedRequests: results.filter((r) => !r.isSuccess).length,
       requestsPerSecond: results.length / (totalDuration / 1000),
       averageResponseTime: results.reduce((sum, r) => sum + r.timing.duration, 0) / results.length,
     }
   }
 
-  private async runWorker<T>(request: GraphQLRequest, duration: number): Promise<ExecutionResult<T>> {
+  private async runWorker<T>(
+    request: GraphQLRequest,
+    duration: number
+  ): Promise<ExecutionResult<T>> {
     const endTime = Date.now() + duration
     const results: ExecutionResult<T>[] = []
 
@@ -223,14 +226,11 @@ export class GraphQLClient {
       try {
         const result = await this.execute<T>(request)
         results.push(result)
-      } catch (error) {
-        // Continue running even if individual requests fail
-        continue
-      }
+      } catch (error) {}
     }
 
     // Return the last successful result or throw if no results
-    const successfulResults = results.filter(r => r.isSuccess)
+    const successfulResults = results.filter((r) => r.isSuccess)
     if (successfulResults.length > 0) {
       return successfulResults[successfulResults.length - 1]!
     }
@@ -322,13 +322,15 @@ export const graphqlClient = new GraphQLClient()
 // Export factory functions
 export const createGraphQLClient = (options?: GraphQLClientOptions) => new GraphQLClient(options)
 
-export const createDevGraphQLClient = () => createGraphQLClient({
-  endpoint: 'http://localhost:4000/graphql',
-  timeout: 10000,
-})
+export const createDevGraphQLClient = () =>
+  createGraphQLClient({
+    endpoint: 'http://localhost:4000/graphql',
+    timeout: 10000,
+  })
 
-export const createProdGraphQLClient = () => createGraphQLClient({
-  endpoint: process.env.PROD_GRAPHQL_URL || 'https://api.example.com/graphql',
-  timeout: 30000,
-  retries: 5,
-})
+export const createProdGraphQLClient = () =>
+  createGraphQLClient({
+    endpoint: process.env.PROD_GRAPHQL_URL || 'https://api.example.com/graphql',
+    timeout: 30000,
+    retries: 5,
+  })

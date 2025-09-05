@@ -36,9 +36,9 @@ export class DeleteQueryTemplate {
           errors: [
             {
               message: `Template with ID '${request.id}' not found`,
-              code: 'TEMPLATE_NOT_FOUND'
-            }
-          ]
+              code: 'TEMPLATE_NOT_FOUND',
+            },
+          ],
         }
       }
 
@@ -46,7 +46,7 @@ export class DeleteQueryTemplate {
       if (!request.force && existingTemplate.getUsageCount() > 0) {
         this.logger.warn('Attempting to delete template with usage history', {
           id: request.id,
-          usageCount: existingTemplate.getUsageCount()
+          usageCount: existingTemplate.getUsageCount(),
         })
 
         return {
@@ -54,9 +54,9 @@ export class DeleteQueryTemplate {
           errors: [
             {
               message: `Template '${existingTemplate.getIdentifier()}' has been used ${existingTemplate.getUsageCount()} times. Use force=true to delete anyway.`,
-              code: 'TEMPLATE_IN_USE'
-            }
-          ]
+              code: 'TEMPLATE_IN_USE',
+            },
+          ],
         }
       }
 
@@ -64,7 +64,7 @@ export class DeleteQueryTemplate {
       if (existingTemplate.getIsActive() && !request.force) {
         this.logger.warn('Deleting active template', {
           id: request.id,
-          identifier: existingTemplate.getIdentifier()
+          identifier: existingTemplate.getIdentifier(),
         })
       }
 
@@ -83,48 +83,42 @@ export class DeleteQueryTemplate {
           errors: [
             {
               message: 'Failed to delete template',
-              code: 'DELETE_FAILED'
-            }
-          ]
+              code: 'DELETE_FAILED',
+            },
+          ],
         }
       }
 
-      this.logger.info('Query template deleted successfully', { 
+      this.logger.info('Query template deleted successfully', {
         id: request.id,
         identifier: existingTemplate.getIdentifier(),
         wasActive: existingTemplate.getIsActive(),
-        usageCount: existingTemplate.getUsageCount()
+        usageCount: existingTemplate.getUsageCount(),
       })
 
       return {
         success: true,
-        errors: []
+        errors: [],
       }
-
     } catch (error) {
-      this.logger.error('Failed to delete query template', { 
-        error, 
-        id: request.id 
+      this.logger.error('Failed to delete query template', {
+        error,
+        id: request.id,
       })
 
       if (error instanceof ApplicationException) {
         throw error
       }
 
-      throw new ApplicationException(
-        'Failed to delete query template',
-        'DELETE_TEMPLATE_FAILED',
-        { originalError: error }
-      )
+      throw new ApplicationException('Failed to delete query template', 'DELETE_TEMPLATE_FAILED', {
+        originalError: error,
+      })
     }
   }
 
   private validateDeleteRequest(request: DeleteQueryTemplateRequest): void {
     if (!request.id || request.id.trim().length === 0) {
-      throw new ApplicationException(
-        'Template ID is required for deletion',
-        'MISSING_TEMPLATE_ID'
-      )
+      throw new ApplicationException('Template ID is required for deletion', 'MISSING_TEMPLATE_ID')
     }
   }
 }

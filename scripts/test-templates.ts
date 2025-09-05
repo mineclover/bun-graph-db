@@ -92,8 +92,15 @@ async function testComplexTemplate() {
     // 1. Create a table using template
     console.log('Step 1: Creating table via template...')
     const createTableResult = await graphqlRequest(
-      `mutation ExecuteTemplate($input: ExecuteTemplateInput!) {
-        executeTemplate(input: $input)
+      `mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
+        executeTemplate(input: $input) {
+          success
+          data
+          errors {
+            message
+            code
+          }
+        }
       }`,
       {
         input: {
@@ -105,8 +112,7 @@ async function testComplexTemplate() {
               description: 'Created via template execution',
             },
           },
-          trackUsage: true,
-        },
+          },
       }
     )
 
@@ -121,8 +127,15 @@ async function testComplexTemplate() {
 
     if (tableId) {
       const createAttrResult = await graphqlRequest(
-        `mutation ExecuteTemplate($input: ExecuteTemplateInput!) {
-          executeTemplate(input: $input)
+        `mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
+          executeTemplate(input: $input) {
+            success
+            data
+            errors {
+              message
+              code
+            }
+          }
         }`,
         {
           input: {
@@ -137,8 +150,7 @@ async function testComplexTemplate() {
                 isRequired: true,
               },
             },
-            trackUsage: true,
-          },
+              },
         }
       )
 
@@ -178,15 +190,20 @@ async function testTemplateExecution(templateId: string, variables: any) {
   console.log(`🎯 Testing template execution: ${templateId}`)
 
   return await graphqlRequest(
-    `mutation ExecuteTemplate($input: ExecuteTemplateInput!) {
-      executeTemplate(input: $input)
+    `mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
+      executeTemplate(input: $input) {
+        success
+        data
+        errors {
+          message
+          code
+        }
+      }
     }`,
     {
       input: {
         templateIdentifier: templateId,
         variables: variables,
-        trackUsage: true,
-        validateVariables: true,
       },
     }
   )
@@ -198,31 +215,33 @@ async function listAvailableTemplates() {
 
   const result = await graphqlRequest(
     `query SearchTemplates {
-      searchTemplates(input: { limit: 50 }) {
-        id
-        identifier
-        name
-        description
-        templateType
-        tags
-        usageCount
-        isActive
+      searchTemplates(pagination: { limit: 50 }) {
+        nodes {
+          id
+          identifier
+          name
+          description
+          usageCount
+          isActive
+          createdAt
+          updatedAt
+        }
+        totalCount
       }
     }`
   )
 
-  if (result.data?.searchTemplates) {
-    result.data.searchTemplates.forEach((template: any, index: number) => {
+  if (result.data?.searchTemplates?.nodes) {
+    result.data.searchTemplates.nodes.forEach((template: any, index: number) => {
       console.log(`${index + 1}. ${template.identifier}`)
       console.log(`   📝 ${template.name}`)
-      console.log(`   📋 ${template.description}`)
-      console.log(`   🏷️  ${template.tags.join(', ')}`)
-      console.log(`   📊 Usage: ${template.usageCount} | Type: ${template.templateType}`)
+      console.log(`   📋 ${template.description || 'No description'}`)
+      console.log(`   📊 Usage: ${template.usageCount} | Active: ${template.isActive}`)
       console.log('')
     })
   }
 
-  return result.data?.searchTemplates || []
+  return result.data?.searchTemplates?.nodes || []
 }
 
 // Test template variable validation
@@ -232,8 +251,15 @@ async function testVariableValidation() {
   // Test with missing required variable
   console.log('Testing missing required variable...')
   const invalidResult = await graphqlRequest(
-    `mutation ExecuteTemplate($input: ExecuteTemplateInput!) {
-      executeTemplate(input: $input)
+    `mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
+      executeTemplate(input: $input) {
+        success
+        data
+        errors {
+          message
+          code
+        }
+      }
     }`,
     {
       input: {
@@ -244,7 +270,6 @@ async function testVariableValidation() {
             name: 'Test Table',
           },
         },
-        validateVariables: true,
       },
     }
   )

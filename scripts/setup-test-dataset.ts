@@ -7,6 +7,7 @@
  * and template-based query execution testing.
  */
 
+import type { SchemaExportUseCase } from '../src/application/use-cases/export/SchemaExportUseCase.js'
 import { Attribute } from '../src/domain/entities/Attribute.js'
 import { AttributeType } from '../src/domain/entities/AttributeType.js'
 import { Node } from '../src/domain/entities/Node.js'
@@ -19,7 +20,6 @@ import type { INodeRelationRepository } from '../src/domain/repositories/INodeRe
 import type { INodeRepository } from '../src/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '../src/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '../src/domain/repositories/ITableRepository.js'
-import type { SchemaExportUseCase } from '../src/application/use-cases/export/SchemaExportUseCase.js'
 import { ContainerBootstrap } from '../src/infrastructure/container/ContainerBootstrap.js'
 import type { DIContainer } from '../src/infrastructure/container/DIContainer.js'
 import { RepositoryTokens, UseCaseTokens } from '../src/infrastructure/container/tokens/index.js'
@@ -606,10 +606,10 @@ export class TestDatasetSetup {
     // 1. Create attribute types
     const attributeTypeMap = new Map<string, string>()
     for (const atConfig of config.attributeTypes) {
-      const allowedValuesString = Array.isArray(atConfig.allowedValues) 
-        ? atConfig.allowedValues.join(',') 
+      const allowedValuesString = Array.isArray(atConfig.allowedValues)
+        ? atConfig.allowedValues.join(',')
         : atConfig.allowedValues
-      
+
       const attributeType = AttributeType.create(
         atConfig.identifier,
         atConfig.name,

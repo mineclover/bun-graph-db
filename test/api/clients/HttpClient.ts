@@ -1,6 +1,6 @@
 /**
  * HTTP Client for Direct API Testing
- * 
+ *
  * Provides low-level HTTP request functionality for API testing
  */
 
@@ -48,7 +48,7 @@ export class HttpClient {
       timeout: config.timeout || 30000,
       defaultHeaders: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
         ...config.defaultHeaders,
       },
       retries: config.retries || 3,
@@ -58,7 +58,7 @@ export class HttpClient {
 
   async request<T = unknown>(options: HttpRequestOptions): Promise<HttpResponse<T>> {
     const startTime = Date.now()
-    
+
     const url = this.resolveUrl(options.url)
     const headers = { ...this.config.defaultHeaders, ...options.headers }
     const timeout = options.timeout || this.config.timeout
@@ -98,7 +98,7 @@ export class HttpClient {
 
         let data: T
         const contentType = responseHeaders['content-type'] || ''
-        
+
         if (contentType.includes('application/json')) {
           data = await response.json()
         } else {
@@ -126,7 +126,6 @@ export class HttpClient {
 
         if (attempt < retries) {
           await this.delay(this.config.retryDelay * (attempt + 1))
-          continue
         }
       }
     }
@@ -134,23 +133,41 @@ export class HttpClient {
     throw lastError || new Error('Request failed after all retries')
   }
 
-  async get<T = unknown>(url: string, options: Omit<HttpRequestOptions, 'method' | 'url'> = {}): Promise<HttpResponse<T>> {
+  async get<T = unknown>(
+    url: string,
+    options: Omit<HttpRequestOptions, 'method' | 'url'> = {}
+  ): Promise<HttpResponse<T>> {
     return this.request<T>({ ...options, method: 'GET', url })
   }
 
-  async post<T = unknown>(url: string, body?: unknown, options: Omit<HttpRequestOptions, 'method' | 'url' | 'body'> = {}): Promise<HttpResponse<T>> {
+  async post<T = unknown>(
+    url: string,
+    body?: unknown,
+    options: Omit<HttpRequestOptions, 'method' | 'url' | 'body'> = {}
+  ): Promise<HttpResponse<T>> {
     return this.request<T>({ ...options, method: 'POST', url, body })
   }
 
-  async put<T = unknown>(url: string, body?: unknown, options: Omit<HttpRequestOptions, 'method' | 'url' | 'body'> = {}): Promise<HttpResponse<T>> {
+  async put<T = unknown>(
+    url: string,
+    body?: unknown,
+    options: Omit<HttpRequestOptions, 'method' | 'url' | 'body'> = {}
+  ): Promise<HttpResponse<T>> {
     return this.request<T>({ ...options, method: 'PUT', url, body })
   }
 
-  async delete<T = unknown>(url: string, options: Omit<HttpRequestOptions, 'method' | 'url'> = {}): Promise<HttpResponse<T>> {
+  async delete<T = unknown>(
+    url: string,
+    options: Omit<HttpRequestOptions, 'method' | 'url'> = {}
+  ): Promise<HttpResponse<T>> {
     return this.request<T>({ ...options, method: 'DELETE', url })
   }
 
-  async patch<T = unknown>(url: string, body?: unknown, options: Omit<HttpRequestOptions, 'method' | 'url' | 'body'> = {}): Promise<HttpResponse<T>> {
+  async patch<T = unknown>(
+    url: string,
+    body?: unknown,
+    options: Omit<HttpRequestOptions, 'method' | 'url' | 'body'> = {}
+  ): Promise<HttpResponse<T>> {
     return this.request<T>({ ...options, method: 'PATCH', url, body })
   }
 
@@ -158,10 +175,12 @@ export class HttpClient {
     if (url.startsWith('http://') || url.startsWith('https://')) {
       return url
     }
-    
-    const baseUrl = this.config.baseURL.endsWith('/') ? this.config.baseURL.slice(0, -1) : this.config.baseURL
+
+    const baseUrl = this.config.baseURL.endsWith('/')
+      ? this.config.baseURL.slice(0, -1)
+      : this.config.baseURL
     const path = url.startsWith('/') ? url : `/${url}`
-    
+
     return `${baseUrl}${path}`
   }
 
@@ -174,7 +193,7 @@ export class HttpClient {
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   // Configuration methods
@@ -209,13 +228,15 @@ export const httpClient = new HttpClient()
 export const createHttpClient = (config?: Partial<HttpClientConfig>) => new HttpClient(config)
 
 // Export for testing specific environments
-export const createDevClient = () => createHttpClient({ 
-  baseURL: 'http://localhost:4000',
-  timeout: 10000 
-})
+export const createDevClient = () =>
+  createHttpClient({
+    baseURL: 'http://localhost:4000',
+    timeout: 10000,
+  })
 
-export const createProdClient = () => createHttpClient({ 
-  baseURL: process.env.PROD_API_URL || 'https://api.example.com',
-  timeout: 30000,
-  retries: 5 
-})
+export const createProdClient = () =>
+  createHttpClient({
+    baseURL: process.env.PROD_API_URL || 'https://api.example.com',
+    timeout: 30000,
+    retries: 5,
+  })

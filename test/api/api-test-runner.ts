@@ -2,13 +2,13 @@
 
 /**
  * API Test Runner
- * 
+ *
  * Unified runner for direct API testing with environment management
  */
 
 import { existsSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
-import { getCurrentEnvironment, getEnvironment, createTestConfig } from './config/environments.js'
+import { createTestConfig, getCurrentEnvironment, getEnvironment } from './config/environments.js'
 
 interface TestRunOptions {
   environment?: string
@@ -70,27 +70,27 @@ class APITestRunner {
 
     const startTime = Date.now()
     const testFiles = this.findTestFiles()
-    
+
     if (testFiles.length === 0) {
       console.log('❌ No test files found')
       return this.createEmptySummary()
     }
 
     console.log(`Found ${testFiles.length} test files`)
-    
+
     const results: TestResult[] = []
-    
+
     if (this.options.parallel) {
       console.log('🔄 Running tests in parallel...')
-      results.push(...await this.runParallel(testFiles))
+      results.push(...(await this.runParallel(testFiles)))
     } else {
       console.log('🔄 Running tests sequentially...')
-      results.push(...await this.runSequential(testFiles))
+      results.push(...(await this.runSequential(testFiles)))
     }
 
     const duration = Date.now() - startTime
     const summary = this.createSummary(results, duration)
-    
+
     await this.generateReport(summary)
     this.printSummary(summary)
 
@@ -99,14 +99,14 @@ class APITestRunner {
 
   private findTestFiles(): string[] {
     const files: string[] = []
-    
+
     const searchDir = (dir: string) => {
       const entries = readdirSync(dir)
-      
+
       for (const entry of entries) {
         const fullPath = join(dir, entry)
         const stat = statSync(fullPath)
-        
+
         if (stat.isDirectory()) {
           // Skip node_modules and similar
           if (!entry.startsWith('.') && entry !== 'node_modules') {
@@ -120,7 +120,7 @@ class APITestRunner {
               continue
             }
           }
-          
+
           files.push(fullPath)
         }
       }
@@ -131,17 +131,15 @@ class APITestRunner {
   }
 
   private async runParallel(testFiles: string[]): Promise<TestResult[]> {
-    const workers = testFiles.map(file => this.runTestFile(file))
+    const workers = testFiles.map((file) => this.runTestFile(file))
     const results = await Promise.allSettled(workers)
-    
-    return results.flatMap(result => 
-      result.status === 'fulfilled' ? result.value : []
-    )
+
+    return results.flatMap((result) => (result.status === 'fulfilled' ? result.value : []))
   }
 
   private async runSequential(testFiles: string[]): Promise<TestResult[]> {
     const results: TestResult[] = []
-    
+
     for (const file of testFiles) {
       try {
         const fileResults = await this.runTestFile(file)
@@ -150,13 +148,13 @@ class APITestRunner {
         console.error(`❌ Failed to run ${file}:`, error)
       }
     }
-    
+
     return results
   }
 
   private async runTestFile(filePath: string): Promise<TestResult[]> {
     const relativePath = filePath.replace(this.testDir, '').replace(/^\//, '')
-    
+
     if (this.options.verbose) {
       console.log(`📝 Running ${relativePath}`)
     }
@@ -166,28 +164,33 @@ class APITestRunner {
 
     try {
       // Set environment variables for the test
-      const env = this.options.environment ? getEnvironment(this.options.environment) : getCurrentEnvironment()
+      const env = this.options.environment
+        ? getEnvironment(this.options.environment)
+        : getCurrentEnvironment()
       const testConfig = createTestConfig(env.name)
-      
+
       // Execute the test file using Bun's test runner
-      const proc = Bun.spawn(['bun', 'test', filePath, '--timeout', String(this.options.timeout!)], {
-        env: {
-          ...process.env,
-          TEST_ENV: env.name,
-          GRAPHQL_ENDPOINT: testConfig.graphqlClient.endpoint,
-          API_TIMEOUT: String(testConfig.graphqlClient.timeout),
-        },
-        stdout: 'pipe',
-        stderr: 'pipe',
-      })
+      const proc = Bun.spawn(
+        ['bun', 'test', filePath, '--timeout', String(this.options.timeout!)],
+        {
+          env: {
+            ...process.env,
+            TEST_ENV: env.name,
+            GRAPHQL_ENDPOINT: testConfig.graphqlClient.endpoint,
+            API_TIMEOUT: String(testConfig.graphqlClient.timeout),
+          },
+          stdout: 'pipe',
+          stderr: 'pipe',
+        }
+      )
 
       const output = await new Response(proc.stdout).text()
       const errors = await new Response(proc.stderr).text()
-      
+
       await proc.exited
 
       const duration = Date.now() - startTime
-      
+
       // Parse Bun test output to extract results
       const testResults = this.parseTestOutput(output, relativePath, duration)
       results.push(...testResults)
@@ -205,7 +208,6 @@ class APITestRunner {
       if (this.options.verbose) {
         console.log(`✅ Completed ${relativePath} in ${duration}ms`)
       }
-
     } catch (error) {
       const duration = Date.now() - startTime
       results.push({
@@ -223,13 +225,13 @@ class APITestRunner {
   private parseTestOutput(output: string, suite: string, duration: number): TestResult[] {
     const results: TestResult[] = []
     const lines = output.split('\n')
-    
+
     // Simple parsing - in a real implementation, you'd want more robust parsing
     for (const line of lines) {
       if (line.includes('✓') || line.includes('✗')) {
         const testName = line.replace(/^[^a-zA-Z]*/, '').trim()
         const status = line.includes('✓') ? 'passed' : 'failed'
-        
+
         results.push({
           suite,
           test: testName,
@@ -253,9 +255,9 @@ class APITestRunner {
   }
 
   private createSummary(results: TestResult[], duration: number): TestSummary {
-    const passed = results.filter(r => r.status === 'passed').length
-    const failed = results.filter(r => r.status === 'failed').length
-    const skipped = results.filter(r => r.status === 'skipped').length
+    const passed = results.filter((r) => r.status === 'passed').length
+    const failed = results.filter((r) => r.status === 'failed').length
+    const skipped = results.filter((r) => r.status === 'skipped').length
 
     return {
       total: results.length,
@@ -287,10 +289,11 @@ class APITestRunner {
       case 'json':
         await Bun.write(this.options.outputFile, JSON.stringify(summary, null, 2))
         break
-      case 'html':
+      case 'html': {
         const html = this.generateHTMLReport(summary)
         await Bun.write(this.options.outputFile, html)
         break
+      }
       default:
         // Console output handled in printSummary
         break
@@ -298,8 +301,9 @@ class APITestRunner {
   }
 
   private generateHTMLReport(summary: TestSummary): string {
-    const successRate = summary.total > 0 ? (summary.passed / summary.total * 100).toFixed(1) : '0'
-    
+    const successRate =
+      summary.total > 0 ? ((summary.passed / summary.total) * 100).toFixed(1) : '0'
+
     return `
 <!DOCTYPE html>
 <html>
@@ -342,7 +346,9 @@ class APITestRunner {
             </tr>
         </thead>
         <tbody>
-            ${summary.results.map(result => `
+            ${summary.results
+              .map(
+                (result) => `
                 <tr class="${result.status}">
                     <td>${result.suite}</td>
                     <td>${result.test}</td>
@@ -350,7 +356,9 @@ class APITestRunner {
                     <td>${result.duration}ms</td>
                     <td>${result.error || ''}</td>
                 </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
         </tbody>
     </table>
 </body>
@@ -368,17 +376,17 @@ class APITestRunner {
     console.log(`✅ Passed: ${summary.passed}`)
     console.log(`❌ Failed: ${summary.failed}`)
     console.log(`⏭️ Skipped: ${summary.skipped}`)
-    
+
     if (summary.total > 0) {
-      const successRate = (summary.passed / summary.total * 100).toFixed(1)
+      const successRate = ((summary.passed / summary.total) * 100).toFixed(1)
       console.log(`📈 Success Rate: ${successRate}%`)
     }
 
     if (summary.failed > 0) {
       console.log('\n❌ FAILED TESTS:')
       summary.results
-        .filter(r => r.status === 'failed')
-        .forEach(result => {
+        .filter((r) => r.status === 'failed')
+        .forEach((result) => {
           console.log(`  • ${result.suite} > ${result.test}`)
           if (result.error) {
             console.log(`    Error: ${result.error}`)
@@ -387,7 +395,7 @@ class APITestRunner {
     }
 
     console.log('═'.repeat(50))
-    
+
     // Exit with error code if tests failed
     if (summary.failed > 0) {
       process.exit(1)
@@ -403,7 +411,7 @@ async function main() {
   // Parse command line arguments
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
-    
+
     switch (arg) {
       case '--env':
       case '--environment':
@@ -449,7 +457,7 @@ async function main() {
   }
 
   const runner = new APITestRunner(options)
-  
+
   try {
     await runner.run()
   } catch (error) {

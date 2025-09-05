@@ -60,16 +60,29 @@ export class AttributeResolver extends BaseResolver {
   }
 
   // Query resolvers - Attribute Types
-  async attributeType(args: { id: string }, context?: GraphQLContext): Promise<AttributeTypeDto | null> {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Attribute Type ID'),
-      BaseResolver.validationRules.nonEmpty('id', 'Attribute Type ID')
-    ], 'attributeType')
+  async attributeType(
+    args: { id: string },
+    context?: GraphQLContext
+  ): Promise<AttributeTypeDto | null> {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Attribute Type ID'),
+        BaseResolver.validationRules.nonEmpty('id', 'Attribute Type ID'),
+      ],
+      'attributeType'
+    )
 
-    return this.handleQuery(async () => {
-      const attributeType = await this.attributeTypeRepository.findById(args.id as AttributeTypeId)
-      return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
-    }, 'findAttributeTypeById', { id: args.id })
+    return this.handleQuery(
+      async () => {
+        const attributeType = await this.attributeTypeRepository.findById(
+          args.id as AttributeTypeId
+        )
+        return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
+      },
+      'findAttributeTypeById',
+      { id: args.id }
+    )
   }
 
   async attributeTypeByIdentifier(args: { identifier: string }): Promise<AttributeTypeDto | null> {
@@ -364,20 +377,33 @@ export class AttributeResolver extends BaseResolver {
   }
 
   // Field resolvers for Attribute type
-  async attributeType_field(attribute: AttributeDto, context?: GraphQLContext): Promise<AttributeTypeDto | null> {
-    return this.handleFieldResolution(async () => {
-      const attributeType = await this.attributeTypeRepository.findById(
-        attribute.attributeTypeId as AttributeTypeId
-      )
-      return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
-    }, 'attributeType', 'Attribute', { attributeId: attribute.id })
+  async attributeType_field(
+    attribute: AttributeDto,
+    context?: GraphQLContext
+  ): Promise<AttributeTypeDto | null> {
+    return this.handleFieldResolution(
+      async () => {
+        const attributeType = await this.attributeTypeRepository.findById(
+          attribute.attributeTypeId as AttributeTypeId
+        )
+        return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
+      },
+      'attributeType',
+      'Attribute',
+      { attributeId: attribute.id }
+    )
   }
 
   async table_field(attribute: AttributeDto, context?: GraphQLContext): Promise<TableDto | null> {
-    return this.handleFieldResolution(async () => {
-      const table = await this.tableRepository.findById(attribute.tableId as TableId)
-      return table ? TableDto.fromEntity(table) : null
-    }, 'table', 'Attribute', { attributeId: attribute.id })
+    return this.handleFieldResolution(
+      async () => {
+        const table = await this.tableRepository.findById(attribute.tableId as TableId)
+        return table ? TableDto.fromEntity(table) : null
+      },
+      'table',
+      'Attribute',
+      { attributeId: attribute.id }
+    )
   }
 
   // Field resolver for NodeAttribute type

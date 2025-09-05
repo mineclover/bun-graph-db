@@ -82,16 +82,27 @@ export class RelationResolver extends BaseResolver {
   }
 
   // Query resolvers
-  async nodeRelation(args: { id: string }, context?: GraphQLContext): Promise<NodeRelationDto | null> {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Relation ID'),
-      BaseResolver.validationRules.nonEmpty('id', 'Relation ID')
-    ], 'nodeRelation')
+  async nodeRelation(
+    args: { id: string },
+    context?: GraphQLContext
+  ): Promise<NodeRelationDto | null> {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Relation ID'),
+        BaseResolver.validationRules.nonEmpty('id', 'Relation ID'),
+      ],
+      'nodeRelation'
+    )
 
-    return this.handleQuery(async () => {
-      const relation = await this.nodeRelationRepository.findById(args.id as NodeRelationId)
-      return relation ? NodeRelationDto.fromEntity(relation) : null
-    }, 'findNodeRelationById', { id: args.id })
+    return this.handleQuery(
+      async () => {
+        const relation = await this.nodeRelationRepository.findById(args.id as NodeRelationId)
+        return relation ? NodeRelationDto.fromEntity(relation) : null
+      },
+      'findNodeRelationById',
+      { id: args.id }
+    )
   }
 
   async nodeRelations(args: { tableId: string }): Promise<NodeRelationDto[]> {

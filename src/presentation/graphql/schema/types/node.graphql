@@ -22,12 +22,9 @@ type TableNode implements Node {
     direction: RelationDirection = BOTH
     relationTypes: [ID!]
   ): [ConnectedNode!]!
-  
-  shortestPath(
-    targetNodeId: ID!
-    maxDepth: Int = 6
-  ): GraphPath
-  
+
+  shortestPath(targetNodeId: ID!, maxDepth: Int = 6): GraphPath
+
   neighborsByRelationType(relationTypeId: ID!): [TableNode!]!
 }
 

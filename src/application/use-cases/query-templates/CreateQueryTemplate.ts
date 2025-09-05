@@ -45,9 +45,9 @@ export class CreateQueryTemplate {
           errors: [
             {
               message: `Template with identifier '${request.identifier}' already exists`,
-              code: 'TEMPLATE_ALREADY_EXISTS'
-            }
-          ]
+              code: 'TEMPLATE_ALREADY_EXISTS',
+            },
+          ],
         }
       }
 
@@ -64,7 +64,7 @@ export class CreateQueryTemplate {
           applicableTables: request.applicableTables,
           templateType: request.templateType,
           complexityScore: request.complexityScore,
-          version: request.version
+          version: request.version,
         }
       )
 
@@ -76,41 +76,38 @@ export class CreateQueryTemplate {
           errors: [
             {
               message: 'Default variables do not match the provided schema',
-              code: 'INVALID_DEFAULT_VARIABLES'
-            }
-          ]
+              code: 'INVALID_DEFAULT_VARIABLES',
+            },
+          ],
         }
       }
 
       // Save to repository
       const savedTemplate = await this.queryTemplateRepository.create(template)
 
-      this.logger.info('Query template created successfully', { 
+      this.logger.info('Query template created successfully', {
         id: savedTemplate.getId(),
-        identifier: savedTemplate.getIdentifier()
+        identifier: savedTemplate.getIdentifier(),
       })
 
       return {
         success: true,
         template: savedTemplate,
-        errors: []
+        errors: [],
       }
-
     } catch (error) {
-      this.logger.error('Failed to create query template', { 
-        error, 
-        identifier: request.identifier 
+      this.logger.error('Failed to create query template', {
+        error,
+        identifier: request.identifier,
       })
 
       if (error instanceof ApplicationException) {
         throw error
       }
 
-      throw new ApplicationException(
-        'Failed to create query template',
-        'CREATE_TEMPLATE_FAILED',
-        { originalError: error }
-      )
+      throw new ApplicationException('Failed to create query template', 'CREATE_TEMPLATE_FAILED', {
+        originalError: error,
+      })
     }
   }
 }

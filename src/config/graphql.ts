@@ -5,7 +5,7 @@ export function createGraphQLConfig(cliOptions?: CliOptions): GraphQLConfig {
   // CLI options take precedence over environment variables
   const port = cliOptions?.port ?? Number.parseInt(process.env.GRAPHQL_PORT || '4000')
   const env = cliOptions?.env ?? process.env.NODE_ENV ?? 'development'
-  
+
   return {
     port,
     introspection: env !== 'production',

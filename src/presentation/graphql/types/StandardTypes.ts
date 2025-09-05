@@ -80,7 +80,7 @@ export interface TemplatesSearchResult<T = any> {
   errors?: GraphQLError[]
 }
 
-// Schema-specific response types  
+// Schema-specific response types
 export interface ExportResult {
   success: boolean
   exportData?: any
@@ -119,7 +119,7 @@ export type FieldResolver<TSource, TResult, TContext = any, TArgs = {}> = (
   info?: any
 ) => Promise<TResult> | TResult
 
-// Query resolver wrapper type  
+// Query resolver wrapper type
 export type QueryResolver<TResult, TContext = any, TArgs = {}> = (
   parent: any,
   args: TArgs,

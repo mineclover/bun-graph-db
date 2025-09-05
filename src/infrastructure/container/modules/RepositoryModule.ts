@@ -1,4 +1,3 @@
-import { SqliteQueryTemplateRepository } from '@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js'
 import { SqliteAttributeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeRepository.js'
 import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeTypeRepository.js'
 import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
@@ -6,6 +5,7 @@ import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
 import { SqliteNodeSearchRepository } from '@/infrastructure/database/sqlite/SqliteNodeSearchRepository.js'
+import { SqliteQueryTemplateRepository } from '@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js'
 import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
 import { SqliteTableRepository } from '@/infrastructure/database/sqlite/SqliteTableRepository.js'
 import type { DIContainer } from '../DIContainer.js'
@@ -16,7 +16,7 @@ const createSimpleLogger = () => ({
   info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
   warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
   error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
-  debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+  debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
 })
 
 /**

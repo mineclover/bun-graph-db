@@ -207,7 +207,7 @@ export class UnifiedTestRunner {
       console.log('  - Bun coverage: coverage/')
       console.log('  - Jest coverage: coverage/jest/')
     } catch (error: any) {
-      console.error('❌ Failed to generate coverage report:', (error as any))
+      console.error('❌ Failed to generate coverage report:', error as any)
     }
   }
 }

@@ -520,7 +520,9 @@ async function testTemplateExecution(db: Database): Promise<void> {
       console.log(`   🔄 Testing template: ${(template as any).identifier}`)
 
       // Parse variables schema and defaults
-      const variablesSchema = (template as any).variables_schema ? JSON.parse((template as any).variables_schema) : {}
+      const variablesSchema = (template as any).variables_schema
+        ? JSON.parse((template as any).variables_schema)
+        : {}
       const defaultVariables = (template as any).default_variables
         ? JSON.parse((template as any).default_variables)
         : {}
@@ -535,7 +537,10 @@ async function testTemplateExecution(db: Database): Promise<void> {
       if (variablesSchema.required?.includes('query')) {
         testVariables.query = 'Service'
       }
-      if (variablesSchema.required?.includes('content') && (template as any).template_type === 'mutation') {
+      if (
+        variablesSchema.required?.includes('content') &&
+        (template as any).template_type === 'mutation'
+      ) {
         testVariables.content = `Test Node ${Date.now()}`
         testVariables.title = 'Test Title'
         testVariables.description = 'Test description for created node'
@@ -572,10 +577,16 @@ async function generateTestReport(db: Database): Promise<void> {
   // Database statistics
   const tableCount = (db.prepare('SELECT COUNT(*) as count FROM tables').get() as any)?.count
   const nodeCount = (db.prepare('SELECT COUNT(*) as count FROM nodes').get() as any)?.count
-  const relationCount = (db.prepare('SELECT COUNT(*) as count FROM node_relations').get() as any)?.count
-  const templateCount = (db.prepare('SELECT COUNT(*) as count FROM query_templates').get() as any)?.count
-  const attributeTypeCount = (db.prepare('SELECT COUNT(*) as count FROM attribute_types').get() as any)?.count
-  const relationTypeCount = (db.prepare('SELECT COUNT(*) as count FROM relation_types').get() as any)?.count
+  const relationCount = (db.prepare('SELECT COUNT(*) as count FROM node_relations').get() as any)
+    ?.count
+  const templateCount = (db.prepare('SELECT COUNT(*) as count FROM query_templates').get() as any)
+    ?.count
+  const attributeTypeCount = (
+    db.prepare('SELECT COUNT(*) as count FROM attribute_types').get() as any
+  )?.count
+  const relationTypeCount = (
+    db.prepare('SELECT COUNT(*) as count FROM relation_types').get() as any
+  )?.count
 
   console.log(`Tables: ${tableCount}`)
   console.log(`Nodes: ${nodeCount}`)

@@ -17,16 +17,19 @@ describe('Relationship Quality Tests', () => {
     }
 
     // Create test table
-    testTableId = await client.createTable('relationship-test', 'Relationship quality testing') as string
+    testTableId = (await client.createTable(
+      'relationship-test',
+      'Relationship quality testing'
+    )) as string
     if (!testTableId) {
       throw new Error('Failed to create test table')
     }
 
     // Create relation type
-    relationTypeId = await client.createRelationType(
+    relationTypeId = (await client.createRelationType(
       'depends-on',
       'Dependency relation for testing'
-    ) as string
+    )) as string
     if (!relationTypeId) {
       throw new Error('Failed to create relation type')
     }

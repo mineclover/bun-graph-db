@@ -23,51 +23,83 @@ export class AttributeQueries extends BaseResolver {
   }
 
   async attributeType(_: GraphQLParent, args: AttributeArgs, context?: GraphQLContext) {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Attribute type ID'),
-      BaseResolver.validationRules.nonEmpty('id', 'Attribute type ID')
-    ], 'attributeType')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Attribute type ID'),
+        BaseResolver.validationRules.nonEmpty('id', 'Attribute type ID'),
+      ],
+      'attributeType'
+    )
 
-    return this.handleQuery(async () => {
-      return await this.attributeTypeRepository.findById(args.id)
-    }, 'findAttributeTypeById', { id: args.id })
+    return this.handleQuery(
+      async () => {
+        return await this.attributeTypeRepository.findById(args.id)
+      },
+      'findAttributeTypeById',
+      { id: args.id }
+    )
   }
 
-  async attributeTypeByIdentifier(_: GraphQLParent, args: AttributeByIdentifierArgs, context?: GraphQLContext) {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('identifier', 'Attribute type identifier'),
-      BaseResolver.validationRules.nonEmpty('identifier', 'Attribute type identifier')
-    ], 'attributeTypeByIdentifier')
+  async attributeTypeByIdentifier(
+    _: GraphQLParent,
+    args: AttributeByIdentifierArgs,
+    context?: GraphQLContext
+  ) {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('identifier', 'Attribute type identifier'),
+        BaseResolver.validationRules.nonEmpty('identifier', 'Attribute type identifier'),
+      ],
+      'attributeTypeByIdentifier'
+    )
 
-    return this.handleQuery(async () => {
-      return await this.attributeTypeRepository.findByIdentifier(args.identifier)
-    }, 'findAttributeTypeByIdentifier', { identifier: args.identifier })
+    return this.handleQuery(
+      async () => {
+        return await this.attributeTypeRepository.findByIdentifier(args.identifier)
+      },
+      'findAttributeTypeByIdentifier',
+      { identifier: args.identifier }
+    )
   }
 
   async attributeTypes(_: GraphQLParent, args?: any, context?: GraphQLContext) {
-    return this.handleQuery(async () => {
-      const result = await this.attributeTypeRepository.findAll({
-        pagination: { limit: 100, offset: 0 },
-      })
+    return this.handleQuery(
+      async () => {
+        const result = await this.attributeTypeRepository.findAll({
+          pagination: { limit: 100, offset: 0 },
+        })
 
-      return {
-        nodes: result.items,
-        totalCount: result.total,
-        hasNextPage: result.hasNextPage,
-        hasPreviousPage: result.hasPreviousPage,
-      }
-    }, 'findAttributeTypes', {})
+        return {
+          nodes: result.items,
+          totalCount: result.total,
+          hasNextPage: result.hasNextPage,
+          hasPreviousPage: result.hasPreviousPage,
+        }
+      },
+      'findAttributeTypes',
+      {}
+    )
   }
 
   async attribute(_: GraphQLParent, args: AttributeArgs, context?: GraphQLContext) {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Attribute ID'),
-      BaseResolver.validationRules.nonEmpty('id', 'Attribute ID')
-    ], 'attribute')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Attribute ID'),
+        BaseResolver.validationRules.nonEmpty('id', 'Attribute ID'),
+      ],
+      'attribute'
+    )
 
-    return this.handleQuery(async () => {
-      return await this.attributeRepository.findById(args.id)
-    }, 'findAttributeById', { id: args.id })
+    return this.handleQuery(
+      async () => {
+        return await this.attributeRepository.findById(args.id)
+      },
+      'findAttributeById',
+      { id: args.id }
+    )
   }
 
   async attributeByIdentifier(
@@ -75,32 +107,44 @@ export class AttributeQueries extends BaseResolver {
     args: AttributeByIdentifierArgs & { tableId: string },
     context?: GraphQLContext
   ) {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('identifier', 'Attribute identifier'),
-      BaseResolver.validationRules.required('tableId', 'Table ID'),
-      BaseResolver.validationRules.nonEmpty('identifier', 'Attribute identifier'),
-      BaseResolver.validationRules.nonEmpty('tableId', 'Table ID')
-    ], 'attributeByIdentifier')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('identifier', 'Attribute identifier'),
+        BaseResolver.validationRules.required('tableId', 'Table ID'),
+        BaseResolver.validationRules.nonEmpty('identifier', 'Attribute identifier'),
+        BaseResolver.validationRules.nonEmpty('tableId', 'Table ID'),
+      ],
+      'attributeByIdentifier'
+    )
 
-    return this.handleQuery(async () => {
-      return await this.attributeRepository.findByIdentifier(args.identifier, args.tableId)
-    }, 'findAttributeByIdentifier', { identifier: args.identifier, tableId: args.tableId })
+    return this.handleQuery(
+      async () => {
+        return await this.attributeRepository.findByIdentifier(args.identifier, args.tableId)
+      },
+      'findAttributeByIdentifier',
+      { identifier: args.identifier, tableId: args.tableId }
+    )
   }
 
   async attributes(_: GraphQLParent, args: AttributesArgs, context?: GraphQLContext) {
-    return this.handleQuery(async () => {
-      const result = await this.attributeRepository.findAll({
-        filter: args.filter,
-        pagination: args.pagination || { limit: 10, offset: 0 },
-        sort: args.sort,
-      })
+    return this.handleQuery(
+      async () => {
+        const result = await this.attributeRepository.findAll({
+          filter: args.filter,
+          pagination: args.pagination || { limit: 10, offset: 0 },
+          sort: args.sort,
+        })
 
-      return {
-        nodes: result.items,
-        totalCount: result.total,
-        hasNextPage: result.hasNextPage,
-        hasPreviousPage: result.hasPreviousPage,
-      }
-    }, 'findAttributes', { filter: args.filter, pagination: args.pagination, sort: args.sort })
+        return {
+          nodes: result.items,
+          totalCount: result.total,
+          hasNextPage: result.hasNextPage,
+          hasPreviousPage: result.hasPreviousPage,
+        }
+      },
+      'findAttributes',
+      { filter: args.filter, pagination: args.pagination, sort: args.sort }
+    )
   }
 }

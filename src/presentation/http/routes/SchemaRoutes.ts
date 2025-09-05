@@ -1,14 +1,19 @@
 /**
  * Schema Routes for External GraphQL Schema Access
- * 
+ *
  * Provides REST endpoints to serve GraphQL schema files for external consumption
  */
 
-import type { DIContainer } from '../../../infrastructure/container/DIContainer.js'
+import {
+  buildClientSchema,
+  getIntrospectionQuery,
+  introspectionFromSchema,
+  printSchema,
+} from 'graphql'
 import type { ILogger } from '../../../application/ports/ILogger.js'
+import type { DIContainer } from '../../../infrastructure/container/DIContainer.js'
 import { CommonTokens } from '../../../infrastructure/container/tokens/CommonTokens.js'
 import { GraphQLSchemaBuilder } from '../../graphql/GraphQLSchemaBuilder.js'
-import { printSchema, getIntrospectionQuery, buildClientSchema, introspectionFromSchema } from 'graphql'
 
 export interface SchemaEndpoint {
   path: string
@@ -75,9 +80,9 @@ export class SchemaRoutes {
   private async getSchemaSDL(request: Request): Promise<Response> {
     try {
       const logger = await this.getLogger()
-      logger.info('Schema SDL requested', { 
+      logger.info('Schema SDL requested', {
         url: request.url,
-        userAgent: request.headers.get('user-agent')
+        userAgent: request.headers.get('user-agent'),
       })
 
       const schema = await this.schemaBuilder.build()
@@ -96,7 +101,7 @@ export class SchemaRoutes {
     } catch (error) {
       const logger = await this.getLogger()
       logger.error('Failed to generate schema SDL', { error })
-      
+
       return new Response(
         JSON.stringify({
           error: 'Failed to generate schema',
@@ -116,9 +121,9 @@ export class SchemaRoutes {
   private async getSchemaJSON(request: Request): Promise<Response> {
     try {
       const logger = await this.getLogger()
-      logger.info('Schema JSON requested', { 
+      logger.info('Schema JSON requested', {
         url: request.url,
-        userAgent: request.headers.get('user-agent')
+        userAgent: request.headers.get('user-agent'),
       })
 
       const schema = await this.schemaBuilder.build()
@@ -137,7 +142,7 @@ export class SchemaRoutes {
     } catch (error) {
       const logger = await this.getLogger()
       logger.error('Failed to generate schema JSON', { error })
-      
+
       return new Response(
         JSON.stringify({
           error: 'Failed to generate schema JSON',
@@ -171,7 +176,7 @@ export class SchemaRoutes {
     } catch (error) {
       const logger = await this.getLogger()
       logger.error('Failed to generate introspection query', { error })
-      
+
       return new Response(
         JSON.stringify({
           error: 'Failed to generate introspection query',
@@ -191,9 +196,9 @@ export class SchemaRoutes {
   private async getIntrospectionJSON(request: Request): Promise<Response> {
     try {
       const logger = await this.getLogger()
-      logger.info('Introspection JSON requested', { 
+      logger.info('Introspection JSON requested', {
         url: request.url,
-        userAgent: request.headers.get('user-agent')
+        userAgent: request.headers.get('user-agent'),
       })
 
       const schema = await this.schemaBuilder.build()
@@ -217,7 +222,7 @@ export class SchemaRoutes {
     } catch (error) {
       const logger = await this.getLogger()
       logger.error('Failed to generate introspection JSON', { error })
-      
+
       return new Response(
         JSON.stringify({
           error: 'Failed to generate introspection JSON',
@@ -237,15 +242,15 @@ export class SchemaRoutes {
   private async getTypeScriptTypes(request: Request): Promise<Response> {
     try {
       const logger = await this.getLogger()
-      logger.info('TypeScript types requested', { 
+      logger.info('TypeScript types requested', {
         url: request.url,
-        userAgent: request.headers.get('user-agent')
+        userAgent: request.headers.get('user-agent'),
       })
 
       // Basic TypeScript types generation (simplified)
       const schema = await this.schemaBuilder.build()
       const introspection = introspectionFromSchema(schema)
-      
+
       const typeDefinitions = this.generateTypeScriptDefinitions(introspection)
 
       return new Response(typeDefinitions, {
@@ -261,7 +266,7 @@ export class SchemaRoutes {
     } catch (error) {
       const logger = await this.getLogger()
       logger.error('Failed to generate TypeScript types', { error })
-      
+
       return new Response(
         JSON.stringify({
           error: 'Failed to generate TypeScript types',
@@ -281,7 +286,7 @@ export class SchemaRoutes {
    */
   private generateTypeScriptDefinitions(introspection: any): string {
     const types = introspection.types || []
-    
+
     let typescript = `// Generated GraphQL TypeScript Definitions\n`
     typescript += `// Generated at: ${new Date().toISOString()}\n`
     typescript += `// Use 'bun run codegen' for complete type generation\n\n`

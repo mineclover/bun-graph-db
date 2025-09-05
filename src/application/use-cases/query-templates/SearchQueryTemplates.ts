@@ -1,6 +1,9 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
-import type { IQueryTemplateRepository, SearchTemplatesOptions } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type {
+  IQueryTemplateRepository,
+  SearchTemplatesOptions,
+} from '@/domain/repositories/IQueryTemplateRepository.js'
 import { ApplicationException } from '@/shared/exceptions/ApplicationException.js'
 
 export interface SearchQueryTemplatesRequest {
@@ -54,7 +57,7 @@ export class SearchQueryTemplates {
         orderBy: request.orderBy || 'created_at',
         orderDirection: request.orderDirection || 'DESC',
         limit: this.validateLimit(request.limit),
-        offset: this.validateOffset(request.offset)
+        offset: this.validateOffset(request.offset),
       }
 
       // Execute search
@@ -63,15 +66,14 @@ export class SearchQueryTemplates {
       this.logger.info('Query template search completed', {
         totalFound: results.total,
         returned: results.items.length,
-        hasNextPage: results.hasNextPage
+        hasNextPage: results.hasNextPage,
       })
 
       return {
         success: true,
         results,
-        errors: []
+        errors: [],
       }
-
     } catch (error) {
       this.logger.error('Failed to search query templates', { error, request })
 
@@ -97,7 +99,10 @@ export class SearchQueryTemplates {
     }
 
     // Validate template type
-    if (request.templateType && !['query', 'mutation', 'subscription'].includes(request.templateType)) {
+    if (
+      request.templateType &&
+      !['query', 'mutation', 'subscription'].includes(request.templateType)
+    ) {
       throw new ApplicationException(
         'Template type must be query, mutation, or subscription',
         'INVALID_TEMPLATE_TYPE'
@@ -133,17 +138,11 @@ export class SearchQueryTemplates {
     if (limit === undefined) return 10
 
     if (limit < 1) {
-      throw new ApplicationException(
-        'Limit must be greater than 0',
-        'INVALID_LIMIT'
-      )
+      throw new ApplicationException('Limit must be greater than 0', 'INVALID_LIMIT')
     }
 
     if (limit > 100) {
-      throw new ApplicationException(
-        'Limit cannot exceed 100',
-        'LIMIT_TOO_LARGE'
-      )
+      throw new ApplicationException('Limit cannot exceed 100', 'LIMIT_TOO_LARGE')
     }
 
     return limit
@@ -153,10 +152,7 @@ export class SearchQueryTemplates {
     if (offset === undefined) return 0
 
     if (offset < 0) {
-      throw new ApplicationException(
-        'Offset must be greater than or equal to 0',
-        'INVALID_OFFSET'
-      )
+      throw new ApplicationException('Offset must be greater than or equal to 0', 'INVALID_OFFSET')
     }
 
     return offset

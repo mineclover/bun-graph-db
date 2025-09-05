@@ -27,27 +27,46 @@ export class TableResolver extends BaseResolver {
 
   // Query resolvers
   async table(args: { id: string }, context?: GraphQLContext): Promise<TableDto | null> {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Table ID'),
-      BaseResolver.validationRules.nonEmpty('id', 'Table ID')
-    ], 'table')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Table ID'),
+        BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
+      ],
+      'table'
+    )
 
-    return this.handleQuery(async () => {
-      const table = await this.tableRepository.findById(args.id as TableId)
-      return table ? TableDto.fromEntity(table) : null
-    }, 'findTableById', { id: args.id })
+    return this.handleQuery(
+      async () => {
+        const table = await this.tableRepository.findById(args.id as TableId)
+        return table ? TableDto.fromEntity(table) : null
+      },
+      'findTableById',
+      { id: args.id }
+    )
   }
 
-  async tableByIdentifier(args: { identifier: string }, context?: GraphQLContext): Promise<TableDto | null> {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('identifier', 'Table Identifier'),
-      BaseResolver.validationRules.nonEmpty('identifier', 'Table Identifier')
-    ], 'tableByIdentifier')
+  async tableByIdentifier(
+    args: { identifier: string },
+    context?: GraphQLContext
+  ): Promise<TableDto | null> {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('identifier', 'Table Identifier'),
+        BaseResolver.validationRules.nonEmpty('identifier', 'Table Identifier'),
+      ],
+      'tableByIdentifier'
+    )
 
-    return this.handleQuery(async () => {
-      const table = await this.tableRepository.findByIdentifier(args.identifier)
-      return table ? TableDto.fromEntity(table) : null
-    }, 'findTableByIdentifier', { identifier: args.identifier })
+    return this.handleQuery(
+      async () => {
+        const table = await this.tableRepository.findByIdentifier(args.identifier)
+        return table ? TableDto.fromEntity(table) : null
+      },
+      'findTableByIdentifier',
+      { identifier: args.identifier }
+    )
   }
 
   async tables(args: { filter?: TablesFilter; pagination?: TablesPagination }): Promise<{
@@ -78,25 +97,36 @@ export class TableResolver extends BaseResolver {
   }
 
   // Mutation resolvers
-  async createTable(args: { input: CreateTableInput }, context?: GraphQLContext): Promise<{
+  async createTable(
+    args: { input: CreateTableInput },
+    context?: GraphQLContext
+  ): Promise<{
     success: boolean
     data?: TableDto | null
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
-    this.validateArgs(args.input, [
-      BaseResolver.validationRules.required('identifier', 'Table Identifier'),
-      BaseResolver.validationRules.nonEmpty('identifier', 'Table Identifier')
-    ], 'createTable')
+    this.validateArgs(
+      args.input,
+      [
+        BaseResolver.validationRules.required('identifier', 'Table Identifier'),
+        BaseResolver.validationRules.nonEmpty('identifier', 'Table Identifier'),
+      ],
+      'createTable'
+    )
 
-    const result = await this.handleMutation(async () => {
-      const useCaseResult = await this.createTableUseCase.execute(args.input)
-      return useCaseResult.table
-    }, 'createTable', { input: args.input })
+    const result = await this.handleMutation(
+      async () => {
+        const useCaseResult = await this.createTableUseCase.execute(args.input)
+        return useCaseResult.table
+      },
+      'createTable',
+      { input: args.input }
+    )
 
     return {
       success: result.success,
       data: result.data,
-      errors: result.errors
+      errors: result.errors,
     }
   }
 
@@ -187,17 +217,31 @@ export class TableResolver extends BaseResolver {
 
   // Field resolvers
   async nodeCount(table: TableDto, context?: GraphQLContext): Promise<number> {
-    return this.handleFieldResolution(async () => {
-      // TODO: Implement node count query
-      return 0
-    }, 'nodeCount', 'Table', { tableId: table.id }) || 0
+    return (
+      this.handleFieldResolution(
+        async () => {
+          // TODO: Implement node count query
+          return 0
+        },
+        'nodeCount',
+        'Table',
+        { tableId: table.id }
+      ) || 0
+    )
   }
 
   async attributeCount(table: TableDto, context?: GraphQLContext): Promise<number> {
-    return this.handleFieldResolution(async () => {
-      // TODO: Implement attribute count query  
-      return 0
-    }, 'attributeCount', 'Table', { tableId: table.id }) || 0
+    return (
+      this.handleFieldResolution(
+        async () => {
+          // TODO: Implement attribute count query
+          return 0
+        },
+        'attributeCount',
+        'Table',
+        { tableId: table.id }
+      ) || 0
+    )
   }
 
   // TODO: Implement relationship resolvers (attributes, nodes)

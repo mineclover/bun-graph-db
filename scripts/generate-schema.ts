@@ -5,9 +5,8 @@
  */
 
 import { readdir, readFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { dirname } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const rootDir = resolve(__dirname, '..')
@@ -22,7 +21,7 @@ await Bun.write(join(outputDir, '.gitkeep'), '')
  */
 async function combineSchemaFiles(): Promise<string> {
   const schemaFiles: string[] = []
-  
+
   // Define the order of schema files for proper dependency resolution
   const schemaOrder = [
     'base-types.graphql',
@@ -42,7 +41,7 @@ async function combineSchemaFiles(): Promise<string> {
     'mutations/relation-mutations.graphql',
     'mutations/template-mutations.graphql',
     'subscriptions/realtime.graphql',
-    'schema-export-import.graphql'
+    'schema-export-import.graphql',
   ]
 
   // Read files in order
@@ -59,11 +58,11 @@ async function combineSchemaFiles(): Promise<string> {
   // Also read any other .graphql files not in the order list
   async function readDir(dir: string, prefix = ''): Promise<void> {
     const files = await readdir(dir, { withFileTypes: true })
-    
+
     for (const file of files) {
       const fullPath = join(dir, file.name)
       const relativePath = prefix ? `${prefix}/${file.name}` : file.name
-      
+
       if (file.isDirectory()) {
         await readDir(fullPath, relativePath)
       } else if (file.name.endsWith('.graphql') && !schemaOrder.includes(relativePath)) {
@@ -74,7 +73,7 @@ async function combineSchemaFiles(): Promise<string> {
   }
 
   await readDir(schemaDir)
-  
+
   return schemaFiles.join('\n\n')
 }
 
@@ -83,18 +82,18 @@ async function combineSchemaFiles(): Promise<string> {
  */
 async function generateSchema() {
   console.log('🔄 Generating GraphQL schema...')
-  
+
   const combinedSchema = await combineSchemaFiles()
-  
+
   // Write combined schema
   const schemaPath = join(outputDir, 'schema.graphql')
   await Bun.write(schemaPath, combinedSchema)
   console.log(`✅ Generated schema: ${schemaPath}`)
-  
+
   // Generate introspection JSON
   console.log('🔄 Generating introspection JSON...')
   const introspectionPath = join(outputDir, 'introspection.json')
-  
+
   // We'll create a simple introspection runner
   const introspectionRunner = `
 import { makeExecutableSchema } from '@graphql-tools/schema'
@@ -116,26 +115,26 @@ try {
   process.exit(1)
 }
 `
-  
+
   const tempFile = join(outputDir, 'temp-introspection.ts')
   await Bun.write(tempFile, introspectionRunner)
-  
+
   try {
     const proc = Bun.spawn(['bun', tempFile], {
       cwd: rootDir,
-      stdout: 'pipe'
+      stdout: 'pipe',
     })
-    
+
     const output = await new Response(proc.stdout).text()
     await Bun.write(introspectionPath, output)
     console.log(`✅ Generated introspection: ${introspectionPath}`)
   } catch (error) {
     console.error('⚠️  Could not generate introspection (server may need to be running)')
   }
-  
+
   // Clean up temp file
   await Bun.spawn(['rm', tempFile]).exited
-  
+
   return { schemaPath, introspectionPath }
 }
 

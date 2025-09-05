@@ -258,11 +258,7 @@ describe('NodeMutations', () => {
         errors: [],
       })
 
-      expect(mockNodeAttributeRepository.save).toHaveBeenCalled(
-        'node-1',
-        'attr-1',
-        'test value'
-      )
+      expect(mockNodeAttributeRepository.save).toHaveBeenCalled('node-1', 'attr-1', 'test value')
       expect(mockLogger.info).toHaveBeenCalledWith('Setting node attribute', {
         input: {
           nodeId: 'node-1',

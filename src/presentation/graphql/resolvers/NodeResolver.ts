@@ -62,57 +62,76 @@ export class NodeResolver extends BaseResolver {
 
   // Query resolvers
   async node(args: { id: string }, context?: GraphQLContext): Promise<NodeDto | null> {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Node ID'),
-      BaseResolver.validationRules.nonEmpty('id', 'Node ID')
-    ], 'node')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Node ID'),
+        BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
+      ],
+      'node'
+    )
 
-    return this.handleQuery(async () => {
-      const node = await this.nodeRepository.findById(args.id as NodeId)
-      if (!node) return null
+    return this.handleQuery(
+      async () => {
+        const node = await this.nodeRepository.findById(args.id as NodeId)
+        if (!node) return null
 
-      // Get node attributes
-      const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(args.id as NodeId)
-      const attributeValues: Record<string, unknown> = {}
+        // Get node attributes
+        const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(args.id as NodeId)
+        const attributeValues: Record<string, unknown> = {}
 
-      for (const nodeAttr of nodeAttributes) {
-        const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
-        if (attribute) {
-          attributeValues[attribute.getIdentifier()] = nodeAttr.getParsedValue()
+        for (const nodeAttr of nodeAttributes) {
+          const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
+          if (attribute) {
+            attributeValues[attribute.getIdentifier()] = nodeAttr.getParsedValue()
+          }
         }
-      }
 
-      return NodeDto.fromEntity(node, attributeValues)
-    }, 'findNodeById', { id: args.id })
+        return NodeDto.fromEntity(node, attributeValues)
+      },
+      'findNodeById',
+      { id: args.id }
+    )
   }
 
-  async nodeByContent(args: { tableId: string; content: string }, context?: GraphQLContext): Promise<NodeDto | null> {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('tableId', 'Table ID'),
-      BaseResolver.validationRules.required('content', 'Content'),
-      BaseResolver.validationRules.nonEmpty('content', 'Content')
-    ], 'nodeByContent')
+  async nodeByContent(
+    args: { tableId: string; content: string },
+    context?: GraphQLContext
+  ): Promise<NodeDto | null> {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('tableId', 'Table ID'),
+        BaseResolver.validationRules.required('content', 'Content'),
+        BaseResolver.validationRules.nonEmpty('content', 'Content'),
+      ],
+      'nodeByContent'
+    )
 
-    return this.handleQuery(async () => {
-      const node = await this.nodeRepository.findByTableIdAndContent(
-        args.tableId as TableId,
-        args.content
-      )
-      if (!node) return null
+    return this.handleQuery(
+      async () => {
+        const node = await this.nodeRepository.findByTableIdAndContent(
+          args.tableId as TableId,
+          args.content
+        )
+        if (!node) return null
 
-      // Get node attributes
-      const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.getId())
-      const attributeValues: Record<string, unknown> = {}
+        // Get node attributes
+        const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.getId())
+        const attributeValues: Record<string, unknown> = {}
 
-      for (const nodeAttr of nodeAttributes) {
-        const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
-        if (attribute) {
-          attributeValues[attribute.getIdentifier()] = nodeAttr.getParsedValue()
+        for (const nodeAttr of nodeAttributes) {
+          const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
+          if (attribute) {
+            attributeValues[attribute.getIdentifier()] = nodeAttr.getParsedValue()
+          }
         }
-      }
 
-      return NodeDto.fromEntity(node, attributeValues)
-    }, 'findNodeByContent', { tableId: args.tableId, content: args.content })
+        return NodeDto.fromEntity(node, attributeValues)
+      },
+      'findNodeByContent',
+      { tableId: args.tableId, content: args.content }
+    )
   }
 
   async nodes(args: {
@@ -197,45 +216,58 @@ export class NodeResolver extends BaseResolver {
   }
 
   // Mutation resolvers
-  async createNode(args: { input: CreateNodeInput }, context?: GraphQLContext): Promise<{
+  async createNode(
+    args: { input: CreateNodeInput },
+    context?: GraphQLContext
+  ): Promise<{
     success: boolean
     data?: NodeDto | null
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
-    this.validateArgs(args.input, [
-      BaseResolver.validationRules.required('tableId', 'Table ID'),
-      BaseResolver.validationRules.required('content', 'Content'),
-      BaseResolver.validationRules.nonEmpty('content', 'Content')
-    ], 'createNode')
+    this.validateArgs(
+      args.input,
+      [
+        BaseResolver.validationRules.required('tableId', 'Table ID'),
+        BaseResolver.validationRules.required('content', 'Content'),
+        BaseResolver.validationRules.nonEmpty('content', 'Content'),
+      ],
+      'createNode'
+    )
 
-    const result = await this.handleMutation(async () => {
-      // Convert GraphQL input to use case input
-      const attributes: Record<string, unknown> = {}
-      if (args.input.attributes) {
-        for (const attr of args.input.attributes) {
-          // Find attribute to get its identifier
-          const attribute = await this.attributeRepository.findById(attr.attributeId as AttributeId)
-          if (attribute) {
-            attributes[attribute.getIdentifier()] = attr.value
+    const result = await this.handleMutation(
+      async () => {
+        // Convert GraphQL input to use case input
+        const attributes: Record<string, unknown> = {}
+        if (args.input.attributes) {
+          for (const attr of args.input.attributes) {
+            // Find attribute to get its identifier
+            const attribute = await this.attributeRepository.findById(
+              attr.attributeId as AttributeId
+            )
+            if (attribute) {
+              attributes[attribute.getIdentifier()] = attr.value
+            }
           }
         }
-      }
 
-      const useCaseResult = await this.createNodeUseCase.execute({
-        tableId: args.input.tableId,
-        content: args.input.content,
-        title: args.input.title,
-        description: args.input.description,
-        attributes,
-      })
+        const useCaseResult = await this.createNodeUseCase.execute({
+          tableId: args.input.tableId,
+          content: args.input.content,
+          title: args.input.title,
+          description: args.input.description,
+          attributes,
+        })
 
-      return useCaseResult.node
-    }, 'createNode', { input: args.input })
+        return useCaseResult.node
+      },
+      'createNode',
+      { input: args.input }
+    )
 
     return {
       success: result.success,
       data: result.data,
-      errors: result.errors
+      errors: result.errors,
     }
   }
 
@@ -294,35 +326,46 @@ export class NodeResolver extends BaseResolver {
     }
   }
 
-  async deleteNode(args: { id: string }, context?: GraphQLContext): Promise<{
+  async deleteNode(
+    args: { id: string },
+    context?: GraphQLContext
+  ): Promise<{
     success: boolean
     data?: boolean
     errors: Array<{ message: string; code: string }>
   }> {
-    this.validateArgs(args, [
-      BaseResolver.validationRules.required('id', 'Node ID'),
-      BaseResolver.validationRules.nonEmpty('id', 'Node ID')
-    ], 'deleteNode')
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('id', 'Node ID'),
+        BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
+      ],
+      'deleteNode'
+    )
 
-    const result = await this.handleMutation(async () => {
-      const node = await this.nodeRepository.findById(args.id as NodeId)
-      if (!node) {
-        throw new NotFoundException(`Node with id ${args.id} not found`)
-      }
+    const result = await this.handleMutation(
+      async () => {
+        const node = await this.nodeRepository.findById(args.id as NodeId)
+        if (!node) {
+          throw new NotFoundException(`Node with id ${args.id} not found`)
+        }
 
-      // Delete node attributes first
-      await this.nodeAttributeRepository.deleteByNodeId(args.id as NodeId)
+        // Delete node attributes first
+        await this.nodeAttributeRepository.deleteByNodeId(args.id as NodeId)
 
-      // Delete the node
-      await this.nodeRepository.delete(args.id as NodeId)
+        // Delete the node
+        await this.nodeRepository.delete(args.id as NodeId)
 
-      return true
-    }, 'deleteNode', { id: args.id })
+        return true
+      },
+      'deleteNode',
+      { id: args.id }
+    )
 
     return {
       success: result.success,
       data: result.data,
-      errors: result.errors
+      errors: result.errors,
     }
   }
 
@@ -401,23 +444,42 @@ export class NodeResolver extends BaseResolver {
 
   // Field resolvers
   async table_field(node: NodeDto, context?: GraphQLContext): Promise<TableDto | null> {
-    return this.handleFieldResolution(async () => {
-      const table = await this.tableRepository.findById(node.tableId as TableId)
-      return table ? TableDto.fromEntity(table) : null
-    }, 'table', 'Node', { nodeId: node.id })
+    return this.handleFieldResolution(
+      async () => {
+        const table = await this.tableRepository.findById(node.tableId as TableId)
+        return table ? TableDto.fromEntity(table) : null
+      },
+      'table',
+      'Node',
+      { nodeId: node.id }
+    )
   }
 
   async attributeCount_field(node: NodeDto, context?: GraphQLContext): Promise<number> {
-    return this.handleFieldResolution(async () => {
-      const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
-      return nodeAttributes.length
-    }, 'attributeCount', 'Node', { nodeId: node.id }) || 0
+    return (
+      this.handleFieldResolution(
+        async () => {
+          const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
+          return nodeAttributes.length
+        },
+        'attributeCount',
+        'Node',
+        { nodeId: node.id }
+      ) || 0
+    )
   }
 
   async attributes_field(node: NodeDto, context?: GraphQLContext): Promise<NodeAttributeDto[]> {
-    return this.handleFieldResolution(async () => {
-      const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
-      return NodeAttributeDto.fromEntities(nodeAttributes)
-    }, 'attributes', 'Node', { nodeId: node.id }) || []
+    return (
+      this.handleFieldResolution(
+        async () => {
+          const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
+          return NodeAttributeDto.fromEntities(nodeAttributes)
+        },
+        'attributes',
+        'Node',
+        { nodeId: node.id }
+      ) || []
+    )
   }
 }

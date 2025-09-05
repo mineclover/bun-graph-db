@@ -19,20 +19,35 @@ export class AttributeFieldResolvers extends BaseResolver {
   }
 
   async attributeType(parent: AttributeParent, args?: any, context?: GraphQLContext) {
-    return this.handleFieldResolution(async () => {
-      return await this.attributeTypeRepository.findById(parent.attributeTypeId)
-    }, 'attributeType', 'Attribute', { attributeId: parent.id, attributeTypeId: parent.attributeTypeId })
+    return this.handleFieldResolution(
+      async () => {
+        return await this.attributeTypeRepository.findById(parent.attributeTypeId)
+      },
+      'attributeType',
+      'Attribute',
+      { attributeId: parent.id, attributeTypeId: parent.attributeTypeId }
+    )
   }
 
   async table(parent: AttributeParent, args?: any, context?: GraphQLContext) {
-    return this.handleFieldResolution(async () => {
-      return await this.tableRepository.findById(parent.tableId)
-    }, 'table', 'Attribute', { attributeId: parent.id, tableId: parent.tableId })
+    return this.handleFieldResolution(
+      async () => {
+        return await this.tableRepository.findById(parent.tableId)
+      },
+      'table',
+      'Attribute',
+      { attributeId: parent.id, tableId: parent.tableId }
+    )
   }
 
   async attribute(parent: any, args?: any, context?: GraphQLContext) {
-    return this.handleFieldResolution(async () => {
-      return await this.attributeRepository.findById(parent.attributeId)
-    }, 'attribute', 'NodeAttribute', { nodeAttributeId: parent.id, attributeId: parent.attributeId })
+    return this.handleFieldResolution(
+      async () => {
+        return await this.attributeRepository.findById(parent.attributeId)
+      },
+      'attribute',
+      'NodeAttribute',
+      { nodeAttributeId: parent.id, attributeId: parent.attributeId }
+    )
   }
 }

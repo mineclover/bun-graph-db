@@ -26,4 +26,5 @@ export const UseCaseTokens = {
 
   // Query template use cases
   EXECUTE_QUERY_TEMPLATE_USE_CASE: Symbol.for('ExecuteQueryTemplateUseCase'),
+  EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE: Symbol.for('ExecuteTemplateWithGraphQLUseCase'),
 } as const

@@ -5,7 +5,12 @@ import type { GraphQLSchema } from 'graphql'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
 import { join } from 'path'
 import type { DIContainer } from '../../infrastructure/container/DIContainer.js'
-import { GraphQLTokens, UseCaseTokens, RepositoryTokens, CommonTokens } from '../../infrastructure/container/tokens/index.js'
+import {
+  CommonTokens,
+  GraphQLTokens,
+  RepositoryTokens,
+  UseCaseTokens,
+} from '../../infrastructure/container/tokens/index.js'
 import type {
   AttributeFieldResolvers,
   NodeFieldResolvers,
@@ -49,7 +54,7 @@ export interface GraphQLDependencies {
   nodeFieldResolvers: NodeFieldResolvers
   attributeFieldResolvers: AttributeFieldResolvers
   relationFieldResolvers: RelationFieldResolvers
-  
+
   // Schema resolvers
   schemaResolvers: ReturnType<typeof createSchemaResolvers>
 }
@@ -85,13 +90,18 @@ export class GraphQLSchemaBuilder {
         GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS
       ),
       relationFieldResolvers: await this.container.resolve(GraphQLTokens.RELATION_FIELD_RESOLVERS),
-      
+
       // Schema resolvers
       schemaResolvers: createSchemaResolvers({
         tableRepository: await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY),
         schemaExportUseCase: await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE),
         schemaImportUseCase: await this.container.resolve(UseCaseTokens.SCHEMA_IMPORT_USE_CASE),
-        logger: await this.container.resolve(CommonTokens.LOGGER),
+        logger: {
+          info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+          warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+          error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+          debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+        },
       }),
     }
   }
@@ -160,7 +170,7 @@ export class GraphQLSchemaBuilder {
           deps.templateQueries.getPopularTemplates(_, args),
         executeTemplate: (_: any, args: any, context: any) =>
           deps.templateQueries.executeTemplate(_, args, context),
-          
+
         // Schema export queries
         exportTable: (_: any, args: any) => deps.schemaResolvers.Query.exportTable(_, args),
         exportAllTables: (_: any, args: any) => deps.schemaResolvers.Query.exportAllTables(_, args),
@@ -208,7 +218,9 @@ export class GraphQLSchemaBuilder {
           deps.templateMutations.deactivateTemplate(_, args),
         executeTemplate: (_: any, args: any, context: any) =>
           deps.templateMutations.executeTemplate(_, args, context),
-          
+        executeTemplateWithGraphQL: (_: any, args: any, context: any) =>
+          deps.templateMutations.executeTemplateWithGraphQL(_, args, context),
+
         // Schema import mutations
         importSchema: (_: any, args: any) => deps.schemaResolvers.Mutation.importSchema(_, args),
       },

@@ -92,3 +92,31 @@ type ExecuteQueryTemplatePayload {
   execution: QueryTemplateExecution
   errors: [Error!]!
 }
+
+type TemplateExecutionResult {
+  success: Boolean!
+  data: JSON
+  errors: [TemplateExecutionError!]
+  metadata: TemplateExecutionMetadata!
+}
+
+type TemplateExecutionError {
+  message: String!
+  locations: [GraphQLLocation!]
+  path: [String!]
+  code: String
+}
+
+type GraphQLLocation {
+  line: Int!
+  column: Int!
+}
+
+type TemplateExecutionMetadata {
+  templateId: ID!
+  templateName: String!
+  complexityScore: Int!
+  estimatedTokens: Int
+  version: String!
+  executionTime: Int!
+}

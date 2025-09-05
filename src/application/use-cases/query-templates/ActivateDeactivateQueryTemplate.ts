@@ -23,7 +23,9 @@ export class ActivateDeactivateQueryTemplate {
     private readonly logger: ILogger
   ) {}
 
-  async execute(request: ActivateDeactivateQueryTemplateRequest): Promise<ActivateDeactivateQueryTemplateResponse> {
+  async execute(
+    request: ActivateDeactivateQueryTemplateRequest
+  ): Promise<ActivateDeactivateQueryTemplateResponse> {
     try {
       const action = request.activate ? 'Activating' : 'Deactivating'
       this.logger.info(`${action} query template`, { id: request.id })
@@ -40,9 +42,9 @@ export class ActivateDeactivateQueryTemplate {
           errors: [
             {
               message: `Template with ID '${request.id}' not found`,
-              code: 'TEMPLATE_NOT_FOUND'
-            }
-          ]
+              code: 'TEMPLATE_NOT_FOUND',
+            },
+          ],
         }
       }
 
@@ -52,18 +54,21 @@ export class ActivateDeactivateQueryTemplate {
         const state = request.activate ? 'active' : 'inactive'
         this.logger.info(`Template is already ${state}`, {
           id: request.id,
-          identifier: existingTemplate.getIdentifier()
+          identifier: existingTemplate.getIdentifier(),
         })
 
         return {
           success: true,
           template: existingTemplate,
-          errors: []
+          errors: [],
         }
       }
 
       // Perform activation/deactivation using repository method
-      const updatedTemplate = await this.queryTemplateRepository.updateStatus(request.id, request.activate)
+      const updatedTemplate = await this.queryTemplateRepository.updateStatus(
+        request.id,
+        request.activate
+      )
 
       if (!updatedTemplate) {
         const action = request.activate ? 'activate' : 'deactivate'
@@ -73,30 +78,29 @@ export class ActivateDeactivateQueryTemplate {
           errors: [
             {
               message: `Failed to ${action} template`,
-              code: request.activate ? 'ACTIVATION_FAILED' : 'DEACTIVATION_FAILED'
-            }
-          ]
+              code: request.activate ? 'ACTIVATION_FAILED' : 'DEACTIVATION_FAILED',
+            },
+          ],
         }
       }
 
       const actionCompleted = request.activate ? 'activated' : 'deactivated'
-      this.logger.info(`Query template ${actionCompleted} successfully`, { 
+      this.logger.info(`Query template ${actionCompleted} successfully`, {
         id: updatedTemplate.getId(),
         identifier: updatedTemplate.getIdentifier(),
-        isActive: updatedTemplate.getIsActive()
+        isActive: updatedTemplate.getIsActive(),
       })
 
       return {
         success: true,
         template: updatedTemplate,
-        errors: []
+        errors: [],
       }
-
     } catch (error) {
       const action = request.activate ? 'activate' : 'deactivate'
-      this.logger.error(`Failed to ${action} query template`, { 
-        error, 
-        id: request.id 
+      this.logger.error(`Failed to ${action} query template`, {
+        error,
+        id: request.id,
       })
 
       if (error instanceof ApplicationException) {
