@@ -26,6 +26,7 @@ export const GraphQLTokens = {
   NODE_FIELD_RESOLVERS: Symbol.for('NodeFieldResolvers'),
   ATTRIBUTE_FIELD_RESOLVERS: Symbol.for('AttributeFieldResolvers'),
   RELATION_FIELD_RESOLVERS: Symbol.for('RelationFieldResolvers'),
+  QUERY_TEMPLATE_FIELD_RESOLVERS: Symbol.for('QueryTemplateFieldResolvers'),
 
   // GraphQL configuration
   GRAPHQL_CONFIG: Symbol.for('GraphQLConfig'),

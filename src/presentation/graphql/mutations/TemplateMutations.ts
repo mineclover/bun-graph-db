@@ -224,7 +224,7 @@ export class TemplateMutations extends BaseResolver {
         }
       },
       'executeTemplate',
-      { templateIdentifier: args.templateIdentifier }
+      { templateIdentifier: args.input.templateIdentifier }
     )
   }
 

@@ -1,4 +1,5 @@
 export { AttributeFieldResolvers } from './AttributeFieldResolvers.js'
 export { NodeFieldResolvers } from './NodeFieldResolvers.js'
+export { QueryTemplateFieldResolvers } from './QueryTemplateFieldResolvers.js'
 export { RelationFieldResolvers } from './RelationFieldResolvers.js'
 export { TableFieldResolvers } from './TableFieldResolvers.js'

@@ -1,6 +1,7 @@
 import {
   AttributeFieldResolvers,
   NodeFieldResolvers,
+  QueryTemplateFieldResolvers,
   RelationFieldResolvers,
   TableFieldResolvers,
 } from '@/presentation/graphql/field-resolvers/index.js'
@@ -351,6 +352,21 @@ export function registerGraphQLModule(container: DIContainer): void {
     ]
   )
 
+  container.registerSingleton(
+    GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS,
+    async (c) => {
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new QueryTemplateFieldResolvers(simpleLogger)
+    },
+    []
+  )
+
   // GraphQL Schema
   container.registerSingleton(
     GraphQLTokens.GRAPHQL_SCHEMA,
@@ -373,6 +389,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const nodeFieldResolvers = await c.resolve(GraphQLTokens.NODE_FIELD_RESOLVERS)
       const attributeFieldResolvers = await c.resolve(GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS)
       const relationFieldResolvers = await c.resolve(GraphQLTokens.RELATION_FIELD_RESOLVERS)
+      const queryTemplateFieldResolvers = await c.resolve(GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS)
 
       return buildGraphQLSchema({
         // Queries
@@ -393,6 +410,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         nodeFieldResolvers,
         attributeFieldResolvers,
         relationFieldResolvers,
+        queryTemplateFieldResolvers,
       })
     },
     [
@@ -412,6 +430,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.NODE_FIELD_RESOLVERS,
       GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS,
       GraphQLTokens.RELATION_FIELD_RESOLVERS,
+      GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS,
     ]
   )
 }
