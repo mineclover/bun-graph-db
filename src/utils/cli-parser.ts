@@ -23,6 +23,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
+    if (!arg) continue
 
     switch (arg) {
       case '--port':
