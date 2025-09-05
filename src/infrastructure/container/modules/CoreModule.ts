@@ -1,4 +1,4 @@
-import { createDatabaseConfig, loadEnvironmentConfig } from '@/core/config/EnvironmentConfig.js'
+import { loadEnvironmentConfig } from '@/core/config/EnvironmentConfig.js'
 import { ConsoleLogger } from '@/infrastructure/logging/ConsoleLogger.js'
 import type { DIContainer } from '../DIContainer.js'
 import { CommonTokens, DatabaseTokens } from '../tokens/index.js'
@@ -14,7 +14,7 @@ export function registerCoreModule(container: DIContainer): void {
   container.registerSingleton(
     DatabaseTokens.DATABASE_CONFIG,
     async (c) => {
-      const envConfig = await c.resolve(CommonTokens.ENVIRONMENT_CONFIG)
+      const envConfig = await c.resolve(CommonTokens.ENVIRONMENT_CONFIG) as any
       return envConfig.database
     },
     [CommonTokens.ENVIRONMENT_CONFIG]

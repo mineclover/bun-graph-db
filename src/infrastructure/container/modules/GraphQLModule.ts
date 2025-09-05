@@ -1,3 +1,16 @@
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
+import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
+import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
+import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
+import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import {
   AttributeFieldResolvers,
   NodeFieldResolvers,
@@ -31,7 +44,7 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.TABLE_QUERIES,
     async (c) => {
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as ITableRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -47,8 +60,8 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.NODE_QUERIES,
     async (c) => {
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
-      const searchNodesUseCase = await c.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE)
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as INodeRepository
+      // Remove SearchNodesUseCase dependency to break circular reference
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -56,16 +69,16 @@ export function registerGraphQLModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new NodeQueries(nodeRepository, searchNodesUseCase, simpleLogger)
+      return new NodeQueries(nodeRepository, null, simpleLogger)
     },
-    [RepositoryTokens.NODE_REPOSITORY, UseCaseTokens.SEARCH_NODES_USE_CASE]
+    [RepositoryTokens.NODE_REPOSITORY]
   )
 
   container.registerSingleton(
     GraphQLTokens.ATTRIBUTE_QUERIES,
     async (c) => {
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as IAttributeRepository
+      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as IAttributeTypeRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -84,9 +97,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.RELATION_QUERIES,
     async (c) => {
-      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
-      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
-      const searchRelatedNodesUseCase = await c.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE)
+      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as INodeRelationRepository
+      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as IRelationTypeRepository
+      // Remove SearchRelatedNodesUseCase dependency to break circular reference
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -97,21 +110,20 @@ export function registerGraphQLModule(container: DIContainer): void {
       return new RelationQueries(
         nodeRelationRepository,
         relationTypeRepository,
-        searchRelatedNodesUseCase,
+        null,
         simpleLogger
       )
     },
     [
       RepositoryTokens.NODE_RELATION_REPOSITORY,
       RepositoryTokens.RELATION_TYPE_REPOSITORY,
-      UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE,
     ]
   )
 
   container.registerSingleton(
     GraphQLTokens.TEMPLATE_QUERIES,
     async (c) => {
-      const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)
+      const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY) as IQueryTemplateRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -128,9 +140,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.TABLE_MUTATIONS,
     async (c) => {
-      const createTableUseCase = await c.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE)
-      const deleteTableUseCase = await c.resolve(UseCaseTokens.DELETE_TABLE_USE_CASE)
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
+      const createTableUseCase = await c.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE) as any
+      const deleteTableUseCase = await c.resolve(UseCaseTokens.DELETE_TABLE_USE_CASE) as any
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as ITableRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -153,8 +165,8 @@ export function registerGraphQLModule(container: DIContainer): void {
       // Temporarily remove CreateNodeUseCase to break circular dependency
       // TODO: Restore proper use case integration after circular dependency is resolved
       const createNodeUseCase = null as any // Placeholder
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
-      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as INodeRepository
+      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -177,10 +189,10 @@ export function registerGraphQLModule(container: DIContainer): void {
     async (c) => {
       const createAttributeTypeUseCase = await c.resolve(
         UseCaseTokens.CREATE_ATTRIBUTE_TYPE_USE_CASE
-      )
-      const createAttributeUseCase = await c.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE)
-      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
+      ) as any
+      const createAttributeUseCase = await c.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE) as any
+      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as IAttributeTypeRepository
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as IAttributeRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -207,9 +219,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.RELATION_MUTATIONS,
     async (c) => {
-      const createRelationUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_USE_CASE)
-      const createRelationTypeUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE)
-      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
+      const createRelationUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_USE_CASE) as any
+      const createRelationTypeUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE) as any
+      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as INodeRelationRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -234,10 +246,10 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.TEMPLATE_MUTATIONS,
     async (c) => {
-      const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)
+      const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY) as IQueryTemplateRepository
       const executeQueryTemplateUseCase = await c.resolve(
         UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE
-      )
+      ) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -257,8 +269,8 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.TABLE_FIELD_RESOLVERS,
     async (c) => {
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as IAttributeRepository
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as INodeRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -274,10 +286,10 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.NODE_FIELD_RESOLVERS,
     async (c) => {
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
-      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
-      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as INodeRepository
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as ITableRepository
+      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
+      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as INodeRelationRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -304,9 +316,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS,
     async (c) => {
-      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
+      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as IAttributeTypeRepository
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as IAttributeRepository
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as ITableRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -331,9 +343,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.RELATION_FIELD_RESOLVERS,
     async (c) => {
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
-      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as ITableRepository
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as INodeRepository
+      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as IRelationTypeRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -375,24 +387,23 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.GRAPHQL_SCHEMA,
     async (c) => {
       // Get all the resolver dependencies
-      const tableQueries = await c.resolve(GraphQLTokens.TABLE_QUERIES)
-      const nodeQueries = await c.resolve(GraphQLTokens.NODE_QUERIES)
-      const attributeQueries = await c.resolve(GraphQLTokens.ATTRIBUTE_QUERIES)
-      const relationQueries = await c.resolve(GraphQLTokens.RELATION_QUERIES)
-      const analyticsQueries = await c.resolve(GraphQLTokens.ANALYTICS_QUERIES)
-      const templateQueries = await c.resolve(GraphQLTokens.TEMPLATE_QUERIES)
+      const tableQueries = await c.resolve(GraphQLTokens.TABLE_QUERIES) as any
+      const nodeQueries = await c.resolve(GraphQLTokens.NODE_QUERIES) as any
+      const attributeQueries = await c.resolve(GraphQLTokens.ATTRIBUTE_QUERIES) as any
+      const relationQueries = await c.resolve(GraphQLTokens.RELATION_QUERIES) as any
+      const templateQueries = await c.resolve(GraphQLTokens.TEMPLATE_QUERIES) as any
 
-      const tableMutations = await c.resolve(GraphQLTokens.TABLE_MUTATIONS)
-      const nodeMutations = await c.resolve(GraphQLTokens.NODE_MUTATIONS)
-      const attributeMutations = await c.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS)
-      const relationMutations = await c.resolve(GraphQLTokens.RELATION_MUTATIONS)
-      const templateMutations = await c.resolve(GraphQLTokens.TEMPLATE_MUTATIONS)
+      const tableMutations = await c.resolve(GraphQLTokens.TABLE_MUTATIONS) as any
+      const nodeMutations = await c.resolve(GraphQLTokens.NODE_MUTATIONS) as any
+      const attributeMutations = await c.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS) as any
+      const relationMutations = await c.resolve(GraphQLTokens.RELATION_MUTATIONS) as any
+      const templateMutations = await c.resolve(GraphQLTokens.TEMPLATE_MUTATIONS) as any
 
-      const tableFieldResolvers = await c.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS)
-      const nodeFieldResolvers = await c.resolve(GraphQLTokens.NODE_FIELD_RESOLVERS)
-      const attributeFieldResolvers = await c.resolve(GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS)
-      const relationFieldResolvers = await c.resolve(GraphQLTokens.RELATION_FIELD_RESOLVERS)
-      const queryTemplateFieldResolvers = await c.resolve(GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS)
+      const tableFieldResolvers = await c.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS) as any
+      const nodeFieldResolvers = await c.resolve(GraphQLTokens.NODE_FIELD_RESOLVERS) as any
+      const attributeFieldResolvers = await c.resolve(GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS) as any
+      const relationFieldResolvers = await c.resolve(GraphQLTokens.RELATION_FIELD_RESOLVERS) as any
+      const queryTemplateFieldResolvers = await c.resolve(GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS) as any
 
       return buildGraphQLSchema({
         // Queries
@@ -400,7 +411,6 @@ export function registerGraphQLModule(container: DIContainer): void {
         nodeQueries,
         attributeQueries,
         relationQueries,
-        analyticsQueries,
         templateQueries,
         // Mutations
         tableMutations,
@@ -414,6 +424,8 @@ export function registerGraphQLModule(container: DIContainer): void {
         attributeFieldResolvers,
         relationFieldResolvers,
         queryTemplateFieldResolvers,
+        // Schema resolvers (placeholder)
+        schemaResolvers: {} as any,
       })
     },
     [
@@ -422,7 +434,6 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.NODE_QUERIES,
       GraphQLTokens.ATTRIBUTE_QUERIES,
       GraphQLTokens.RELATION_QUERIES,
-      GraphQLTokens.ANALYTICS_QUERIES,
       GraphQLTokens.TEMPLATE_QUERIES,
       GraphQLTokens.TABLE_MUTATIONS,
       GraphQLTokens.NODE_MUTATIONS,

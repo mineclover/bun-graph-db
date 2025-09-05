@@ -109,6 +109,10 @@ export class SqliteTableRepository implements ITableRepository {
       const tables = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: tables,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: tables,
         total,
         hasMore: offset + limit < total,

@@ -49,17 +49,17 @@ export class Node {
 
   private validateContent(content: string): void {
     if (!content || content.trim() === '') {
-      throw new DomainException('Node content cannot be empty', 'DOMAIN_ERROR')
+      throw new DomainException('Node content cannot be empty', { code: 'DOMAIN_ERROR' })
     }
 
     if (content.length > 1000) {
-      throw new DomainException('Node content cannot exceed 1000 characters', 'DOMAIN_ERROR')
+      throw new DomainException('Node content cannot exceed 1000 characters', { code: 'DOMAIN_ERROR' })
     }
   }
 
   private validateTitle(title: string | null): void {
     if (title && title.length > 255) {
-      throw new DomainException('Node title cannot exceed 255 characters', 'DOMAIN_ERROR')
+      throw new DomainException('Node title cannot exceed 255 characters', { code: 'DOMAIN_ERROR' })
     }
   }
 

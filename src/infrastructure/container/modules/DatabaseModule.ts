@@ -17,7 +17,7 @@ export function registerDatabaseModule(container: DIContainer): void {
   container.registerSingleton(
     DatabaseTokens.DATABASE_CONNECTION,
     async (c) => {
-      const config = await c.resolve(DatabaseTokens.DATABASE_CONFIG)
+      const config = await c.resolve(DatabaseTokens.DATABASE_CONFIG) as any
 
       // Create SQLite database connection using the configured path
       const db = new Database(config.url)

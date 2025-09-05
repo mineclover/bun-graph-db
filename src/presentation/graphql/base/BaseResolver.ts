@@ -152,8 +152,7 @@ export abstract class BaseResolver {
         this.logger.warn(`Argument validation failed: ${context}`, { error, args })
         throw new ValidationException(
           `Invalid arguments for ${context}: ${error instanceof Error ? error.message : 'Unknown validation error'}`,
-          'INVALID_ARGUMENTS',
-          { context, args }
+          { code: 'INVALID_ARGUMENTS', context, args }
         )
       }
     }
@@ -183,7 +182,7 @@ export abstract class BaseResolver {
         extensions: {
           type: 'DOMAIN_ERROR',
           context,
-          details: error.details,
+          details: error.context,
         },
       }
     }
@@ -195,7 +194,7 @@ export abstract class BaseResolver {
         extensions: {
           type: 'APPLICATION_ERROR',
           context,
-          details: error.details,
+          details: error.context,
         },
       }
     }

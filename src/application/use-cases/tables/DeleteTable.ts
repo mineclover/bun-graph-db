@@ -1,5 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { TableId } from '@/core/types/TableTypes.js'
+import type { TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'

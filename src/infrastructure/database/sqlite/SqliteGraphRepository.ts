@@ -1,7 +1,8 @@
 import type { Database } from 'bun:sqlite'
 import type { IGraphRepository } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
-import type { GraphQuery, RelationDirection } from '@/domain/value-objects/RelationQuery.js'
+import type { GraphQuery } from '@/domain/value-objects/RelationQuery.js'
+import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface RelatedNodeRow {
@@ -110,6 +111,10 @@ export class SqliteGraphRepository implements IGraphRepository {
       const offset = graphQuery.offset || 0
 
       return {
+        nodes: data,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data,
         total,
         hasMore: offset + limit < total,

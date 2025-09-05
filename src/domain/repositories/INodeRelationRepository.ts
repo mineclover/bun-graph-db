@@ -15,11 +15,11 @@ export interface INodeRelationRepository {
     tableId: TableId,
     options?: PaginationOptions
   ): Promise<PaginatedResult<NodeRelation>>
-  findBySourceNodeId(
+  findBySourceNodeIdPaginated(
     sourceNodeId: NodeId,
     options?: PaginationOptions
   ): Promise<PaginatedResult<NodeRelation>>
-  findByTargetNodeId(
+  findByTargetNodeIdPaginated(
     targetNodeId: NodeId,
     options?: PaginationOptions
   ): Promise<PaginatedResult<NodeRelation>>

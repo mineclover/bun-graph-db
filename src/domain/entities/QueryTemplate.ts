@@ -134,32 +134,32 @@ export class QueryTemplate {
 
   private validateIdentifier(identifier: string): void {
     if (!identifier || identifier.trim().length === 0) {
-      throw new DomainException('Query template identifier cannot be empty', 'VALIDATION_ERROR')
+      throw new DomainException('Query template identifier cannot be empty', { code: 'VALIDATION_ERROR' })
     }
 
     if (!/^[a-z0-9-_]+$/.test(identifier)) {
       throw new DomainException(
         'Query template identifier must contain only lowercase letters, numbers, hyphens, and underscores',
-        'VALIDATION_ERROR'
+        { code: 'VALIDATION_ERROR' }
       )
     }
   }
 
   private validateQueryText(queryText: string): void {
     if (!queryText || queryText.trim().length === 0) {
-      throw new DomainException('Query text cannot be empty', 'VALIDATION_ERROR')
+      throw new DomainException('Query text cannot be empty', { code: 'VALIDATION_ERROR' })
     }
   }
 
   private validateComplexityScore(score: number): void {
     if (score < 1 || score > 10) {
-      throw new DomainException('Complexity score must be between 1 and 10', 'VALIDATION_ERROR')
+      throw new DomainException('Complexity score must be between 1 and 10', { code: 'VALIDATION_ERROR' })
     }
   }
 
   private validateTags(tags: string[]): void {
     if (!tags || tags.length === 0) {
-      throw new DomainException('At least one tag is required', 'VALIDATION_ERROR')
+      throw new DomainException('At least one tag is required', { code: 'VALIDATION_ERROR' })
     }
   }
 

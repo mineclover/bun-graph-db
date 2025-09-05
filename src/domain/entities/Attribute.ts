@@ -64,18 +64,18 @@ export class Attribute {
 
   private validateIdentifier(identifier: string): void {
     if (!identifier || identifier.trim() === '') {
-      throw new DomainException('Attribute identifier cannot be empty', 'DOMAIN_ERROR')
+      throw new DomainException('Attribute identifier cannot be empty', { code: 'DOMAIN_ERROR' })
     }
 
     if (!/^[a-z][a-z0-9_]*$/.test(identifier)) {
       throw new DomainException(
         'Attribute identifier must start with lowercase letter and contain only lowercase letters, numbers, and underscores',
-        'DOMAIN_ERROR'
+        { code: 'DOMAIN_ERROR' }
       )
     }
 
     if (identifier.length > 50) {
-      throw new DomainException('Attribute identifier cannot exceed 50 characters', 'DOMAIN_ERROR')
+      throw new DomainException('Attribute identifier cannot exceed 50 characters', { code: 'DOMAIN_ERROR' })
     }
   }
 
@@ -84,7 +84,7 @@ export class Attribute {
       try {
         JSON.parse(this.metadata)
       } catch (error) {
-        throw new DomainException('Attribute metadata must be valid JSON', 'DOMAIN_ERROR')
+        throw new DomainException('Attribute metadata must be valid JSON', { code: 'DOMAIN_ERROR' })
       }
     }
   }
@@ -167,7 +167,7 @@ export class Attribute {
       try {
         JSON.parse(metadata)
       } catch (error) {
-        throw new DomainException('Attribute metadata must be valid JSON', 'DOMAIN_ERROR')
+        throw new DomainException('Attribute metadata must be valid JSON', { code: 'DOMAIN_ERROR' })
       }
     }
 

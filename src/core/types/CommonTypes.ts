@@ -10,6 +10,7 @@ export type NodeId = string
 export type AttributeId = string
 export type AttributeTypeId = string
 export type RelationId = string
+export type NodeRelationId = string
 export type RelationTypeId = string
 export type QueryTemplateId = string
 
@@ -65,3 +66,25 @@ export interface SortInput {
   field: string
   direction: SortDirection
 }
+
+// Configuration types
+export interface DatabaseConfig {
+  path: string
+  timeout?: number
+  busyTimeout?: number
+  poolSize?: number
+}
+
+export interface GraphQLConfig {
+  port: number
+  endpoint?: string
+  playground?: boolean
+  cors?: boolean | {
+    origin?: string | string[]
+    credentials?: boolean
+  }
+  introspection?: boolean
+}
+
+// Alias for compatibility
+export type PaginationOptions = PaginationInput

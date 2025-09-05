@@ -21,7 +21,7 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.CREATE_TABLE_USE_CASE,
     async (c) => {
-      const repository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
+      const repository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -37,10 +37,10 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.DELETE_TABLE_USE_CASE,
     async (c) => {
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-      const relationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as any
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
+      const relationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -68,7 +68,7 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.CREATE_ATTRIBUTE_TYPE_USE_CASE,
     async (c) => {
-      const repository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
+      const repository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -84,9 +84,9 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE,
     async (c) => {
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
+      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as any
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -112,10 +112,10 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.CREATE_NODE_USE_CASE,
     async (c) => {
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
-      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as any
+      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -142,7 +142,10 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.SEARCH_NODES_USE_CASE,
     async (c) => {
-      const nodeSearchRepository = await c.resolve(RepositoryTokens.NODE_SEARCH_REPOSITORY)
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as any
+      const nodeSearchRepository = await c.resolve(RepositoryTokens.NODE_SEARCH_REPOSITORY) as any
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -150,18 +153,19 @@ export function registerUseCaseModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new SearchNodesUseCase(nodeSearchRepository, simpleLogger)
+      return new SearchNodesUseCase(nodeRepository, nodeSearchRepository, attributeRepository, tableRepository, simpleLogger)
     },
-    [RepositoryTokens.NODE_SEARCH_REPOSITORY]
+    [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.NODE_SEARCH_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY, RepositoryTokens.TABLE_REPOSITORY]
   )
 
   // Relation use cases
   container.registerSingleton(
     UseCaseTokens.CREATE_RELATION_USE_CASE,
     async (c) => {
-      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
-      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
+      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as any
+      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as any
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as any
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -171,22 +175,24 @@ export function registerUseCaseModule(container: DIContainer): void {
       }
       return new CreateRelationUseCase(
         nodeRelationRepository,
-        nodeRepository,
         relationTypeRepository,
+        nodeRepository,
+        tableRepository,
         simpleLogger
       )
     },
     [
       RepositoryTokens.NODE_RELATION_REPOSITORY,
-      RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.RELATION_TYPE_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.TABLE_REPOSITORY,
     ]
   )
 
   container.registerSingleton(
     UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE,
     async (c) => {
-      const repository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
+      const repository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -202,7 +208,10 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE,
     async (c) => {
-      const graphRepository = await c.resolve(RepositoryTokens.GRAPH_REPOSITORY)
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as any
+      const relationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as any
+      const graphRepository = await c.resolve(RepositoryTokens.GRAPH_REPOSITORY) as any
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -210,16 +219,21 @@ export function registerUseCaseModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new SearchRelatedNodesUseCase(graphRepository, simpleLogger)
+      return new SearchRelatedNodesUseCase(nodeRepository, relationRepository, graphRepository, tableRepository, simpleLogger)
     },
-    [RepositoryTokens.GRAPH_REPOSITORY]
+    [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.NODE_RELATION_REPOSITORY, RepositoryTokens.GRAPH_REPOSITORY, RepositoryTokens.TABLE_REPOSITORY]
   )
 
   // Import/Export use cases
   container.registerSingleton(
     UseCaseTokens.SCHEMA_EXPORT_USE_CASE,
     async (c) => {
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
+      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as any
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as any
+      const relationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as any
+      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -227,17 +241,35 @@ export function registerUseCaseModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new SchemaExportUseCase(tableRepository, simpleLogger)
+      return new SchemaExportUseCase(
+        tableRepository,
+        attributeTypeRepository,
+        attributeRepository,
+        nodeRepository,
+        relationRepository,
+        relationTypeRepository,
+        simpleLogger
+      )
     },
-    [RepositoryTokens.TABLE_REPOSITORY]
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
+    ]
   )
 
   container.registerSingleton(
     UseCaseTokens.SCHEMA_IMPORT_USE_CASE,
     async (c) => {
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
+      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as any
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as any
+      const relationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as any
+      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -247,15 +279,21 @@ export function registerUseCaseModule(container: DIContainer): void {
       }
       return new SchemaImportUseCase(
         tableRepository,
+        attributeTypeRepository,
         attributeRepository,
         nodeRepository,
+        relationRepository,
+        relationTypeRepository,
         simpleLogger
       )
     },
     [
       RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
     ]
   )
 
@@ -263,7 +301,7 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE,
     async (c) => {
-      const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)
+      const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),

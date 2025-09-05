@@ -76,20 +76,20 @@ export class AttributeType {
 
   private validateIdentifier(identifier: string): void {
     if (!identifier || identifier.trim() === '') {
-      throw new DomainException('AttributeType identifier cannot be empty', 'DOMAIN_ERROR')
+      throw new DomainException('AttributeType identifier cannot be empty', { code: 'DOMAIN_ERROR' })
     }
 
     if (!/^[a-z][a-z0-9_]*$/.test(identifier)) {
       throw new DomainException(
         'AttributeType identifier must start with lowercase letter and contain only lowercase letters, numbers, and underscores',
-        'DOMAIN_ERROR'
+        { code: 'DOMAIN_ERROR' }
       )
     }
 
     if (identifier.length > 50) {
       throw new DomainException(
         'AttributeType identifier cannot exceed 50 characters',
-        'DOMAIN_ERROR'
+        { code: 'DOMAIN_ERROR' }
       )
     }
   }
@@ -99,7 +99,7 @@ export class AttributeType {
     if (!validJsonTypes.includes(jsonType)) {
       throw new DomainException(
         `Invalid JSON type. Must be one of: ${validJsonTypes.join(', ')}`,
-        'DOMAIN_ERROR'
+        { code: 'DOMAIN_ERROR' }
       )
     }
   }
@@ -111,7 +111,7 @@ export class AttributeType {
     if (!validFormats.includes(format)) {
       throw new DomainException(
         `Invalid format. Must be one of: ${validFormats.join(', ')}`,
-        'DOMAIN_ERROR'
+        { code: 'DOMAIN_ERROR' }
       )
     }
   }
@@ -129,7 +129,7 @@ export class AttributeType {
         try {
           JSON.parse(value)
         } catch (error) {
-          throw new DomainException(`${field} must be valid JSON`, 'DOMAIN_ERROR')
+          throw new DomainException(`${field} must be valid JSON`, { code: 'DOMAIN_ERROR' })
         }
       }
     }

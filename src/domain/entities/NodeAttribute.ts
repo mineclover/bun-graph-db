@@ -37,7 +37,7 @@ export class NodeAttribute {
 
   private validateValue(value: string): void {
     if (value === null || value === undefined) {
-      throw new DomainException('NodeAttribute value cannot be null', 'DOMAIN_ERROR')
+      throw new DomainException('NodeAttribute value cannot be null', { code: 'DOMAIN_ERROR' })
     }
 
     // Value is stored as string (can be JSON for complex types)
@@ -45,7 +45,7 @@ export class NodeAttribute {
     if (value.length > 65535) {
       throw new DomainException(
         'NodeAttribute value cannot exceed 65535 characters',
-        'DOMAIN_ERROR'
+        { code: 'DOMAIN_ERROR' }
       )
     }
   }

@@ -7,6 +7,25 @@ import type {
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
+interface QueryTemplateRow {
+  id: number
+  identifier: string
+  name: string
+  description: string | null
+  query_text: string
+  variables_schema: string | null
+  default_variables: string | null
+  applicable_tables: string | null
+  template_type: string
+  complexity_score: number | null
+  usage_count: number | null
+  version: string | null
+  is_active: number | boolean
+  tags: string | null
+  created_at: string
+  updated_at: string
+}
+
 export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
   constructor(
     private readonly db: Database,
@@ -18,7 +37,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const query = `
         SELECT * FROM templates WHERE id = ?
       `
-      const row = this.db.query(query).get(id)
+      const row = this.db.query<QueryTemplateRow, [string]>(query).get(id)
 
       if (!row) return null
 
@@ -32,9 +51,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.default_variables,
         row.applicable_tables,
         row.template_type,
-        row.complexity_score,
-        row.usage_count,
-        row.version,
+        row.complexity_score || 0,
+        row.usage_count || 0,
+        row.version || '1.0',
         Boolean(row.is_active),
         row.tags,
         row.created_at,
@@ -42,7 +61,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       )
     } catch (error) {
       this.logger.error('Failed to find template by id', { id, error })
-      throw new DomainException('Failed to find template', 'DATABASE_ERROR')
+      throw new DomainException('Failed to find template', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -51,7 +70,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const query = `
         SELECT * FROM templates WHERE identifier = ?
       `
-      const row = this.db.query(query).get(identifier)
+      const row = this.db.query<QueryTemplateRow, [string]>(query).get(identifier)
 
       if (!row) return null
 
@@ -65,9 +84,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.default_variables,
         row.applicable_tables,
         row.template_type,
-        row.complexity_score,
-        row.usage_count,
-        row.version,
+        row.complexity_score || 0,
+        row.usage_count || 0,
+        row.version || '1.0',
         Boolean(row.is_active),
         row.tags,
         row.created_at,
@@ -75,7 +94,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       )
     } catch (error) {
       this.logger.error('Failed to find template by identifier', { identifier, error })
-      throw new DomainException('Failed to find template', 'DATABASE_ERROR')
+      throw new DomainException('Failed to find template', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -132,8 +151,8 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
       // Get total count
       const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total')
-      const totalResult = this.db.query(countQuery).get(...params)
-      const total = totalResult?.total || 0
+      const totalResult = this.db.query<{ count: number }, any[]>(countQuery).get(...params)
+      const total = totalResult?.count || 0
 
       // Ordering
       const orderBy = criteria.orderBy || 'usage_count'
@@ -147,7 +166,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       query += ` LIMIT ? OFFSET ?`
       params.push(limit, offset)
 
-      const rows = this.db.query(query).all(...params)
+      const rows = this.db.query<QueryTemplateRow, any[]>(query).all(...params)
 
       const items = rows.map((row) =>
         QueryTemplate.fromDatabase(
@@ -160,9 +179,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           row.default_variables,
           row.applicable_tables,
           row.template_type,
-          row.complexity_score,
-          row.usage_count,
-          row.version,
+          row.complexity_score || 0,
+          row.usage_count || 0,
+          row.version || '1.0',
           Boolean(row.is_active),
           row.tags,
           row.created_at,
@@ -178,7 +197,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       }
     } catch (error) {
       this.logger.error('Failed to search templates', { criteria, error })
-      throw new DomainException('Failed to search templates', 'DATABASE_ERROR')
+      throw new DomainException('Failed to search templates', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -231,7 +250,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       )
     } catch (error) {
       this.logger.error('Failed to create template', { template, error })
-      throw new DomainException('Failed to create template', 'DATABASE_ERROR')
+      throw new DomainException('Failed to create template', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -239,7 +258,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
     try {
       const existing = await this.findById(id)
       if (!existing) {
-        throw new DomainException('Template not found', 'NOT_FOUND')
+        throw new DomainException('Template not found', { code: 'NOT_FOUND' })
       }
 
       const data = existing.toDatabase()
@@ -281,7 +300,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       return existing
     } catch (error) {
       this.logger.error('Failed to update template', { id, updates, error })
-      throw new DomainException('Failed to update template', 'DATABASE_ERROR')
+      throw new DomainException('Failed to update template', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -292,7 +311,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       return result.changes > 0
     } catch (error) {
       this.logger.error('Failed to delete template', { id, error })
-      throw new DomainException('Failed to delete template', 'DATABASE_ERROR')
+      throw new DomainException('Failed to delete template', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -308,7 +327,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       stmt.run(id)
     } catch (error) {
       this.logger.error('Failed to increment usage', { id, error })
-      throw new DomainException('Failed to increment usage', 'DATABASE_ERROR')
+      throw new DomainException('Failed to increment usage', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -333,9 +352,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           row.default_variables,
           row.applicable_tables,
           row.template_type,
-          row.complexity_score,
-          row.usage_count,
-          row.version,
+          row.complexity_score || 0,
+          row.usage_count || 0,
+          row.version || '1.0',
           Boolean(row.is_active),
           row.tags,
           row.created_at,
@@ -344,7 +363,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       )
     } catch (error) {
       this.logger.error('Failed to find popular templates', { limit, error })
-      throw new DomainException('Failed to find popular templates', 'DATABASE_ERROR')
+      throw new DomainException('Failed to find popular templates', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -352,7 +371,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
     try {
       const template = await this.findById(id)
       if (!template) {
-        throw new DomainException('Template not found', 'NOT_FOUND')
+        throw new DomainException('Template not found', { code: 'NOT_FOUND' })
       }
 
       const updatedTemplate = isActive ? template.activate() : template.deactivate()
@@ -369,7 +388,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       return updatedTemplate
     } catch (error) {
       this.logger.error('Failed to update template status', { id, isActive, error })
-      throw new DomainException('Failed to update template status', 'DATABASE_ERROR')
+      throw new DomainException('Failed to update template status', { code: 'DATABASE_ERROR' })
     }
   }
 

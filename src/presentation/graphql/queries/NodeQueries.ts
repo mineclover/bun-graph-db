@@ -16,7 +16,7 @@ export class NodeQueries extends BaseResolver {
 
   constructor(
     private readonly nodeRepository: INodeRepository,
-    private readonly searchNodesUseCase: SearchNodesUseCase,
+    private readonly searchNodesUseCase: SearchNodesUseCase | null,
     logger: ILogger
   ) {
     super()
@@ -87,6 +87,24 @@ export class NodeQueries extends BaseResolver {
   async searchNodes(_: GraphQLParent, args: SearchNodesArgs, context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
+        // Temporary fallback to basic findAll when SearchNodesUseCase is not available
+        // TODO: Restore proper search functionality after circular dependency is resolved
+        if (!this.searchNodesUseCase) {
+          this.logger.warn('SearchNodesUseCase not available, using basic node listing')
+          const result = await this.nodeRepository.findAll({
+            filter: args.filter,
+            pagination: args.pagination || { limit: 10, offset: 0 },
+            sort: args.sort,
+          })
+
+          return {
+            nodes: result.items,
+            totalCount: result.total,
+            hasNextPage: result.hasNextPage,
+            hasPreviousPage: result.hasPreviousPage,
+          }
+        }
+
         const result = await this.searchNodesUseCase.execute({
           filter: args.filter,
           pagination: args.pagination || { limit: 10, offset: 0 },

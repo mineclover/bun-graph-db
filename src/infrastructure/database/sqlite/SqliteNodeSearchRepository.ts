@@ -96,6 +96,10 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
       const offset = searchQuery.offset || 0
 
       return {
+        nodes: data,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data,
         total,
         hasMore: offset + limit < total,

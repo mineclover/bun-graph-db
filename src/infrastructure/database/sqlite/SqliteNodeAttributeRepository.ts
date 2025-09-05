@@ -124,6 +124,10 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
       const nodeAttributes = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodeAttributes,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodeAttributes,
         total,
         hasMore: offset + limit < total,

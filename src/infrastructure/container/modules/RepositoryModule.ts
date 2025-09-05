@@ -27,7 +27,7 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.TABLE_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
       return new SqliteTableRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
@@ -37,8 +37,8 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      return new SqliteAttributeTypeRepository(connection, createSimpleLogger())
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
+      return new SqliteAttributeTypeRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
@@ -47,8 +47,8 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.ATTRIBUTE_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      return new SqliteAttributeRepository(connection, createSimpleLogger())
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
+      return new SqliteAttributeRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
@@ -57,8 +57,8 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.NODE_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      return new SqliteNodeRepository(connection, createSimpleLogger())
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
+      return new SqliteNodeRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
@@ -67,8 +67,8 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      return new SqliteNodeAttributeRepository(connection, createSimpleLogger())
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
+      return new SqliteNodeAttributeRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
@@ -77,8 +77,8 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.NODE_RELATION_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      return new SqliteNodeRelationRepository(connection, createSimpleLogger())
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
+      return new SqliteNodeRelationRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
@@ -87,8 +87,8 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.RELATION_TYPE_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      return new SqliteRelationTypeRepository(connection, createSimpleLogger())
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
+      return new SqliteRelationTypeRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
@@ -97,7 +97,7 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
       return new SqliteQueryTemplateRepository(connection, createSimpleLogger())
     },
     [DatabaseTokens.DATABASE_CONNECTION]
@@ -107,8 +107,8 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.NODE_SEARCH_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      return new SqliteNodeSearchRepository(connection, createSimpleLogger())
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
+      return new SqliteNodeSearchRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
@@ -117,8 +117,8 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.GRAPH_REPOSITORY,
     async (c) => {
-      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      return new SqliteGraphRepository(connection, createSimpleLogger())
+      const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION) as any
+      return new SqliteGraphRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )

@@ -110,6 +110,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodeRelations,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodeRelations,
         total,
         hasMore: offset + limit < total,
@@ -119,7 +123,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     }
   }
 
-  async findBySourceNodeId(
+  async findBySourceNodeIdPaginated(
     sourceNodeId: NodeId,
     options: PaginationOptions = {}
   ): Promise<PaginatedResult<NodeRelation>> {
@@ -147,6 +151,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodeRelations,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodeRelations,
         total,
         hasMore: offset + limit < total,
@@ -156,7 +164,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     }
   }
 
-  async findByTargetNodeId(
+  async findByTargetNodeIdPaginated(
     targetNodeId: NodeId,
     options: PaginationOptions = {}
   ): Promise<PaginatedResult<NodeRelation>> {
@@ -184,6 +192,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodeRelations,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodeRelations,
         total,
         hasMore: offset + limit < total,
@@ -247,6 +259,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodeRelations,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodeRelations,
         total,
         hasMore: offset + limit < total,
@@ -287,6 +303,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodeRelations,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodeRelations,
         total,
         hasMore: offset + limit < total,
@@ -324,6 +344,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodeRelations,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodeRelations,
         total,
         hasMore: offset + limit < total,
@@ -504,6 +528,115 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       return result?.count || 0
     } catch (error) {
       throw new DatabaseException(`Failed to count node relations: ${error}`)
+    }
+  }
+
+  // Simple array-returning overloads for graph traversal
+  async findBySourceNodeId(sourceNodeId: NodeId): Promise<NodeRelation[]> {
+    const query = `
+      SELECT id, table_id, source_node_id, source_external_id, 
+             target_node_id, target_external_id, relation_type_id, 
+             properties, strength, created_at, updated_at
+      FROM node_relations
+      WHERE source_node_id = ?
+      ORDER BY created_at DESC
+    `
+
+    try {
+      const rows = this.db
+        .query<NodeRelationRow, [string]>(query)
+        .all(sourceNodeId)
+      return rows.map((row) => this.mapRowToEntity(row))
+    } catch (error) {
+      throw new DatabaseException(`Failed to find node relations by source node id: ${error}`)
+    }
+  }
+
+  async findByTargetNodeId(targetNodeId: NodeId): Promise<NodeRelation[]> {
+    const query = `
+      SELECT id, table_id, source_node_id, source_external_id, 
+             target_node_id, target_external_id, relation_type_id, 
+             properties, strength, created_at, updated_at
+      FROM node_relations
+      WHERE target_node_id = ?
+      ORDER BY created_at DESC
+    `
+
+    try {
+      const rows = this.db
+        .query<NodeRelationRow, [string]>(query)
+        .all(targetNodeId)
+      return rows.map((row) => this.mapRowToEntity(row))
+    } catch (error) {
+      throw new DatabaseException(`Failed to find node relations by target node id: ${error}`)
+    }
+  }
+
+  async findBySourceNodeIdAndRelationType(
+    sourceNodeId: NodeId,
+    relationTypeId: RelationTypeId
+  ): Promise<NodeRelation[]> {
+    const query = `
+      SELECT id, table_id, source_node_id, source_external_id, 
+             target_node_id, target_external_id, relation_type_id, 
+             properties, strength, created_at, updated_at
+      FROM node_relations
+      WHERE source_node_id = ? AND relation_type_id = ?
+      ORDER BY created_at DESC
+    `
+
+    try {
+      const rows = this.db
+        .query<NodeRelationRow, [string, string]>(query)
+        .all(sourceNodeId, relationTypeId)
+      return rows.map((row) => this.mapRowToEntity(row))
+    } catch (error) {
+      throw new DatabaseException(`Failed to find node relations by source node id and relation type: ${error}`)
+    }
+  }
+
+  async findByTargetNodeIdAndRelationType(
+    targetNodeId: NodeId,
+    relationTypeId: RelationTypeId
+  ): Promise<NodeRelation[]> {
+    const query = `
+      SELECT id, table_id, source_node_id, source_external_id, 
+             target_node_id, target_external_id, relation_type_id, 
+             properties, strength, created_at, updated_at
+      FROM node_relations
+      WHERE target_node_id = ? AND relation_type_id = ?
+      ORDER BY created_at DESC
+    `
+
+    try {
+      const rows = this.db
+        .query<NodeRelationRow, [string, string]>(query)
+        .all(targetNodeId, relationTypeId)
+      return rows.map((row) => this.mapRowToEntity(row))
+    } catch (error) {
+      throw new DatabaseException(`Failed to find node relations by target node id and relation type: ${error}`)
+    }
+  }
+
+  async countBySourceNodeId(sourceNodeId: NodeId): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM node_relations WHERE source_node_id = ?`
+
+    try {
+      const result = this.db.query<{ count: number }, [string]>(query).get(sourceNodeId)
+      return result?.count || 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to count node relations by source node id: ${error}`)
+    }
+  }
+
+  async countByTargetNodeId(targetNodeId: NodeId): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM node_relations WHERE target_node_id = ?`
+
+    try {
+      const result = this.db.query<{ count: number }, [string]>(query).get(targetNodeId)
+      return result?.count || 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to count node relations by target node id: ${error}`)
     }
   }
 

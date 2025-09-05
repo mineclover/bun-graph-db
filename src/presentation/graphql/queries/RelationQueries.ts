@@ -19,7 +19,7 @@ export class RelationQueries extends BaseResolver {
   constructor(
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
-    private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase,
+    private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase | null,
     logger: ILogger
   ) {
     super()
@@ -101,6 +101,24 @@ export class RelationQueries extends BaseResolver {
   ) {
     return this.handleQuery(
       async () => {
+        // Temporary fallback when SearchRelatedNodesUseCase is not available
+        // TODO: Restore proper search functionality after circular dependency is resolved
+        if (!this.searchRelatedNodesUseCase) {
+          this.logger.warn('SearchRelatedNodesUseCase not available, using basic relation listing')
+          const result = await this.nodeRelationRepository.findAll({
+            filter: args.filter,
+            pagination: args.pagination || { limit: 10, offset: 0 },
+          })
+
+          return {
+            nodes: [],
+            relations: result.items,
+            totalCount: result.total,
+            hasNextPage: result.hasNextPage,
+            hasPreviousPage: result.hasPreviousPage,
+          }
+        }
+
         const result = await this.searchRelatedNodesUseCase.execute({
           filter: args.filter,
           pagination: args.pagination || { limit: 10, offset: 0 },

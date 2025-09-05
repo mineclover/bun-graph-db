@@ -129,6 +129,10 @@ export class SqliteAttributeTypeRepository implements IAttributeTypeRepository {
       const attributeTypes = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: attributeTypes,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: attributeTypes,
         total,
         hasMore: offset + limit < total,
@@ -164,6 +168,10 @@ export class SqliteAttributeTypeRepository implements IAttributeTypeRepository {
       const attributeTypes = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: attributeTypes,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: attributeTypes,
         total,
         hasMore: offset + limit < total,

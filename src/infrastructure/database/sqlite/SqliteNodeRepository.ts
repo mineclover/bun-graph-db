@@ -124,6 +124,10 @@ export class SqliteNodeRepository implements INodeRepository {
       const nodes = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodes,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodes,
         total,
         hasMore: offset + limit < total,
@@ -153,6 +157,10 @@ export class SqliteNodeRepository implements INodeRepository {
       const nodes = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodes,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodes,
         total,
         hasMore: offset + limit < total,
@@ -300,6 +308,10 @@ export class SqliteNodeRepository implements INodeRepository {
       const nodes = rows.map((row) => this.mapRowToEntity(row))
 
       return {
+        nodes: nodes,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
         data: nodes,
         total,
         hasMore: offset + limit < total,
