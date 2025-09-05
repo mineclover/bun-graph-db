@@ -1,0 +1,1644 @@
+{
+  "version": "1.0",
+  "domain": "ecommerce",
+  "size": "small",
+  "tables": {
+    "users": [
+      {
+        "content": "user_000000",
+        "title": "User 1",
+        "attributes": {
+          "username": "user1",
+          "email": "user1@example.com",
+          "fullName": "Emily Smith",
+          "role": "admin"
+        },
+        "metadata": {
+          "weight": 0.2986612654320988,
+          "importance": 3,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000001",
+        "title": "User 2",
+        "attributes": {
+          "username": "user2",
+          "email": "user2@example.com",
+          "fullName": "Jane Garcia",
+          "role": "customer"
+        },
+        "metadata": {
+          "weight": 0.12391203703703704,
+          "importance": 4,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000002",
+        "title": "User 3",
+        "attributes": {
+          "username": "user3",
+          "email": "user3@example.com",
+          "fullName": "Sarah Johnson",
+          "role": "admin"
+        },
+        "metadata": {
+          "weight": 0.7044868827160493,
+          "importance": 3,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000003",
+        "title": "User 4",
+        "attributes": {
+          "username": "user4",
+          "email": "user4@example.com",
+          "fullName": "David Brown",
+          "role": "admin"
+        },
+        "metadata": {
+          "weight": 0.9764969135802469,
+          "importance": 4,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000004",
+        "title": "User 5",
+        "attributes": {
+          "username": "user5",
+          "email": "user5@example.com",
+          "fullName": "Michael Johnson",
+          "role": "moderator"
+        },
+        "metadata": {
+          "weight": 0.34271990740740743,
+          "importance": 6,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000005",
+        "title": "User 6",
+        "attributes": {
+          "username": "user6",
+          "email": "user6@example.com",
+          "fullName": "Michael Garcia",
+          "role": "admin"
+        },
+        "metadata": {
+          "weight": 0.2726003086419753,
+          "importance": 10,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000006",
+        "title": "User 7",
+        "attributes": {
+          "username": "user7",
+          "email": "user7@example.com",
+          "fullName": "Sarah Davis",
+          "role": "admin"
+        },
+        "metadata": {
+          "weight": 0.20224922839506174,
+          "importance": 10,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000007",
+        "title": "User 8",
+        "attributes": {
+          "username": "user8",
+          "email": "user8@example.com",
+          "fullName": "Robert Brown",
+          "role": "admin"
+        },
+        "metadata": {
+          "weight": 0.3344444444444445,
+          "importance": 1,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000008",
+        "title": "User 9",
+        "attributes": {
+          "username": "user9",
+          "email": "user9@example.com",
+          "fullName": "Michael Williams",
+          "role": "admin"
+        },
+        "metadata": {
+          "weight": 0.538630401234568,
+          "importance": 3,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000009",
+        "title": "User 10",
+        "attributes": {
+          "username": "user10",
+          "email": "user10@example.com",
+          "fullName": "Robert Jones",
+          "role": "admin"
+        },
+        "metadata": {
+          "weight": 0.7509182098765432,
+          "importance": 1,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000010",
+        "title": "User 11",
+        "attributes": {
+          "username": "user11",
+          "email": "user11@example.com",
+          "fullName": "Sarah Jones",
+          "role": "customer"
+        },
+        "metadata": {
+          "weight": 0.17408564814814814,
+          "importance": 9,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000011",
+        "title": "User 12",
+        "attributes": {
+          "username": "user12",
+          "email": "user12@example.com",
+          "fullName": "Sarah Smith",
+          "role": "moderator"
+        },
+        "metadata": {
+          "weight": 0.6775771604938272,
+          "importance": 2,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000012",
+        "title": "User 13",
+        "attributes": {
+          "username": "user13",
+          "email": "user13@example.com",
+          "fullName": "John Jones",
+          "role": "moderator"
+        },
+        "metadata": {
+          "weight": 0.8975038580246913,
+          "importance": 10,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000013",
+        "title": "User 14",
+        "attributes": {
+          "username": "user14",
+          "email": "user14@example.com",
+          "fullName": "John Garcia",
+          "role": "customer"
+        },
+        "metadata": {
+          "weight": 0.8366435185185185,
+          "importance": 1,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      },
+      {
+        "content": "user_000014",
+        "title": "User 15",
+        "attributes": {
+          "username": "user15",
+          "email": "user15@example.com",
+          "fullName": "David Williams",
+          "role": "customer"
+        },
+        "metadata": {
+          "weight": 0.7644405864197531,
+          "importance": 9,
+          "tags": [
+            "user",
+            "account"
+          ]
+        }
+      }
+    ],
+    "products": [
+      {
+        "content": "product_000000",
+        "title": "Smart Package 965",
+        "attributes": {
+          "name": "Ultra Kit 66",
+          "price": 906.1122993827161,
+          "category": "Clothing",
+          "stock": 552
+        },
+        "metadata": {
+          "weight": 0.6852237654320987,
+          "importance": 2,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000001",
+        "title": "Advanced Tool 860",
+        "attributes": {
+          "name": "Professional System 711",
+          "price": 503.23305555555555,
+          "category": "Clothing",
+          "stock": 142
+        },
+        "metadata": {
+          "weight": 0.7279976851851853,
+          "importance": 3,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000002",
+        "title": "Smart Tool 841",
+        "attributes": {
+          "name": "Professional Package 489",
+          "price": 100.09918209876543,
+          "category": "Home",
+          "stock": 579
+        },
+        "metadata": {
+          "weight": 0.1122067901234568,
+          "importance": 4,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000003",
+        "title": "Smart Solution 78",
+        "attributes": {
+          "name": "Ultra Tool 347",
+          "price": 671.4329012345679,
+          "category": "Books",
+          "stock": 585
+        },
+        "metadata": {
+          "weight": 0.7239621913580246,
+          "importance": 6,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000004",
+        "title": "Deluxe Device 924",
+        "attributes": {
+          "name": "Smart Kit 84",
+          "price": 295.28976851851854,
+          "category": "Books",
+          "stock": 406
+        },
+        "metadata": {
+          "weight": 0.6160416666666667,
+          "importance": 3,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000005",
+        "title": "Deluxe Package 35",
+        "attributes": {
+          "name": "Deluxe Kit 462",
+          "price": 533.0586728395061,
+          "category": "Books",
+          "stock": 916
+        },
+        "metadata": {
+          "weight": 0.7078896604938271,
+          "importance": 5,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000006",
+        "title": "Ultra Widget 132",
+        "attributes": {
+          "name": "Smart Device 985",
+          "price": 599.4618364197531,
+          "category": "Clothing",
+          "stock": 394
+        },
+        "metadata": {
+          "weight": 0.38561728395061734,
+          "importance": 10,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000007",
+        "title": "Ultra Device 459",
+        "attributes": {
+          "name": "Smart Solution 343",
+          "price": 112.55481481481482,
+          "category": "Sports",
+          "stock": 974
+        },
+        "metadata": {
+          "weight": 0.9020023148148147,
+          "importance": 5,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000008",
+        "title": "Ultra Tool 892",
+        "attributes": {
+          "name": "Premium Set 517",
+          "price": 523.7264969135803,
+          "category": "Home",
+          "stock": 751
+        },
+        "metadata": {
+          "weight": 0.3764891975308642,
+          "importance": 6,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000009",
+        "title": "Premium Package 710",
+        "attributes": {
+          "name": "Ultra Set 568",
+          "price": 277.6991049382716,
+          "category": "Clothing",
+          "stock": 561
+        },
+        "metadata": {
+          "weight": 0.19518904320987657,
+          "importance": 10,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000010",
+        "title": "Premium Kit 48",
+        "attributes": {
+          "name": "Smart Tool 72",
+          "price": 532.5281944444445,
+          "category": "Books",
+          "stock": 427
+        },
+        "metadata": {
+          "weight": 0.3108796296296297,
+          "importance": 6,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000011",
+        "title": "Smart Device 997",
+        "attributes": {
+          "name": "Ultra Kit 236",
+          "price": 649.6026543209877,
+          "category": "Clothing",
+          "stock": 666
+        },
+        "metadata": {
+          "weight": 0.543005401234568,
+          "importance": 5,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000012",
+        "title": "Ultra Set 399",
+        "attributes": {
+          "name": "Ultra Set 674",
+          "price": 283.64470679012345,
+          "category": "Electronics",
+          "stock": 671
+        },
+        "metadata": {
+          "weight": 0.6776774691358025,
+          "importance": 2,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000013",
+        "title": "Ultra Tool 272",
+        "attributes": {
+          "name": "Professional Solution 854",
+          "price": 152.7099074074074,
+          "category": "Electronics",
+          "stock": 350
+        },
+        "metadata": {
+          "weight": 0.2676736111111111,
+          "importance": 1,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000014",
+        "title": "Deluxe Widget 934",
+        "attributes": {
+          "name": "Ultra Widget 203",
+          "price": 498.1871450617284,
+          "category": "Home",
+          "stock": 246
+        },
+        "metadata": {
+          "weight": 0.8324382716049382,
+          "importance": 6,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000015",
+        "title": "Professional Device 779",
+        "attributes": {
+          "name": "Deluxe Set 890",
+          "price": 204.79864197530864,
+          "category": "Books",
+          "stock": 305
+        },
+        "metadata": {
+          "weight": 0.5580825617283951,
+          "importance": 3,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000016",
+        "title": "Professional Kit 716",
+        "attributes": {
+          "name": "Ultra Device 273",
+          "price": 540.5999537037038,
+          "category": "Clothing",
+          "stock": 327
+        },
+        "metadata": {
+          "weight": 0.39738425925925924,
+          "importance": 6,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000017",
+        "title": "Deluxe Solution 285",
+        "attributes": {
+          "name": "Smart System 1",
+          "price": 646.9799691358024,
+          "category": "Home",
+          "stock": 74
+        },
+        "metadata": {
+          "weight": 0.8697878086419754,
+          "importance": 6,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000018",
+        "title": "Advanced Kit 435",
+        "attributes": {
+          "name": "Advanced System 798",
+          "price": 618.6609104938271,
+          "category": "Home",
+          "stock": 49
+        },
+        "metadata": {
+          "weight": 0.3614043209876544,
+          "importance": 7,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000019",
+        "title": "Smart System 963",
+        "attributes": {
+          "name": "Advanced System 911",
+          "price": 293.6983333333334,
+          "category": "Home",
+          "stock": 941
+        },
+        "metadata": {
+          "weight": 0.32501157407407405,
+          "importance": 6,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000020",
+        "title": "Professional Device 634",
+        "attributes": {
+          "name": "Advanced Solution 213",
+          "price": 683.4811265432099,
+          "category": "Home",
+          "stock": 733
+        },
+        "metadata": {
+          "weight": 0.28005401234567906,
+          "importance": 10,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000021",
+        "title": "Smart Package 949",
+        "attributes": {
+          "name": "Deluxe Device 982",
+          "price": 122.73151234567901,
+          "category": "Books",
+          "stock": 485
+        },
+        "metadata": {
+          "weight": 0.6126427469135803,
+          "importance": 1,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000022",
+        "title": "Advanced Widget 597",
+        "attributes": {
+          "name": "Smart Package 354",
+          "price": 979.5050462962963,
+          "category": "Home",
+          "stock": 774
+        },
+        "metadata": {
+          "weight": 0.5755555555555555,
+          "importance": 9,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000023",
+        "title": "Deluxe Kit 563",
+        "attributes": {
+          "name": "Deluxe Kit 422",
+          "price": 195.19061728395064,
+          "category": "Electronics",
+          "stock": 806
+        },
+        "metadata": {
+          "weight": 0.48823688271604937,
+          "importance": 5,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000024",
+        "title": "Premium System 905",
+        "attributes": {
+          "name": "Ultra Solution 25",
+          "price": 284.5104475308642,
+          "category": "Clothing",
+          "stock": 196
+        },
+        "metadata": {
+          "weight": 0.9367978395061728,
+          "importance": 1,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000025",
+        "title": "Advanced Device 202",
+        "attributes": {
+          "name": "Professional System 182",
+          "price": 205.5200925925926,
+          "category": "Clothing",
+          "stock": 410
+        },
+        "metadata": {
+          "weight": 0.7740162037037037,
+          "importance": 8,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000026",
+        "title": "Deluxe System 657",
+        "attributes": {
+          "name": "Deluxe Kit 213",
+          "price": 749.6084413580247,
+          "category": "Sports",
+          "stock": 877
+        },
+        "metadata": {
+          "weight": 0.21933641975308643,
+          "importance": 5,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000027",
+        "title": "Premium Set 887",
+        "attributes": {
+          "name": "Deluxe Tool 509",
+          "price": 691.4977160493827,
+          "category": "Sports",
+          "stock": 766
+        },
+        "metadata": {
+          "weight": 0.9588695987654321,
+          "importance": 2,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000028",
+        "title": "Premium System 359",
+        "attributes": {
+          "name": "Advanced System 980",
+          "price": 529.2434722222222,
+          "category": "Books",
+          "stock": 433
+        },
+        "metadata": {
+          "weight": 0.5453935185185186,
+          "importance": 2,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000029",
+        "title": "Premium Device 499",
+        "attributes": {
+          "name": "Professional Widget 168",
+          "price": 944.2345987654321,
+          "category": "Clothing",
+          "stock": 529
+        },
+        "metadata": {
+          "weight": 0.8983526234567901,
+          "importance": 8,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000030",
+        "title": "Advanced Kit 479",
+        "attributes": {
+          "name": "Advanced Package 19",
+          "price": 931.1933179012345,
+          "category": "Sports",
+          "stock": 779
+        },
+        "metadata": {
+          "weight": 0.30385802469135803,
+          "importance": 10,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000031",
+        "title": "Deluxe Tool 652",
+        "attributes": {
+          "name": "Smart Solution 332",
+          "price": 548.1751851851852,
+          "category": "Books",
+          "stock": 426
+        },
+        "metadata": {
+          "weight": 0.4146875,
+          "importance": 4,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000032",
+        "title": "Professional System 672",
+        "attributes": {
+          "name": "Smart Tool 870",
+          "price": 366.5690895061729,
+          "category": "Clothing",
+          "stock": 345
+        },
+        "metadata": {
+          "weight": 0.35028549382716045,
+          "importance": 8,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000033",
+        "title": "Smart Kit 262",
+        "attributes": {
+          "name": "Ultra Widget 138",
+          "price": 591.0972530864198,
+          "category": "Home",
+          "stock": 816
+        },
+        "metadata": {
+          "weight": 0.39676311728395064,
+          "importance": 1,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000034",
+        "title": "Ultra System 666",
+        "attributes": {
+          "name": "Deluxe Tool 820",
+          "price": 839.8152314814815,
+          "category": "Clothing",
+          "stock": 972
+        },
+        "metadata": {
+          "weight": 0.9068981481481482,
+          "importance": 1,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000035",
+        "title": "Smart Set 759",
+        "attributes": {
+          "name": "Advanced Widget 904",
+          "price": 584.1119135802469,
+          "category": "Electronics",
+          "stock": 909
+        },
+        "metadata": {
+          "weight": 0.9001350308641975,
+          "importance": 2,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000036",
+        "title": "Deluxe Tool 820",
+        "attributes": {
+          "name": "Premium Device 448",
+          "price": 248.7095216049383,
+          "category": "Sports",
+          "stock": 462
+        },
+        "metadata": {
+          "weight": 0.8625848765432098,
+          "importance": 2,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000037",
+        "title": "Deluxe System 983",
+        "attributes": {
+          "name": "Deluxe Tool 29",
+          "price": 991.6636111111111,
+          "category": "Sports",
+          "stock": 655
+        },
+        "metadata": {
+          "weight": 0.7470254629629629,
+          "importance": 9,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000038",
+        "title": "Deluxe Package 344",
+        "attributes": {
+          "name": "Deluxe Package 852",
+          "price": 194.36307098765434,
+          "category": "Clothing",
+          "stock": 804
+        },
+        "metadata": {
+          "weight": 0.37290123456790125,
+          "importance": 5,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      },
+      {
+        "content": "product_000039",
+        "title": "Smart Widget 737",
+        "attributes": {
+          "name": "Ultra Package 534",
+          "price": 481.53012345679014,
+          "category": "Clothing",
+          "stock": 301
+        },
+        "metadata": {
+          "weight": 0.42632330246913586,
+          "importance": 6,
+          "tags": [
+            "product",
+            "catalog"
+          ]
+        }
+      }
+    ],
+    "orders": [
+      {
+        "content": "order_00000000",
+        "title": "Order #1000",
+        "attributes": {
+          "orderNumber": "ORD-1000",
+          "customerName": "Emily Miller",
+          "totalAmount": 389.80558641975307,
+          "status": "shipped"
+        },
+        "metadata": {
+          "weight": 0.21537422839506173,
+          "importance": 6,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000001",
+        "title": "Order #1001",
+        "attributes": {
+          "orderNumber": "ORD-1001",
+          "customerName": "David Miller",
+          "totalAmount": 133.4954012345679,
+          "status": "shipped"
+        },
+        "metadata": {
+          "weight": 0.3960918209876543,
+          "importance": 2,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000002",
+        "title": "Order #1002",
+        "attributes": {
+          "orderNumber": "ORD-1002",
+          "customerName": "Michael Smith",
+          "totalAmount": 518.8518827160493,
+          "status": "delivered"
+        },
+        "metadata": {
+          "weight": 0.3684760802469136,
+          "importance": 8,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000003",
+        "title": "Order #1003",
+        "attributes": {
+          "orderNumber": "ORD-1003",
+          "customerName": "Robert Jones",
+          "totalAmount": 225.87503086419753,
+          "status": "processing"
+        },
+        "metadata": {
+          "weight": 0.43252700617283946,
+          "importance": 7,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000004",
+        "title": "Order #1004",
+        "attributes": {
+          "orderNumber": "ORD-1004",
+          "customerName": "David Davis",
+          "totalAmount": 1894.5648456790123,
+          "status": "cancelled"
+        },
+        "metadata": {
+          "weight": 0.8882445987654322,
+          "importance": 3,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000005",
+        "title": "Order #1005",
+        "attributes": {
+          "orderNumber": "ORD-1005",
+          "customerName": "Lisa Brown",
+          "totalAmount": 244.92132716049383,
+          "status": "cancelled"
+        },
+        "metadata": {
+          "weight": 0.23562885802469136,
+          "importance": 9,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000006",
+        "title": "Order #1006",
+        "attributes": {
+          "orderNumber": "ORD-1006",
+          "customerName": "John Williams",
+          "totalAmount": 1876.9444753086418,
+          "status": "processing"
+        },
+        "metadata": {
+          "weight": 0.5746797839506174,
+          "importance": 8,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000007",
+        "title": "Order #1007",
+        "attributes": {
+          "orderNumber": "ORD-1007",
+          "customerName": "David Smith",
+          "totalAmount": 1510.6342901234568,
+          "status": "shipped"
+        },
+        "metadata": {
+          "weight": 0.40539737654320984,
+          "importance": 4,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000008",
+        "title": "Order #1008",
+        "attributes": {
+          "orderNumber": "ORD-1008",
+          "customerName": "Emily Miller",
+          "totalAmount": 1785.9907716049383,
+          "status": "cancelled"
+        },
+        "metadata": {
+          "weight": 0.9277816358024692,
+          "importance": 9,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000009",
+        "title": "Order #1009",
+        "attributes": {
+          "orderNumber": "ORD-1009",
+          "customerName": "Michael Smith",
+          "totalAmount": 1383.0139197530864,
+          "status": "cancelled"
+        },
+        "metadata": {
+          "weight": 0.6418325617283951,
+          "importance": 8,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000010",
+        "title": "Order #1010",
+        "attributes": {
+          "orderNumber": "ORD-1010",
+          "customerName": "Michael Smith",
+          "totalAmount": 961.7037345679013,
+          "status": "cancelled"
+        },
+        "metadata": {
+          "weight": 0.7475501543209876,
+          "importance": 3,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000011",
+        "title": "Order #1011",
+        "attributes": {
+          "orderNumber": "ORD-1011",
+          "customerName": "Lisa Smith",
+          "totalAmount": 1182.0602160493827,
+          "status": "pending"
+        },
+        "metadata": {
+          "weight": 0.6449344135802468,
+          "importance": 9,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000012",
+        "title": "Order #1012",
+        "attributes": {
+          "orderNumber": "ORD-1012",
+          "customerName": "Emily Garcia",
+          "totalAmount": 724.0833641975308,
+          "status": "delivered"
+        },
+        "metadata": {
+          "weight": 0.6339853395061729,
+          "importance": 7,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000013",
+        "title": "Order #1013",
+        "attributes": {
+          "orderNumber": "ORD-1013",
+          "customerName": "Jane Davis",
+          "totalAmount": 247.77317901234568,
+          "status": "processing"
+        },
+        "metadata": {
+          "weight": 0.11470293209876543,
+          "importance": 2,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000014",
+        "title": "Order #1014",
+        "attributes": {
+          "orderNumber": "ORD-1014",
+          "customerName": "Michael Williams",
+          "totalAmount": 413.1296604938272,
+          "status": "cancelled"
+        },
+        "metadata": {
+          "weight": 0.28708719135802474,
+          "importance": 7,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000015",
+        "title": "Order #1015",
+        "attributes": {
+          "orderNumber": "ORD-1015",
+          "customerName": "Emily Johnson",
+          "totalAmount": 1880.1528086419753,
+          "status": "processing"
+        },
+        "metadata": {
+          "weight": 0.5511381172839507,
+          "importance": 5,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000016",
+        "title": "Order #1016",
+        "attributes": {
+          "orderNumber": "ORD-1016",
+          "customerName": "Robert Garcia",
+          "totalAmount": 1348.84262345679,
+          "status": "shipped"
+        },
+        "metadata": {
+          "weight": 0.3068557098765432,
+          "importance": 10,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000017",
+        "title": "Order #1017",
+        "attributes": {
+          "orderNumber": "ORD-1017",
+          "customerName": "Sarah Brown",
+          "totalAmount": 1459.1991049382716,
+          "status": "cancelled"
+        },
+        "metadata": {
+          "weight": 0.7542399691358025,
+          "importance": 5,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000018",
+        "title": "Order #1018",
+        "attributes": {
+          "orderNumber": "ORD-1018",
+          "customerName": "Emily Jones",
+          "totalAmount": 891.2222530864198,
+          "status": "cancelled"
+        },
+        "metadata": {
+          "weight": 0.39329089506172843,
+          "importance": 3,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000019",
+        "title": "Order #1019",
+        "attributes": {
+          "orderNumber": "ORD-1019",
+          "customerName": "Emily Brown",
+          "totalAmount": 304.91206790123454,
+          "status": "delivered"
+        },
+        "metadata": {
+          "weight": 0.424008487654321,
+          "importance": 7,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000020",
+        "title": "Order #1020",
+        "attributes": {
+          "orderNumber": "ORD-1020",
+          "customerName": "Lisa Brown",
+          "totalAmount": 360.26854938271606,
+          "status": "delivered"
+        },
+        "metadata": {
+          "weight": 0.24639274691358026,
+          "importance": 1,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000021",
+        "title": "Order #1021",
+        "attributes": {
+          "orderNumber": "ORD-1021",
+          "customerName": "Michael Davis",
+          "totalAmount": 1717.2916975308642,
+          "status": "processing"
+        },
+        "metadata": {
+          "weight": 0.16044367283950617,
+          "importance": 9,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000022",
+        "title": "Order #1022",
+        "attributes": {
+          "orderNumber": "ORD-1022",
+          "customerName": "Lisa Smith",
+          "totalAmount": 1075.981512345679,
+          "status": "delivered"
+        },
+        "metadata": {
+          "weight": 0.4661612654320988,
+          "importance": 3,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000023",
+        "title": "Order #1023",
+        "attributes": {
+          "orderNumber": "ORD-1023",
+          "customerName": "John Brown",
+          "totalAmount": 1076.3379938271605,
+          "status": "processing"
+        },
+        "metadata": {
+          "weight": 0.5635455246913581,
+          "importance": 7,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      },
+      {
+        "content": "order_00000024",
+        "title": "Order #1024",
+        "attributes": {
+          "orderNumber": "ORD-1024",
+          "customerName": "John Johnson",
+          "totalAmount": 398.3611419753086,
+          "status": "delivered"
+        },
+        "metadata": {
+          "weight": 0.752596450617284,
+          "importance": 5,
+          "tags": [
+            "order",
+            "transaction"
+          ]
+        }
+      }
+    ],
+    "categories": [
+      {
+        "content": "categories_0",
+        "title": "categories 1",
+        "metadata": {
+          "weight": 0.39894675925925926,
+          "importance": 7,
+          "tags": []
+        }
+      },
+      {
+        "content": "categories_1",
+        "title": "categories 2",
+        "metadata": {
+          "weight": 0.8554822530864198,
+          "importance": 8,
+          "tags": []
+        }
+      },
+      {
+        "content": "categories_2",
+        "title": "categories 3",
+        "metadata": {
+          "weight": 0.43331404320987654,
+          "importance": 9,
+          "tags": []
+        }
+      },
+      {
+        "content": "categories_3",
+        "title": "categories 4",
+        "metadata": {
+          "weight": 0.21021990740740742,
+          "importance": 3,
+          "tags": []
+        }
+      },
+      {
+        "content": "categories_4",
+        "title": "categories 5",
+        "metadata": {
+          "weight": 0.8306442901234568,
+          "importance": 1,
+          "tags": []
+        }
+      }
+    ],
+    "reviews": [
+      {
+        "content": "reviews_0",
+        "title": "reviews 1",
+        "metadata": {
+          "weight": 0.8056983024691358,
+          "importance": 3,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_1",
+        "title": "reviews 2",
+        "metadata": {
+          "weight": 0.8131597222222222,
+          "importance": 4,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_2",
+        "title": "reviews 3",
+        "metadata": {
+          "weight": 0.4974729938271605,
+          "importance": 9,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_3",
+        "title": "reviews 4",
+        "metadata": {
+          "weight": 0.36974922839506175,
+          "importance": 10,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_4",
+        "title": "reviews 5",
+        "metadata": {
+          "weight": 0.7077662037037037,
+          "importance": 2,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_5",
+        "title": "reviews 6",
+        "metadata": {
+          "weight": 0.15596836419753088,
+          "importance": 7,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_6",
+        "title": "reviews 7",
+        "metadata": {
+          "weight": 0.32546682098765434,
+          "importance": 3,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_7",
+        "title": "reviews 8",
+        "metadata": {
+          "weight": 0.19403935185185187,
+          "importance": 1,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_8",
+        "title": "reviews 9",
+        "metadata": {
+          "weight": 0.1061304012345679,
+          "importance": 6,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_9",
+        "title": "reviews 10",
+        "metadata": {
+          "weight": 0.9728510802469136,
+          "importance": 7,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_10",
+        "title": "reviews 11",
+        "metadata": {
+          "weight": 0.4719791666666667,
+          "importance": 5,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_11",
+        "title": "reviews 12",
+        "metadata": {
+          "weight": 0.6479591049382716,
+          "importance": 1,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_12",
+        "title": "reviews 13",
+        "metadata": {
+          "weight": 0.8119020061728395,
+          "importance": 4,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_13",
+        "title": "reviews 14",
+        "metadata": {
+          "weight": 0.9415856481481482,
+          "importance": 6,
+          "tags": []
+        }
+      },
+      {
+        "content": "reviews_14",
+        "title": "reviews 15",
+        "metadata": {
+          "weight": 0.281454475308642,
+          "importance": 5,
+          "tags": []
+        }
+      }
+    ]
+  },
+  "relations": [],
+  "metadata": {
+    "totalNodes": 100,
+    "totalRelations": 0,
+    "generated": "2025-09-05T02:12:51.062Z",
+    "description": "Generated small dataset for ecommerce domain"
+  }
+}

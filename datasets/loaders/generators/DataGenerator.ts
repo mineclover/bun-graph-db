@@ -187,19 +187,29 @@ export class DataGenerator {
     
     for (let i = 0; i < count; i++) {
       let attempts = 0
-      let sourceNode: FixtureNode
-      let targetNode: FixtureNode
-      let pairKey: string
+      let sourceNode: FixtureNode | undefined
+      let targetNode: FixtureNode | undefined
+      let pairKey: string | undefined
       
       // Find unique pair
       do {
-        sourceNode = sourceNodes[this.randomInt(0, sourceNodes.length - 1)]
-        targetNode = targetNodes[this.randomInt(0, targetNodes.length - 1)]
+        const sourceIndex = this.randomInt(0, sourceNodes.length - 1)
+        const targetIndex = this.randomInt(0, targetNodes.length - 1)
+        const selectedSource = sourceNodes[sourceIndex]
+        const selectedTarget = targetNodes[targetIndex]
+        
+        if (!selectedSource || !selectedTarget) {
+          attempts++
+          continue
+        }
+        
+        sourceNode = selectedSource
+        targetNode = selectedTarget
         pairKey = `${sourceNode.content}:${targetNode.content}`
         attempts++
-      } while (usedPairs.has(pairKey) && attempts < 10)
+      } while (pairKey && usedPairs.has(pairKey) && attempts < 10)
       
-      if (attempts < 10) {
+      if (attempts < 10 && sourceNode && targetNode && pairKey) {
         usedPairs.add(pairKey)
         
         relations.push({
@@ -300,7 +310,7 @@ export class DataGenerator {
 
   private parseRelationIdentifier(identifier: string): [string, string] {
     const parts = identifier.split('-')
-    if (parts.length !== 2) {
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
       throw new Error(`Invalid relation identifier format: ${identifier}`)
     }
     return [parts[0], parts[1]]
@@ -323,7 +333,15 @@ export class DataGenerator {
   }
 
   private randomChoice<T>(choices: T[]): T {
-    return choices[this.randomInt(0, choices.length - 1)]
+    if (choices.length === 0) {
+      throw new Error('Cannot choose from empty array')
+    }
+    const index = this.randomInt(0, choices.length - 1)
+    const selected = choices[index]
+    if (selected === undefined) {
+      throw new Error('Selected item is undefined')
+    }
+    return selected
   }
 
   // Data generators

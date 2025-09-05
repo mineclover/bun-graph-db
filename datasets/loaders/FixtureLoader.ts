@@ -92,9 +92,14 @@ export class FixtureLoader {
       throw new Error('No fixtures provided for merging')
     }
 
+    const firstFixture = fixtures[0]
+    if (!firstFixture) {
+      throw new Error('First fixture is undefined')
+    }
+
     const merged: DomainFixtures = {
       version: '1.0',
-      domain: fixtures[0].domain,
+      domain: firstFixture.domain,
       size: 'large', // Merged is typically large
       tables: {},
       relations: [],

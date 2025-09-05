@@ -91,7 +91,7 @@ export class UnifiedTestRunner {
     try {
       const exitCode = await this.executeCommand(suite.command, {
         timeout: suite.timeout || 60000,
-        env: { ...process.env, ...suite.env },
+        env: { ...process.env, ...(suite.env || {}) } as Record<string, string>,
       })
 
       const duration = Date.now() - startTime

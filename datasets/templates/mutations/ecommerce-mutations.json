@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "name": "E-commerce Mutations",
+  "description": "Mutation templates for e-commerce operations",
+  "domain": "ecommerce",
+  "templates": [
+    {
+      "identifier": "create-user",
+      "name": "Create User",
+      "description": "Create a new user account",
+      "templateType": "MUTATION",
+      "tags": ["user", "create", "account"],
+      "queryText": "mutation CreateUser($input: CreateNodeInput!) { createNode(input: $input) { success data { id content title attributes { value attribute { identifier name } } } errors { message code } } }",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "tableId": { "type": "string" },
+              "content": { "type": "string" },
+              "title": { "type": "string" },
+              "attributes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "attributeId": { "type": "string" },
+                    "value": { "type": "string" }
+                  }
+                }
+              }
+            },
+            "required": ["tableId", "content"]
+          }
+        },
+        "required": ["input"]
+      },
+      "applicableTables": ["users"],
+      "complexityScore": 4
+    },
+    {
+      "identifier": "update-product-price",
+      "name": "Update Product Price",
+      "description": "Update product pricing information",
+      "templateType": "MUTATION",
+      "tags": ["product", "update", "price"],
+      "queryText": "mutation UpdateProductPrice($nodeId: String!, $attributeId: String!, $price: String!) { setNodeAttribute(nodeId: $nodeId, attributeId: $attributeId, value: $price) { node { id content attributes { value attribute { identifier } } } errors { message } } }",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": { "type": "string" },
+          "attributeId": { "type": "string" },
+          "price": { "type": "string", "pattern": "^[0-9]+\\.?[0-9]*$" }
+        },
+        "required": ["nodeId", "attributeId", "price"]
+      },
+      "applicableTables": ["products"],
+      "complexityScore": 3
+    }
+  ]
+}

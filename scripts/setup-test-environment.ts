@@ -554,7 +554,7 @@ async function testTemplateExecution(db: Database): Promise<void> {
       console.log(`   ✅ Template executed: ${(template as any).name}`)
       successCount++
     } catch (error) {
-      console.log(`   ❌ Template failed: ${template.name} - ${error}`)
+      console.log(`   ❌ Template failed: ${(template as any).name} - ${error}`)
       failCount++
     }
   }
@@ -708,10 +708,10 @@ async function exportTestDataset(db: Database): Promise<SchemaExportResult> {
   }
 
   // Get global types
-  const globalRelationTypes = db
+  const globalRelationTypes = (db as Database)
     .prepare('SELECT * FROM relation_types')
     .all()
-    .map((rt) => ({
+    .map((rt: any) => ({
       id: rt.id.toString(),
       identifier: rt.identifier,
       name: rt.name,
@@ -721,10 +721,10 @@ async function exportTestDataset(db: Database): Promise<SchemaExportResult> {
       updatedAt: rt.updated_at,
     }))
 
-  const globalAttributeTypes = db
+  const globalAttributeTypes = (db as Database)
     .prepare('SELECT * FROM attribute_types')
     .all()
-    .map((at) => ({
+    .map((at: any) => ({
       id: at.id.toString(),
       identifier: at.identifier,
       name: at.name,
@@ -789,7 +789,7 @@ async function runComprehensiveTestEnvironment(): Promise<void> {
   console.log('🚀 Comprehensive Test Environment Setup for Template-based Query Execution')
   console.log('===========================================================================\n')
 
-  let db: Database
+  let db: Database | undefined
 
   try {
     // Phase 1: Initialize database

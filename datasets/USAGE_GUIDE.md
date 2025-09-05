@@ -10,11 +10,24 @@ npm run dataset:generate
 ### 2. List Available Datasets
 ```bash
 npm run dataset:list
+npm run template:list
 ```
 
 ### 3. Get Dataset Statistics
 ```bash
 npm run dataset:stats
+npm run template:validate
+```
+
+### 4. Import Templates to Server
+```bash
+# Start server first
+bun run dev
+
+# In another terminal, import templates
+npm run template:import
+# or
+npm run dataset:import
 ```
 
 ## Programming Usage
@@ -99,6 +112,64 @@ datasets/
 ├── templates/{type}/                # Query templates
 ├── loaders/                         # Loading utilities
 └── scripts/                         # Data generation scripts
+```
+
+## Template Management
+
+### CLI Template Manager
+```bash
+# List all templates
+npm run template:list
+
+# Search for templates
+bun datasets/scripts/template-manager.ts search "product"
+
+# Check complexity distribution
+npm run template:complexity
+
+# Validate all templates
+npm run template:validate
+
+# Import all templates to server (requires running server)
+npm run template:import
+```
+
+### Server Import Methods
+
+#### Method 1: Bulk Import (Recommended)
+```bash
+# Start server
+bun run dev
+
+# Import all templates
+npm run template:import
+```
+
+#### Method 2: Individual GraphQL Mutations
+```graphql
+mutation CreateTemplate($input: CreateQueryTemplateInput!) {
+  createTemplate(input: $input) {
+    success
+    template {
+      id
+      identifier 
+      name
+    }
+    errors {
+      message
+    }
+  }
+}
+```
+
+#### Method 3: Programmatic Import
+```typescript
+import { createTemplateOnServer } from './datasets/scripts/import-templates-to-server.js'
+
+const result = await createTemplateOnServer(templateObject)
+if (result.success) {
+  console.log(`Imported: ${result.serverId}`)
+}
 ```
 
 ## Advanced Usage

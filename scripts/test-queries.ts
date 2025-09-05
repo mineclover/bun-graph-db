@@ -132,7 +132,7 @@ async function executeQuery(queryKey: string, tableId?: string) {
     process.exit(1)
   }
 
-  const variables = queryConfig.variables || { tableId: tableId || '1' }
+  const variables = (queryConfig as any).variables || { tableId: tableId || '1' }
 
   console.log(`🚀 Executing: ${queryConfig.name}`)
   console.log(`📝 Variables:`, variables)

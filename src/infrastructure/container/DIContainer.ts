@@ -68,14 +68,15 @@ export class DIContainer {
    * Resolve a service by token
    */
   async resolve<T>(token: ServiceToken<T>): Promise<T> {
-    // Check for circular dependencies
-    if (this.resolutionStack.has(token)) {
-      throw new Error(`Circular dependency detected for token: ${String(token)}`)
-    }
-
     // Check singleton cache first
     if (this.singletonInstances.has(token)) {
       return this.singletonInstances.get(token)
+    }
+
+    // Check for circular dependencies
+    if (this.resolutionStack.has(token)) {
+      const stackArray = Array.from(this.resolutionStack).map(t => String(t))
+      throw new Error(`Circular dependency detected for token: ${String(token)}\nDependency chain: ${stackArray.join(' -> ')} -> ${String(token)}`)
     }
 
     const registration = this.registrations.get(token)

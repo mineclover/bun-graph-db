@@ -1,8 +1,26 @@
 // Main entry point for dataset loaders
-export { SchemaLoader } from './SchemaLoader.js'
-export { FixtureLoader } from './FixtureLoader.js'
-export { TemplateLoader } from './TemplateLoader.js'
-export { DataGenerator } from './generators/DataGenerator.js'
+import { SchemaLoader } from './SchemaLoader.js'
+import { FixtureLoader } from './FixtureLoader.js'
+import { TemplateLoader } from './TemplateLoader.js'
+import { DataGenerator } from './generators/DataGenerator.js'
+import type {
+  DomainSchema,
+  TableSchema,
+  AttributeSchema,
+  RelationTypeSchema,
+  DomainFixtures,
+  FixtureNode,
+  FixtureRelation,
+  QueryTemplate,
+  TemplateCollection,
+  DatasetSize,
+  DomainType,
+  TemplateType,
+  LoaderOptions,
+  GeneratorOptions
+} from './types/DatasetTypes.js'
+
+export { SchemaLoader, FixtureLoader, TemplateLoader, DataGenerator }
 
 // Re-export types
 export type {
@@ -20,7 +38,7 @@ export type {
   TemplateType,
   LoaderOptions,
   GeneratorOptions
-} from './types/DatasetTypes.js'
+}
 
 // Convenience factory class
 export class DatasetManager {

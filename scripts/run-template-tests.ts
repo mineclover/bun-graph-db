@@ -68,15 +68,15 @@ async function runTests(): Promise<void> {
     const decoder = new TextDecoder()
 
     // Handle stdout
-    if (testProcess.stdout) {
-      testProcess.stdout.on('data', (chunk: any) => {
+    if (testProcess.stdout && 'on' in testProcess.stdout) {
+      (testProcess.stdout as any).on('data', (chunk: any) => {
         process.stdout.write(decoder.decode(chunk))
       })
     }
 
     // Handle stderr
-    if (testProcess.stderr) {
-      testProcess.stderr.on('data', (chunk: any) => {
+    if (testProcess.stderr && 'on' in testProcess.stderr) {
+      (testProcess.stderr as any).on('data', (chunk: any) => {
         process.stderr.write(decoder.decode(chunk))
       })
     }

@@ -690,7 +690,7 @@ export class TestDatasetSetup {
         targetNodeId,
         relationTypeId,
         relationConfig.properties,
-        relationConfig.strength
+        relationConfig.strength?.toString() || '1.0'
       )
       await relationRepository.save(relation)
       console.log(
