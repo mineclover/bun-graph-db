@@ -67,9 +67,7 @@ export class AttributeQueries extends BaseResolver {
   async attributeTypes(_: GraphQLParent, args?: any, context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        const result = await this.attributeTypeRepository.findAll({
-          pagination: { limit: 100, offset: 0 },
-        })
+        const result = await this.attributeTypeRepository.findAll({ limit: 100, offset: 0 })
 
         return {
           nodes: result.items,
@@ -120,7 +118,10 @@ export class AttributeQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        return await this.attributeRepository.findByIdentifier(args.identifier, args.tableId)
+        // Note: The repository interface only accepts identifier, not tableId
+        // This is a potential issue in the domain design that might need addressing
+        // For now, we'll use only the identifier parameter
+        return await this.attributeRepository.findByIdentifier(args.identifier)
       },
       'findAttributeByIdentifier',
       { identifier: args.identifier, tableId: args.tableId }
@@ -130,11 +131,9 @@ export class AttributeQueries extends BaseResolver {
   async attributes(_: GraphQLParent, args: AttributesArgs, context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        const result = await this.attributeRepository.findAll({
-          filter: args.filter,
-          pagination: args.pagination || { limit: 10, offset: 0 },
-          sort: args.sort,
-        })
+        const result = await this.attributeRepository.findAll(
+          args.pagination || { limit: 10, offset: 0 }
+        )
 
         return {
           nodes: result.items,

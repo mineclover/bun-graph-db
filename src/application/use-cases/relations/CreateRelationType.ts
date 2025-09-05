@@ -5,7 +5,6 @@ import { ConflictException, ValidationException } from '@/shared/exceptions/Doma
 
 export interface CreateRelationTypeInput {
   identifier: string
-  name: string
   description?: string
   category?: string
 }

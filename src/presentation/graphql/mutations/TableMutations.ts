@@ -54,9 +54,9 @@ export class TableMutations extends BaseResolver {
       this.logger.error('Mutation failed: createTable', { error, input: args.input })
 
       const errorCode =
-        error.code ||
-        (error.message?.includes('already exists') ? 'CREATE_TABLE_ERROR' : 'INTERNAL_ERROR')
-      const errorMessage = error.message || 'Unknown error occurred'
+        (error as any).code ||
+        ((error as Error).message?.includes('already exists') ? 'CREATE_TABLE_ERROR' : 'INTERNAL_ERROR')
+      const errorMessage = (error as Error).message || 'Unknown error occurred'
 
       return {
         success: false,
@@ -159,15 +159,16 @@ export class TableMutations extends BaseResolver {
         cascadeDelete: args.cascadeDelete,
       })
 
-      const errorCode = error.message.includes('Cannot delete table')
+      const errorMessage = (error as Error).message || 'Unknown error occurred'
+      const errorCode = errorMessage.includes('Cannot delete table')
         ? 'TABLE_HAS_DEPENDENCIES'
-        : error.message.includes('not found')
+        : errorMessage.includes('not found')
           ? 'TABLE_NOT_FOUND'
           : 'DELETE_TABLE_ERROR'
 
       return {
         success: false,
-        errors: [{ message: error.message, code: errorCode }],
+        errors: [{ message: errorMessage, code: errorCode }],
       }
     }
   }

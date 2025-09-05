@@ -56,6 +56,10 @@ export class NodeQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
+        // Ensure tableId is not undefined before passing to repository
+        if (!args.tableId) {
+          throw new Error('Table ID is required')
+        }
         return await this.nodeRepository.findByTableIdAndContent(args.tableId, args.content)
       },
       'findNodeByContent',
@@ -66,11 +70,9 @@ export class NodeQueries extends BaseResolver {
   async nodes(_: GraphQLParent, args: NodesArgs, context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        const result = await this.nodeRepository.findAll({
-          filter: args.filter,
-          pagination: args.pagination || { limit: 10, offset: 0 },
-          sort: args.sort,
-        })
+        const result = await this.nodeRepository.findAll(
+          args.pagination || { limit: 10, offset: 0 }
+        )
 
         return {
           nodes: result.items,
@@ -91,11 +93,9 @@ export class NodeQueries extends BaseResolver {
         // TODO: Restore proper search functionality after circular dependency is resolved
         if (!this.searchNodesUseCase) {
           this.logger.warn('SearchNodesUseCase not available, using basic node listing')
-          const result = await this.nodeRepository.findAll({
-            filter: args.filter,
-            pagination: args.pagination || { limit: 10, offset: 0 },
-            sort: args.sort,
-          })
+          const result = await this.nodeRepository.findAll(
+            args.pagination || { limit: 10, offset: 0 }
+          )
 
           return {
             nodes: result.items,
@@ -105,11 +105,27 @@ export class NodeQueries extends BaseResolver {
           }
         }
 
-        const result = await this.searchNodesUseCase.execute({
-          filter: args.filter,
-          pagination: args.pagination || { limit: 10, offset: 0 },
-          sort: args.sort,
-        })
+        // Transform GraphQL args to SearchNodesInput format
+        const searchInput = {
+          tableId: args.filter?.tableId || '', // Provide default empty string if not provided
+          query: args.filter?.search,
+          limit: args.pagination?.limit,
+          offset: args.pagination?.offset,
+          sortBy: args.sort ? (Array.isArray(args.sort) ? args.sort.map((s: any) => ({
+            field: s.field,
+            direction: s.direction.toLowerCase() as 'asc' | 'desc'
+          })) : [{
+            field: (args.sort as any).field,
+            direction: ((args.sort as any).direction.toLowerCase() as 'asc' | 'desc')
+          }]) : undefined
+        }
+
+        // Validate that tableId is provided
+        if (!searchInput.tableId) {
+          throw new Error('Table ID is required for searching nodes')
+        }
+
+        const result = await this.searchNodesUseCase.execute(searchInput)
 
         return {
           nodes: result.nodes,

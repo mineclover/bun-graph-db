@@ -23,12 +23,9 @@ type TableNode implements Node {
     direction: RelationDirection = BOTH
     relationTypes: [ID!]
   ): [ConnectedNode!]!
-  
-  shortestPath(
-    targetNodeId: ID!
-    maxDepth: Int = 6
-  ): GraphPath
-  
+
+  shortestPath(targetNodeId: ID!, maxDepth: Int = 6): GraphPath
+
   neighborsByRelationType(relationTypeId: ID!): [TableNode!]!
 }
 
@@ -169,10 +166,10 @@ type Table implements Node {
 
   # Relationships
   attributes: [Attribute!]!
-  nodes: [TableNode!]!
+  tableNodes: [TableNode!]!
 
   # Computed fields
-  nodeCount: Int!
+  tableNodeCount: Int!
   attributeCount: Int!
 }
 
@@ -233,7 +230,7 @@ type DeleteTablePayload implements OperationResult {
 
 # Table dependency information for deletion
 type TableDependencyInfo {
-  nodeCount: Int!
+  tableNodeCount: Int!
   attributeCount: Int!
   relationCount: Int!
 }
@@ -401,6 +398,7 @@ input CreateRelationTypeInput {
 
 # Input types for relation operations
 input CreateRelationInput {
+  tableId: ID!
   sourceNodeId: ID!
   targetNodeId: ID!
   relationTypeId: ID!
@@ -574,6 +572,34 @@ type ExecuteQueryTemplatePayload {
   data: JSON
   execution: QueryTemplateExecution
   errors: [Error!]!
+}
+
+type TemplateExecutionResult {
+  success: Boolean!
+  data: JSON
+  errors: [TemplateExecutionError!]
+  metadata: TemplateExecutionMetadata!
+}
+
+type TemplateExecutionError {
+  message: String!
+  locations: [GraphQLLocation!]
+  path: [String!]
+  code: String
+}
+
+type GraphQLLocation {
+  line: Int!
+  column: Int!
+}
+
+type TemplateExecutionMetadata {
+  templateId: ID!
+  templateName: String!
+  complexityScore: Int!
+  estimatedTokens: Int
+  version: String!
+  executionTime: Int!
 }
 
 
@@ -772,6 +798,13 @@ extend type Mutation {
 
   # Template execution
   executeTemplate(input: ExecuteQueryTemplateInput!): ExecuteQueryTemplatePayload!
+
+  # Template execution with GraphQL
+  executeTemplateWithGraphQL(
+    templateIdentifier: String!
+    variables: JSON
+    trackUsage: Boolean
+  ): TemplateExecutionResult!
 }
 
 

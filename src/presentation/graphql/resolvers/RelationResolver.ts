@@ -1,9 +1,11 @@
 import { NodeDto } from '@/application/dtos/NodeDto.js'
 import {
-  CreateRelationOutput,
-  CreateRelationTypeOutput,
   NodeRelationDto,
   RelationTypeDto,
+} from '@/application/dtos/RelationDto.js'
+import type {
+  CreateRelationOutput,
+  CreateRelationTypeOutput,
 } from '@/application/dtos/RelationDto.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'

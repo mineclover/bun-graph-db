@@ -56,7 +56,7 @@ export class TemplateMutations extends BaseResolver {
 
       const result = await this.queryTemplateRepository.create(template)
 
-      this.logger.info('Template created successfully', { templateId: result.id, identifier: result.identifier })
+      this.logger.info('Template created successfully', { templateId: result.getId(), identifier: result.getIdentifier() })
       
       return {
         success: true,
@@ -99,19 +99,24 @@ export class TemplateMutations extends BaseResolver {
           throw new Error('Template not found')
         }
 
-        const updatedTemplate = await this.queryTemplateRepository.update(args.id, {
-          name: args.input.name,
-          description: args.input.description,
-          queryText: args.input.queryText,
-          variablesSchema: args.input.variablesSchema,
-          defaultVariables: args.input.defaultVariables,
-          applicableTables: args.input.applicableTables,
-          templateType: args.input.templateType,
-          complexityScore: args.input.complexityScore,
-          version: args.input.version,
-          isActive: args.input.isActive,
-          tags: args.input.tags,
-        })
+        // Build update object with only available fields from GraphQL input
+        // Note: The repository expects fields to match QueryTemplate entity structure
+        const updateData: Record<string, unknown> = {}
+        
+        if (args.input.name !== undefined) {
+          updateData.name = args.input.name
+        }
+        if (args.input.description !== undefined) {
+          updateData.description = args.input.description
+        }
+        if (args.input.query !== undefined) {
+          updateData.queryText = args.input.query // Map 'query' field to 'queryText'
+        }
+        if (args.input.variables !== undefined) {
+          updateData.defaultVariables = args.input.variables // Map 'variables' to 'defaultVariables'
+        }
+
+        const updatedTemplate = await this.queryTemplateRepository.update(args.id, updateData as Partial<QueryTemplate>)
 
         return updatedTemplate
       },

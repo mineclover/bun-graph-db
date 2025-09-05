@@ -2,6 +2,20 @@
  * Common GraphQL types and interfaces
  */
 
+// Import generated GraphQL types
+export type {
+  CreateTableInput,
+  UpdateTableInput,
+  TablesFilter,
+  TablesPagination,
+  CreateRelationInput,
+  CreateRelationOutput,
+  CreateRelationTypeOutput,
+  SearchNodesFilter,
+  SearchRelatedNodesFilter,
+  UpdateQueryTemplateInput,
+} from '../../generated/graphql.types.js'
+
 export interface GraphQLContext {
   requestId: string
   startTime: Date

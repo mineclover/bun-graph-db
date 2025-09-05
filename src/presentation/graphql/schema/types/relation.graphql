@@ -30,6 +30,7 @@ input CreateRelationTypeInput {
 
 # Input types for relation operations
 input CreateRelationInput {
+  tableId: ID!
   sourceNodeId: ID!
   targetNodeId: ID!
   relationTypeId: ID!

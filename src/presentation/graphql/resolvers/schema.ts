@@ -7,7 +7,7 @@ import type {
   ExportTableArgs,
   GraphQLParent,
   ImportSchemaArgs,
-} from '../types/GraphQLTypes.js'
+} from '@/core/types/GraphQLTypes.js'
 
 interface SchemaResolverDependencies {
   tableRepository: ITableRepository

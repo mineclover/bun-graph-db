@@ -45,7 +45,6 @@ export class RelationMutations extends BaseResolver {
       async () => {
         const result = await this.createRelationTypeUseCase.execute({
           identifier: args.input.identifier,
-          name: args.input.name,
           description: args.input.description,
         })
 
@@ -74,6 +73,7 @@ export class RelationMutations extends BaseResolver {
     return this.handleMutation(
       async () => {
         const result = await this.createRelationUseCase.execute({
+          tableId: args.input.tableId,
           sourceNodeId: args.input.sourceNodeId,
           targetNodeId: args.input.targetNodeId,
           relationTypeId: args.input.relationTypeId,
