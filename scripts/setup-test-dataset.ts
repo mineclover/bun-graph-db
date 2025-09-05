@@ -13,6 +13,13 @@ import { Node } from '../src/domain/entities/Node.js'
 import { NodeRelation } from '../src/domain/entities/NodeRelation.js'
 import { RelationType } from '../src/domain/entities/RelationType.js'
 import { Table } from '../src/domain/entities/Table.js'
+import type { IAttributeRepository } from '../src/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '../src/domain/repositories/IAttributeTypeRepository.js'
+import type { INodeRelationRepository } from '../src/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '../src/domain/repositories/INodeRepository.js'
+import type { IRelationTypeRepository } from '../src/domain/repositories/IRelationTypeRepository.js'
+import type { ITableRepository } from '../src/domain/repositories/ITableRepository.js'
+import type { SchemaExportUseCase } from '../src/application/use-cases/export/SchemaExportUseCase.js'
 import { ContainerBootstrap } from '../src/infrastructure/container/ContainerBootstrap.js'
 import type { DIContainer } from '../src/infrastructure/container/DIContainer.js'
 import { RepositoryTokens, UseCaseTokens } from '../src/infrastructure/container/tokens/index.js'
@@ -575,34 +582,44 @@ export class TestDatasetSetup {
   }
 
   private async createTable(config: TestTableConfig): Promise<void> {
-    const tableRepository = await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY)
-    const attributeTypeRepository = await this.container.resolve(
+    const tableRepository = (await this.container.resolve(
+      RepositoryTokens.TABLE_REPOSITORY
+    )) as ITableRepository
+    const attributeTypeRepository = (await this.container.resolve(
       RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY
-    )
-    const attributeRepository = await this.container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-    const nodeRepository = await this.container.resolve(RepositoryTokens.NODE_REPOSITORY)
-    const relationTypeRepository = await this.container.resolve(
+    )) as IAttributeTypeRepository
+    const attributeRepository = (await this.container.resolve(
+      RepositoryTokens.ATTRIBUTE_REPOSITORY
+    )) as IAttributeRepository
+    const nodeRepository = (await this.container.resolve(
+      RepositoryTokens.NODE_REPOSITORY
+    )) as INodeRepository
+    const relationTypeRepository = (await this.container.resolve(
       RepositoryTokens.RELATION_TYPE_REPOSITORY
-    )
-    const relationRepository = await this.container.resolve(
+    )) as IRelationTypeRepository
+    const relationRepository = (await this.container.resolve(
       RepositoryTokens.NODE_RELATION_REPOSITORY
-    )
+    )) as INodeRelationRepository
 
     console.log(`  📋 Creating table: ${config.identifier}`)
 
     // 1. Create attribute types
     const attributeTypeMap = new Map<string, string>()
     for (const atConfig of config.attributeTypes) {
+      const allowedValuesString = Array.isArray(atConfig.allowedValues) 
+        ? atConfig.allowedValues.join(',') 
+        : atConfig.allowedValues
+      
       const attributeType = AttributeType.create(
         atConfig.identifier,
         atConfig.name,
         atConfig.dataType,
         atConfig.description,
-        atConfig.allowedValues,
+        allowedValuesString,
         atConfig.constraints
       )
       await attributeTypeRepository.save(attributeType)
-      attributeTypeMap.set(atConfig.identifier, attributeType.id)
+      attributeTypeMap.set(atConfig.identifier, attributeType.getId())
       console.log(`    🏷️  Created attribute type: ${atConfig.identifier}`)
     }
 
@@ -615,7 +632,7 @@ export class TestDatasetSetup {
         rtConfig.description
       )
       await relationTypeRepository.save(relationType)
-      relationTypeMap.set(rtConfig.identifier, relationType.id)
+      relationTypeMap.set(rtConfig.identifier, relationType.getId())
       console.log(`    🔗 Created relation type: ${rtConfig.identifier}`)
     }
 
@@ -633,12 +650,10 @@ export class TestDatasetSetup {
 
       const attribute = Attribute.create(
         table.id,
-        attributeTypeId,
         attrConfig.identifier,
-        attrConfig.name,
+        attributeTypeId,
         attrConfig.description,
-        attrConfig.isRequired,
-        attrConfig.defaultValue
+        attrConfig.isRequired
       )
       await attributeRepository.save(attribute)
       console.log(`    📝 Created attribute: ${attrConfig.identifier}`)
@@ -651,11 +666,10 @@ export class TestDatasetSetup {
         table.id,
         nodeConfig.content,
         nodeConfig.title,
-        nodeConfig.description,
-        nodeConfig.attributes
+        nodeConfig.description
       )
       await nodeRepository.save(node)
-      nodeMap.set(nodeConfig.content, node.id)
+      nodeMap.set(nodeConfig.content, node.getId())
       console.log(`    🔘 Created node: ${nodeConfig.content}`)
     }
 
@@ -688,7 +702,9 @@ export class TestDatasetSetup {
   async exportDatasets(): Promise<void> {
     console.log('\n📤 Exporting test datasets...')
 
-    const exportUseCase = await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE)
+    const exportUseCase = (await this.container.resolve(
+      UseCaseTokens.SCHEMA_EXPORT_USE_CASE
+    )) as SchemaExportUseCase
     const result = await exportUseCase.exportAllTables({
       includeData: true,
       includeRelations: true,

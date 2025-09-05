@@ -268,16 +268,16 @@ async function testQueryTemplates(): Promise<{
         tableId: 'test-table-1',
         nodeIds: ['node-1'],
       })
-      if (result.data) {
+      if (result?.data) {
         passed++
-        templates.push(`✅ ${query.split('{')[0].trim()}`)
+        templates.push(`✅ ${query.split('{')[0]?.trim() ?? 'Unknown Query'}`)
       } else {
         failed++
-        templates.push(`❌ ${query.split('{')[0].trim()}`)
+        templates.push(`❌ ${query.split('{')[0]?.trim() ?? 'Unknown Query'}`)
       }
     } catch (error) {
       failed++
-      templates.push(`❌ ${query.split('{')[0].trim()} - ${error}`)
+      templates.push(`❌ ${query.split('{')[0]?.trim() ?? 'Unknown Query'} - ${error}`)
     }
   }
 
@@ -311,16 +311,16 @@ async function testMutationTemplates(): Promise<{
     try {
       const input = { content: 'Test', title: 'Test Node', tableId: 'test-table' }
       const result = await simulateGraphQLQuery(mutation, { input, id: 'test-id' })
-      if (result.data) {
+      if (result?.data) {
         passed++
-        templates.push(`✅ ${mutation.split('{')[0].trim()}`)
+        templates.push(`✅ ${mutation.split('{')[0]?.trim() ?? 'Unknown Mutation'}`)
       } else {
         failed++
-        templates.push(`❌ ${mutation.split('{')[0].trim()}`)
+        templates.push(`❌ ${mutation.split('{')[0]?.trim() ?? 'Unknown Mutation'}`)
       }
     } catch (error) {
       failed++
-      templates.push(`❌ ${mutation.split('{')[0].trim()} - ${error}`)
+      templates.push(`❌ ${mutation.split('{')[0]?.trim() ?? 'Unknown Mutation'} - ${error}`)
     }
   }
 

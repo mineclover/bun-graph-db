@@ -344,7 +344,8 @@ class QueryManager {
         await client.request(test.query)
         console.log(`✅ ${test.name}: Working`)
       } catch (error) {
-        console.log(`❌ ${test.name}: Failed - ${error.message.split('\n')[0]}`)
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.log(`❌ ${test.name}: Failed - ${errorMessage.split('\n')[0]}`)
       }
     }
   }
@@ -355,7 +356,7 @@ class QueryManager {
         if (!acc[query.category]) {
           acc[query.category] = []
         }
-        acc[query.category].push(query)
+        acc[query.category]?.push(query)
         return acc
       },
       {} as Record<string, QueryInfo[]>

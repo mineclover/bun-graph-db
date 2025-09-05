@@ -221,7 +221,12 @@ async function createTestDataset(db: Database): Promise<void> {
       node.description,
       JSON.stringify(node.attributes)
     )
-    nodeIds.push(Number(result.lastInsertRowid))
+    const insertedId = result.lastInsertRowid
+    if (insertedId != null) {
+      nodeIds.push(Number(insertedId))
+    } else {
+      throw new Error(`Failed to insert node: ${node.content}`)
+    }
   }
 
   // Create test relations
@@ -230,11 +235,16 @@ async function createTestDataset(db: Database): Promise<void> {
     VALUES (?, ?, ?, ?, ?, ?)
   `)
 
+  // Ensure we have enough nodeIds before creating relations
+  if (nodeIds.length < 5) {
+    throw new Error(`Expected 5 nodes, got ${nodeIds.length}`)
+  }
+
   // User Service depends on PostgreSQL Database
   relationStmt.run(
     tableId,
-    nodeIds[0], // User Service
-    nodeIds[1], // PostgreSQL Database
+    nodeIds[0]!, // User Service
+    nodeIds[1]!, // PostgreSQL Database
     1, // depends-on
     JSON.stringify({ connectionType: 'database', protocol: 'TCP', port: 5432 }),
     0.9
@@ -243,8 +253,8 @@ async function createTestDataset(db: Database): Promise<void> {
   // API Gateway routes to User Service
   relationStmt.run(
     tableId,
-    nodeIds[2], // API Gateway
-    nodeIds[0], // User Service
+    nodeIds[2]!, // API Gateway
+    nodeIds[0]!, // User Service
     2, // routes-to
     JSON.stringify({ endpoint: '/api/users', methods: ['GET', 'POST', 'PUT', 'DELETE'] }),
     0.8
@@ -253,8 +263,8 @@ async function createTestDataset(db: Database): Promise<void> {
   // User Service connects to Redis Cache
   relationStmt.run(
     tableId,
-    nodeIds[0], // User Service
-    nodeIds[3], // Redis Cache
+    nodeIds[0]!, // User Service
+    nodeIds[3]!, // Redis Cache
     3, // connects-to
     JSON.stringify({ connectionType: 'cache', protocol: 'Redis', port: 6379 }),
     0.7
@@ -263,8 +273,8 @@ async function createTestDataset(db: Database): Promise<void> {
   // Load Balancer routes to API Gateway
   relationStmt.run(
     tableId,
-    nodeIds[4], // Load Balancer
-    nodeIds[2], // API Gateway
+    nodeIds[4]!, // Load Balancer
+    nodeIds[2]!, // API Gateway
     2, // routes-to
     JSON.stringify({ algorithm: 'round-robin', healthCheck: true }),
     0.95
