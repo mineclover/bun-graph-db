@@ -45,12 +45,9 @@ export class ExecuteQueryTemplateUseCase {
     const variables = { ...template.getDefaultVariables(), ...(input.variables || {}) }
 
     // 4. Variables 유효성 검사
-    if (!template.validateVariables(variables)) {
-      const schema = template.getVariablesSchema()
-      const required = schema?.required || []
-      throw new ValidationException(
-        `Missing required variables: ${required.filter((field) => !Object.hasOwn(variables, field)).join(', ')}`
-      )
+    const validationResult = template.validateVariables(variables)
+    if (!validationResult.isValid) {
+      throw new ValidationException(`Variable validation failed: ${validationResult.errors.join('; ')}`)
     }
 
     // 5. 사용 통계 업데이트 (선택적)

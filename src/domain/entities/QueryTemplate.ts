@@ -1,5 +1,10 @@
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
+export interface ValidationResult {
+  isValid: boolean
+  errors: string[]
+}
+
 export interface QueryVariablesSchema {
   type: string
   properties: Record<
@@ -272,8 +277,12 @@ export class QueryTemplate {
     )
   }
 
-  validateVariables(variables: Record<string, unknown>): boolean {
-    if (!this.variablesSchema) return true
+  validateVariables(variables: Record<string, unknown>): ValidationResult {
+    if (!this.variablesSchema) {
+      return { isValid: true, errors: [] }
+    }
+
+    const errors: string[] = []
 
     // Check required fields
     if (this.variablesSchema.required) {
@@ -282,7 +291,7 @@ export class QueryTemplate {
           !Object.hasOwn(variables, requiredField) || variables[requiredField] === undefined
       )
       if (missingRequired.length > 0) {
-        return false
+        errors.push(`Missing required variables: ${missingRequired.join(', ')}`)
       }
     }
 
@@ -294,18 +303,25 @@ export class QueryTemplate {
 
           // Type checking
           if (!this.validateVariableType(value, propSchema.type)) {
-            return false
+            errors.push(
+              `Variable '${key}' expected type '${propSchema.type}' but got '${typeof value}'`
+            )
           }
 
           // Enum validation
           if (propSchema.enum && !propSchema.enum.includes(value)) {
-            return false
+            errors.push(
+              `Variable '${key}' must be one of: ${propSchema.enum.join(', ')}. Got: ${value}`
+            )
           }
         }
       }
     }
 
-    return true
+    return {
+      isValid: errors.length === 0,
+      errors,
+    }
   }
 
   private validateVariableType(value: unknown, expectedType: string): boolean {

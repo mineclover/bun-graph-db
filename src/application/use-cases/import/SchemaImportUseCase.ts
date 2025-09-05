@@ -269,9 +269,7 @@ export class SchemaImportUseCase {
 
         const relationType = RelationType.create(
           rtData.identifier,
-          rtData.name,
-          rtData.description,
-          rtData.metadata
+          rtData.description
         )
 
         await this.relationTypeRepository.save(relationType)
@@ -324,7 +322,7 @@ export class SchemaImportUseCase {
         table = existingTable
         // Update table properties if needed
       } else {
-        table = Table.create(tableData.identifier, tableData.description, tableData.metadata)
+        table = Table.create(tableData.identifier, tableData.description)
         await this.tableRepository.save(table)
       }
 
@@ -376,11 +374,9 @@ export class SchemaImportUseCase {
           // Create the missing attribute type
           const newAttributeType = AttributeType.create(
             attrData.attributeType.identifier,
-            attrData.attributeType.name,
-            attrData.attributeType.dataType,
-            attrData.attributeType.description,
-            attrData.attributeType.allowedValues,
-            attrData.attributeType.constraints
+            attrData.attributeType.dataType || 'string',
+            undefined, // format
+            attrData.attributeType.name // description
           )
           await this.attributeTypeRepository.save(newAttributeType)
         }
@@ -398,12 +394,10 @@ export class SchemaImportUseCase {
 
         const attribute = Attribute.create(
           tableId,
-          attributeType?.id || attrData.attributeType.id,
           attrData.identifier,
-          attrData.name,
+          attributeType?.getId() || attrData.attributeType.id,
           attrData.description,
-          attrData.isRequired,
-          attrData.defaultValue
+          attrData.isRequired
         )
 
         await this.attributeRepository.save(attribute)
@@ -445,14 +439,13 @@ export class SchemaImportUseCase {
           tableId,
           nodeData.content,
           nodeData.title,
-          nodeData.description,
-          nodeData.attributes
+          nodeData.description
         )
 
         await this.nodeRepository.save(node)
 
         // Map old ID to new ID for relation mapping
-        nodeIdMapping.set(nodeData.id, node.id)
+        nodeIdMapping.set(nodeData.id, node.getId())
         result.statistics.nodesImported++
       } catch (error) {
         result.errors.push({
@@ -513,10 +506,12 @@ export class SchemaImportUseCase {
         const relation = NodeRelation.create(
           tableId,
           sourceNodeId,
+          'internal',
           targetNodeId,
-          relationType?.id || relationData.relationType.id,
+          'internal',
+          relationType?.getId() || relationData.relationType.id,
           relationData.properties,
-          relationData.strength
+          relationData.strength || 50
         )
 
         await this.relationRepository.save(relation)

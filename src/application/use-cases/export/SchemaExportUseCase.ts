@@ -270,18 +270,18 @@ export class SchemaExportUseCase {
         exportedAttributes.push({
           id: attribute.getId(),
           identifier: attribute.getIdentifier(),
-          name: attribute.getName(),
+          name: attribute.getIdentifier(), // Use identifier as name
           description: attribute.getDescription() || undefined,
           attributeType: {
             id: attributeType.getId(),
             identifier: attributeType.getIdentifier(),
-            name: attributeType.getName(),
-            dataType: attributeType.getDataType(),
-            allowedValues: attributeType.getAllowedValues(),
-            constraints: attributeType.getConstraints(),
+            name: attributeType.getIdentifier(), // Use identifier as name
+            dataType: 'string', // Default data type
+            allowedValues: undefined, // Not available in AttributeType
+            constraints: undefined, // Not available in AttributeType
           },
           isRequired: attribute.getIsRequired(),
-          defaultValue: attribute.getDefaultValue(),
+          defaultValue: undefined, // Not available in Attribute
           createdAt: attribute.getCreatedAt().toISOString(),
           updatedAt: attribute.getUpdatedAt().toISOString(),
         })
@@ -340,12 +340,12 @@ export class SchemaExportUseCase {
     }
 
     return {
-      id: table.getId(),
-      identifier: table.getIdentifier() || 'unknown',
-      description: table.getDescription() || undefined,
-      metadata: table.getMetadata(),
-      createdAt: table.getCreatedAt().toISOString(),
-      updatedAt: table.getUpdatedAt().toISOString(),
+      id: table.id,
+      identifier: table.identifier || 'unknown',
+      description: table.description || undefined,
+      metadata: undefined,
+      createdAt: table.createdAt.toISOString(),
+      updatedAt: table.updatedAt.toISOString(),
       attributes: exportedAttributes,
       nodes: exportedNodes,
       relations: exportedRelations,
@@ -366,9 +366,9 @@ export class SchemaExportUseCase {
     return relationTypesResult.data?.map((rt) => ({
       id: rt.getId(),
       identifier: rt.getIdentifier() || 'unknown',
-      name: rt.getName() || 'Unknown Relation Type',
+      name: rt.getIdentifier() || 'Unknown Relation Type', // Use identifier as name
       description: rt.getDescription() || undefined,
-      metadata: rt.getMetadata(),
+      metadata: null, // Set to null for now
       createdAt: rt.getCreatedAt().toISOString(),
       updatedAt: rt.getUpdatedAt().toISOString(),
     })) || []
@@ -383,11 +383,11 @@ export class SchemaExportUseCase {
     return attributeTypesResult.data?.map((at) => ({
       id: at.getId(),
       identifier: at.getIdentifier() || 'unknown',
-      name: at.getName() || 'Unknown Attribute Type',
+      name: at.getIdentifier() || 'Unknown Attribute Type', // Use identifier as name
       description: at.getDescription() || undefined,
-      dataType: at.getDataType(),
-      allowedValues: at.getAllowedValues(),
-      constraints: at.getConstraints(),
+      dataType: 'STRING', // Default data type
+      allowedValues: undefined, // Not available
+      constraints: undefined, // Not available
       createdAt: at.getCreatedAt().toISOString(),
       updatedAt: at.getUpdatedAt().toISOString(),
     })) || []

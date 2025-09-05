@@ -19,7 +19,8 @@ export class TableFieldResolvers extends BaseResolver {
   async attributes(parent: TableParent, args?: any, context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
-        return await this.attributeRepository.findByTableId(parent.id)
+        const result = await this.attributeRepository.findByTableId(parent.id)
+        return result.items || []
       },
       'attributes',
       'Table',
