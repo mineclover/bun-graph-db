@@ -2,9 +2,9 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type {
   IQueryTemplateRepository,
-  SearchTemplatesOptions,
+  SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
-import { ApplicationException } from '@/shared/exceptions/ApplicationException.js'
+import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface SearchQueryTemplatesRequest {
   tags?: string[]
@@ -47,7 +47,7 @@ export class SearchQueryTemplates {
       this.validateSearchRequest(request)
 
       // Build search options
-      const searchOptions: SearchTemplatesOptions = {
+      const searchOptions: SearchCriteria = {
         tags: request.tags,
         tagMatchMode: request.tagMatchMode,
         applicableToTable: request.applicableToTable,
@@ -77,13 +77,12 @@ export class SearchQueryTemplates {
     } catch (error) {
       this.logger.error('Failed to search query templates', { error, request })
 
-      if (error instanceof ApplicationException) {
+      if (error instanceof ValidationException) {
         throw error
       }
 
-      throw new ApplicationException(
+      throw new ValidationException(
         'Failed to search query templates',
-        'SEARCH_TEMPLATES_FAILED',
         { originalError: error }
       )
     }
@@ -92,10 +91,7 @@ export class SearchQueryTemplates {
   private validateSearchRequest(request: SearchQueryTemplatesRequest): void {
     // Validate tag match mode
     if (request.tagMatchMode && !['ANY', 'ALL'].includes(request.tagMatchMode)) {
-      throw new ApplicationException(
-        'Tag match mode must be either ANY or ALL',
-        'INVALID_TAG_MATCH_MODE'
-      )
+      throw new ValidationException('Tag match mode must be either ANY or ALL')
     }
 
     // Validate template type
@@ -103,34 +99,22 @@ export class SearchQueryTemplates {
       request.templateType &&
       !['query', 'mutation', 'subscription'].includes(request.templateType)
     ) {
-      throw new ApplicationException(
-        'Template type must be query, mutation, or subscription',
-        'INVALID_TEMPLATE_TYPE'
-      )
+      throw new ValidationException('Template type must be query, mutation, or subscription')
     }
 
     // Validate order by
     if (request.orderBy && !['usage_count', 'created_at', 'updated_at'].includes(request.orderBy)) {
-      throw new ApplicationException(
-        'Order by must be usage_count, created_at, or updated_at',
-        'INVALID_ORDER_BY'
-      )
+      throw new ValidationException('Order by must be usage_count, created_at, or updated_at')
     }
 
     // Validate order direction
     if (request.orderDirection && !['ASC', 'DESC'].includes(request.orderDirection)) {
-      throw new ApplicationException(
-        'Order direction must be ASC or DESC',
-        'INVALID_ORDER_DIRECTION'
-      )
+      throw new ValidationException('Order direction must be ASC or DESC')
     }
 
     // Validate tags if tagMatchMode is specified without tags
     if (request.tagMatchMode && (!request.tags || request.tags.length === 0)) {
-      throw new ApplicationException(
-        'Tag match mode requires tags to be specified',
-        'TAG_MATCH_MODE_REQUIRES_TAGS'
-      )
+      throw new ValidationException('Tag match mode requires tags to be specified')
     }
   }
 
@@ -138,11 +122,11 @@ export class SearchQueryTemplates {
     if (limit === undefined) return 10
 
     if (limit < 1) {
-      throw new ApplicationException('Limit must be greater than 0', 'INVALID_LIMIT')
+      throw new ValidationException('Limit must be greater than 0')
     }
 
     if (limit > 100) {
-      throw new ApplicationException('Limit cannot exceed 100', 'LIMIT_TOO_LARGE')
+      throw new ValidationException('Limit cannot exceed 100')
     }
 
     return limit
@@ -152,7 +136,7 @@ export class SearchQueryTemplates {
     if (offset === undefined) return 0
 
     if (offset < 0) {
-      throw new ApplicationException('Offset must be greater than or equal to 0', 'INVALID_OFFSET')
+      throw new ValidationException('Offset must be greater than or equal to 0')
     }
 
     return offset

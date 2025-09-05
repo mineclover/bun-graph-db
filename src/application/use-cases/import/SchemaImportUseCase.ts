@@ -430,7 +430,7 @@ export class SchemaImportUseCase {
         )
 
         if (existing && options.skipDuplicates) {
-          nodeIdMapping.set(nodeData.id, existing.id)
+          nodeIdMapping.set(nodeData.id, existing.getId())
           result.statistics.skipped++
           continue
         }

@@ -65,7 +65,8 @@ describe('Comprehensive GraphQL Query Tests', () => {
   describe('Table Operations', () => {
     test('should create, read, and list tables', async () => {
       // Create table
-      const tableId = await client.createTable('test-table', 'Test table for comprehensive testing')
+      const uniqueId = `test-table-${Date.now()}`
+      const tableId = await client.createTable(uniqueId, 'Test table for comprehensive testing')
       expect(tableId).toBeTruthy()
 
       // Get single table
@@ -84,15 +85,16 @@ describe('Comprehensive GraphQL Query Tests', () => {
 
       const createdTable = tablesResult.data.tables.nodes.find((t) => t.id === tableId)
       expect(createdTable).toBeTruthy()
-      expect(createdTable.identifier).toBe('test-table')
+      expect(createdTable.identifier).toBe(uniqueId)
     })
 
     test('should handle table creation errors gracefully', async () => {
       // Try to create table with duplicate identifier
-      const tableId1 = await client.createTable('duplicate-table', 'First table')
+      const duplicateId = `duplicate-table-${Date.now()}`
+      const tableId1 = await client.createTable(duplicateId, 'First table')
       expect(tableId1).toBeTruthy()
 
-      const tableId2 = await client.createTable('duplicate-table', 'Second table')
+      const tableId2 = await client.createTable(duplicateId, 'Second table')
       expect(tableId2).toBeNull() // Should fail due to duplicate identifier
     })
   })

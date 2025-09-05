@@ -4,12 +4,8 @@ import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type {
-  GraphQuery,
-  PathQuery,
-  RelationDirection,
-  RelationFilter,
-} from '@/domain/value-objects/RelationQuery.js'
+import type { GraphQuery, PathQuery, RelationFilter } from '@/domain/value-objects/RelationQuery.js'
+import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface SearchRelatedNodesInput {
@@ -138,20 +134,20 @@ export class SearchRelatedNodesUseCase {
       }
 
       // Convert to DTOs
-      const nodeDtos = result.data.map((item: any) =>
+      const nodeDtos = (result.data || []).map((item: any) =>
         NodeDto.fromEntity(item.node, item.attributes || {})
       )
 
       this.logger.info('Related nodes search completed', {
         tableId: input.tableId,
-        foundNodes: result.data.length,
+        foundNodes: result.data?.length || 0,
         foundPaths: paths.length,
         total: result.total,
       })
 
       return {
         nodes: nodeDtos,
-        relations: result.data.map((item: any) => ({
+        relations: (result.data || []).map((item: any) => ({
           sourceNodeId: item.sourceNodeId,
           targetNodeId: item.targetNodeId,
           relationTypeId: item.relationTypeId,
@@ -159,8 +155,8 @@ export class SearchRelatedNodesUseCase {
           strength: item.strength,
         })),
         paths,
-        total: result.total,
-        hasMore: result.hasMore,
+        total: result.total || 0,
+        hasMore: result.hasMore || false,
       }
     } catch (error) {
       this.logger.error('Failed to search related nodes', {

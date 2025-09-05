@@ -1,7 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import { ApplicationException } from '@/shared/exceptions/ApplicationException.js'
+import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface ActivateDeactivateQueryTemplateRequest {
   id: string
@@ -103,13 +103,12 @@ export class ActivateDeactivateQueryTemplate {
         id: request.id,
       })
 
-      if (error instanceof ApplicationException) {
+      if (error instanceof ValidationException) {
         throw error
       }
 
-      throw new ApplicationException(
+      throw new ValidationException(
         `Failed to ${action} query template`,
-        request.activate ? 'ACTIVATE_TEMPLATE_FAILED' : 'DEACTIVATE_TEMPLATE_FAILED',
         { originalError: error }
       )
     }
@@ -125,17 +124,11 @@ export class ActivateDeactivateQueryTemplate {
 
   private validateRequest(request: ActivateDeactivateQueryTemplateRequest): void {
     if (!request.id || request.id.trim().length === 0) {
-      throw new ApplicationException(
-        'Template ID is required for activation/deactivation',
-        'MISSING_TEMPLATE_ID'
-      )
+      throw new ValidationException('Template ID is required for activation/deactivation')
     }
 
     if (typeof request.activate !== 'boolean') {
-      throw new ApplicationException(
-        'Activate flag must be a boolean value',
-        'INVALID_ACTIVATE_FLAG'
-      )
+      throw new ValidationException('Activate flag must be a boolean value')
     }
   }
 }

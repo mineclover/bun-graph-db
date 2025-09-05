@@ -132,7 +132,7 @@ export class GraphQLTestClient {
             description
             createdAt
             updatedAt
-            nodeCount
+            tableNodeCount
             attributeCount
           }
           totalCount
@@ -153,7 +153,7 @@ export class GraphQLTestClient {
           metadata
           createdAt
           updatedAt
-          nodeCount
+          tableNodeCount
           attributeCount
         }
       }

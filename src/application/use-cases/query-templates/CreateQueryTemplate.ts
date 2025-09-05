@@ -1,7 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import { ApplicationException } from '@/shared/exceptions/ApplicationException.js'
+import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface CreateQueryTemplateRequest {
   identifier: string
@@ -101,11 +101,11 @@ export class CreateQueryTemplate {
         identifier: request.identifier,
       })
 
-      if (error instanceof ApplicationException) {
+      if (error instanceof ValidationException) {
         throw error
       }
 
-      throw new ApplicationException('Failed to create query template', 'CREATE_TEMPLATE_FAILED', {
+      throw new ValidationException('Failed to create query template', {
         originalError: error,
       })
     }

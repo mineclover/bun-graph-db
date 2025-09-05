@@ -1,7 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import { ApplicationException } from '@/shared/exceptions/ApplicationException.js'
+import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface UpdateQueryTemplateRequest {
   id: string
@@ -145,11 +145,11 @@ export class UpdateQueryTemplate {
         id: request.id,
       })
 
-      if (error instanceof ApplicationException) {
+      if (error instanceof ValidationException) {
         throw error
       }
 
-      throw new ApplicationException('Failed to update query template', 'UPDATE_TEMPLATE_FAILED', {
+      throw new ValidationException('Failed to update query template', {
         originalError: error,
       })
     }
@@ -157,7 +157,7 @@ export class UpdateQueryTemplate {
 
   private validateUpdateRequest(request: UpdateQueryTemplateRequest): void {
     if (!request.id || request.id.trim().length === 0) {
-      throw new ApplicationException('Template ID is required for update', 'MISSING_TEMPLATE_ID')
+      throw new ValidationException('Template ID is required for update')
     }
 
     // Validate template type if provided
@@ -165,40 +165,34 @@ export class UpdateQueryTemplate {
       request.templateType &&
       !['query', 'mutation', 'subscription'].includes(request.templateType)
     ) {
-      throw new ApplicationException(
-        'Template type must be query, mutation, or subscription',
-        'INVALID_TEMPLATE_TYPE'
-      )
+      throw new ValidationException('Template type must be query, mutation, or subscription')
     }
 
     // Validate name if provided
     if (request.name !== undefined && request.name.trim().length === 0) {
-      throw new ApplicationException('Template name cannot be empty', 'INVALID_TEMPLATE_NAME')
+      throw new ValidationException('Template name cannot be empty')
     }
 
     // Validate query text if provided
     if (request.queryText !== undefined && request.queryText.trim().length === 0) {
-      throw new ApplicationException('Query text cannot be empty', 'INVALID_QUERY_TEXT')
+      throw new ValidationException('Query text cannot be empty')
     }
   }
 
   private validateComplexityScore(score: number): void {
     if (score < 1 || score > 10) {
-      throw new ApplicationException(
-        'Complexity score must be between 1 and 10',
-        'INVALID_COMPLEXITY_SCORE'
-      )
+      throw new ValidationException('Complexity score must be between 1 and 10')
     }
   }
 
   private validateTags(tags: string[]): void {
     if (!tags || tags.length === 0) {
-      throw new ApplicationException('At least one tag is required', 'INVALID_TAGS')
+      throw new ValidationException('At least one tag is required')
     }
 
     for (const tag of tags) {
       if (!tag || tag.trim().length === 0) {
-        throw new ApplicationException('Tags cannot be empty', 'INVALID_TAG_VALUE')
+        throw new ValidationException('Tags cannot be empty')
       }
     }
   }

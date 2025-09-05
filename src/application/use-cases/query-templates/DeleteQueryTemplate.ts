@@ -1,6 +1,6 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import { ApplicationException } from '@/shared/exceptions/ApplicationException.js'
+import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface DeleteQueryTemplateRequest {
   id: string
@@ -106,11 +106,11 @@ export class DeleteQueryTemplate {
         id: request.id,
       })
 
-      if (error instanceof ApplicationException) {
+      if (error instanceof ValidationException) {
         throw error
       }
 
-      throw new ApplicationException('Failed to delete query template', 'DELETE_TEMPLATE_FAILED', {
+      throw new ValidationException('Failed to delete query template', {
         originalError: error,
       })
     }
@@ -118,7 +118,7 @@ export class DeleteQueryTemplate {
 
   private validateDeleteRequest(request: DeleteQueryTemplateRequest): void {
     if (!request.id || request.id.trim().length === 0) {
-      throw new ApplicationException('Template ID is required for deletion', 'MISSING_TEMPLATE_ID')
+      throw new ValidationException('Template ID is required for deletion')
     }
   }
 }

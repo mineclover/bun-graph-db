@@ -100,8 +100,8 @@ export class ExecuteTemplateWithGraphQLUseCase {
           data: executionResult.data,
           errors: executionResult.errors.map((error) => ({
             message: error.message,
-            locations: error.locations,
-            path: error.path,
+            locations: error.locations ? [...error.locations] : undefined,
+            path: error.path ? [...error.path] : undefined,
             extensions: error.extensions,
           })),
           metadata: {
