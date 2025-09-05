@@ -3,45 +3,49 @@ import type {
   AttributeArgs,
   AttributeByIdentifierArgs,
   AttributesArgs,
+  GraphQLContext,
   GraphQLParent,
 } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import { BaseResolver } from '../base/BaseResolver.js'
 
-export class AttributeQueries {
+export class AttributeQueries extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly attributeRepository: IAttributeRepository,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async attributeType(_: GraphQLParent, args: AttributeArgs) {
-    try {
-      this.logger.info('Fetching attribute type', { id: args.id })
+  async attributeType(_: GraphQLParent, args: AttributeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Attribute type ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Attribute type ID')
+    ], 'attributeType')
+
+    return this.handleQuery(async () => {
       return await this.attributeTypeRepository.findById(args.id)
-    } catch (error) {
-      this.logger.error('Error fetching attribute type', { error, id: args.id })
-      throw error
-    }
+    }, 'findAttributeTypeById', { id: args.id })
   }
 
-  async attributeTypeByIdentifier(_: GraphQLParent, args: AttributeByIdentifierArgs) {
-    try {
-      this.logger.info('Fetching attribute type by identifier', { identifier: args.identifier })
+  async attributeTypeByIdentifier(_: GraphQLParent, args: AttributeByIdentifierArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('identifier', 'Attribute type identifier'),
+      BaseResolver.validationRules.nonEmpty('identifier', 'Attribute type identifier')
+    ], 'attributeTypeByIdentifier')
+
+    return this.handleQuery(async () => {
       return await this.attributeTypeRepository.findByIdentifier(args.identifier)
-    } catch (error) {
-      this.logger.error('Error fetching attribute type by identifier', {
-        error,
-        identifier: args.identifier,
-      })
-      throw error
-    }
+    }, 'findAttributeTypeByIdentifier', { identifier: args.identifier })
   }
 
-  async attributeTypes(_: GraphQLParent) {
-    try {
-      this.logger.info('Fetching attribute types')
-
+  async attributeTypes(_: GraphQLParent, args?: any, context?: GraphQLContext) {
+    return this.handleQuery(async () => {
       const result = await this.attributeTypeRepository.findAll({
         pagination: { limit: 100, offset: 0 },
       })
@@ -52,46 +56,39 @@ export class AttributeQueries {
         hasNextPage: result.hasNextPage,
         hasPreviousPage: result.hasPreviousPage,
       }
-    } catch (error) {
-      this.logger.error('Error fetching attribute types', { error })
-      throw error
-    }
+    }, 'findAttributeTypes', {})
   }
 
-  async attribute(_: GraphQLParent, args: AttributeArgs) {
-    try {
-      this.logger.info('Fetching attribute', { id: args.id })
+  async attribute(_: GraphQLParent, args: AttributeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Attribute ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Attribute ID')
+    ], 'attribute')
+
+    return this.handleQuery(async () => {
       return await this.attributeRepository.findById(args.id)
-    } catch (error) {
-      this.logger.error('Error fetching attribute', { error, id: args.id })
-      throw error
-    }
+    }, 'findAttributeById', { id: args.id })
   }
 
   async attributeByIdentifier(
     _: GraphQLParent,
-    args: AttributeByIdentifierArgs & { tableId: string }
+    args: AttributeByIdentifierArgs & { tableId: string },
+    context?: GraphQLContext
   ) {
-    try {
-      this.logger.info('Fetching attribute by identifier', {
-        identifier: args.identifier,
-        tableId: args.tableId,
-      })
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('identifier', 'Attribute identifier'),
+      BaseResolver.validationRules.required('tableId', 'Table ID'),
+      BaseResolver.validationRules.nonEmpty('identifier', 'Attribute identifier'),
+      BaseResolver.validationRules.nonEmpty('tableId', 'Table ID')
+    ], 'attributeByIdentifier')
+
+    return this.handleQuery(async () => {
       return await this.attributeRepository.findByIdentifier(args.identifier, args.tableId)
-    } catch (error) {
-      this.logger.error('Error fetching attribute by identifier', {
-        error,
-        identifier: args.identifier,
-        tableId: args.tableId,
-      })
-      throw error
-    }
+    }, 'findAttributeByIdentifier', { identifier: args.identifier, tableId: args.tableId })
   }
 
-  async attributes(_: GraphQLParent, args: AttributesArgs) {
-    try {
-      this.logger.info('Fetching attributes', { args })
-
+  async attributes(_: GraphQLParent, args: AttributesArgs, context?: GraphQLContext) {
+    return this.handleQuery(async () => {
       const result = await this.attributeRepository.findAll({
         filter: args.filter,
         pagination: args.pagination || { limit: 10, offset: 0 },
@@ -104,9 +101,6 @@ export class AttributeQueries {
         hasNextPage: result.hasNextPage,
         hasPreviousPage: result.hasPreviousPage,
       }
-    } catch (error) {
-      this.logger.error('Error fetching attributes', { error, args })
-      throw error
-    }
+    }, 'findAttributes', { filter: args.filter, pagination: args.pagination, sort: args.sort })
   }
 }

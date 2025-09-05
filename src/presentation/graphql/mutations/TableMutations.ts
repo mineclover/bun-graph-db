@@ -4,23 +4,34 @@ import type { DeleteTableUseCase } from '@/application/use-cases/tables/DeleteTa
 import type {
   CreateTableArgs,
   DeleteTableArgs,
+  GraphQLContext,
   GraphQLParent,
   UpdateTableArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { BaseResolver } from '../base/BaseResolver.js'
 
-export class TableMutations {
+export class TableMutations extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly createTableUseCase: CreateTableUseCase,
     private readonly deleteTableUseCase: DeleteTableUseCase,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async createTable(_: GraphQLParent, args: CreateTableArgs) {
-    try {
-      this.logger.info('Creating table', { input: args.input })
+  async createTable(_: GraphQLParent, args: CreateTableArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('input', 'Create table input'),
+      BaseResolver.validationRules.required('input.identifier', 'Table identifier'),
+      BaseResolver.validationRules.nonEmpty('input.identifier', 'Table identifier')
+    ], 'createTable')
 
+    return this.handleMutation(async () => {
       const result = await this.createTableUseCase.execute({
         identifier: args.input.identifier,
         description: args.input.description,
@@ -28,28 +39,25 @@ export class TableMutations {
 
       return {
         success: !!result,
-        table: result,
+        data: result,
         errors: [],
       }
-    } catch (error) {
-      this.logger.error('Error creating table', { error, input: args.input })
-      return {
-        success: false,
-        table: null,
-        errors: [{ message: error.message, code: 'CREATE_TABLE_ERROR' }],
-      }
-    }
+    }, 'createTable', { input: args.input })
   }
 
-  async updateTable(_: GraphQLParent, args: UpdateTableArgs) {
-    try {
-      this.logger.info('Updating table', { id: args.id, input: args.input })
+  async updateTable(_: GraphQLParent, args: UpdateTableArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Table ID'),
+      BaseResolver.validationRules.required('input', 'Update table input'),
+      BaseResolver.validationRules.nonEmpty('id', 'Table ID')
+    ], 'updateTable')
 
+    return this.handleMutation(async () => {
       const existingTable = await this.tableRepository.findById(args.id)
       if (!existingTable) {
         return {
           success: false,
-          table: null,
+          data: null,
           errors: [{ message: 'Table not found', code: 'TABLE_NOT_FOUND' }],
         }
       }
@@ -60,27 +68,19 @@ export class TableMutations {
 
       return {
         success: !!updatedTable,
-        table: updatedTable,
+        data: updatedTable,
         errors: [],
       }
-    } catch (error) {
-      this.logger.error('Error updating table', { error, id: args.id, input: args.input })
-      return {
-        success: false,
-        table: null,
-        errors: [{ message: error.message, code: 'UPDATE_TABLE_ERROR' }],
-      }
-    }
+    }, 'updateTable', { id: args.id, input: args.input })
   }
 
-  async deleteTable(_: GraphQLParent, args: DeleteTableArgs) {
-    try {
-      this.logger.info('Deleting table with safety checks', {
-        id: args.id,
-        force: args.force,
-        cascadeDelete: args.cascadeDelete,
-      })
+  async deleteTable(_: GraphQLParent, args: DeleteTableArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Table ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Table ID')
+    ], 'deleteTable')
 
+    return this.handleMutation(async () => {
       const dependencies = await this.deleteTableUseCase.execute({
         id: args.id,
         force: args.force,
@@ -104,20 +104,16 @@ export class TableMutations {
           relationCount: dependencies.relationCount,
         },
       }
-    } catch (error) {
-      this.logger.error('Error deleting table', { error, id: args.id })
-
-      // Enhanced error reporting for safety violations
-      const errorCode = error.message.includes('Cannot delete table')
-        ? 'TABLE_HAS_DEPENDENCIES'
-        : error.message.includes('not found')
-          ? 'TABLE_NOT_FOUND'
-          : 'DELETE_TABLE_ERROR'
-
-      return {
-        success: false,
-        errors: [{ message: error.message, code: errorCode }],
+    }, 'deleteTable', { id: args.id, force: args.force, cascadeDelete: args.cascadeDelete }, {
+      successMessage: `Table deleted successfully with ${args.cascadeDelete ? 'cascade' : 'safety checks'}`,
+      errorHandler: (error) => {
+        const errorCode = error.message.includes('Cannot delete table')
+          ? 'TABLE_HAS_DEPENDENCIES'
+          : error.message.includes('not found')
+            ? 'TABLE_NOT_FOUND'
+            : 'DELETE_TABLE_ERROR'
+        return { message: error.message, code: errorCode }
       }
-    }
+    })
   }
 }

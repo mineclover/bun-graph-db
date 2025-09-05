@@ -31,11 +31,16 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.TABLE_QUERIES,
     async (c) => {
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
-      const createTableUseCase = await c.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new TableQueries(tableRepository, createTableUseCase, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+      }
+      return new TableQueries(tableRepository, simpleLogger)
     },
-    [RepositoryTokens.TABLE_REPOSITORY, UseCaseTokens.CREATE_TABLE_USE_CASE, CommonTokens.LOGGER]
+    [RepositoryTokens.TABLE_REPOSITORY]
   )
 
   container.registerSingleton(
@@ -43,10 +48,16 @@ export function registerGraphQLModule(container: DIContainer): void {
     async (c) => {
       const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
       const searchNodesUseCase = await c.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new NodeQueries(nodeRepository, searchNodesUseCase, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+      }
+      return new NodeQueries(nodeRepository, searchNodesUseCase, simpleLogger)
     },
-    [RepositoryTokens.NODE_REPOSITORY, UseCaseTokens.SEARCH_NODES_USE_CASE, CommonTokens.LOGGER]
+    [RepositoryTokens.NODE_REPOSITORY, UseCaseTokens.SEARCH_NODES_USE_CASE]
   )
 
   container.registerSingleton(
@@ -90,17 +101,16 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.TEMPLATE_QUERIES,
     async (c) => {
       const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)
-      const executeQueryTemplateUseCase = await c.resolve(
-        UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE
-      )
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new TemplateQueries(queryTemplateRepository, executeQueryTemplateUseCase, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+      }
+      return new TemplateQueries(queryTemplateRepository, simpleLogger)
     },
-    [
-      RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
-      UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE,
-      CommonTokens.LOGGER,
-    ]
+    [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY]
   )
 
   // Mutation resolvers
@@ -124,17 +134,23 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.NODE_MUTATIONS,
     async (c) => {
-      const createNodeUseCase = await c.resolve(UseCaseTokens.CREATE_NODE_USE_CASE)
+      // Temporarily remove CreateNodeUseCase to break circular dependency
+      // TODO: Restore proper use case integration after circular dependency is resolved
+      const createNodeUseCase = null as any // Placeholder
       const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
       const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new NodeMutations(createNodeUseCase, nodeRepository, nodeAttributeRepository, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+      }
+      return new NodeMutations(createNodeUseCase, nodeRepository, nodeAttributeRepository, simpleLogger)
     },
     [
-      UseCaseTokens.CREATE_NODE_USE_CASE,
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 

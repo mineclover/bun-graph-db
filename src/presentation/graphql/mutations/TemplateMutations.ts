@@ -4,19 +4,33 @@ import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
-export class TemplateMutations {
+export class TemplateMutations extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     private readonly executeQueryTemplateUseCase: ExecuteQueryTemplateUseCase,
-    private readonly logger: ILogger,
+    logger: ILogger,
     private readonly schema?: GraphQLSchema
-  ) {}
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async createTemplate(_: GraphQLParent, args: { input: any }) {
-    try {
-      this.logger.info('Creating template', { input: args.input })
+  async createTemplate(_: GraphQLParent, args: { input: any }, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('input', 'Create template input'),
+      BaseResolver.validationRules.required('input.identifier', 'Template identifier'),
+      BaseResolver.validationRules.required('input.name', 'Template name'),
+      BaseResolver.validationRules.required('input.queryText', 'Query text'),
+      BaseResolver.validationRules.nonEmpty('input.identifier', 'Template identifier'),
+      BaseResolver.validationRules.nonEmpty('input.name', 'Template name'),
+      BaseResolver.validationRules.nonEmpty('input.queryText', 'Query text')
+    ], 'createTemplate')
 
+    return this.handleMutation(async () => {
       const template = QueryTemplate.create(
         args.input.identifier,
         args.input.name,
@@ -35,32 +49,21 @@ export class TemplateMutations {
 
       const result = await this.queryTemplateRepository.create(template)
 
-      return {
-        success: !!result,
-        template: result,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Error creating template', { error, input: args.input })
-      return {
-        success: false,
-        template: null,
-        errors: [{ message: error.message, code: 'CREATE_TEMPLATE_ERROR' }],
-      }
-    }
+      return result
+    }, 'createTemplate', { input: args.input })
   }
 
-  async updateTemplate(_: GraphQLParent, args: { id: string; input: any }) {
-    try {
-      this.logger.info('Updating template', { id: args.id, input: args.input })
+  async updateTemplate(_: GraphQLParent, args: { id: string; input: any }, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Template ID'),
+      BaseResolver.validationRules.required('input', 'Update template input'),
+      BaseResolver.validationRules.nonEmpty('id', 'Template ID')
+    ], 'updateTemplate')
 
+    return this.handleMutation(async () => {
       const existingTemplate = await this.queryTemplateRepository.findById(args.id)
       if (!existingTemplate) {
-        return {
-          success: false,
-          template: null,
-          errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }],
-        }
+        throw new Error('Template not found')
       }
 
       const updatedTemplate = await this.queryTemplateRepository.update(args.id, {
@@ -77,25 +80,17 @@ export class TemplateMutations {
         tags: args.input.tags,
       })
 
-      return {
-        success: !!updatedTemplate,
-        template: updatedTemplate,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Error updating template', { error, id: args.id, input: args.input })
-      return {
-        success: false,
-        template: null,
-        errors: [{ message: error.message, code: 'UPDATE_TEMPLATE_ERROR' }],
-      }
-    }
+      return updatedTemplate
+    }, 'updateTemplate', { id: args.id, input: args.input })
   }
 
-  async deleteTemplate(_: GraphQLParent, args: { id: string }) {
-    try {
-      this.logger.info('Deleting template', { id: args.id })
+  async deleteTemplate(_: GraphQLParent, args: { id: string }, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Template ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Template ID')
+    ], 'deleteTemplate')
 
+    return this.handleMutation(async () => {
       const existingTemplate = await this.queryTemplateRepository.findById(args.id)
       if (!existingTemplate) {
         return {
@@ -106,41 +101,32 @@ export class TemplateMutations {
 
       await this.queryTemplateRepository.delete(args.id)
 
-      return {
-        success: true,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Error deleting template', { error, id: args.id })
-      return {
-        success: false,
-        errors: [{ message: error.message, code: 'DELETE_TEMPLATE_ERROR' }],
-      }
-    }
+      return true
+    }, 'deleteTemplate', { id: args.id })
   }
 
-  async activateTemplate(_: GraphQLParent, args: { id: string }) {
-    try {
-      this.logger.info('Activating template', { id: args.id })
+  async activateTemplate(_: GraphQLParent, args: { id: string }, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Template ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Template ID')
+    ], 'activateTemplate')
 
+    return this.handleMutation(async () => {
       const result = await this.queryTemplateRepository.updateStatus(args.id, true)
       return result
-    } catch (error) {
-      this.logger.error('Error activating template', { error, id: args.id })
-      throw error
-    }
+    }, 'activateTemplate', { id: args.id })
   }
 
-  async deactivateTemplate(_: GraphQLParent, args: { id: string }) {
-    try {
-      this.logger.info('Deactivating template', { id: args.id })
+  async deactivateTemplate(_: GraphQLParent, args: { id: string }, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Template ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Template ID')
+    ], 'deactivateTemplate')
 
+    return this.handleMutation(async () => {
       const result = await this.queryTemplateRepository.updateStatus(args.id, false)
       return result
-    } catch (error) {
-      this.logger.error('Error deactivating template', { error, id: args.id })
-      throw error
-    }
+    }, 'deactivateTemplate', { id: args.id })
   }
 
   async executeTemplate(
@@ -150,11 +136,14 @@ export class TemplateMutations {
       variables?: Record<string, unknown>
       trackUsage?: boolean
     },
-    context: GraphQLContext
+    context?: GraphQLContext
   ) {
-    try {
-      this.logger.info('Executing template', { templateIdentifier: args.templateIdentifier })
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('templateIdentifier', 'Template Identifier'),
+      BaseResolver.validationRules.nonEmpty('templateIdentifier', 'Template Identifier')
+    ], 'executeTemplate')
 
+    return this.handleQuery(async () => {
       const result = await this.executeQueryTemplateUseCase.execute({
         templateIdentifier: args.templateIdentifier,
         variables: args.variables,
@@ -166,10 +155,7 @@ export class TemplateMutations {
         processedVariables: result.processedVariables,
         metadata: result.metadata,
       }
-    } catch (error) {
-      this.logger.error('Error executing template', { error, args })
-      throw error
-    }
+    }, 'executeTemplate', { templateIdentifier: args.templateIdentifier })
   }
 
   setSchema(schema: GraphQLSchema) {

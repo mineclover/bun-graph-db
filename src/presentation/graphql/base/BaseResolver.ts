@@ -7,8 +7,7 @@ import type {
   PerformanceMetrics,
   ResolverContext 
 } from '@/presentation/graphql/types/StandardTypes.js'
-import { ApplicationException } from '@/shared/exceptions/ApplicationException.js'
-import { DomainException } from '@/shared/exceptions/DomainException.js'
+import { ValidationException, DomainException } from '@/shared/exceptions/DomainException.js'
 
 export abstract class BaseResolver {
   protected abstract logger: ILogger
@@ -151,7 +150,7 @@ export abstract class BaseResolver {
         rule(args)
       } catch (error) {
         this.logger.warn(`Argument validation failed: ${context}`, { error, args })
-        throw new ApplicationException(
+        throw new ValidationException(
           `Invalid arguments for ${context}: ${error instanceof Error ? error.message : 'Unknown validation error'}`,
           'INVALID_ARGUMENTS',
           { context, args }
@@ -189,7 +188,7 @@ export abstract class BaseResolver {
       }
     }
 
-    if (error instanceof ApplicationException) {
+    if (error instanceof ValidationException) {
       return {
         message: error.message,
         code: error.code,
@@ -256,7 +255,7 @@ export abstract class BaseResolver {
    * Extract error code from exception
    */
   private extractErrorCode(error: unknown): string {
-    if (error instanceof DomainException || error instanceof ApplicationException) {
+    if (error instanceof DomainException || error instanceof ValidationException) {
       return error.code
     }
     if (error instanceof Error) {

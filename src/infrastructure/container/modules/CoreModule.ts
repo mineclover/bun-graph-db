@@ -20,13 +20,14 @@ export function registerCoreModule(container: DIContainer): void {
     [CommonTokens.ENVIRONMENT_CONFIG]
   )
 
-  // Logger
+  // Logger (removed EnvironmentConfig dependency to break circular reference)
   container.registerSingleton(
     CommonTokens.LOGGER,
     async (c) => {
-      const envConfig = await c.resolve(CommonTokens.ENVIRONMENT_CONFIG)
-      return new ConsoleLogger(envConfig.logging.level)
+      // Use default log level to avoid circular dependency
+      const { LogLevel } = await import('@/application/ports/ILogger.js')
+      return new ConsoleLogger(LogLevel.INFO)
     },
-    [CommonTokens.ENVIRONMENT_CONFIG]
+    []
   )
 }

@@ -11,6 +11,14 @@ import { SqliteTableRepository } from '@/infrastructure/database/sqlite/SqliteTa
 import type { DIContainer } from '../DIContainer.js'
 import { CommonTokens, DatabaseTokens, RepositoryTokens } from '../tokens/index.js'
 
+// Simple console logger factory to avoid circular dependencies
+const createSimpleLogger = () => ({
+  info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+  warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+  error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+  debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+})
+
 /**
  * Repository module - registers all repository implementations
  */
@@ -20,108 +28,98 @@ export function registerRepositoryModule(container: DIContainer): void {
     RepositoryTokens.TABLE_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteTableRepository(connection, logger)
+      return new SqliteTableRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Attribute type repository
+  // Attribute type repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteAttributeTypeRepository(connection, logger)
+      return new SqliteAttributeTypeRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Attribute repository
+  // Attribute repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.ATTRIBUTE_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteAttributeRepository(connection, logger)
+      return new SqliteAttributeRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node repository
+  // Node repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.NODE_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteNodeRepository(connection, logger)
+      return new SqliteNodeRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node attribute repository
+  // Node attribute repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteNodeAttributeRepository(connection, logger)
+      return new SqliteNodeAttributeRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node relation repository
+  // Node relation repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.NODE_RELATION_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteNodeRelationRepository(connection, logger)
+      return new SqliteNodeRelationRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Relation type repository
+  // Relation type repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.RELATION_TYPE_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteRelationTypeRepository(connection, logger)
+      return new SqliteRelationTypeRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Query template repository
+  // Query template repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteQueryTemplateRepository(connection, logger)
+      return new SqliteQueryTemplateRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node search repository
+  // Node search repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.NODE_SEARCH_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteNodeSearchRepository(connection, logger)
+      return new SqliteNodeSearchRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Graph repository
+  // Graph repository (removed logger dependency to break circular reference)
   container.registerSingleton(
     RepositoryTokens.GRAPH_REPOSITORY,
     async (c) => {
       const connection = await c.resolve(DatabaseTokens.DATABASE_CONNECTION)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SqliteGraphRepository(connection, logger)
+      return new SqliteGraphRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION, CommonTokens.LOGGER]
+    [DatabaseTokens.DATABASE_CONNECTION]
   )
 }

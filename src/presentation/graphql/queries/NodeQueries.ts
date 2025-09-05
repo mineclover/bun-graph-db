@@ -47,10 +47,8 @@ export class NodeQueries extends BaseResolver {
     }, 'findNodeByContent', { content: args.content, tableId: args.tableId })
   }
 
-  async nodes(_: GraphQLParent, args: NodesArgs) {
-    try {
-      this.logger.info('Fetching nodes', { args })
-
+  async nodes(_: GraphQLParent, args: NodesArgs, context?: GraphQLContext) {
+    return this.handleQuery(async () => {
       const result = await this.nodeRepository.findAll({
         filter: args.filter,
         pagination: args.pagination || { limit: 10, offset: 0 },
@@ -63,16 +61,11 @@ export class NodeQueries extends BaseResolver {
         hasNextPage: result.hasNextPage,
         hasPreviousPage: result.hasPreviousPage,
       }
-    } catch (error) {
-      this.logger.error('Error fetching nodes', { error, args })
-      throw error
-    }
+    }, 'findAllNodes', { args })
   }
 
-  async searchNodes(_: GraphQLParent, args: SearchNodesArgs) {
-    try {
-      this.logger.info('Searching nodes', { args })
-
+  async searchNodes(_: GraphQLParent, args: SearchNodesArgs, context?: GraphQLContext) {
+    return this.handleQuery(async () => {
       const result = await this.searchNodesUseCase.execute({
         filter: args.filter,
         pagination: args.pagination || { limit: 10, offset: 0 },
@@ -85,9 +78,6 @@ export class NodeQueries extends BaseResolver {
         hasNextPage: result.hasNextPage,
         hasPreviousPage: result.hasPreviousPage,
       }
-    } catch (error) {
-      this.logger.error('Error searching nodes', { error, args })
-      throw error
-    }
+    }, 'searchNodes', { args })
   }
 }

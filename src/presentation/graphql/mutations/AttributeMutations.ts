@@ -6,26 +6,40 @@ import type {
   CreateAttributeTypeArgs,
   DeleteAttributeArgs,
   DeleteAttributeTypeArgs,
+  GraphQLContext,
   GraphQLParent,
   UpdateAttributeArgs,
   UpdateAttributeTypeArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import { BaseResolver } from '../base/BaseResolver.js'
 
-export class AttributeMutations {
+export class AttributeMutations extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly createAttributeTypeUseCase: CreateAttributeTypeUseCase,
     private readonly createAttributeUseCase: CreateAttributeUseCase,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly attributeRepository: IAttributeRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async createAttributeType(_: GraphQLParent, args: CreateAttributeTypeArgs) {
-    try {
-      this.logger.info('Creating attribute type', { input: args.input })
+  async createAttributeType(_: GraphQLParent, args: CreateAttributeTypeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('input', 'Create attribute type input'),
+      BaseResolver.validationRules.required('input.identifier', 'Identifier'),
+      BaseResolver.validationRules.required('input.name', 'Name'),
+      BaseResolver.validationRules.required('input.dataType', 'Data type'),
+      BaseResolver.validationRules.nonEmpty('input.identifier', 'Identifier'),
+      BaseResolver.validationRules.nonEmpty('input.name', 'Name')
+    ], 'createAttributeType')
 
+    return this.handleMutation(async () => {
       const result = await this.createAttributeTypeUseCase.execute({
         identifier: args.input.identifier,
         name: args.input.name,
@@ -37,28 +51,25 @@ export class AttributeMutations {
 
       return {
         success: !!result,
-        attributeType: result,
+        data: result,
         errors: [],
       }
-    } catch (error) {
-      this.logger.error('Error creating attribute type', { error, input: args.input })
-      return {
-        success: false,
-        attributeType: null,
-        errors: [{ message: error.message, code: 'CREATE_ATTRIBUTE_TYPE_ERROR' }],
-      }
-    }
+    }, 'createAttributeType', { input: args.input })
   }
 
-  async updateAttributeType(_: GraphQLParent, args: UpdateAttributeTypeArgs) {
-    try {
-      this.logger.info('Updating attribute type', { id: args.id, input: args.input })
+  async updateAttributeType(_: GraphQLParent, args: UpdateAttributeTypeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Attribute type ID'),
+      BaseResolver.validationRules.required('input', 'Update attribute type input'),
+      BaseResolver.validationRules.nonEmpty('id', 'Attribute type ID')
+    ], 'updateAttributeType')
 
+    return this.handleMutation(async () => {
       const existingAttributeType = await this.attributeTypeRepository.findById(args.id)
       if (!existingAttributeType) {
         return {
           success: false,
-          attributeType: null,
+          data: null,
           errors: [{ message: 'Attribute type not found', code: 'ATTRIBUTE_TYPE_NOT_FOUND' }],
         }
       }
@@ -72,23 +83,19 @@ export class AttributeMutations {
 
       return {
         success: !!updatedAttributeType,
-        attributeType: updatedAttributeType,
+        data: updatedAttributeType,
         errors: [],
       }
-    } catch (error) {
-      this.logger.error('Error updating attribute type', { error, id: args.id, input: args.input })
-      return {
-        success: false,
-        attributeType: null,
-        errors: [{ message: error.message, code: 'UPDATE_ATTRIBUTE_TYPE_ERROR' }],
-      }
-    }
+    }, 'updateAttributeType', { id: args.id, input: args.input })
   }
 
-  async deleteAttributeType(_: GraphQLParent, args: DeleteAttributeTypeArgs) {
-    try {
-      this.logger.info('Deleting attribute type', { id: args.id })
+  async deleteAttributeType(_: GraphQLParent, args: DeleteAttributeTypeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Attribute type ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Attribute type ID')
+    ], 'deleteAttributeType')
 
+    return this.handleMutation(async () => {
       const existingAttributeType = await this.attributeTypeRepository.findById(args.id)
       if (!existingAttributeType) {
         return {
@@ -103,19 +110,23 @@ export class AttributeMutations {
         success: true,
         errors: [],
       }
-    } catch (error) {
-      this.logger.error('Error deleting attribute type', { error, id: args.id })
-      return {
-        success: false,
-        errors: [{ message: error.message, code: 'DELETE_ATTRIBUTE_TYPE_ERROR' }],
-      }
-    }
+    }, 'deleteAttributeType', { id: args.id })
   }
 
-  async createAttribute(_: GraphQLParent, args: CreateAttributeArgs) {
-    try {
-      this.logger.info('Creating attribute', { input: args.input })
+  async createAttribute(_: GraphQLParent, args: CreateAttributeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('input', 'Create attribute input'),
+      BaseResolver.validationRules.required('input.identifier', 'Identifier'),
+      BaseResolver.validationRules.required('input.name', 'Name'),
+      BaseResolver.validationRules.required('input.attributeTypeId', 'Attribute type ID'),
+      BaseResolver.validationRules.required('input.tableId', 'Table ID'),
+      BaseResolver.validationRules.nonEmpty('input.identifier', 'Identifier'),
+      BaseResolver.validationRules.nonEmpty('input.name', 'Name'),
+      BaseResolver.validationRules.nonEmpty('input.attributeTypeId', 'Attribute type ID'),
+      BaseResolver.validationRules.nonEmpty('input.tableId', 'Table ID')
+    ], 'createAttribute')
 
+    return this.handleMutation(async () => {
       const result = await this.createAttributeUseCase.execute({
         identifier: args.input.identifier,
         name: args.input.name,
@@ -126,28 +137,25 @@ export class AttributeMutations {
 
       return {
         success: !!result,
-        attribute: result,
+        data: result,
         errors: [],
       }
-    } catch (error) {
-      this.logger.error('Error creating attribute', { error, input: args.input })
-      return {
-        success: false,
-        attribute: null,
-        errors: [{ message: error.message, code: 'CREATE_ATTRIBUTE_ERROR' }],
-      }
-    }
+    }, 'createAttribute', { input: args.input })
   }
 
-  async updateAttribute(_: GraphQLParent, args: UpdateAttributeArgs) {
-    try {
-      this.logger.info('Updating attribute', { id: args.id, input: args.input })
+  async updateAttribute(_: GraphQLParent, args: UpdateAttributeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Attribute ID'),
+      BaseResolver.validationRules.required('input', 'Update attribute input'),
+      BaseResolver.validationRules.nonEmpty('id', 'Attribute ID')
+    ], 'updateAttribute')
 
+    return this.handleMutation(async () => {
       const existingAttribute = await this.attributeRepository.findById(args.id)
       if (!existingAttribute) {
         return {
           success: false,
-          attribute: null,
+          data: null,
           errors: [{ message: 'Attribute not found', code: 'ATTRIBUTE_NOT_FOUND' }],
         }
       }
@@ -159,23 +167,19 @@ export class AttributeMutations {
 
       return {
         success: !!updatedAttribute,
-        attribute: updatedAttribute,
+        data: updatedAttribute,
         errors: [],
       }
-    } catch (error) {
-      this.logger.error('Error updating attribute', { error, id: args.id, input: args.input })
-      return {
-        success: false,
-        attribute: null,
-        errors: [{ message: error.message, code: 'UPDATE_ATTRIBUTE_ERROR' }],
-      }
-    }
+    }, 'updateAttribute', { id: args.id, input: args.input })
   }
 
-  async deleteAttribute(_: GraphQLParent, args: DeleteAttributeArgs) {
-    try {
-      this.logger.info('Deleting attribute', { id: args.id })
+  async deleteAttribute(_: GraphQLParent, args: DeleteAttributeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Attribute ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Attribute ID')
+    ], 'deleteAttribute')
 
+    return this.handleMutation(async () => {
       const existingAttribute = await this.attributeRepository.findById(args.id)
       if (!existingAttribute) {
         return {
@@ -190,12 +194,6 @@ export class AttributeMutations {
         success: true,
         errors: [],
       }
-    } catch (error) {
-      this.logger.error('Error deleting attribute', { error, id: args.id })
-      return {
-        success: false,
-        errors: [{ message: error.message, code: 'DELETE_ATTRIBUTE_ERROR' }],
-      }
-    }
+    }, 'deleteAttribute', { id: args.id })
   }
 }

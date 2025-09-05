@@ -3,127 +3,107 @@ import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode
 import type {
   CreateNodeArgs,
   DeleteNodeArgs,
+  GraphQLContext,
   GraphQLParent,
   SetNodeAttributeArgs,
   UpdateNodeArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import { BaseResolver } from '../base/BaseResolver.js'
 
-export class NodeMutations {
+export class NodeMutations extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly createNodeUseCase: CreateNodeUseCase,
     private readonly nodeRepository: INodeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async createNode(_: GraphQLParent, args: CreateNodeArgs) {
-    try {
-      this.logger.info('Creating node', { input: args.input })
+  async createNode(_: GraphQLParent, args: CreateNodeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('input', 'Create node input'),
+      BaseResolver.validationRules.required('input.content', 'Node content'),
+      BaseResolver.validationRules.required('input.tableId', 'Table ID'),
+      BaseResolver.validationRules.nonEmpty('input.content', 'Node content'),
+      BaseResolver.validationRules.nonEmpty('input.tableId', 'Table ID')
+    ], 'createNode')
 
+    return this.handleMutation(async () => {
       const result = await this.createNodeUseCase.execute({
         content: args.input.content,
         tableId: args.input.tableId,
         attributes: args.input.attributes || [],
       })
 
-      return {
-        success: !!result,
-        node: result,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Error creating node', { error, input: args.input })
-      return {
-        success: false,
-        node: null,
-        errors: [{ message: error.message, code: 'CREATE_NODE_ERROR' }],
-      }
-    }
+      return result
+    }, 'createNode', { input: args.input })
   }
 
-  async updateNode(_: GraphQLParent, args: UpdateNodeArgs) {
-    try {
-      this.logger.info('Updating node', { id: args.id, input: args.input })
+  async updateNode(_: GraphQLParent, args: UpdateNodeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Node ID'),
+      BaseResolver.validationRules.required('input', 'Update node input'),
+      BaseResolver.validationRules.required('input.content', 'Node content'),
+      BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
+      BaseResolver.validationRules.nonEmpty('input.content', 'Node content')
+    ], 'updateNode')
 
+    return this.handleMutation(async () => {
       const existingNode = await this.nodeRepository.findById(args.id)
       if (!existingNode) {
-        return {
-          success: false,
-          node: null,
-          errors: [{ message: 'Node not found', code: 'NODE_NOT_FOUND' }],
-        }
+        throw new Error('Node not found')
       }
 
       const updatedNode = await this.nodeRepository.update(args.id, {
         content: args.input.content,
       })
 
-      return {
-        success: !!updatedNode,
-        node: updatedNode,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Error updating node', { error, id: args.id, input: args.input })
-      return {
-        success: false,
-        node: null,
-        errors: [{ message: error.message, code: 'UPDATE_NODE_ERROR' }],
-      }
-    }
+      return updatedNode
+    }, 'updateNode', { id: args.id, input: args.input })
   }
 
-  async deleteNode(_: GraphQLParent, args: DeleteNodeArgs) {
-    try {
-      this.logger.info('Deleting node', { id: args.id })
+  async deleteNode(_: GraphQLParent, args: DeleteNodeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Node ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Node ID')
+    ], 'deleteNode')
 
+    return this.handleMutation(async () => {
       const existingNode = await this.nodeRepository.findById(args.id)
       if (!existingNode) {
-        return {
-          success: false,
-          errors: [{ message: 'Node not found', code: 'NODE_NOT_FOUND' }],
-        }
+        throw new Error('Node not found')
       }
 
       await this.nodeRepository.delete(args.id)
 
-      return {
-        success: true,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Error deleting node', { error, id: args.id })
-      return {
-        success: false,
-        errors: [{ message: error.message, code: 'DELETE_NODE_ERROR' }],
-      }
-    }
+      return true
+    }, 'deleteNode', { id: args.id })
   }
 
-  async setNodeAttribute(_: GraphQLParent, args: SetNodeAttributeArgs) {
-    try {
-      this.logger.info('Setting node attribute', { input: args.input })
+  async setNodeAttribute(_: GraphQLParent, args: SetNodeAttributeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('input', 'Set node attribute input'),
+      BaseResolver.validationRules.required('input.nodeId', 'Node ID'),
+      BaseResolver.validationRules.required('input.attributeId', 'Attribute ID'),
+      BaseResolver.validationRules.required('input.value', 'Attribute value'),
+      BaseResolver.validationRules.nonEmpty('input.nodeId', 'Node ID'),
+      BaseResolver.validationRules.nonEmpty('input.attributeId', 'Attribute ID')
+    ], 'setNodeAttribute')
 
+    return this.handleMutation(async () => {
       const result = await this.nodeAttributeRepository.setNodeAttribute(
         args.input.nodeId,
         args.input.attributeId,
         args.input.value
       )
 
-      return {
-        success: !!result,
-        nodeAttribute: result,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Error setting node attribute', { error, input: args.input })
-      return {
-        success: false,
-        nodeAttribute: null,
-        errors: [{ message: error.message, code: 'SET_NODE_ATTRIBUTE_ERROR' }],
-      }
-    }
+      return result
+    }, 'setNodeAttribute', { input: args.input })
   }
 }

@@ -2,6 +2,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type {
   GetDependencyChainArgs,
+  GraphQLContext,
   GraphQLParent,
   NodeRelationArgs,
   NodeRelationsArgs,
@@ -10,49 +11,52 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
-export class RelationQueries {
+export class RelationQueries extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async relationType(_: GraphQLParent, args: RelationTypeArgs) {
-    try {
-      this.logger.info('Fetching relation type', { id: args.id })
+  async relationType(_: GraphQLParent, args: RelationTypeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Relation Type ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Relation Type ID')
+    ], 'relationType')
+
+    return this.handleQuery(async () => {
       return await this.relationTypeRepository.findById(args.id)
-    } catch (error) {
-      this.logger.error('Error fetching relation type', { error, id: args.id })
-      throw error
-    }
+    }, 'findRelationTypeById', { id: args.id })
   }
 
-  async relationTypes(_: GraphQLParent) {
-    try {
-      this.logger.info('Fetching relation types')
-      return await this.relationTypeRepository.findAll({ pagination: { limit: 100, offset: 0 } })
-    } catch (error) {
-      this.logger.error('Error fetching relation types', { error })
-      throw error
-    }
+  async relationTypes(_: GraphQLParent, args?: any, context?: GraphQLContext) {
+    return this.handleQuery(async () => {
+      const result = await this.relationTypeRepository.findAll({ pagination: { limit: 100, offset: 0 } })
+      return result.items
+    }, 'findAllRelationTypes')
   }
 
-  async nodeRelation(_: GraphQLParent, args: NodeRelationArgs) {
-    try {
-      this.logger.info('Fetching node relation', { id: args.id })
+  async nodeRelation(_: GraphQLParent, args: NodeRelationArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Node Relation ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Node Relation ID')
+    ], 'nodeRelation')
+
+    return this.handleQuery(async () => {
       return await this.nodeRelationRepository.findById(args.id)
-    } catch (error) {
-      this.logger.error('Error fetching node relation', { error, id: args.id })
-      throw error
-    }
+    }, 'findNodeRelationById', { id: args.id })
   }
 
-  async nodeRelations(_: GraphQLParent, args: NodeRelationsArgs) {
-    try {
-      this.logger.info('Fetching node relations', { args })
-
+  async nodeRelations(_: GraphQLParent, args: NodeRelationsArgs, context?: GraphQLContext) {
+    return this.handleQuery(async () => {
       const result = await this.nodeRelationRepository.findAll({
         filter: args.filter,
         pagination: args.pagination || { limit: 10, offset: 0 },
@@ -65,16 +69,11 @@ export class RelationQueries {
         hasNextPage: result.hasNextPage,
         hasPreviousPage: result.hasPreviousPage,
       }
-    } catch (error) {
-      this.logger.error('Error fetching node relations', { error, args })
-      throw error
-    }
+    }, 'findAllNodeRelations', { args })
   }
 
-  async searchRelatedNodes(_: GraphQLParent, args: SearchRelatedNodesArgs) {
-    try {
-      this.logger.info('Searching related nodes', { args })
-
+  async searchRelatedNodes(_: GraphQLParent, args: SearchRelatedNodesArgs, context?: GraphQLContext) {
+    return this.handleQuery(async () => {
       const result = await this.searchRelatedNodesUseCase.execute({
         filter: args.filter,
         pagination: args.pagination || { limit: 10, offset: 0 },
@@ -87,16 +86,16 @@ export class RelationQueries {
         hasNextPage: result.hasNextPage,
         hasPreviousPage: result.hasPreviousPage,
       }
-    } catch (error) {
-      this.logger.error('Error searching related nodes', { error, args })
-      throw error
-    }
+    }, 'searchRelatedNodes', { args })
   }
 
-  async getDependencyChain(_: GraphQLParent, args: GetDependencyChainArgs) {
-    try {
-      this.logger.info('Getting dependency chain', { args })
+  async getDependencyChain(_: GraphQLParent, args: GetDependencyChainArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('nodeId', 'Node ID'),
+      BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID')
+    ], 'getDependencyChain')
 
+    return this.handleQuery(async () => {
       // This would need to be implemented in a use case or repository method
       // For now, return empty result
       return {
@@ -106,9 +105,6 @@ export class RelationQueries {
         hasNextPage: false,
         hasPreviousPage: false,
       }
-    } catch (error) {
-      this.logger.error('Error getting dependency chain', { error, args })
-      throw error
-    }
+    }, 'getDependencyChain', { args })
   }
 }

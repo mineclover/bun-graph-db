@@ -1,82 +1,44 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { NodeRelationParent } from '@/core/types/GraphQLTypes.js'
+import type { GraphQLContext, NodeRelationParent } from '@/core/types/GraphQLTypes.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
-export class RelationFieldResolvers {
+export class RelationFieldResolvers extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly tableRepository: ITableRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async table(parent: NodeRelationParent) {
-    try {
-      this.logger.debug('Resolving relation table', {
-        relationId: parent.id,
-        tableId: parent.tableId,
-      })
+  async table(parent: NodeRelationParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.tableRepository.findById(parent.tableId)
-    } catch (error) {
-      this.logger.error('Error resolving relation table', {
-        error,
-        relationId: parent.id,
-        tableId: parent.tableId,
-      })
-      throw error
-    }
+    }, 'table', 'NodeRelation', { relationId: parent.id, tableId: parent.tableId })
   }
 
-  async sourceNode(parent: NodeRelationParent) {
-    try {
-      this.logger.debug('Resolving relation source node', {
-        relationId: parent.id,
-        sourceNodeId: parent.sourceNodeId,
-      })
+  async sourceNode(parent: NodeRelationParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.nodeRepository.findById(parent.sourceNodeId)
-    } catch (error) {
-      this.logger.error('Error resolving relation source node', {
-        error,
-        relationId: parent.id,
-        sourceNodeId: parent.sourceNodeId,
-      })
-      throw error
-    }
+    }, 'sourceNode', 'NodeRelation', { relationId: parent.id, sourceNodeId: parent.sourceNodeId })
   }
 
-  async targetNode(parent: NodeRelationParent) {
-    try {
-      this.logger.debug('Resolving relation target node', {
-        relationId: parent.id,
-        targetNodeId: parent.targetNodeId,
-      })
+  async targetNode(parent: NodeRelationParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.nodeRepository.findById(parent.targetNodeId)
-    } catch (error) {
-      this.logger.error('Error resolving relation target node', {
-        error,
-        relationId: parent.id,
-        targetNodeId: parent.targetNodeId,
-      })
-      throw error
-    }
+    }, 'targetNode', 'NodeRelation', { relationId: parent.id, targetNodeId: parent.targetNodeId })
   }
 
-  async relationType(parent: NodeRelationParent) {
-    try {
-      this.logger.debug('Resolving relation type', {
-        relationId: parent.id,
-        relationTypeId: parent.relationTypeId,
-      })
+  async relationType(parent: NodeRelationParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.relationTypeRepository.findById(parent.relationTypeId)
-    } catch (error) {
-      this.logger.error('Error resolving relation type', {
-        error,
-        relationId: parent.id,
-        relationTypeId: parent.relationTypeId,
-      })
-      throw error
-    }
+    }, 'relationType', 'NodeRelation', { relationId: parent.id, relationTypeId: parent.relationTypeId })
   }
 }

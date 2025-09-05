@@ -1,65 +1,38 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { AttributeParent } from '@/core/types/GraphQLTypes.js'
+import type { AttributeParent, GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
-export class AttributeFieldResolvers {
+export class AttributeFieldResolvers extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async attributeType(parent: AttributeParent) {
-    try {
-      this.logger.debug('Resolving attribute type', {
-        attributeId: parent.id,
-        attributeTypeId: parent.attributeTypeId,
-      })
+  async attributeType(parent: AttributeParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.attributeTypeRepository.findById(parent.attributeTypeId)
-    } catch (error) {
-      this.logger.error('Error resolving attribute type', {
-        error,
-        attributeId: parent.id,
-        attributeTypeId: parent.attributeTypeId,
-      })
-      throw error
-    }
+    }, 'attributeType', 'Attribute', { attributeId: parent.id, attributeTypeId: parent.attributeTypeId })
   }
 
-  async table(parent: AttributeParent) {
-    try {
-      this.logger.debug('Resolving attribute table', {
-        attributeId: parent.id,
-        tableId: parent.tableId,
-      })
+  async table(parent: AttributeParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.tableRepository.findById(parent.tableId)
-    } catch (error) {
-      this.logger.error('Error resolving attribute table', {
-        error,
-        attributeId: parent.id,
-        tableId: parent.tableId,
-      })
-      throw error
-    }
+    }, 'table', 'Attribute', { attributeId: parent.id, tableId: parent.tableId })
   }
 
-  async attribute(parent: any) {
-    try {
-      this.logger.debug('Resolving node attribute', {
-        nodeAttributeId: parent.id,
-        attributeId: parent.attributeId,
-      })
+  async attribute(parent: any, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.attributeRepository.findById(parent.attributeId)
-    } catch (error) {
-      this.logger.error('Error resolving node attribute', {
-        error,
-        nodeAttributeId: parent.id,
-        attributeId: parent.attributeId,
-      })
-      throw error
-    }
+    }, 'attribute', 'NodeAttribute', { nodeAttributeId: parent.id, attributeId: parent.attributeId })
   }
 }

@@ -1,81 +1,61 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { NodeParent } from '@/core/types/GraphQLTypes.js'
+import type { GraphQLContext, NodeParent } from '@/core/types/GraphQLTypes.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
-export class NodeFieldResolvers {
+export class NodeFieldResolvers extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
+    private readonly nodeRepository: INodeRepository,
     private readonly tableRepository: ITableRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
-  async table(parent: NodeParent) {
-    try {
-      this.logger.debug('Resolving node table', { nodeId: parent.id, tableId: parent.tableId })
+  async table(parent: NodeParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.tableRepository.findById(parent.tableId)
-    } catch (error) {
-      this.logger.error('Error resolving node table', {
-        error,
-        nodeId: parent.id,
-        tableId: parent.tableId,
-      })
-      throw error
-    }
+    }, 'table', 'Node', { nodeId: parent.id, tableId: parent.tableId })
   }
 
-  async attributes(parent: NodeParent) {
-    try {
-      this.logger.debug('Resolving node attributes', { nodeId: parent.id })
+  async attributes(parent: NodeParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.nodeAttributeRepository.findByNodeId(parent.id)
-    } catch (error) {
-      this.logger.error('Error resolving node attributes', { error, nodeId: parent.id })
-      throw error
-    }
+    }, 'attributes', 'Node', { nodeId: parent.id })
   }
 
-  async attributeCount(parent: NodeParent) {
-    try {
-      this.logger.debug('Resolving node attribute count', { nodeId: parent.id })
+  async attributeCount(parent: NodeParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.nodeAttributeRepository.countByNodeId(parent.id)
-    } catch (error) {
-      this.logger.error('Error resolving node attribute count', { error, nodeId: parent.id })
-      throw error
-    }
+    }, 'attributeCount', 'Node', { nodeId: parent.id })
   }
 
-  async outgoingRelations(parent: NodeParent) {
-    try {
-      this.logger.debug('Resolving node outgoing relations', { nodeId: parent.id })
+  async outgoingRelations(parent: NodeParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.nodeRelationRepository.findBySourceNodeId(parent.id)
-    } catch (error) {
-      this.logger.error('Error resolving node outgoing relations', { error, nodeId: parent.id })
-      throw error
-    }
+    }, 'outgoingRelations', 'Node', { nodeId: parent.id })
   }
 
-  async incomingRelations(parent: NodeParent) {
-    try {
-      this.logger.debug('Resolving node incoming relations', { nodeId: parent.id })
+  async incomingRelations(parent: NodeParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       return await this.nodeRelationRepository.findByTargetNodeId(parent.id)
-    } catch (error) {
-      this.logger.error('Error resolving node incoming relations', { error, nodeId: parent.id })
-      throw error
-    }
+    }, 'incomingRelations', 'Node', { nodeId: parent.id })
   }
 
-  async relationCount(parent: NodeParent) {
-    try {
-      this.logger.debug('Resolving node relation count', { nodeId: parent.id })
+  async relationCount(parent: NodeParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       const outgoingCount = await this.nodeRelationRepository.countBySourceNodeId(parent.id)
       const incomingCount = await this.nodeRelationRepository.countByTargetNodeId(parent.id)
       return outgoingCount + incomingCount
-    } catch (error) {
-      this.logger.error('Error resolving node relation count', { error, nodeId: parent.id })
-      throw error
-    }
+    }, 'relationCount', 'Node', { nodeId: parent.id })
   }
 
   // 그래프 탐색용 Field Resolvers
@@ -83,18 +63,11 @@ export class NodeFieldResolvers {
     depth?: number 
     direction?: 'OUTGOING' | 'INCOMING' | 'BOTH'
     relationTypes?: string[]
-  }) {
-    try {
+  }, context?: GraphQLContext) {
+    return this.handleFieldResolution(async () => {
       const depth = args?.depth || 1
       const direction = args?.direction || 'BOTH'
       const relationTypes = args?.relationTypes
-
-      this.logger.debug('Resolving connected nodes with traversal', {
-        nodeId: parent.id,
-        depth,
-        direction,
-        relationTypes
-      })
 
       const visited = new Set<string>()
       const result: any[] = []
@@ -102,45 +75,29 @@ export class NodeFieldResolvers {
       await this._traverseGraph(parent.id, depth, direction, relationTypes, visited, result, 0)
       
       return result
-    } catch (error) {
-      this.logger.error('Error resolving connected nodes', { 
-        error, 
-        nodeId: parent.id,
-        args 
-      })
-      throw error
-    }
+    }, 'connectedNodes', 'Node', { nodeId: parent.id, depth: args?.depth, direction: args?.direction })
   }
 
-  async shortestPath(parent: NodeParent, args: { targetNodeId: string; maxDepth?: number }) {
-    try {
-      const { targetNodeId, maxDepth = 6 } = args
-      
-      this.logger.debug('Finding shortest path', {
-        sourceNodeId: parent.id,
-        targetNodeId,
-        maxDepth
-      })
+  async shortestPath(parent: NodeParent, args: { targetNodeId: string; maxDepth?: number }, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('targetNodeId', 'Target Node ID'),
+      BaseResolver.validationRules.nonEmpty('targetNodeId', 'Target Node ID')
+    ], 'shortestPath')
 
+    return this.handleFieldResolution(async () => {
+      const { targetNodeId, maxDepth = 6 } = args
       const path = await this._findShortestPath(parent.id, targetNodeId, maxDepth)
       return path
-    } catch (error) {
-      this.logger.error('Error finding shortest path', {
-        error,
-        sourceNodeId: parent.id,
-        targetNodeId: args.targetNodeId
-      })
-      throw error
-    }
+    }, 'shortestPath', 'Node', { sourceNodeId: parent.id, targetNodeId: args.targetNodeId })
   }
 
-  async neighborsByRelationType(parent: NodeParent, args: { relationTypeId: string }) {
-    try {
-      this.logger.debug('Resolving neighbors by relation type', {
-        nodeId: parent.id,
-        relationTypeId: args.relationTypeId
-      })
+  async neighborsByRelationType(parent: NodeParent, args: { relationTypeId: string }, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('relationTypeId', 'Relation Type ID'),
+      BaseResolver.validationRules.nonEmpty('relationTypeId', 'Relation Type ID')
+    ], 'neighborsByRelationType')
 
+    return this.handleFieldResolution(async () => {
       const outgoing = await this.nodeRelationRepository.findBySourceNodeIdAndRelationType(
         parent.id,
         args.relationTypeId
@@ -161,14 +118,7 @@ export class NodeFieldResolvers {
       )
 
       return neighbors.filter(node => node !== null)
-    } catch (error) {
-      this.logger.error('Error resolving neighbors by relation type', {
-        error,
-        nodeId: parent.id,
-        relationTypeId: args.relationTypeId
-      })
-      throw error
-    }
+    }, 'neighborsByRelationType', 'Node', { nodeId: parent.id, relationTypeId: args.relationTypeId })
   }
 
   // 그래프 탐색 헬퍼 메서드들

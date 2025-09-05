@@ -4,7 +4,7 @@ import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExport
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
-import { ExecuteQueryTemplate } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
+import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
 import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
@@ -94,13 +94,19 @@ export function registerUseCaseModule(container: DIContainer): void {
       const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
       const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+      }
       return new CreateNodeUseCase(
         nodeRepository,
         nodeAttributeRepository,
         tableRepository,
         attributeRepository,
-        logger
+        simpleLogger
       )
     },
     [
@@ -108,7 +114,6 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
-      CommonTokens.LOGGER,
     ]
   )
 
@@ -116,10 +121,16 @@ export function registerUseCaseModule(container: DIContainer): void {
     UseCaseTokens.SEARCH_NODES_USE_CASE,
     async (c) => {
       const nodeSearchRepository = await c.resolve(RepositoryTokens.NODE_SEARCH_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new SearchNodesUseCase(nodeSearchRepository, logger)
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || '')
+      }
+      return new SearchNodesUseCase(nodeSearchRepository, simpleLogger)
     },
-    [RepositoryTokens.NODE_SEARCH_REPOSITORY, CommonTokens.LOGGER]
+    [RepositoryTokens.NODE_SEARCH_REPOSITORY]
   )
 
   // Relation use cases
@@ -199,7 +210,7 @@ export function registerUseCaseModule(container: DIContainer): void {
     async (c) => {
       const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new ExecuteQueryTemplate(queryTemplateRepository, logger)
+      return new ExecuteQueryTemplateUseCase(queryTemplateRepository, logger)
     },
     [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY, CommonTokens.LOGGER]
   )
