@@ -1,6 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type {
+  GraphQLContext,
   GraphQLParent,
   NodeArgs,
   NodeByContentArgs,
@@ -8,36 +9,42 @@ import type {
   SearchNodesArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
-export class NodeQueries {
+export class NodeQueries extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly nodeRepository: INodeRepository,
     private readonly searchNodesUseCase: SearchNodesUseCase,
-    private readonly logger: ILogger
-  ) {}
-
-  async node(_: GraphQLParent, args: NodeArgs) {
-    try {
-      this.logger.info('Fetching node', { id: args.id })
-      return await this.nodeRepository.findById(args.id)
-    } catch (error) {
-      this.logger.error('Error fetching node', { error, id: args.id })
-      throw error
-    }
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
   }
 
-  async nodeByContent(_: GraphQLParent, args: NodeByContentArgs) {
-    try {
-      this.logger.info('Fetching node by content', { content: args.content, tableId: args.tableId })
-      return await this.nodeRepository.findByContent(args.content, args.tableId)
-    } catch (error) {
-      this.logger.error('Error fetching node by content', {
-        error,
-        content: args.content,
-        tableId: args.tableId,
-      })
-      throw error
-    }
+  async node(_: GraphQLParent, args: NodeArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Node ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Node ID')
+    ], 'node')
+
+    return this.handleQuery(async () => {
+      const node = await this.nodeRepository.findById(args.id)
+      return node
+    }, 'findNodeById', { id: args.id })
+  }
+
+  async nodeByContent(_: GraphQLParent, args: NodeByContentArgs, context?: GraphQLContext) {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('content', 'Content'),
+      BaseResolver.validationRules.required('tableId', 'Table ID'),
+      BaseResolver.validationRules.nonEmpty('content', 'Content')
+    ], 'nodeByContent')
+
+    return this.handleQuery(async () => {
+      return await this.nodeRepository.findByTableIdAndContent(args.tableId, args.content)
+    }, 'findNodeByContent', { content: args.content, tableId: args.tableId })
   }
 
   async nodes(_: GraphQLParent, args: NodesArgs) {

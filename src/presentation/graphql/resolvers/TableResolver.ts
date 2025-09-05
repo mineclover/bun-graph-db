@@ -4,42 +4,50 @@ import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTa
 import type { TableId } from '@/core/types/CommonTypes.js'
 import type {
   CreateTableInput,
+  GraphQLContext,
   TablesFilter,
   TablesPagination,
   UpdateTableInput,
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
-export class TableResolver {
+export class TableResolver extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly createTableUseCase: CreateTableUseCase,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
-  ) {}
-
-  // Query resolvers
-  async table(args: { id: string }): Promise<TableDto | null> {
-    try {
-      const table = await this.tableRepository.findById(args.id as TableId)
-      return table ? TableDto.fromEntity(table) : null
-    } catch (error) {
-      this.logger.error('Failed to find table by id', { id: args.id, error })
-      throw error
-    }
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
   }
 
-  async tableByIdentifier(args: { identifier: string }): Promise<TableDto | null> {
-    try {
+  // Query resolvers
+  async table(args: { id: string }, context?: GraphQLContext): Promise<TableDto | null> {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Table ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Table ID')
+    ], 'table')
+
+    return this.handleQuery(async () => {
+      const table = await this.tableRepository.findById(args.id as TableId)
+      return table ? TableDto.fromEntity(table) : null
+    }, 'findTableById', { id: args.id })
+  }
+
+  async tableByIdentifier(args: { identifier: string }, context?: GraphQLContext): Promise<TableDto | null> {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('identifier', 'Table Identifier'),
+      BaseResolver.validationRules.nonEmpty('identifier', 'Table Identifier')
+    ], 'tableByIdentifier')
+
+    return this.handleQuery(async () => {
       const table = await this.tableRepository.findByIdentifier(args.identifier)
       return table ? TableDto.fromEntity(table) : null
-    } catch (error) {
-      this.logger.error('Failed to find table by identifier', {
-        identifier: args.identifier,
-        error,
-      })
-      throw error
-    }
+    }, 'findTableByIdentifier', { identifier: args.identifier })
   }
 
   async tables(args: { filter?: TablesFilter; pagination?: TablesPagination }): Promise<{
@@ -70,41 +78,25 @@ export class TableResolver {
   }
 
   // Mutation resolvers
-  async createTable(args: { input: CreateTableInput }): Promise<{
-    table: TableDto | null
+  async createTable(args: { input: CreateTableInput }, context?: GraphQLContext): Promise<{
+    success: boolean
+    data?: TableDto | null
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
-    try {
-      const result = await this.createTableUseCase.execute(args.input)
-      return {
-        table: result.table,
-        errors: [],
-      }
-    } catch (error) {
-      this.logger.error('Failed to create table', { input: args.input, error })
+    this.validateArgs(args.input, [
+      BaseResolver.validationRules.required('identifier', 'Table Identifier'),
+      BaseResolver.validationRules.nonEmpty('identifier', 'Table Identifier')
+    ], 'createTable')
 
-      if (error instanceof ValidationException) {
-        return {
-          table: null,
-          errors: [
-            {
-              message: error.message,
-              code: error.code,
-              field: 'identifier',
-            },
-          ],
-        }
-      }
+    const result = await this.handleMutation(async () => {
+      const useCaseResult = await this.createTableUseCase.execute(args.input)
+      return useCaseResult.table
+    }, 'createTable', { input: args.input })
 
-      return {
-        table: null,
-        errors: [
-          {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            code: 'INTERNAL_ERROR',
-          },
-        ],
-      }
+    return {
+      success: result.success,
+      data: result.data,
+      errors: result.errors
     }
   }
 
@@ -194,14 +186,18 @@ export class TableResolver {
   }
 
   // Field resolvers
-  async nodeCount(table: TableDto): Promise<number> {
-    // TODO: Implement node count query
-    return 0
+  async nodeCount(table: TableDto, context?: GraphQLContext): Promise<number> {
+    return this.handleFieldResolution(async () => {
+      // TODO: Implement node count query
+      return 0
+    }, 'nodeCount', 'Table', { tableId: table.id }) || 0
   }
 
-  async attributeCount(table: TableDto): Promise<number> {
-    // TODO: Implement attribute count query
-    return 0
+  async attributeCount(table: TableDto, context?: GraphQLContext): Promise<number> {
+    return this.handleFieldResolution(async () => {
+      // TODO: Implement attribute count query  
+      return 0
+    }, 'attributeCount', 'Table', { tableId: table.id }) || 0
   }
 
   // TODO: Implement relationship resolvers (attributes, nodes)

@@ -6,9 +6,11 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import type { AttributeId, AttributeTypeId, TableId } from '@/core/types/CommonTypes.js'
+import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import {
   ConflictException,
   NotFoundException,
@@ -42,25 +44,32 @@ interface UpdateAttributeInput {
   metadata?: object
 }
 
-export class AttributeResolver {
+export class AttributeResolver extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly createAttributeTypeUseCase: CreateAttributeTypeUseCase,
     private readonly createAttributeUseCase: CreateAttributeUseCase,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
   // Query resolvers - Attribute Types
-  async attributeType(args: { id: string }): Promise<AttributeTypeDto | null> {
-    try {
+  async attributeType(args: { id: string }, context?: GraphQLContext): Promise<AttributeTypeDto | null> {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Attribute Type ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Attribute Type ID')
+    ], 'attributeType')
+
+    return this.handleQuery(async () => {
       const attributeType = await this.attributeTypeRepository.findById(args.id as AttributeTypeId)
       return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
-    } catch (error) {
-      this.logger.error('Failed to find attribute type by id', { id: args.id, error })
-      throw error
-    }
+    }, 'findAttributeTypeById', { id: args.id })
   }
 
   async attributeTypeByIdentifier(args: { identifier: string }): Promise<AttributeTypeDto | null> {
@@ -355,29 +364,20 @@ export class AttributeResolver {
   }
 
   // Field resolvers for Attribute type
-  async attributeType_field(attribute: AttributeDto): Promise<AttributeTypeDto | null> {
-    try {
+  async attributeType_field(attribute: AttributeDto, context?: GraphQLContext): Promise<AttributeTypeDto | null> {
+    return this.handleFieldResolution(async () => {
       const attributeType = await this.attributeTypeRepository.findById(
         attribute.attributeTypeId as AttributeTypeId
       )
       return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
-    } catch (error) {
-      this.logger.error('Failed to resolve attribute type field', {
-        attributeId: attribute.id,
-        error,
-      })
-      return null
-    }
+    }, 'attributeType', 'Attribute', { attributeId: attribute.id })
   }
 
-  async table_field(attribute: AttributeDto): Promise<TableDto | null> {
-    try {
+  async table_field(attribute: AttributeDto, context?: GraphQLContext): Promise<TableDto | null> {
+    return this.handleFieldResolution(async () => {
       const table = await this.tableRepository.findById(attribute.tableId as TableId)
       return table ? TableDto.fromEntity(table) : null
-    } catch (error) {
-      this.logger.error('Failed to resolve table field', { attributeId: attribute.id, error })
-      return null
-    }
+    }, 'table', 'Attribute', { attributeId: attribute.id })
   }
 
   // Field resolver for NodeAttribute type

@@ -1,6 +1,8 @@
 import { execute, GraphQLError, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import {
   type CreateQueryTemplateInput,
   type ExecuteTemplateInput,
@@ -10,12 +12,17 @@ import {
   type UpdateQueryTemplateInput,
 } from '@/presentation/dto/QueryTemplateDto.js'
 
-export class QueryTemplateResolver {
+export class QueryTemplateResolver extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger,
+    logger: ILogger,
     private readonly schema: any // GraphQL Schema instance
-  ) {}
+  ) {
+    super()
+    this.logger = logger
+  }
 
   /**
    * 템플릿 기반 쿼리 실행
@@ -129,9 +136,16 @@ export class QueryTemplateResolver {
   /**
    * ID로 템플릿 조회
    */
-  async getTemplate(id: string): Promise<QueryTemplateDto | null> {
-    const template = await this.queryTemplateRepository.findById(id)
-    return template ? QueryTemplateDtoMapper.toDto(template) : null
+  async getTemplate(id: string, context?: GraphQLContext): Promise<QueryTemplateDto | null> {
+    this.validateArgs({ id }, [
+      BaseResolver.validationRules.required('id', 'Template ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Template ID')
+    ], 'getTemplate')
+
+    return this.handleQuery(async () => {
+      const template = await this.queryTemplateRepository.findById(id)
+      return template ? QueryTemplateDtoMapper.toDto(template) : null
+    }, 'findTemplateById', { id })
   }
 
   /**

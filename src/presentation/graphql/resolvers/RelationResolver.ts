@@ -11,11 +11,13 @@ import type { CreateRelationUseCase } from '@/application/use-cases/relations/Cr
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { NodeId, NodeRelationId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
+import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
+import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import {
   ConflictException,
   NotFoundException,
@@ -62,7 +64,9 @@ interface SearchRelatedNodesInput {
   offset?: number
 }
 
-export class RelationResolver {
+export class RelationResolver extends BaseResolver {
+  protected logger: ILogger
+
   constructor(
     private readonly createRelationUseCase: CreateRelationUseCase,
     private readonly createRelationTypeUseCase: CreateRelationTypeUseCase,
@@ -71,18 +75,23 @@ export class RelationResolver {
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
-  ) {}
+    logger: ILogger
+  ) {
+    super()
+    this.logger = logger
+  }
 
   // Query resolvers
-  async nodeRelation(args: { id: string }): Promise<NodeRelationDto | null> {
-    try {
+  async nodeRelation(args: { id: string }, context?: GraphQLContext): Promise<NodeRelationDto | null> {
+    this.validateArgs(args, [
+      BaseResolver.validationRules.required('id', 'Relation ID'),
+      BaseResolver.validationRules.nonEmpty('id', 'Relation ID')
+    ], 'nodeRelation')
+
+    return this.handleQuery(async () => {
       const relation = await this.nodeRelationRepository.findById(args.id as NodeRelationId)
       return relation ? NodeRelationDto.fromEntity(relation) : null
-    } catch (error) {
-      this.logger.error('Failed to find node relation by id', { id: args.id, error })
-      throw error
-    }
+    }, 'findNodeRelationById', { id: args.id })
   }
 
   async nodeRelations(args: { tableId: string }): Promise<NodeRelationDto[]> {
