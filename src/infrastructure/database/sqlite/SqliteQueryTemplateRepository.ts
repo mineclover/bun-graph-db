@@ -18,7 +18,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const query = `
         SELECT * FROM templates WHERE id = ?
       `
-      const row = await this.connection.queryFirst(query, [id])
+      const row = this.db.query(query).get(id)
 
       if (!row) return null
 
@@ -51,7 +51,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const query = `
         SELECT * FROM templates WHERE identifier = ?
       `
-      const row = await this.connection.queryFirst(query, [identifier])
+      const row = this.db.query(query).get(identifier)
 
       if (!row) return null
 
@@ -132,7 +132,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
       // Get total count
       const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total')
-      const totalResult = await this.connection.queryFirst(countQuery, params)
+      const totalResult = this.db.query(countQuery).get(...params)
       const total = totalResult?.total || 0
 
       // Ordering
@@ -147,7 +147,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       query += ` LIMIT ? OFFSET ?`
       params.push(limit, offset)
 
-      const rows = await this.connection.query(query, params)
+      const rows = this.db.query(query).all(...params)
 
       const items = rows.map((row) =>
         QueryTemplate.fromDatabase(
@@ -261,7 +261,8 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `
-      await this.connection.execute(query, [
+      const stmt = this.db.prepare(query)
+      stmt.run(
         data.name,
         data.description,
         data.query_text,
@@ -274,8 +275,8 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.version,
         data.is_active,
         data.tags,
-        id,
-      ])
+        id
+      )
 
       return existing
     } catch (error) {
@@ -303,7 +304,8 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `
-      await this.connection.execute(query, [id])
+      const stmt = this.db.prepare(query)
+      stmt.run(id)
     } catch (error) {
       this.logger.error('Failed to increment usage', { id, error })
       throw new DomainException('Failed to increment usage', 'DATABASE_ERROR')
@@ -361,7 +363,8 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         SET is_active = ?, updated_at = CURRENT_TIMESTAMP 
         WHERE id = ?
       `
-      await this.connection.execute(query, [isActive, id])
+      const stmt = this.db.prepare(query)
+      stmt.run(isActive, id)
 
       return updatedTemplate
     } catch (error) {

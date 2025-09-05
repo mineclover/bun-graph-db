@@ -35,31 +35,46 @@ export class TemplateMutations extends BaseResolver {
       'createTemplate'
     )
 
-    return this.handleMutation(
-      async () => {
-        const template = QueryTemplate.create(
-          args.input.identifier,
-          args.input.name,
-          args.input.query,
-          args.input.tags || ['general'],
-          {
-            description: args.input.description,
-            variablesSchema: args.input.variablesSchema,
-            defaultVariables: args.input.defaultVariables,
-            applicableTables: args.input.applicableTables,
-            templateType: args.input.templateType,
-            complexityScore: args.input.complexityScore,
-            version: args.input.version,
-          }
-        )
+    try {
+      this.logger.info('Executing mutation: createTemplate', { input: args.input })
+      
+      const template = QueryTemplate.create(
+        args.input.identifier,
+        args.input.name,
+        args.input.query,
+        args.input.tags || ['general'],
+        {
+          description: args.input.description,
+          variablesSchema: args.input.variablesSchema,
+          defaultVariables: args.input.defaultVariables,
+          applicableTables: args.input.applicableTables,
+          templateType: args.input.templateType,
+          complexityScore: args.input.complexityScore,
+          version: args.input.version,
+        }
+      )
 
-        const result = await this.queryTemplateRepository.create(template)
+      const result = await this.queryTemplateRepository.create(template)
 
-        return result
-      },
-      'createTemplate',
-      { input: args.input }
-    )
+      this.logger.info('Template created successfully', { templateId: result.id, identifier: result.identifier })
+      
+      return {
+        success: true,
+        template: result,
+        errors: []
+      }
+    } catch (error) {
+      this.logger.error('Failed to create template', { error, input: args.input })
+      
+      return {
+        success: false,
+        template: null,
+        errors: [{
+          message: error instanceof Error ? error.message : 'Failed to create template',
+          code: 'TEMPLATE_CREATION_ERROR'
+        }]
+      }
+    }
   }
 
   async updateTemplate(
