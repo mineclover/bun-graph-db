@@ -4,59 +4,48 @@ import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNod
 import type { Node } from '@/domain/entities/Node.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { NodeQueries } from '@/presentation/graphql/queries/NodeQueries.js'
+import { 
+  createTestContext, 
+  TestFramework
+} from '../../../framework/TestFramework.js'
+import type { NodeDto, PaginatedResult } from '../../../framework/core/GraphQLTypeMapper.js'
 
 describe('NodeQueries', () => {
   let nodeQueries: NodeQueries
-  let mockNodeRepository: INodeRepository
-  let mockSearchNodesUseCase: SearchNodesUseCase
-  let mockLogger: ILogger
+  let mockNodeRepository: jest.Mocked<INodeRepository>
+  let mockSearchNodesUseCase: jest.Mocked<SearchNodesUseCase>
+  let mockLogger: jest.Mocked<ILogger>
+  const testContext = createTestContext('node-queries-test')
 
-  const mockNode: Partial<Node> = {
-    getId: () => 'node-1',
-    getContent: () => 'Test Node Content',
-    getTableId: () => 'table-1',
-    getCreatedAt: () => new Date('2024-01-01'),
-    getUpdatedAt: () => new Date('2024-01-01'),
-  }
+  // Use framework's mock Node factory
+  const mockNode = TestFramework.TestMockManager.createMockNode({
+    id: 'node-1',
+    content: 'Test Node Content',
+    tableId: 'table-1'
+  })
 
   beforeEach(() => {
-    mockNodeRepository = {
-      findById: mock(() => Promise.resolve(mockNode as Node)),
-      searchByContent: mock(() =>
-        Promise.resolve({
-          items: [mockNode as Node],
-          total: 1,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        })
-      ),
-      findAll: mock(() =>
-        Promise.resolve({
-          items: [mockNode as Node],
-          total: 1,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        })
-      ),
-    } as any
+    // Use type-safe mock creation
+    mockNodeRepository = testContext.mockManager.createNodeRepositoryMock({
+      findById: () => Promise.resolve(mockNode),
+      searchByContent: () => Promise.resolve({
+        items: [mockNode],
+        total: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+      })
+    })
 
-    mockSearchNodesUseCase = {
-      execute: mock(() =>
-        Promise.resolve({
-          nodes: [mockNode as Node],
-          total: 1,
-          hasNextPage: false,
-          hasPreviousPage: false,
-        })
-      ),
-    } as any
+    mockSearchNodesUseCase = testContext.mockManager.createTypedMock<SearchNodesUseCase>({
+      execute: () => Promise.resolve({
+        nodes: [mockNode],
+        totalCount: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+      })
+    })
 
-    mockLogger = {
-      info: mock(() => {}),
-      error: mock(() => {}),
-      warn: mock(() => {}),
-      debug: mock(() => {}),
-    } as any
+    mockLogger = testContext.mockManager.createLoggerMock()
 
     nodeQueries = new NodeQueries(mockNodeRepository, mockSearchNodesUseCase, mockLogger)
   })
