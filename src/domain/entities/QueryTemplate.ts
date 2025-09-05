@@ -1,4 +1,5 @@
 import { DomainException } from '@/shared/exceptions/DomainException.js'
+import { GraphQLParser } from '@/core/utils/GraphQLParser.js'
 
 export interface ValidationResult {
   isValid: boolean
@@ -19,7 +20,8 @@ export interface QueryVariablesSchema {
   required?: string[]
 }
 
-export type TemplateType = 'query' | 'mutation' | 'subscription'
+export type OperationType = 'query' | 'mutation' | 'subscription'
+export type TemplateType = OperationType // Legacy alias
 
 export class QueryTemplate {
   constructor(
@@ -28,12 +30,16 @@ export class QueryTemplate {
     private readonly name: string,
     private readonly description: string | null,
     private readonly queryText: string,
+    private readonly queryName: string | null,
+    private readonly operationType: OperationType,
     private readonly variablesSchema: QueryVariablesSchema | null,
     private readonly defaultVariables: Record<string, unknown> | null,
     private readonly applicableTables: string[] | null,
-    private readonly templateType: TemplateType,
+    private readonly templateType: TemplateType, // Legacy field
     private readonly complexityScore: number,
     private readonly usageCount: number,
+    private readonly lastUsedAt: Date | null,
+    private readonly avgExecutionTimeMs: number,
     private readonly version: string,
     private readonly isActive: boolean,
     private readonly tags: string[],
@@ -56,12 +62,16 @@ export class QueryTemplate {
       variablesSchema?: QueryVariablesSchema
       defaultVariables?: Record<string, unknown>
       applicableTables?: string[]
-      templateType?: TemplateType
+      templateType?: TemplateType // Legacy, will be overridden by parsed operationType
       complexityScore?: number
       version?: string
     }
   ): QueryTemplate {
     const now = new Date()
+    
+    // Extract operation info from GraphQL query text
+    const operationInfo = GraphQLParser.extractOperationInfo(queryText)
+    const autoComplexity = options?.complexityScore || GraphQLParser.calculateComplexityScore(queryText)
 
     return new QueryTemplate(
       null,
@@ -69,11 +79,15 @@ export class QueryTemplate {
       name,
       options?.description || null,
       queryText,
+      operationInfo.queryName,
+      operationInfo.operationType,
       options?.variablesSchema || null,
       options?.defaultVariables || null,
       options?.applicableTables || null,
-      options?.templateType || 'query',
-      options?.complexityScore || 1,
+      operationInfo.operationType, // Use parsed type, not legacy templateType
+      autoComplexity,
+      0,
+      null,
       0,
       options?.version || '1.0.0',
       true,
@@ -89,12 +103,16 @@ export class QueryTemplate {
     name: string,
     description: string | null,
     queryText: string,
+    queryName: string | null,
+    operationType: string | null,
     variablesSchema: string | null,
     defaultVariables: string | null,
     applicableTables: string | null,
-    templateType: string,
+    templateType: string, // Legacy field
     complexityScore: number,
     usageCount: number,
+    lastUsedAt: string | null,
+    avgExecutionTimeMs: number | null,
     version: string,
     isActive: boolean,
     tags: string | null,
@@ -111,6 +129,22 @@ export class QueryTemplate {
       ? (JSON.parse(applicableTables) as string[])
       : null
     const parsedTags = tags ? (JSON.parse(tags) as string[]) : []
+    
+    // Use operationType if available, fallback to templateType, then parse from queryText
+    let finalOperationType: OperationType
+    if (operationType && ['query', 'mutation', 'subscription'].includes(operationType)) {
+      finalOperationType = operationType as OperationType
+    } else if (templateType && ['query', 'mutation', 'subscription'].includes(templateType)) {
+      finalOperationType = templateType as OperationType
+    } else {
+      // Parse from queryText as fallback
+      try {
+        const operationInfo = GraphQLParser.extractOperationInfo(queryText)
+        finalOperationType = operationInfo.operationType
+      } catch {
+        finalOperationType = 'query' // Default fallback
+      }
+    }
 
     return new QueryTemplate(
       id,
@@ -118,12 +152,16 @@ export class QueryTemplate {
       name,
       description,
       queryText,
+      queryName,
+      finalOperationType,
       parsedVariablesSchema,
       parsedDefaultVariables,
       parsedApplicableTables,
-      templateType as TemplateType,
+      finalOperationType, // Keep templateType in sync
       complexityScore,
       usageCount,
+      lastUsedAt ? new Date(lastUsedAt) : null,
+      avgExecutionTimeMs || 0,
       version,
       isActive,
       parsedTags,
@@ -179,6 +217,12 @@ export class QueryTemplate {
   getQueryText(): string {
     return this.queryText
   }
+  getQueryName(): string | null {
+    return this.queryName
+  }
+  getOperationType(): OperationType {
+    return this.operationType
+  }
   getVariablesSchema(): QueryVariablesSchema | null {
     return this.variablesSchema
   }
@@ -196,6 +240,12 @@ export class QueryTemplate {
   }
   getUsageCount(): number {
     return this.usageCount
+  }
+  getLastUsedAt(): Date | null {
+    return this.lastUsedAt
+  }
+  getAvgExecutionTimeMs(): number {
+    return this.avgExecutionTimeMs
   }
   getVersion(): string {
     return this.version
@@ -221,12 +271,45 @@ export class QueryTemplate {
       this.name,
       this.description,
       this.queryText,
+      this.queryName,
+      this.operationType,
       this.variablesSchema,
       this.defaultVariables,
       this.applicableTables,
       this.templateType,
       this.complexityScore,
       this.usageCount + 1,
+      new Date(), // Update lastUsedAt
+      this.avgExecutionTimeMs,
+      this.version,
+      this.isActive,
+      this.tags,
+      this.createdAt,
+      new Date()
+    )
+  }
+
+  updateExecutionStats(executionTimeMs: number): QueryTemplate {
+    const newAvgTime = this.usageCount > 0 
+      ? Math.round((this.avgExecutionTimeMs * this.usageCount + executionTimeMs) / (this.usageCount + 1))
+      : executionTimeMs
+    
+    return new QueryTemplate(
+      this.id,
+      this.identifier,
+      this.name,
+      this.description,
+      this.queryText,
+      this.queryName,
+      this.operationType,
+      this.variablesSchema,
+      this.defaultVariables,
+      this.applicableTables,
+      this.templateType,
+      this.complexityScore,
+      this.usageCount + 1,
+      new Date(),
+      newAvgTime,
       this.version,
       this.isActive,
       this.tags,
@@ -242,12 +325,16 @@ export class QueryTemplate {
       this.name,
       this.description,
       this.queryText,
+      this.queryName,
+      this.operationType,
       this.variablesSchema,
       this.defaultVariables,
       this.applicableTables,
       this.templateType,
       this.complexityScore,
       this.usageCount,
+      this.lastUsedAt,
+      this.avgExecutionTimeMs,
       this.version,
       true,
       this.tags,
@@ -263,12 +350,16 @@ export class QueryTemplate {
       this.name,
       this.description,
       this.queryText,
+      this.queryName,
+      this.operationType,
       this.variablesSchema,
       this.defaultVariables,
       this.applicableTables,
       this.templateType,
       this.complexityScore,
       this.usageCount,
+      this.lastUsedAt,
+      this.avgExecutionTimeMs,
       this.version,
       false,
       this.tags,
@@ -365,12 +456,16 @@ export class QueryTemplate {
     name: string
     description: string | null
     query_text: string
+    query_name: string | null
+    operation_type: string
     variables_schema: string | null
     default_variables: string | null
     applicable_tables: string | null
-    template_type: string
+    template_type: string // Legacy field
     complexity_score: number
     usage_count: number
+    last_used_at: string | null
+    avg_execution_time_ms: number
     version: string
     is_active: boolean
     tags: string
@@ -383,12 +478,16 @@ export class QueryTemplate {
       name: this.name,
       description: this.description,
       query_text: this.queryText,
+      query_name: this.queryName,
+      operation_type: this.operationType,
       variables_schema: this.variablesSchema ? JSON.stringify(this.variablesSchema) : null,
       default_variables: this.defaultVariables ? JSON.stringify(this.defaultVariables) : null,
       applicable_tables: this.applicableTables ? JSON.stringify(this.applicableTables) : null,
-      template_type: this.templateType,
+      template_type: this.templateType, // Keep for backwards compatibility
       complexity_score: this.complexityScore,
       usage_count: this.usageCount,
+      last_used_at: this.lastUsedAt ? this.lastUsedAt.toISOString() : null,
+      avg_execution_time_ms: this.avgExecutionTimeMs,
       version: this.version,
       is_active: this.isActive,
       tags: JSON.stringify(this.tags),

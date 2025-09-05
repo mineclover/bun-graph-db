@@ -13,12 +13,16 @@ interface QueryTemplateRow {
   name: string
   description: string | null
   query_text: string
+  query_name: string | null
+  operation_type: string | null
   variables_schema: string | null
   default_variables: string | null
   applicable_tables: string | null
-  template_type: string
+  template_type: string // Legacy field
   complexity_score: number | null
   usage_count: number | null
+  last_used_at: string | null
+  avg_execution_time_ms: number | null
   version: string | null
   is_active: number | boolean
   tags: string | null
@@ -47,12 +51,16 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.name,
         row.description,
         row.query_text,
+        row.query_name,
+        row.operation_type,
         row.variables_schema,
         row.default_variables,
         row.applicable_tables,
         row.template_type,
         row.complexity_score || 0,
         row.usage_count || 0,
+        row.last_used_at,
+        row.avg_execution_time_ms,
         row.version || '1.0',
         Boolean(row.is_active),
         row.tags,
@@ -80,12 +88,16 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.name,
         row.description,
         row.query_text,
+        row.query_name,
+        row.operation_type,
         row.variables_schema,
         row.default_variables,
         row.applicable_tables,
         row.template_type,
         row.complexity_score || 0,
         row.usage_count || 0,
+        row.last_used_at,
+        row.avg_execution_time_ms,
         row.version || '1.0',
         Boolean(row.is_active),
         row.tags,
@@ -207,23 +219,27 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
       const query = `
         INSERT INTO templates (
-          identifier, name, description, query_text,
+          identifier, name, description, query_text, query_name, operation_type,
           variables_schema, default_variables, applicable_tables,
-          template_type, complexity_score, usage_count,
+          template_type, complexity_score, usage_count, last_used_at, avg_execution_time_ms,
           version, is_active, tags
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
       const result = this.db.run(query, [
         data.identifier,
         data.name,
         data.description,
         data.query_text,
+        data.query_name,
+        data.operation_type,
         data.variables_schema,
         data.default_variables,
         data.applicable_tables,
         data.template_type,
         data.complexity_score,
         data.usage_count,
+        data.last_used_at,
+        data.avg_execution_time_ms,
         data.version,
         data.is_active,
         data.tags,
@@ -236,12 +252,16 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.name,
         data.description,
         data.query_text,
+        data.query_name,
+        data.operation_type,
         data.variables_schema,
         data.default_variables,
         data.applicable_tables,
         data.template_type,
         data.complexity_score,
         data.usage_count,
+        data.last_used_at,
+        data.avg_execution_time_ms,
         data.version,
         data.is_active,
         data.tags,
@@ -268,12 +288,16 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           name = ?,
           description = ?,
           query_text = ?,
+          query_name = ?,
+          operation_type = ?,
           variables_schema = ?,
           default_variables = ?,
           applicable_tables = ?,
           template_type = ?,
           complexity_score = ?,
           usage_count = ?,
+          last_used_at = ?,
+          avg_execution_time_ms = ?,
           version = ?,
           is_active = ?,
           tags = ?,
@@ -285,12 +309,16 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.name,
         data.description,
         data.query_text,
+        data.query_name,
+        data.operation_type,
         data.variables_schema,
         data.default_variables,
         data.applicable_tables,
         data.template_type,
         data.complexity_score,
         data.usage_count,
+        data.last_used_at,
+        data.avg_execution_time_ms,
         data.version,
         data.is_active,
         data.tags,
@@ -320,6 +348,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const query = `
         UPDATE templates 
         SET usage_count = usage_count + 1,
+            last_used_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `
@@ -328,6 +357,37 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
     } catch (error) {
       this.logger.error('Failed to increment usage', { id, error })
       throw new DomainException('Failed to increment usage', { code: 'DATABASE_ERROR' })
+    }
+  }
+
+  async updateExecutionStats(id: string, executionTimeMs: number): Promise<void> {
+    try {
+      // Get current stats to calculate new average
+      const currentTemplate = await this.findById(id)
+      if (!currentTemplate) {
+        throw new DomainException('Template not found', { code: 'NOT_FOUND' })
+      }
+      
+      const currentCount = currentTemplate.getUsageCount()
+      const currentAvg = currentTemplate.getAvgExecutionTimeMs()
+      const newCount = currentCount + 1
+      const newAvg = currentCount > 0 
+        ? Math.round((currentAvg * currentCount + executionTimeMs) / newCount)
+        : executionTimeMs
+      
+      const query = `
+        UPDATE templates 
+        SET usage_count = ?,
+            last_used_at = CURRENT_TIMESTAMP,
+            avg_execution_time_ms = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `
+      const stmt = this.db.prepare(query)
+      stmt.run(newCount, newAvg, id)
+    } catch (error) {
+      this.logger.error('Failed to update execution stats', { id, executionTimeMs, error })
+      throw new DomainException('Failed to update execution stats', { code: 'DATABASE_ERROR' })
     }
   }
 
@@ -348,12 +408,16 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           row.name,
           row.description,
           row.query_text,
+          row.query_name,
+          row.operation_type,
           row.variables_schema,
           row.default_variables,
           row.applicable_tables,
           row.template_type,
           row.complexity_score || 0,
           row.usage_count || 0,
+          row.last_used_at,
+          row.avg_execution_time_ms,
           row.version || '1.0',
           Boolean(row.is_active),
           row.tags,
