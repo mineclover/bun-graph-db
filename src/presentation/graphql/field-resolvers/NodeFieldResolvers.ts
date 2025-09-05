@@ -169,8 +169,8 @@ export class NodeFieldResolvers extends BaseResolver {
         )
 
         const neighborIds = [
-          ...outgoing.map((rel) => rel.getTargetNodeId()),
-          ...incoming.map((rel) => rel.getSourceNodeId()),
+          ...outgoing.map((rel) => rel.getTargetNodeId()).filter((id): id is string => id !== null),
+          ...incoming.map((rel) => rel.getSourceNodeId()).filter((id): id is string => id !== null),
         ]
 
         const uniqueNeighborIds = [...new Set(neighborIds)]
@@ -286,7 +286,7 @@ export class NodeFieldResolvers extends BaseResolver {
             ? relation.getTargetNodeId()
             : relation.getSourceNodeId()
 
-        if (!visited.has(nextNodeId) && !current.path.includes(nextNodeId)) {
+        if (nextNodeId && !visited.has(nextNodeId) && !current.path.includes(nextNodeId)) {
           queue.push({
             nodeId: nextNodeId,
             path: [...current.path, nextNodeId],

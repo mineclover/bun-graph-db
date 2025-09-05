@@ -300,22 +300,20 @@ export abstract class BaseResolver {
    */
   protected static validationRules = {
     required:
-      <T>(field: keyof T, fieldName: string) =>
+      <T>(field: string, fieldName: string) =>
       (args: T): void => {
         // Handle nested field access like 'input.identifier'
-        const fieldPath = String(field)
-        const value = this.getNestedValue(args, fieldPath)
+        const value = this.getNestedValue(args, field)
         if (!value) {
-          console.log(`Validation failed for field: ${fieldPath}`, { args, value })
+          console.log(`Validation failed for field: ${field}`, { args, value })
           throw new Error(`${fieldName} is required`)
         }
       },
 
     nonEmpty:
-      <T>(field: keyof T, fieldName: string) =>
+      <T>(field: string, fieldName: string) =>
       (args: T): void => {
-        const fieldPath = String(field)
-        const value = BaseResolver.getNestedValue(args, fieldPath)
+        const value = BaseResolver.getNestedValue(args, field)
         if (typeof value === 'string' && value.trim().length === 0) {
           throw new Error(`${fieldName} cannot be empty`)
         }

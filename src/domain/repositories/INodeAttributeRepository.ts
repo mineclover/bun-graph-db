@@ -23,6 +23,7 @@ export interface INodeAttributeRepository {
   deleteByNodeId(nodeId: NodeId): Promise<void>
   deleteByAttributeId(attributeId: AttributeId): Promise<void>
   exists(nodeId: NodeId, attributeId: AttributeId): Promise<boolean>
+  countByNodeId(nodeId: NodeId): Promise<number>
   saveMany(nodeAttributes: NodeAttribute[]): Promise<void>
   updateMany(nodeAttributes: NodeAttribute[]): Promise<void>
 }

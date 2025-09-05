@@ -390,6 +390,39 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     )
   }
 
+  async update(id: AttributeId, updates: Partial<Attribute>): Promise<Attribute> {
+    const existing = await this.findById(id)
+    if (!existing) {
+      throw new DatabaseException(`Attribute with id ${id} not found`)
+    }
+
+    const data = existing.toDatabase()
+    const query = `
+      UPDATE attributes 
+      SET identifier = ?, attribute_type_id = ?, description = ?, is_required = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `
+
+    try {
+      const result = this.db.run(query, [
+        data.identifier,
+        data.attribute_type_id,
+        data.description,
+        data.is_required,
+        data.metadata,
+        id
+      ])
+
+      if (result.changes === 0) {
+        throw new DatabaseException(`Attribute with id ${id} not found for update`)
+      }
+
+      return existing
+    } catch (error) {
+      throw new DatabaseException(`Failed to update attribute: ${error}`)
+    }
+  }
+
   private mapAttributeTypeRowToEntity(row: AttributeTypeRow): AttributeType {
     return AttributeType.fromDatabase(
       row.id.toString(),

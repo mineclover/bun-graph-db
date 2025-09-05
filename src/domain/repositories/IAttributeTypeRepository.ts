@@ -19,4 +19,5 @@ export interface IAttributeTypeRepository {
   count(): Promise<number>
   saveMany(attributeTypes: AttributeType[]): Promise<void>
   findByIds(ids: AttributeTypeId[]): Promise<AttributeType[]>
+  update(id: AttributeTypeId, updates: Partial<AttributeType>): Promise<AttributeType>
 }

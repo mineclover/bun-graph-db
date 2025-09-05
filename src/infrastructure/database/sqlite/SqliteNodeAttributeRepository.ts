@@ -251,6 +251,17 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
     }
   }
 
+  async countByNodeId(nodeId: NodeId): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM node_attributes WHERE node_id = ?`
+
+    try {
+      const result = this.db.query<{ count: number }, [string]>(query).get(nodeId)
+      return result?.count || 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to count node attributes by node id: ${error}`)
+    }
+  }
+
   private mapRowToEntity(row: NodeAttributeRow): NodeAttribute {
     return NodeAttribute.fromDatabase(
       row.id.toString(),
