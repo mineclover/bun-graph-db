@@ -80,14 +80,14 @@ export class TableResolver extends BaseResolver {
 
       // TODO: Implement filtering in repository
       const result = await this.tableRepository.findAll({
-        limit: pagination.limit,
-        offset: pagination.offset,
+        limit: pagination.limit || 10,
+        offset: pagination.offset || 0,
       })
 
       return {
-        nodes: result.data.map((table) => TableDto.fromEntity(table)),
-        totalCount: result.total,
-        hasNextPage: result.hasMore,
+        nodes: (result.data || []).map((table) => TableDto.fromEntity(table)),
+        totalCount: result.total || 0,
+        hasNextPage: result.hasMore || false,
         hasPreviousPage: (pagination.offset || 0) > 0,
       }
     } catch (error) {
@@ -116,7 +116,11 @@ export class TableResolver extends BaseResolver {
 
     const result = await this.handleMutation(
       async () => {
-        const useCaseResult = await this.createTableUseCase.execute(args.input)
+        const cleanedInput = {
+          identifier: args.input.identifier,
+          description: args.input.description ?? undefined,
+        }
+        const useCaseResult = await this.createTableUseCase.execute(cleanedInput)
         return useCaseResult.table
       },
       'createTable',
@@ -217,8 +221,7 @@ export class TableResolver extends BaseResolver {
 
   // Field resolvers
   async nodeCount(table: TableDto, context?: GraphQLContext): Promise<number> {
-    return (
-      this.handleFieldResolution(
+    const result = await this.handleFieldResolution(
         async () => {
           // TODO: Implement node count query
           return 0
@@ -226,13 +229,12 @@ export class TableResolver extends BaseResolver {
         'nodeCount',
         'Table',
         { tableId: table.id }
-      ) || 0
-    )
+      )
+    return result ?? 0
   }
 
   async attributeCount(table: TableDto, context?: GraphQLContext): Promise<number> {
-    return (
-      this.handleFieldResolution(
+    const result = await this.handleFieldResolution(
         async () => {
           // TODO: Implement attribute count query
           return 0
@@ -240,8 +242,8 @@ export class TableResolver extends BaseResolver {
         'attributeCount',
         'Table',
         { tableId: table.id }
-      ) || 0
-    )
+      )
+    return result ?? 0
   }
 
   // TODO: Implement relationship resolvers (attributes, nodes)

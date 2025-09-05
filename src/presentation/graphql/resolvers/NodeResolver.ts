@@ -151,6 +151,19 @@ export class NodeResolver extends BaseResolver {
         offset: pagination.offset,
       })
 
+      // Check if result.data exists
+      if (!result.data) {
+        this.logger.warn('No data returned from nodeRepository.findByTableId', {
+          tableId: args.tableId,
+        })
+        return {
+          nodes: [],
+          totalCount: 0,
+          hasNextPage: false,
+          hasPreviousPage: false,
+        }
+      }
+
       // Get attributes for each node
       const nodesWithAttributes = await Promise.all(
         result.data.map(async (node) => {
@@ -170,8 +183,8 @@ export class NodeResolver extends BaseResolver {
 
       return {
         nodes: nodesWithAttributes,
-        totalCount: result.total,
-        hasNextPage: result.hasMore,
+        totalCount: result.total ?? 0,
+        hasNextPage: result.hasMore ?? false,
         hasPreviousPage: (pagination.offset || 0) > 0,
       }
     } catch (error) {
@@ -203,10 +216,10 @@ export class NodeResolver extends BaseResolver {
         nodes: result.nodes,
         totalCount: result.total,
         hasNextPage: result.hasMore,
-        hasPreviousPage: (args.input.offset || 0) > 0,
+        hasPreviousPage: (args.input.offset ?? 0) > 0,
         query: {
           originalQuery: result.query.originalQuery,
-          parsedConditions: result.query.parsed,
+          parsedConditions: (result.query.parsed as unknown as Record<string, unknown>) || {},
         },
       }
     } catch (error) {
@@ -364,7 +377,7 @@ export class NodeResolver extends BaseResolver {
 
     return {
       success: result.success,
-      data: result.data,
+      data: result.success && result.data ? result.data : undefined,
       errors: result.errors,
     }
   }
@@ -456,30 +469,28 @@ export class NodeResolver extends BaseResolver {
   }
 
   async attributeCount_field(node: NodeDto, context?: GraphQLContext): Promise<number> {
-    return (
-      this.handleFieldResolution(
-        async () => {
-          const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
-          return nodeAttributes.length
-        },
-        'attributeCount',
-        'Node',
-        { nodeId: node.id }
-      ) || 0
+    const result = await this.handleFieldResolution(
+      async () => {
+        const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
+        return nodeAttributes.length
+      },
+      'attributeCount',
+      'Node',
+      { nodeId: node.id }
     )
+    return result ?? 0
   }
 
   async attributes_field(node: NodeDto, context?: GraphQLContext): Promise<NodeAttributeDto[]> {
-    return (
-      this.handleFieldResolution(
-        async () => {
-          const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
-          return NodeAttributeDto.fromEntities(nodeAttributes)
-        },
-        'attributes',
-        'Node',
-        { nodeId: node.id }
-      ) || []
+    const result = await this.handleFieldResolution(
+      async () => {
+        const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
+        return NodeAttributeDto.fromEntities(nodeAttributes)
+      },
+      'attributes',
+      'Node',
+      { nodeId: node.id }
     )
+    return result ?? []
   }
 }

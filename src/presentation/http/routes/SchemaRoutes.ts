@@ -22,7 +22,7 @@ export interface SchemaEndpoint {
 }
 
 export class SchemaRoutes {
-  private logger: ILogger
+  private logger?: ILogger
   private schemaBuilder: GraphQLSchemaBuilder
 
   constructor(private container: DIContainer) {

@@ -8,7 +8,7 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
 import YAML from 'yaml'
-import { testLogger, TestLogEntry } from './TestLogger.js'
+// import { testLogger, TestLogEntry } from './TestLogger.js' // 제거됨
 import { detailedAnalysisLogger } from './DetailedAnalysisLogger.js'
 
 export interface TemplateTestConfig {
@@ -582,23 +582,7 @@ export class TemplateTestRunner {
           ]
         })
 
-        // 기존 로그에도 기록
-        testLogger.logTest({
-          testName: `Template not found: ${templateId}`,
-          testType: 'template',
-          input: { templateId, variables },
-          output: null,
-          success: false,
-          error: testResult.error,
-          executionTime: testResult.executionTime,
-          metadata: testResult.metadata,
-          errorDetails: {
-            errorType: 'TEMPLATE_NOT_FOUND',
-            errorMessage: testResult.error,
-            errorStack: new Error().stack,
-            templateConfig: templateId
-          }
-        })
+        // 기존 로그 제거됨 - detailedAnalysisLogger만 사용
 
         detailedAnalysisLogger.endTrace('runTemplate', testResult)
         return testResult
@@ -607,11 +591,12 @@ export class TemplateTestRunner {
       // 템플릿 등록 (필요한 경우)
       await this.registerTemplate(templateConfig)
 
-      // 변수 치환
+      // 변수 치환 및 병합
       const substitutedVariables = this.substituteVariables(templateConfig.variables)
+      const mergedVariables = { ...substitutedVariables, ...variables }
 
       // 템플릿 실행
-      const result = await this.executeTemplate(templateId, variables)
+      const result = await this.executeTemplate(templateId, mergedVariables)
       const executionTime = Date.now() - startTime
 
       if (!result.success) {
@@ -624,34 +609,7 @@ export class TemplateTestRunner {
           expectations: []
         }
 
-        // 로그에 실패 기록
-        testLogger.logTest({
-          testName: templateConfig.name,
-          testType: 'template',
-          input: { templateId, variables },
-          output: result,
-          success: false,
-          error: testResult.error,
-          executionTime,
-          metadata: { templateConfig: templateConfig.identifier },
-          debugInfo: {
-            graphqlRequest: {
-              query: templateConfig.query,
-              variables: substitutedVariables
-            },
-            graphqlResponse: result,
-            variables: substitutedVariables,
-            errorStack: new Error().stack,
-            performanceMetrics: {
-              memoryUsage: process.memoryUsage(),
-              cpuUsage: process.cpuUsage()
-            },
-            environmentInfo: {
-              nodeVersion: process.version,
-              platform: process.platform
-            }
-          }
-        })
+        // 로그 제거됨 - detailedAnalysisLogger만 사용
 
         return testResult
       }
@@ -686,40 +644,7 @@ export class TemplateTestRunner {
         } : undefined
       }
 
-      // 로그에 성공/실패 기록
-      testLogger.logTest({
-        testName: templateConfig.name,
-        testType: 'template',
-        input: { templateId, variables },
-        output: result,
-        success: allPassed,
-        error: allPassed ? undefined : `Failed expectations: ${expectations.filter(e => !e.passed).map(e => e.path).join(', ')}`,
-        executionTime,
-        metadata: { 
-          templateConfig: templateConfig.identifier,
-          expectations: expectations.length,
-          passedExpectations: expectations.filter(e => e.passed).length,
-          performance: testResult.performance
-        },
-        debugInfo: {
-          graphqlRequest: {
-            query: templateConfig.query,
-            variables: substitutedVariables
-          },
-          graphqlResponse: result,
-          variables: substitutedVariables,
-          errorStack: allPassed ? undefined : new Error().stack,
-          performanceMetrics: {
-            memoryUsage: process.memoryUsage(),
-            cpuUsage: process.cpuUsage(),
-            complexityScore: testResult.performance?.complexityScore
-          },
-          environmentInfo: {
-            nodeVersion: process.version,
-            platform: process.platform
-          }
-        }
-      })
+      // 로그 제거됨 - detailedAnalysisLogger만 사용
 
       return testResult
 
@@ -749,38 +674,7 @@ export class TemplateTestRunner {
         substitutedVariables = templateConfig?.variables || variables
       }
 
-      // 로그에 예외 기록
-      testLogger.logTest({
-        testName: templateConfig?.name || `Template not found: ${templateId}`,
-        testType: 'template',
-        input: { templateId, variables },
-        output: null,
-        success: false,
-        error: testResult.error,
-        executionTime: testResult.executionTime,
-        metadata: { 
-          templateConfig: templateConfig?.identifier || templateId, 
-          exception: true,
-          errorType: 'EXECUTION_ERROR'
-        },
-        debugInfo: {
-          graphqlRequest: {
-            query: templateConfig?.query || 'N/A',
-            variables: substitutedVariables
-          },
-          graphqlResponse: null,
-          variables: substitutedVariables,
-          errorStack: (error as Error).stack,
-          performanceMetrics: {
-            memoryUsage: process.memoryUsage(),
-            cpuUsage: process.cpuUsage()
-          },
-          environmentInfo: {
-            nodeVersion: process.version,
-            platform: process.platform
-          }
-        }
-      })
+      // 로그 제거됨 - detailedAnalysisLogger만 사용
 
       return testResult
     }
@@ -817,16 +711,7 @@ export class TemplateTestRunner {
     const startTime = Date.now()
     const templateResults: TestResult[] = []
 
-    // 시나리오 로그 시작
-    testLogger.logTest({
-      testName: scenario.name,
-      testType: 'scenario',
-      input: { scenarioName, templates: scenario.templates },
-      output: null,
-      success: true,
-      executionTime: 0,
-      metadata: { description: scenario.description }
-    })
+    // 시나리오 로그 제거됨 - detailedAnalysisLogger만 사용
 
     // Setup 실행 (현재는 로깅만)
     let setupSuccess = true
@@ -880,21 +765,7 @@ export class TemplateTestRunner {
     console.log(`   Total time: ${totalExecutionTime}ms`)
 
     // 시나리오 완료 로그
-    testLogger.logTest({
-      testName: `${scenario.name} (Completed)`,
-      testType: 'scenario',
-      input: { scenarioName, templates: scenario.templates },
-      output: { templateResults, overallSuccess, setupSuccess, teardownSuccess },
-      success: overallSuccess,
-      error: overallSuccess ? undefined : `Failed templates: ${templateResults.filter(r => !r.success).map(r => r.templateName).join(', ')}`,
-      executionTime: totalExecutionTime,
-      metadata: { 
-        passedTemplates: templateResults.filter(r => r.success).length,
-        totalTemplates: templateResults.length,
-        setupSuccess,
-        teardownSuccess
-      }
-    })
+    // 시나리오 로그 제거됨 - detailedAnalysisLogger만 사용
 
     // 시나리오 종료 후 클리어
     if (this.config.execution_settings.cleanup_after_test) {

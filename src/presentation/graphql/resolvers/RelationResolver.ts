@@ -36,7 +36,7 @@ interface CreateRelationInput {
   relationTypeId: string
   properties?: Record<string, unknown>
   strength?: number
-  confidence?: number
+  // Note: confidence is handled in the use case, not in this interface
 }
 
 interface CreateRelationTypeInput {
@@ -113,7 +113,7 @@ export class RelationResolver extends BaseResolver {
         limit: 1000,
         offset: 0,
       })
-      return NodeRelationDto.fromEntities(result.items)
+      return NodeRelationDto.fromEntities(result.items || [])
     } catch (error) {
       this.logger.error('Failed to find node relations by table id', {
         tableId: args.tableId,
@@ -126,7 +126,7 @@ export class RelationResolver extends BaseResolver {
   async relationTypes(): Promise<RelationTypeDto[]> {
     try {
       const result = await this.relationTypeRepository.findAll({ limit: 100, offset: 0 })
-      return RelationTypeDto.fromEntities(result.data)
+      return RelationTypeDto.fromEntities(result.data || [])
     } catch (error) {
       this.logger.error('Failed to find all relation types', { error })
       throw error
@@ -222,7 +222,7 @@ export class RelationResolver extends BaseResolver {
         relationTypeId: args.input.relationTypeId,
         properties: args.input.properties,
         strength: args.input.strength,
-        confidence: args.input.confidence,
+        // confidence is not part of the use case interface
       })
 
       // Convert the use case output to DTO
@@ -449,11 +449,11 @@ export class RelationResolver extends BaseResolver {
     try {
       if (!node.id) return []
 
-      const result = await this.nodeRelationRepository.findBySourceNodeId(node.id as NodeId, {
+      const result = await this.nodeRelationRepository.findBySourceNodeIdPaginated(node.id as NodeId, {
         limit: 100,
         offset: 0,
       })
-      return NodeRelationDto.fromEntities(result.items)
+      return NodeRelationDto.fromEntities(result.items || [])
     } catch (error) {
       this.logger.error('Failed to resolve outgoing relations', { nodeId: node.id, error })
       return []
@@ -464,11 +464,11 @@ export class RelationResolver extends BaseResolver {
     try {
       if (!node.id) return []
 
-      const result = await this.nodeRelationRepository.findByTargetNodeId(node.id as NodeId, {
+      const result = await this.nodeRelationRepository.findByTargetNodeIdPaginated(node.id as NodeId, {
         limit: 100,
         offset: 0,
       })
-      return NodeRelationDto.fromEntities(result.items)
+      return NodeRelationDto.fromEntities(result.items || [])
     } catch (error) {
       this.logger.error('Failed to resolve incoming relations', { nodeId: node.id, error })
       return []

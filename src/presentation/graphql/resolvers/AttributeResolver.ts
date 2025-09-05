@@ -101,6 +101,10 @@ export class AttributeResolver extends BaseResolver {
   async attributeTypes(): Promise<AttributeTypeDto[]> {
     try {
       const result = await this.attributeTypeRepository.findAll({ limit: 100, offset: 0 })
+      if (!result.data) {
+        this.logger.warn('No data returned from attributeTypeRepository.findAll')
+        return []
+      }
       return result.data.map((attributeType) => AttributeTypeDto.fromEntity(attributeType))
     } catch (error) {
       this.logger.error('Failed to find attribute types', { error })
@@ -125,6 +129,12 @@ export class AttributeResolver extends BaseResolver {
         limit: 100,
         offset: 0,
       })
+      if (!result.data) {
+        this.logger.warn('No data returned from attributeRepository.findByTableId', {
+          tableId: args.tableId,
+        })
+        return []
+      }
       return result.data.map((attribute) => AttributeDto.fromEntity(attribute))
     } catch (error) {
       this.logger.error('Failed to find attributes by table id', { tableId: args.tableId, error })

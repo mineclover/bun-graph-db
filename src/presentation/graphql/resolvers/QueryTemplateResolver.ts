@@ -1,6 +1,7 @@
 import { execute, GraphQLError, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
+import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import {
   type CreateQueryTemplateInput,
@@ -266,8 +267,23 @@ export class QueryTemplateResolver extends BaseResolver {
         })
       }
 
-      // Use repository update method instead of entity methods
-      const savedTemplate = await this.queryTemplateRepository.update(id, input)
+      // Convert UpdateQueryTemplateInput to partial QueryTemplate entity update
+      const updateData: Partial<QueryTemplate> = {
+        // Map the input properties that can be updated
+        ...(input.name && { name: input.name }),
+        ...(input.description !== undefined && { description: input.description }),
+        ...(input.queryText && { queryText: input.queryText }),
+        ...(input.variablesSchema !== undefined && { variablesSchema: input.variablesSchema }),
+        ...(input.defaultVariables !== undefined && { defaultVariables: input.defaultVariables }),
+        ...(input.applicableTables !== undefined && { applicableTables: input.applicableTables }),
+        ...(input.templateType && { templateType: input.templateType }),
+        ...(input.complexityScore !== undefined && { complexityScore: input.complexityScore }),
+        ...(input.version && { version: input.version }),
+        ...(input.isActive !== undefined && { isActive: input.isActive }),
+        ...(input.tags !== undefined && { tags: input.tags }),
+      } as Partial<QueryTemplate>
+
+      const savedTemplate = await this.queryTemplateRepository.update(id, updateData)
       return QueryTemplateDtoMapper.toDto(savedTemplate)
     } catch (error) {
       this.logger.error('Failed to update template', { id, error })

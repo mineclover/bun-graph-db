@@ -24,7 +24,13 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
       exportTable: async (_: GraphQLParent, args: ExportTableArgs) => {
         try {
           const { tableId, options = {} } = args
-          return await schemaExportUseCase.exportTable(tableId, options)
+          const exportOptions = {
+            includeData: options.includeData,
+            includeRelations: options.includeRelations,
+            compression: options.compression,
+            format: (options.format === 'json' || options.format === 'yaml') ? options.format as 'json' | 'yaml' : undefined
+          }
+          return await schemaExportUseCase.exportTable(tableId, exportOptions)
         } catch (error) {
           logger.error('Failed to export table', { tableId: args.tableId, error })
           throw error
@@ -34,7 +40,13 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
       exportAllTables: async (_: GraphQLParent, args: ExportAllTablesArgs) => {
         try {
           const { options = {} } = args
-          return await schemaExportUseCase.exportAllTables(options)
+          const exportOptions = {
+            includeData: options.includeData,
+            includeRelations: options.includeRelations,
+            compression: options.compression,
+            format: (options.format === 'json' || options.format === 'yaml') ? options.format as 'json' | 'yaml' : undefined
+          }
+          return await schemaExportUseCase.exportAllTables(exportOptions)
         } catch (error) {
           logger.error('Failed to export all tables', { error })
           throw error
@@ -46,7 +58,11 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
       importSchema: async (_: GraphQLParent, args: ImportSchemaArgs) => {
         try {
           const { exportData, options = {} } = args
-          return await schemaImportUseCase.importSchema(exportData, options)
+          const importOptions = {
+            ...options,
+            conflictResolution: (['skip', 'overwrite', 'merge', 'fail'].includes(options.conflictResolution as string)) ? options.conflictResolution as 'skip' | 'overwrite' | 'merge' | 'fail' : undefined
+          }
+          return await schemaImportUseCase.importSchema(exportData, importOptions)
         } catch (error) {
           logger.error('Failed to import schema', { error })
           throw error

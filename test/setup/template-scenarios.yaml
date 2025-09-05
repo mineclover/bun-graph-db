@@ -80,74 +80,234 @@ test_templates:
       - path: "data.createTable.identifier"
         contains: "test-table"
 
-  # 2. 속성 관련 템플릿
-  define_attributes:
-    identifier: "test-define-attributes"
-    name: "Define Table Attributes"
-    description: "테이블에 속성 정의 테스트"
+  # 2. 속성 타입 생성 템플릿
+  create_string_attribute_type:
+    identifier: "test-create-string-attribute-type"
+    name: "Create String Attribute Type"
+    description: "문자열 속성 타입 생성 테스트"
     query: |
-      mutation DefineAttributes($tableId: ID!, $attributes: [AttributeInput!]!) {
-        defineAttributes(tableId: $tableId, attributes: $attributes) {
-          id
-          name
-          type
-          required
-          tableId
+      mutation CreateAttributeType($input: CreateAttributeTypeInput!) {
+        createAttributeType(input: $input) {
+          success
+          attributeType {
+            id
+            identifier
+            name
+            dataType
+            description
+            createdAt
+          }
+          errors {
+            message
+            code
+          }
         }
       }
     variables:
-      tableId: "{{tableId}}"
-      attributes:
-        - name: "name"
-          type: "string"
-          required: true
-        - name: "email"
-          type: "string"
-          required: true
-        - name: "age"
-          type: "integer"
-          required: false
+      input:
+        identifier: "string"
+        name: "String"
+        description: "String data type for text values"
+        dataType: "string"
     expectations:
-      - path: "data.defineAttributes"
-        type: "array"
-      - path: "data.defineAttributes.length"
-        equals: 3
+      - path: "data.createAttributeType.success"
+        equals: true
+      - path: "data.createAttributeType.attributeType.id"
+        type: "string"
+
+  create_integer_attribute_type:
+    identifier: "test-create-integer-attribute-type"
+    name: "Create Integer Attribute Type"
+    description: "정수 속성 타입 생성 테스트"
+    query: |
+      mutation CreateAttributeType($input: CreateAttributeTypeInput!) {
+        createAttributeType(input: $input) {
+          success
+          attributeType {
+            id
+            identifier
+            name
+            dataType
+            description
+            createdAt
+          }
+          errors {
+            message
+            code
+          }
+        }
+      }
+    variables:
+      input:
+        identifier: "integer"
+        name: "Integer"
+        description: "Integer data type for numeric values"
+        dataType: "integer"
+    expectations:
+      - path: "data.createAttributeType.success"
+        equals: true
+      - path: "data.createAttributeType.attributeType.id"
+        type: "string"
+
+  # 3. 속성 관련 템플릿 (기존 createAttribute 사용)
+  create_name_attribute:
+    identifier: "test-create-name-attribute"
+    name: "Create Name Attribute"
+    description: "이름 속성 생성 테스트"
+    query: |
+      mutation CreateAttribute($input: CreateAttributeInput!) {
+        createAttribute(input: $input) {
+          success
+          attribute {
+            id
+            identifier
+            name
+            description
+            createdAt
+          }
+          errors {
+            message
+            code
+          }
+        }
+      }
+    variables:
+      input:
+        identifier: "name"
+        name: "name"
+        description: "User name attribute"
+        attributeTypeId: "{{stringAttributeTypeId}}"
+        tableId: "{{tableId}}"
+    expectations:
+      - path: "data.createAttribute.success"
+        equals: true
+      - path: "data.createAttribute.attribute.id"
+        type: "string"
+
+  create_email_attribute:
+    identifier: "test-create-email-attribute"
+    name: "Create Email Attribute"
+    description: "이메일 속성 생성 테스트"
+    query: |
+      mutation CreateAttribute($input: CreateAttributeInput!) {
+        createAttribute(input: $input) {
+          success
+          attribute {
+            id
+            identifier
+            name
+            description
+            createdAt
+          }
+          errors {
+            message
+            code
+          }
+        }
+      }
+    variables:
+      input:
+        identifier: "email"
+        name: "email"
+        description: "User email attribute"
+        attributeTypeId: "{{stringAttributeTypeId}}"
+        tableId: "{{tableId}}"
+    expectations:
+      - path: "data.createAttribute.success"
+        equals: true
+      - path: "data.createAttribute.attribute.id"
+        type: "string"
+
+  create_age_attribute:
+    identifier: "test-create-age-attribute"
+    name: "Create Age Attribute"
+    description: "나이 속성 생성 테스트"
+    query: |
+      mutation CreateAttribute($input: CreateAttributeInput!) {
+        createAttribute(input: $input) {
+          success
+          attribute {
+            id
+            identifier
+            name
+            description
+            createdAt
+          }
+          errors {
+            message
+            code
+          }
+        }
+      }
+    variables:
+      input:
+        identifier: "age"
+        name: "age"
+        description: "User age attribute"
+        attributeTypeId: "{{integerAttributeTypeId}}"
+        tableId: "{{tableId}}"
+    expectations:
+      - path: "data.createAttribute.success"
+        equals: true
+      - path: "data.createAttribute.attribute.id"
+        type: "string"
 
   create_node_with_attributes:
     identifier: "test-create-node-with-attributes"
     name: "Create Node with Attributes"
     description: "속성을 포함한 노드 생성 테스트"
     query: |
-      mutation CreateNodeWithAttributes($tableId: ID!, $attributes: JSON!) {
-        createNodeWithAttributes(tableId: $tableId, attributes: $attributes) {
-          id
-          tableId
-          attributes
-          createdAt
+      mutation CreateNode($input: CreateNodeInput!) {
+        createNode(input: $input) {
+          success
+          node {
+            id
+            content
+            tableId
+            createdAt
+          }
+          errors {
+            message
+            code
+          }
         }
       }
     variables:
-      tableId: "{{tableId}}"
-      attributes:
-        name: "John Doe"
-        email: "john.doe@example.com"
-        age: 30
+      input:
+        tableId: "{{tableId}}"
+        content: "John Doe - john.doe@example.com - 30"
+        attributes:
+          - attributeId: "{{nameAttributeId}}"
+            value: "John Doe"
+          - attributeId: "{{emailAttributeId}}"
+            value: "john.doe@example.com"
+          - attributeId: "{{ageAttributeId}}"
+            value: "30"
     expectations:
-      - path: "data.createNodeWithAttributes.id"
+      - path: "data.createNode.success"
+        equals: true
+      - path: "data.createNode.node.id"
         type: "string"
-      - path: "data.createNodeWithAttributes.attributes.name"
-        equals: "John Doe"
 
   get_node_with_attributes:
     identifier: "test-get-node-with-attributes"
     name: "Get Node with Attributes"
     description: "속성을 포함한 노드 조회 테스트"
     query: |
-      query GetNodeWithAttributes($nodeId: ID!) {
-        getNodeWithAttributes(nodeId: $nodeId) {
+      query GetNode($nodeId: ID!) {
+        node(id: $nodeId) {
           id
+          content
           tableId
-          attributes
+          attributes {
+            id
+            value
+            attribute {
+              id
+              identifier
+              name
+            }
+          }
           createdAt
           updatedAt
         }
@@ -155,10 +315,10 @@ test_templates:
     variables:
       nodeId: "{{nodeId}}"
     expectations:
-      - path: "data.getNodeWithAttributes.id"
+      - path: "data.node.id"
         type: "string"
-      - path: "data.getNodeWithAttributes.attributes"
-        type: "object"
+      - path: "data.node.attributes"
+        type: "array"
 
   delete_node:
     identifier: "test-delete-node"
@@ -166,9 +326,12 @@ test_templates:
     description: "노드 삭제 테스트"
     query: |
       mutation DeleteNode($nodeId: ID!) {
-        deleteNode(nodeId: $nodeId) {
+        deleteNode(id: $nodeId) {
           success
-          message
+          errors {
+            message
+            code
+          }
         }
       }
     variables:

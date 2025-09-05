@@ -37,20 +37,24 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
       }
 
       case '--host':
-      case '-h':
-        options.host = args[++i]
-        if (!options.host) {
+      case '-h': {
+        const hostValue = args[++i]
+        if (!hostValue) {
           throw new Error('Host value is required')
         }
+        options.host = hostValue
         break
+      }
 
       case '--env':
-      case '-e':
-        options.env = args[++i]
-        if (!options.env) {
+      case '-e': {
+        const envValue = args[++i]
+        if (!envValue) {
           throw new Error('Environment value is required')
         }
+        options.env = envValue
         break
+      }
 
       case '--help':
         options.help = true

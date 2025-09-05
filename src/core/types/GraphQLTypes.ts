@@ -9,12 +9,10 @@ export type {
   TablesFilter,
   TablesPagination,
   CreateRelationInput,
-  CreateRelationOutput,
-  CreateRelationTypeOutput,
   SearchNodesFilter,
   SearchRelatedNodesFilter,
   UpdateQueryTemplateInput,
-} from '../../generated/graphql.types.js'
+} from '../../../generated/graphql.types.js'
 
 export interface GraphQLContext {
   requestId: string
@@ -208,6 +206,7 @@ export interface CreateRelationTypeArgs {
 
 export interface CreateRelationArgs {
   input: {
+    tableId: string
     sourceNodeId: string
     targetNodeId: string
     relationTypeId: string
