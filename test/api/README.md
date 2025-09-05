@@ -6,96 +6,57 @@
 
 ```
 test/api/
-├── 📁 Core Structure
+├── 📁 Core Structure (현재 구현 범위)
 │   ├── queries/                    # GraphQL 쿼리 테스트
 │   │   ├── nodes/                  # 노드 관련 쿼리
 │   │   ├── tables/                 # 테이블 관련 쿼리
 │   │   ├── relations/              # 관계 쿼리
-│   │   ├── templates/              # 템플릿 쿼리
-│   │   └── analytics/              # 분석 쿼리
+│   │   └── templates/              # 템플릿 쿼리
 │   │
 │   ├── mutations/                  # GraphQL 뮤테이션 테스트
 │   │   ├── nodes/                  # 노드 CRUD
 │   │   ├── tables/                 # 테이블 CRUD
 │   │   ├── relations/              # 관계 생성/수정
-│   │   ├── templates/              # 템플릿 관리
-│   │   └── bulk/                   # 대량 작업
+│   │   └── templates/              # 템플릿 관리
 │   │
-│   ├── subscriptions/              # GraphQL 구독 테스트
-│   │   ├── real-time/              # 실시간 업데이트
-│   │   └── notifications/          # 알림 시스템
-│   │
-│   ├── scenarios/                  # 복합 시나리오 테스트
-│   │   ├── workflows/              # 비즈니스 워크플로우
-│   │   ├── user-journeys/          # 사용자 여정
-│   │   └── edge-cases/             # 엣지 케이스
-│   │
-│   ├── load/                       # 부하 테스트
-│   │   ├── concurrent/             # 동시 요청
-│   │   ├── stress/                 # 스트레스 테스트
-│   │   └── endurance/              # 장기 실행
-│   │
-│   └── security/                   # 보안 테스트
-│       ├── authentication/         # 인증 테스트
-│       ├── authorization/          # 권한 테스트
-│       ├── injection/              # 인젝션 공격
-│       └── rate-limiting/          # 속도 제한
+│   └── scenarios/                  # 복합 시나리오 테스트
+│       ├── workflows/              # 비즈니스 워크플로우
+│       ├── template-usage/         # 템플릿 기반 데이터 생성
+│       └── graph-traversal/        # 그래프 탐색 시나리오
 │
 ├── 🛠️ Infrastructure
 │   ├── clients/                    # API 클라이언트
 │   │   ├── HttpClient.ts           # HTTP 클라이언트
-│   │   ├── GraphQLClient.ts        # GraphQL 클라이언트
-│   │   ├── WebSocketClient.ts      # WebSocket 클라이언트
-│   │   └── RestClient.ts           # REST API 클라이언트
+│   │   └── GraphQLClient.ts        # GraphQL 클라이언트
 │   │
 │   ├── factories/                  # 테스트 데이터 팩토리
-│   │   ├── RequestFactory.ts       # 요청 생성
-│   │   ├── ResponseFactory.ts      # 응답 검증
-│   │   └── DataFactory.ts          # 테스트 데이터
+│   │   ├── RequestFactory.ts       # GraphQL 요청 생성
+│   │   └── DataFactory.ts          # 테스트 데이터 생성
 │   │
 │   ├── matchers/                   # 커스텀 매처
-│   │   ├── ResponseMatchers.ts     # 응답 검증
-│   │   ├── PerformanceMatchers.ts  # 성능 검증
-│   │   └── GraphQLMatchers.ts      # GraphQL 검증
-│   │
-│   ├── middleware/                 # 미들웨어
-│   │   ├── LoggingMiddleware.ts    # 로깅
-│   │   ├── MetricsMiddleware.ts    # 메트릭 수집
-│   │   └── RetryMiddleware.ts      # 재시도 로직
+│   │   ├── ResponseMatchers.ts     # GraphQL 응답 검증
+│   │   └── GraphQLMatchers.ts      # GraphQL 스키마 검증
 │   │
 │   └── config/                     # 설정
-│       ├── environments.ts         # 환경별 설정
-│       ├── endpoints.ts            # API 엔드포인트
-│       └── timeouts.ts             # 타임아웃 설정
+│       └── environments.ts         # 환경별 설정 (dev, testing, staging)
 │
 ├── 📊 Utilities
 │   ├── assertions/                 # 검증 유틸리티
 │   │   ├── StatusAssertions.ts     # HTTP 상태 검증
-│   │   ├── DataAssertions.ts       # 데이터 검증
-│   │   └── PerformanceAssertions.ts # 성능 검증
+│   │   └── DataAssertions.ts       # GraphQL 데이터 검증
 │   │
 │   ├── reporters/                  # 리포터
 │   │   ├── ConsoleReporter.ts      # 콘솔 출력
-│   │   ├── JSONReporter.ts         # JSON 리포트
-│   │   └── HTMLReporter.ts         # HTML 리포트
+│   │   └── JSONReporter.ts         # JSON 리포트
 │   │
 │   └── helpers/                    # 헬퍼
-│       ├── ServerHelper.ts         # 서버 관리
-│       ├── DatabaseHelper.ts       # 데이터베이스 관리
-│       └── TimingHelper.ts         # 시간 측정
+│       ├── ServerHelper.ts         # 서버 상태 관리
+│       └── TimingHelper.ts         # 응답 시간 측정
 │
 └── 📋 Test Suites
-    ├── smoke/                      # 스모크 테스트
-    │   ├── health-check.api.ts     # 서버 상태 확인
-    │   └── basic-operations.api.ts # 기본 동작 확인
-    │
-    ├── regression/                 # 회귀 테스트
-    │   ├── version-compatibility.ts # 버전 호환성
-    │   └── breaking-changes.ts     # 변경사항 검증
-    │
-    └── contracts/                  # 계약 테스트
-        ├── api-contracts.ts        # API 계약
-        └── schema-contracts.ts     # 스키마 계약
+    └── smoke/                      # 스모크 테스트
+        ├── health-check.api.ts     # 서버 상태 확인
+        └── basic-operations.api.ts # 기본 CRUD 동작 확인
 ```
 
 ## 🎯 테스트 방식별 특징
@@ -121,18 +82,11 @@ test/api/
 // 검증: 워크플로우, 상태 전이
 ```
 
-### 4. Load Tests (부하 테스트)
+### 4. Scenario Tests (시나리오 테스트)
 ```typescript
-// 목적: 성능 및 확장성 검증
-// 특징: 동시/순차 요청 대량 실행
-// 검증: 응답 시간, 처리량, 안정성
-```
-
-### 5. Security Tests (보안 테스트)
-```typescript
-// 목적: 보안 취약점 검증
-// 특징: 악의적 요청 시뮬레이션
-// 검증: 인증, 권한, 입력 검증
+// 목적: 복합 비즈니스 로직 검증
+// 특징: 다단계 API 호출 조합
+// 검증: 워크플로우, 상태 전이, 템플릿 기반 데이터 생성
 ```
 
 ## 🚀 사용법
@@ -143,8 +97,6 @@ npm run test:api                    # 전체 API 테스트
 npm run test:api:queries           # 쿼리 테스트만
 npm run test:api:mutations         # 뮤테이션 테스트만
 npm run test:api:scenarios         # 시나리오 테스트만
-npm run test:api:load              # 부하 테스트만
-npm run test:api:security          # 보안 테스트만
 ```
 
 ### 환경별 테스트

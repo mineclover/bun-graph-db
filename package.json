@@ -36,8 +36,6 @@
     "test:api:queries": "bun test/api/api-test-runner.ts --category queries",
     "test:api:mutations": "bun test/api/api-test-runner.ts --category mutations",
     "test:api:scenarios": "bun test/api/api-test-runner.ts --category scenarios",
-    "test:api:load": "bun test/api/api-test-runner.ts --category load",
-    "test:api:security": "bun test/api/api-test-runner.ts --category security",
     "test:api:dev": "bun test/api/api-test-runner.ts --env development",
     "test:api:staging": "bun test/api/api-test-runner.ts --env staging",
     "test:api:prod": "bun test/api/api-test-runner.ts --env production",

@@ -52,20 +52,19 @@ test/
         │   │   ├── templates/           # 템플릿 관리
         │   │   └── bulk/                # 대량 작업
         │   │
-        │   ├── scenarios/               # 복합 시나리오 테스트
-        │   ├── load/                    # 부하 테스트
-        │   └── security/                # 보안 테스트
+        │   └── scenarios/               # 복합 시나리오 테스트
+        │       ├── workflows/           # 비즈니스 워크플로우
+        │       ├── template-usage/      # 템플릿 기반 데이터 생성
+        │       └── graph-traversal/     # 그래프 탐색 시나리오
         │
         ├── 🛠️ Infrastructure
-        │   ├── clients/                 # API 클라이언트 (HTTP, GraphQL, WebSocket)
+        │   ├── clients/                 # API 클라이언트 (HTTP, GraphQL)
         │   ├── config/                  # 환경별 설정
         │   ├── factories/               # 테스트 데이터 팩토리
         │   └── matchers/                # 커스텀 매처
         │
         └── 📋 Test Suites
-            ├── smoke/                   # 스모크 테스트
-            ├── regression/              # 회귀 테스트
-            └── contracts/               # 계약 테스트
+            └── smoke/                   # 스모크 테스트
 ```
 
 ## 🎯 핵심 테스트 파일 분석
@@ -249,8 +248,6 @@ npm run test:api                    # 전체 API 테스트
 npm run test:api:queries           # 쿼리 테스트만
 npm run test:api:mutations         # 뮤테이션 테스트만  
 npm run test:api:scenarios         # 시나리오 테스트만
-npm run test:api:load              # 부하 테스트만
-npm run test:api:security          # 보안 테스트만
 ```
 
 ## 🎯 테스트 데이터 전략
