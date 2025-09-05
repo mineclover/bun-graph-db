@@ -91,6 +91,8 @@ CREATE TABLE IF NOT EXISTS templates (
   
   -- GraphQL 쿼리 정보
   query_text TEXT NOT NULL,
+  query_name TEXT, -- GraphQL operation name (ex: GetUser, CreateProduct)
+  operation_type TEXT, -- 'query', 'mutation', 'subscription' (extracted from query_text)
   variables_schema TEXT, -- JSON schema for variables
   default_variables TEXT, -- Default JSON values
   
@@ -98,11 +100,12 @@ CREATE TABLE IF NOT EXISTS templates (
   applicable_tables TEXT, -- JSON array of table identifiers. null = 범용, ["table1", "table2"] = 특정 테이블들
   
   -- 메타데이터
-  template_type TEXT DEFAULT 'query', -- 'query', 'mutation', 'subscription'
   complexity_score INTEGER DEFAULT 1, -- 1-10 (1=simple, 10=complex)
   
   -- 사용 통계
   usage_count INTEGER DEFAULT 0,
+  last_used_at TEXT, -- Last execution timestamp
+  avg_execution_time_ms INTEGER DEFAULT 0, -- Average execution time
   
   -- 버전 관리
   version TEXT DEFAULT '1.0.0',
@@ -309,12 +312,19 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_docs_unique_active
 ON docs(table_id, category) WHERE is_active = TRUE;
 -- Templates (query templates) indexes
 CREATE INDEX IF NOT EXISTS idx_templates_identifier ON templates(identifier);
-CREATE INDEX IF NOT EXISTS idx_templates_type ON templates(template_type);
+CREATE INDEX IF NOT EXISTS idx_templates_query_name ON templates(query_name);
+CREATE INDEX IF NOT EXISTS idx_templates_operation_type ON templates(operation_type);
 CREATE INDEX IF NOT EXISTS idx_templates_active ON templates(is_active);
 CREATE INDEX IF NOT EXISTS idx_templates_version ON templates(version);
 CREATE INDEX IF NOT EXISTS idx_templates_usage ON templates(usage_count DESC);
+CREATE INDEX IF NOT EXISTS idx_templates_performance ON templates(avg_execution_time_ms);
+CREATE INDEX IF NOT EXISTS idx_templates_last_used ON templates(last_used_at DESC);
 CREATE INDEX IF NOT EXISTS idx_templates_applicable ON templates(applicable_tables);
 CREATE INDEX IF NOT EXISTS idx_templates_tags ON templates(tags);
+-- Composite indexes for common query patterns
+CREATE INDEX IF NOT EXISTS idx_templates_query_lookup ON templates(query_name, operation_type);
+CREATE INDEX IF NOT EXISTS idx_templates_active_performance ON templates(is_active, avg_execution_time_ms) WHERE is_active = 1;
+CREATE INDEX IF NOT EXISTS idx_templates_hot_queries ON templates(usage_count DESC, last_used_at DESC) WHERE is_active = 1;
 CREATE INDEX IF NOT EXISTS idx_node_attributes_node ON node_attributes(node_id);
 CREATE INDEX IF NOT EXISTS idx_node_attributes_attr ON node_attributes(attribute_id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_source ON node_relations(source_node_id);

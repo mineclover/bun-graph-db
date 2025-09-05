@@ -1,0 +1,388 @@
+{
+  "id": "user-management-test-suite",
+  "name": "User Management Test Suite",
+  "description": "Comprehensive test suite for user management operations",
+  "version": "1.0.0",
+  "metadata": {
+    "created": "2025-01-05",
+    "author": "test-automation",
+    "tags": ["user", "crud", "integration-test"]
+  },
+  "templates": [
+    {
+      "identifier": "test-create-user",
+      "name": "Create User",
+      "description": "Create a new user node",
+      "templateType": "MUTATION",
+      "queryText": "mutation CreateUser($input: CreateNodeInput!) {\n  createNode(input: $input) {\n    success\n    node {\n      id\n      content\n      createdAt\n    }\n    errors {\n      message\n    }\n  }\n}",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "tableId": {
+                "type": "string",
+                "description": "Table identifier for users"
+              },
+              "content": {
+                "type": "string",
+                "description": "User content (email)"
+              }
+            },
+            "required": ["tableId", "content"]
+          }
+        },
+        "required": ["input"]
+      },
+      "tags": ["create", "user", "mutation"],
+      "complexityScore": 2
+    },
+    {
+      "identifier": "test-get-user",
+      "name": "Get User by ID",
+      "description": "Retrieve a specific user by node ID",
+      "templateType": "QUERY",
+      "queryText": "query GetUser($nodeId: ID!) {\n  node(id: $nodeId) {\n    id\n    content\n    createdAt\n    updatedAt\n    attributes {\n      id\n      value\n      attribute {\n        identifier\n      }\n    }\n  }\n}",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "Node ID of the user"
+          }
+        },
+        "required": ["nodeId"]
+      },
+      "tags": ["read", "user", "query"],
+      "complexityScore": 1
+    },
+    {
+      "identifier": "test-update-user",
+      "name": "Update User",
+      "description": "Update user information",
+      "templateType": "MUTATION",
+      "queryText": "mutation UpdateUser($nodeId: ID!, $input: UpdateNodeInput!) {\n  updateNode(id: $nodeId, input: $input) {\n    success\n    node {\n      id\n      content\n      updatedAt\n    }\n    errors {\n      message\n    }\n  }\n}",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "Node ID of the user to update"
+          },
+          "input": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "string",
+                "description": "New content value"
+              }
+            }
+          }
+        },
+        "required": ["nodeId", "input"]
+      },
+      "tags": ["update", "user", "mutation"],
+      "complexityScore": 2
+    },
+    {
+      "identifier": "test-delete-user",
+      "name": "Delete User",
+      "description": "Delete a user node",
+      "templateType": "MUTATION",
+      "queryText": "mutation DeleteUser($nodeId: ID!) {\n  deleteNode(id: $nodeId) {\n    success\n    errors {\n      message\n    }\n  }\n}",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "Node ID of the user to delete"
+          }
+        },
+        "required": ["nodeId"]
+      },
+      "tags": ["delete", "user", "mutation"],
+      "complexityScore": 2
+    },
+    {
+      "identifier": "test-list-users",
+      "name": "List Users",
+      "description": "Get paginated list of users",
+      "templateType": "QUERY",
+      "queryText": "query ListUsers($filter: NodesFilter, $pagination: NodesPagination) {\n  nodes(filter: $filter, pagination: $pagination) {\n    totalCount\n    hasNextPage\n    hasPreviousPage\n    nodes {\n      id\n      content\n      createdAt\n    }\n  }\n}",
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "type": "object",
+            "properties": {
+              "tableId": {
+                "type": "string",
+                "description": "Table identifier for users"
+              }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 10
+              },
+              "offset": {
+                "type": "integer",
+                "minimum": 0,
+                "default": 0
+              }
+            }
+          }
+        },
+        "required": []
+      },
+      "tags": ["list", "user", "query", "pagination"],
+      "complexityScore": 3
+    }
+  ],
+  "datasets": [
+    {
+      "id": "basic-crud-flow",
+      "name": "Basic CRUD Flow",
+      "description": "Test basic Create, Read, Update, Delete operations",
+      "executions": [
+        {
+          "templateId": "test-create-user",
+          "variables": {
+            "input": {
+              "tableId": "users",
+              "content": "john.doe@example.com"
+            }
+          },
+          "expectedResult": {
+            "success": true,
+            "node": {
+              "content": "john.doe@example.com"
+            }
+          },
+          "order": 1,
+          "description": "Create first user"
+        },
+        {
+          "templateId": "test-create-user",
+          "variables": {
+            "input": {
+              "tableId": "users",
+              "content": "jane.smith@example.com"
+            }
+          },
+          "expectedResult": {
+            "success": true
+          },
+          "order": 2,
+          "description": "Create second user"
+        },
+        {
+          "templateId": "test-list-users",
+          "variables": {
+            "filter": {
+              "tableId": "users"
+            },
+            "pagination": {
+              "limit": 10,
+              "offset": 0
+            }
+          },
+          "expectedResult": {
+            "totalCount": 2,
+            "hasNextPage": false
+          },
+          "order": 3,
+          "description": "List all users"
+        },
+        {
+          "templateId": "test-get-user",
+          "variables": {
+            "nodeId": "${execution[0].node.id}"
+          },
+          "expectedResult": {
+            "content": "john.doe@example.com"
+          },
+          "order": 4,
+          "description": "Get specific user",
+          "dependsOn": [0]
+        },
+        {
+          "templateId": "test-update-user",
+          "variables": {
+            "nodeId": "${execution[0].node.id}",
+            "input": {
+              "content": "john.doe.updated@example.com"
+            }
+          },
+          "expectedResult": {
+            "success": true,
+            "node": {
+              "content": "john.doe.updated@example.com"
+            }
+          },
+          "order": 5,
+          "description": "Update user email",
+          "dependsOn": [0]
+        },
+        {
+          "templateId": "test-delete-user",
+          "variables": {
+            "nodeId": "${execution[1].node.id}"
+          },
+          "expectedResult": {
+            "success": true
+          },
+          "order": 6,
+          "description": "Delete second user",
+          "dependsOn": [1]
+        },
+        {
+          "templateId": "test-list-users",
+          "variables": {
+            "filter": {
+              "tableId": "users"
+            },
+            "pagination": {
+              "limit": 10,
+              "offset": 0
+            }
+          },
+          "expectedResult": {
+            "totalCount": 1,
+            "nodes": [
+              {
+                "content": "john.doe.updated@example.com"
+              }
+            ]
+          },
+          "order": 7,
+          "description": "Verify final state"
+        }
+      ]
+    },
+    {
+      "id": "pagination-test",
+      "name": "Pagination Test",
+      "description": "Test pagination functionality",
+      "setup": {
+        "description": "Create multiple users for pagination testing",
+        "count": 25
+      },
+      "executions": [
+        {
+          "templateId": "test-list-users",
+          "variables": {
+            "filter": {
+              "tableId": "users"
+            },
+            "pagination": {
+              "limit": 10,
+              "offset": 0
+            }
+          },
+          "expectedResult": {
+            "totalCount": 25,
+            "hasNextPage": true,
+            "hasPreviousPage": false
+          },
+          "order": 1,
+          "description": "First page"
+        },
+        {
+          "templateId": "test-list-users",
+          "variables": {
+            "filter": {
+              "tableId": "users"
+            },
+            "pagination": {
+              "limit": 10,
+              "offset": 10
+            }
+          },
+          "expectedResult": {
+            "totalCount": 25,
+            "hasNextPage": true,
+            "hasPreviousPage": true
+          },
+          "order": 2,
+          "description": "Second page"
+        },
+        {
+          "templateId": "test-list-users",
+          "variables": {
+            "filter": {
+              "tableId": "users"
+            },
+            "pagination": {
+              "limit": 10,
+              "offset": 20
+            }
+          },
+          "expectedResult": {
+            "totalCount": 25,
+            "hasNextPage": false,
+            "hasPreviousPage": true,
+            "nodes": {
+              "length": 5
+            }
+          },
+          "order": 3,
+          "description": "Last page with partial results"
+        }
+      ]
+    },
+    {
+      "id": "error-handling-test",
+      "name": "Error Handling Test",
+      "description": "Test error scenarios",
+      "executions": [
+        {
+          "templateId": "test-get-user",
+          "variables": {
+            "nodeId": "non-existent-id"
+          },
+          "expectedError": {
+            "code": "NOT_FOUND",
+            "message": "Node not found"
+          },
+          "order": 1,
+          "description": "Get non-existent user"
+        },
+        {
+          "templateId": "test-create-user",
+          "variables": {
+            "input": {
+              "tableId": "invalid-table",
+              "content": "test@example.com"
+            }
+          },
+          "expectedError": {
+            "code": "INVALID_TABLE"
+          },
+          "order": 2,
+          "description": "Create user in invalid table"
+        },
+        {
+          "templateId": "test-update-user",
+          "variables": {
+            "nodeId": "non-existent-id",
+            "input": {
+              "content": "new@example.com"
+            }
+          },
+          "expectedError": {
+            "code": "NOT_FOUND"
+          },
+          "order": 3,
+          "description": "Update non-existent user"
+        }
+      ]
+    }
+  ]
+}
