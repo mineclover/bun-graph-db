@@ -1,0 +1,1189 @@
+# ========== types/node.graphql ==========
+# Node domain types
+
+type TableNode implements Node {
+  id: ID!
+  content: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  table: Table!
+  attributes: [NodeAttribute!]!
+  outgoingRelations: [NodeRelation!]!
+  incomingRelations: [NodeRelation!]!
+
+  # Computed fields
+  attributeCount: Int!
+  relationCount: Int!
+
+  # 그래프 탐색 필드들
+  connectedNodes(
+    depth: Int = 1
+    direction: RelationDirection = BOTH
+    relationTypes: [ID!]
+  ): [ConnectedNode!]!
+  
+  shortestPath(
+    targetNodeId: ID!
+    maxDepth: Int = 6
+  ): GraphPath
+  
+  neighborsByRelationType(relationTypeId: ID!): [TableNode!]!
+}
+
+type NodeAttribute {
+  id: ID!
+  value: String!
+  attribute: Attribute!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Input types for node operations
+input CreateNodeInput {
+  content: String!
+  tableId: ID!
+  attributes: [NodeAttributeInput!]
+}
+
+input UpdateNodeInput {
+  content: String
+}
+
+input NodeAttributeInput {
+  attributeId: ID!
+  value: String!
+}
+
+input SetNodeAttributeInput {
+  nodeId: ID!
+  attributeId: ID!
+  value: String!
+}
+
+# Filter for nodes
+input NodesFilter {
+  search: String
+  tableId: ID
+  hasAttributes: Boolean
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+input SearchNodesFilter {
+  content: String
+  tableId: ID
+  attributeFilters: [AttributeFilter!]
+  relationFilters: [RelationFilter!]
+}
+
+input AttributeFilter {
+  attributeId: ID!
+  value: String!
+  operator: FilterOperator = EQUALS
+}
+
+input RelationFilter {
+  relationTypeId: ID!
+  direction: RelationDirection!
+  targetNodeId: ID
+}
+
+enum FilterOperator {
+  EQUALS
+  CONTAINS
+  STARTS_WITH
+  ENDS_WITH
+  GREATER_THAN
+  LESS_THAN
+}
+
+enum RelationDirection {
+  INCOMING
+  OUTGOING
+  BOTH
+}
+
+# Pagination for nodes
+input NodesPagination {
+  limit: Int = 10
+  offset: Int = 0
+}
+
+# Connection types for nodes
+type NodesConnection implements Connection {
+  nodes: [TableNode!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for nodes
+type CreateNodePayload implements OperationResult {
+  success: Boolean!
+  node: TableNode
+  errors: [Error!]!
+}
+
+type UpdateNodePayload implements OperationResult {
+  success: Boolean!
+  node: TableNode
+  errors: [Error!]!
+}
+
+type DeleteNodePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+type SetNodeAttributePayload implements OperationResult {
+  success: Boolean!
+  nodeAttribute: NodeAttribute
+  errors: [Error!]!
+}
+
+# 그래프 탐색 결과 타입들
+type ConnectedNode {
+  node: TableNode!
+  depth: Int!
+  path: [ID!]!
+}
+
+type GraphPath {
+  nodes: [TableNode!]!
+  relations: [NodeRelation!]!
+  distance: Int!
+}
+
+
+# ========== types/table.graphql ==========
+# Table domain types
+
+type Table implements Node {
+  id: ID!
+  identifier: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  attributes: [Attribute!]!
+  nodes: [TableNode!]!
+
+  # Computed fields
+  nodeCount: Int!
+  attributeCount: Int!
+}
+
+# Input types for table operations
+input CreateTableInput {
+  identifier: String!
+  description: String
+}
+
+input UpdateTableInput {
+  description: String
+}
+
+# Filter for tables
+input TablesFilter {
+  search: String
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Pagination for tables
+input TablesPagination {
+  limit: Int = 10
+  offset: Int = 0
+}
+
+# Connection types for tables
+type TablesConnection implements Connection {
+  nodes: [Table!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+type TableEdge implements Edge {
+  cursor: String!
+  node: Table!
+}
+
+# Operation result types for tables
+type CreateTablePayload implements OperationResult {
+  success: Boolean!
+  table: Table
+  errors: [Error!]!
+}
+
+type UpdateTablePayload implements OperationResult {
+  success: Boolean!
+  table: Table
+  errors: [Error!]!
+}
+
+type DeleteTablePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+  deletedDependencies: TableDependencyInfo
+}
+
+# Table dependency information for deletion
+type TableDependencyInfo {
+  nodeCount: Int!
+  attributeCount: Int!
+  relationCount: Int!
+}
+
+
+# ========== types/attribute.graphql ==========
+# Attribute domain types
+
+type AttributeType implements Node {
+  id: ID!
+  identifier: String!
+  name: String!
+  description: String
+  dataType: String!
+  constraints: JSON
+  defaultValue: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Attribute implements Node {
+  id: ID!
+  identifier: String!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  attributeType: AttributeType!
+  table: Table!
+}
+
+# Input types for attribute type operations
+input CreateAttributeTypeInput {
+  identifier: String!
+  name: String!
+  description: String
+  dataType: String!
+  constraints: JSON
+  defaultValue: String
+}
+
+input UpdateAttributeTypeInput {
+  name: String
+  description: String
+  constraints: JSON
+  defaultValue: String
+}
+
+# Input types for attribute operations
+input CreateAttributeInput {
+  identifier: String!
+  name: String!
+  description: String
+  attributeTypeId: ID!
+  tableId: ID!
+}
+
+input UpdateAttributeInput {
+  name: String
+  description: String
+}
+
+# Filter for attribute types
+input AttributeTypesFilter {
+  search: String
+  dataType: String
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Filter for attributes
+input AttributesFilter {
+  search: String
+  tableId: ID
+  attributeTypeId: ID
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Connection types for attribute types
+type AttributeTypesConnection implements Connection {
+  nodes: [AttributeType!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Connection types for attributes
+type AttributesConnection implements Connection {
+  nodes: [Attribute!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for attribute types
+type CreateAttributeTypePayload implements OperationResult {
+  success: Boolean!
+  attributeType: AttributeType
+  errors: [Error!]!
+}
+
+type UpdateAttributeTypePayload implements OperationResult {
+  success: Boolean!
+  attributeType: AttributeType
+  errors: [Error!]!
+}
+
+type DeleteAttributeTypePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+# Operation result types for attributes
+type CreateAttributePayload implements OperationResult {
+  success: Boolean!
+  attribute: Attribute
+  errors: [Error!]!
+}
+
+type UpdateAttributePayload implements OperationResult {
+  success: Boolean!
+  attribute: Attribute
+  errors: [Error!]!
+}
+
+type DeleteAttributePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+
+# ========== types/relation.graphql ==========
+# Relation domain types
+
+type RelationType implements Node {
+  id: ID!
+  identifier: String!
+  name: String!
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type NodeRelation implements Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  table: Table!
+  sourceNode: TableNode!
+  targetNode: TableNode!
+  relationType: RelationType!
+}
+
+# Input types for relation type operations
+input CreateRelationTypeInput {
+  identifier: String!
+  name: String!
+  description: String
+}
+
+# Input types for relation operations
+input CreateRelationInput {
+  sourceNodeId: ID!
+  targetNodeId: ID!
+  relationTypeId: ID!
+}
+
+# Filters for relations
+input NodeRelationsFilter {
+  tableId: ID
+  sourceNodeId: ID
+  targetNodeId: ID
+  relationTypeId: ID
+  direction: RelationDirection
+}
+
+input SearchRelatedNodesFilter {
+  sourceNodeId: ID!
+  relationTypeIds: [ID!]
+  direction: RelationDirection = OUTGOING
+  maxDepth: Int = 1
+}
+
+# Graph analysis types
+type NodePath {
+  nodes: [TableNode!]!
+  relations: [NodeRelation!]!
+  length: Int!
+  totalWeight: Float
+}
+
+input FindPathsInput {
+  sourceNodeId: ID!
+  targetNodeId: ID!
+  maxDepth: Int = 3
+  relationTypeIds: [ID!]
+}
+
+input DependencyChainInput {
+  nodeId: ID!
+  direction: RelationDirection = OUTGOING
+  maxDepth: Int = 5
+  relationTypeIds: [ID!]
+}
+
+# Connection types for relations
+type NodeRelationsConnection implements Connection {
+  nodes: [NodeRelation!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+type RelatedNodesConnection implements Connection {
+  nodes: [TableNode!]!
+  relations: [NodeRelation!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for relation types
+type CreateRelationTypePayload implements OperationResult {
+  success: Boolean!
+  relationType: RelationType
+  errors: [Error!]!
+}
+
+# Operation result types for relations
+type CreateRelationPayload implements OperationResult {
+  success: Boolean!
+  relation: NodeRelation
+  errors: [Error!]!
+}
+
+type DeleteRelationPayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+
+# ========== types/query-template.graphql ==========
+# Query Template domain types
+
+type QueryTemplate implements Node {
+  id: ID!
+  identifier: String!
+  name: String!
+  description: String
+  query: String!
+  variables: JSON
+  isActive: Boolean!
+  usageCount: Int!
+  createdBy: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Validation
+  isValid: Boolean!
+  validationErrors: [String!]!
+}
+
+type QueryTemplateExecution {
+  id: ID!
+  templateId: ID!
+  executedAt: DateTime!
+  duration: Float!
+  resultCount: Int!
+  success: Boolean!
+  errorMessage: String
+}
+
+# Input types for query template operations
+input CreateQueryTemplateInput {
+  identifier: String!
+  name: String!
+  description: String
+  query: String!
+  variables: JSON
+  createdBy: String
+}
+
+input UpdateQueryTemplateInput {
+  name: String
+  description: String
+  query: String
+  variables: JSON
+}
+
+input ExecuteQueryTemplateInput {
+  templateId: ID
+  templateIdentifier: String
+  variables: JSON
+}
+
+# Filter for query templates
+input QueryTemplatesFilter {
+  search: String
+  isActive: Boolean
+  createdBy: String
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Connection types for query templates
+type QueryTemplatesConnection implements Connection {
+  nodes: [QueryTemplate!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for query templates
+type CreateQueryTemplatePayload implements OperationResult {
+  success: Boolean!
+  template: QueryTemplate
+  errors: [Error!]!
+}
+
+type UpdateQueryTemplatePayload implements OperationResult {
+  success: Boolean!
+  template: QueryTemplate
+  errors: [Error!]!
+}
+
+type DeleteQueryTemplatePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+type ExecuteQueryTemplatePayload {
+  success: Boolean!
+  data: JSON
+  execution: QueryTemplateExecution
+  errors: [Error!]!
+}
+
+
+# ========== queries/node-queries.graphql ==========
+# Node Query extensions
+
+extend type Query {
+  # Get single node
+  node(id: ID!): TableNode
+  nodeByContent(content: String!, tableId: ID!): TableNode
+
+  # Get multiple nodes with filtering and pagination
+  nodes(filter: NodesFilter, pagination: NodesPagination, sort: [SortInput!]): NodesConnection!
+
+  # Advanced node search
+  searchNodes(
+    filter: SearchNodesFilter!
+    pagination: NodesPagination
+    sort: [SortInput!]
+  ): NodesConnection!
+}
+
+
+# ========== queries/table-queries.graphql ==========
+# Table Query extensions
+
+extend type Query {
+  # Get single table
+  table(id: ID!): Table
+  tableByIdentifier(identifier: String!): Table
+
+  # Get multiple tables with filtering and pagination
+  tables(filter: TablesFilter, pagination: TablesPagination, sort: [SortInput!]): TablesConnection!
+}
+
+
+# ========== queries/attribute-queries.graphql ==========
+# Attribute Query extensions
+
+extend type Query {
+  # Attribute Type queries
+  attributeType(id: ID!): AttributeType
+  attributeTypeByIdentifier(identifier: String!): AttributeType
+  attributeTypes(
+    filter: AttributeTypesFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): AttributeTypesConnection!
+
+  # Attribute queries
+  attribute(id: ID!): Attribute
+  attributeByIdentifier(identifier: String!, tableId: ID!): Attribute
+  attributes(
+    filter: AttributesFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): AttributesConnection!
+}
+
+
+# ========== queries/relation-queries.graphql ==========
+# Relation Query extensions
+
+extend type Query {
+  # Relation Type queries
+  relationType(id: ID!): RelationType
+  relationTypeByIdentifier(identifier: String!): RelationType
+  relationTypes(
+    filter: FilterInput
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): [RelationType!]!
+
+  # Node Relation queries
+  nodeRelation(id: ID!): NodeRelation
+  nodeRelations(
+    filter: NodeRelationsFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): NodeRelationsConnection!
+
+  # Graph relationship queries
+  searchRelatedNodes(
+    filter: SearchRelatedNodesFilter!
+    pagination: PaginationInput
+  ): RelatedNodesConnection!
+
+  # Graph analysis queries
+  findPathsBetweenNodes(input: FindPathsInput!): [NodePath!]!
+
+  getDependencyChain(input: DependencyChainInput!): RelatedNodesConnection!
+}
+
+
+# ========== queries/template-queries.graphql ==========
+# Query Template Query extensions
+
+extend type Query {
+  # Get single template
+  getTemplate(id: ID!): QueryTemplate
+  getTemplateByIdentifier(identifier: String!): QueryTemplate
+
+  # Search templates
+  searchTemplates(
+    filter: QueryTemplatesFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): QueryTemplatesConnection!
+
+  # Get popular templates
+  getPopularTemplates(limit: Int = 10): [QueryTemplate!]!
+
+  # Execute template (also available as mutation)
+  executeTemplate(input: ExecuteQueryTemplateInput!): ExecuteQueryTemplatePayload!
+}
+
+
+# ========== mutations/node-mutations.graphql ==========
+# Node Mutation extensions
+
+extend type Mutation {
+  # Node management
+  createNode(input: CreateNodeInput!): CreateNodePayload!
+
+  updateNode(id: ID!, input: UpdateNodeInput!): UpdateNodePayload!
+
+  deleteNode(id: ID!): DeleteNodePayload!
+
+  # Node attribute management
+  setNodeAttribute(input: SetNodeAttributeInput!): SetNodeAttributePayload!
+}
+
+
+# ========== mutations/table-mutations.graphql ==========
+# Table Mutation extensions
+
+extend type Mutation {
+  # Table management
+  createTable(input: CreateTableInput!): CreateTablePayload!
+
+  updateTable(id: ID!, input: UpdateTableInput!): UpdateTablePayload!
+
+  deleteTable(id: ID!, force: Boolean = false, cascadeDelete: Boolean = false): DeleteTablePayload!
+}
+
+
+# ========== mutations/attribute-mutations.graphql ==========
+# Attribute Mutation extensions
+
+extend type Mutation {
+  # Attribute Type management
+  createAttributeType(input: CreateAttributeTypeInput!): CreateAttributeTypePayload!
+
+  updateAttributeType(id: ID!, input: UpdateAttributeTypeInput!): UpdateAttributeTypePayload!
+
+  deleteAttributeType(id: ID!): DeleteAttributeTypePayload!
+
+  # Attribute management
+  createAttribute(input: CreateAttributeInput!): CreateAttributePayload!
+
+  updateAttribute(id: ID!, input: UpdateAttributeInput!): UpdateAttributePayload!
+
+  deleteAttribute(id: ID!): DeleteAttributePayload!
+}
+
+
+# ========== mutations/relation-mutations.graphql ==========
+# Relation Mutation extensions
+
+extend type Mutation {
+  # Relation Type management
+  createRelationType(input: CreateRelationTypeInput!): CreateRelationTypePayload!
+
+  # Node Relation management
+  createRelation(input: CreateRelationInput!): CreateRelationPayload!
+
+  deleteRelation(id: ID!): DeleteRelationPayload!
+}
+
+
+# ========== mutations/template-mutations.graphql ==========
+# Query Template Mutation extensions
+
+extend type Mutation {
+  # Template management
+  createTemplate(input: CreateQueryTemplateInput!): CreateQueryTemplatePayload!
+
+  updateTemplate(id: ID!, input: UpdateQueryTemplateInput!): UpdateQueryTemplatePayload!
+
+  deleteTemplate(id: ID!): DeleteQueryTemplatePayload!
+
+  # Template state management
+  activateTemplate(id: ID!): QueryTemplate
+
+  deactivateTemplate(id: ID!): QueryTemplate
+
+  # Template execution
+  executeTemplate(input: ExecuteQueryTemplateInput!): ExecuteQueryTemplatePayload!
+}
+
+
+# ========== subscriptions/realtime.graphql ==========
+# Real-time Subscription extensions
+
+extend type Subscription {
+  # Table subscriptions
+  tableCreated: Table!
+  tableUpdated: Table!
+  tableDeleted: TableDeletedEvent!
+
+  # Node subscriptions
+  nodeCreated(tableId: ID): TableNode!
+  nodeUpdated(tableId: ID): TableNode!
+  nodeDeleted(tableId: ID): NodeDeletedEvent!
+
+  # Relation subscriptions
+  relationCreated(tableId: ID): NodeRelation!
+  relationDeleted(tableId: ID): NodeRelation!
+
+  # System subscriptions
+  systemHealthChanged: SystemHealth!
+  performanceAlert: PerformanceMetrics!
+}
+
+# Event types for subscriptions
+type TableDeletedEvent {
+  id: ID!
+  identifier: String!
+  deletedAt: DateTime!
+}
+
+type NodeDeletedEvent {
+  id: ID!
+  tableId: ID!
+  content: String!
+  deletedAt: DateTime!
+}
+
+
+# ========== schema-export-import.graphql ==========
+# Schema Export/Import type definitions
+
+# Export options
+input SchemaExportOptions {
+  includeData: Boolean = true
+  includeRelations: Boolean = true
+  format: String = "json"
+  compression: Boolean = false
+}
+
+# Export result metadata
+type ExportMetadata {
+  exportedAt: String!
+  version: String!
+  source: String!
+  options: JSON
+  checksum: String
+}
+
+# Exported table structure
+type ExportedTable {
+  id: String!
+  identifier: String!
+  description: String
+  metadata: JSON
+  createdAt: String!
+  updatedAt: String!
+  attributes: [ExportedAttribute!]!
+  nodes: [ExportedNode!]!
+  relations: [ExportedRelation!]!
+  statistics: ExportTableStatistics!
+}
+
+type ExportTableStatistics {
+  nodeCount: Int!
+  attributeCount: Int!
+  relationCount: Int!
+}
+
+# Exported attribute structure
+type ExportedAttribute {
+  id: String!
+  identifier: String!
+  name: String!
+  description: String
+  attributeType: ExportedAttributeType!
+  isRequired: Boolean!
+  defaultValue: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ExportedAttributeType {
+  id: String!
+  identifier: String!
+  name: String!
+  dataType: String!
+  allowedValues: [String!]
+  constraints: JSON
+}
+
+# Exported node structure
+type ExportedNode {
+  id: String!
+  content: String!
+  title: String
+  description: String
+  attributes: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Exported relation structure
+type ExportedRelation {
+  id: String!
+  sourceNodeId: String!
+  targetNodeId: String!
+  relationType: ExportedRelationType!
+  properties: JSON
+  strength: Float
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ExportedRelationType {
+  id: String!
+  identifier: String!
+  name: String!
+  description: String
+}
+
+# Global types in export
+type ExportedGlobalRelationType {
+  id: String!
+  identifier: String!
+  name: String!
+  description: String
+  metadata: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ExportedGlobalAttributeType {
+  id: String!
+  identifier: String!
+  name: String!
+  description: String
+  dataType: String!
+  allowedValues: [String!]
+  constraints: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+# Export statistics
+type ExportStatistics {
+  totalTables: Int!
+  totalNodes: Int!
+  totalRelations: Int!
+  totalAttributes: Int!
+  exportSize: String!
+}
+
+# Complete export result
+type SchemaExportResult {
+  metadata: ExportMetadata!
+  tables: [ExportedTable!]!
+  globalRelationTypes: [ExportedGlobalRelationType!]!
+  globalAttributeTypes: [ExportedGlobalAttributeType!]!
+  statistics: ExportStatistics!
+}
+
+# Import options
+input SchemaImportOptions {
+  overwriteExisting: Boolean = false
+  skipDuplicates: Boolean = true
+  validateData: Boolean = true
+  dryRun: Boolean = false
+  conflictResolution: String = "skip"
+}
+
+# Import statistics
+type ImportStatistics {
+  tablesImported: Int!
+  nodesImported: Int!
+  relationsImported: Int!
+  attributesImported: Int!
+  attributeTypesImported: Int!
+  relationTypesImported: Int!
+  skipped: Int!
+  errors: Int!
+}
+
+# Import error/warning
+type ImportIssue {
+  type: String!
+  message: String!
+  item: JSON
+}
+
+# Import result
+type ImportResult {
+  success: Boolean!
+  statistics: ImportStatistics!
+  errors: [ImportIssue!]!
+  warnings: [ImportIssue!]!
+  executionTime: Float!
+  importedAt: String!
+}
+
+extend type Query {
+  # Export single table
+  exportTable(tableId: String!, options: SchemaExportOptions): SchemaExportResult!
+
+  # Export all tables
+  exportAllTables(options: SchemaExportOptions): SchemaExportResult!
+}
+
+extend type Mutation {
+  # Import schema data
+  importSchema(exportData: JSON!, options: SchemaImportOptions): ImportResult!
+}
+
+
+# ========== types/analytics.graphql ==========
+# Analytics domain types
+
+type NodeAnalytics {
+  nodeId: ID!
+  inDegree: Int!
+  outDegree: Int!
+  totalDegree: Int!
+  clusteringCoefficient: Float!
+  betweennessCentrality: Float!
+  pageRank: Float!
+  attributeCount: Int!
+}
+
+type GraphMetrics {
+  totalNodes: Int!
+  totalRelations: Int!
+  averageDegree: Float!
+  density: Float!
+  components: Int!
+  diameter: Int!
+  averagePathLength: Float!
+}
+
+type PerformanceMetrics {
+  queryTime: Float!
+  memoryUsage: Float!
+  cpuUsage: Float!
+  cacheHitRate: Float!
+  throughput: Float!
+  timestamp: DateTime!
+}
+
+type TestSuiteStatus {
+  totalTests: Int!
+  passedTests: Int!
+  failedTests: Int!
+  skippedTests: Int!
+  successRate: Float!
+  lastRun: DateTime!
+  avgExecutionTime: Float!
+}
+
+type AggregationResult {
+  field: String!
+  value: String!
+  count: Int!
+  percentage: Float!
+}
+
+type SystemHealth {
+  status: String!
+  uptime: Float!
+  memoryUsage: Float!
+  diskUsage: Float!
+  databaseConnections: Int!
+  activeQueries: Int!
+  timestamp: DateTime!
+}
+
+# Input types for analytics
+input AnalyzeNodesInput {
+  tableId: ID
+  nodeIds: [ID!]
+  metrics: [AnalyticsMetric!]!
+}
+
+enum AnalyticsMetric {
+  DEGREE
+  CLUSTERING_COEFFICIENT
+  BETWEENNESS_CENTRALITY
+  PAGE_RANK
+  ALL
+}
+
+input AggregateDataInput {
+  tableId: ID!
+  groupBy: String!
+  aggregateFunction: AggregateFunction!
+  filters: [AttributeFilter!]
+}
+
+enum AggregateFunction {
+  COUNT
+  SUM
+  AVG
+  MIN
+  MAX
+  DISTINCT_COUNT
+}
+
+# Operation result types
+type AnalyzeNodesPayload {
+  analytics: [NodeAnalytics!]!
+  graphMetrics: GraphMetrics
+  errors: [Error!]!
+}
+
+
+# ========== types/common.graphql ==========
+# Common types and interfaces used across domains
+
+# Base interface for entities
+interface Node {
+  id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+# Pagination input
+input PaginationInput {
+  limit: Int = 10
+  offset: Int = 0
+}
+
+# Filter input
+input FilterInput {
+  search: String
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Sort input
+enum SortDirection {
+  ASC
+  DESC
+}
+
+input SortInput {
+  field: String!
+  direction: SortDirection!
+}
+
+# Connection interface for pagination
+interface Connection {
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Edge interface for connections
+interface Edge {
+  cursor: String!
+}
+
+# Operation result interface
+interface OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+
+# ========== root.graphql ==========
+# Root GraphQL Schema - Main entry point
+
+# Common scalars
+scalar DateTime
+scalar JSON
+
+# Health status type
+type HealthStatus {
+  status: String!
+  timestamp: DateTime!
+  database: Boolean!
+  version: String!
+}
+
+# Root types - Query, Mutation, Subscription will be extended by domain schemas
+type Query {
+  # Health check endpoint
+  health: HealthStatus!
+}
+
+type Mutation {
+  # Placeholder to extend in domain schemas
+  _empty: String
+}
+
+type Subscription {
+  # Real-time updates will be added by domain schemas
+  _placeholder: String
+}
+
+# Common error type
+type Error {
+  message: String!
+  code: String!
+  field: String
+}

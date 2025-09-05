@@ -42,10 +42,17 @@
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "schema:generate": "bun scripts/generate-schema.ts",
+    "codegen": "graphql-codegen",
+    "schema:update": "bun schema:generate && bun codegen"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",
+    "@graphql-codegen/cli": "^5.0.7",
+    "@graphql-codegen/introspection": "^4.0.3",
+    "@graphql-codegen/typescript": "^4.1.6",
+    "@graphql-codegen/typescript-operations": "^4.6.1",
     "@types/bun": "latest",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.0",
