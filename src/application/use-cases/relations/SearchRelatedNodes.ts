@@ -1,16 +1,16 @@
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
 import { NodeDto } from '@/application/dtos/NodeDto.js'
-import type { TableId, NodeId, PaginatedResult } from '@/core/types/CommonTypes.js'
-import type { 
-  GraphQuery, 
-  RelationDirection, 
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type {
+  GraphQuery,
+  PathQuery,
+  RelationDirection,
   RelationFilter,
-  PathQuery 
 } from '@/domain/value-objects/RelationQuery.js'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface SearchRelatedNodesInput {
   tableId: string
@@ -42,10 +42,7 @@ export interface SearchRelatedNodesOutput {
 }
 
 export interface IGraphRepository {
-  searchRelatedNodes(
-    tableId: TableId,
-    graphQuery: GraphQuery
-  ): Promise<PaginatedResult<any>>
+  searchRelatedNodes(tableId: TableId, graphQuery: GraphQuery): Promise<PaginatedResult<any>>
 
   findPathsBetweenNodes(
     tableId: TableId,
@@ -53,23 +50,27 @@ export interface IGraphRepository {
     endNodeIds: string[],
     maxDepth?: number,
     relationTypes?: string[]
-  ): Promise<Array<{
-    startNodeId: string
-    endNodeId: string
-    path: string[]
-    length: number
-  }>>
+  ): Promise<
+    Array<{
+      startNodeId: string
+      endNodeId: string
+      path: string[]
+      length: number
+    }>
+  >
 
   getDependencyChain(
     tableId: TableId,
     nodeId: string,
     direction: RelationDirection,
     relationTypes?: string[]
-  ): Promise<Array<{
-    nodeId: string
-    level: number
-    relationPath: string[]
-  }>>
+  ): Promise<
+    Array<{
+      nodeId: string
+      level: number
+      relationPath: string[]
+    }>
+  >
 }
 
 export class SearchRelatedNodesUseCase {
@@ -85,7 +86,7 @@ export class SearchRelatedNodesUseCase {
     this.logger.info('Searching related nodes', {
       tableId: input.tableId,
       sourceNodeIds: input.sourceNodeIds?.length || 0,
-      filters: Object.keys(input.nodeFilters || {}).length
+      filters: Object.keys(input.nodeFilters || {}).length,
     })
 
     // Validate input
@@ -104,7 +105,7 @@ export class SearchRelatedNodesUseCase {
         relationFilters: input.relationFilters,
         pathQueries: input.pathQueries,
         limit: input.limit || 10,
-        offset: input.offset || 0
+        offset: input.offset || 0,
       }
 
       // Execute graph search
@@ -114,7 +115,7 @@ export class SearchRelatedNodesUseCase {
       )
 
       // Process path queries if specified
-      let paths: Array<{
+      const paths: Array<{
         startNodeId: string
         endNodeId: string
         path: string[]
@@ -137,7 +138,7 @@ export class SearchRelatedNodesUseCase {
       }
 
       // Convert to DTOs
-      const nodeDtos = result.data.map((item: any) => 
+      const nodeDtos = result.data.map((item: any) =>
         NodeDto.fromEntity(item.node, item.attributes || {})
       )
 
@@ -145,7 +146,7 @@ export class SearchRelatedNodesUseCase {
         tableId: input.tableId,
         foundNodes: result.data.length,
         foundPaths: paths.length,
-        total: result.total
+        total: result.total,
       })
 
       return {
@@ -155,16 +156,16 @@ export class SearchRelatedNodesUseCase {
           targetNodeId: item.targetNodeId,
           relationTypeId: item.relationTypeId,
           properties: item.properties,
-          strength: item.strength
+          strength: item.strength,
         })),
         paths,
         total: result.total,
-        hasMore: result.hasMore
+        hasMore: result.hasMore,
       }
     } catch (error) {
       this.logger.error('Failed to search related nodes', {
         input,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
       throw error
     }
@@ -175,11 +176,13 @@ export class SearchRelatedNodesUseCase {
     nodeId: string,
     direction: RelationDirection = RelationDirection.INCOMING,
     relationTypes?: string[]
-  ): Promise<Array<{
-    nodeId: string
-    level: number
-    relationPath: string[]
-  }>> {
+  ): Promise<
+    Array<{
+      nodeId: string
+      level: number
+      relationPath: string[]
+    }>
+  > {
     // Validate input
     if (!tableId?.trim()) {
       throw new ValidationException('Table ID is required')
@@ -206,7 +209,7 @@ export class SearchRelatedNodesUseCase {
         tableId,
         nodeId,
         direction,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
       throw error
     }

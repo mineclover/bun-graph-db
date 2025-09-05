@@ -1,15 +1,15 @@
-import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import type { 
-  CreateTableInput, 
-  UpdateTableInput,
-  TablesFilter,
-  TablesPagination 
-} from '@/core/types/GraphQLTypes.js'
-import { ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
+import type {
+  CreateTableInput,
+  TablesFilter,
+  TablesPagination,
+  UpdateTableInput,
+} from '@/core/types/GraphQLTypes.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export class TableResolver {
   constructor(
@@ -34,15 +34,15 @@ export class TableResolver {
       const table = await this.tableRepository.findByIdentifier(args.identifier)
       return table ? TableDto.fromEntity(table) : null
     } catch (error) {
-      this.logger.error('Failed to find table by identifier', { identifier: args.identifier, error })
+      this.logger.error('Failed to find table by identifier', {
+        identifier: args.identifier,
+        error,
+      })
       throw error
     }
   }
 
-  async tables(args: { 
-    filter?: TablesFilter
-    pagination?: TablesPagination 
-  }): Promise<{
+  async tables(args: { filter?: TablesFilter; pagination?: TablesPagination }): Promise<{
     nodes: TableDto[]
     totalCount: number
     hasNextPage: boolean
@@ -50,18 +50,18 @@ export class TableResolver {
   }> {
     try {
       const { pagination = { limit: 10, offset: 0 } } = args
-      
+
       // TODO: Implement filtering in repository
       const result = await this.tableRepository.findAll({
         limit: pagination.limit,
-        offset: pagination.offset
+        offset: pagination.offset,
       })
-      
+
       return {
-        nodes: result.data.map(table => TableDto.fromEntity(table)),
+        nodes: result.data.map((table) => TableDto.fromEntity(table)),
         totalCount: result.total,
         hasNextPage: result.hasMore,
-        hasPreviousPage: (pagination.offset || 0) > 0
+        hasPreviousPage: (pagination.offset || 0) > 0,
       }
     } catch (error) {
       this.logger.error('Failed to find tables', { args, error })
@@ -78,36 +78,37 @@ export class TableResolver {
       const result = await this.createTableUseCase.execute(args.input)
       return {
         table: result.table,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to create table', { input: args.input, error })
-      
+
       if (error instanceof ValidationException) {
         return {
           table: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code,
-            field: 'identifier'
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+              field: 'identifier',
+            },
+          ],
         }
       }
-      
+
       return {
         table: null,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
 
-  async updateTable(args: { 
-    id: string
-    input: UpdateTableInput 
-  }): Promise<{
+  async updateTable(args: { id: string; input: UpdateTableInput }): Promise<{
     table: TableDto | null
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
@@ -127,27 +128,31 @@ export class TableResolver {
 
       return {
         table: TableDto.fromEntity(table),
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to update table', { id: args.id, input: args.input, error })
-      
+
       if (error instanceof NotFoundException || error instanceof ValidationException) {
         return {
           table: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code 
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+            },
+          ],
         }
       }
-      
+
       return {
         table: null,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
@@ -171,17 +176,19 @@ export class TableResolver {
 
       return {
         success: true,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to delete table', { id: args.id, error })
-      
+
       return {
         success: false,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
@@ -193,7 +200,7 @@ export class TableResolver {
   }
 
   async attributeCount(table: TableDto): Promise<number> {
-    // TODO: Implement attribute count query  
+    // TODO: Implement attribute count query
     return 0
   }
 

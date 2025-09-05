@@ -12,7 +12,7 @@ type QueryTemplate implements Node {
   createdBy: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Validation
   isValid: Boolean!
   validationErrors: [String!]!

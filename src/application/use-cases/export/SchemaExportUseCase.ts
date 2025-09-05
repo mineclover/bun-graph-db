@@ -1,11 +1,11 @@
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 
 export interface SchemaExportOptions {
   includeData?: boolean
@@ -125,9 +125,12 @@ export class SchemaExportUseCase {
     private readonly logger: ILogger
   ) {}
 
-  async exportTable(tableId: string, options: SchemaExportOptions = {}): Promise<SchemaExportResult> {
+  async exportTable(
+    tableId: string,
+    options: SchemaExportOptions = {}
+  ): Promise<SchemaExportResult> {
     const startTime = Date.now()
-    
+
     try {
       this.logger.info('Starting table export', { tableId, options })
 
@@ -150,7 +153,7 @@ export class SchemaExportUseCase {
         totalNodes: exportedTable.statistics.nodeCount,
         totalRelations: exportedTable.statistics.relationCount,
         totalAttributes: exportedTable.statistics.attributeCount,
-        exportSize: this.calculateSize([exportedTable])
+        exportSize: this.calculateSize([exportedTable]),
       }
 
       const result: SchemaExportResult = {
@@ -158,23 +161,22 @@ export class SchemaExportUseCase {
           exportedAt: new Date().toISOString(),
           version: '1.0.0',
           source: 'Bun Graph DB',
-          options
+          options,
         },
         tables: [exportedTable],
         globalRelationTypes,
         globalAttributeTypes,
-        statistics
+        statistics,
       }
 
       const executionTime = Date.now() - startTime
-      this.logger.info('Table export completed', { 
-        tableId, 
-        statistics, 
-        executionTime 
+      this.logger.info('Table export completed', {
+        tableId,
+        statistics,
+        executionTime,
       })
 
       return result
-
     } catch (error) {
       this.logger.error('Failed to export table', { tableId, options, error })
       throw error
@@ -183,7 +185,7 @@ export class SchemaExportUseCase {
 
   async exportAllTables(options: SchemaExportOptions = {}): Promise<SchemaExportResult> {
     const startTime = Date.now()
-    
+
     try {
       this.logger.info('Starting full database export', { options })
 
@@ -204,14 +206,17 @@ export class SchemaExportUseCase {
       // Calculate total statistics
       const totalNodes = exportedTables.reduce((sum, t) => sum + t.statistics.nodeCount, 0)
       const totalRelations = exportedTables.reduce((sum, t) => sum + t.statistics.relationCount, 0)
-      const totalAttributes = exportedTables.reduce((sum, t) => sum + t.statistics.attributeCount, 0)
+      const totalAttributes = exportedTables.reduce(
+        (sum, t) => sum + t.statistics.attributeCount,
+        0
+      )
 
       const statistics = {
         totalTables: exportedTables.length,
         totalNodes,
         totalRelations,
         totalAttributes,
-        exportSize: this.calculateSize(exportedTables)
+        exportSize: this.calculateSize(exportedTables),
       }
 
       const result: SchemaExportResult = {
@@ -220,30 +225,32 @@ export class SchemaExportUseCase {
           version: '1.0.0',
           source: 'Bun Graph DB',
           options,
-          checksum: this.calculateChecksum(exportedTables)
+          checksum: this.calculateChecksum(exportedTables),
         },
         tables: exportedTables,
         globalRelationTypes,
         globalAttributeTypes,
-        statistics
+        statistics,
       }
 
       const executionTime = Date.now() - startTime
-      this.logger.info('Full database export completed', { 
+      this.logger.info('Full database export completed', {
         tablesCount: exportedTables.length,
-        statistics, 
-        executionTime 
+        statistics,
+        executionTime,
       })
 
       return result
-
     } catch (error) {
       this.logger.error('Failed to export database', { options, error })
       throw error
     }
   }
 
-  private async exportSingleTable(tableId: string, options: SchemaExportOptions): Promise<ExportedTable> {
+  private async exportSingleTable(
+    tableId: string,
+    options: SchemaExportOptions
+  ): Promise<ExportedTable> {
     // Get table
     const table = await this.tableRepository.findById(tableId as TableId)
     if (!table) {
@@ -251,7 +258,10 @@ export class SchemaExportUseCase {
     }
 
     // Get attributes
-    const attributesResult = await this.attributeRepository.findByTableId(tableId as TableId, { limit: 1000, offset: 0 })
+    const attributesResult = await this.attributeRepository.findByTableId(tableId as TableId, {
+      limit: 1000,
+      offset: 0,
+    })
     const exportedAttributes: ExportedAttribute[] = []
 
     for (const attribute of attributesResult.data) {
@@ -268,12 +278,12 @@ export class SchemaExportUseCase {
             name: attributeType.name,
             dataType: attributeType.dataType,
             allowedValues: attributeType.allowedValues,
-            constraints: attributeType.constraints
+            constraints: attributeType.constraints,
           },
           isRequired: attribute.isRequired,
           defaultValue: attribute.defaultValue,
           createdAt: attribute.createdAt.toISOString(),
-          updatedAt: attribute.updatedAt.toISOString()
+          updatedAt: attribute.updatedAt.toISOString(),
         })
       }
     }
@@ -281,8 +291,11 @@ export class SchemaExportUseCase {
     // Get nodes (conditionally)
     const exportedNodes: ExportedNode[] = []
     if (options.includeData !== false) {
-      const nodesResult = await this.nodeRepository.findByTableId(tableId as TableId, { limit: 10000, offset: 0 })
-      
+      const nodesResult = await this.nodeRepository.findByTableId(tableId as TableId, {
+        limit: 10000,
+        offset: 0,
+      })
+
       for (const node of nodesResult.data) {
         exportedNodes.push({
           id: node.id,
@@ -291,7 +304,7 @@ export class SchemaExportUseCase {
           description: node.description,
           attributes: node.attributes,
           createdAt: node.createdAt.toISOString(),
-          updatedAt: node.updatedAt.toISOString()
+          updatedAt: node.updatedAt.toISOString(),
         })
       }
     }
@@ -299,8 +312,11 @@ export class SchemaExportUseCase {
     // Get relations (conditionally)
     const exportedRelations: ExportedRelation[] = []
     if (options.includeRelations !== false && options.includeData !== false) {
-      const relationsResult = await this.relationRepository.findByTableId(tableId as TableId, { limit: 10000, offset: 0 })
-      
+      const relationsResult = await this.relationRepository.findByTableId(tableId as TableId, {
+        limit: 10000,
+        offset: 0,
+      })
+
       for (const relation of relationsResult.data) {
         const relationType = await this.relationTypeRepository.findById(relation.relationTypeId)
         if (relationType) {
@@ -312,19 +328,19 @@ export class SchemaExportUseCase {
               id: relationType.id,
               identifier: relationType.identifier,
               name: relationType.name,
-              description: relationType.description
+              description: relationType.description,
             },
             properties: relation.properties,
             strength: relation.strength,
             createdAt: relation.createdAt.toISOString(),
-            updatedAt: relation.updatedAt.toISOString()
+            updatedAt: relation.updatedAt.toISOString(),
           })
         }
       }
     }
 
     const tableData = table.toDatabase()
-    
+
     return {
       id: table.id,
       identifier: table.identifier || 'unknown',
@@ -338,29 +354,35 @@ export class SchemaExportUseCase {
       statistics: {
         nodeCount: exportedNodes.length,
         attributeCount: exportedAttributes.length,
-        relationCount: exportedRelations.length
-      }
+        relationCount: exportedRelations.length,
+      },
     }
   }
 
   private async exportGlobalRelationTypes(): Promise<any[]> {
-    const relationTypesResult = await this.relationTypeRepository.findAll({ limit: 1000, offset: 0 })
-    
-    return relationTypesResult.data.map(rt => ({
+    const relationTypesResult = await this.relationTypeRepository.findAll({
+      limit: 1000,
+      offset: 0,
+    })
+
+    return relationTypesResult.data.map((rt) => ({
       id: rt.id,
       identifier: rt.identifier || 'unknown',
       name: rt.name || 'Unknown Relation Type',
       description: rt.description || null,
       metadata: rt.metadata || null,
       createdAt: rt.createdAt.toISOString(),
-      updatedAt: rt.updatedAt.toISOString()
+      updatedAt: rt.updatedAt.toISOString(),
     }))
   }
 
   private async exportGlobalAttributeTypes(): Promise<any[]> {
-    const attributeTypesResult = await this.attributeTypeRepository.findAll({ limit: 1000, offset: 0 })
-    
-    return attributeTypesResult.data.map(at => ({
+    const attributeTypesResult = await this.attributeTypeRepository.findAll({
+      limit: 1000,
+      offset: 0,
+    })
+
+    return attributeTypesResult.data.map((at) => ({
       id: at.id,
       identifier: at.identifier || 'unknown',
       name: at.name || 'Unknown Attribute Type',
@@ -369,14 +391,14 @@ export class SchemaExportUseCase {
       allowedValues: at.allowedValues || null,
       constraints: at.constraints || null,
       createdAt: at.createdAt.toISOString(),
-      updatedAt: at.updatedAt.toISOString()
+      updatedAt: at.updatedAt.toISOString(),
     }))
   }
 
   private calculateSize(tables: ExportedTable[]): string {
     const jsonString = JSON.stringify(tables)
     const sizeInBytes = Buffer.byteLength(jsonString, 'utf8')
-    
+
     if (sizeInBytes < 1024) {
       return `${sizeInBytes} B`
     } else if (sizeInBytes < 1024 * 1024) {
@@ -388,15 +410,15 @@ export class SchemaExportUseCase {
 
   private calculateChecksum(tables: ExportedTable[]): string {
     const jsonString = JSON.stringify(tables, null, 0)
-    
+
     // Simple hash function for checksum
     let hash = 0
     for (let i = 0; i < jsonString.length; i++) {
       const char = jsonString.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
+      hash = (hash << 5) - hash + char
       hash = hash & hash // Convert to 32-bit integer
     }
-    
+
     return Math.abs(hash).toString(16)
   }
 }

@@ -1,6 +1,6 @@
+import type { ILogger } from '@/application/ports/ILogger.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
 import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface CreateRelationTypeInput {
@@ -27,8 +27,8 @@ export class CreateRelationTypeUseCase {
   ) {}
 
   async execute(input: CreateRelationTypeInput): Promise<CreateRelationTypeOutput> {
-    this.logger.info('Creating new relation type', { 
-      identifier: input.identifier
+    this.logger.info('Creating new relation type', {
+      identifier: input.identifier,
     })
 
     // Validate input
@@ -37,7 +37,9 @@ export class CreateRelationTypeUseCase {
     }
 
     // Check if relation type with same identifier already exists
-    const existingRelationType = await this.relationTypeRepository.findByIdentifier(input.identifier)
+    const existingRelationType = await this.relationTypeRepository.findByIdentifier(
+      input.identifier
+    )
     if (existingRelationType) {
       throw new ConflictException(
         `RelationType with identifier '${input.identifier}' already exists`
@@ -46,11 +48,7 @@ export class CreateRelationTypeUseCase {
 
     try {
       // Create domain entity
-      const relationType = RelationType.create(
-        input.identifier,
-        input.description,
-        input.category
-      )
+      const relationType = RelationType.create(input.identifier, input.description, input.category)
 
       // Save to repository
       await this.relationTypeRepository.save(relationType)
@@ -61,9 +59,9 @@ export class CreateRelationTypeUseCase {
         throw new Error('Failed to retrieve saved relation type')
       }
 
-      this.logger.info('Relation type created successfully', { 
-        id: savedRelationType.getId(), 
-        identifier: savedRelationType.getIdentifier()
+      this.logger.info('Relation type created successfully', {
+        id: savedRelationType.getId(),
+        identifier: savedRelationType.getIdentifier(),
       })
 
       return {
@@ -73,13 +71,13 @@ export class CreateRelationTypeUseCase {
           description: savedRelationType.getDescription(),
           category: savedRelationType.getCategory(),
           createdAt: savedRelationType.getCreatedAt().toISOString(),
-          updatedAt: savedRelationType.getUpdatedAt().toISOString()
-        }
+          updatedAt: savedRelationType.getUpdatedAt().toISOString(),
+        },
       }
     } catch (error) {
-      this.logger.error('Failed to create relation type', { 
+      this.logger.error('Failed to create relation type', {
         identifier: input.identifier,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
       throw error
     }

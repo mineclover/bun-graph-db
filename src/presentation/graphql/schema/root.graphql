@@ -4,7 +4,7 @@
 scalar DateTime
 scalar JSON
 
-# Health status type  
+# Health status type
 type HealthStatus {
   status: String!
   timestamp: DateTime!

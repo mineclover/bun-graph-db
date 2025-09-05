@@ -1,4 +1,4 @@
-# Node type definitions based on SQLite schema  
+# Node type definitions based on SQLite schema
 type Node {
   id: ID!
   table: Table!
@@ -7,14 +7,14 @@ type Node {
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Attribute values
   attributes: [NodeAttribute!]!
-  
+
   # Relations
   outgoingRelations: [NodeRelation!]!
   incomingRelations: [NodeRelation!]!
-  
+
   # Computed fields
   attributeCount: Int!
   relationCount: Int!
@@ -34,7 +34,7 @@ type NodeRelation {
   table: Table!
   sourceNode: Node
   sourceExternalId: String!
-  targetNode: Node  
+  targetNode: Node
   targetExternalId: String!
   relationType: RelationType!
   properties: JSON
@@ -185,18 +185,17 @@ type SearchQueryInfo {
   parsedConditions: JSON!
 }
 
-
 extend type Query {
   # Single node queries
   node(id: ID!): Node
   nodeByContent(tableId: ID!, content: String!): Node
-  
+
   # Multiple node queries
   nodes(tableId: ID!, pagination: TablesPagination): NodesConnection!
-  
+
   # Advanced search with query parsing
   searchNodes(input: SearchNodesInput!): SearchNodesResult!
-  
+
   # Relations
   nodeRelation(id: ID!): NodeRelation
   nodeRelations(tableId: ID!): [NodeRelation!]!
@@ -209,15 +208,15 @@ extend type Mutation {
   createNode(input: CreateNodeInput!): CreateNodePayload!
   updateNode(id: ID!, input: UpdateNodeInput!): UpdateNodePayload!
   deleteNode(id: ID!): DeleteNodePayload!
-  
+
   # Node attribute management
   setNodeAttribute(nodeId: ID!, attributeId: ID!, value: JSON!): UpdateNodePayload!
   removeNodeAttribute(nodeId: ID!, attributeId: ID!): UpdateNodePayload!
-  
+
   # Relation management
   createRelation(input: CreateRelationInput!): CreateRelationPayload!
   deleteRelation(id: ID!): DeleteNodePayload!
-  
+
   # Relation type management
   createRelationType(input: CreateRelationTypeInput!): CreateRelationTypePayload!
 }

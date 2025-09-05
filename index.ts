@@ -1,9 +1,9 @@
 import { createYoga } from 'graphql-yoga'
-import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder.js'
+import type { ILogger } from './src/application/ports/ILogger.js'
+import { graphqlConfig } from './src/config/graphql.js'
 import { ContainerBootstrap } from './src/infrastructure/container/ContainerBootstrap.js'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens.js'
-import { graphqlConfig } from './src/config/graphql.js'
-import type { ILogger } from './src/application/ports/ILogger.js'
+import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder.js'
 
 // Initialize dependency container
 const container = await ContainerBootstrap.createContainer()
@@ -53,9 +53,9 @@ const yoga = createYoga({
           hasNextPage
         }
       }
-    `
+    `,
   },
-  landingPage: false
+  landingPage: false,
 })
 
 const server = Bun.serve({
@@ -64,22 +64,26 @@ const server = Bun.serve({
   hostname: '0.0.0.0',
 })
 
-logger.info(`🚀 Bun Graph DB Server ready at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`)
-logger.info(`📊 GraphiQL available at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`)
+logger.info(
+  `🚀 Bun Graph DB Server ready at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`
+)
+logger.info(
+  `📊 GraphiQL available at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`
+)
 logger.info('🏗️  Architecture: Hexagonal with Domain-Driven Design')
 logger.info('🎯 Target: GraphQL → MCP conversion via mcp-graphql')
 
 // Graceful shutdown
 const shutdown = async () => {
   logger.info('🛑 Server shutting down...')
-  
+
   try {
     server.stop()
     logger.info('✅ Server stopped successfully')
   } catch (error) {
     logger.error('❌ Error during shutdown', { error })
   }
-  
+
   process.exit(0)
 }
 

@@ -2,13 +2,13 @@
 
 /**
  * Template Testing Script
- * 
+ *
  * This script tests the template system by:
  * 1. Running predefined template scenarios
  * 2. Verifying expected outputs
  * 3. Testing variable substitution
  * 4. Validating usage tracking
- * 
+ *
  * Usage: bun run scripts/test-templates.ts [template-identifier]
  */
 
@@ -30,7 +30,7 @@ async function graphqlRequest(query: string, variables?: any): Promise<any> {
   })
 
   const result = await response.json()
-  
+
   if (result.errors) {
     console.error('❌ GraphQL Error:', JSON.stringify(result.errors, null, 2))
     return { error: result.errors[0].message, data: null }
@@ -47,14 +47,14 @@ const testScenarios = [
     templateId: 'health-check',
     variables: null,
     expectedFields: ['health'],
-    description: 'Basic system health check'
+    description: 'Basic system health check',
   },
   {
     name: 'List Tables Template',
     templateId: 'list-all-tables',
     variables: { limit: 5, offset: 0 },
     expectedFields: ['tables'],
-    description: 'List tables with pagination'
+    description: 'List tables with pagination',
   },
   {
     name: 'Create Table Template',
@@ -63,11 +63,11 @@ const testScenarios = [
       input: {
         identifier: 'test-table-' + Date.now(),
         name: 'Test Table',
-        description: 'A table created via template testing'
-      }
+        description: 'A table created via template testing',
+      },
     },
     expectedFields: ['createTable'],
-    description: 'Create a new table dynamically'
+    description: 'Create a new table dynamically',
   },
   {
     name: 'Search Nodes Template',
@@ -76,18 +76,18 @@ const testScenarios = [
       input: {
         tableId: '1', // Will be updated dynamically
         limit: 10,
-        offset: 0
-      }
+        offset: 0,
+      },
     },
     expectedFields: ['searchNodes'],
-    description: 'Search nodes in a table'
-  }
+    description: 'Search nodes in a table',
+  },
 ]
 
 // Advanced test for complex template execution
 async function testComplexTemplate() {
   console.log('🧪 Testing Complex Template Workflow...')
-  
+
   try {
     // 1. Create a table using template
     console.log('Step 1: Creating table via template...')
@@ -102,11 +102,11 @@ async function testComplexTemplate() {
             input: {
               identifier: 'template-test-' + Date.now(),
               name: 'Template Test Table',
-              description: 'Created via template execution'
-            }
+              description: 'Created via template execution',
+            },
           },
-          trackUsage: true
-        }
+          trackUsage: true,
+        },
       }
     )
 
@@ -118,7 +118,7 @@ async function testComplexTemplate() {
     // 2. Create attribute types for the table
     console.log('Step 2: Creating attribute types...')
     const tableId = createTableResult.data?.executeTemplate?.createTable?.id
-    
+
     if (tableId) {
       const createAttrResult = await graphqlRequest(
         `mutation ExecuteTemplate($input: ExecuteTemplateInput!) {
@@ -134,11 +134,11 @@ async function testComplexTemplate() {
                 name: 'Test Name',
                 description: 'Name field for testing',
                 dataType: 'STRING',
-                isRequired: true
-              }
+                isRequired: true,
+              },
             },
-            trackUsage: true
-          }
+            trackUsage: true,
+          },
         }
       )
 
@@ -176,7 +176,7 @@ async function testComplexTemplate() {
 // Run template execution test
 async function testTemplateExecution(templateId: string, variables: any) {
   console.log(`🎯 Testing template execution: ${templateId}`)
-  
+
   return await graphqlRequest(
     `mutation ExecuteTemplate($input: ExecuteTemplateInput!) {
       executeTemplate(input: $input)
@@ -186,8 +186,8 @@ async function testTemplateExecution(templateId: string, variables: any) {
         templateIdentifier: templateId,
         variables: variables,
         trackUsage: true,
-        validateVariables: true
-      }
+        validateVariables: true,
+      },
     }
   )
 }
@@ -195,7 +195,7 @@ async function testTemplateExecution(templateId: string, variables: any) {
 // List all available templates
 async function listAvailableTemplates() {
   console.log('📑 Available Templates:')
-  
+
   const result = await graphqlRequest(
     `query SearchTemplates {
       searchTemplates(input: { limit: 50 }) {
@@ -241,20 +241,21 @@ async function testVariableValidation() {
         variables: {
           input: {
             // Missing required 'identifier' field
-            name: 'Test Table'
-          }
+            name: 'Test Table',
+          },
         },
-        validateVariables: true
-      }
+        validateVariables: true,
+      },
     }
   )
 
-  const hasValidationError = invalidResult.error && 
-    invalidResult.error.includes('Missing required')
-  
-  console.log(hasValidationError ? 
-    '✅ Variable validation working correctly' : 
-    '❌ Variable validation not working')
+  const hasValidationError = invalidResult.error && invalidResult.error.includes('Missing required')
+
+  console.log(
+    hasValidationError
+      ? '✅ Variable validation working correctly'
+      : '❌ Variable validation not working'
+  )
 
   return hasValidationError
 }
@@ -283,7 +284,7 @@ async function main() {
     if (specificTemplate) {
       // Test specific template
       console.log(`\n🎯 Testing specific template: ${specificTemplate}`)
-      
+
       const template = templates.find((t: any) => t.identifier === specificTemplate)
       if (!template) {
         console.error(`❌ Template '${specificTemplate}' not found`)
@@ -293,7 +294,6 @@ async function main() {
       // Test the specific template with minimal variables
       const result = await testTemplateExecution(specificTemplate, {})
       console.log(result.error ? '❌ Test failed' : '✅ Test passed')
-      
     } else {
       // Run comprehensive tests
       console.log('\n🧪 Running Comprehensive Tests...')
@@ -318,9 +318,9 @@ async function main() {
         totalTests++
         console.log(`\n🧪 Running: ${scenario.name}`)
         console.log(`   ${scenario.description}`)
-        
+
         const result = await testTemplateExecution(scenario.templateId, scenario.variables)
-        
+
         if (!result.error && result.data) {
           console.log('✅ Test passed')
           passedTests++
@@ -331,14 +331,13 @@ async function main() {
 
       // Summary
       console.log(`\n📊 Test Results: ${passedTests}/${totalTests} tests passed`)
-      
+
       if (passedTests === totalTests) {
         console.log('🎉 All tests passed! Template system is working correctly.')
       } else {
         console.log('⚠️ Some tests failed. Please check the output above.')
       }
     }
-
   } catch (error) {
     console.error('❌ Test execution failed:', error)
     process.exit(1)

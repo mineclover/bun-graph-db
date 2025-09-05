@@ -1,12 +1,19 @@
+import type {
+  CreateAttributeInput,
+  CreateAttributeOutput,
+} from '@/application/dtos/AttributeDto.js'
+import { AttributeDto } from '@/application/dtos/AttributeDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { AttributeTypeId, TableId } from '@/core/types/CommonTypes.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { ConflictException, ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
-import type { CreateAttributeInput, CreateAttributeOutput } from '@/application/dtos/AttributeDto.js'
-import { AttributeDto } from '@/application/dtos/AttributeDto.js'
-import type { TableId, AttributeTypeId } from '@/core/types/CommonTypes.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
 
 export class CreateAttributeUseCase {
   constructor(
@@ -17,9 +24,9 @@ export class CreateAttributeUseCase {
   ) {}
 
   async execute(input: CreateAttributeInput): Promise<CreateAttributeOutput> {
-    this.logger.info('Creating new attribute', { 
-      identifier: input.identifier, 
-      tableId: input.tableId 
+    this.logger.info('Creating new attribute', {
+      identifier: input.identifier,
+      tableId: input.tableId,
     })
 
     // Validate input
@@ -42,14 +49,16 @@ export class CreateAttributeUseCase {
     }
 
     // Check if attribute type exists
-    const attributeType = await this.attributeTypeRepository.findById(input.attributeTypeId as AttributeTypeId)
+    const attributeType = await this.attributeTypeRepository.findById(
+      input.attributeTypeId as AttributeTypeId
+    )
     if (!attributeType) {
       throw new NotFoundException(`Attribute type with id '${input.attributeTypeId}' not found`)
     }
 
     // Check if attribute already exists for this table
     const existingAttribute = await this.attributeRepository.findByTableIdAndIdentifier(
-      input.tableId as TableId, 
+      input.tableId as TableId,
       input.identifier
     )
     if (existingAttribute) {
@@ -77,28 +86,28 @@ export class CreateAttributeUseCase {
 
       // Retrieve the saved attribute with the generated ID
       const savedAttribute = await this.attributeRepository.findByTableIdAndIdentifier(
-        input.tableId as TableId, 
+        input.tableId as TableId,
         input.identifier
       )
       if (!savedAttribute) {
         throw new Error('Failed to retrieve saved attribute')
       }
 
-      this.logger.info('Attribute created successfully', { 
-        id: savedAttribute.getId(), 
+      this.logger.info('Attribute created successfully', {
+        id: savedAttribute.getId(),
         identifier: savedAttribute.getIdentifier(),
-        tableId: savedAttribute.getTableId()
+        tableId: savedAttribute.getTableId(),
       })
 
       // Return DTO
       return {
-        attribute: AttributeDto.fromEntity(savedAttribute)
+        attribute: AttributeDto.fromEntity(savedAttribute),
       }
     } catch (error) {
-      this.logger.error('Failed to create attribute', { 
+      this.logger.error('Failed to create attribute', {
         identifier: input.identifier,
         tableId: input.tableId,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
       throw error
     }

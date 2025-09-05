@@ -1,13 +1,22 @@
+import type {
+  AttributeId,
+  AttributeTypeId,
+  PaginatedResult,
+  PaginationOptions,
+  TableId,
+} from '@/core/types/CommonTypes.js'
 import type { Attribute } from '@/domain/entities/Attribute.js'
 import type { AttributeType } from '@/domain/entities/AttributeType.js'
-import type { AttributeId, AttributeTypeId, TableId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 
 export interface IAttributeRepository {
   save(attribute: Attribute): Promise<void>
   findById(id: AttributeId): Promise<Attribute | null>
   findByTableIdAndIdentifier(tableId: TableId, identifier: string): Promise<Attribute | null>
   findByTableId(tableId: TableId, options?: PaginationOptions): Promise<PaginatedResult<Attribute>>
-  findByAttributeTypeId(attributeTypeId: AttributeTypeId, options?: PaginationOptions): Promise<PaginatedResult<Attribute>>
+  findByAttributeTypeId(
+    attributeTypeId: AttributeTypeId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<Attribute>>
   findAll(options?: PaginationOptions): Promise<PaginatedResult<Attribute>>
   delete(id: AttributeId): Promise<void>
   deleteByTableId(tableId: TableId): Promise<void>

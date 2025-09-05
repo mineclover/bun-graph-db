@@ -28,7 +28,7 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
     graphql: createGraphQLConfig(env),
     logging: {
       level: (env.LOG_LEVEL as EnvironmentConfig['logging']['level']) || 'info',
-      format: (env.LOG_FORMAT as EnvironmentConfig['logging']['format']) || 'pretty'
-    }
+      format: (env.LOG_FORMAT as EnvironmentConfig['logging']['format']) || 'pretty',
+    },
   }
 }

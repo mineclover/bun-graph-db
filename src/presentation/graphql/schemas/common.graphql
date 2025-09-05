@@ -24,7 +24,7 @@ type Subscription {
   tableCreated: Table!
   tableUpdated: Table!
   tableDeleted: TableDeletedEvent!
-  
+
   nodeCreated: Node!
   nodeUpdated: Node!
   nodeDeleted: NodeDeletedEvent!

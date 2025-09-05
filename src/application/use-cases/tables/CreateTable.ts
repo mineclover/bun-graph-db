@@ -1,9 +1,9 @@
-import { Table } from '@/domain/entities/Table.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import type { CreateTableInput, CreateTableOutput } from '@/application/dtos/TableDto.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import { Table } from '@/domain/entities/Table.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export class CreateTableUseCase {
   constructor(
@@ -38,19 +38,19 @@ export class CreateTableUseCase {
         throw new Error('Failed to retrieve saved table')
       }
 
-      this.logger.info('Table created successfully', { 
-        id: savedTable.id, 
-        identifier: savedTable.identifier 
+      this.logger.info('Table created successfully', {
+        id: savedTable.id,
+        identifier: savedTable.identifier,
       })
 
       // Return DTO
       return {
-        table: TableDto.fromEntity(savedTable)
+        table: TableDto.fromEntity(savedTable),
       }
     } catch (error) {
-      this.logger.error('Failed to create table', { 
+      this.logger.error('Failed to create table', {
         identifier: input.identifier,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
       throw error
     }

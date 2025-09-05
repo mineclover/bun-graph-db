@@ -9,7 +9,7 @@ extend type Query {
     pagination: PaginationInput
     sort: [SortInput!]
   ): AttributeTypesConnection!
-  
+
   # Attribute queries
   attribute(id: ID!): Attribute
   attributeByIdentifier(identifier: String!, tableId: ID!): Attribute

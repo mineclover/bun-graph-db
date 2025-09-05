@@ -1,5 +1,5 @@
-export { TableMutations } from './TableMutations.js'
-export { NodeMutations } from './NodeMutations.js'
 export { AttributeMutations } from './AttributeMutations.js'
+export { NodeMutations } from './NodeMutations.js'
 export { RelationMutations } from './RelationMutations.js'
+export { TableMutations } from './TableMutations.js'
 export { TemplateMutations } from './TemplateMutations.js'

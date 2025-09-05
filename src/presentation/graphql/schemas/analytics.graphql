@@ -185,4 +185,3 @@ input AggregationInput {
   filters: JSON
   timeRange: TimeRangeInput
 }
-

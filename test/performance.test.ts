@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeAll } from '@jest/globals'
+import { beforeAll, describe, expect, test } from '@jest/globals'
 import { GraphQLTestClient } from './utils/GraphQLTestClient.js'
 
 describe('Performance Tests', () => {
@@ -7,13 +7,13 @@ describe('Performance Tests', () => {
 
   beforeAll(async () => {
     client = new GraphQLTestClient()
-    
+
     // Health check
     const isHealthy = await client.healthCheck()
     if (!isHealthy) {
       throw new Error('GraphQL server is not healthy')
     }
-    
+
     // Create test table
     testTableId = await client.createTable('performance-test', 'Performance testing table')
     if (!testTableId) {
@@ -31,18 +31,22 @@ describe('Performance Tests', () => {
       for (let i = 0; i < nodeCount; i += 10) {
         const batchPromises = []
         const batchEnd = Math.min(i + 10, nodeCount)
-        
+
         for (let j = i; j < batchEnd; j++) {
           batchPromises.push(
-            client.createNode(testTableId, `Performance Node ${j}`, `Test node ${j} for performance testing`)
+            client.createNode(
+              testTableId,
+              `Performance Node ${j}`,
+              `Test node ${j} for performance testing`
+            )
           )
         }
-        
+
         const batchResults = await Promise.all(batchPromises)
-        createdNodes.push(...batchResults.filter(id => id !== null))
-        
+        createdNodes.push(...batchResults.filter((id) => id !== null))
+
         // Small delay between batches to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await new Promise((resolve) => setTimeout(resolve, 50))
       }
 
       const duration = Date.now() - startTime
@@ -60,12 +64,12 @@ describe('Performance Tests', () => {
     test('should handle concurrent queries efficiently', async () => {
       const concurrentQueries = 5
       const startTime = Date.now()
-      
+
       const queryPromises = []
       for (let i = 0; i < concurrentQueries; i++) {
         queryPromises.push(client.getTables())
       }
-      
+
       const results = await Promise.all(queryPromises)
       const duration = Date.now() - startTime
       const avgTimePerQuery = duration / concurrentQueries
@@ -76,7 +80,7 @@ describe('Performance Tests', () => {
       console.log(`   - Average time per query: ${avgTimePerQuery.toFixed(2)}ms`)
 
       // All queries should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.data).toBeTruthy()
         expect(result.data.tables).toBeTruthy()
       })
@@ -87,10 +91,10 @@ describe('Performance Tests', () => {
 
     test('should handle large result sets efficiently', async () => {
       const startTime = Date.now()
-      
+
       // Query all nodes in the table
       const result = await client.getNodes(testTableId)
-      
+
       const duration = Date.now() - startTime
 
       console.log(`✅ Large result set performance:`)
@@ -105,18 +109,18 @@ describe('Performance Tests', () => {
   describe('Memory Efficiency', () => {
     test('should handle operations without memory leaks', async () => {
       const initialMemory = process.memoryUsage()
-      
+
       // Perform multiple operations
       for (let i = 0; i < 10; i++) {
         await client.getTables()
         await client.getNodes(testTableId)
       }
-      
+
       // Force garbage collection if available
       if (global.gc) {
         global.gc()
       }
-      
+
       const finalMemory = process.memoryUsage()
       const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed
 

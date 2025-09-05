@@ -5,10 +5,10 @@
 export const CommonTokens = {
   // Common services
   LOGGER: Symbol.for('Logger'),
-  
+
   // Configuration
   ENVIRONMENT_CONFIG: Symbol.for('EnvironmentConfig'),
-  
+
   // Application services
-  SEARCH_QUERY_PARSER: Symbol.for('SearchQueryParser')
+  SEARCH_QUERY_PARSER: Symbol.for('SearchQueryParser'),
 } as const

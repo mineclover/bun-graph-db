@@ -9,7 +9,7 @@ extend type Query {
     pagination: PaginationInput
     sort: [SortInput!]
   ): [RelationType!]!
-  
+
   # Node Relation queries
   nodeRelation(id: ID!): NodeRelation
   nodeRelations(
@@ -17,19 +17,15 @@ extend type Query {
     pagination: PaginationInput
     sort: [SortInput!]
   ): NodeRelationsConnection!
-  
+
   # Graph relationship queries
   searchRelatedNodes(
     filter: SearchRelatedNodesFilter!
     pagination: PaginationInput
   ): RelatedNodesConnection!
-  
+
   # Graph analysis queries
-  findPathsBetweenNodes(
-    input: FindPathsInput!
-  ): [NodePath!]!
-  
-  getDependencyChain(
-    input: DependencyChainInput!
-  ): RelatedNodesConnection!
+  findPathsBetweenNodes(input: FindPathsInput!): [NodePath!]!
+
+  getDependencyChain(input: DependencyChainInput!): RelatedNodesConnection!
 }

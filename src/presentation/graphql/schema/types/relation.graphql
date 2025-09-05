@@ -13,7 +13,7 @@ type NodeRelation implements Node {
   id: ID!
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Relationships
   table: Table!
   sourceNode: TableNode!

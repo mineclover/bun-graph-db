@@ -4,11 +4,7 @@ extend type Query {
   # Get single table
   table(id: ID!): Table
   tableByIdentifier(identifier: String!): Table
-  
+
   # Get multiple tables with filtering and pagination
-  tables(
-    filter: TablesFilter
-    pagination: TablesPagination
-    sort: [SortInput!]
-  ): TablesConnection!
+  tables(filter: TablesFilter, pagination: TablesPagination, sort: [SortInput!]): TablesConnection!
 }

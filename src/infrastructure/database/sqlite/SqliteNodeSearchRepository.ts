@@ -1,10 +1,14 @@
 import type { Database } from 'bun:sqlite'
-import type { INodeSearchRepository } from '@/application/use-cases/nodes/SearchNodes.js'
-import { Node } from '@/domain/entities/Node.js'
-import { Attribute } from '@/domain/entities/Attribute.js'
-import type { TableId, NodeId, PaginatedResult } from '@/core/types/CommonTypes.js'
-import type { SearchQuery, SearchOperator, LogicalOperator } from '@/domain/value-objects/SearchFilter.js'
 import type { AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
+import type { INodeSearchRepository } from '@/application/use-cases/nodes/SearchNodes.js'
+import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
+import { Attribute } from '@/domain/entities/Attribute.js'
+import { Node } from '@/domain/entities/Node.js'
+import type {
+  LogicalOperator,
+  SearchOperator,
+  SearchQuery,
+} from '@/domain/value-objects/SearchFilter.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface NodeWithAttributesRow {
@@ -30,22 +34,22 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
   constructor(private readonly db: Database) {}
 
   async searchNodes(
-    tableId: TableId, 
+    tableId: TableId,
     searchQuery: SearchQuery,
     availableAttributes: AttributeTypeInfo[]
   ): Promise<PaginatedResult<NodeSearchResult>> {
     try {
       // Build the SQL query from the search query
       const { query: dataQuery, params: dataParams } = this.buildSearchQuery(
-        tableId, 
-        searchQuery, 
+        tableId,
+        searchQuery,
         availableAttributes,
         false
       )
-      
+
       const { query: countQuery, params: countParams } = this.buildSearchQuery(
-        tableId, 
-        searchQuery, 
+        tableId,
+        searchQuery,
         availableAttributes,
         true
       )
@@ -56,10 +60,10 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
       // Execute data query
       const rows = this.db.query<NodeWithAttributesRow, any[]>(dataQuery).all(...dataParams)
-      
+
       // Group results by node
       const nodeMap = new Map<string, NodeSearchResult>()
-      
+
       for (const row of rows) {
         if (!nodeMap.has(row.node_id)) {
           nodeMap.set(row.node_id, {
@@ -72,12 +76,12 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
               new Date(row.node_created_at),
               new Date(row.node_updated_at)
             ),
-            attributes: {}
+            attributes: {},
           })
         }
 
         const nodeResult = nodeMap.get(row.node_id)!
-        
+
         // Add attribute value if present
         if (row.attribute_identifier && row.attribute_value !== null) {
           nodeResult.attributes[row.attribute_identifier] = this.parseAttributeValue(
@@ -94,7 +98,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
       return {
         data,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to search nodes: ${error}`)
@@ -108,9 +112,9 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     isCountQuery: boolean
   ): { query: string; params: any[] } {
     const params: any[] = [tableId]
-    
+
     // Base query structure
-    let query = isCountQuery 
+    let query = isCountQuery
       ? 'SELECT COUNT(DISTINCT n.id) as count'
       : `SELECT DISTINCT n.id as node_id, n.table_id as node_table_id, 
                 n.content as node_content, n.title as node_title, n.description as node_description,
@@ -131,10 +135,10 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
         const filterClauses = condition.filters.map((filter) => {
           return this.buildFilterClause(filter, availableAttributes, params)
         })
-        
+
         return `(${filterClauses.join(` ${condition.logicalOperator.toUpperCase()} `)})`
       })
-      
+
       query += ` AND (${conditionClauses.join(' AND ')})`
     }
 
@@ -147,7 +151,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     // Add sorting for data queries
     if (!isCountQuery) {
       if (searchQuery.sortBy && searchQuery.sortBy.length > 0) {
-        const sortClauses = searchQuery.sortBy.map(sort => {
+        const sortClauses = searchQuery.sortBy.map((sort) => {
           if (sort.field === 'created_at') {
             return `n.created_at ${sort.direction.toUpperCase()}`
           } else if (sort.field === 'updated_at') {
@@ -184,7 +188,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     }
 
     // Find attribute type
-    const attributeInfo = availableAttributes.find(attr => attr.identifier === filter.field)
+    const attributeInfo = availableAttributes.find((attr) => attr.identifier === filter.field)
     if (!attributeInfo) {
       throw new DatabaseException(`Unknown attribute: ${filter.field}`)
     }
@@ -230,22 +234,25 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
         params.push(filter.value)
         return baseCondition + this.buildComparisonClause(attributeInfo.dataType, '<=') + ')'
 
-      case 'range':
+      case 'range': {
         const range = filter.value as { min: any; max: any }
         params.push(range.min, range.max)
         return baseCondition + this.buildRangeClause(attributeInfo.dataType) + ')'
+      }
 
-      case 'in':
+      case 'in': {
         const values = Array.isArray(filter.value) ? filter.value : [filter.value]
         const placeholders = values.map(() => '?').join(',')
         params.push(...values)
         return baseCondition + `nav.value IN (${placeholders}))`
+      }
 
-      case 'not_in':
+      case 'not_in': {
         const notValues = Array.isArray(filter.value) ? filter.value : [filter.value]
         const notPlaceholders = notValues.map(() => '?').join(',')
         params.push(...notValues)
         return baseCondition + `nav.value NOT IN (${notPlaceholders}))`
+      }
 
       case 'is_null':
         return baseCondition + 'nav.value IS NULL)'
@@ -284,27 +291,28 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
   private parseAttributeValue(value: string, dataType: string): any {
     switch (dataType) {
-      case 'number':
+      case 'number': {
         const num = Number(value)
         return isNaN(num) ? value : num
-      
+      }
+
       case 'boolean':
         return value === 'true' || value === '1'
-      
+
       case 'datetime':
         try {
           return new Date(value).toISOString()
         } catch {
           return value
         }
-      
+
       case 'json':
         try {
           return JSON.parse(value)
         } catch {
           return value
         }
-      
+
       default:
         return value
     }

@@ -2,7 +2,7 @@
 
 /**
  * Template-based Node Mutations Test Runner
- * 
+ *
  * This script runs comprehensive tests for template-based node creation functionality
  * and provides detailed output about the test results.
  */
@@ -26,8 +26,8 @@ async function checkServerHealth(): Promise<boolean> {
               version
             }
           }
-        `
-      })
+        `,
+      }),
     })
 
     const data = await response.json()
@@ -40,7 +40,7 @@ async function checkServerHealth(): Promise<boolean> {
 
 async function setupSampleData(): Promise<void> {
   console.log('📋 Setting up sample templates...')
-  
+
   try {
     await createSampleTemplates(GRAPHQL_ENDPOINT)
     console.log('✅ Sample templates created successfully')
@@ -52,35 +52,33 @@ async function setupSampleData(): Promise<void> {
 
 async function runTests(): Promise<void> {
   console.log('🧪 Running template-based node mutation tests...')
-  
+
   try {
-    const testProcess = spawn([
-      'bun',
-      'test',
-      'tests/template-based-node-mutations.test.ts',
-      '--verbose'
-    ], {
-      stdio: 'pipe',
-      env: {
-        ...process.env,
-        NODE_ENV: 'test'
+    const testProcess = spawn(
+      ['bun', 'test', 'tests/template-based-node-mutations.test.ts', '--verbose'],
+      {
+        stdio: 'pipe',
+        env: {
+          ...process.env,
+          NODE_ENV: 'test',
+        },
       }
-    })
+    )
 
     const decoder = new TextDecoder()
-    
+
     // Handle stdout
     testProcess.stdout.on('data', (chunk) => {
       process.stdout.write(decoder.decode(chunk))
     })
-    
+
     // Handle stderr
     testProcess.stderr.on('data', (chunk) => {
       process.stderr.write(decoder.decode(chunk))
     })
 
     const exitCode = await testProcess.exited
-    
+
     if (exitCode === 0) {
       console.log('\n✅ All tests passed successfully!')
     } else {
@@ -114,10 +112,10 @@ async function demonstrateTemplateUsage(): Promise<void> {
       variables: {
         input: {
           identifier: `demo-products-${Date.now()}`,
-          description: 'Demo table for template usage'
-        }
-      }
-    })
+          description: 'Demo table for template usage',
+        },
+      },
+    }),
   })
 
   const tableData = await createTableResponse.json()
@@ -129,7 +127,7 @@ async function demonstrateTemplateUsage(): Promise<void> {
   const attributes = [
     { identifier: 'product_name', type: '1', description: 'Product name' },
     { identifier: 'product_price', type: '4', description: 'Product price' },
-    { identifier: 'product_category', type: '1', description: 'Product category' }
+    { identifier: 'product_category', type: '1', description: 'Product category' },
   ]
 
   const createdAttributes = []
@@ -152,15 +150,15 @@ async function demonstrateTemplateUsage(): Promise<void> {
             identifier: attr.identifier,
             attributeTypeId: attr.type,
             description: attr.description,
-            isRequired: true
-          }
-        }
-      })
+            isRequired: true,
+          },
+        },
+      }),
     })
     const attrData = await response.json()
     createdAttributes.push({
       id: attrData.data.createAttribute.id,
-      identifier: attr.identifier
+      identifier: attr.identifier,
     })
   }
   console.log(`✅ Created ${createdAttributes.length} attributes`)
@@ -188,18 +186,18 @@ async function demonstrateTemplateUsage(): Promise<void> {
           tagMatchMode: 'ANY',
           templateType: 'mutation',
           isActive: true,
-          limit: 1
-        }
-      }
-    })
+          limit: 1,
+        },
+      },
+    }),
   })
 
   const searchData = await searchResponse.json()
   const templates = searchData.data.searchTemplates
-  
+
   if (templates.length === 0) {
     console.log('⚠️  No node creation templates found. Creating a simple one...')
-    
+
     // Create a basic template
     const createTemplateResponse = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
@@ -241,24 +239,24 @@ async function demonstrateTemplateUsage(): Promise<void> {
                 tableId: { type: 'string' },
                 productName: { type: 'string' },
                 productPrice: { type: 'number' },
-                productCategory: { type: 'string' }
+                productCategory: { type: 'string' },
               },
-              required: ['tableId', 'productName', 'productPrice']
+              required: ['tableId', 'productName', 'productPrice'],
             },
             defaultVariables: {
-              productCategory: 'General'
+              productCategory: 'General',
             },
             templateType: 'mutation',
             complexityScore: 2,
-            tags: ['node-creation', 'products', 'demo']
-          }
-        }
-      })
+            tags: ['node-creation', 'products', 'demo'],
+          },
+        },
+      }),
     })
 
     const templateData = await createTemplateResponse.json()
     console.log(`✅ Created demo template: ${templateData.data.createQueryTemplate.name}`)
-    
+
     // Use the created template
     const executeResponse = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
@@ -276,12 +274,12 @@ async function demonstrateTemplateUsage(): Promise<void> {
               tableId: testTableId,
               productName: 'Demo Wireless Speaker',
               productPrice: 89.99,
-              productCategory: 'Electronics'
+              productCategory: 'Electronics',
             },
-            trackUsage: true
-          }
-        }
-      })
+            trackUsage: true,
+          },
+        },
+      }),
     })
 
     const executeData = await executeResponse.json()
@@ -307,9 +305,9 @@ async function demonstrateTemplateUsage(): Promise<void> {
           }
         `,
         variables: {
-          identifier: 'demo-create-product'
-        }
-      })
+          identifier: 'demo-create-product',
+        },
+      }),
     })
 
     const statsData = await statsResponse.json()
@@ -334,32 +332,31 @@ async function main(): Promise<void> {
   // Check if server is running
   console.log('🔍 Checking server health...')
   const isHealthy = await checkServerHealth()
-  
+
   if (!isHealthy) {
     console.error('❌ GraphQL server is not running or unhealthy')
     console.log('💡 Please start the server with: bun run dev')
     process.exit(1)
   }
-  
+
   console.log('✅ Server is healthy and ready')
 
   try {
     // Setup sample data
     await setupSampleData()
-    
+
     // Run the comprehensive tests
     await runTests()
-    
+
     // Demonstrate template usage
     await demonstrateTemplateUsage()
-    
+
     console.log('\n🎉 Template-based node mutations test suite completed successfully!')
     console.log('\n📚 Next steps:')
     console.log('   • Review the test results above')
     console.log('   • Check the created templates in GraphiQL')
     console.log('   • Explore the sample templates in examples/sample-node-templates.ts')
     console.log('   • Read the documentation in docs/template-workflow.md')
-    
   } catch (error) {
     console.error('\n💥 Test suite failed:', error)
     process.exit(1)

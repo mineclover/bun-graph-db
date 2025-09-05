@@ -1,7 +1,7 @@
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import type { TestContext } from './utils/GraphQLTestClient.js'
 import { GraphQLTestClient } from './utils/GraphQLTestClient.js'
 import { TestDataFixtures } from './utils/TestDataFixtures.js'
-import type { TestContext } from './utils/GraphQLTestClient.js'
 
 describe('Comprehensive GraphQL Query Tests', () => {
   let client: GraphQLTestClient
@@ -15,7 +15,9 @@ describe('Comprehensive GraphQL Query Tests', () => {
     // Health check to ensure server is running
     const isHealthy = await client.healthCheck()
     if (!isHealthy) {
-      throw new Error('GraphQL server is not healthy. Please start the server before running tests.')
+      throw new Error(
+        'GraphQL server is not healthy. Please start the server before running tests.'
+      )
     }
   })
 
@@ -79,8 +81,8 @@ describe('Comprehensive GraphQL Query Tests', () => {
       expect(tablesResult.data).toBeTruthy()
       expect(tablesResult.data.tables.nodes).toBeTruthy()
       expect(tablesResult.data.tables.nodes.length).toBeGreaterThan(0)
-      
-      const createdTable = tablesResult.data.tables.nodes.find(t => t.id === tableId)
+
+      const createdTable = tablesResult.data.tables.nodes.find((t) => t.id === tableId)
       expect(createdTable).toBeTruthy()
       expect(createdTable.identifier).toBe('test-table')
     })
@@ -98,7 +100,10 @@ describe('Comprehensive GraphQL Query Tests', () => {
   describe('Attribute Type Operations', () => {
     test('should create and retrieve attribute types', async () => {
       // Create attribute type
-      const attrTypeId = await client.createAttributeType('test-string-type', 'Test string attribute type')
+      const attrTypeId = await client.createAttributeType(
+        'test-string-type',
+        'Test string attribute type'
+      )
       expect(attrTypeId).toBeTruthy()
 
       // Get attribute types
@@ -106,8 +111,8 @@ describe('Comprehensive GraphQL Query Tests', () => {
       expect(result.data).toBeTruthy()
       expect(result.data.attributeTypes).toBeTruthy()
       expect(Array.isArray(result.data.attributeTypes)).toBe(true)
-      
-      const createdType = result.data.attributeTypes.find(at => at.id === attrTypeId)
+
+      const createdType = result.data.attributeTypes.find((at) => at.id === attrTypeId)
       expect(createdType).toBeTruthy()
       expect(createdType.identifier).toBe('test-string-type')
     })
@@ -165,7 +170,10 @@ describe('Comprehensive GraphQL Query Tests', () => {
     })
 
     test('should handle node search with no results', async () => {
-      const tableId = await client.createTable('empty-search-table', 'Empty table for search testing')
+      const tableId = await client.createTable(
+        'empty-search-table',
+        'Empty table for search testing'
+      )
 
       const searchResult = await client.searchNodes(tableId, 'nonexistent', 10)
       expect(searchResult.data).toBeTruthy()
@@ -210,8 +218,8 @@ describe('Comprehensive GraphQL Query Tests', () => {
       const result = await client.getRelationTypes()
       expect(result.data).toBeTruthy()
       expect(Array.isArray(result.data.relationTypes)).toBe(true)
-      
-      const createdType = result.data.relationTypes.find(rt => rt.id === relTypeId)
+
+      const createdType = result.data.relationTypes.find((rt) => rt.id === relTypeId)
       expect(createdType).toBeTruthy()
       expect(createdType.identifier).toBe('depends-on')
     })
@@ -220,7 +228,10 @@ describe('Comprehensive GraphQL Query Tests', () => {
   describe('Advanced Search Operations', () => {
     test('should perform advanced search with filters', async () => {
       // Setup test environment with related nodes
-      const tableId = await client.createTable('advanced-search-table', 'Advanced search test table')
+      const tableId = await client.createTable(
+        'advanced-search-table',
+        'Advanced search test table'
+      )
       const relTypeId = await client.createRelationType('relates-to', 'General relation')
       const nodeIds = []
 
@@ -268,7 +279,7 @@ describe('Comprehensive GraphQL Query Tests', () => {
   describe('E-commerce Domain Test Suite', () => {
     test('should create complete e-commerce environment', async () => {
       const ecommerceData = await fixtures.createECommerceEnvironment()
-      
+
       expect(ecommerceData.tableId).toBeTruthy()
       expect(ecommerceData.productNodes.length).toBe(3)
       expect(ecommerceData.customerNodes.length).toBe(2)
@@ -278,8 +289,10 @@ describe('Comprehensive GraphQL Query Tests', () => {
       // Verify product search works
       const searchResult = await client.searchNodes(ecommerceData.tableId, 'Laptop', 10)
       expect(searchResult.data.searchNodes.nodes.length).toBeGreaterThan(0)
-      
-      const laptopNode = searchResult.data.searchNodes.nodes.find(n => n.content.includes('Laptop'))
+
+      const laptopNode = searchResult.data.searchNodes.nodes.find((n) =>
+        n.content.includes('Laptop')
+      )
       expect(laptopNode).toBeTruthy()
     })
   })
@@ -287,7 +300,7 @@ describe('Comprehensive GraphQL Query Tests', () => {
   describe('Project Management Domain Test Suite', () => {
     test('should create complete project management environment', async () => {
       const projectData = await fixtures.createProjectManagementEnvironment()
-      
+
       expect(projectData.tableId).toBeTruthy()
       expect(projectData.projectNodes.length).toBe(2)
       expect(projectData.taskNodes.length).toBe(6)
@@ -303,7 +316,7 @@ describe('Comprehensive GraphQL Query Tests', () => {
   describe('Knowledge Graph Domain Test Suite', () => {
     test('should create complete knowledge graph environment', async () => {
       const knowledgeData = await fixtures.createKnowledgeGraphEnvironment()
-      
+
       expect(knowledgeData.tableId).toBeTruthy()
       expect(knowledgeData.conceptNodes.length).toBe(6)
       expect(knowledgeData.relations.length).toBeGreaterThan(0)
@@ -311,9 +324,9 @@ describe('Comprehensive GraphQL Query Tests', () => {
       // Verify concept relationships
       const relationsResult = await client.getNodeRelations(knowledgeData.tableId)
       expect(relationsResult.data.nodeRelations.length).toBeGreaterThan(0)
-      
+
       // Should have hierarchical relationships (is-a, part-of)
-      const relationTypes = relationsResult.data.nodeRelations.map(r => r.relationType.identifier)
+      const relationTypes = relationsResult.data.nodeRelations.map((r) => r.relationType.identifier)
       expect(relationTypes).toContain('is-a')
       expect(relationTypes).toContain('part-of')
     })
@@ -322,7 +335,7 @@ describe('Comprehensive GraphQL Query Tests', () => {
   describe('Performance Test Suite', () => {
     test('should handle performance test data creation', async () => {
       const performanceData = await fixtures.createPerformanceTestData()
-      
+
       expect(performanceData.tableId).toBeTruthy()
       expect(performanceData.nodeCount).toBe(100)
       expect(performanceData.relationCount).toBe(200)
@@ -331,7 +344,7 @@ describe('Comprehensive GraphQL Query Tests', () => {
       const startTime = Date.now()
       const searchResult = await client.searchNodes(performanceData.tableId, 'Performance', 20)
       const endTime = Date.now()
-      
+
       expect(searchResult.data.searchNodes.nodes.length).toBeGreaterThan(0)
       expect(endTime - startTime).toBeLessThan(2000) // Should complete within 2 seconds
     })
@@ -346,9 +359,14 @@ describe('Comprehensive GraphQL Query Tests', () => {
     test('should handle missing relation endpoints', async () => {
       const tableId = await client.createTable('error-test-table', 'Error testing table')
       const relTypeId = await client.createRelationType('test-relation', 'Test relation')
-      
+
       // Try to create relation with non-existent nodes
-      const relationId = await client.createRelation(tableId, relTypeId, 'nonexistent-1', 'nonexistent-2')
+      const relationId = await client.createRelation(
+        tableId,
+        relTypeId,
+        'nonexistent-1',
+        'nonexistent-2'
+      )
       expect(relationId).toBeNull()
     })
   })

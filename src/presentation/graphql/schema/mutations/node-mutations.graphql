@@ -2,21 +2,12 @@
 
 extend type Mutation {
   # Node management
-  createNode(
-    input: CreateNodeInput!
-  ): CreateNodePayload!
-  
-  updateNode(
-    id: ID!
-    input: UpdateNodeInput!
-  ): UpdateNodePayload!
-  
-  deleteNode(
-    id: ID!
-  ): DeleteNodePayload!
-  
+  createNode(input: CreateNodeInput!): CreateNodePayload!
+
+  updateNode(id: ID!, input: UpdateNodeInput!): UpdateNodePayload!
+
+  deleteNode(id: ID!): DeleteNodePayload!
+
   # Node attribute management
-  setNodeAttribute(
-    input: SetNodeAttributeInput!
-  ): SetNodeAttributePayload!
+  setNodeAttribute(input: SetNodeAttributeInput!): SetNodeAttributePayload!
 }

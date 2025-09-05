@@ -5,16 +5,16 @@ extend type Subscription {
   tableCreated: Table!
   tableUpdated: Table!
   tableDeleted: TableDeletedEvent!
-  
+
   # Node subscriptions
   nodeCreated(tableId: ID): TableNode!
   nodeUpdated(tableId: ID): TableNode!
   nodeDeleted(tableId: ID): NodeDeletedEvent!
-  
+
   # Relation subscriptions
   relationCreated(tableId: ID): NodeRelation!
   relationDeleted(tableId: ID): NodeRelation!
-  
+
   # System subscriptions
   systemHealthChanged: SystemHealth!
   performanceAlert: PerformanceMetrics!

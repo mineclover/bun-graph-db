@@ -78,7 +78,7 @@ export class AttributeType {
     if (!identifier || identifier.trim() === '') {
       throw new DomainException('AttributeType identifier cannot be empty', 'DOMAIN_ERROR')
     }
-    
+
     if (!/^[a-z][a-z0-9_]*$/.test(identifier)) {
       throw new DomainException(
         'AttributeType identifier must start with lowercase letter and contain only lowercase letters, numbers, and underscores',
@@ -87,7 +87,10 @@ export class AttributeType {
     }
 
     if (identifier.length > 50) {
-      throw new DomainException('AttributeType identifier cannot exceed 50 characters', 'DOMAIN_ERROR')
+      throw new DomainException(
+        'AttributeType identifier cannot exceed 50 characters',
+        'DOMAIN_ERROR'
+      )
     }
   }
 
@@ -104,9 +107,7 @@ export class AttributeType {
   private validateFormat(format: string | null): void {
     if (!format) return
 
-    const validFormats = [
-      'date', 'time', 'date-time', 'email', 'uri', 'uuid', 'reference'
-    ]
+    const validFormats = ['date', 'time', 'date-time', 'email', 'uri', 'uuid', 'reference']
     if (!validFormats.includes(format)) {
       throw new DomainException(
         `Invalid format. Must be one of: ${validFormats.join(', ')}`,
@@ -120,7 +121,7 @@ export class AttributeType {
       { field: 'validationSchema', value: this.validationSchema },
       { field: 'referenceConfig', value: this.referenceConfig },
       { field: 'defaultValue', value: this.defaultValue },
-      { field: 'examples', value: this.examples }
+      { field: 'examples', value: this.examples },
     ]
 
     for (const { field, value } of jsonFields) {
@@ -243,7 +244,7 @@ export class AttributeType {
       default_value: this.defaultValue,
       examples: this.examples,
       created_at: this.createdAt.toISOString(),
-      updated_at: this.updatedAt.toISOString()
+      updated_at: this.updatedAt.toISOString(),
     }
   }
 }

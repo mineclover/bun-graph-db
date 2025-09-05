@@ -31,7 +31,7 @@ export class DIContainer {
       token,
       factory,
       singleton: false,
-      dependencies
+      dependencies,
     })
   }
 
@@ -47,7 +47,7 @@ export class DIContainer {
       token,
       factory,
       singleton: true,
-      dependencies
+      dependencies,
     })
   }
 
@@ -60,7 +60,7 @@ export class DIContainer {
       token,
       factory: () => instance,
       singleton: true,
-      dependencies: []
+      dependencies: [],
     })
   }
 
@@ -88,7 +88,7 @@ export class DIContainer {
     try {
       // Resolve dependencies first
       const dependencyInstances = await Promise.all(
-        registration.dependencies.map(depToken => this.resolve(depToken))
+        registration.dependencies.map((depToken) => this.resolve(depToken))
       )
 
       // Create instance
@@ -133,17 +133,17 @@ export class DIContainer {
    */
   createChild(): DIContainer {
     const child = new DIContainer()
-    
+
     // Copy parent registrations
     for (const [token, registration] of this.registrations) {
       child.registrations.set(token, registration)
     }
-    
+
     // Copy singleton instances
     for (const [token, instance] of this.singletonInstances) {
       child.singletonInstances.set(token, instance)
     }
-    
+
     return child
   }
 }

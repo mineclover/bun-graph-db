@@ -5,7 +5,7 @@
  * Comprehensive test environment with server lifecycle management
  */
 
-import { spawn, ChildProcess } from 'child_process'
+import { type ChildProcess, spawn } from 'child_process'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { GraphQLTestClient } from './utils/GraphQLTestClient.js'
@@ -25,7 +25,7 @@ const DEFAULT_CONFIG: TestRunnerConfig = {
   healthCheckRetries: 15,
   healthCheckInterval: 2000, // 2 seconds
   testTimeout: 120000, // 2 minutes per test suite
-  cleanupTimeout: 10000 // 10 seconds
+  cleanupTimeout: 10000, // 10 seconds
 }
 
 export class GraphQLTestRunner {
@@ -65,9 +65,9 @@ export class GraphQLTestRunner {
           ...process.env,
           NODE_ENV: 'test',
           PORT: this.config.serverPort.toString(),
-          LOG_LEVEL: 'error' // Reduce log noise during tests
+          LOG_LEVEL: 'error', // Reduce log noise during tests
         },
-        stdio: ['pipe', 'pipe', 'pipe']
+        stdio: ['pipe', 'pipe', 'pipe'],
       })
 
       let startupOutput = ''
@@ -75,18 +75,20 @@ export class GraphQLTestRunner {
       this.serverProcess.stdout?.on('data', (data) => {
         const output = data.toString()
         startupOutput += output
-        
+
         // Look for server ready indicators
         if (output.includes('Server running') || output.includes('GraphQL server')) {
           console.log('📡 Server process started, checking health...')
-          this.waitForServerHealth().then(() => {
-            clearTimeout(timeout)
-            this.isServerReady = true
-            resolve()
-          }).catch((error) => {
-            clearTimeout(timeout)
-            reject(error)
-          })
+          this.waitForServerHealth()
+            .then(() => {
+              clearTimeout(timeout)
+              this.isServerReady = true
+              resolve()
+            })
+            .catch((error) => {
+              clearTimeout(timeout)
+              reject(error)
+            })
         }
       })
 
@@ -116,11 +118,11 @@ export class GraphQLTestRunner {
    */
   private async waitForServerHealth(): Promise<void> {
     const client = new GraphQLTestClient(`http://localhost:${this.config.serverPort}/graphql`)
-    
+
     for (let attempt = 1; attempt <= this.config.healthCheckRetries; attempt++) {
       try {
         console.log(`🔍 Health check attempt ${attempt}/${this.config.healthCheckRetries}`)
-        
+
         const isHealthy = await client.healthCheck()
         if (isHealthy) {
           console.log('✅ Server is healthy and ready for testing')
@@ -130,12 +132,12 @@ export class GraphQLTestRunner {
       } catch (error) {
         console.log(`❌ Health check ${attempt} failed:`, error.message)
       }
-      
+
       if (attempt < this.config.healthCheckRetries) {
         await this.sleep(this.config.healthCheckInterval)
       }
     }
-    
+
     throw new Error(`Server failed health checks after ${this.config.healthCheckRetries} attempts`)
   }
 
@@ -199,8 +201,8 @@ export class GraphQLTestRunner {
         env: {
           ...process.env,
           TEST_SERVER_URL: `http://localhost:${this.config.serverPort}/graphql`,
-          NODE_ENV: 'test'
-        }
+          NODE_ENV: 'test',
+        },
       })
 
       const exitCode = await new Promise<number>((resolve) => {
@@ -215,7 +217,6 @@ export class GraphQLTestRunner {
       }
 
       console.log('✅ All tests completed successfully!')
-
     } catch (error) {
       clearTimeout(originalTimeout)
       throw error
@@ -238,8 +239,8 @@ export class GraphQLTestRunner {
       env: {
         ...process.env,
         TEST_SERVER_URL: `http://localhost:${this.config.serverPort}/graphql`,
-        NODE_ENV: 'test'
-      }
+        NODE_ENV: 'test',
+      },
     })
 
     const exitCode = await new Promise<number>((resolve) => {
@@ -289,7 +290,7 @@ export class GraphQLTestRunner {
    * Sleep utility
    */
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms))
+    return new Promise((resolve) => setTimeout(resolve, ms))
   }
 
   /**
@@ -324,7 +325,7 @@ if (import.meta.main) {
       })
       break
 
-    case 'test':
+    case 'test': {
       const testFile = args[1]
       await runner.startServer()
       try {
@@ -337,6 +338,7 @@ if (import.meta.main) {
         await runner.cleanup()
       }
       break
+    }
 
     case 'full':
     default:

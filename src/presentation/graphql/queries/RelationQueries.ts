@@ -1,15 +1,15 @@
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
-import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { 
+import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
+import type {
+  GetDependencyChainArgs,
   GraphQLParent,
   NodeRelationArgs,
   NodeRelationsArgs,
   RelationTypeArgs,
   SearchRelatedNodesArgs,
-  GetDependencyChainArgs
 } from '@/core/types/GraphQLTypes.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 
 export class RelationQueries {
   constructor(
@@ -52,18 +52,18 @@ export class RelationQueries {
   async nodeRelations(_: GraphQLParent, args: NodeRelationsArgs) {
     try {
       this.logger.info('Fetching node relations', { args })
-      
+
       const result = await this.nodeRelationRepository.findAll({
         filter: args.filter,
         pagination: args.pagination || { limit: 10, offset: 0 },
-        sort: args.sort
+        sort: args.sort,
       })
 
       return {
         nodes: result.items,
         totalCount: result.total,
         hasNextPage: result.hasNextPage,
-        hasPreviousPage: result.hasPreviousPage
+        hasPreviousPage: result.hasPreviousPage,
       }
     } catch (error) {
       this.logger.error('Error fetching node relations', { error, args })
@@ -74,10 +74,10 @@ export class RelationQueries {
   async searchRelatedNodes(_: GraphQLParent, args: SearchRelatedNodesArgs) {
     try {
       this.logger.info('Searching related nodes', { args })
-      
+
       const result = await this.searchRelatedNodesUseCase.execute({
         filter: args.filter,
-        pagination: args.pagination || { limit: 10, offset: 0 }
+        pagination: args.pagination || { limit: 10, offset: 0 },
       })
 
       return {
@@ -85,7 +85,7 @@ export class RelationQueries {
         relations: result.relations,
         totalCount: result.total,
         hasNextPage: result.hasNextPage,
-        hasPreviousPage: result.hasPreviousPage
+        hasPreviousPage: result.hasPreviousPage,
       }
     } catch (error) {
       this.logger.error('Error searching related nodes', { error, args })
@@ -93,11 +93,10 @@ export class RelationQueries {
     }
   }
 
-
   async getDependencyChain(_: GraphQLParent, args: GetDependencyChainArgs) {
     try {
       this.logger.info('Getting dependency chain', { args })
-      
+
       // This would need to be implemented in a use case or repository method
       // For now, return empty result
       return {
@@ -105,7 +104,7 @@ export class RelationQueries {
         relations: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       }
     } catch (error) {
       this.logger.error('Error getting dependency chain', { error, args })

@@ -1,6 +1,6 @@
-import type { DIContainer } from '../DIContainer.js'
-import { DatabaseTokens, CommonTokens } from '../tokens/index.js'
 import type { IDatabaseConnection } from '@/core/database/interfaces/IDatabaseConnection.js'
+import type { DIContainer } from '../DIContainer.js'
+import { CommonTokens, DatabaseTokens } from '../tokens/index.js'
 
 /**
  * Database module - registers database connections and adapters
@@ -12,7 +12,7 @@ export function registerDatabaseModule(container: DIContainer): void {
     async (c): Promise<IDatabaseConnection> => {
       const config = await c.resolve(DatabaseTokens.DATABASE_CONFIG)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      
+
       switch (config.provider) {
         case 'bun-sqlite':
           return await c.resolve(DatabaseTokens.BUN_SQLITE_ADAPTER)
@@ -33,7 +33,7 @@ export function registerDatabaseModule(container: DIContainer): void {
     async (c) => {
       const config = await c.resolve(DatabaseTokens.DATABASE_CONFIG)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      
+
       // Import dynamically to avoid loading SQLite in environments where it's not available
       const { BunSqliteAdapter } = await import('@/core/database/adapters/BunSqliteAdapter.js')
       return new BunSqliteAdapter(config, logger)
@@ -47,9 +47,11 @@ export function registerDatabaseModule(container: DIContainer): void {
     async (c) => {
       const config = await c.resolve(DatabaseTokens.DATABASE_CONFIG)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      
+
       // Import dynamically for environments where D1 is not available
-      const { CloudflareD1Adapter } = await import('@/core/database/adapters/CloudflareD1Adapter.js')
+      const { CloudflareD1Adapter } = await import(
+        '@/core/database/adapters/CloudflareD1Adapter.js'
+      )
       return new CloudflareD1Adapter(config, logger)
     },
     [DatabaseTokens.DATABASE_CONFIG, CommonTokens.LOGGER]
@@ -61,8 +63,10 @@ export function registerDatabaseModule(container: DIContainer): void {
     async (c) => {
       const config = await c.resolve(DatabaseTokens.DATABASE_CONFIG)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      
-      const { MockDatabaseAdapter } = await import('@/core/database/adapters/MockDatabaseAdapter.js')
+
+      const { MockDatabaseAdapter } = await import(
+        '@/core/database/adapters/MockDatabaseAdapter.js'
+      )
       return new MockDatabaseAdapter(config, logger)
     },
     [DatabaseTokens.DATABASE_CONFIG, CommonTokens.LOGGER]

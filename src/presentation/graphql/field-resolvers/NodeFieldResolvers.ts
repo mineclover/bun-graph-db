@@ -1,8 +1,8 @@
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { NodeParent } from '@/core/types/GraphQLTypes.js'
+import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 
 export class NodeFieldResolvers {
   constructor(
@@ -17,7 +17,11 @@ export class NodeFieldResolvers {
       this.logger.debug('Resolving node table', { nodeId: parent.id, tableId: parent.tableId })
       return await this.tableRepository.findById(parent.tableId)
     } catch (error) {
-      this.logger.error('Error resolving node table', { error, nodeId: parent.id, tableId: parent.tableId })
+      this.logger.error('Error resolving node table', {
+        error,
+        nodeId: parent.id,
+        tableId: parent.tableId,
+      })
       throw error
     }
   }

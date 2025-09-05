@@ -31,12 +31,12 @@ export class NodeRelationDto {
       strength: nodeRelation.getStrength(),
       confidence: (nodeRelation as any).getConfidence ? (nodeRelation as any).getConfidence() : 1,
       createdAt: nodeRelation.getCreatedAt().toISOString(),
-      updatedAt: nodeRelation.getUpdatedAt().toISOString()
+      updatedAt: nodeRelation.getUpdatedAt().toISOString(),
     }
   }
 
   static fromEntities(nodeRelations: NodeRelation[]): NodeRelationDto[] {
-    return nodeRelations.map(nodeRelation => NodeRelationDto.fromEntity(nodeRelation))
+    return nodeRelations.map((nodeRelation) => NodeRelationDto.fromEntity(nodeRelation))
   }
 }
 
@@ -58,12 +58,12 @@ export class RelationTypeDto {
       description: relationType.getDescription(),
       category: relationType.getCategory(),
       createdAt: relationType.getCreatedAt().toISOString(),
-      updatedAt: relationType.getUpdatedAt().toISOString()
+      updatedAt: relationType.getUpdatedAt().toISOString(),
     }
   }
 
   static fromEntities(relationTypes: RelationType[]): RelationTypeDto[] {
-    return relationTypes.map(relationType => RelationTypeDto.fromEntity(relationType))
+    return relationTypes.map((relationType) => RelationTypeDto.fromEntity(relationType))
   }
 }
 

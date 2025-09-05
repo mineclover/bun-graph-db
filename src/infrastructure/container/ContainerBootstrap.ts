@@ -1,10 +1,10 @@
 import { DIContainer } from './DIContainer.js'
-import { 
+import {
   registerCoreModule,
   registerDatabaseModule,
+  registerGraphQLModule,
   registerRepositoryModule,
   registerUseCaseModule,
-  registerGraphQLModule
 } from './modules/index.js'
 
 /**
@@ -17,8 +17,8 @@ export class ContainerBootstrap {
    * Create and configure the main application container
    */
   static async createContainer(): Promise<DIContainer> {
-    if (this.instance) {
-      return this.instance
+    if (ContainerBootstrap.instance) {
+      return ContainerBootstrap.instance
     }
 
     const container = new DIContainer()
@@ -30,7 +30,7 @@ export class ContainerBootstrap {
     registerUseCaseModule(container)
     registerGraphQLModule(container)
 
-    this.instance = container
+    ContainerBootstrap.instance = container
     return container
   }
 
@@ -38,17 +38,17 @@ export class ContainerBootstrap {
    * Get the singleton container instance
    */
   static getContainer(): DIContainer {
-    if (!this.instance) {
+    if (!ContainerBootstrap.instance) {
       throw new Error('Container not initialized. Call createContainer() first.')
     }
-    return this.instance
+    return ContainerBootstrap.instance
   }
 
   /**
    * Reset the container (for testing)
    */
   static reset(): void {
-    this.instance = undefined
+    ContainerBootstrap.instance = undefined
   }
 
   /**
@@ -59,10 +59,10 @@ export class ContainerBootstrap {
 
     // Register core module with test configuration
     registerCoreModule(container)
-    
+
     // Override database provider to use mock
     process.env.DB_PROVIDER = 'mock'
-    
+
     registerDatabaseModule(container)
     registerRepositoryModule(container)
     registerUseCaseModule(container)

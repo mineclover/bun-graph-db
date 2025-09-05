@@ -23,7 +23,7 @@ export const createDatabaseConfig = (env: Record<string, string | undefined>): D
       queryTimeout: parseInt(env.DB_QUERY_TIMEOUT || '30000'),
       connectionPoolSize: parseInt(env.DB_POOL_SIZE || '10'),
       enableQueryLogging: env.DB_ENABLE_QUERY_LOGGING === 'true',
-      enableMetrics: env.DB_ENABLE_METRICS !== 'false'
-    }
+      enableMetrics: env.DB_ENABLE_METRICS !== 'false',
+    },
   }
 }

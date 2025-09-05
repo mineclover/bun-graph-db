@@ -15,12 +15,7 @@ export class Node {
     this.validateTitle(title)
   }
 
-  static create(
-    tableId: TableId,
-    content: string,
-    title?: string,
-    description?: string
-  ): Node {
+  static create(tableId: TableId, content: string, title?: string, description?: string): Node {
     return new Node(
       null as any as NodeId,
       tableId,
@@ -150,7 +145,7 @@ export class Node {
       title: this.title,
       description: this.description,
       created_at: this.createdAt.toISOString(),
-      updated_at: this.updatedAt.toISOString()
+      updated_at: this.updatedAt.toISOString(),
     }
   }
 }

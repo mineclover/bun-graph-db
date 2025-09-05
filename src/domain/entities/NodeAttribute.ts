@@ -1,4 +1,4 @@
-import type { NodeId, AttributeId } from '@/core/types/CommonTypes.js'
+import type { AttributeId, NodeId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export class NodeAttribute {
@@ -13,19 +13,8 @@ export class NodeAttribute {
     this.validateValue(value)
   }
 
-  static create(
-    nodeId: NodeId,
-    attributeId: AttributeId,
-    value: string
-  ): NodeAttribute {
-    return new NodeAttribute(
-      null,
-      nodeId,
-      attributeId,
-      value,
-      new Date(),
-      new Date()
-    )
+  static create(nodeId: NodeId, attributeId: AttributeId, value: string): NodeAttribute {
+    return new NodeAttribute(null, nodeId, attributeId, value, new Date(), new Date())
   }
 
   static fromDatabase(
@@ -54,7 +43,10 @@ export class NodeAttribute {
     // Value is stored as string (can be JSON for complex types)
     // Maximum size for TEXT in SQLite
     if (value.length > 65535) {
-      throw new DomainException('NodeAttribute value cannot exceed 65535 characters', 'DOMAIN_ERROR')
+      throw new DomainException(
+        'NodeAttribute value cannot exceed 65535 characters',
+        'DOMAIN_ERROR'
+      )
     }
   }
 
@@ -117,7 +109,7 @@ export class NodeAttribute {
       attribute_id: this.attributeId,
       value: this.value,
       created_at: this.createdAt.toISOString(),
-      updated_at: this.updatedAt.toISOString()
+      updated_at: this.updatedAt.toISOString(),
     }
   }
 }

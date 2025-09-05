@@ -1,9 +1,14 @@
-import { GraphQLError } from 'graphql'
-import { execute, parse } from 'graphql'
+import { execute, GraphQLError, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import { QueryTemplateDtoMapper, type QueryTemplateDto, type ExecuteTemplateInput, type SearchTemplatesInput, type CreateQueryTemplateInput, type UpdateQueryTemplateInput } from '@/presentation/dto/QueryTemplateDto.js'
-
+import {
+  type CreateQueryTemplateInput,
+  type ExecuteTemplateInput,
+  type QueryTemplateDto,
+  QueryTemplateDtoMapper,
+  type SearchTemplatesInput,
+  type UpdateQueryTemplateInput,
+} from '@/presentation/dto/QueryTemplateDto.js'
 
 export class QueryTemplateResolver {
   constructor(
@@ -17,23 +22,23 @@ export class QueryTemplateResolver {
    * 템플릿을 로드하고, 변수를 적용한 후 실제 GraphQL 쿼리를 실행합니다
    */
   async executeTemplate(input: ExecuteTemplateInput, context: any): Promise<any> {
-    this.logger.info('Executing template', { 
+    this.logger.info('Executing template', {
       templateId: input.templateId,
-      templateIdentifier: input.templateIdentifier 
+      templateIdentifier: input.templateIdentifier,
     })
 
     // 1. 템플릿 로드
     const template = await this.loadTemplate(input.templateId, input.templateIdentifier)
     if (!template) {
       throw new GraphQLError('Template not found', {
-        extensions: { code: 'TEMPLATE_NOT_FOUND' }
+        extensions: { code: 'TEMPLATE_NOT_FOUND' },
       })
     }
 
     // 2. 활성화 상태 확인
     if (!template.isActive) {
       throw new GraphQLError('Template is inactive', {
-        extensions: { code: 'TEMPLATE_INACTIVE' }
+        extensions: { code: 'TEMPLATE_INACTIVE' },
       })
     }
 
@@ -47,7 +52,7 @@ export class QueryTemplateResolver {
 
     // 4. 사용 통계 업데이트 (비동기, 실패 무시)
     if (input.trackUsage !== false) {
-      this.trackUsage(template.id).catch(error => {
+      this.trackUsage(template.id).catch((error) => {
         this.logger.warn('Failed to track template usage', { error })
       })
     }
@@ -55,44 +60,44 @@ export class QueryTemplateResolver {
     // 5. GraphQL 쿼리 실행
     try {
       const document = parse(template.queryText)
-      
+
       const result = await execute({
         schema: this.schema,
         document,
         variableValues: processedVariables,
-        contextValue: context
+        contextValue: context,
       })
 
       // 6. 실행 결과 반환
       if (result.errors && result.errors.length > 0) {
-        this.logger.error('Template execution errors', { 
+        this.logger.error('Template execution errors', {
           templateId: template.id,
-          errors: result.errors 
+          errors: result.errors,
         })
         throw new GraphQLError('Template execution failed', {
-          extensions: { 
+          extensions: {
             code: 'TEMPLATE_EXECUTION_ERROR',
-            errors: result.errors
-          }
+            errors: result.errors,
+          },
         })
       }
 
       return result.data
     } catch (error) {
-      this.logger.error('Failed to execute template', { 
+      this.logger.error('Failed to execute template', {
         templateId: template.id,
-        error 
+        error,
       })
-      
+
       if (error instanceof GraphQLError) {
         throw error
       }
-      
+
       throw new GraphQLError('Failed to execute template', {
-        extensions: { 
+        extensions: {
           code: 'TEMPLATE_EXECUTION_ERROR',
-          originalError: error
-        }
+          originalError: error,
+        },
       })
     }
   }
@@ -114,7 +119,7 @@ export class QueryTemplateResolver {
       orderBy: input.orderBy || 'usage_count',
       orderDirection: input.orderDirection || 'DESC',
       limit: input.limit || 20,
-      offset: input.offset || 0
+      offset: input.offset || 0,
     }
 
     const result = await this.queryTemplateRepository.search(searchCriteria)
@@ -166,7 +171,7 @@ export class QueryTemplateResolver {
     // 기본값과 사용자 입력 병합
     const merged = {
       ...(defaultVariables || {}),
-      ...(userVariables || {})
+      ...(userVariables || {}),
     }
 
     // 검증이 필요한 경우
@@ -186,7 +191,7 @@ export class QueryTemplateResolver {
     for (const field of required) {
       if (!(field in variables)) {
         throw new GraphQLError(`Missing required variable: ${field}`, {
-          extensions: { code: 'INVALID_VARIABLES' }
+          extensions: { code: 'INVALID_VARIABLES' },
         })
       }
     }
@@ -212,15 +217,15 @@ export class QueryTemplateResolver {
     try {
       const template = QueryTemplateDtoMapper.createInputToEntity(input)
       const savedTemplate = await this.queryTemplateRepository.create(template)
-      
+
       return QueryTemplateDtoMapper.toDto(savedTemplate)
     } catch (error) {
-      this.logger.error('Failed to create template', { 
-        identifier: input.identifier, 
-        error 
+      this.logger.error('Failed to create template', {
+        identifier: input.identifier,
+        error,
       })
       throw new GraphQLError('Failed to create template', {
-        extensions: { code: 'TEMPLATE_CREATION_FAILED' }
+        extensions: { code: 'TEMPLATE_CREATION_FAILED' },
       })
     }
   }
@@ -235,7 +240,7 @@ export class QueryTemplateResolver {
       const template = await this.queryTemplateRepository.findById(id)
       if (!template) {
         throw new GraphQLError('Template not found', {
-          extensions: { code: 'TEMPLATE_NOT_FOUND' }
+          extensions: { code: 'TEMPLATE_NOT_FOUND' },
         })
       }
 
@@ -245,7 +250,7 @@ export class QueryTemplateResolver {
     } catch (error) {
       this.logger.error('Failed to update template', { id, error })
       throw new GraphQLError('Failed to update template', {
-        extensions: { code: 'TEMPLATE_UPDATE_FAILED' }
+        extensions: { code: 'TEMPLATE_UPDATE_FAILED' },
       })
     }
   }
@@ -260,7 +265,7 @@ export class QueryTemplateResolver {
       const exists = await this.queryTemplateRepository.findById(id)
       if (!exists) {
         throw new GraphQLError('Template not found', {
-          extensions: { code: 'TEMPLATE_NOT_FOUND' }
+          extensions: { code: 'TEMPLATE_NOT_FOUND' },
         })
       }
 
@@ -269,7 +274,7 @@ export class QueryTemplateResolver {
     } catch (error) {
       this.logger.error('Failed to delete template', { id, error })
       throw new GraphQLError('Failed to delete template', {
-        extensions: { code: 'TEMPLATE_DELETION_FAILED' }
+        extensions: { code: 'TEMPLATE_DELETION_FAILED' },
       })
     }
   }
@@ -286,7 +291,7 @@ export class QueryTemplateResolver {
     } catch (error) {
       this.logger.error('Failed to activate template', { id, error })
       throw new GraphQLError('Failed to activate template', {
-        extensions: { code: 'TEMPLATE_ACTIVATION_FAILED' }
+        extensions: { code: 'TEMPLATE_ACTIVATION_FAILED' },
       })
     }
   }
@@ -303,7 +308,7 @@ export class QueryTemplateResolver {
     } catch (error) {
       this.logger.error('Failed to deactivate template', { id, error })
       throw new GraphQLError('Failed to deactivate template', {
-        extensions: { code: 'TEMPLATE_DEACTIVATION_FAILED' }
+        extensions: { code: 'TEMPLATE_DEACTIVATION_FAILED' },
       })
     }
   }

@@ -81,7 +81,7 @@ extend type Query {
   attributeType(id: ID!): AttributeType
   attributeTypeByIdentifier(identifier: String!): AttributeType
   attributeTypes: [AttributeType!]!
-  
+
   # Attributes
   attribute(id: ID!): Attribute
   attributes(tableId: ID!): [Attribute!]!
@@ -92,7 +92,7 @@ extend type Mutation {
   createAttributeType(input: CreateAttributeTypeInput!): CreateAttributeTypePayload!
   updateAttributeType(id: ID!, input: CreateAttributeTypeInput!): CreateAttributeTypePayload!
   deleteAttributeType(id: ID!): DeleteAttributePayload!
-  
+
   # Attribute management
   createAttribute(input: CreateAttributeInput!): CreateAttributePayload!
   updateAttribute(id: ID!, input: UpdateAttributeInput!): UpdateAttributePayload!

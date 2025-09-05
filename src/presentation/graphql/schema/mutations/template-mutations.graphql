@@ -2,30 +2,17 @@
 
 extend type Mutation {
   # Template management
-  createTemplate(
-    input: CreateQueryTemplateInput!
-  ): CreateQueryTemplatePayload!
-  
-  updateTemplate(
-    id: ID!
-    input: UpdateQueryTemplateInput!
-  ): UpdateQueryTemplatePayload!
-  
-  deleteTemplate(
-    id: ID!
-  ): DeleteQueryTemplatePayload!
-  
+  createTemplate(input: CreateQueryTemplateInput!): CreateQueryTemplatePayload!
+
+  updateTemplate(id: ID!, input: UpdateQueryTemplateInput!): UpdateQueryTemplatePayload!
+
+  deleteTemplate(id: ID!): DeleteQueryTemplatePayload!
+
   # Template state management
-  activateTemplate(
-    id: ID!
-  ): QueryTemplate
-  
-  deactivateTemplate(
-    id: ID!
-  ): QueryTemplate
-  
+  activateTemplate(id: ID!): QueryTemplate
+
+  deactivateTemplate(id: ID!): QueryTemplate
+
   # Template execution
-  executeTemplate(
-    input: ExecuteQueryTemplateInput!
-  ): ExecuteQueryTemplatePayload!
+  executeTemplate(input: ExecuteQueryTemplateInput!): ExecuteQueryTemplatePayload!
 }

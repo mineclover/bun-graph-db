@@ -48,7 +48,7 @@ export interface DeleteTableArgs {
   cascadeDelete?: boolean
 }
 
-// Node GraphQL Arguments  
+// Node GraphQL Arguments
 export interface NodeArgs {
   id: string
 }

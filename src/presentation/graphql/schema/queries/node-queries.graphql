@@ -4,14 +4,10 @@ extend type Query {
   # Get single node
   node(id: ID!): TableNode
   nodeByContent(content: String!, tableId: ID!): TableNode
-  
+
   # Get multiple nodes with filtering and pagination
-  nodes(
-    filter: NodesFilter
-    pagination: NodesPagination
-    sort: [SortInput!]
-  ): NodesConnection!
-  
+  nodes(filter: NodesFilter, pagination: NodesPagination, sort: [SortInput!]): NodesConnection!
+
   # Advanced node search
   searchNodes(
     filter: SearchNodesFilter!

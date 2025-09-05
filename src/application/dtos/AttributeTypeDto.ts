@@ -28,12 +28,12 @@ export class AttributeTypeDto {
       defaultValue: attributeType.getParsedDefaultValue(),
       examples: attributeType.getParsedExamples(),
       createdAt: attributeType.getCreatedAt().toISOString(),
-      updatedAt: attributeType.getUpdatedAt().toISOString()
+      updatedAt: attributeType.getUpdatedAt().toISOString(),
     }
   }
 
   static fromEntities(attributeTypes: AttributeType[]): AttributeTypeDto[] {
-    return attributeTypes.map(attributeType => AttributeTypeDto.fromEntity(attributeType))
+    return attributeTypes.map((attributeType) => AttributeTypeDto.fromEntity(attributeType))
   }
 }
 

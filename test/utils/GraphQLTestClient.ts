@@ -31,7 +31,7 @@ export class GraphQLTestClient {
       createdAttributes: [],
       createdNodes: [],
       createdRelations: [],
-      createdRelationTypes: []
+      createdRelationTypes: [],
     }
   }
 
@@ -43,7 +43,7 @@ export class GraphQLTestClient {
       if (error.response?.errors) {
         return {
           data: null,
-          errors: error.response.errors
+          errors: error.response.errors,
         }
       }
       throw error
@@ -65,7 +65,7 @@ export class GraphQLTestClient {
       createdAttributes: [],
       createdNodes: [],
       createdRelations: [],
-      createdRelationTypes: []
+      createdRelationTypes: [],
     }
   }
 
@@ -90,7 +90,8 @@ export class GraphQLTestClient {
 
   // Table operations
   async createTable(identifier: string, description?: string): Promise<string | null> {
-    const result = await this.query(`
+    const result = await this.query(
+      `
       mutation CreateTable($input: CreateTableInput!) {
         createTable(input: $input) {
           table {
@@ -105,12 +106,14 @@ export class GraphQLTestClient {
           }
         }
       }
-    `, {
-      input: {
-        identifier,
-        description: description || `Test table: ${identifier}`
+    `,
+      {
+        input: {
+          identifier,
+          description: description || `Test table: ${identifier}`,
+        },
       }
-    })
+    )
 
     if (result.data?.createTable?.table?.id) {
       this.trackResource('createdTables', result.data.createTable.table.id)
@@ -140,7 +143,8 @@ export class GraphQLTestClient {
   }
 
   async getTable(id: string): Promise<any> {
-    return await this.query(`
+    return await this.query(
+      `
       query GetTable($id: ID!) {
         table(id: $id) {
           id
@@ -153,12 +157,15 @@ export class GraphQLTestClient {
           attributeCount
         }
       }
-    `, { id })
+    `,
+      { id }
+    )
   }
 
   // Attribute type operations
   async createAttributeType(identifier: string, description?: string): Promise<string | null> {
-    const result = await this.query(`
+    const result = await this.query(
+      `
       mutation CreateAttributeType($input: CreateAttributeTypeInput!) {
         createAttributeType(input: $input) {
           attributeType {
@@ -173,12 +180,14 @@ export class GraphQLTestClient {
           }
         }
       }
-    `, {
-      input: {
-        identifier,
-        description: description || `Test attribute type: ${identifier}`
+    `,
+      {
+        input: {
+          identifier,
+          description: description || `Test attribute type: ${identifier}`,
+        },
       }
-    })
+    )
 
     if (result.data?.createAttributeType?.attributeType?.id) {
       this.trackResource('createdAttributeTypes', result.data.createAttributeType.attributeType.id)
@@ -203,8 +212,13 @@ export class GraphQLTestClient {
   }
 
   // Attribute operations
-  async createAttribute(tableId: string, identifier: string, attributeTypeId: string): Promise<string | null> {
-    const result = await this.query(`
+  async createAttribute(
+    tableId: string,
+    identifier: string,
+    attributeTypeId: string
+  ): Promise<string | null> {
+    const result = await this.query(
+      `
       mutation CreateAttribute($input: CreateAttributeInput!) {
         createAttribute(input: $input) {
           attribute {
@@ -219,16 +233,18 @@ export class GraphQLTestClient {
           }
         }
       }
-    `, {
-      input: {
-        tableId,
-        identifier,
-        attributeTypeId,
-        description: `Test attribute: ${identifier}`,
-        isRequired: false,
-        isSearchable: true
+    `,
+      {
+        input: {
+          tableId,
+          identifier,
+          attributeTypeId,
+          description: `Test attribute: ${identifier}`,
+          isRequired: false,
+          isSearchable: true,
+        },
       }
-    })
+    )
 
     if (result.data?.createAttribute?.attribute?.id) {
       this.trackResource('createdAttributes', result.data.createAttribute.attribute.id)
@@ -238,7 +254,8 @@ export class GraphQLTestClient {
   }
 
   async getAttributes(tableId: string): Promise<any> {
-    return await this.query(`
+    return await this.query(
+      `
       query GetAttributes($tableId: ID!) {
         attributes(tableId: $tableId) {
           id
@@ -258,12 +275,15 @@ export class GraphQLTestClient {
           updatedAt
         }
       }
-    `, { tableId })
+    `,
+      { tableId }
+    )
   }
 
   // Node operations
   async createNode(tableId: string, content: string, description?: string): Promise<string | null> {
-    const result = await this.query(`
+    const result = await this.query(
+      `
       mutation CreateNode($input: CreateNodeInput!) {
         createNode(input: $input) {
           node {
@@ -278,13 +298,15 @@ export class GraphQLTestClient {
           }
         }
       }
-    `, {
-      input: {
-        tableId,
-        content,
-        description: description || `Test node: ${content}`
+    `,
+      {
+        input: {
+          tableId,
+          content,
+          description: description || `Test node: ${content}`,
+        },
       }
-    })
+    )
 
     if (result.data?.createNode?.node?.id) {
       this.trackResource('createdNodes', result.data.createNode.node.id)
@@ -294,7 +316,8 @@ export class GraphQLTestClient {
   }
 
   async getNodes(tableId: string): Promise<any> {
-    return await this.query(`
+    return await this.query(
+      `
       query GetNodes($tableId: ID!) {
         nodes(tableId: $tableId) {
           nodes {
@@ -315,11 +338,14 @@ export class GraphQLTestClient {
           hasNextPage
         }
       }
-    `, { tableId })
+    `,
+      { tableId }
+    )
   }
 
   async searchNodes(tableId: string, query?: string, limit = 10): Promise<any> {
-    return await this.query(`
+    return await this.query(
+      `
       query SearchNodes($input: SearchNodesInput!) {
         searchNodes(input: $input) {
           nodes {
@@ -335,18 +361,21 @@ export class GraphQLTestClient {
           }
         }
       }
-    `, {
-      input: {
-        tableId,
-        query,
-        limit
+    `,
+      {
+        input: {
+          tableId,
+          query,
+          limit,
+        },
       }
-    })
+    )
   }
 
   // Relation operations
   async createRelationType(identifier: string, description?: string): Promise<string | null> {
-    const result = await this.query(`
+    const result = await this.query(
+      `
       mutation CreateRelationType($input: CreateRelationTypeInput!) {
         createRelationType(input: $input) {
           relationType {
@@ -361,12 +390,14 @@ export class GraphQLTestClient {
           }
         }
       }
-    `, {
-      input: {
-        identifier,
-        description: description || `Test relation type: ${identifier}`
+    `,
+      {
+        input: {
+          identifier,
+          description: description || `Test relation type: ${identifier}`,
+        },
       }
-    })
+    )
 
     if (result.data?.createRelationType?.relationType?.id) {
       this.trackResource('createdRelationTypes', result.data.createRelationType.relationType.id)
@@ -390,8 +421,16 @@ export class GraphQLTestClient {
     `)
   }
 
-  async createRelation(tableId: string, relationTypeId: string, sourceExternalId: string, targetExternalId: string, strength = 1, confidence = 1): Promise<string | null> {
-    const result = await this.query(`
+  async createRelation(
+    tableId: string,
+    relationTypeId: string,
+    sourceExternalId: string,
+    targetExternalId: string,
+    strength = 1,
+    confidence = 1
+  ): Promise<string | null> {
+    const result = await this.query(
+      `
       mutation CreateRelation($input: CreateRelationInput!) {
         createRelation(input: $input) {
           relation {
@@ -408,16 +447,18 @@ export class GraphQLTestClient {
           }
         }
       }
-    `, {
-      input: {
-        tableId,
-        relationTypeId,
-        sourceExternalId,
-        targetExternalId,
-        strength,
-        confidence
+    `,
+      {
+        input: {
+          tableId,
+          relationTypeId,
+          sourceExternalId,
+          targetExternalId,
+          strength,
+          confidence,
+        },
       }
-    })
+    )
 
     if (result.data?.createRelation?.relation?.id) {
       this.trackResource('createdRelations', result.data.createRelation.relation.id)
@@ -427,7 +468,8 @@ export class GraphQLTestClient {
   }
 
   async getNodeRelations(tableId: string): Promise<any> {
-    return await this.query(`
+    return await this.query(
+      `
       query GetNodeRelations($tableId: ID!) {
         nodeRelations(tableId: $tableId) {
           id
@@ -448,7 +490,9 @@ export class GraphQLTestClient {
           updatedAt
         }
       }
-    `, { tableId })
+    `,
+      { tableId }
+    )
   }
 
   // Analytics operations
@@ -479,7 +523,8 @@ export class GraphQLTestClient {
 
   // Schema operations
   async exportTable(tableId: string): Promise<any> {
-    return await this.query(`
+    return await this.query(
+      `
       query ExportTable($tableId: ID!) {
         exportTable(tableId: $tableId) {
           success
@@ -488,7 +533,9 @@ export class GraphQLTestClient {
           timestamp
         }
       }
-    `, { tableId })
+    `,
+      { tableId }
+    )
   }
 
   async exportAllTables(): Promise<any> {
@@ -506,7 +553,8 @@ export class GraphQLTestClient {
 
   // Complex query operations
   async searchRelatedNodes(tableId: string, sourceNodeIds: string[], depth = 2): Promise<any> {
-    return await this.query(`
+    return await this.query(
+      `
       query SearchRelatedNodes($input: SearchRelatedNodesInput!) {
         searchRelatedNodes(input: $input) {
           nodes {
@@ -538,15 +586,19 @@ export class GraphQLTestClient {
           hasMore
         }
       }
-    `, {
-      input: {
-        tableId,
-        sourceNodeIds,
-        relationFilters: [{
-          direction: 'OUTGOING',
-          depth
-        }]
+    `,
+      {
+        input: {
+          tableId,
+          sourceNodeIds,
+          relationFilters: [
+            {
+              direction: 'OUTGOING',
+              depth,
+            },
+          ],
+        },
       }
-    })
+    )
   }
 }

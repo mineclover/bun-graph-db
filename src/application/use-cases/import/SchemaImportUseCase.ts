@@ -1,17 +1,23 @@
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { SchemaExportResult, ExportedTable, ExportedAttribute, ExportedNode, ExportedRelation } from '../export/SchemaExportUseCase.js'
-import { Table } from '@/domain/entities/Table.js'
-import { AttributeType } from '@/domain/entities/AttributeType.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
+import { AttributeType } from '@/domain/entities/AttributeType.js'
 import { Node } from '@/domain/entities/Node.js'
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
+import { Table } from '@/domain/entities/Table.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type {
+  ExportedAttribute,
+  ExportedNode,
+  ExportedRelation,
+  ExportedTable,
+  SchemaExportResult,
+} from '../export/SchemaExportUseCase.js'
 
 export interface SchemaImportOptions {
   overwriteExisting?: boolean
@@ -58,9 +64,12 @@ export class SchemaImportUseCase {
     private readonly logger: ILogger
   ) {}
 
-  async importSchema(exportData: SchemaExportResult, options: SchemaImportOptions = {}): Promise<ImportResult> {
+  async importSchema(
+    exportData: SchemaExportResult,
+    options: SchemaImportOptions = {}
+  ): Promise<ImportResult> {
     const startTime = Date.now()
-    
+
     const result: ImportResult = {
       success: false,
       statistics: {
@@ -71,18 +80,18 @@ export class SchemaImportUseCase {
         attributeTypesImported: 0,
         relationTypesImported: 0,
         skipped: 0,
-        errors: 0
+        errors: 0,
       },
       errors: [],
       warnings: [],
       executionTime: 0,
-      importedAt: new Date().toISOString()
+      importedAt: new Date().toISOString(),
     }
 
     try {
-      this.logger.info('Starting schema import', { 
+      this.logger.info('Starting schema import', {
         tablesCount: exportData.tables.length,
-        options 
+        options,
       })
 
       // Validate export data
@@ -111,33 +120,35 @@ export class SchemaImportUseCase {
       result.success = result.errors.length === 0
       result.executionTime = Date.now() - startTime
 
-      this.logger.info('Schema import completed', { 
+      this.logger.info('Schema import completed', {
         success: result.success,
         statistics: result.statistics,
-        executionTime: result.executionTime 
+        executionTime: result.executionTime,
       })
 
       return result
-
     } catch (error) {
       result.errors.push({
         type: 'SYSTEM_ERROR',
-        message: `Import failed: ${error}`
+        message: `Import failed: ${error}`,
       })
       result.statistics.errors++
       result.executionTime = Date.now() - startTime
-      
+
       this.logger.error('Schema import failed', { error, result })
       throw error
     }
   }
 
-  private async validateExportData(exportData: SchemaExportResult, result: ImportResult): Promise<void> {
+  private async validateExportData(
+    exportData: SchemaExportResult,
+    result: ImportResult
+  ): Promise<void> {
     // Validate metadata
     if (!exportData.metadata || !exportData.metadata.exportedAt) {
       result.warnings.push({
         type: 'VALIDATION_WARNING',
-        message: 'Export metadata is missing or incomplete'
+        message: 'Export metadata is missing or incomplete',
       })
     }
 
@@ -147,7 +158,7 @@ export class SchemaImportUseCase {
         result.errors.push({
           type: 'VALIDATION_ERROR',
           message: 'Table missing required fields',
-          item: table
+          item: table,
         })
         result.statistics.errors++
       }
@@ -158,7 +169,7 @@ export class SchemaImportUseCase {
           result.errors.push({
             type: 'VALIDATION_ERROR',
             message: 'Node missing required fields',
-            item: node
+            item: node,
           })
           result.statistics.errors++
         }
@@ -166,14 +177,14 @@ export class SchemaImportUseCase {
 
       // Validate relations reference valid nodes
       for (const relation of table.relations) {
-        const sourceExists = table.nodes.some(n => n.id === relation.sourceNodeId)
-        const targetExists = table.nodes.some(n => n.id === relation.targetNodeId)
-        
+        const sourceExists = table.nodes.some((n) => n.id === relation.sourceNodeId)
+        const targetExists = table.nodes.some((n) => n.id === relation.targetNodeId)
+
         if (!sourceExists || !targetExists) {
           result.errors.push({
             type: 'VALIDATION_ERROR',
             message: 'Relation references non-existent nodes',
-            item: relation
+            item: relation,
           })
           result.statistics.errors++
         }
@@ -181,12 +192,16 @@ export class SchemaImportUseCase {
     }
   }
 
-  private async importAttributeTypes(attributeTypes: any[], options: SchemaImportOptions, result: ImportResult): Promise<void> {
+  private async importAttributeTypes(
+    attributeTypes: any[],
+    options: SchemaImportOptions,
+    result: ImportResult
+  ): Promise<void> {
     for (const atData of attributeTypes) {
       try {
         // Check if attribute type already exists
         const existing = await this.attributeTypeRepository.findByIdentifier(atData.identifier)
-        
+
         if (existing) {
           if (options.conflictResolution === 'skip' || options.skipDuplicates) {
             result.statistics.skipped++
@@ -195,7 +210,7 @@ export class SchemaImportUseCase {
             result.errors.push({
               type: 'CONFLICT_ERROR',
               message: `Attribute type '${atData.identifier}' already exists`,
-              item: atData
+              item: atData,
             })
             result.statistics.errors++
             continue
@@ -216,24 +231,27 @@ export class SchemaImportUseCase {
         result.statistics.attributeTypesImported++
 
         this.logger.debug('Imported attribute type', { identifier: atData.identifier })
-
       } catch (error) {
         result.errors.push({
           type: 'IMPORT_ERROR',
           message: `Failed to import attribute type '${atData.identifier}': ${error}`,
-          item: atData
+          item: atData,
         })
         result.statistics.errors++
       }
     }
   }
 
-  private async importRelationTypes(relationTypes: any[], options: SchemaImportOptions, result: ImportResult): Promise<void> {
+  private async importRelationTypes(
+    relationTypes: any[],
+    options: SchemaImportOptions,
+    result: ImportResult
+  ): Promise<void> {
     for (const rtData of relationTypes) {
       try {
         // Check if relation type already exists
         const existing = await this.relationTypeRepository.findByIdentifier(rtData.identifier)
-        
+
         if (existing) {
           if (options.conflictResolution === 'skip' || options.skipDuplicates) {
             result.statistics.skipped++
@@ -242,7 +260,7 @@ export class SchemaImportUseCase {
             result.errors.push({
               type: 'CONFLICT_ERROR',
               message: `Relation type '${rtData.identifier}' already exists`,
-              item: rtData
+              item: rtData,
             })
             result.statistics.errors++
             continue
@@ -260,25 +278,28 @@ export class SchemaImportUseCase {
         result.statistics.relationTypesImported++
 
         this.logger.debug('Imported relation type', { identifier: rtData.identifier })
-
       } catch (error) {
         result.errors.push({
           type: 'IMPORT_ERROR',
           message: `Failed to import relation type '${rtData.identifier}': ${error}`,
-          item: rtData
+          item: rtData,
         })
         result.statistics.errors++
       }
     }
   }
 
-  private async importTable(tableData: ExportedTable, options: SchemaImportOptions, result: ImportResult): Promise<void> {
+  private async importTable(
+    tableData: ExportedTable,
+    options: SchemaImportOptions,
+    result: ImportResult
+  ): Promise<void> {
     try {
       this.logger.info('Importing table', { identifier: tableData.identifier })
 
       // Check if table already exists
       const existingTable = await this.tableRepository.findByIdentifier(tableData.identifier)
-      
+
       if (existingTable) {
         if (options.conflictResolution === 'skip' || options.skipDuplicates) {
           result.statistics.skipped++
@@ -287,7 +308,7 @@ export class SchemaImportUseCase {
           result.errors.push({
             type: 'CONFLICT_ERROR',
             message: `Table '${tableData.identifier}' already exists`,
-            item: tableData
+            item: tableData,
           })
           result.statistics.errors++
           return
@@ -296,18 +317,17 @@ export class SchemaImportUseCase {
 
       // Create or update table
       let table: Table
-      if (existingTable && (options.conflictResolution === 'overwrite' || options.conflictResolution === 'merge')) {
+      if (
+        existingTable &&
+        (options.conflictResolution === 'overwrite' || options.conflictResolution === 'merge')
+      ) {
         table = existingTable
         // Update table properties if needed
       } else {
-        table = Table.create(
-          tableData.identifier,
-          tableData.description,
-          tableData.metadata
-        )
+        table = Table.create(tableData.identifier, tableData.description, tableData.metadata)
         await this.tableRepository.save(table)
       }
-      
+
       result.statistics.tablesImported++
 
       // Import attributes for this table
@@ -319,34 +339,40 @@ export class SchemaImportUseCase {
       // Import relations for this table
       await this.importTableRelations(table.id, tableData.relations, nodeIdMapping, options, result)
 
-      this.logger.info('Table import completed', { 
+      this.logger.info('Table import completed', {
         identifier: tableData.identifier,
         nodes: tableData.nodes.length,
-        relations: tableData.relations.length 
+        relations: tableData.relations.length,
       })
-
     } catch (error) {
       result.errors.push({
         type: 'TABLE_IMPORT_ERROR',
         message: `Failed to import table '${tableData.identifier}': ${error}`,
-        item: tableData
+        item: tableData,
       })
       result.statistics.errors++
     }
   }
 
-  private async importTableAttributes(tableId: string, attributes: ExportedAttribute[], options: SchemaImportOptions, result: ImportResult): Promise<void> {
+  private async importTableAttributes(
+    tableId: string,
+    attributes: ExportedAttribute[],
+    options: SchemaImportOptions,
+    result: ImportResult
+  ): Promise<void> {
     for (const attrData of attributes) {
       try {
         // Find the attribute type
-        const attributeType = await this.attributeTypeRepository.findByIdentifier(attrData.attributeType.identifier)
+        const attributeType = await this.attributeTypeRepository.findByIdentifier(
+          attrData.attributeType.identifier
+        )
         if (!attributeType) {
           result.warnings.push({
             type: 'MISSING_REFERENCE',
             message: `Attribute type '${attrData.attributeType.identifier}' not found, creating it`,
-            item: attrData
+            item: attrData,
           })
-          
+
           // Create the missing attribute type
           const newAttributeType = AttributeType.create(
             attrData.attributeType.identifier,
@@ -360,8 +386,11 @@ export class SchemaImportUseCase {
         }
 
         // Check if attribute already exists
-        const existing = await this.attributeRepository.findByTableIdAndIdentifier(tableId, attrData.identifier)
-        
+        const existing = await this.attributeRepository.findByTableIdAndIdentifier(
+          tableId,
+          attrData.identifier
+        )
+
         if (existing && options.skipDuplicates) {
           result.statistics.skipped++
           continue
@@ -379,26 +408,33 @@ export class SchemaImportUseCase {
 
         await this.attributeRepository.save(attribute)
         result.statistics.attributesImported++
-
       } catch (error) {
         result.errors.push({
           type: 'ATTRIBUTE_IMPORT_ERROR',
           message: `Failed to import attribute '${attrData.identifier}': ${error}`,
-          item: attrData
+          item: attrData,
         })
         result.statistics.errors++
       }
     }
   }
 
-  private async importTableNodes(tableId: string, nodes: ExportedNode[], options: SchemaImportOptions, result: ImportResult): Promise<Map<string, string>> {
+  private async importTableNodes(
+    tableId: string,
+    nodes: ExportedNode[],
+    options: SchemaImportOptions,
+    result: ImportResult
+  ): Promise<Map<string, string>> {
     const nodeIdMapping = new Map<string, string>() // old ID -> new ID
 
     for (const nodeData of nodes) {
       try {
         // Check for existing node with same content
-        const existing = await this.nodeRepository.findByTableIdAndContent(tableId, nodeData.content)
-        
+        const existing = await this.nodeRepository.findByTableIdAndContent(
+          tableId,
+          nodeData.content
+        )
+
         if (existing && options.skipDuplicates) {
           nodeIdMapping.set(nodeData.id, existing.id)
           result.statistics.skipped++
@@ -414,16 +450,15 @@ export class SchemaImportUseCase {
         )
 
         await this.nodeRepository.save(node)
-        
+
         // Map old ID to new ID for relation mapping
         nodeIdMapping.set(nodeData.id, node.id)
         result.statistics.nodesImported++
-
       } catch (error) {
         result.errors.push({
           type: 'NODE_IMPORT_ERROR',
           message: `Failed to import node '${nodeData.content}': ${error}`,
-          item: nodeData
+          item: nodeData,
         })
         result.statistics.errors++
       }
@@ -433,10 +468,10 @@ export class SchemaImportUseCase {
   }
 
   private async importTableRelations(
-    tableId: string, 
-    relations: ExportedRelation[], 
+    tableId: string,
+    relations: ExportedRelation[],
     nodeIdMapping: Map<string, string>,
-    options: SchemaImportOptions, 
+    options: SchemaImportOptions,
     result: ImportResult
   ): Promise<void> {
     for (const relationData of relations) {
@@ -449,19 +484,21 @@ export class SchemaImportUseCase {
           result.errors.push({
             type: 'RELATION_MAPPING_ERROR',
             message: 'Cannot map relation node IDs',
-            item: relationData
+            item: relationData,
           })
           result.statistics.errors++
           continue
         }
 
         // Find the relation type
-        const relationType = await this.relationTypeRepository.findByIdentifier(relationData.relationType.identifier)
+        const relationType = await this.relationTypeRepository.findByIdentifier(
+          relationData.relationType.identifier
+        )
         if (!relationType) {
           result.warnings.push({
             type: 'MISSING_REFERENCE',
             message: `Relation type '${relationData.relationType.identifier}' not found, creating it`,
-            item: relationData
+            item: relationData,
           })
 
           // Create the missing relation type
@@ -484,12 +521,11 @@ export class SchemaImportUseCase {
 
         await this.relationRepository.save(relation)
         result.statistics.relationsImported++
-
       } catch (error) {
         result.errors.push({
           type: 'RELATION_IMPORT_ERROR',
           message: `Failed to import relation: ${error}`,
-          item: relationData
+          item: relationData,
         })
         result.statistics.errors++
       }

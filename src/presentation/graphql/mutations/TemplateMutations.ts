@@ -1,9 +1,9 @@
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLSchema } from 'graphql'
-import type { GraphQLParent, GraphQLContext } from '@/core/types/GraphQLTypes.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
+import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 
 export class TemplateMutations {
   constructor(
@@ -16,7 +16,7 @@ export class TemplateMutations {
   async createTemplate(_: GraphQLParent, args: { input: any }) {
     try {
       this.logger.info('Creating template', { input: args.input })
-      
+
       const template = QueryTemplate.create(
         args.input.identifier,
         args.input.name,
@@ -29,23 +29,23 @@ export class TemplateMutations {
           applicableTables: args.input.applicableTables,
           templateType: args.input.templateType,
           complexityScore: args.input.complexityScore,
-          version: args.input.version
+          version: args.input.version,
         }
       )
-      
+
       const result = await this.queryTemplateRepository.create(template)
 
       return {
         success: !!result,
         template: result,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Error creating template', { error, input: args.input })
       return {
         success: false,
         template: null,
-        errors: [{ message: error.message, code: 'CREATE_TEMPLATE_ERROR' }]
+        errors: [{ message: error.message, code: 'CREATE_TEMPLATE_ERROR' }],
       }
     }
   }
@@ -53,13 +53,13 @@ export class TemplateMutations {
   async updateTemplate(_: GraphQLParent, args: { id: string; input: any }) {
     try {
       this.logger.info('Updating template', { id: args.id, input: args.input })
-      
+
       const existingTemplate = await this.queryTemplateRepository.findById(args.id)
       if (!existingTemplate) {
         return {
           success: false,
           template: null,
-          errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }]
+          errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }],
         }
       }
 
@@ -74,20 +74,20 @@ export class TemplateMutations {
         complexityScore: args.input.complexityScore,
         version: args.input.version,
         isActive: args.input.isActive,
-        tags: args.input.tags
+        tags: args.input.tags,
       })
 
       return {
         success: !!updatedTemplate,
         template: updatedTemplate,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Error updating template', { error, id: args.id, input: args.input })
       return {
         success: false,
         template: null,
-        errors: [{ message: error.message, code: 'UPDATE_TEMPLATE_ERROR' }]
+        errors: [{ message: error.message, code: 'UPDATE_TEMPLATE_ERROR' }],
       }
     }
   }
@@ -95,12 +95,12 @@ export class TemplateMutations {
   async deleteTemplate(_: GraphQLParent, args: { id: string }) {
     try {
       this.logger.info('Deleting template', { id: args.id })
-      
+
       const existingTemplate = await this.queryTemplateRepository.findById(args.id)
       if (!existingTemplate) {
         return {
           success: false,
-          errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }]
+          errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }],
         }
       }
 
@@ -108,13 +108,13 @@ export class TemplateMutations {
 
       return {
         success: true,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Error deleting template', { error, id: args.id })
       return {
         success: false,
-        errors: [{ message: error.message, code: 'DELETE_TEMPLATE_ERROR' }]
+        errors: [{ message: error.message, code: 'DELETE_TEMPLATE_ERROR' }],
       }
     }
   }
@@ -122,7 +122,7 @@ export class TemplateMutations {
   async activateTemplate(_: GraphQLParent, args: { id: string }) {
     try {
       this.logger.info('Activating template', { id: args.id })
-      
+
       const result = await this.queryTemplateRepository.updateStatus(args.id, true)
       return result
     } catch (error) {
@@ -134,7 +134,7 @@ export class TemplateMutations {
   async deactivateTemplate(_: GraphQLParent, args: { id: string }) {
     try {
       this.logger.info('Deactivating template', { id: args.id })
-      
+
       const result = await this.queryTemplateRepository.updateStatus(args.id, false)
       return result
     } catch (error) {
@@ -143,24 +143,28 @@ export class TemplateMutations {
     }
   }
 
-  async executeTemplate(_: GraphQLParent, args: { 
-    templateIdentifier: string
-    variables?: Record<string, unknown>
-    trackUsage?: boolean
-  }, context: GraphQLContext) {
+  async executeTemplate(
+    _: GraphQLParent,
+    args: {
+      templateIdentifier: string
+      variables?: Record<string, unknown>
+      trackUsage?: boolean
+    },
+    context: GraphQLContext
+  ) {
     try {
       this.logger.info('Executing template', { templateIdentifier: args.templateIdentifier })
 
       const result = await this.executeQueryTemplateUseCase.execute({
         templateIdentifier: args.templateIdentifier,
         variables: args.variables,
-        trackUsage: args.trackUsage
+        trackUsage: args.trackUsage,
       })
 
       return {
         queryText: result.queryText,
         processedVariables: result.processedVariables,
-        metadata: result.metadata
+        metadata: result.metadata,
       }
     } catch (error) {
       this.logger.error('Error executing template', { error, args })

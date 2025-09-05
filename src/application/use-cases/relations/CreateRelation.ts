@@ -1,11 +1,15 @@
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { NodeId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { ConflictException, ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
-import type { TableId, NodeId, RelationTypeId } from '@/core/types/CommonTypes.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
 
 export interface CreateRelationInput {
   tableId: string
@@ -44,13 +48,13 @@ export class CreateRelationUseCase {
   ) {}
 
   async execute(input: CreateRelationInput): Promise<CreateRelationOutput> {
-    this.logger.info('Creating new node relation', { 
+    this.logger.info('Creating new node relation', {
       tableId: input.tableId,
       sourceNodeId: input.sourceNodeId,
       sourceExternalId: input.sourceExternalId,
       targetNodeId: input.targetNodeId,
       targetExternalId: input.targetExternalId,
-      relationTypeId: input.relationTypeId
+      relationTypeId: input.relationTypeId,
     })
 
     // Validate input
@@ -63,13 +67,15 @@ export class CreateRelationUseCase {
     }
 
     // Check if relation type exists
-    const relationType = await this.relationTypeRepository.findById(input.relationTypeId as RelationTypeId)
+    const relationType = await this.relationTypeRepository.findById(
+      input.relationTypeId as RelationTypeId
+    )
     if (!relationType) {
       throw new NotFoundException(`RelationType with id '${input.relationTypeId}' not found`)
     }
 
     // Determine external IDs and validate nodes
-    const { sourceNodeId, sourceExternalId, targetNodeId, targetExternalId } = 
+    const { sourceNodeId, sourceExternalId, targetNodeId, targetExternalId } =
       await this.resolveNodesAndExternalIds(input)
 
     // Check for existing relation (prevent duplicates)
@@ -79,7 +85,7 @@ export class CreateRelationUseCase {
       input.tableId as TableId,
       input.relationTypeId as RelationTypeId
     )
-    
+
     if (existingRelation) {
       throw new ConflictException(
         `Relation of type '${relationType.getIdentifier()}' already exists between '${sourceExternalId}' and '${targetExternalId}'`
@@ -113,11 +119,11 @@ export class CreateRelationUseCase {
         throw new Error('Failed to retrieve saved node relation')
       }
 
-      this.logger.info('Node relation created successfully', { 
+      this.logger.info('Node relation created successfully', {
         id: savedRelation.getId(),
         sourceExternalId: savedRelation.getSourceExternalId(),
         targetExternalId: savedRelation.getTargetExternalId(),
-        relationTypeId: savedRelation.getRelationTypeId()
+        relationTypeId: savedRelation.getRelationTypeId(),
       })
 
       return {
@@ -132,13 +138,13 @@ export class CreateRelationUseCase {
           properties: savedRelation.getProperties(),
           strength: savedRelation.getStrength(),
           createdAt: savedRelation.getCreatedAt().toISOString(),
-          updatedAt: savedRelation.getUpdatedAt().toISOString()
-        }
+          updatedAt: savedRelation.getUpdatedAt().toISOString(),
+        },
       }
     } catch (error) {
-      this.logger.error('Failed to create node relation', { 
+      this.logger.error('Failed to create node relation', {
         input,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
       throw error
     }
@@ -235,10 +241,14 @@ export class CreateRelationUseCase {
 
     // Prevent self-referencing relations
     // For internal nodes, compare node IDs; for external nodes, compare external IDs
-    const isSelfReferencing = 
-      (sourceExternalId === 'internal' && targetExternalId === 'internal' && sourceNodeId === targetNodeId) ||
-      (sourceExternalId !== 'internal' && targetExternalId !== 'internal' && sourceExternalId === targetExternalId)
-    
+    const isSelfReferencing =
+      (sourceExternalId === 'internal' &&
+        targetExternalId === 'internal' &&
+        sourceNodeId === targetNodeId) ||
+      (sourceExternalId !== 'internal' &&
+        targetExternalId !== 'internal' &&
+        sourceExternalId === targetExternalId)
+
     if (isSelfReferencing) {
       throw new ValidationException('Source and target cannot be the same')
     }
@@ -247,7 +257,7 @@ export class CreateRelationUseCase {
       sourceNodeId,
       sourceExternalId,
       targetNodeId,
-      targetExternalId
+      targetExternalId,
     }
   }
 }

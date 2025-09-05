@@ -1,15 +1,15 @@
-import type { DIContainer } from '../DIContainer.js'
-import { RepositoryTokens, DatabaseTokens, CommonTokens } from '../tokens/index.js'
-import { SqliteTableRepository } from '@/infrastructure/database/sqlite/SqliteTableRepository.js'
-import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeTypeRepository.js'
+import { SQLiteQueryTemplateRepository } from '@/infrastructure/database/repositories/SQLiteQueryTemplateRepository.js'
 import { SqliteAttributeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeRepository.js'
-import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
+import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeTypeRepository.js'
+import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
 import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/SqliteNodeAttributeRepository.js'
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
-import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
-import { SQLiteQueryTemplateRepository } from '@/infrastructure/database/repositories/SQLiteQueryTemplateRepository.js'
+import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
 import { SqliteNodeSearchRepository } from '@/infrastructure/database/sqlite/SqliteNodeSearchRepository.js'
-import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
+import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
+import { SqliteTableRepository } from '@/infrastructure/database/sqlite/SqliteTableRepository.js'
+import type { DIContainer } from '../DIContainer.js'
+import { CommonTokens, DatabaseTokens, RepositoryTokens } from '../tokens/index.js'
 
 /**
  * Repository module - registers all repository implementations

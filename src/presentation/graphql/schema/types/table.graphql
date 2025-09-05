@@ -6,11 +6,11 @@ type Table implements Node {
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Relationships
   attributes: [Attribute!]!
   nodes: [TableNode!]!
-  
+
   # Computed fields
   nodeCount: Int!
   attributeCount: Int!

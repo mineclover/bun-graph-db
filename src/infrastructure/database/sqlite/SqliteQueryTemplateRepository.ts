@@ -1,7 +1,10 @@
+import type { ILogger } from '@/application/ports/ILogger.js'
 import type { IDatabaseConnection } from '@/core/database/interfaces/IDatabaseConnection.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
-import type { IQueryTemplateRepository, SearchCriteria } from '@/domain/repositories/IQueryTemplateRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
+import type {
+  IQueryTemplateRepository,
+  SearchCriteria,
+} from '@/domain/repositories/IQueryTemplateRepository.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
@@ -108,9 +111,11 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           }
         } else {
           // Must have at least one tag (ANY mode)
-          const tagConditions = criteria.tags.map(() => `json_extract(tags, '$') LIKE ?`).join(' OR ')
+          const tagConditions = criteria.tags
+            .map(() => `json_extract(tags, '$') LIKE ?`)
+            .join(' OR ')
           query += ` AND (${tagConditions})`
-          criteria.tags.forEach(tag => params.push(`%"${tag}"%`))
+          criteria.tags.forEach((tag) => params.push(`%"${tag}"%`))
         }
       }
 
@@ -144,30 +149,32 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
       const rows = await this.connection.query(query, params)
 
-      const items = rows.map(row => QueryTemplate.fromDatabase(
-        String(row.id),
-        row.identifier,
-        row.name,
-        row.description,
-        row.query_text,
-        row.variables_schema,
-        row.default_variables,
-        row.applicable_tables,
-        row.template_type,
-        row.complexity_score,
-        row.usage_count,
-        row.version,
-        Boolean(row.is_active),
-        row.tags,
-        row.created_at,
-        row.updated_at
-      ))
+      const items = rows.map((row) =>
+        QueryTemplate.fromDatabase(
+          String(row.id),
+          row.identifier,
+          row.name,
+          row.description,
+          row.query_text,
+          row.variables_schema,
+          row.default_variables,
+          row.applicable_tables,
+          row.template_type,
+          row.complexity_score,
+          row.usage_count,
+          row.version,
+          Boolean(row.is_active),
+          row.tags,
+          row.created_at,
+          row.updated_at
+        )
+      )
 
       return {
         items,
         total,
         hasNextPage: offset + limit < total,
-        hasPreviousPage: offset > 0
+        hasPreviousPage: offset > 0,
       }
     } catch (error) {
       this.logger.error('Failed to search templates', { criteria, error })
@@ -178,7 +185,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
   async create(template: QueryTemplate): Promise<QueryTemplate> {
     try {
       const data = template.toDatabase()
-      
+
       const query = `
         INSERT INTO templates (
           identifier, name, description, query_text,
@@ -200,9 +207,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.usage_count,
         data.version,
         data.is_active,
-        data.tags
+        data.tags,
       ])
-      
+
       // Return with the new ID
       return QueryTemplate.fromDatabase(
         String(result.lastInsertRowid),
@@ -236,7 +243,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       }
 
       const data = existing.toDatabase()
-      
+
       const query = `
         UPDATE templates SET
           name = ?,
@@ -267,9 +274,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.version,
         data.is_active,
         data.tags,
-        id
+        id,
       ])
-      
+
       return existing
     } catch (error) {
       this.logger.error('Failed to update template', { id, updates, error })
@@ -313,24 +320,26 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       `
       const rows = await this.connection.query(query, [limit])
 
-      return rows.map(row => QueryTemplate.fromDatabase(
-        String(row.id),
-        row.identifier,
-        row.name,
-        row.description,
-        row.query_text,
-        row.variables_schema,
-        row.default_variables,
-        row.applicable_tables,
-        row.template_type,
-        row.complexity_score,
-        row.usage_count,
-        row.version,
-        Boolean(row.is_active),
-        row.tags,
-        row.created_at,
-        row.updated_at
-      ))
+      return rows.map((row) =>
+        QueryTemplate.fromDatabase(
+          String(row.id),
+          row.identifier,
+          row.name,
+          row.description,
+          row.query_text,
+          row.variables_schema,
+          row.default_variables,
+          row.applicable_tables,
+          row.template_type,
+          row.complexity_score,
+          row.usage_count,
+          row.version,
+          Boolean(row.is_active),
+          row.tags,
+          row.created_at,
+          row.updated_at
+        )
+      )
     } catch (error) {
       this.logger.error('Failed to find popular templates', { limit, error })
       throw new DomainException('Failed to find popular templates', 'DATABASE_ERROR')
@@ -363,11 +372,11 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
   private mapOrderByField(field: string): string {
     const mappings: Record<string, string> = {
-      'usage_count': 'usage_count',
-      'created_at': 'created_at',
-      'updated_at': 'updated_at',
-      'name': 'name',
-      'complexity_score': 'complexity_score'
+      usage_count: 'usage_count',
+      created_at: 'created_at',
+      updated_at: 'updated_at',
+      name: 'name',
+      complexity_score: 'complexity_score',
     }
     return mappings[field] || 'usage_count'
   }

@@ -1,16 +1,20 @@
+import { AttributeDto } from '@/application/dtos/AttributeDto.js'
+import { NodeAttributeDto, NodeDto } from '@/application/dtos/NodeDto.js'
+import { TableDto } from '@/application/dtos/TableDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
-import { NodeDto, NodeAttributeDto } from '@/application/dtos/NodeDto.js'
-import { TableDto } from '@/application/dtos/TableDto.js'
-import { AttributeDto } from '@/application/dtos/AttributeDto.js'
-import type { NodeId, TableId, AttributeId } from '@/core/types/CommonTypes.js'
+import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
 
 // Input types matching GraphQL schema
 interface CreateNodeInput {
@@ -94,16 +98,16 @@ export class NodeResolver {
 
       return NodeDto.fromEntity(node, attributeValues)
     } catch (error) {
-      this.logger.error('Failed to find node by content', { 
-        tableId: args.tableId, 
-        content: args.content, 
-        error 
+      this.logger.error('Failed to find node by content', {
+        tableId: args.tableId,
+        content: args.content,
+        error,
       })
       throw error
     }
   }
 
-  async nodes(args: { 
+  async nodes(args: {
     tableId: string
     pagination?: { limit?: number; offset?: number }
   }): Promise<{
@@ -114,15 +118,12 @@ export class NodeResolver {
   }> {
     try {
       const { pagination = { limit: 10, offset: 0 } } = args
-      
-      const result = await this.nodeRepository.findByTableId(
-        args.tableId as TableId,
-        {
-          limit: pagination.limit,
-          offset: pagination.offset
-        }
-      )
-      
+
+      const result = await this.nodeRepository.findByTableId(args.tableId as TableId, {
+        limit: pagination.limit,
+        offset: pagination.offset,
+      })
+
       // Get attributes for each node
       const nodesWithAttributes = await Promise.all(
         result.data.map(async (node) => {
@@ -139,12 +140,12 @@ export class NodeResolver {
           return NodeDto.fromEntity(node, attributeValues)
         })
       )
-      
+
       return {
         nodes: nodesWithAttributes,
         totalCount: result.total,
         hasNextPage: result.hasMore,
-        hasPreviousPage: (pagination.offset || 0) > 0
+        hasPreviousPage: (pagination.offset || 0) > 0,
       }
     } catch (error) {
       this.logger.error('Failed to find nodes', { args, error })
@@ -168,7 +169,7 @@ export class NodeResolver {
         query: args.input.query,
         limit: args.input.limit,
         offset: args.input.offset,
-        sortBy: args.input.sortBy
+        sortBy: args.input.sortBy,
       })
 
       return {
@@ -178,8 +179,8 @@ export class NodeResolver {
         hasPreviousPage: (args.input.offset || 0) > 0,
         query: {
           originalQuery: result.query.originalQuery,
-          parsedConditions: result.query.parsed
-        }
+          parsedConditions: result.query.parsed,
+        },
       }
     } catch (error) {
       this.logger.error('Failed to search nodes', { input: args.input, error })
@@ -210,62 +211,67 @@ export class NodeResolver {
         content: args.input.content,
         title: args.input.title,
         description: args.input.description,
-        attributes
+        attributes,
       })
 
       return {
         node: result.node,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to create node', { input: args.input, error })
-      
+
       if (error instanceof ValidationException) {
         return {
           node: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code,
-            field: 'content'
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+              field: 'content',
+            },
+          ],
         }
       }
 
       if (error instanceof NotFoundException) {
         return {
           node: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+            },
+          ],
         }
       }
 
       if (error instanceof ConflictException) {
         return {
           node: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code,
-            field: 'content'
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+              field: 'content',
+            },
+          ],
         }
       }
-      
+
       return {
         node: null,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
 
-  async updateNode(args: { 
-    id: string
-    input: UpdateNodeInput 
-  }): Promise<{
+  async updateNode(args: { id: string; input: UpdateNodeInput }): Promise<{
     node: NodeDto | null
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
@@ -303,17 +309,19 @@ export class NodeResolver {
 
       return {
         node: NodeDto.fromEntity(updatedNode, attributeValues),
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to update node', { id: args.id, input: args.input, error })
-      
+
       return {
         node: null,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
@@ -336,26 +344,24 @@ export class NodeResolver {
 
       return {
         success: true,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to delete node', { id: args.id, error })
-      
+
       return {
         success: false,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
 
-  async setNodeAttribute(args: { 
-    nodeId: string
-    attributeId: string
-    value: unknown 
-  }): Promise<{
+  async setNodeAttribute(args: { nodeId: string; attributeId: string; value: unknown }): Promise<{
     node: NodeDto | null
     errors: Array<{ message: string; code: string }>
   }> {
@@ -407,21 +413,23 @@ export class NodeResolver {
 
       return {
         node: NodeDto.fromEntity(node, attributeValues),
-        errors: []
+        errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to set node attribute', { 
+      this.logger.error('Failed to set node attribute', {
         nodeId: args.nodeId,
         attributeId: args.attributeId,
-        error 
+        error,
       })
-      
+
       return {
         node: null,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }

@@ -1,4 +1,4 @@
-import { GraphQLTestClient } from './GraphQLTestClient.js'
+import type { GraphQLTestClient } from './GraphQLTestClient.js'
 
 export interface TableFixture {
   identifier: string
@@ -58,46 +58,88 @@ export class TestDataFixtures {
         { identifier: 'category', description: 'Product category' },
         { identifier: 'brand', description: 'Product brand name' },
         { identifier: 'rating', description: 'Product rating (1-5)' },
-        { identifier: 'stock', description: 'Stock quantity' }
+        { identifier: 'stock', description: 'Stock quantity' },
       ],
       attributes: [
         { identifier: 'price', description: 'Price in USD', isRequired: true, isSearchable: true },
-        { identifier: 'category', description: 'Product category', isRequired: true, isSearchable: true },
+        {
+          identifier: 'category',
+          description: 'Product category',
+          isRequired: true,
+          isSearchable: true,
+        },
         { identifier: 'brand', description: 'Brand name', isRequired: false, isSearchable: true },
-        { identifier: 'rating', description: 'Customer rating', isRequired: false, isSearchable: false },
-        { identifier: 'stock_count', description: 'Items in stock', isRequired: true, isSearchable: false }
+        {
+          identifier: 'rating',
+          description: 'Customer rating',
+          isRequired: false,
+          isSearchable: false,
+        },
+        {
+          identifier: 'stock_count',
+          description: 'Items in stock',
+          isRequired: true,
+          isSearchable: false,
+        },
       ],
       nodes: [
         {
           content: 'iPhone 15 Pro',
           description: 'Latest iPhone with advanced features',
           externalId: 'iphone-15-pro',
-          attributes: { price: 999.99, category: 'smartphones', brand: 'Apple', rating: 4.8, stock_count: 50 }
+          attributes: {
+            price: 999.99,
+            category: 'smartphones',
+            brand: 'Apple',
+            rating: 4.8,
+            stock_count: 50,
+          },
         },
         {
           content: 'MacBook Pro M3',
           description: 'Professional laptop with M3 chip',
           externalId: 'macbook-pro-m3',
-          attributes: { price: 1999.99, category: 'laptops', brand: 'Apple', rating: 4.9, stock_count: 25 }
+          attributes: {
+            price: 1999.99,
+            category: 'laptops',
+            brand: 'Apple',
+            rating: 4.9,
+            stock_count: 25,
+          },
         },
         {
           content: 'AirPods Pro',
           description: 'Wireless earbuds with noise cancellation',
           externalId: 'airpods-pro',
-          attributes: { price: 249.99, category: 'audio', brand: 'Apple', rating: 4.7, stock_count: 100 }
+          attributes: {
+            price: 249.99,
+            category: 'audio',
+            brand: 'Apple',
+            rating: 4.7,
+            stock_count: 100,
+          },
         },
         {
           content: 'USB-C Cable',
           description: 'High-quality USB-C charging cable',
           externalId: 'usb-c-cable',
-          attributes: { price: 29.99, category: 'accessories', brand: 'Apple', rating: 4.5, stock_count: 200 }
-        }
+          attributes: {
+            price: 29.99,
+            category: 'accessories',
+            brand: 'Apple',
+            rating: 4.5,
+            stock_count: 200,
+          },
+        },
       ],
       relationTypes: [
         { identifier: 'compatible_with', description: 'Product compatibility relationship' },
-        { identifier: 'frequently_bought_together', description: 'Products often purchased together' },
+        {
+          identifier: 'frequently_bought_together',
+          description: 'Products often purchased together',
+        },
         { identifier: 'alternative_to', description: 'Alternative product options' },
-        { identifier: 'requires', description: 'Product dependency relationship' }
+        { identifier: 'requires', description: 'Product dependency relationship' },
       ],
       relations: [
         {
@@ -105,30 +147,30 @@ export class TestDataFixtures {
           sourceExternalId: 'usb-c-cable',
           targetExternalId: 'iphone-15-pro',
           strength: 4,
-          confidence: 4
+          confidence: 4,
         },
         {
           relationType: 'compatible_with',
           sourceExternalId: 'usb-c-cable',
           targetExternalId: 'macbook-pro-m3',
           strength: 4,
-          confidence: 4
+          confidence: 4,
         },
         {
           relationType: 'frequently_bought_together',
           sourceExternalId: 'iphone-15-pro',
           targetExternalId: 'airpods-pro',
           strength: 3,
-          confidence: 3
+          confidence: 3,
         },
         {
           relationType: 'frequently_bought_together',
           sourceExternalId: 'macbook-pro-m3',
           targetExternalId: 'airpods-pro',
           strength: 2,
-          confidence: 3
-        }
-      ]
+          confidence: 3,
+        },
+      ],
     }
   }
 
@@ -142,52 +184,107 @@ export class TestDataFixtures {
         { identifier: 'priority', description: 'Priority level (1-5)' },
         { identifier: 'assignee', description: 'Person assigned to task' },
         { identifier: 'estimation', description: 'Time estimation in hours' },
-        { identifier: 'completion', description: 'Completion percentage' }
+        { identifier: 'completion', description: 'Completion percentage' },
       ],
       attributes: [
-        { identifier: 'status', description: 'Current status', isRequired: true, isSearchable: true },
-        { identifier: 'priority', description: 'Priority level', isRequired: true, isSearchable: true },
-        { identifier: 'assignee', description: 'Assigned developer', isRequired: false, isSearchable: true },
-        { identifier: 'estimated_hours', description: 'Time estimate', isRequired: false, isSearchable: false },
-        { identifier: 'completion_percent', description: 'Progress percentage', isRequired: false, isSearchable: false }
+        {
+          identifier: 'status',
+          description: 'Current status',
+          isRequired: true,
+          isSearchable: true,
+        },
+        {
+          identifier: 'priority',
+          description: 'Priority level',
+          isRequired: true,
+          isSearchable: true,
+        },
+        {
+          identifier: 'assignee',
+          description: 'Assigned developer',
+          isRequired: false,
+          isSearchable: true,
+        },
+        {
+          identifier: 'estimated_hours',
+          description: 'Time estimate',
+          isRequired: false,
+          isSearchable: false,
+        },
+        {
+          identifier: 'completion_percent',
+          description: 'Progress percentage',
+          isRequired: false,
+          isSearchable: false,
+        },
       ],
       nodes: [
         {
           content: 'User Authentication System',
           description: 'Implement OAuth 2.0 authentication',
           externalId: 'auth-system',
-          attributes: { status: 'in_progress', priority: 5, assignee: 'john.doe', estimated_hours: 40, completion_percent: 75 }
+          attributes: {
+            status: 'in_progress',
+            priority: 5,
+            assignee: 'john.doe',
+            estimated_hours: 40,
+            completion_percent: 75,
+          },
         },
         {
           content: 'Database Migration',
           description: 'Migrate from MySQL to PostgreSQL',
           externalId: 'db-migration',
-          attributes: { status: 'planning', priority: 4, assignee: 'jane.smith', estimated_hours: 60, completion_percent: 10 }
+          attributes: {
+            status: 'planning',
+            priority: 4,
+            assignee: 'jane.smith',
+            estimated_hours: 60,
+            completion_percent: 10,
+          },
         },
         {
           content: 'API Rate Limiting',
           description: 'Implement rate limiting for public APIs',
           externalId: 'api-rate-limit',
-          attributes: { status: 'todo', priority: 3, assignee: 'bob.wilson', estimated_hours: 20, completion_percent: 0 }
+          attributes: {
+            status: 'todo',
+            priority: 3,
+            assignee: 'bob.wilson',
+            estimated_hours: 20,
+            completion_percent: 0,
+          },
         },
         {
           content: 'Frontend Unit Tests',
           description: 'Add comprehensive unit test coverage',
           externalId: 'frontend-tests',
-          attributes: { status: 'in_progress', priority: 3, assignee: 'alice.brown', estimated_hours: 30, completion_percent: 45 }
+          attributes: {
+            status: 'in_progress',
+            priority: 3,
+            assignee: 'alice.brown',
+            estimated_hours: 30,
+            completion_percent: 45,
+          },
         },
         {
           content: 'CI/CD Pipeline',
           description: 'Set up automated deployment pipeline',
           externalId: 'ci-cd-pipeline',
-          attributes: { status: 'completed', priority: 4, assignee: 'charlie.davis', estimated_hours: 35, completion_percent: 100 }
-        }
+          attributes: {
+            status: 'completed',
+            priority: 4,
+            assignee: 'charlie.davis',
+            estimated_hours: 35,
+            completion_percent: 100,
+          },
+        },
       ],
       relationTypes: [
         { identifier: 'depends_on', description: 'Task dependency relationship' },
         { identifier: 'blocks', description: 'Blocking relationship' },
         { identifier: 'related_to', description: 'General relationship' },
-        { identifier: 'assigned_with', description: 'Co-assignment relationship' }
+        { identifier: 'assigned_with', description: 'Co-assignment relationship' },
       ],
       relations: [
         {
@@ -195,30 +292,30 @@ export class TestDataFixtures {
           sourceExternalId: 'api-rate-limit',
           targetExternalId: 'auth-system',
           strength: 4,
-          confidence: 4
+          confidence: 4,
         },
         {
           relationType: 'depends_on',
           sourceExternalId: 'ci-cd-pipeline',
           targetExternalId: 'frontend-tests',
           strength: 3,
-          confidence: 4
+          confidence: 4,
         },
         {
           relationType: 'blocks',
           sourceExternalId: 'db-migration',
           targetExternalId: 'auth-system',
           strength: 2,
-          confidence: 3
+          confidence: 3,
         },
         {
           relationType: 'related_to',
           sourceExternalId: 'frontend-tests',
           targetExternalId: 'auth-system',
           strength: 2,
-          confidence: 2
-        }
-      ]
+          confidence: 2,
+        },
+      ],
     }
   }
 
@@ -231,51 +328,86 @@ export class TestDataFixtures {
         { identifier: 'concept_type', description: 'Type of concept (person, place, thing, idea)' },
         { identifier: 'confidence_score', description: 'Confidence in the information (0-1)' },
         { identifier: 'source', description: 'Information source' },
-        { identifier: 'last_verified', description: 'Last verification date' }
+        { identifier: 'last_verified', description: 'Last verification date' },
       ],
       attributes: [
         { identifier: 'type', description: 'Concept type', isRequired: true, isSearchable: true },
-        { identifier: 'confidence', description: 'Data confidence', isRequired: false, isSearchable: false },
+        {
+          identifier: 'confidence',
+          description: 'Data confidence',
+          isRequired: false,
+          isSearchable: false,
+        },
         { identifier: 'source', description: 'Data source', isRequired: false, isSearchable: true },
-        { identifier: 'verified_date', description: 'Verification date', isRequired: false, isSearchable: false }
+        {
+          identifier: 'verified_date',
+          description: 'Verification date',
+          isRequired: false,
+          isSearchable: false,
+        },
       ],
       nodes: [
         {
           content: 'Artificial Intelligence',
           description: 'Branch of computer science dealing with intelligent agents',
           externalId: 'ai-concept',
-          attributes: { type: 'concept', confidence: 0.95, source: 'academic_papers', verified_date: '2024-01-15' }
+          attributes: {
+            type: 'concept',
+            confidence: 0.95,
+            source: 'academic_papers',
+            verified_date: '2024-01-15',
+          },
         },
         {
           content: 'Machine Learning',
           description: 'Subset of AI focused on learning from data',
           externalId: 'ml-concept',
-          attributes: { type: 'concept', confidence: 0.98, source: 'textbooks', verified_date: '2024-01-15' }
+          attributes: {
+            type: 'concept',
+            confidence: 0.98,
+            source: 'textbooks',
+            verified_date: '2024-01-15',
+          },
         },
         {
           content: 'Neural Networks',
           description: 'Computing systems inspired by biological neural networks',
           externalId: 'neural-networks',
-          attributes: { type: 'concept', confidence: 0.92, source: 'research_papers', verified_date: '2024-01-10' }
+          attributes: {
+            type: 'concept',
+            confidence: 0.92,
+            source: 'research_papers',
+            verified_date: '2024-01-10',
+          },
         },
         {
           content: 'Deep Learning',
           description: 'ML technique using deep neural networks',
           externalId: 'deep-learning',
-          attributes: { type: 'concept', confidence: 0.96, source: 'academic_papers', verified_date: '2024-01-12' }
+          attributes: {
+            type: 'concept',
+            confidence: 0.96,
+            source: 'academic_papers',
+            verified_date: '2024-01-12',
+          },
         },
         {
           content: 'Natural Language Processing',
           description: 'AI field focused on language understanding',
           externalId: 'nlp-concept',
-          attributes: { type: 'concept', confidence: 0.94, source: 'journals', verified_date: '2024-01-14' }
-        }
+          attributes: {
+            type: 'concept',
+            confidence: 0.94,
+            source: 'journals',
+            verified_date: '2024-01-14',
+          },
+        },
       ],
       relationTypes: [
         { identifier: 'is_subset_of', description: 'Hierarchical subset relationship' },
         { identifier: 'uses', description: 'Utilization relationship' },
         { identifier: 'applies_to', description: 'Application relationship' },
-        { identifier: 'related_field', description: 'Related field or domain' }
+        { identifier: 'related_field', description: 'Related field or domain' },
       ],
       relations: [
         {
@@ -283,37 +415,37 @@ export class TestDataFixtures {
           sourceExternalId: 'ml-concept',
           targetExternalId: 'ai-concept',
           strength: 4,
-          confidence: 4
+          confidence: 4,
         },
         {
           relationType: 'uses',
           sourceExternalId: 'ml-concept',
           targetExternalId: 'neural-networks',
           strength: 3,
-          confidence: 4
+          confidence: 4,
         },
         {
           relationType: 'is_subset_of',
           sourceExternalId: 'deep-learning',
           targetExternalId: 'ml-concept',
           strength: 4,
-          confidence: 4
+          confidence: 4,
         },
         {
           relationType: 'uses',
           sourceExternalId: 'deep-learning',
           targetExternalId: 'neural-networks',
           strength: 4,
-          confidence: 4
+          confidence: 4,
         },
         {
           relationType: 'applies_to',
           sourceExternalId: 'nlp-concept',
           targetExternalId: 'deep-learning',
           strength: 3,
-          confidence: 3
-        }
-      ]
+          confidence: 3,
+        },
+      ],
     }
   }
 
@@ -392,23 +524,33 @@ export class TestDataFixtures {
       attributeIds,
       nodeIds,
       relationTypeIds,
-      relationIds
+      relationIds,
     }
   }
 
   // Generate performance test data
-  async createPerformanceTestData(tableIdentifier: string, nodeCount: number = 100, relationCount: number = 200): Promise<{
+  async createPerformanceTestData(
+    tableIdentifier: string,
+    nodeCount: number = 100,
+    relationCount: number = 200
+  ): Promise<{
     tableId: string
     nodeIds: string[]
     relationIds: string[]
   }> {
     console.log(`🚀 Creating performance test data: ${nodeCount} nodes, ${relationCount} relations`)
 
-    const tableId = await this.client.createTable(tableIdentifier, `Performance test with ${nodeCount} nodes`)
+    const tableId = await this.client.createTable(
+      tableIdentifier,
+      `Performance test with ${nodeCount} nodes`
+    )
     if (!tableId) throw new Error('Failed to create performance test table')
 
     // Create a basic relation type
-    const relationTypeId = await this.client.createRelationType('test_relation', 'Performance test relation')
+    const relationTypeId = await this.client.createRelationType(
+      'test_relation',
+      'Performance test relation'
+    )
     if (!relationTypeId) throw new Error('Failed to create relation type')
 
     // Create nodes in batches
@@ -417,21 +559,17 @@ export class TestDataFixtures {
     for (let i = 0; i < nodeCount; i += batchSize) {
       const batch = Math.min(batchSize, nodeCount - i)
       const promises = []
-      
+
       for (let j = 0; j < batch; j++) {
         const nodeIndex = i + j
         promises.push(
-          this.client.createNode(
-            tableId,
-            `Node ${nodeIndex}`,
-            `Performance test node ${nodeIndex}`
-          )
+          this.client.createNode(tableId, `Node ${nodeIndex}`, `Performance test node ${nodeIndex}`)
         )
       }
 
       const batchResults = await Promise.all(promises)
-      nodeIds.push(...batchResults.filter(id => id !== null) as string[])
-      
+      nodeIds.push(...(batchResults.filter((id) => id !== null) as string[]))
+
       if (i % 50 === 0) {
         console.log(`   Created ${Math.min(i + batchSize, nodeCount)}/${nodeCount} nodes`)
       }
@@ -464,12 +602,14 @@ export class TestDataFixtures {
       }
     }
 
-    console.log(`✅ Performance test data created: ${nodeIds.length} nodes, ${relationIds.length} relations`)
+    console.log(
+      `✅ Performance test data created: ${nodeIds.length} nodes, ${relationIds.length} relations`
+    )
 
     return {
       tableId,
       nodeIds,
-      relationIds
+      relationIds,
     }
   }
 }

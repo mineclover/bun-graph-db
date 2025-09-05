@@ -5,11 +5,11 @@ type Table {
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Relationships
   attributes: [Attribute!]!
   nodes: [Node!]!
-  
+
   # Computed fields
   nodeCount: Int!
   attributeCount: Int!
@@ -65,12 +65,9 @@ extend type Query {
   # Get single table
   table(id: ID!): Table
   tableByIdentifier(identifier: String!): Table
-  
+
   # Get multiple tables
-  tables(
-    filter: TablesFilter
-    pagination: TablesPagination
-  ): TablesConnection!
+  tables(filter: TablesFilter, pagination: TablesPagination): TablesConnection!
 }
 
 extend type Mutation {

@@ -19,7 +19,7 @@ type Attribute implements Node {
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Relationships
   attributeType: AttributeType!
   table: Table!

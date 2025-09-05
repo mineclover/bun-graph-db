@@ -2,15 +2,15 @@
 
 export enum RelationDirection {
   OUTGOING = 'outgoing',
-  INCOMING = 'incoming', 
-  BOTH = 'both'
+  INCOMING = 'incoming',
+  BOTH = 'both',
 }
 
 export enum RelationDepth {
   DIRECT = 1,
   TWO_HOPS = 2,
   THREE_HOPS = 3,
-  UNLIMITED = -1
+  UNLIMITED = -1,
 }
 
 export interface RelationFilter {
@@ -108,40 +108,40 @@ export interface RelationSearchPattern {
 export class RelationSearchPatternParser {
   static parse(pattern: string): RelationSearchPattern[] {
     const patterns: RelationSearchPattern[] = []
-    
+
     // Pattern: node1 -[DEPENDS_ON]-> node2
     const directionalPattern = /(\w+)\s*-\[([^\]]+)\]->\s*(\w+)/g
     let match = directionalPattern.exec(pattern)
-    
+
     if (match) {
       patterns.push({
         pattern: match[0],
         direction: RelationDirection.OUTGOING,
-        relationTypes: [match[2]]
+        relationTypes: [match[2]],
       })
     }
 
-    // Pattern: node1 <-[DEPENDS_ON]- node2  
+    // Pattern: node1 <-[DEPENDS_ON]- node2
     const incomingPattern = /(\w+)\s*<-\[([^\]]+)\]-\s*(\w+)/g
     match = incomingPattern.exec(pattern)
-    
+
     if (match) {
       patterns.push({
         pattern: match[0],
         direction: RelationDirection.INCOMING,
-        relationTypes: [match[2]]
+        relationTypes: [match[2]],
       })
     }
 
     // Pattern: node1 -[*2]-> (depth 2)
     const depthPattern = /(\w+)\s*-\[\*(\d+)\]->\s*(\w+)/g
     match = depthPattern.exec(pattern)
-    
+
     if (match) {
       patterns.push({
         pattern: match[0],
         direction: RelationDirection.OUTGOING,
-        depth: parseInt(match[2])
+        depth: parseInt(match[2]),
       })
     }
 

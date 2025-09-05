@@ -1,4 +1,8 @@
-import { QueryTemplate, QueryVariablesSchema, TemplateType } from '@/domain/entities/QueryTemplate.js'
+import {
+  QueryTemplate,
+  type QueryVariablesSchema,
+  type TemplateType,
+} from '@/domain/entities/QueryTemplate.js'
 
 export interface QueryTemplateDto {
   id: string | null
@@ -87,29 +91,23 @@ export class QueryTemplateDtoMapper {
       isActive: entity.getIsActive(),
       tags: entity.getTags(),
       createdAt: entity.getCreatedAt().toISOString(),
-      updatedAt: entity.getUpdatedAt().toISOString()
+      updatedAt: entity.getUpdatedAt().toISOString(),
     }
   }
 
   static toDtoList(entities: QueryTemplate[]): QueryTemplateDto[] {
-    return entities.map(entity => this.toDto(entity))
+    return entities.map((entity) => QueryTemplateDtoMapper.toDto(entity))
   }
 
   static createInputToEntity(input: CreateQueryTemplateInput): QueryTemplate {
-    return QueryTemplate.create(
-      input.identifier,
-      input.name,
-      input.queryText,
-      input.tags,
-      {
-        description: input.description,
-        variablesSchema: input.variablesSchema,
-        defaultVariables: input.defaultVariables,
-        applicableTables: input.applicableTables,
-        templateType: input.templateType,
-        complexityScore: input.complexityScore,
-        version: input.version
-      }
-    )
+    return QueryTemplate.create(input.identifier, input.name, input.queryText, input.tags, {
+      description: input.description,
+      variablesSchema: input.variablesSchema,
+      defaultVariables: input.defaultVariables,
+      applicableTables: input.applicableTables,
+      templateType: input.templateType,
+      complexityScore: input.complexityScore,
+      version: input.version,
+    })
   }
 }

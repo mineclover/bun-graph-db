@@ -2,7 +2,7 @@
 
 enum RelationDirection {
   OUTGOING
-  INCOMING  
+  INCOMING
   BOTH
 }
 
@@ -95,7 +95,7 @@ input SearchRelatedNodesInput {
 extend type Query {
   # Search related nodes with advanced graph queries
   searchRelatedNodes(input: SearchRelatedNodesInput!): SearchRelatedNodesResult!
-  
+
   # Get dependency chain
   getDependencyChain(
     tableId: ID!

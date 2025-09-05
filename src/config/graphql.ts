@@ -5,9 +5,12 @@ export const graphqlConfig: GraphQLConfig = {
   introspection: process.env.NODE_ENV !== 'production',
   playground: process.env.NODE_ENV !== 'production',
   cors: {
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000', 'http://localhost:4000'],
-    credentials: true
-  }
+    origin: process.env.CORS_ORIGIN?.split(',') || [
+      'http://localhost:3000',
+      'http://localhost:4000',
+    ],
+    credentials: true,
+  },
 }
 
 export const getGraphQLEndpoint = (): string => {

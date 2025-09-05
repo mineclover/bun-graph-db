@@ -1,12 +1,12 @@
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { 
-  GraphQLParent,
+import type {
   AttributeArgs,
   AttributeByIdentifierArgs,
-  AttributesArgs
+  AttributesArgs,
+  GraphQLParent,
 } from '@/core/types/GraphQLTypes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 
 export class AttributeQueries {
   constructor(
@@ -30,7 +30,10 @@ export class AttributeQueries {
       this.logger.info('Fetching attribute type by identifier', { identifier: args.identifier })
       return await this.attributeTypeRepository.findByIdentifier(args.identifier)
     } catch (error) {
-      this.logger.error('Error fetching attribute type by identifier', { error, identifier: args.identifier })
+      this.logger.error('Error fetching attribute type by identifier', {
+        error,
+        identifier: args.identifier,
+      })
       throw error
     }
   }
@@ -38,16 +41,16 @@ export class AttributeQueries {
   async attributeTypes(_: GraphQLParent) {
     try {
       this.logger.info('Fetching attribute types')
-      
+
       const result = await this.attributeTypeRepository.findAll({
-        pagination: { limit: 100, offset: 0 }
+        pagination: { limit: 100, offset: 0 },
       })
 
       return {
         nodes: result.items,
         totalCount: result.total,
         hasNextPage: result.hasNextPage,
-        hasPreviousPage: result.hasPreviousPage
+        hasPreviousPage: result.hasPreviousPage,
       }
     } catch (error) {
       this.logger.error('Error fetching attribute types', { error })
@@ -65,12 +68,22 @@ export class AttributeQueries {
     }
   }
 
-  async attributeByIdentifier(_: GraphQLParent, args: AttributeByIdentifierArgs & { tableId: string }) {
+  async attributeByIdentifier(
+    _: GraphQLParent,
+    args: AttributeByIdentifierArgs & { tableId: string }
+  ) {
     try {
-      this.logger.info('Fetching attribute by identifier', { identifier: args.identifier, tableId: args.tableId })
+      this.logger.info('Fetching attribute by identifier', {
+        identifier: args.identifier,
+        tableId: args.tableId,
+      })
       return await this.attributeRepository.findByIdentifier(args.identifier, args.tableId)
     } catch (error) {
-      this.logger.error('Error fetching attribute by identifier', { error, identifier: args.identifier, tableId: args.tableId })
+      this.logger.error('Error fetching attribute by identifier', {
+        error,
+        identifier: args.identifier,
+        tableId: args.tableId,
+      })
       throw error
     }
   }
@@ -78,18 +91,18 @@ export class AttributeQueries {
   async attributes(_: GraphQLParent, args: AttributesArgs) {
     try {
       this.logger.info('Fetching attributes', { args })
-      
+
       const result = await this.attributeRepository.findAll({
         filter: args.filter,
         pagination: args.pagination || { limit: 10, offset: 0 },
-        sort: args.sort
+        sort: args.sort,
       })
 
       return {
         nodes: result.items,
         totalCount: result.total,
         hasNextPage: result.hasNextPage,
-        hasPreviousPage: result.hasPreviousPage
+        hasPreviousPage: result.hasPreviousPage,
       }
     } catch (error) {
       this.logger.error('Error fetching attributes', { error, args })

@@ -1,13 +1,13 @@
+import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import type { 
-  GraphQLParent,
-  CreateRelationTypeArgs,
+import type {
   CreateRelationArgs,
-  DeleteRelationArgs
+  CreateRelationTypeArgs,
+  DeleteRelationArgs,
+  GraphQLParent,
 } from '@/core/types/GraphQLTypes.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 
 export class RelationMutations {
   constructor(
@@ -20,24 +20,24 @@ export class RelationMutations {
   async createRelationType(_: GraphQLParent, args: CreateRelationTypeArgs) {
     try {
       this.logger.info('Creating relation type', { input: args.input })
-      
+
       const result = await this.createRelationTypeUseCase.execute({
         identifier: args.input.identifier,
         name: args.input.name,
-        description: args.input.description
+        description: args.input.description,
       })
 
       return {
         success: !!result,
         relationType: result,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Error creating relation type', { error, input: args.input })
       return {
         success: false,
         relationType: null,
-        errors: [{ message: error.message, code: 'CREATE_RELATION_TYPE_ERROR' }]
+        errors: [{ message: error.message, code: 'CREATE_RELATION_TYPE_ERROR' }],
       }
     }
   }
@@ -45,24 +45,24 @@ export class RelationMutations {
   async createRelation(_: GraphQLParent, args: CreateRelationArgs) {
     try {
       this.logger.info('Creating relation', { input: args.input })
-      
+
       const result = await this.createRelationUseCase.execute({
         sourceNodeId: args.input.sourceNodeId,
         targetNodeId: args.input.targetNodeId,
-        relationTypeId: args.input.relationTypeId
+        relationTypeId: args.input.relationTypeId,
       })
 
       return {
         success: !!result,
         relation: result,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Error creating relation', { error, input: args.input })
       return {
         success: false,
         relation: null,
-        errors: [{ message: error.message, code: 'CREATE_RELATION_ERROR' }]
+        errors: [{ message: error.message, code: 'CREATE_RELATION_ERROR' }],
       }
     }
   }
@@ -70,12 +70,12 @@ export class RelationMutations {
   async deleteRelation(_: GraphQLParent, args: DeleteRelationArgs) {
     try {
       this.logger.info('Deleting relation', { id: args.id })
-      
+
       const existingRelation = await this.nodeRelationRepository.findById(args.id)
       if (!existingRelation) {
         return {
           success: false,
-          errors: [{ message: 'Relation not found', code: 'RELATION_NOT_FOUND' }]
+          errors: [{ message: 'Relation not found', code: 'RELATION_NOT_FOUND' }],
         }
       }
 
@@ -83,13 +83,13 @@ export class RelationMutations {
 
       return {
         success: true,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Error deleting relation', { error, id: args.id })
       return {
         success: false,
-        errors: [{ message: error.message, code: 'DELETE_RELATION_ERROR' }]
+        errors: [{ message: error.message, code: 'DELETE_RELATION_ERROR' }],
       }
     }
   }

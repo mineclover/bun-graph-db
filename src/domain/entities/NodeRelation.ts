@@ -1,4 +1,4 @@
-import type { NodeRelationId, TableId, NodeId, RelationTypeId } from '@/core/types/CommonTypes.js'
+import type { NodeId, NodeRelationId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export class NodeRelation {
@@ -93,7 +93,11 @@ export class NodeRelation {
 
     // For internal nodes (external_id = 'internal'), we rely on node IDs for uniqueness
     // For external nodes, external IDs must be different
-    if (sourceExternalId !== 'internal' && targetExternalId !== 'internal' && sourceExternalId === targetExternalId) {
+    if (
+      sourceExternalId !== 'internal' &&
+      targetExternalId !== 'internal' &&
+      sourceExternalId === targetExternalId
+    ) {
       throw new DomainException('Source and target external IDs cannot be the same')
     }
   }
@@ -247,7 +251,7 @@ export class NodeRelation {
       properties: this.properties ? JSON.stringify(this.properties) : null,
       strength: this.strength,
       created_at: this.createdAt.toISOString(),
-      updated_at: this.updatedAt.toISOString()
+      updated_at: this.updatedAt.toISOString(),
     }
   }
 }

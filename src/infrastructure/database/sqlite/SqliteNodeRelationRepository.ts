@@ -1,14 +1,14 @@
 import type { Database } from 'bun:sqlite'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import { NodeRelation } from '@/domain/entities/NodeRelation.js'
-import type { 
-  NodeRelationId, 
-  TableId, 
-  NodeId, 
-  RelationTypeId, 
-  PaginationOptions, 
-  PaginatedResult 
+import type {
+  NodeId,
+  NodeRelationId,
+  PaginatedResult,
+  PaginationOptions,
+  RelationTypeId,
+  TableId,
 } from '@/core/types/CommonTypes.js'
+import { NodeRelation } from '@/domain/entities/NodeRelation.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface NodeRelationRow {
@@ -30,7 +30,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
 
   async save(nodeRelation: NodeRelation): Promise<void> {
     const data = nodeRelation.toDatabase()
-    
+
     if (!data.id) {
       const query = `
         INSERT INTO node_relations (
@@ -40,7 +40,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
-      
+
       try {
         const result = this.db.run(query, [
           data.table_id,
@@ -52,9 +52,9 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
           data.properties,
           data.strength,
           data.created_at,
-          data.updated_at
+          data.updated_at,
         ])
-        
+
         console.log('New node relation created with ID:', result.lastInsertRowid)
       } catch (error) {
         console.error('Save error:', error)
@@ -73,7 +73,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       FROM node_relations
       WHERE id = ?
     `
-    
+
     try {
       const row = this.db.query<NodeRelationRow, [string]>(query).get(id)
       return row ? this.mapRowToEntity(row) : null
@@ -82,9 +82,12 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     }
   }
 
-  async findByTableId(tableId: TableId, options: PaginationOptions = {}): Promise<PaginatedResult<NodeRelation>> {
+  async findByTableId(
+    tableId: TableId,
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<NodeRelation>> {
     const { limit = 10, offset = 0 } = options
-    
+
     const dataQuery = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -94,29 +97,34 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     const countQuery = `SELECT COUNT(*) as count FROM node_relations WHERE table_id = ?`
-    
+
     try {
-      const rows = this.db.query<NodeRelationRow, [string, number, number]>(dataQuery).all(tableId, limit, offset)
+      const rows = this.db
+        .query<NodeRelationRow, [string, number, number]>(dataQuery)
+        .all(tableId, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(tableId)
       const total = countResult?.count || 0
-      
-      const nodeRelations = rows.map(row => this.mapRowToEntity(row))
-      
+
+      const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
+
       return {
         data: nodeRelations,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by table id: ${error}`)
     }
   }
 
-  async findBySourceNodeId(sourceNodeId: NodeId, options: PaginationOptions = {}): Promise<PaginatedResult<NodeRelation>> {
+  async findBySourceNodeId(
+    sourceNodeId: NodeId,
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<NodeRelation>> {
     const { limit = 10, offset = 0 } = options
-    
+
     const dataQuery = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -126,29 +134,34 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     const countQuery = `SELECT COUNT(*) as count FROM node_relations WHERE source_node_id = ?`
-    
+
     try {
-      const rows = this.db.query<NodeRelationRow, [string, number, number]>(dataQuery).all(sourceNodeId, limit, offset)
+      const rows = this.db
+        .query<NodeRelationRow, [string, number, number]>(dataQuery)
+        .all(sourceNodeId, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(sourceNodeId)
       const total = countResult?.count || 0
-      
-      const nodeRelations = rows.map(row => this.mapRowToEntity(row))
-      
+
+      const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
+
       return {
         data: nodeRelations,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by source node id: ${error}`)
     }
   }
 
-  async findByTargetNodeId(targetNodeId: NodeId, options: PaginationOptions = {}): Promise<PaginatedResult<NodeRelation>> {
+  async findByTargetNodeId(
+    targetNodeId: NodeId,
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<NodeRelation>> {
     const { limit = 10, offset = 0 } = options
-    
+
     const dataQuery = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -158,27 +171,33 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     const countQuery = `SELECT COUNT(*) as count FROM node_relations WHERE target_node_id = ?`
-    
+
     try {
-      const rows = this.db.query<NodeRelationRow, [string, number, number]>(dataQuery).all(targetNodeId, limit, offset)
+      const rows = this.db
+        .query<NodeRelationRow, [string, number, number]>(dataQuery)
+        .all(targetNodeId, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(targetNodeId)
       const total = countResult?.count || 0
-      
-      const nodeRelations = rows.map(row => this.mapRowToEntity(row))
-      
+
+      const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
+
       return {
         data: nodeRelations,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by target node id: ${error}`)
     }
   }
 
-  async findByExternalIds(sourceExternalId: string, targetExternalId: string, tableId: TableId): Promise<NodeRelation | null> {
+  async findByExternalIds(
+    sourceExternalId: string,
+    targetExternalId: string,
+    tableId: TableId
+  ): Promise<NodeRelation | null> {
     const query = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -186,18 +205,24 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       FROM node_relations
       WHERE source_external_id = ? AND target_external_id = ? AND table_id = ?
     `
-    
+
     try {
-      const row = this.db.query<NodeRelationRow, [string, string, string]>(query).get(sourceExternalId, targetExternalId, tableId)
+      const row = this.db
+        .query<NodeRelationRow, [string, string, string]>(query)
+        .get(sourceExternalId, targetExternalId, tableId)
       return row ? this.mapRowToEntity(row) : null
     } catch (error) {
       throw new DatabaseException(`Failed to find node relation by external ids: ${error}`)
     }
   }
 
-  async findBySourceExternalId(sourceExternalId: string, tableId: TableId, options: PaginationOptions = {}): Promise<PaginatedResult<NodeRelation>> {
+  async findBySourceExternalId(
+    sourceExternalId: string,
+    tableId: TableId,
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<NodeRelation>> {
     const { limit = 10, offset = 0 } = options
-    
+
     const dataQuery = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -207,29 +232,37 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     const countQuery = `SELECT COUNT(*) as count FROM node_relations WHERE source_external_id = ? AND table_id = ?`
-    
+
     try {
-      const rows = this.db.query<NodeRelationRow, [string, string, number, number]>(dataQuery).all(sourceExternalId, tableId, limit, offset)
-      const countResult = this.db.query<{ count: number }, [string, string]>(countQuery).get(sourceExternalId, tableId)
+      const rows = this.db
+        .query<NodeRelationRow, [string, string, number, number]>(dataQuery)
+        .all(sourceExternalId, tableId, limit, offset)
+      const countResult = this.db
+        .query<{ count: number }, [string, string]>(countQuery)
+        .get(sourceExternalId, tableId)
       const total = countResult?.count || 0
-      
-      const nodeRelations = rows.map(row => this.mapRowToEntity(row))
-      
+
+      const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
+
       return {
         data: nodeRelations,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by source external id: ${error}`)
     }
   }
 
-  async findByTargetExternalId(targetExternalId: string, tableId: TableId, options: PaginationOptions = {}): Promise<PaginatedResult<NodeRelation>> {
+  async findByTargetExternalId(
+    targetExternalId: string,
+    tableId: TableId,
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<NodeRelation>> {
     const { limit = 10, offset = 0 } = options
-    
+
     const dataQuery = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -239,29 +272,36 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     const countQuery = `SELECT COUNT(*) as count FROM node_relations WHERE target_external_id = ? AND table_id = ?`
-    
+
     try {
-      const rows = this.db.query<NodeRelationRow, [string, string, number, number]>(dataQuery).all(targetExternalId, tableId, limit, offset)
-      const countResult = this.db.query<{ count: number }, [string, string]>(countQuery).get(targetExternalId, tableId)
+      const rows = this.db
+        .query<NodeRelationRow, [string, string, number, number]>(dataQuery)
+        .all(targetExternalId, tableId, limit, offset)
+      const countResult = this.db
+        .query<{ count: number }, [string, string]>(countQuery)
+        .get(targetExternalId, tableId)
       const total = countResult?.count || 0
-      
-      const nodeRelations = rows.map(row => this.mapRowToEntity(row))
-      
+
+      const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
+
       return {
         data: nodeRelations,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by target external id: ${error}`)
     }
   }
 
-  async findByRelationType(relationTypeId: RelationTypeId, options: PaginationOptions = {}): Promise<PaginatedResult<NodeRelation>> {
+  async findByRelationType(
+    relationTypeId: RelationTypeId,
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<NodeRelation>> {
     const { limit = 10, offset = 0 } = options
-    
+
     const dataQuery = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -271,32 +311,37 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     const countQuery = `SELECT COUNT(*) as count FROM node_relations WHERE relation_type_id = ?`
-    
+
     try {
-      const rows = this.db.query<NodeRelationRow, [string, number, number]>(dataQuery).all(relationTypeId, limit, offset)
+      const rows = this.db
+        .query<NodeRelationRow, [string, number, number]>(dataQuery)
+        .all(relationTypeId, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(relationTypeId)
       const total = countResult?.count || 0
-      
-      const nodeRelations = rows.map(row => this.mapRowToEntity(row))
-      
+
+      const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
+
       return {
         data: nodeRelations,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by relation type: ${error}`)
     }
   }
 
-  async findByNodeId(nodeId: NodeId, options: PaginationOptions = {}): Promise<{
+  async findByNodeId(
+    nodeId: NodeId,
+    options: PaginationOptions = {}
+  ): Promise<{
     incoming: NodeRelation[]
     outgoing: NodeRelation[]
   }> {
     const { limit = 100, offset = 0 } = options
-    
+
     const outgoingQuery = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -306,7 +351,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     const incomingQuery = `
       SELECT id, table_id, source_node_id, source_external_id, 
              target_node_id, target_external_id, relation_type_id, 
@@ -316,14 +361,18 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     try {
-      const outgoingRows = this.db.query<NodeRelationRow, [string, number, number]>(outgoingQuery).all(nodeId, limit, offset)
-      const incomingRows = this.db.query<NodeRelationRow, [string, number, number]>(incomingQuery).all(nodeId, limit, offset)
-      
+      const outgoingRows = this.db
+        .query<NodeRelationRow, [string, number, number]>(outgoingQuery)
+        .all(nodeId, limit, offset)
+      const incomingRows = this.db
+        .query<NodeRelationRow, [string, number, number]>(incomingQuery)
+        .all(nodeId, limit, offset)
+
       return {
-        outgoing: outgoingRows.map(row => this.mapRowToEntity(row)),
-        incoming: incomingRows.map(row => this.mapRowToEntity(row))
+        outgoing: outgoingRows.map((row) => this.mapRowToEntity(row)),
+        incoming: incomingRows.map((row) => this.mapRowToEntity(row)),
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by node id: ${error}`)
@@ -332,7 +381,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
 
   async update(nodeRelation: NodeRelation): Promise<void> {
     const data = nodeRelation.toDatabase()
-    
+
     const query = `
       UPDATE node_relations 
       SET table_id = ?, source_node_id = ?, source_external_id = ?, 
@@ -340,7 +389,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
           properties = ?, strength = ?, updated_at = ?
       WHERE id = ?
     `
-    
+
     try {
       const result = this.db.run(query, [
         data.table_id,
@@ -352,9 +401,9 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
         data.properties,
         data.strength,
         data.updated_at,
-        data.id
+        data.id,
       ])
-      
+
       if (result.changes === 0) {
         throw new DatabaseException(`NodeRelation with id ${data.id} not found for update`)
       }
@@ -365,7 +414,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
 
   async delete(id: NodeRelationId): Promise<void> {
     const query = `DELETE FROM node_relations WHERE id = ?`
-    
+
     try {
       const result = this.db.run(query, [id])
       if (result.changes === 0) {
@@ -378,7 +427,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
 
   async deleteByTableId(tableId: TableId): Promise<void> {
     const query = `DELETE FROM node_relations WHERE table_id = ?`
-    
+
     try {
       this.db.run(query, [tableId])
     } catch (error) {
@@ -388,7 +437,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
 
   async deleteBySourceNodeId(sourceNodeId: NodeId): Promise<void> {
     const query = `DELETE FROM node_relations WHERE source_node_id = ?`
-    
+
     try {
       this.db.run(query, [sourceNodeId])
     } catch (error) {
@@ -398,7 +447,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
 
   async deleteByTargetNodeId(targetNodeId: NodeId): Promise<void> {
     const query = `DELETE FROM node_relations WHERE target_node_id = ?`
-    
+
     try {
       this.db.run(query, [targetNodeId])
     } catch (error) {
@@ -406,18 +455,23 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     }
   }
 
-  async exists(sourceExternalId: string, targetExternalId: string, tableId: TableId, relationTypeId: RelationTypeId): Promise<boolean> {
+  async exists(
+    sourceExternalId: string,
+    targetExternalId: string,
+    tableId: TableId,
+    relationTypeId: RelationTypeId
+  ): Promise<boolean> {
     const query = `
       SELECT 1 FROM node_relations 
       WHERE source_external_id = ? AND target_external_id = ? 
         AND table_id = ? AND relation_type_id = ?
       LIMIT 1
     `
-    
+
     try {
-      const row = this.db.query<{ 1: number }, [string, string, string, string]>(query).get(
-        sourceExternalId, targetExternalId, tableId, relationTypeId
-      )
+      const row = this.db
+        .query<{ 1: number }, [string, string, string, string]>(query)
+        .get(sourceExternalId, targetExternalId, tableId, relationTypeId)
       return row !== null
     } catch (error) {
       throw new DatabaseException(`Failed to check node relation existence: ${error}`)
@@ -427,24 +481,24 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
   async count(tableId?: TableId, relationTypeId?: RelationTypeId): Promise<number> {
     let query = `SELECT COUNT(*) as count FROM node_relations`
     const params: string[] = []
-    
+
     if (tableId || relationTypeId) {
       query += ` WHERE `
       const conditions: string[] = []
-      
+
       if (tableId) {
         conditions.push(`table_id = ?`)
         params.push(tableId)
       }
-      
+
       if (relationTypeId) {
         conditions.push(`relation_type_id = ?`)
         params.push(relationTypeId)
       }
-      
+
       query += conditions.join(` AND `)
     }
-    
+
     try {
       const result = this.db.query<{ count: number }, string[]>(query).get(...params)
       return result?.count || 0

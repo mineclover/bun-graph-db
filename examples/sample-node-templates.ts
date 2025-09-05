@@ -1,6 +1,6 @@
 /**
  * Sample Node Creation Templates
- * 
+ *
  * This file contains example GraphQL mutation templates for creating nodes
  * in different domains with specific attributes.
  */
@@ -42,17 +42,17 @@ export const sampleNodeCreationTemplates = [
         firstName: { type: 'string', description: 'User first name' },
         lastName: { type: 'string', description: 'User last name' },
         age: { type: 'integer', minimum: 13, maximum: 120, description: 'User age' },
-        city: { type: 'string', description: 'User city' }
+        city: { type: 'string', description: 'User city' },
       },
-      required: ['tableId', 'email', 'firstName', 'lastName']
+      required: ['tableId', 'email', 'firstName', 'lastName'],
     },
     defaultVariables: {
-      city: 'Seoul'
+      city: 'Seoul',
     },
     applicableTables: null, // Universal template
     templateType: 'mutation',
     complexityScore: 2,
-    tags: ['node-creation', 'user-management', 'profile', 'personal-data']
+    tags: ['node-creation', 'user-management', 'profile', 'personal-data'],
   },
 
   {
@@ -104,18 +104,18 @@ export const sampleNodeCreationTemplates = [
         stockQuantity: { type: 'integer', minimum: 0, description: 'Stock quantity' },
         category: { type: 'string', description: 'Product category' },
         supplier: { type: 'string', description: 'Supplier name' },
-        description: { type: 'string', description: 'Product description' }
+        description: { type: 'string', description: 'Product description' },
       },
-      required: ['tableId', 'productName', 'sku', 'price', 'stockQuantity', 'category']
+      required: ['tableId', 'productName', 'sku', 'price', 'stockQuantity', 'category'],
     },
     defaultVariables: {
       supplier: 'Default Supplier',
-      stockQuantity: 0
+      stockQuantity: 0,
     },
     applicableTables: ['products', 'inventory', 'catalog'],
     templateType: 'mutation',
     complexityScore: 4,
-    tags: ['node-creation', 'products', 'inventory', 'ecommerce', 'pricing']
+    tags: ['node-creation', 'products', 'inventory', 'ecommerce', 'pricing'],
   },
 
   {
@@ -160,26 +160,26 @@ export const sampleNodeCreationTemplates = [
         tableId: { type: 'string', description: 'Target table ID for tasks' },
         taskTitle: { type: 'string', minLength: 3, description: 'Task title' },
         taskDescription: { type: 'string', description: 'Detailed task description' },
-        priority: { 
-          type: 'string', 
+        priority: {
+          type: 'string',
           enum: ['low', 'medium', 'high', 'critical'],
-          description: 'Task priority level' 
+          description: 'Task priority level',
         },
         assigneeEmail: { type: 'string', format: 'email', description: 'Assigned user email' },
         dueDate: { type: 'string', format: 'date', description: 'Due date (YYYY-MM-DD)' },
         estimatedHours: { type: 'number', minimum: 0, description: 'Estimated hours to complete' },
-        projectId: { type: 'string', description: 'Related project ID' }
+        projectId: { type: 'string', description: 'Related project ID' },
       },
-      required: ['tableId', 'taskTitle', 'taskDescription', 'priority']
+      required: ['tableId', 'taskTitle', 'taskDescription', 'priority'],
     },
     defaultVariables: {
       priority: 'medium',
-      estimatedHours: 4.0
+      estimatedHours: 4.0,
     },
     applicableTables: ['tasks', 'project-tasks', 'work-items'],
     templateType: 'mutation',
     complexityScore: 3,
-    tags: ['node-creation', 'project-management', 'tasks', 'workflow']
+    tags: ['node-creation', 'project-management', 'tasks', 'workflow'],
   },
 
   {
@@ -224,26 +224,37 @@ export const sampleNodeCreationTemplates = [
         tableId: { type: 'string', description: 'Target table ID for orders' },
         customerEmail: { type: 'string', format: 'email', description: 'Customer email address' },
         orderTotal: { type: 'number', minimum: 0, description: 'Total order amount' },
-        currency: { type: 'string', pattern: '^[A-Z]{3}$', description: 'Currency code (e.g., USD, EUR)' },
+        currency: {
+          type: 'string',
+          pattern: '^[A-Z]{3}$',
+          description: 'Currency code (e.g., USD, EUR)',
+        },
         billingAddress: { type: 'string', minLength: 10, description: 'Billing address' },
         shippingAddress: { type: 'string', description: 'Shipping address (defaults to billing)' },
-        paymentMethod: { 
-          type: 'string', 
+        paymentMethod: {
+          type: 'string',
           enum: ['credit_card', 'debit_card', 'paypal', 'bank_transfer', 'cash'],
-          description: 'Payment method' 
+          description: 'Payment method',
         },
-        orderNotes: { type: 'string', description: 'Additional order notes' }
+        orderNotes: { type: 'string', description: 'Additional order notes' },
       },
-      required: ['tableId', 'customerEmail', 'orderTotal', 'currency', 'billingAddress', 'paymentMethod']
+      required: [
+        'tableId',
+        'customerEmail',
+        'orderTotal',
+        'currency',
+        'billingAddress',
+        'paymentMethod',
+      ],
     },
     defaultVariables: {
       currency: 'USD',
-      paymentMethod: 'credit_card'
+      paymentMethod: 'credit_card',
     },
     applicableTables: ['orders', 'customer-orders', 'sales'],
     templateType: 'mutation',
     complexityScore: 5,
-    tags: ['node-creation', 'orders', 'ecommerce', 'customers', 'billing']
+    tags: ['node-creation', 'orders', 'ecommerce', 'customers', 'billing'],
   },
 
   {
@@ -285,25 +296,39 @@ export const sampleNodeCreationTemplates = [
         eventId: { type: 'string', description: 'Event identifier' },
         participantEmail: { type: 'string', format: 'email', description: 'Participant email' },
         participantName: { type: 'string', minLength: 2, description: 'Participant full name' },
-        registrationDate: { type: 'string', format: 'date-time', description: 'Registration timestamp' },
-        ticketType: { 
+        registrationDate: {
+          type: 'string',
+          format: 'date-time',
+          description: 'Registration timestamp',
+        },
+        ticketType: {
           type: 'string',
           enum: ['general', 'vip', 'student', 'early_bird', 'group'],
-          description: 'Ticket type' 
+          description: 'Ticket type',
         },
-        specialRequirements: { type: 'string', description: 'Special requirements or dietary restrictions' },
-        emergencyContact: { type: 'string', description: 'Emergency contact information' }
+        specialRequirements: {
+          type: 'string',
+          description: 'Special requirements or dietary restrictions',
+        },
+        emergencyContact: { type: 'string', description: 'Emergency contact information' },
       },
-      required: ['tableId', 'eventId', 'participantEmail', 'participantName', 'registrationDate', 'ticketType']
+      required: [
+        'tableId',
+        'eventId',
+        'participantEmail',
+        'participantName',
+        'registrationDate',
+        'ticketType',
+      ],
     },
     defaultVariables: {
       ticketType: 'general',
-      registrationDate: new Date().toISOString()
+      registrationDate: new Date().toISOString(),
     },
     applicableTables: ['event-registrations', 'participants', 'attendees'],
     templateType: 'mutation',
     complexityScore: 3,
-    tags: ['node-creation', 'events', 'registrations', 'participants']
+    tags: ['node-creation', 'events', 'registrations', 'participants'],
   },
 
   {
@@ -349,34 +374,34 @@ export const sampleNodeCreationTemplates = [
         title: { type: 'string', minLength: 5, maxLength: 200, description: 'Article title' },
         content: { type: 'string', minLength: 50, description: 'Article content body' },
         authorEmail: { type: 'string', format: 'email', description: 'Author email address' },
-        category: { 
+        category: {
           type: 'string',
           enum: ['technology', 'business', 'lifestyle', 'news', 'tutorial', 'opinion'],
-          description: 'Article category' 
+          description: 'Article category',
         },
-        tags: { 
+        tags: {
           type: 'array',
           items: { type: 'string' },
           minItems: 1,
           maxItems: 10,
-          description: 'Article tags' 
+          description: 'Article tags',
         },
         publishDate: { type: 'string', format: 'date-time', description: 'Publication date' },
         featuredImage: { type: 'string', format: 'uri', description: 'Featured image URL' },
-        excerpt: { type: 'string', maxLength: 500, description: 'Article excerpt/summary' }
+        excerpt: { type: 'string', maxLength: 500, description: 'Article excerpt/summary' },
       },
-      required: ['tableId', 'title', 'content', 'authorEmail', 'category', 'tags']
+      required: ['tableId', 'title', 'content', 'authorEmail', 'category', 'tags'],
     },
     defaultVariables: {
       category: 'general',
       publishDate: new Date().toISOString(),
-      tags: ['general']
+      tags: ['general'],
     },
     applicableTables: ['articles', 'blog-posts', 'content'],
     templateType: 'mutation',
     complexityScore: 4,
-    tags: ['node-creation', 'content', 'articles', 'blogging', 'publishing']
-  }
+    tags: ['node-creation', 'content', 'articles', 'blogging', 'publishing'],
+  },
 ]
 
 /**
@@ -398,10 +423,10 @@ export async function createSampleTemplates(graphqlEndpoint: string): Promise<vo
               }
             }
           `,
-          variables: { input: template }
-        })
+          variables: { input: template },
+        }),
       })
-      
+
       const data = await response.json()
       if (data.errors) {
         console.error(`Failed to create template ${template.identifier}:`, data.errors)
@@ -425,10 +450,10 @@ export const usageExamples = {
       firstName: 'John',
       lastName: 'Doe',
       age: 30,
-      city: 'New York'
-    }
+      city: 'New York',
+    },
   },
-  
+
   'create-product-inventory': {
     variables: {
       tableId: 'products-table-id',
@@ -438,10 +463,10 @@ export const usageExamples = {
       stockQuantity: 50,
       category: 'Electronics',
       supplier: 'Tech Supplier Co.',
-      description: 'High-quality wireless headphones with noise cancellation'
-    }
+      description: 'High-quality wireless headphones with noise cancellation',
+    },
   },
-  
+
   'create-project-task': {
     variables: {
       tableId: 'tasks-table-id',
@@ -451,10 +476,10 @@ export const usageExamples = {
       assigneeEmail: 'developer@company.com',
       dueDate: '2025-09-15',
       estimatedHours: 16.0,
-      projectId: 'project-123'
-    }
+      projectId: 'project-123',
+    },
   },
-  
+
   'create-customer-order': {
     variables: {
       tableId: 'orders-table-id',
@@ -464,10 +489,10 @@ export const usageExamples = {
       billingAddress: '123 Main St, Anytown, ST 12345',
       shippingAddress: '456 Oak Ave, Somewhere, ST 67890',
       paymentMethod: 'credit_card',
-      orderNotes: 'Please deliver after 3 PM'
-    }
+      orderNotes: 'Please deliver after 3 PM',
+    },
   },
-  
+
   'create-event-registration': {
     variables: {
       tableId: 'registrations-table-id',
@@ -477,10 +502,10 @@ export const usageExamples = {
       registrationDate: new Date().toISOString(),
       ticketType: 'early_bird',
       specialRequirements: 'Vegetarian meals',
-      emergencyContact: 'Emergency Contact: +1-555-0123'
-    }
+      emergencyContact: 'Emergency Contact: +1-555-0123',
+    },
   },
-  
+
   'create-article-post': {
     variables: {
       tableId: 'articles-table-id',
@@ -491,7 +516,7 @@ export const usageExamples = {
       tags: ['graphql', 'templates', 'tutorial', 'development'],
       publishDate: new Date().toISOString(),
       featuredImage: 'https://example.com/images/graphql-tutorial.jpg',
-      excerpt: 'Learn how to use GraphQL templates for efficient node creation'
-    }
-  }
+      excerpt: 'Learn how to use GraphQL templates for efficient node creation',
+    },
+  },
 }

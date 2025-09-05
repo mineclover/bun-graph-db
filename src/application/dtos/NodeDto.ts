@@ -23,12 +23,12 @@ export class NodeDto {
       description: node.getDescription(),
       createdAt: node.getCreatedAt().toISOString(),
       updatedAt: node.getUpdatedAt().toISOString(),
-      attributes
+      attributes,
     }
   }
 
   static fromEntities(nodes: Node[]): NodeDto[] {
-    return nodes.map(node => NodeDto.fromEntity(node))
+    return nodes.map((node) => NodeDto.fromEntity(node))
   }
 }
 
@@ -96,11 +96,11 @@ export class NodeAttributeDto {
       attributeId: nodeAttribute.getAttributeId(),
       value: nodeAttribute.getParsedValue(),
       createdAt: nodeAttribute.getCreatedAt().toISOString(),
-      updatedAt: nodeAttribute.getUpdatedAt().toISOString()
+      updatedAt: nodeAttribute.getUpdatedAt().toISOString(),
     }
   }
 
   static fromEntities(nodeAttributes: NodeAttribute[]): NodeAttributeDto[] {
-    return nodeAttributes.map(nodeAttribute => NodeAttributeDto.fromEntity(nodeAttribute))
+    return nodeAttributes.map((nodeAttribute) => NodeAttributeDto.fromEntity(nodeAttribute))
   }
 }

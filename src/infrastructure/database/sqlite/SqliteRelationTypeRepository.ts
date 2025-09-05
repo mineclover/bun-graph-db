@@ -1,7 +1,11 @@
 import type { Database } from 'bun:sqlite'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import type {
+  PaginatedResult,
+  PaginationOptions,
+  RelationTypeId,
+} from '@/core/types/CommonTypes.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
-import type { RelationTypeId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface RelationTypeRow {
@@ -18,22 +22,22 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
 
   async save(relationType: RelationType): Promise<void> {
     const data = relationType.toDatabase()
-    
+
     if (!data.id) {
       const query = `
         INSERT INTO relation_types (identifier, description, category, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
       `
-      
+
       try {
         const result = this.db.run(query, [
           data.identifier,
           data.description,
           data.category,
           data.created_at,
-          data.updated_at
+          data.updated_at,
         ])
-        
+
         console.log('New relation type created with ID:', result.lastInsertRowid)
       } catch (error) {
         console.error('Save error:', error)
@@ -50,7 +54,7 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
       FROM relation_types
       WHERE id = ?
     `
-    
+
     try {
       const row = this.db.query<RelationTypeRow, [string]>(query).get(id)
       return row ? this.mapRowToEntity(row) : null
@@ -65,7 +69,7 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
       FROM relation_types
       WHERE identifier = ?
     `
-    
+
     try {
       const row = this.db.query<RelationTypeRow, [string]>(query).get(identifier)
       return row ? this.mapRowToEntity(row) : null
@@ -76,27 +80,27 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
 
   async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<RelationType>> {
     const { limit = 10, offset = 0 } = options
-    
+
     const dataQuery = `
       SELECT id, identifier, description, category, created_at, updated_at
       FROM relation_types
       ORDER BY identifier ASC
       LIMIT ? OFFSET ?
     `
-    
+
     const countQuery = `SELECT COUNT(*) as count FROM relation_types`
-    
+
     try {
       const rows = this.db.query<RelationTypeRow, [number, number]>(dataQuery).all(limit, offset)
       const countResult = this.db.query<{ count: number }, []>(countQuery).get()
       const total = countResult?.count || 0
-      
-      const relationTypes = rows.map(row => this.mapRowToEntity(row))
-      
+
+      const relationTypes = rows.map((row) => this.mapRowToEntity(row))
+
       return {
         data: relationTypes,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find all relation types: ${error}`)
@@ -105,22 +109,22 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
 
   async update(relationType: RelationType): Promise<void> {
     const data = relationType.toDatabase()
-    
+
     const query = `
       UPDATE relation_types 
       SET identifier = ?, description = ?, category = ?, updated_at = ?
       WHERE id = ?
     `
-    
+
     try {
       const result = this.db.run(query, [
         data.identifier,
         data.description,
         data.category,
         data.updated_at,
-        data.id
+        data.id,
       ])
-      
+
       if (result.changes === 0) {
         throw new DatabaseException(`RelationType with id ${data.id} not found for update`)
       }
@@ -131,7 +135,7 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
 
   async delete(id: RelationTypeId): Promise<void> {
     const query = `DELETE FROM relation_types WHERE id = ?`
-    
+
     try {
       const result = this.db.run(query, [id])
       if (result.changes === 0) {
@@ -144,7 +148,7 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
 
   async exists(identifier: string): Promise<boolean> {
     const query = `SELECT 1 FROM relation_types WHERE identifier = ? LIMIT 1`
-    
+
     try {
       const row = this.db.query<{ 1: number }, [string]>(query).get(identifier)
       return row !== null

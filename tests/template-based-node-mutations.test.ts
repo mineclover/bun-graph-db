@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 import { createYoga } from 'graphql-yoga'
-import { GraphQLSchemaBuilder } from '../src/presentation/graphql/GraphQLSchemaBuilder.js'
 import { ContainerBootstrap } from '../src/infrastructure/container/ContainerBootstrap.js'
 import type { DIContainer } from '../src/infrastructure/container/DIContainer.js'
+import { GraphQLSchemaBuilder } from '../src/presentation/graphql/GraphQLSchemaBuilder.js'
 
 describe('Template-based Node Mutations', () => {
   let yoga: ReturnType<typeof createYoga>
@@ -11,7 +11,7 @@ describe('Template-based Node Mutations', () => {
   beforeAll(async () => {
     // Initialize dependency container
     container = await ContainerBootstrap.createContainer()
-    
+
     // Build GraphQL schema with the new schema builder
     const schemaBuilder = new GraphQLSchemaBuilder(container)
     const schema = await schemaBuilder.build()
@@ -43,10 +43,10 @@ describe('Template-based Node Mutations', () => {
           variables: {
             input: {
               identifier: `test-products-${Date.now()}`,
-              description: 'Test table for product management'
-            }
-          }
-        })
+              description: 'Test table for product management',
+            },
+          },
+        }),
       })
 
       const tableData = await createTableResponse.json()
@@ -71,10 +71,10 @@ describe('Template-based Node Mutations', () => {
               identifier: 'product_name',
               attributeTypeId: '1', // string type
               description: 'Product name',
-              isRequired: true
-            }
-          }
-        })
+              isRequired: true,
+            },
+          },
+        }),
       })
 
       await yoga.fetch('http://localhost:4000/graphql', {
@@ -95,10 +95,10 @@ describe('Template-based Node Mutations', () => {
               identifier: 'product_price',
               attributeTypeId: '4', // number type
               description: 'Product price',
-              isRequired: true
-            }
-          }
-        })
+              isRequired: true,
+            },
+          },
+        }),
       })
 
       await yoga.fetch('http://localhost:4000/graphql', {
@@ -119,10 +119,10 @@ describe('Template-based Node Mutations', () => {
               identifier: 'product_category',
               attributeTypeId: '1', // string type
               description: 'Product category',
-              isRequired: false
-            }
-          }
-        })
+              isRequired: false,
+            },
+          },
+        }),
       })
     })
 
@@ -199,27 +199,27 @@ describe('Template-based Node Mutations', () => {
                   tableId: { type: 'string', description: 'Target table ID' },
                   productName: { type: 'string', description: 'Product name' },
                   productPrice: { type: 'number', description: 'Product price' },
-                  productCategory: { type: 'string', description: 'Product category' }
+                  productCategory: { type: 'string', description: 'Product category' },
                 },
-                required: ['tableId', 'productName', 'productPrice']
+                required: ['tableId', 'productName', 'productPrice'],
               },
               defaultVariables: {
-                productCategory: 'General'
+                productCategory: 'General',
               },
               applicableTables: [`test-products-${Date.now()}`],
               templateType: 'mutation',
               complexityScore: 3,
-              tags: ['node-creation', 'products', 'ecommerce', 'attributes']
-            }
-          }
-        })
+              tags: ['node-creation', 'products', 'ecommerce', 'attributes'],
+            },
+          },
+        }),
       })
 
       const templateData = await createTemplateResponse.json()
       expect(templateData.data.createQueryTemplate).toBeDefined()
       expect(templateData.data.createQueryTemplate.identifier).toBe('create-product-node')
       expect(templateData.data.createQueryTemplate.tags).toContain('node-creation')
-      
+
       createNodeTemplateId = templateData.data.createQueryTemplate.id
     })
 
@@ -246,18 +246,18 @@ describe('Template-based Node Mutations', () => {
               tags: ['node-creation'],
               tagMatchMode: 'ANY',
               templateType: 'mutation',
-              isActive: true
-            }
-          }
-        })
+              isActive: true,
+            },
+          },
+        }),
       })
 
       const searchData = await searchResponse.json()
       expect(searchData.data.searchTemplates).toBeDefined()
       expect(searchData.data.searchTemplates.length).toBeGreaterThan(0)
-      
-      const nodeCreationTemplates = searchData.data.searchTemplates.filter(
-        (template: any) => template.tags.includes('node-creation')
+
+      const nodeCreationTemplates = searchData.data.searchTemplates.filter((template: any) =>
+        template.tags.includes('node-creation')
       )
       expect(nodeCreationTemplates.length).toBeGreaterThan(0)
     })
@@ -277,9 +277,9 @@ describe('Template-based Node Mutations', () => {
             }
           `,
           variables: {
-            tableId: testTableId
-          }
-        })
+            tableId: testTableId,
+          },
+        }),
       })
 
       const attributesData = await attributesResponse.json()
@@ -287,7 +287,9 @@ describe('Template-based Node Mutations', () => {
 
       const productNameAttr = attributes.find((attr: any) => attr.identifier === 'product_name')
       const productPriceAttr = attributes.find((attr: any) => attr.identifier === 'product_price')
-      const productCategoryAttr = attributes.find((attr: any) => attr.identifier === 'product_category')
+      const productCategoryAttr = attributes.find(
+        (attr: any) => attr.identifier === 'product_category'
+      )
 
       // Execute the template with specific product data
       const executeResponse = await fetch('http://localhost:4000/graphql', {
@@ -309,18 +311,18 @@ describe('Template-based Node Mutations', () => {
                 productCategory: 'Electronics',
                 productNameAttrId: productNameAttr.id,
                 productPriceAttrId: productPriceAttr.id,
-                productCategoryAttrId: productCategoryAttr.id
+                productCategoryAttrId: productCategoryAttr.id,
               },
               trackUsage: true,
-              validateVariables: true
-            }
-          }
-        })
+              validateVariables: true,
+            },
+          },
+        }),
       })
 
       const executeData = await executeResponse.json()
       expect(executeData.data.executeTemplate).toBeDefined()
-      
+
       // Verify the node was created
       if (executeData.data.executeTemplate.createNode) {
         expect(executeData.data.executeTemplate.createNode.content).toBe('Wireless Headphones')
@@ -345,9 +347,9 @@ describe('Template-based Node Mutations', () => {
             }
           `,
           variables: {
-            identifier: 'create-product-node'
-          }
-        })
+            identifier: 'create-product-node',
+          },
+        }),
       })
 
       const templateData = await templateResponse.json()
@@ -359,7 +361,7 @@ describe('Template-based Node Mutations', () => {
       const products = [
         { name: 'Smart Watch', price: 199.99, category: 'Electronics' },
         { name: 'Coffee Mug', price: 12.99, category: 'Kitchen' },
-        { name: 'Gaming Mouse', price: 79.99, category: 'Electronics' }
+        { name: 'Gaming Mouse', price: 79.99, category: 'Electronics' },
       ]
 
       // Get attribute IDs
@@ -375,20 +377,22 @@ describe('Template-based Node Mutations', () => {
               }
             }
           `,
-          variables: { tableId: testTableId }
-        })
+          variables: { tableId: testTableId },
+        }),
       })
 
       const attributesData = await attributesResponse.json()
       const attributes = attributesData.data.attributes
-      
+
       const productNameAttr = attributes.find((attr: any) => attr.identifier === 'product_name')
       const productPriceAttr = attributes.find((attr: any) => attr.identifier === 'product_price')
-      const productCategoryAttr = attributes.find((attr: any) => attr.identifier === 'product_category')
+      const productCategoryAttr = attributes.find(
+        (attr: any) => attr.identifier === 'product_category'
+      )
 
       // Create multiple products using the template
       const createdProducts = []
-      
+
       for (const product of products) {
         const response = await fetch('http://localhost:4000/graphql', {
           method: 'POST',
@@ -409,12 +413,12 @@ describe('Template-based Node Mutations', () => {
                   productCategory: product.category,
                   productNameAttrId: productNameAttr.id,
                   productPriceAttrId: productPriceAttr.id,
-                  productCategoryAttrId: productCategoryAttr.id
+                  productCategoryAttrId: productCategoryAttr.id,
                 },
-                trackUsage: true
-              }
-            }
-          })
+                trackUsage: true,
+              },
+            },
+          }),
         })
 
         const data = await response.json()
@@ -424,9 +428,9 @@ describe('Template-based Node Mutations', () => {
       }
 
       expect(createdProducts.length).toBe(products.length)
-      
+
       // Verify all products were created with correct names
-      const productNames = createdProducts.map(p => p.content)
+      const productNames = createdProducts.map((p) => p.content)
       expect(productNames).toContain('Smart Watch')
       expect(productNames).toContain('Coffee Mug')
       expect(productNames).toContain('Gaming Mouse')
@@ -461,9 +465,9 @@ describe('Template-based Node Mutations', () => {
             }
           `,
           variables: {
-            identifier: 'create-product-node'
-          }
-        })
+            identifier: 'create-product-node',
+          },
+        }),
       })
 
       const templateData = await templateResponse.json()
@@ -479,18 +483,18 @@ describe('Template-based Node Mutations', () => {
       expect(template.usageCount).toBeGreaterThan(0)
       expect(template.complexityScore).toBe(3)
       expect(template.isActive).toBe(true)
-      
+
       // Verify variable schema
       expect(template.variablesSchema).toBeDefined()
       expect(template.variablesSchema.type).toBe('object')
       expect(template.variablesSchema.properties.tableId).toBeDefined()
       expect(template.variablesSchema.properties.productName).toBeDefined()
       expect(template.variablesSchema.properties.productPrice).toBeDefined()
-      
+
       // Verify default variables
       expect(template.defaultVariables).toBeDefined()
       expect(template.defaultVariables.productCategory).toBe('General')
-      
+
       console.log('✅ Template Information Retrieved:')
       console.log(`   ID: ${template.id}`)
       console.log(`   Name: ${template.name}`)
@@ -521,21 +525,23 @@ describe('Template-based Node Mutations', () => {
             }
           `,
           variables: {
-            limit: 5
-          }
-        })
+            limit: 5,
+          },
+        }),
       })
 
       const popularData = await popularResponse.json()
       expect(popularData.data.getPopularTemplates).toBeDefined()
-      
+
       const popularTemplates = popularData.data.getPopularTemplates
       if (popularTemplates.length > 0) {
         // Verify templates are sorted by usage count (descending)
         for (let i = 1; i < popularTemplates.length; i++) {
-          expect(popularTemplates[i-1].usageCount).toBeGreaterThanOrEqual(popularTemplates[i].usageCount)
+          expect(popularTemplates[i - 1].usageCount).toBeGreaterThanOrEqual(
+            popularTemplates[i].usageCount
+          )
         }
-        
+
         console.log('✅ Popular Templates:')
         popularTemplates.forEach((template: any, index: number) => {
           console.log(`   ${index + 1}. ${template.name} (${template.usageCount} uses)`)
@@ -562,16 +568,16 @@ describe('Template-based Node Mutations', () => {
               variables: {
                 // Missing required tableId and productName
                 productPrice: 'invalid_price', // Wrong type
-                productCategory: 'Electronics'
+                productCategory: 'Electronics',
               },
-              validateVariables: true
-            }
-          }
-        })
+              validateVariables: true,
+            },
+          },
+        }),
       })
 
       const invalidData = await invalidResponse.json()
-      
+
       // Should return an error due to validation failure
       expect(invalidData.errors).toBeDefined()
       expect(invalidData.errors.length).toBeGreaterThan(0)
@@ -592,13 +598,13 @@ describe('Template-based Node Mutations', () => {
             input: {
               templateIdentifier: 'create-product-node',
               variables: {
-                productCategory: 'Electronics'
+                productCategory: 'Electronics',
                 // Missing required variables
               },
-              validateVariables: false
-            }
-          }
-        })
+              validateVariables: false,
+            },
+          },
+        }),
       })
 
       const data = await response.json()

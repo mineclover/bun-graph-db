@@ -66,7 +66,7 @@ export class Attribute {
     if (!identifier || identifier.trim() === '') {
       throw new DomainException('Attribute identifier cannot be empty', 'DOMAIN_ERROR')
     }
-    
+
     if (!/^[a-z][a-z0-9_]*$/.test(identifier)) {
       throw new DomainException(
         'Attribute identifier must start with lowercase letter and contain only lowercase letters, numbers, and underscores',
@@ -204,7 +204,7 @@ export class Attribute {
       is_required: this.isRequired,
       metadata: this.metadata,
       created_at: this.createdAt.toISOString(),
-      updated_at: this.updatedAt.toISOString()
+      updated_at: this.updatedAt.toISOString(),
     }
   }
 }

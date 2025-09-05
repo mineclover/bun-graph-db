@@ -1,7 +1,7 @@
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableParent } from '@/core/types/GraphQLTypes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 
 export class TableFieldResolvers {
   constructor(

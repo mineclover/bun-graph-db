@@ -16,12 +16,12 @@ export class TableDto {
       identifier: table.identifier,
       description: table.description,
       createdAt: table.createdAt.toISOString(),
-      updatedAt: table.updatedAt.toISOString()
+      updatedAt: table.updatedAt.toISOString(),
     }
   }
 
   static fromEntities(tables: Table[]): TableDto[] {
-    return tables.map(table => TableDto.fromEntity(table))
+    return tables.map((table) => TableDto.fromEntity(table))
   }
 }
 

@@ -1,26 +1,26 @@
-import type { DIContainer } from '../DIContainer.js'
-import { GraphQLTokens, RepositoryTokens, UseCaseTokens, CommonTokens } from '../tokens/index.js'
-import { 
-  TableQueries, 
-  NodeQueries, 
-  AttributeQueries, 
-  RelationQueries, 
-  TemplateQueries 
-} from '@/presentation/graphql/queries/index.js'
-import { 
-  TableMutations, 
-  NodeMutations, 
-  AttributeMutations, 
-  RelationMutations, 
-  TemplateMutations 
-} from '@/presentation/graphql/mutations/index.js'
-import { 
-  TableFieldResolvers, 
-  NodeFieldResolvers, 
-  AttributeFieldResolvers, 
-  RelationFieldResolvers 
+import {
+  AttributeFieldResolvers,
+  NodeFieldResolvers,
+  RelationFieldResolvers,
+  TableFieldResolvers,
 } from '@/presentation/graphql/field-resolvers/index.js'
 import { buildGraphQLSchema } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
+import {
+  AttributeMutations,
+  NodeMutations,
+  RelationMutations,
+  TableMutations,
+  TemplateMutations,
+} from '@/presentation/graphql/mutations/index.js'
+import {
+  AttributeQueries,
+  NodeQueries,
+  RelationQueries,
+  TableQueries,
+  TemplateQueries,
+} from '@/presentation/graphql/queries/index.js'
+import type { DIContainer } from '../DIContainer.js'
+import { CommonTokens, GraphQLTokens, RepositoryTokens, UseCaseTokens } from '../tokens/index.js'
 
 /**
  * GraphQL module - registers GraphQL resolvers and schema
@@ -57,7 +57,11 @@ export function registerGraphQLModule(container: DIContainer): void {
       const logger = await c.resolve(CommonTokens.LOGGER)
       return new AttributeQueries(attributeRepository, attributeTypeRepository, logger)
     },
-    [RepositoryTokens.ATTRIBUTE_REPOSITORY, RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY, CommonTokens.LOGGER]
+    [
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      CommonTokens.LOGGER,
+    ]
   )
 
   container.registerSingleton(
@@ -67,21 +71,36 @@ export function registerGraphQLModule(container: DIContainer): void {
       const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
       const searchRelatedNodesUseCase = await c.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new RelationQueries(nodeRelationRepository, relationTypeRepository, searchRelatedNodesUseCase, logger)
+      return new RelationQueries(
+        nodeRelationRepository,
+        relationTypeRepository,
+        searchRelatedNodesUseCase,
+        logger
+      )
     },
-    [RepositoryTokens.NODE_RELATION_REPOSITORY, RepositoryTokens.RELATION_TYPE_REPOSITORY, UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE, CommonTokens.LOGGER]
+    [
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
+      UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE,
+      CommonTokens.LOGGER,
+    ]
   )
-
 
   container.registerSingleton(
     GraphQLTokens.TEMPLATE_QUERIES,
     async (c) => {
       const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)
-      const executeQueryTemplateUseCase = await c.resolve(UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE)
+      const executeQueryTemplateUseCase = await c.resolve(
+        UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE
+      )
       const logger = await c.resolve(CommonTokens.LOGGER)
       return new TemplateQueries(queryTemplateRepository, executeQueryTemplateUseCase, logger)
     },
-    [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY, UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE, CommonTokens.LOGGER]
+    [
+      RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
+      UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE,
+      CommonTokens.LOGGER,
+    ]
   )
 
   // Mutation resolvers
@@ -94,7 +113,12 @@ export function registerGraphQLModule(container: DIContainer): void {
       const logger = await c.resolve(CommonTokens.LOGGER)
       return new TableMutations(createTableUseCase, deleteTableUseCase, tableRepository, logger)
     },
-    [UseCaseTokens.CREATE_TABLE_USE_CASE, UseCaseTokens.DELETE_TABLE_USE_CASE, RepositoryTokens.TABLE_REPOSITORY, CommonTokens.LOGGER]
+    [
+      UseCaseTokens.CREATE_TABLE_USE_CASE,
+      UseCaseTokens.DELETE_TABLE_USE_CASE,
+      RepositoryTokens.TABLE_REPOSITORY,
+      CommonTokens.LOGGER,
+    ]
   )
 
   container.registerSingleton(
@@ -106,20 +130,39 @@ export function registerGraphQLModule(container: DIContainer): void {
       const logger = await c.resolve(CommonTokens.LOGGER)
       return new NodeMutations(createNodeUseCase, nodeRepository, nodeAttributeRepository, logger)
     },
-    [UseCaseTokens.CREATE_NODE_USE_CASE, RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY, CommonTokens.LOGGER]
+    [
+      UseCaseTokens.CREATE_NODE_USE_CASE,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      CommonTokens.LOGGER,
+    ]
   )
 
   container.registerSingleton(
     GraphQLTokens.ATTRIBUTE_MUTATIONS,
     async (c) => {
-      const createAttributeTypeUseCase = await c.resolve(UseCaseTokens.CREATE_ATTRIBUTE_TYPE_USE_CASE)
+      const createAttributeTypeUseCase = await c.resolve(
+        UseCaseTokens.CREATE_ATTRIBUTE_TYPE_USE_CASE
+      )
       const createAttributeUseCase = await c.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE)
       const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
       const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new AttributeMutations(createAttributeTypeUseCase, createAttributeUseCase, attributeTypeRepository, attributeRepository, logger)
+      return new AttributeMutations(
+        createAttributeTypeUseCase,
+        createAttributeUseCase,
+        attributeTypeRepository,
+        attributeRepository,
+        logger
+      )
     },
-    [UseCaseTokens.CREATE_ATTRIBUTE_TYPE_USE_CASE, UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE, RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY, CommonTokens.LOGGER]
+    [
+      UseCaseTokens.CREATE_ATTRIBUTE_TYPE_USE_CASE,
+      UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      CommonTokens.LOGGER,
+    ]
   )
 
   container.registerSingleton(
@@ -129,20 +172,36 @@ export function registerGraphQLModule(container: DIContainer): void {
       const createRelationTypeUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE)
       const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new RelationMutations(createRelationUseCase, createRelationTypeUseCase, nodeRelationRepository, logger)
+      return new RelationMutations(
+        createRelationUseCase,
+        createRelationTypeUseCase,
+        nodeRelationRepository,
+        logger
+      )
     },
-    [UseCaseTokens.CREATE_RELATION_USE_CASE, UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE, RepositoryTokens.NODE_RELATION_REPOSITORY, CommonTokens.LOGGER]
+    [
+      UseCaseTokens.CREATE_RELATION_USE_CASE,
+      UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      CommonTokens.LOGGER,
+    ]
   )
 
   container.registerSingleton(
     GraphQLTokens.TEMPLATE_MUTATIONS,
     async (c) => {
       const queryTemplateRepository = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)
-      const executeQueryTemplateUseCase = await c.resolve(UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE)
+      const executeQueryTemplateUseCase = await c.resolve(
+        UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE
+      )
       const logger = await c.resolve(CommonTokens.LOGGER)
       return new TemplateMutations(queryTemplateRepository, executeQueryTemplateUseCase, logger)
     },
-    [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY, UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE, CommonTokens.LOGGER]
+    [
+      RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
+      UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE,
+      CommonTokens.LOGGER,
+    ]
   )
 
   // Field resolvers
@@ -164,9 +223,19 @@ export function registerGraphQLModule(container: DIContainer): void {
       const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
       const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new NodeFieldResolvers(tableRepository, nodeAttributeRepository, nodeRelationRepository, logger)
+      return new NodeFieldResolvers(
+        tableRepository,
+        nodeAttributeRepository,
+        nodeRelationRepository,
+        logger
+      )
     },
-    [RepositoryTokens.TABLE_REPOSITORY, RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY, RepositoryTokens.NODE_RELATION_REPOSITORY, CommonTokens.LOGGER]
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      CommonTokens.LOGGER,
+    ]
   )
 
   container.registerSingleton(
@@ -176,9 +245,19 @@ export function registerGraphQLModule(container: DIContainer): void {
       const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
       const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new AttributeFieldResolvers(attributeTypeRepository, attributeRepository, tableRepository, logger)
+      return new AttributeFieldResolvers(
+        attributeTypeRepository,
+        attributeRepository,
+        tableRepository,
+        logger
+      )
     },
-    [RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY, RepositoryTokens.TABLE_REPOSITORY, CommonTokens.LOGGER]
+    [
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.TABLE_REPOSITORY,
+      CommonTokens.LOGGER,
+    ]
   )
 
   container.registerSingleton(
@@ -188,9 +267,19 @@ export function registerGraphQLModule(container: DIContainer): void {
       const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY)
       const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)
       const logger = await c.resolve(CommonTokens.LOGGER)
-      return new RelationFieldResolvers(tableRepository, nodeRepository, relationTypeRepository, logger)
+      return new RelationFieldResolvers(
+        tableRepository,
+        nodeRepository,
+        relationTypeRepository,
+        logger
+      )
     },
-    [RepositoryTokens.TABLE_REPOSITORY, RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.RELATION_TYPE_REPOSITORY, CommonTokens.LOGGER]
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
+      CommonTokens.LOGGER,
+    ]
   )
 
   // GraphQL Schema
@@ -204,13 +293,13 @@ export function registerGraphQLModule(container: DIContainer): void {
       const relationQueries = await c.resolve(GraphQLTokens.RELATION_QUERIES)
       const analyticsQueries = await c.resolve(GraphQLTokens.ANALYTICS_QUERIES)
       const templateQueries = await c.resolve(GraphQLTokens.TEMPLATE_QUERIES)
-      
+
       const tableMutations = await c.resolve(GraphQLTokens.TABLE_MUTATIONS)
       const nodeMutations = await c.resolve(GraphQLTokens.NODE_MUTATIONS)
       const attributeMutations = await c.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS)
       const relationMutations = await c.resolve(GraphQLTokens.RELATION_MUTATIONS)
       const templateMutations = await c.resolve(GraphQLTokens.TEMPLATE_MUTATIONS)
-      
+
       const tableFieldResolvers = await c.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS)
       const nodeFieldResolvers = await c.resolve(GraphQLTokens.NODE_FIELD_RESOLVERS)
       const attributeFieldResolvers = await c.resolve(GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS)
@@ -234,7 +323,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         tableFieldResolvers,
         nodeFieldResolvers,
         attributeFieldResolvers,
-        relationFieldResolvers
+        relationFieldResolvers,
       })
     },
     [
@@ -253,7 +342,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.TABLE_FIELD_RESOLVERS,
       GraphQLTokens.NODE_FIELD_RESOLVERS,
       GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS,
-      GraphQLTokens.RELATION_FIELD_RESOLVERS
+      GraphQLTokens.RELATION_FIELD_RESOLVERS,
     ]
   )
 }

@@ -1,12 +1,15 @@
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
 import { NodeDto } from '@/application/dtos/NodeDto.js'
-import type { TableId, PaginatedResult } from '@/core/types/CommonTypes.js'
-import { SearchQueryParser, type AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import {
+  type AttributeTypeInfo,
+  SearchQueryParser,
+} from '@/application/services/SearchQueryParser.js'
+import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { SearchQuery } from '@/domain/value-objects/SearchFilter.js'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface SearchNodesInput {
   tableId: string
@@ -31,7 +34,7 @@ export interface SearchNodesOutput {
 
 export interface INodeSearchRepository {
   searchNodes(
-    tableId: TableId, 
+    tableId: TableId,
     searchQuery: SearchQuery,
     availableAttributes: AttributeTypeInfo[]
   ): Promise<PaginatedResult<any>>
@@ -47,11 +50,11 @@ export class SearchNodesUseCase {
   ) {}
 
   async execute(input: SearchNodesInput): Promise<SearchNodesOutput> {
-    this.logger.info('Searching nodes', { 
+    this.logger.info('Searching nodes', {
       tableId: input.tableId,
       query: input.query,
       limit: input.limit,
-      offset: input.offset
+      offset: input.offset,
     })
 
     // Validate input
@@ -69,7 +72,10 @@ export class SearchNodesUseCase {
       const attributeInfo: AttributeTypeInfo[] = await Promise.all(
         attributes.data.map(async (attr: any) => ({
           identifier: attr.getIdentifier(),
-          dataType: (await this.attributeRepository.getAttributeTypeForAttribute(attr.getId()))?.getIdentifier() || 'string'
+          dataType:
+            (
+              await this.attributeRepository.getAttributeTypeForAttribute(attr.getId())
+            )?.getIdentifier() || 'string',
         }))
       )
 
@@ -78,7 +84,7 @@ export class SearchNodesUseCase {
       if (input.query && input.query.trim().length > 0) {
         const parser = new SearchQueryParser(attributeInfo)
         searchQuery = parser.parse(input.query)
-        
+
         // Override with input parameters
         if (input.limit) searchQuery.limit = input.limit
         if (input.offset) searchQuery.offset = input.offset
@@ -89,7 +95,7 @@ export class SearchNodesUseCase {
           conditions: [],
           limit: input.limit || 10,
           offset: input.offset || 0,
-          sortBy: input.sortBy
+          sortBy: input.sortBy,
         }
       }
 
@@ -101,14 +107,14 @@ export class SearchNodesUseCase {
       )
 
       // Convert to DTOs
-      const nodeDtos = result.data.map(nodeData => 
+      const nodeDtos = result.data.map((nodeData) =>
         NodeDto.fromEntity(nodeData.node, nodeData.attributes || {})
       )
 
-      this.logger.info('Node search completed', { 
+      this.logger.info('Node search completed', {
         tableId: input.tableId,
         foundNodes: result.data.length,
-        total: result.total
+        total: result.total,
       })
 
       return {
@@ -117,13 +123,13 @@ export class SearchNodesUseCase {
         hasMore: result.hasMore,
         query: {
           parsed: searchQuery,
-          originalQuery: input.query || ''
-        }
+          originalQuery: input.query || '',
+        },
       }
     } catch (error) {
-      this.logger.error('Failed to search nodes', { 
+      this.logger.error('Failed to search nodes', {
         input,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
       throw error
     }

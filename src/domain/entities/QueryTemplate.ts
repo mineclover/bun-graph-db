@@ -2,12 +2,15 @@ import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export interface QueryVariablesSchema {
   type: string
-  properties: Record<string, {
-    type: string
-    description?: string
-    default?: unknown
-    enum?: unknown[]
-  }>
+  properties: Record<
+    string,
+    {
+      type: string
+      description?: string
+      default?: unknown
+      enum?: unknown[]
+    }
+  >
   required?: string[]
 }
 
@@ -54,7 +57,7 @@ export class QueryTemplate {
     }
   ): QueryTemplate {
     const now = new Date()
-    
+
     return new QueryTemplate(
       null,
       identifier,
@@ -93,11 +96,17 @@ export class QueryTemplate {
     createdAt: string,
     updatedAt: string
   ): QueryTemplate {
-    const parsedVariablesSchema = variablesSchema ? JSON.parse(variablesSchema) as QueryVariablesSchema : null
-    const parsedDefaultVariables = defaultVariables ? JSON.parse(defaultVariables) as Record<string, unknown> : null
-    const parsedApplicableTables = applicableTables ? JSON.parse(applicableTables) as string[] : null
-    const parsedTags = tags ? JSON.parse(tags) as string[] : []
-    
+    const parsedVariablesSchema = variablesSchema
+      ? (JSON.parse(variablesSchema) as QueryVariablesSchema)
+      : null
+    const parsedDefaultVariables = defaultVariables
+      ? (JSON.parse(defaultVariables) as Record<string, unknown>)
+      : null
+    const parsedApplicableTables = applicableTables
+      ? (JSON.parse(applicableTables) as string[])
+      : null
+    const parsedTags = tags ? (JSON.parse(tags) as string[]) : []
+
     return new QueryTemplate(
       id,
       identifier,
@@ -122,9 +131,12 @@ export class QueryTemplate {
     if (!identifier || identifier.trim().length === 0) {
       throw new DomainException('Query template identifier cannot be empty', 'VALIDATION_ERROR')
     }
-    
+
     if (!/^[a-z0-9-_]+$/.test(identifier)) {
-      throw new DomainException('Query template identifier must contain only lowercase letters, numbers, hyphens, and underscores', 'VALIDATION_ERROR')
+      throw new DomainException(
+        'Query template identifier must contain only lowercase letters, numbers, hyphens, and underscores',
+        'VALIDATION_ERROR'
+      )
     }
   }
 
@@ -147,22 +159,54 @@ export class QueryTemplate {
   }
 
   // Getters
-  getId(): string | null { return this.id }
-  getIdentifier(): string { return this.identifier }
-  getName(): string { return this.name }
-  getDescription(): string | null { return this.description }
-  getQueryText(): string { return this.queryText }
-  getVariablesSchema(): QueryVariablesSchema | null { return this.variablesSchema }
-  getDefaultVariables(): Record<string, unknown> | null { return this.defaultVariables }
-  getApplicableTables(): string[] | null { return this.applicableTables }
-  getTemplateType(): TemplateType { return this.templateType }
-  getComplexityScore(): number { return this.complexityScore }
-  getUsageCount(): number { return this.usageCount }
-  getVersion(): string { return this.version }
-  getIsActive(): boolean { return this.isActive }
-  getTags(): string[] { return this.tags }
-  getCreatedAt(): Date { return this.createdAt }
-  getUpdatedAt(): Date { return this.updatedAt }
+  getId(): string | null {
+    return this.id
+  }
+  getIdentifier(): string {
+    return this.identifier
+  }
+  getName(): string {
+    return this.name
+  }
+  getDescription(): string | null {
+    return this.description
+  }
+  getQueryText(): string {
+    return this.queryText
+  }
+  getVariablesSchema(): QueryVariablesSchema | null {
+    return this.variablesSchema
+  }
+  getDefaultVariables(): Record<string, unknown> | null {
+    return this.defaultVariables
+  }
+  getApplicableTables(): string[] | null {
+    return this.applicableTables
+  }
+  getTemplateType(): TemplateType {
+    return this.templateType
+  }
+  getComplexityScore(): number {
+    return this.complexityScore
+  }
+  getUsageCount(): number {
+    return this.usageCount
+  }
+  getVersion(): string {
+    return this.version
+  }
+  getIsActive(): boolean {
+    return this.isActive
+  }
+  getTags(): string[] {
+    return this.tags
+  }
+  getCreatedAt(): Date {
+    return this.createdAt
+  }
+  getUpdatedAt(): Date {
+    return this.updatedAt
+  }
 
   // Business methods
   incrementUsage(): QueryTemplate {
@@ -230,28 +274,29 @@ export class QueryTemplate {
 
   validateVariables(variables: Record<string, unknown>): boolean {
     if (!this.variablesSchema) return true
-    
+
     // Check required fields
     if (this.variablesSchema.required) {
-      const missingRequired = this.variablesSchema.required.filter(requiredField => 
-        !variables.hasOwnProperty(requiredField) || variables[requiredField] === undefined
+      const missingRequired = this.variablesSchema.required.filter(
+        (requiredField) =>
+          !Object.hasOwn(variables, requiredField) || variables[requiredField] === undefined
       )
       if (missingRequired.length > 0) {
         return false
       }
     }
-    
+
     // Check type validation for each property
     if (this.variablesSchema.properties) {
       for (const [key, propSchema] of Object.entries(this.variablesSchema.properties)) {
-        if (variables.hasOwnProperty(key) && variables[key] !== undefined) {
+        if (Object.hasOwn(variables, key) && variables[key] !== undefined) {
           const value = variables[key]
-          
+
           // Type checking
           if (!this.validateVariableType(value, propSchema.type)) {
             return false
           }
-          
+
           // Enum validation
           if (propSchema.enum && !propSchema.enum.includes(value)) {
             return false
@@ -259,10 +304,10 @@ export class QueryTemplate {
         }
       }
     }
-    
+
     return true
   }
-  
+
   private validateVariableType(value: unknown, expectedType: string): boolean {
     switch (expectedType) {
       case 'string':
@@ -291,11 +336,11 @@ export class QueryTemplate {
   }
 
   hasAnyTag(tags: string[]): boolean {
-    return tags.some(tag => this.hasTag(tag))
+    return tags.some((tag) => this.hasTag(tag))
   }
 
   hasAllTags(tags: string[]): boolean {
-    return tags.every(tag => this.hasTag(tag))
+    return tags.every((tag) => this.hasTag(tag))
   }
 
   toDatabase(): {
@@ -332,7 +377,7 @@ export class QueryTemplate {
       is_active: this.isActive,
       tags: JSON.stringify(this.tags),
       created_at: this.createdAt.toISOString(),
-      updated_at: this.updatedAt.toISOString()
+      updated_at: this.updatedAt.toISOString(),
     }
   }
 }

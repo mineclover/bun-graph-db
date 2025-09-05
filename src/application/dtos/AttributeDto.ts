@@ -24,12 +24,12 @@ export class AttributeDto {
       isRequired: attribute.getIsRequired(),
       metadata: attribute.getParsedMetadata(),
       createdAt: attribute.getCreatedAt().toISOString(),
-      updatedAt: attribute.getUpdatedAt().toISOString()
+      updatedAt: attribute.getUpdatedAt().toISOString(),
     }
   }
 
   static fromEntities(attributes: Attribute[]): AttributeDto[] {
-    return attributes.map(attribute => AttributeDto.fromEntity(attribute))
+    return attributes.map((attribute) => AttributeDto.fromEntity(attribute))
   }
 }
 

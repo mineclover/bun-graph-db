@@ -1,17 +1,26 @@
+import { NodeDto } from '@/application/dtos/NodeDto.js'
+import {
+  CreateRelationOutput,
+  CreateRelationTypeOutput,
+  NodeRelationDto,
+  RelationTypeDto,
+} from '@/application/dtos/RelationDto.js'
+import { TableDto } from '@/application/dtos/TableDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
+import type { NodeId, NodeRelationId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
-import { NodeRelationDto, RelationTypeDto, CreateRelationOutput, CreateRelationTypeOutput } from '@/application/dtos/RelationDto.js'
-import { NodeDto } from '@/application/dtos/NodeDto.js'
 import type { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
-import { TableDto } from '@/application/dtos/TableDto.js'
-import type { NodeRelationId, RelationTypeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
 
 // Input types matching GraphQL schema
 interface CreateRelationInput {
@@ -78,13 +87,16 @@ export class RelationResolver {
 
   async nodeRelations(args: { tableId: string }): Promise<NodeRelationDto[]> {
     try {
-      const result = await this.nodeRelationRepository.findByTableId(
-        args.tableId as TableId,
-        { limit: 1000, offset: 0 }
-      )
+      const result = await this.nodeRelationRepository.findByTableId(args.tableId as TableId, {
+        limit: 1000,
+        offset: 0,
+      })
       return NodeRelationDto.fromEntities(result.data)
     } catch (error) {
-      this.logger.error('Failed to find node relations by table id', { tableId: args.tableId, error })
+      this.logger.error('Failed to find node relations by table id', {
+        tableId: args.tableId,
+        error,
+      })
       return []
     }
   }
@@ -115,32 +127,32 @@ export class RelationResolver {
       const result = await this.searchRelatedNodesUseCase.execute({
         tableId: args.input.tableId,
         sourceNodeIds: args.input.sourceNodeIds,
-        relationFilters: args.input.relationFilters?.map(f => ({
+        relationFilters: args.input.relationFilters?.map((f) => ({
           relationTypes: f.relationTypes,
           properties: f.properties,
           direction: f.direction,
-          depth: f.depth as any // Convert number to RelationDepth enum
+          depth: f.depth as any, // Convert number to RelationDepth enum
         })),
         pathQueries: args.input.pathQueries,
         nodeFilters: args.input.nodeFilters,
         limit: args.input.limit,
-        offset: args.input.offset
+        offset: args.input.offset,
       })
 
       return {
-        nodes: result.nodes.map(n => ({
+        nodes: result.nodes.map((n) => ({
           node: n,
           attributes: {}, // TODO: Extract attributes from node
           sourceNodeId: null,
           targetNodeId: null,
           relationTypeId: null,
           properties: null,
-          strength: null
+          strength: null,
         })),
         relations: result.relations || [],
         paths: result.paths || [],
         total: result.total,
-        hasMore: result.hasMore
+        hasMore: result.hasMore,
       }
     } catch (error) {
       this.logger.error('Failed to search related nodes', { input: args.input, error })
@@ -148,17 +160,18 @@ export class RelationResolver {
     }
   }
 
-
   async getDependencyChain(args: {
     tableId: string
     nodeId: string
     direction?: RelationDirection
     relationTypes?: string[]
-  }): Promise<Array<{
-    nodeId: string
-    level: number
-    relationPath: string[]
-  }>> {
+  }): Promise<
+    Array<{
+      nodeId: string
+      level: number
+      relationPath: string[]
+    }>
+  > {
     try {
       return await this.searchRelatedNodesUseCase.getDependencies(
         args.tableId,
@@ -187,7 +200,7 @@ export class RelationResolver {
         relationTypeId: args.input.relationTypeId,
         properties: args.input.properties,
         strength: args.input.strength,
-        confidence: args.input.confidence
+        confidence: args.input.confidence,
       })
 
       // Convert the use case output to DTO
@@ -203,53 +216,61 @@ export class RelationResolver {
         strength: result.relation.strength,
         confidence: result.relation.confidence || 1,
         createdAt: result.relation.createdAt,
-        updatedAt: result.relation.updatedAt
+        updatedAt: result.relation.updatedAt,
       }
 
       return {
         relation: relationDto,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to create relation', { input: args.input, error })
-      
+
       if (error instanceof ValidationException) {
         return {
           relation: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code,
-            field: this.getValidationField(error.message)
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+              field: this.getValidationField(error.message),
+            },
+          ],
         }
       }
 
       if (error instanceof NotFoundException) {
         return {
           relation: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+            },
+          ],
         }
       }
 
       if (error instanceof ConflictException) {
         return {
           relation: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+            },
+          ],
         }
       }
-      
+
       return {
         relation: null,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
@@ -262,7 +283,7 @@ export class RelationResolver {
       const result = await this.createRelationTypeUseCase.execute({
         identifier: args.input.identifier,
         description: args.input.description,
-        category: args.input.category
+        category: args.input.category,
       })
 
       // Convert the use case output to DTO
@@ -272,44 +293,50 @@ export class RelationResolver {
         description: result.relationType.description,
         category: result.relationType.category,
         createdAt: result.relationType.createdAt,
-        updatedAt: result.relationType.updatedAt
+        updatedAt: result.relationType.updatedAt,
       }
 
       return {
         relationType: relationTypeDto,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to create relation type', { input: args.input, error })
-      
+
       if (error instanceof ValidationException) {
         return {
           relationType: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code,
-            field: 'identifier'
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+              field: 'identifier',
+            },
+          ],
         }
       }
 
       if (error instanceof ConflictException) {
         return {
           relationType: null,
-          errors: [{ 
-            message: error.message, 
-            code: error.code,
-            field: 'identifier'
-          }]
+          errors: [
+            {
+              message: error.message,
+              code: error.code,
+              field: 'identifier',
+            },
+          ],
         }
       }
-      
+
       return {
         relationType: null,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
@@ -328,17 +355,19 @@ export class RelationResolver {
 
       return {
         success: true,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to delete relation', { id: args.id, error })
-      
+
       return {
         success: false,
-        errors: [{ 
-          message: error instanceof Error ? error.message : 'Unknown error',
-          code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: error instanceof NotFoundException ? 'NOT_FOUND' : 'INTERNAL_ERROR',
+          },
+        ],
       }
     }
   }
@@ -349,7 +378,10 @@ export class RelationResolver {
       const table = await this.tableRepository.findById(relation.tableId as TableId)
       return table ? TableDto.fromEntity(table) : null
     } catch (error) {
-      this.logger.error('Failed to resolve table field for relation', { relationId: relation.id, error })
+      this.logger.error('Failed to resolve table field for relation', {
+        relationId: relation.id,
+        error,
+      })
       return null
     }
   }
@@ -357,7 +389,7 @@ export class RelationResolver {
   async sourceNode_field(relation: NodeRelationDto): Promise<NodeDto | null> {
     try {
       if (!relation.sourceNodeId) return null
-      
+
       const node = await this.nodeRepository.findById(relation.sourceNodeId as NodeId)
       return node ? NodeDto.fromEntity(node) : null
     } catch (error) {
@@ -369,7 +401,7 @@ export class RelationResolver {
   async targetNode_field(relation: NodeRelationDto): Promise<NodeDto | null> {
     try {
       if (!relation.targetNodeId) return null
-      
+
       const node = await this.nodeRepository.findById(relation.targetNodeId as NodeId)
       return node ? NodeDto.fromEntity(node) : null
     } catch (error) {
@@ -380,7 +412,9 @@ export class RelationResolver {
 
   async relationType_field(relation: NodeRelationDto): Promise<RelationTypeDto | null> {
     try {
-      const relationType = await this.relationTypeRepository.findById(relation.relationTypeId as RelationTypeId)
+      const relationType = await this.relationTypeRepository.findById(
+        relation.relationTypeId as RelationTypeId
+      )
       return relationType ? RelationTypeDto.fromEntity(relationType) : null
     } catch (error) {
       this.logger.error('Failed to resolve relation type field', { relationId: relation.id, error })
@@ -392,8 +426,11 @@ export class RelationResolver {
   async outgoingRelations_field(node: NodeDto): Promise<NodeRelationDto[]> {
     try {
       if (!node.id) return []
-      
-      const result = await this.nodeRelationRepository.findBySourceNodeId(node.id as NodeId, { limit: 100, offset: 0 })
+
+      const result = await this.nodeRelationRepository.findBySourceNodeId(node.id as NodeId, {
+        limit: 100,
+        offset: 0,
+      })
       return NodeRelationDto.fromEntities(result.data)
     } catch (error) {
       this.logger.error('Failed to resolve outgoing relations', { nodeId: node.id, error })
@@ -404,8 +441,11 @@ export class RelationResolver {
   async incomingRelations_field(node: NodeDto): Promise<NodeRelationDto[]> {
     try {
       if (!node.id) return []
-      
-      const result = await this.nodeRelationRepository.findByTargetNodeId(node.id as NodeId, { limit: 100, offset: 0 })
+
+      const result = await this.nodeRelationRepository.findByTargetNodeId(node.id as NodeId, {
+        limit: 100,
+        offset: 0,
+      })
       return NodeRelationDto.fromEntities(result.data)
     } catch (error) {
       this.logger.error('Failed to resolve incoming relations', { nodeId: node.id, error })
@@ -416,8 +456,11 @@ export class RelationResolver {
   async relationCount_field(node: NodeDto): Promise<number> {
     try {
       if (!node.id) return 0
-      
-      const relations = await this.nodeRelationRepository.findByNodeId(node.id as NodeId, { limit: 1000, offset: 0 })
+
+      const relations = await this.nodeRelationRepository.findByNodeId(node.id as NodeId, {
+        limit: 1000,
+        offset: 0,
+      })
       return relations.incoming.length + relations.outgoing.length
     } catch (error) {
       this.logger.error('Failed to resolve relation count', { nodeId: node.id, error })

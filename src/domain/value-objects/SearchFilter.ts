@@ -2,7 +2,7 @@
 
 export enum SearchOperator {
   EQUALS = 'equals',
-  NOT_EQUALS = 'not_equals', 
+  NOT_EQUALS = 'not_equals',
   GREATER_THAN = 'gt',
   GREATER_THAN_OR_EQUAL = 'gte',
   LESS_THAN = 'lt',
@@ -14,12 +14,12 @@ export enum SearchOperator {
   NOT_IN = 'not_in',
   RANGE = 'range',
   IS_NULL = 'is_null',
-  IS_NOT_NULL = 'is_not_null'
+  IS_NOT_NULL = 'is_not_null',
 }
 
 export enum LogicalOperator {
   AND = 'and',
-  OR = 'or'
+  OR = 'or',
 }
 
 export interface SearchFilter {
@@ -57,13 +57,18 @@ export class SearchQueryBuilder {
   private limit?: number
   private offset?: number
 
-  addFilter(field: string, operator: SearchOperator, value: any, valueType: string = 'string'): this {
+  addFilter(
+    field: string,
+    operator: SearchOperator,
+    value: any,
+    valueType: string = 'string'
+  ): this {
     const filter: SearchFilter = { field, operator, value, valueType: valueType as any }
-    
+
     if (this.conditions.length === 0) {
       this.conditions.push({
         filters: [filter],
-        logicalOperator: LogicalOperator.AND
+        logicalOperator: LogicalOperator.AND,
       })
     } else {
       // Add to the last condition
@@ -72,7 +77,7 @@ export class SearchQueryBuilder {
         lastCondition.filters.push(filter)
       }
     }
-    
+
     return this
   }
 
@@ -80,7 +85,7 @@ export class SearchQueryBuilder {
     if (this.conditions.length > 0) {
       this.conditions.push({
         filters: [],
-        logicalOperator
+        logicalOperator,
       })
     }
     return this
@@ -108,11 +113,11 @@ export class SearchQueryBuilder {
 
   build(): SearchQuery {
     return {
-      conditions: this.conditions.filter(condition => condition.filters.length > 0),
+      conditions: this.conditions.filter((condition) => condition.filters.length > 0),
       textSearch: this.textSearch,
       sortBy: this.sortBy.length > 0 ? this.sortBy : undefined,
       limit: this.limit,
-      offset: this.offset
+      offset: this.offset,
     }
   }
 

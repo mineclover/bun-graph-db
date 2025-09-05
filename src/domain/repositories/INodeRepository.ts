@@ -1,5 +1,10 @@
+import type {
+  NodeId,
+  PaginatedResult,
+  PaginationOptions,
+  TableId,
+} from '@/core/types/CommonTypes.js'
 import type { Node } from '@/domain/entities/Node.js'
-import type { NodeId, TableId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
 
 export interface INodeRepository {
   save(node: Node): Promise<void>
@@ -14,6 +19,10 @@ export interface INodeRepository {
   countByTableId(tableId: TableId): Promise<number>
   saveMany(nodes: Node[]): Promise<void>
   findByIds(ids: NodeId[]): Promise<Node[]>
-  searchByContent(tableId: TableId, searchTerm: string, options?: PaginationOptions): Promise<PaginatedResult<Node>>
+  searchByContent(
+    tableId: TableId,
+    searchTerm: string,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<Node>>
   executeRawQuery(query: string, params?: any[]): Promise<any[]>
 }

@@ -1,8 +1,8 @@
 import { Database } from 'bun:sqlite'
 import { readFileSync } from 'fs'
 import { join } from 'path'
-import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { getDatabasePath } from '@/config/database.js'
+import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 export class SqliteConnection {
   private static instance: SqliteConnection
@@ -28,16 +28,15 @@ export class SqliteConnection {
     try {
       const dbPath = getDatabasePath()
       this.db = new Database(dbPath)
-      
+
       // Enable foreign keys
       this.db.exec('PRAGMA foreign_keys = ON')
-      
+
       // Set reasonable timeout
       this.db.exec('PRAGMA busy_timeout = 30000')
-      
+
       // Initialize schema
       this.initializeSchema()
-      
     } catch (error) {
       throw new DatabaseException(`Failed to connect to database: ${error}`)
     }
@@ -48,12 +47,12 @@ export class SqliteConnection {
       // Read and execute schema file
       const schemaPath = join(process.cwd(), 'core', 'schema.sql')
       const schema = readFileSync(schemaPath, 'utf-8')
-      
+
       // Execute schema in a transaction for safety
       this.db!.transaction(() => {
         this.db!.exec(schema)
       })()
-      
+
       console.log('Database schema initialized successfully')
     } catch (error) {
       console.error('Failed to initialize database schema:', error)
@@ -72,7 +71,7 @@ export class SqliteConnection {
   isHealthy(): boolean {
     try {
       if (!this.db) return false
-      
+
       const result = this.db.query('SELECT 1 as health').get()
       return result !== null
     } catch {
@@ -85,7 +84,7 @@ export class SqliteConnection {
     if (!this.db) {
       throw new DatabaseException('Database not connected')
     }
-    
+
     return this.db.transaction(fn)()
   }
 }

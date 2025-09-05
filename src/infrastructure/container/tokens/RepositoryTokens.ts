@@ -12,8 +12,8 @@ export const RepositoryTokens = {
   NODE_RELATION_REPOSITORY: Symbol.for('NodeRelationRepository'),
   RELATION_TYPE_REPOSITORY: Symbol.for('RelationTypeRepository'),
   QUERY_TEMPLATE_REPOSITORY: Symbol.for('QueryTemplateRepository'),
-  
+
   // Search repositories
   NODE_SEARCH_REPOSITORY: Symbol.for('NodeSearchRepository'),
-  GRAPH_REPOSITORY: Symbol.for('GraphRepository')
+  GRAPH_REPOSITORY: Symbol.for('GraphRepository'),
 } as const

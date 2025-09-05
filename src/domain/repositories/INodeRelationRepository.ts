@@ -1,24 +1,51 @@
-import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
-import type { 
-  NodeRelationId, 
-  TableId, 
-  NodeId, 
-  RelationTypeId, 
-  PaginationOptions, 
-  PaginatedResult 
+import type {
+  NodeId,
+  NodeRelationId,
+  PaginatedResult,
+  PaginationOptions,
+  RelationTypeId,
+  TableId,
 } from '@/core/types/CommonTypes.js'
+import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 
 export interface INodeRelationRepository {
   save(nodeRelation: NodeRelation): Promise<void>
   findById(id: NodeRelationId): Promise<NodeRelation | null>
-  findByTableId(tableId: TableId, options?: PaginationOptions): Promise<PaginatedResult<NodeRelation>>
-  findBySourceNodeId(sourceNodeId: NodeId, options?: PaginationOptions): Promise<PaginatedResult<NodeRelation>>
-  findByTargetNodeId(targetNodeId: NodeId, options?: PaginationOptions): Promise<PaginatedResult<NodeRelation>>
-  findByExternalIds(sourceExternalId: string, targetExternalId: string, tableId: TableId): Promise<NodeRelation | null>
-  findBySourceExternalId(sourceExternalId: string, tableId: TableId, options?: PaginationOptions): Promise<PaginatedResult<NodeRelation>>
-  findByTargetExternalId(targetExternalId: string, tableId: TableId, options?: PaginationOptions): Promise<PaginatedResult<NodeRelation>>
-  findByRelationType(relationTypeId: RelationTypeId, options?: PaginationOptions): Promise<PaginatedResult<NodeRelation>>
-  findByNodeId(nodeId: NodeId, options?: PaginationOptions): Promise<{
+  findByTableId(
+    tableId: TableId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<NodeRelation>>
+  findBySourceNodeId(
+    sourceNodeId: NodeId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<NodeRelation>>
+  findByTargetNodeId(
+    targetNodeId: NodeId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<NodeRelation>>
+  findByExternalIds(
+    sourceExternalId: string,
+    targetExternalId: string,
+    tableId: TableId
+  ): Promise<NodeRelation | null>
+  findBySourceExternalId(
+    sourceExternalId: string,
+    tableId: TableId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<NodeRelation>>
+  findByTargetExternalId(
+    targetExternalId: string,
+    tableId: TableId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<NodeRelation>>
+  findByRelationType(
+    relationTypeId: RelationTypeId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<NodeRelation>>
+  findByNodeId(
+    nodeId: NodeId,
+    options?: PaginationOptions
+  ): Promise<{
     incoming: NodeRelation[]
     outgoing: NodeRelation[]
   }>
@@ -27,6 +54,11 @@ export interface INodeRelationRepository {
   deleteByTableId(tableId: TableId): Promise<void>
   deleteBySourceNodeId(sourceNodeId: NodeId): Promise<void>
   deleteByTargetNodeId(targetNodeId: NodeId): Promise<void>
-  exists(sourceExternalId: string, targetExternalId: string, tableId: TableId, relationTypeId: RelationTypeId): Promise<boolean>
+  exists(
+    sourceExternalId: string,
+    targetExternalId: string,
+    tableId: TableId,
+    relationTypeId: RelationTypeId
+  ): Promise<boolean>
   count(tableId?: TableId, relationTypeId?: RelationTypeId): Promise<number>
 }

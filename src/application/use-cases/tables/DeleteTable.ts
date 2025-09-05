@@ -1,9 +1,9 @@
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/TableTypes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 
 export interface DeleteTableInput {
   id: TableId
@@ -33,7 +33,7 @@ export class DeleteTableUseCase {
     const [nodeCount, attributeCount, relationCount] = await Promise.all([
       this.nodeRepository.countByTableId(tableId),
       this.attributeRepository.countByTableId(tableId),
-      this.relationRepository.count(tableId)
+      this.relationRepository.count(tableId),
     ])
 
     const hasData = nodeCount > 0 || attributeCount > 0 || relationCount > 0
@@ -43,14 +43,14 @@ export class DeleteTableUseCase {
       nodeCount,
       attributeCount,
       relationCount,
-      hasData
+      hasData,
     })
 
     return {
       nodeCount,
       attributeCount,
       relationCount,
-      hasData
+      hasData,
     }
   }
 
@@ -60,7 +60,7 @@ export class DeleteTableUseCase {
     this.logger.info('Starting table deletion process', {
       tableId: id,
       force,
-      cascadeDelete
+      cascadeDelete,
     })
 
     // Check if table exists
@@ -76,14 +76,15 @@ export class DeleteTableUseCase {
     if (dependencies.hasData && !force) {
       this.logger.warn('Table deletion blocked due to existing data', {
         tableId: id,
-        dependencies
+        dependencies,
       })
-      
-      const errorMessage = `Cannot delete table '${table.identifier}'. ` +
+
+      const errorMessage =
+        `Cannot delete table '${table.identifier}'. ` +
         `Found ${dependencies.nodeCount} nodes, ${dependencies.attributeCount} attributes, ` +
         `and ${dependencies.relationCount} relations. ` +
         `Use 'force: true' to override or 'cascadeDelete: true' to delete all related data.`
-      
+
       throw new Error(errorMessage)
     }
 
@@ -91,7 +92,7 @@ export class DeleteTableUseCase {
     if (cascadeDelete && dependencies.hasData) {
       this.logger.info('Starting cascade deletion of related data', {
         tableId: id,
-        dependencies
+        dependencies,
       })
 
       // Note: This would need to be implemented with proper transaction handling
@@ -100,7 +101,7 @@ export class DeleteTableUseCase {
         tableId: id,
         nodeCount: dependencies.nodeCount,
         attributeCount: dependencies.attributeCount,
-        relationCount: dependencies.relationCount
+        relationCount: dependencies.relationCount,
       })
 
       // TODO: Implement actual cascade deletion with proper transaction handling
@@ -113,7 +114,7 @@ export class DeleteTableUseCase {
     this.logger.info('Table deletion completed successfully', {
       tableId: id,
       tableName: table.identifier,
-      hadDependencies: dependencies.hasData
+      hadDependencies: dependencies.hasData,
     })
 
     return dependencies
@@ -123,7 +124,7 @@ export class DeleteTableUseCase {
   // private async deleteCascadeData(tableId: TableId, dependencies: TableDependencyInfo): Promise<void> {
   //   // Delete in proper order to maintain referential integrity:
   //   // 1. Relations (referencing nodes)
-  //   // 2. Node attributes (referencing nodes and attributes)  
+  //   // 2. Node attributes (referencing nodes and attributes)
   //   // 3. Nodes (referencing table)
   //   // 4. Attributes (referencing table)
   // }

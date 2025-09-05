@@ -13,11 +13,7 @@ export class RelationType {
     this.validateIdentifier(identifier)
   }
 
-  static create(
-    identifier: string,
-    description?: string,
-    category?: string
-  ): RelationType {
+  static create(identifier: string, description?: string, category?: string): RelationType {
     return new RelationType(
       null as any as RelationTypeId,
       identifier,
@@ -126,7 +122,7 @@ export class RelationType {
       description: this.description,
       category: this.category,
       created_at: this.createdAt.toISOString(),
-      updated_at: this.updatedAt.toISOString()
+      updated_at: this.updatedAt.toISOString(),
     }
   }
 }

@@ -1,7 +1,12 @@
 import type { Database } from 'bun:sqlite'
-import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type {
+  AttributeId,
+  NodeId,
+  PaginatedResult,
+  PaginationOptions,
+} from '@/core/types/CommonTypes.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
-import type { NodeId, AttributeId, PaginationOptions, PaginatedResult } from '@/core/types/CommonTypes.js'
+import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface NodeAttributeRow {
@@ -18,22 +23,22 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
 
   async save(nodeAttribute: NodeAttribute): Promise<void> {
     const data = nodeAttribute.toDatabase()
-    
+
     if (!data.id) {
       const query = `
         INSERT INTO node_attributes (node_id, attribute_id, value, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
       `
-      
+
       try {
         const result = this.db.run(query, [
           data.node_id,
           data.attribute_id,
           data.value,
           data.created_at,
-          data.updated_at
+          data.updated_at,
         ])
-        
+
         console.log('New node attribute created with ID:', result.lastInsertRowid)
       } catch (error) {
         console.error('Save error:', error)
@@ -50,7 +55,7 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
       FROM node_attributes
       WHERE id = ?
     `
-    
+
     try {
       const row = this.db.query<NodeAttributeRow, [string]>(query).get(id)
       return row ? this.mapRowToEntity(row) : null
@@ -59,13 +64,16 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
     }
   }
 
-  async findByNodeIdAndAttributeId(nodeId: NodeId, attributeId: AttributeId): Promise<NodeAttribute | null> {
+  async findByNodeIdAndAttributeId(
+    nodeId: NodeId,
+    attributeId: AttributeId
+  ): Promise<NodeAttribute | null> {
     const query = `
       SELECT id, node_id, attribute_id, value, created_at, updated_at
       FROM node_attributes
       WHERE node_id = ? AND attribute_id = ?
     `
-    
+
     try {
       const row = this.db.query<NodeAttributeRow, [string, string]>(query).get(nodeId, attributeId)
       return row ? this.mapRowToEntity(row) : null
@@ -81,18 +89,21 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
       WHERE node_id = ?
       ORDER BY attribute_id
     `
-    
+
     try {
       const rows = this.db.query<NodeAttributeRow, [string]>(query).all(nodeId)
-      return rows.map(row => this.mapRowToEntity(row))
+      return rows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
       throw new DatabaseException(`Failed to find node attributes: ${error}`)
     }
   }
 
-  async findByAttributeId(attributeId: AttributeId, options: PaginationOptions = {}): Promise<PaginatedResult<NodeAttribute>> {
+  async findByAttributeId(
+    attributeId: AttributeId,
+    options: PaginationOptions = {}
+  ): Promise<PaginatedResult<NodeAttribute>> {
     const { limit = 10, offset = 0 } = options
-    
+
     const dataQuery = `
       SELECT id, node_id, attribute_id, value, created_at, updated_at
       FROM node_attributes
@@ -100,20 +111,22 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `
-    
+
     const countQuery = `SELECT COUNT(*) as count FROM node_attributes WHERE attribute_id = ?`
-    
+
     try {
-      const rows = this.db.query<NodeAttributeRow, [string, number, number]>(dataQuery).all(attributeId, limit, offset)
+      const rows = this.db
+        .query<NodeAttributeRow, [string, number, number]>(dataQuery)
+        .all(attributeId, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(attributeId)
       const total = countResult?.count || 0
-      
-      const nodeAttributes = rows.map(row => this.mapRowToEntity(row))
-      
+
+      const nodeAttributes = rows.map((row) => this.mapRowToEntity(row))
+
       return {
         data: nodeAttributes,
         total,
-        hasMore: offset + limit < total
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node attributes by attribute id: ${error}`)
@@ -122,21 +135,21 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
 
   async update(nodeAttribute: NodeAttribute): Promise<void> {
     const data = nodeAttribute.toDatabase()
-    
+
     const query = `
       UPDATE node_attributes 
       SET value = ?, updated_at = ?
       WHERE node_id = ? AND attribute_id = ?
     `
-    
+
     try {
       const result = this.db.run(query, [
         data.value,
         data.updated_at,
         data.node_id,
-        data.attribute_id
+        data.attribute_id,
       ])
-      
+
       if (result.changes === 0) {
         throw new DatabaseException(`NodeAttribute not found for update`)
       }
@@ -147,7 +160,7 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
 
   async delete(id: string): Promise<void> {
     const query = `DELETE FROM node_attributes WHERE id = ?`
-    
+
     try {
       const result = this.db.run(query, [id])
       if (result.changes === 0) {
@@ -160,7 +173,7 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
 
   async deleteByNodeId(nodeId: NodeId): Promise<void> {
     const query = `DELETE FROM node_attributes WHERE node_id = ?`
-    
+
     try {
       this.db.run(query, [nodeId])
     } catch (error) {
@@ -170,7 +183,7 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
 
   async deleteByAttributeId(attributeId: AttributeId): Promise<void> {
     const query = `DELETE FROM node_attributes WHERE attribute_id = ?`
-    
+
     try {
       this.db.run(query, [attributeId])
     } catch (error) {
@@ -180,7 +193,7 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
 
   async exists(nodeId: NodeId, attributeId: AttributeId): Promise<boolean> {
     const query = `SELECT 1 FROM node_attributes WHERE node_id = ? AND attribute_id = ? LIMIT 1`
-    
+
     try {
       const row = this.db.query<{ 1: number }, [string, string]>(query).get(nodeId, attributeId)
       return row !== null
@@ -191,25 +204,19 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
 
   async saveMany(nodeAttributes: NodeAttribute[]): Promise<void> {
     if (nodeAttributes.length === 0) return
-    
+
     const query = `
       INSERT OR REPLACE INTO node_attributes (node_id, attribute_id, value, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?)
     `
-    
+
     try {
       const stmt = this.db.prepare(query)
-      
+
       this.db.transaction(() => {
         for (const nodeAttribute of nodeAttributes) {
           const data = nodeAttribute.toDatabase()
-          stmt.run(
-            data.node_id,
-            data.attribute_id,
-            data.value,
-            data.created_at,
-            data.updated_at
-          )
+          stmt.run(data.node_id, data.attribute_id, data.value, data.created_at, data.updated_at)
         }
       })()
     } catch (error) {
@@ -219,25 +226,20 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
 
   async updateMany(nodeAttributes: NodeAttribute[]): Promise<void> {
     if (nodeAttributes.length === 0) return
-    
+
     const query = `
       UPDATE node_attributes 
       SET value = ?, updated_at = ?
       WHERE node_id = ? AND attribute_id = ?
     `
-    
+
     try {
       const stmt = this.db.prepare(query)
-      
+
       this.db.transaction(() => {
         for (const nodeAttribute of nodeAttributes) {
           const data = nodeAttribute.toDatabase()
-          stmt.run(
-            data.value,
-            data.updated_at,
-            data.node_id,
-            data.attribute_id
-          )
+          stmt.run(data.value, data.updated_at, data.node_id, data.attribute_id)
         }
       })()
     } catch (error) {

@@ -5,13 +5,13 @@ type TableNode implements Node {
   content: String!
   createdAt: DateTime!
   updatedAt: DateTime!
-  
+
   # Relationships
   table: Table!
   attributes: [NodeAttribute!]!
   outgoingRelations: [NodeRelation!]!
   incomingRelations: [NodeRelation!]!
-  
+
   # Computed fields
   attributeCount: Int!
   relationCount: Int!

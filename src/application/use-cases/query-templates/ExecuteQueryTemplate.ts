@@ -1,7 +1,7 @@
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import type { QueryTemplateId } from '@/core/types/CommonTypes.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface ExecuteQueryTemplateInput {
   templateIdentifier: string
@@ -43,13 +43,13 @@ export class ExecuteQueryTemplateUseCase {
 
     // 3. Variables 처리
     const variables = { ...template.getDefaultVariables(), ...(input.variables || {}) }
-    
+
     // 4. Variables 유효성 검사
     if (!template.validateVariables(variables)) {
       const schema = template.getVariablesSchema()
       const required = schema?.required || []
       throw new ValidationException(
-        `Missing required variables: ${required.filter(field => !variables.hasOwnProperty(field)).join(', ')}`
+        `Missing required variables: ${required.filter((field) => !Object.hasOwn(variables, field)).join(', ')}`
       )
     }
 
@@ -72,8 +72,8 @@ export class ExecuteQueryTemplateUseCase {
         templateName: template.getName(),
         complexityScore: template.getComplexityScore(),
         estimatedTokens: Math.ceil(template.getQueryText().length / 4), // 대략적인 토큰 추정
-        version: template.getVersion()
-      }
+        version: template.getVersion(),
+      },
     }
   }
 }

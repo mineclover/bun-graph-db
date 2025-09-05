@@ -1,12 +1,12 @@
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { 
+import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
+import type {
   GraphQLParent,
   TableArgs,
   TableByIdentifierArgs,
-  TablesArgs
+  TablesArgs,
 } from '@/core/types/GraphQLTypes.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 
 export class TableQueries {
   constructor(
@@ -30,7 +30,10 @@ export class TableQueries {
       this.logger.info('Fetching table by identifier', { identifier: args.identifier })
       return await this.tableRepository.findByIdentifier(args.identifier)
     } catch (error) {
-      this.logger.error('Error fetching table by identifier', { error, identifier: args.identifier })
+      this.logger.error('Error fetching table by identifier', {
+        error,
+        identifier: args.identifier,
+      })
       throw error
     }
   }
@@ -38,18 +41,18 @@ export class TableQueries {
   async tables(_: GraphQLParent, args: TablesArgs) {
     try {
       this.logger.info('Fetching tables', { args })
-      
+
       const result = await this.tableRepository.findAll({
         filter: args.filter,
         pagination: args.pagination || { limit: 10, offset: 0 },
-        sort: args.sort
+        sort: args.sort,
       })
 
       return {
         nodes: result.items,
         totalCount: result.total,
         hasNextPage: result.hasNextPage,
-        hasPreviousPage: result.hasPreviousPage
+        hasPreviousPage: result.hasPreviousPage,
       }
     } catch (error) {
       this.logger.error('Error fetching tables', { error, args })

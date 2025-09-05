@@ -1,5 +1,5 @@
-export { TableQueries } from './TableQueries.js'
-export { NodeQueries } from './NodeQueries.js'
 export { AttributeQueries } from './AttributeQueries.js'
+export { NodeQueries } from './NodeQueries.js'
 export { RelationQueries } from './RelationQueries.js'
+export { TableQueries } from './TableQueries.js'
 export { TemplateQueries } from './TemplateQueries.js'

@@ -40,13 +40,13 @@ export class ConsoleLogger implements ILogger {
     const timestamp = new Date().toISOString()
     const colorCode = this.enableColors && color ? color : ''
     const resetCode = this.enableColors ? '\x1b[0m' : ''
-    
+
     let logMessage = `${colorCode}[${timestamp}] ${level}: ${message}${resetCode}`
-    
+
     if (meta && Object.keys(meta).length > 0) {
       logMessage += `\n${JSON.stringify(meta, null, 2)}`
     }
-    
+
     // Use appropriate console method based on level
     switch (level) {
       case 'ERROR':

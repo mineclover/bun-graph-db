@@ -2,18 +2,9 @@
 
 extend type Mutation {
   # Table management
-  createTable(
-    input: CreateTableInput!
-  ): CreateTablePayload!
-  
-  updateTable(
-    id: ID!
-    input: UpdateTableInput!
-  ): UpdateTablePayload!
-  
-  deleteTable(
-    id: ID!
-    force: Boolean = false
-    cascadeDelete: Boolean = false
-  ): DeleteTablePayload!
+  createTable(input: CreateTableInput!): CreateTablePayload!
+
+  updateTable(id: ID!, input: UpdateTableInput!): UpdateTablePayload!
+
+  deleteTable(id: ID!, force: Boolean = false, cascadeDelete: Boolean = false): DeleteTablePayload!
 }

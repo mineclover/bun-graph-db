@@ -1,8 +1,13 @@
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
 import type { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
-import type { GraphQLParent, ExportTableArgs, ExportAllTablesArgs, ImportSchemaArgs } from '../types/GraphQLTypes.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type {
+  ExportAllTablesArgs,
+  ExportTableArgs,
+  GraphQLParent,
+  ImportSchemaArgs,
+} from '../types/GraphQLTypes.js'
 
 interface SchemaResolverDependencies {
   tableRepository: ITableRepository
@@ -34,7 +39,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
           logger.error('Failed to export all tables', { error })
           throw error
         }
-      }
+      },
     },
 
     Mutation: {
@@ -46,7 +51,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
           logger.error('Failed to import schema', { error })
           throw error
         }
-      }
-    }
+      },
+    },
   }
 }

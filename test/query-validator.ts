@@ -32,7 +32,7 @@ export class GraphQLQueryValidator {
       query: `query { health { status } }`,
       expectedFields: ['health', 'status'],
       shouldSucceed: true,
-      description: 'Basic health check query'
+      description: 'Basic health check query',
     },
 
     // Table Operations
@@ -41,7 +41,7 @@ export class GraphQLQueryValidator {
       query: `query { tables { nodes { id identifier description createdAt } totalCount } }`,
       expectedFields: ['tables', 'nodes', 'totalCount'],
       shouldSucceed: true,
-      description: 'Fetch all tables'
+      description: 'Fetch all tables',
     },
     {
       name: 'create_table',
@@ -54,7 +54,7 @@ export class GraphQLQueryValidator {
       variables: { input: { identifier: 'test-table', description: 'Test table' } },
       expectedFields: ['createTable', 'table', 'errors'],
       shouldSucceed: true,
-      description: 'Create new table'
+      description: 'Create new table',
     },
     {
       name: 'get_table_by_id',
@@ -62,7 +62,7 @@ export class GraphQLQueryValidator {
       variables: { id: 'needs-real-id' }, // Will be updated dynamically
       expectedFields: ['table', 'id', 'identifier'],
       shouldSucceed: true, // Will succeed with valid ID
-      description: 'Get table by ID'
+      description: 'Get table by ID',
     },
 
     // Node Operations
@@ -76,7 +76,7 @@ export class GraphQLQueryValidator {
       variables: { tableId: 'placeholder', identifier: 'test-node', description: 'Test node' },
       expectedFields: ['createNode', 'id', 'externalId'],
       shouldSucceed: false, // Will fail without valid table ID
-      description: 'Create new node'
+      description: 'Create new node',
     },
     {
       name: 'get_nodes',
@@ -90,7 +90,7 @@ export class GraphQLQueryValidator {
       variables: { tableId: 'placeholder', limit: 10 },
       expectedFields: ['nodes', 'totalCount', 'hasMore'],
       shouldSucceed: false, // Will fail without valid table ID
-      description: 'Get nodes with pagination'
+      description: 'Get nodes with pagination',
     },
 
     // Attribute Operations
@@ -105,14 +105,14 @@ export class GraphQLQueryValidator {
       variables: { input: { identifier: 'test-attribute', jsonType: 'string' } },
       expectedFields: ['createAttributeType', 'attributeType', 'errors'],
       shouldSucceed: true,
-      description: 'Create attribute type'
+      description: 'Create attribute type',
     },
     {
       name: 'get_attribute_types',
       query: `query { attributeTypes { id identifier jsonType } }`,
       expectedFields: ['attributeTypes', 'id', 'identifier'],
       shouldSucceed: true,
-      description: 'Get all attribute types'
+      description: 'Get all attribute types',
     },
 
     // Relation Operations
@@ -127,14 +127,14 @@ export class GraphQLQueryValidator {
       variables: { input: { identifier: 'test-relation', description: 'Test relation' } },
       expectedFields: ['createRelationType', 'relationType', 'errors'],
       shouldSucceed: true,
-      description: 'Create relation type'
+      description: 'Create relation type',
     },
     {
       name: 'get_relation_types',
       query: `query { relationTypes { id identifier description } }`,
       expectedFields: ['relationTypes', 'id', 'identifier'],
       shouldSucceed: true,
-      description: 'Get all relation types'
+      description: 'Get all relation types',
     },
 
     // Search Operations
@@ -149,7 +149,7 @@ export class GraphQLQueryValidator {
       variables: { tableId: 'placeholder', searchQuery: 'test', limit: 10 },
       expectedFields: ['searchNodes', 'nodes', 'totalCount'],
       shouldSucceed: false, // Will fail without valid table ID
-      description: 'Search nodes by query'
+      description: 'Search nodes by query',
     },
     {
       name: 'search_related_nodes',
@@ -162,7 +162,7 @@ export class GraphQLQueryValidator {
       variables: { tableId: 'placeholder', nodeIds: ['test'], maxDepth: 2 },
       expectedFields: ['searchRelatedNodes', 'nodes', 'relationships'],
       shouldSucceed: false, // Will fail without valid IDs
-      description: 'Search related nodes'
+      description: 'Search related nodes',
     },
 
     // Relationship Operations
@@ -178,7 +178,7 @@ export class GraphQLQueryValidator {
       variables: { tableId: 'placeholder' },
       expectedFields: ['nodeRelations', 'id', 'sourceExternalId', 'strength'],
       shouldSucceed: false, // Will fail without valid table ID
-      description: 'Get node relationships'
+      description: 'Get node relationships',
     },
 
     // Advanced Analytics
@@ -194,31 +194,34 @@ export class GraphQLQueryValidator {
       variables: { tableId: 'placeholder' },
       expectedFields: ['nodeStatistics', 'totalNodes', 'totalRelations'],
       shouldSucceed: false, // Will fail without valid table ID
-      description: 'Get node statistics'
-    }
+      description: 'Get node statistics',
+    },
   ]
 
   async setupDynamicTestData(): Promise<void> {
     try {
       // Create a test table to use for get_table_by_id query
-      const createTableResult = await this.client.request(`
+      const createTableResult = await this.client.request(
+        `
         mutation($input: CreateTableInput!) {
           createTable(input: $input) {
             table { id identifier description }
             errors { message }
           }
         }
-      `, {
-        input: {
-          identifier: 'validator-test-table',
-          description: 'Test table for query validation'
+      `,
+        {
+          input: {
+            identifier: 'validator-test-table',
+            description: 'Test table for query validation',
+          },
         }
-      })
+      )
 
       const tableId = createTableResult.createTable.table?.id
       if (tableId) {
         // Update the get_table_by_id test case with the real table ID
-        const testCase = this.queryTestCases.find(tc => tc.name === 'get_table_by_id')
+        const testCase = this.queryTestCases.find((tc) => tc.name === 'get_table_by_id')
         if (testCase && testCase.variables) {
           testCase.variables.id = tableId
         }
@@ -230,10 +233,10 @@ export class GraphQLQueryValidator {
 
   async validateAllQueries(): Promise<ValidationReport> {
     console.log('🔍 Starting GraphQL Query Validation...\n')
-    
+
     // Set up dynamic test data
     await this.setupDynamicTestData()
-    
+
     const startTime = Date.now()
     let passed = 0
     let failed = 0
@@ -242,7 +245,7 @@ export class GraphQLQueryValidator {
       console.log(`📋 Testing: ${testCase.name}`)
       const result = await this.validateQuery(testCase)
       this.testResults.set(testCase.name, result)
-      
+
       if (result.passed) {
         passed++
         console.log(`✅ ${testCase.name}: PASSED\n`)
@@ -254,14 +257,14 @@ export class GraphQLQueryValidator {
     }
 
     const totalTime = Date.now() - startTime
-    
+
     const report: ValidationReport = {
       totalQueries: this.queryTestCases.length,
       passed,
       failed,
       duration: totalTime,
       results: Object.fromEntries(this.testResults),
-      success: failed === 0
+      success: failed === 0,
     }
 
     this.printSummary(report)
@@ -270,35 +273,38 @@ export class GraphQLQueryValidator {
 
   async validateQuery(testCase: QueryTestCase): Promise<QueryResult> {
     const startTime = Date.now()
-    
+
     try {
       const response = await this.client.request(testCase.query, testCase.variables)
       const duration = Date.now() - startTime
-      
+
       // Check if response contains expected fields
       const hasExpectedFields = this.checkExpectedFields(response, testCase.expectedFields)
-      
+
       const success = testCase.shouldSucceed ? hasExpectedFields : false
-      
+
       return {
         name: testCase.name,
         passed: success,
         duration,
         response,
-        error: !success && testCase.shouldSucceed ? 'Missing expected fields or unexpected failure' : undefined
+        error:
+          !success && testCase.shouldSucceed
+            ? 'Missing expected fields or unexpected failure'
+            : undefined,
       }
     } catch (error) {
       const duration = Date.now() - startTime
       const errorMessage = error instanceof Error ? error.message : String(error)
-      
+
       // If we expected this to fail, it's a pass
       const expectedFailure = !testCase.shouldSucceed
-      
+
       return {
         name: testCase.name,
         passed: expectedFailure,
         duration,
-        error: expectedFailure ? undefined : errorMessage
+        error: expectedFailure ? undefined : errorMessage,
       }
     }
   }
@@ -314,11 +320,11 @@ export class GraphQLQueryValidator {
 
   private hasField(obj: any, fieldPath: string): boolean {
     if (!obj || typeof obj !== 'object') return false
-    
+
     // Handle nested field paths (e.g., "data.health.status")
     const parts = fieldPath.split('.')
     let current = obj
-    
+
     for (const part of parts) {
       if (current && typeof current === 'object' && part in current) {
         current = current[part]
@@ -327,16 +333,16 @@ export class GraphQLQueryValidator {
         return this.findFieldInObject(obj, fieldPath)
       }
     }
-    
+
     return current !== undefined && current !== null
   }
 
   private findFieldInObject(obj: any, fieldName: string): boolean {
     if (!obj || typeof obj !== 'object') return false
-    
+
     // Direct property check
     if (fieldName in obj) return true
-    
+
     // Recursive search in nested objects and arrays
     for (const key in obj) {
       if (obj[key] && typeof obj[key] === 'object') {
@@ -345,20 +351,20 @@ export class GraphQLQueryValidator {
         }
       }
     }
-    
+
     return false
   }
 
   async getQueryAnalytics(): Promise<QueryAnalytics> {
     const results = Array.from(this.testResults.values())
-    
+
     return {
       totalQueries: results.length,
-      passedQueries: results.filter(r => r.passed).length,
-      failedQueries: results.filter(r => !r.passed).length,
+      passedQueries: results.filter((r) => r.passed).length,
+      failedQueries: results.filter((r) => !r.passed).length,
       avgDuration: results.reduce((sum, r) => sum + r.duration, 0) / results.length,
       slowestQuery: results.sort((a, b) => b.duration - a.duration)[0]?.name,
-      fastestQuery: results.sort((a, b) => a.duration - b.duration)[0]?.name
+      fastestQuery: results.sort((a, b) => a.duration - b.duration)[0]?.name,
     }
   }
 
@@ -371,7 +377,7 @@ export class GraphQLQueryValidator {
     console.log(`Failed: ${report.failed}`)
     console.log(`Total Duration: ${(report.duration / 1000).toFixed(2)}s`)
     console.log(`Success Rate: ${((report.passed / report.totalQueries) * 100).toFixed(1)}%`)
-    
+
     if (report.failed > 0) {
       console.log('\n❌ Failed Queries:')
       Object.entries(report.results).forEach(([name, result]) => {
@@ -380,7 +386,7 @@ export class GraphQLQueryValidator {
         }
       })
     }
-    
+
     console.log('\n' + (report.success ? '✅ ALL QUERIES VALIDATED!' : '❌ SOME QUERIES FAILED'))
     console.log('='.repeat(60))
   }
@@ -420,12 +426,13 @@ if (import.meta.main) {
   const command = args[0] || 'validate'
 
   switch (command) {
-    case 'validate':
+    case 'validate': {
       const report = await validator.validateAllQueries()
       process.exit(report.success ? 0 : 1)
       break
+    }
 
-    case 'analytics':
+    case 'analytics': {
       await validator.validateAllQueries()
       const analytics = await validator.getQueryAnalytics()
       console.log('\n📊 Query Analytics:')
@@ -436,6 +443,7 @@ if (import.meta.main) {
       console.log(`  - Slowest Query: ${analytics.slowestQuery}`)
       console.log(`  - Fastest Query: ${analytics.fastestQuery}`)
       break
+    }
 
     default:
       console.log(`
