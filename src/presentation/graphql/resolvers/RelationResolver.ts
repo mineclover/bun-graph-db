@@ -111,7 +111,7 @@ export class RelationResolver extends BaseResolver {
         limit: 1000,
         offset: 0,
       })
-      return NodeRelationDto.fromEntities(result.data)
+      return NodeRelationDto.fromEntities(result.items)
     } catch (error) {
       this.logger.error('Failed to find node relations by table id', {
         tableId: args.tableId,
@@ -234,7 +234,7 @@ export class RelationResolver extends BaseResolver {
         relationTypeId: result.relation.relationTypeId,
         properties: result.relation.properties,
         strength: result.relation.strength,
-        confidence: result.relation.confidence || 1,
+        confidence: result.relation.strength || 1,
         createdAt: result.relation.createdAt,
         updatedAt: result.relation.updatedAt,
       }
@@ -451,7 +451,7 @@ export class RelationResolver extends BaseResolver {
         limit: 100,
         offset: 0,
       })
-      return NodeRelationDto.fromEntities(result.data)
+      return NodeRelationDto.fromEntities(result.items)
     } catch (error) {
       this.logger.error('Failed to resolve outgoing relations', { nodeId: node.id, error })
       return []
@@ -466,7 +466,7 @@ export class RelationResolver extends BaseResolver {
         limit: 100,
         offset: 0,
       })
-      return NodeRelationDto.fromEntities(result.data)
+      return NodeRelationDto.fromEntities(result.items)
     } catch (error) {
       this.logger.error('Failed to resolve incoming relations', { nodeId: node.id, error })
       return []

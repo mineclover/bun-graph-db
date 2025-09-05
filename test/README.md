@@ -1,355 +1,153 @@
-# Test Documentation
+# Test Suite Structure
 
-Streamlined testing environment for Bun Graph DB with essential tests only.
+이 디렉토리는 테스트 환경 구축 코드와 테스트 코드를 명확하게 분리하여 체계적으로 관리합니다.
 
-## Test Architecture
-
-### 🏗️ **Simplified Test Structure**
+## 📁 디렉토리 구조
 
 ```
 test/
-├── utils/                      # Test utilities and shared components
-│   ├── GraphQLTestClient.ts    # Full-featured GraphQL test client
-│   └── TestDataFixtures.ts     # Test data generation for different domains
-├── unified-test-runner.ts      # Unified test management system
-├── test-runner.ts              # Bun GraphQL integration tests with server management
-├── graphql-comprehensive.test.ts # Bun comprehensive GraphQL API tests
-├── performance.test.ts         # Jest performance and bulk operations tests
-├── relationships.test.ts       # Jest relationship quality system tests
-├── setup.ts                    # Jest test setup and configuration
-└── README.md                   # This documentation
+├── setup/                    # 테스트 환경 구축 코드
+│   ├── environment/          # 환경 설정
+│   │   └── setup.ts         # 테스트 환경 초기화
+│   ├── fixtures/            # 테스트 데이터
+│   │   └── template-scenarios.yaml
+│   └── utilities/           # 테스트 유틸리티
+│       ├── TemplateTestRunner.ts
+│       ├── TestLogger.ts
+│       ├── LogViewer.ts
+│       ├── GraphQLTestClient.ts
+│       └── ...
+├── suites/                   # 테스트 스위트 (주제별)
+│   ├── template/            # 템플릿 관련 테스트
+│   │   ├── template-crud.test.ts      # 🎯 템플릿 CRUD 통합 테스트
+│   │   ├── template-driven.test.ts
+│   │   ├── template-system-improved.test.ts
+│   │   └── ...
+│   ├── node/                # 노드 관련 테스트
+│   ├── graphql/             # GraphQL 관련 테스트
+│   └── integration/         # 통합 테스트
+├── runner/                   # 테스트 실행 관리
+│   ├── entry-points/        # 단일 진입점
+│   │   └── test-runner.ts   # 🚀 통합 테스트 러너
+│   └── orchestrators/       # 테스트 오케스트레이터
+└── logs/                    # 테스트 로그
+    ├── individual/          # 개별 테스트 로그
+    └── *.json              # 테스트 스위트 로그
 ```
 
-### 🧪 **Test Types**
+## 🎯 주요 특징
 
-1. **Bun Native Tests** - Fast, modern testing with built-in TypeScript support
-2. **Jest Integration Tests** - Legacy comprehensive integration tests
-3. **GraphQL API Tests** - Complete API validation with real server
-4. **Performance Tests** - Large dataset and performance validation
-5. **Domain Tests** - E-commerce, project management, knowledge graph scenarios
+### 1. 명확한 분리
+- **setup/**: 테스트 환경 구축 및 유틸리티
+- **suites/**: 실제 테스트 코드 (주제별 분류)
+- **runner/**: 테스트 실행 관리
 
-## Quick Start
+### 2. 단일 진입점
+- **template-crud.test.ts**: 템플릿 CRUD 테스트의 통합 진입점
+- **test-runner.ts**: 모든 테스트 실행의 통합 진입점
 
-### 🚀 **Run All Tests**
+### 3. 주제별 체계적 관리
+- **template/**: 템플릿 관련 모든 테스트
+- **node/**: 노드 관련 테스트
+- **graphql/**: GraphQL 관련 테스트
+- **integration/**: 통합 테스트
+
+## 🚀 사용법
+
+### 기본 명령어
 
 ```bash
-# Run complete unified test suite (recommended)
-bun run test
-
-# Alternative: Run all tests with detailed output
-bun test/unified-test-runner.ts all
-```
-
-### 📋 **List Available Test Suites**
-
-```bash
+# 사용 가능한 테스트 목록 확인
 bun run test:list
+
+# 테스트 통계 확인
+bun run test:stats
+
+# 템플릿 CRUD 테스트 실행
+bun run test:crud
+
+# 템플릿 카테고리 전체 테스트 실행
+bun run test:template
+
+# 모든 테스트 실행
+bun run test:all
 ```
 
-Output:
-```
-📋 Available test suites:
-
-  bun-comprehensive: Bun comprehensive GraphQL integration tests
-    Command: bun test/test-runner.ts full
-    Timeout: 120s
-
-  jest-performance: Performance and bulk operations tests
-    Command: jest --testPathPattern=performance.test.ts --runInBand
-    Timeout: 120s
-
-  jest-relationships: Relationship quality system tests
-    Command: jest --testPathPattern=relationships.test.ts --runInBand
-    Timeout: 90s
-
-  bun-unit: Bun native unit tests
-    Command: bun test --coverage
-    Timeout: 60s
-```
-
-## Test Categories
-
-### ⚡ **Bun Native Tests**
-
-Fast, modern tests using Bun's built-in test runner:
+### 고급 사용법
 
 ```bash
-# Run Bun unit tests with coverage
-bun run test:bun
+# 특정 테스트 실행
+bun test/runner/entry-points/test-runner.ts run template-crud
 
-# Full GraphQL integration tests with server management
-bun run test:integration
+# 카테고리별 테스트 실행
+bun test/runner/entry-points/test-runner.ts category template
+
+# 우선순위별 테스트 실행
+bun test/runner/entry-points/test-runner.ts priority high
+
+# 상세 로그와 함께 실행
+bun test/runner/entry-points/test-runner.ts all --verbose
+
+# 타임아웃 설정
+bun test/runner/entry-points/test-runner.ts all --timeout 60000
 ```
 
-### 🔍 **GraphQL Query Validation**
-
-Dedicated GraphQL API query testing (separate from integration tests):
+### 로그 확인
 
 ```bash
-# Validate all GraphQL queries and mutations
-bun run test:queries
+# 테스트 로그 통계
+bun run logs:stats
 
-# Run validation with detailed analytics
-bun run test:query-analytics
+# 실패한 테스트 확인
+bun run logs:failed
+
+# 특정 테스트 상세 로그
+bun run logs:view details "System Health Check"
+
+# 전체 리포트 생성
+bun run logs:report
 ```
 
-### 🧪 **Jest Specialized Tests**
+## 📊 테스트 우선순위
 
-Focused Jest tests for specific functionality:
+### 🔴 High Priority
+- `template-crud`: 템플릿 CRUD 통합 테스트
+- `template-driven`: 메인 템플릿 테스트
 
-```bash
-# Performance and bulk operations testing
-bun run test:performance
+### 🟡 Medium Priority
+- `template-system-improved`: 개선된 템플릿 시스템
+- `template-execution`: 템플릿 실행 테스트
+- `template-node-mutations`: 노드 뮤테이션 테스트
 
-# Relationship quality system testing
-bun run test:relationships
-```
+### 🟢 Low Priority
+- `template-basic`: 기본 템플릿 테스트
 
-### 🎯 **Unified Test Management**
+## 🔧 개발 가이드
 
-```bash
-# Run all tests with detailed reporting
-bun run test
+### 새로운 테스트 추가
 
-# Run specific test suite
-bun run test:specific jest-performance
-bun run test:specific bun-comprehensive
+1. **주제별 분류**: 적절한 카테고리 디렉토리에 추가
+2. **네이밍 컨벤션**: `{기능}-{세부사항}.test.ts`
+3. **test-runner.ts 업데이트**: TEST_CONFIGS에 새 테스트 추가
+4. **우선순위 설정**: high/medium/low 중 선택
 
-# Generate coverage reports
-bun run test:coverage
-```
+### 테스트 환경 구축 코드 추가
 
-## Test Utilities
+1. **setup/utilities/**: 재사용 가능한 유틸리티
+2. **setup/fixtures/**: 테스트 데이터
+3. **setup/environment/**: 환경 설정
 
-### 📡 **GraphQLTestClient**
+### 로그 시스템 활용
 
-Full-featured GraphQL client for testing:
+- 모든 테스트는 자동으로 개별 로그 파일 생성
+- `testLogger`를 통한 구조화된 로깅
+- 실시간 로그 출력 + 파일 저장
 
-```typescript
-import { GraphQLTestClient } from './utils/GraphQLTestClient.js'
+## 📈 모니터링
 
-const client = new GraphQLTestClient()
+- **실시간 로그**: 테스트 실행 중 실시간 확인
+- **개별 로그 파일**: 각 테스트별 상세 디버깅 정보
+- **통계 리포트**: 성공률, 실행시간, 에러 타입별 분석
+- **프로세스 종료**: 실패 시 자동 종료 (exit code 1)
 
-// Health check
-const isHealthy = await client.healthCheck()
-
-// Create test data
-const tableId = await client.createTable('test-table', 'Description')
-const nodeId = await client.createNode(tableId, 'Test Node', 'Node description')
-
-// Track created resources for cleanup
-const context = client.getContext()
-console.log('Created resources:', context)
-```
-
-### 🗂️ **TestDataFixtures**
-
-Pre-built test data for different domains:
-
-```typescript
-import { TestDataFixtures } from './utils/TestDataFixtures.js'
-
-const fixtures = new TestDataFixtures(client)
-
-// Create complete test environments
-const ecommerce = await fixtures.createECommerceEnvironment()
-const project = await fixtures.createProjectManagementEnvironment()
-const knowledge = await fixtures.createKnowledgeGraphEnvironment()
-const performance = await fixtures.createPerformanceTestData() // 100 nodes, 200 relations
-```
-
-## Coverage and Reporting
-
-### 📊 **Generate Coverage Reports**
-
-```bash
-# Generate unified coverage for all test runners
-bun run test:coverage
-```
-
-Coverage reports are generated in:
-- `coverage/` - Bun test coverage
-- `coverage/jest/` - Jest test coverage
-
-### 📈 **Test Report Format**
-
-The unified test runner provides detailed reporting:
-
-```
-📊 TEST SUITE SUMMARY
-============================================================
-Total Suites: 6
-Passed: 5
-Failed: 1
-Total Duration: 125.43s
-Success Rate: 83.3%
-
-❌ Failed Suites:
-  - jest-integration: Exit code: 1
-
-✅ SOME TESTS FAILED
-============================================================
-```
-
-## Configuration
-
-### ⚙️ **Jest Configuration** (`jest.config.js`)
-
-```javascript
-module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  testMatch: [
-    '**/*.test.ts',
-    '!**/graphql-comprehensive.test.ts', // Bun-specific
-    '!**/test-runner.ts'
-  ],
-  setupFilesAfterEnv: ['<rootDir>/test/setup.ts'],
-  testTimeout: 30000,
-  maxWorkers: 1 // Sequential execution
-}
-```
-
-### 🔧 **Test Environment Variables**
-
-```bash
-NODE_ENV=test              # Test environment
-TEST_SERVER_URL=http://...  # GraphQL server URL for integration tests
-```
-
-## Writing Tests
-
-### ✅ **Bun Native Test Example**
-
-```typescript
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { GraphQLTestClient } from './utils/GraphQLTestClient.js'
-
-describe('My Feature Tests', () => {
-  let client: GraphQLTestClient
-
-  beforeAll(async () => {
-    client = new GraphQLTestClient()
-    await client.healthCheck()
-  })
-
-  test('should create and retrieve data', async () => {
-    const tableId = await client.createTable('test', 'Test table')
-    expect(tableId).toBeTruthy()
-    
-    const result = await client.getTable(tableId)
-    expect(result.data.table.identifier).toBe('test')
-  })
-})
-```
-
-### 🧪 **Jest Integration Test Example**
-
-```typescript
-import { describe, test, expect, beforeAll } from '@jest/globals'
-import { GraphQLTestClient } from './utils/GraphQLTestClient.js'
-
-describe('Integration Tests', () => {
-  let client: GraphQLTestClient
-
-  beforeAll(async () => {
-    client = new GraphQLTestClient()
-  })
-
-  test('should handle complex scenarios', async () => {
-    // Test implementation
-  })
-})
-```
-
-## Best Practices
-
-### 🎯 **Test Guidelines**
-
-1. **Use appropriate test runner**:
-   - **Bun tests**: Fast unit tests, simple integration tests
-   - **Jest tests**: Complex integration tests, legacy compatibility
-   - **Query Validator**: Dedicated GraphQL API schema validation
-
-2. **Query Testing Strategy**:
-   - Use **Query Validator** for comprehensive API validation
-   - Separate query testing from business logic testing
-   - Focus on schema compliance and expected field validation
-   - Use test:queries for CI/CD GraphQL API validation
-
-3. **Resource management**:
-   - Always use `GraphQLTestClient` for resource tracking
-   - Clean up created resources in test teardown
-   - Use unique identifiers to avoid conflicts
-
-4. **Test isolation**:
-   - Each test should be independent
-   - Use fixtures for consistent test data
-   - Clear context between tests
-
-5. **Performance considerations**:
-   - Run integration tests sequentially (`maxWorkers: 1`)
-   - Use appropriate timeouts for different test types
-   - Monitor test execution time
-
-### 🚨 **Common Issues**
-
-1. **Server not running**: Ensure GraphQL server is running on port 4000
-2. **Port conflicts**: Check if other services are using port 4000
-3. **Test timeouts**: Increase timeout for slow operations
-4. **Resource cleanup**: Always clean up test resources to avoid conflicts
-
-## CI/CD Integration
-
-### 🔄 **GitHub Actions Example**
-
-```yaml
-name: Test Suite
-on: [push, pull_request]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
-      
-      - name: Install dependencies
-        run: bun install
-      
-      - name: Start GraphQL server
-        run: bun run dev &
-        
-      - name: Wait for server
-        run: sleep 5
-        
-      - name: Run unified test suite
-        run: bun run test
-        
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-```
-
-## Troubleshooting
-
-### 🔍 **Debug Test Issues**
-
-```bash
-# Check test server connectivity
-curl -X POST -H "Content-Type: application/json" \
-  -d '{"query":"query { health { status } }"}' \
-  http://localhost:4000/graphql
-
-# Run tests with verbose output
-DEBUG=* bun run test:integration
-
-# Run specific failing test
-bun test/unified-test-runner.ts run jest-integration
-```
-
-### 📝 **Common Error Solutions**
-
-- **GraphQL 400 errors**: Check schema/resolver mismatches
-- **Connection refused**: Ensure server is running
-- **Test timeout**: Increase timeout in Jest config or test suite
-- **Resource conflicts**: Use unique identifiers and proper cleanup
+이 구조를 통해 테스트 코드의 유지보수성과 확장성을 크게 향상시킬 수 있습니다.

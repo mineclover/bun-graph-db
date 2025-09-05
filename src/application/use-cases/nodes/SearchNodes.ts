@@ -26,6 +26,9 @@ export interface SearchNodesOutput {
   nodes: NodeDto[]
   total: number
   hasMore: boolean
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  totalCount: number
   query: {
     parsed: SearchQuery
     originalQuery: string
@@ -121,6 +124,9 @@ export class SearchNodesUseCase {
         nodes: nodeDtos,
         total: result.total || 0,
         hasMore: result.hasMore || false,
+        hasNextPage: result.hasNextPage || false,
+        hasPreviousPage: result.hasPreviousPage || false,
+        totalCount: result.total || 0,
         query: {
           parsed: searchQuery,
           originalQuery: input.query || '',

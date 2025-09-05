@@ -640,6 +640,45 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     }
   }
 
+  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<NodeRelation>> {
+    const { limit = 10, offset = 0 } = options
+
+    const dataQuery = `
+      SELECT id, table_id, source_node_id, source_external_id, 
+             target_node_id, target_external_id, relation_type_id, 
+             properties, strength, created_at, updated_at
+      FROM node_relations
+      ORDER BY created_at DESC
+      LIMIT ? OFFSET ?
+    `
+
+    const countQuery = `SELECT COUNT(*) as count FROM node_relations`
+
+    try {
+      const rows = this.db
+        .query<NodeRelationRow, [number, number]>(dataQuery)
+        .all(limit, offset)
+      const countResult = this.db
+        .query<{ count: number }, []>(countQuery)
+        .get()
+      const total = countResult?.count || 0
+
+      const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
+
+      return {
+        data: nodeRelations,
+        nodes: nodeRelations,
+        total,
+        hasMore: offset + limit < total,
+        totalCount: total,
+        hasNextPage: offset + limit < total,
+        hasPreviousPage: offset > 0,
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to find all node relations: ${error}`)
+    }
+  }
+
   private mapRowToEntity(row: NodeRelationRow): NodeRelation {
     return NodeRelation.fromDatabase(
       row.id.toString(),

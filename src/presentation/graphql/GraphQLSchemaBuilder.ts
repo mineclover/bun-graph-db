@@ -109,7 +109,7 @@ export class GraphQLSchemaBuilder {
     }
   }
 
-  private buildSchema(deps: GraphQLDependencies): GraphQLSchema {
+  protected buildSchema(deps: GraphQLDependencies): GraphQLSchema {
     // Load GraphQL schema files from the new structure
     const typesArray = loadFilesSync(join(process.cwd(), 'src/presentation/graphql/schema'), {
       extensions: ['graphql'],
@@ -290,7 +290,7 @@ export function buildGraphQLSchema(deps: GraphQLDependencies): GraphQLSchema {
       super(null as any) // This is for backward compatibility only
     }
 
-    buildSchema(dependencies: GraphQLDependencies): GraphQLSchema {
+    override buildSchema(dependencies: GraphQLDependencies): GraphQLSchema {
       return super.buildSchema(dependencies)
     }
   })()

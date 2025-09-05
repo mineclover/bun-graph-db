@@ -423,6 +423,22 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     }
   }
 
+  async findByIdentifier(identifier: string): Promise<Attribute | null> {
+    const query = `
+      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      FROM attributes
+      WHERE identifier = ?
+      LIMIT 1
+    `
+
+    try {
+      const row = this.db.query<AttributeRow, [string]>(query).get(identifier)
+      return row ? this.mapRowToEntity(row) : null
+    } catch (error) {
+      throw new DatabaseException(`Failed to find attribute by identifier: ${error}`)
+    }
+  }
+
   private mapAttributeTypeRowToEntity(row: AttributeTypeRow): AttributeType {
     return AttributeType.fromDatabase(
       row.id.toString(),

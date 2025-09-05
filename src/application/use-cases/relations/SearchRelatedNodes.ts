@@ -35,6 +35,9 @@ export interface SearchRelatedNodesOutput {
   }>
   total: number
   hasMore: boolean
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  totalCount: number
 }
 
 export interface IGraphRepository {
@@ -157,6 +160,9 @@ export class SearchRelatedNodesUseCase {
         paths,
         total: result.total || 0,
         hasMore: result.hasMore || false,
+        hasNextPage: result.hasNextPage || false,
+        hasPreviousPage: result.hasPreviousPage || false,
+        totalCount: result.total || 0,
       }
     } catch (error) {
       this.logger.error('Failed to search related nodes', {

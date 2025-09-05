@@ -262,6 +262,35 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
     }
   }
 
+  async setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: any): Promise<NodeAttribute> {
+    try {
+      const existing = await this.findByNodeIdAndAttributeId(nodeId, attributeId)
+      
+      if (existing) {
+        const existingId = existing.getId()
+        if (!existingId) {
+          throw new DatabaseException('Existing node attribute has no ID')
+        }
+        const updated = NodeAttribute.fromDatabase(
+          existingId,
+          existing.getNodeId(),
+          existing.getAttributeId(),
+          value,
+          existing.getCreatedAt(),
+          new Date()
+        )
+        await this.update(updated)
+        return updated
+      } else {
+        const newNodeAttribute = NodeAttribute.create(nodeId, attributeId, value)
+        await this.save(newNodeAttribute)
+        return newNodeAttribute
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to set node attribute: ${error}`)
+    }
+  }
+
   private mapRowToEntity(row: NodeAttributeRow): NodeAttribute {
     return NodeAttribute.fromDatabase(
       row.id.toString(),

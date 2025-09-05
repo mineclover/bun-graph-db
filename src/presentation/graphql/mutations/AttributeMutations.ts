@@ -57,9 +57,9 @@ export class AttributeMutations extends BaseResolver {
           identifier: args.input.identifier,
           jsonType: args.input.dataType,
           format: args.input.name,
-          description: args.input.description,
-          validationSchema: args.input.constraints || undefined,
-          defaultValue: args.input.defaultValue || undefined,
+          description: args.input.description ?? undefined,
+          validationSchema: args.input.constraints ?? undefined,
+          defaultValue: args.input.defaultValue ?? undefined,
         })
 
         return {
