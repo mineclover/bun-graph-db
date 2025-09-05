@@ -35,22 +35,35 @@ export class TestMockManager implements ITestMockManager {
   // Domain-specific typed mock creators
   createNodeRepositoryMock(overrides?: Partial<INodeRepository>): jest.Mocked<INodeRepository> {
     const defaultImplementation: Partial<INodeRepository> = {
+      save: () => Promise.resolve(),
       findById: () => Promise.resolve(null),
-      findByTableIdAndContent: () => Promise.resolve(null), // Add missing method
+      findByTableIdAndContent: () => Promise.resolve(null),
+      findByTableId: () => Promise.resolve({ 
+        items: [], 
+        total: 0, 
+        hasNextPage: false, 
+        hasPreviousPage: false 
+      }),
       findAll: () => Promise.resolve({ 
         items: [], 
         total: 0, 
         hasNextPage: false, 
         hasPreviousPage: false 
       }),
-      save: () => Promise.resolve(),
       delete: () => Promise.resolve(),
+      deleteByTableId: () => Promise.resolve(),
+      exists: () => Promise.resolve(false),
+      count: () => Promise.resolve(0),
+      countByTableId: () => Promise.resolve(0),
+      saveMany: () => Promise.resolve(),
+      findByIds: () => Promise.resolve([]),
       searchByContent: () => Promise.resolve({ 
         items: [], 
         total: 0, 
         hasNextPage: false, 
         hasPreviousPage: false 
       }),
+      executeRawQuery: () => Promise.resolve([]),
       ...overrides
     }
     

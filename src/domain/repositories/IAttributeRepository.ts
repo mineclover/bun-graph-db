@@ -28,4 +28,5 @@ export interface IAttributeRepository {
   findRequiredByTableId(tableId: TableId): Promise<Attribute[]>
   getAttributeTypeForAttribute(attributeId: AttributeId): Promise<AttributeType | null>
   update(id: AttributeId, updates: Partial<Attribute>): Promise<Attribute>
+  findByIdentifier(identifier: string): Promise<Attribute | null>
 }

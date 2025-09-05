@@ -17,4 +17,5 @@ export interface ITableRepository {
   // Batch operations for performance
   saveMany(tables: Table[]): Promise<void>
   findByIds(ids: TableId[]): Promise<Table[]>
+  update(id: TableId, updates: Partial<Table>): Promise<Table>
 }

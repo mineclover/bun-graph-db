@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, test } from '@jest/globals'
 import { GraphQLTestClient } from './utils/GraphQLTestClient.js'
 
 describe('Performance Tests', () => {
+  const testContext = createTestContext('performance-tests')
+
   let client: GraphQLTestClient
   let testTableId: string
 

@@ -26,4 +26,5 @@ export interface INodeAttributeRepository {
   countByNodeId(nodeId: NodeId): Promise<number>
   saveMany(nodeAttributes: NodeAttribute[]): Promise<void>
   updateMany(nodeAttributes: NodeAttribute[]): Promise<void>
+  setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: any): Promise<NodeAttribute>
 }

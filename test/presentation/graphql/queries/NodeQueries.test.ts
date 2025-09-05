@@ -1,4 +1,12 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { 
+  createTestContext, 
+  TestFramework, 
+  type NodeDto, 
+  type TableDto, 
+  type PaginatedResult,
+  type StandardMutationResult
+} from '../../framework/TestFramework.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { Node } from '@/domain/entities/Node.js'
@@ -28,18 +36,22 @@ describe('NodeQueries', () => {
     // Use type-safe mock creation
     mockNodeRepository = testContext.mockManager.createNodeRepositoryMock({
       findById: () => Promise.resolve(mockNode),
-      searchByContent: () => Promise.resolve({
+      findByTableIdAndContent: () => Promise.resolve(mockNode),
+      findAll: () => Promise.resolve({
         items: [mockNode],
         total: 1,
         hasNextPage: false,
-        hasPreviousPage: false
-      })
+        hasPreviousPage: false,
+        nodes: [mockNode],
+        totalCount: 1
+      }),
+      searchByContent: () => Promise.resolve(TestFramework.TypeMapper.createPaginatedResult([mockNode], 1, false, false))
     })
 
     mockSearchNodesUseCase = testContext.mockManager.createTypedMock<SearchNodesUseCase>({
       execute: () => Promise.resolve({
         nodes: [mockNode],
-        totalCount: 1,
+        total: 1,
         hasNextPage: false,
         hasPreviousPage: false
       })
@@ -56,7 +68,12 @@ describe('NodeQueries', () => {
 
       expect(result).toBe(mockNode)
       expect(mockNodeRepository.findById).toHaveBeenCalledWith('node-1')
-      expect(mockLogger.info).toHaveBeenCalledWith('Fetching node', { id: 'node-1' })
+      expect(mockLogger.info).toHaveBeenCalledTimes(2)
+      expect(mockLogger.info).toHaveBeenNthCalledWith(1, 'Executing query: findNodeById', { id: 'node-1' })
+      expect(mockLogger.info).toHaveBeenNthCalledWith(2, 'Query completed: findNodeById', expect.objectContaining({
+        duration: expect.stringMatching(/^\d+ms$/),
+        id: 'node-1'
+      }))
     })
 
     it('should handle node not found', async () => {
@@ -65,7 +82,12 @@ describe('NodeQueries', () => {
       const result = await nodeQueries.node({}, { id: 'nonexistent' })
 
       expect(result).toBeNull()
-      expect(mockLogger.info).toHaveBeenCalledWith('Fetching node', { id: 'nonexistent' })
+      expect(mockLogger.info).toHaveBeenCalledTimes(2)
+      expect(mockLogger.info).toHaveBeenNthCalledWith(1, 'Executing query: findNodeById', { id: 'nonexistent' })
+      expect(mockLogger.info).toHaveBeenNthCalledWith(2, 'Query completed: findNodeById', expect.objectContaining({
+        duration: expect.stringMatching(/^\d+ms$/),
+        id: 'nonexistent'
+      }))
     })
 
     it('should handle database errors', async () => {
@@ -75,7 +97,8 @@ describe('NodeQueries', () => {
       await expect(nodeQueries.node({}, { id: 'node-1' })).rejects.toThrow(
         'Database connection failed'
       )
-      expect(mockLogger.error).toHaveBeenCalledWith('Error fetching node', {
+      expect(mockLogger.info).toHaveBeenCalledWith('Executing query: findNodeById', { id: 'node-1' })
+      expect(mockLogger.error).toHaveBeenCalledWith('Query failed: findNodeById', {
         error: dbError,
         id: 'node-1',
       })
@@ -93,21 +116,24 @@ describe('NodeQueries', () => {
       )
 
       expect(result).toBe(mockNode)
-      expect(mockNodeRepository.searchByContent).toHaveBeenCalledWith(
+      expect(mockNodeRepository.findByTableIdAndContent).toHaveBeenCalledWith(
         'table-1',
-        'Test Content',
-        undefined
+        'Test Content'
       )
-      expect(mockLogger.info).toHaveBeenCalledWith('Fetching node by content', {
+      expect(mockLogger.info).toHaveBeenCalledTimes(2)
+      expect(mockLogger.info).toHaveBeenNthCalledWith(1, 'Executing query: findNodeByContent', {
         content: 'Test Content',
         tableId: 'table-1',
       })
+      expect(mockLogger.info).toHaveBeenNthCalledWith(2, 'Query completed: findNodeByContent', expect.objectContaining({
+        duration: expect.stringMatching(/^\d+ms$/),
+        content: 'Test Content',
+        tableId: 'table-1'
+      }))
     })
 
     it('should handle content not found', async () => {
-      mockNodeRepository.searchByContent = mock(() =>
-        Promise.resolve({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })
-      )
+      mockNodeRepository.findByTableIdAndContent = mock(() => Promise.resolve(null))
 
       const result = await nodeQueries.nodeByContent(
         {},
@@ -118,11 +144,21 @@ describe('NodeQueries', () => {
       )
 
       expect(result).toBeNull()
+      expect(mockLogger.info).toHaveBeenCalledTimes(2)
+      expect(mockLogger.info).toHaveBeenNthCalledWith(1, 'Executing query: findNodeByContent', {
+        content: 'Nonexistent Content',
+        tableId: 'table-1',
+      })
+      expect(mockLogger.info).toHaveBeenNthCalledWith(2, 'Query completed: findNodeByContent', expect.objectContaining({
+        duration: expect.stringMatching(/^\d+ms$/),
+        content: 'Nonexistent Content',
+        tableId: 'table-1'
+      }))
     })
 
     it('should handle errors in content search', async () => {
       const searchError = new Error('Content search failed')
-      mockNodeRepository.searchByContent = mock(() => Promise.reject(searchError))
+      mockNodeRepository.findByTableIdAndContent = mock(() => Promise.reject(searchError))
 
       await expect(
         nodeQueries.nodeByContent(
@@ -134,7 +170,11 @@ describe('NodeQueries', () => {
         )
       ).rejects.toThrow('Content search failed')
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Error fetching node by content', {
+      expect(mockLogger.info).toHaveBeenCalledWith('Executing query: findNodeByContent', {
+        content: 'Test Content',
+        tableId: 'table-1',
+      })
+      expect(mockLogger.error).toHaveBeenCalledWith('Query failed: findNodeByContent', {
         error: searchError,
         content: 'Test Content',
         tableId: 'table-1',
@@ -164,7 +204,12 @@ describe('NodeQueries', () => {
         pagination: { limit: 10, offset: 0 },
         sort: { field: 'createdAt', direction: 'DESC' },
       })
-      expect(mockLogger.info).toHaveBeenCalledWith('Fetching nodes', { args })
+      expect(mockLogger.info).toHaveBeenCalledTimes(2)
+      expect(mockLogger.info).toHaveBeenNthCalledWith(1, 'Executing query: findAllNodes', { args })
+      expect(mockLogger.info).toHaveBeenNthCalledWith(2, 'Query completed: findAllNodes', expect.objectContaining({
+        duration: expect.stringMatching(/^\d+ms$/),
+        args
+      }))
     })
 
     it('should use default pagination when none provided', async () => {
@@ -182,7 +227,8 @@ describe('NodeQueries', () => {
       mockNodeRepository.findAll = mock(() => Promise.reject(repoError))
 
       await expect(nodeQueries.nodes({}, {})).rejects.toThrow('Repository query failed')
-      expect(mockLogger.error).toHaveBeenCalledWith('Error fetching nodes', {
+      expect(mockLogger.info).toHaveBeenCalledWith('Executing query: findAllNodes', { args: {} })
+      expect(mockLogger.error).toHaveBeenCalledWith('Query failed: findAllNodes', {
         error: repoError,
         args: {},
       })
@@ -210,7 +256,12 @@ describe('NodeQueries', () => {
         pagination: { limit: 20, offset: 5 },
         sort: undefined,
       })
-      expect(mockLogger.info).toHaveBeenCalledWith('Searching nodes', { args: searchArgs })
+      expect(mockLogger.info).toHaveBeenCalledTimes(2)
+      expect(mockLogger.info).toHaveBeenNthCalledWith(1, 'Executing query: searchNodes', { args: searchArgs })
+      expect(mockLogger.info).toHaveBeenNthCalledWith(2, 'Query completed: searchNodes', expect.objectContaining({
+        duration: expect.stringMatching(/^\d+ms$/),
+        args: searchArgs
+      }))
     })
 
     it('should use default pagination for search when none provided', async () => {
@@ -230,7 +281,10 @@ describe('NodeQueries', () => {
       await expect(nodeQueries.searchNodes({}, { filter: { search: 'test' } })).rejects.toThrow(
         'Search service unavailable'
       )
-      expect(mockLogger.error).toHaveBeenCalledWith('Error searching nodes', {
+      expect(mockLogger.info).toHaveBeenCalledWith('Executing query: searchNodes', {
+        args: { filter: { search: 'test' } },
+      })
+      expect(mockLogger.error).toHaveBeenCalledWith('Query failed: searchNodes', {
         error: searchError,
         args: { filter: { search: 'test' } },
       })

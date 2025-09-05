@@ -25,4 +25,5 @@ export interface INodeRepository {
     options?: PaginationOptions
   ): Promise<PaginatedResult<Node>>
   executeRawQuery(query: string, params?: any[]): Promise<any[]>
+  update(id: NodeId, updates: Partial<Node>): Promise<Node>
 }

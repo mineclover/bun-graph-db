@@ -330,6 +330,56 @@ export class SqliteNodeRepository implements INodeRepository {
     }
   }
 
+  async update(id: NodeId, updates: Partial<Node>): Promise<Node> {
+    try {
+      const existingNode = await this.findById(id)
+      if (!existingNode) {
+        throw new DatabaseException(`Node with id ${id} not found`)
+      }
+
+      const updateFields = []
+      const updateValues = []
+
+      if (updates.content !== undefined) {
+        updateFields.push('content = ?')
+        updateValues.push(updates.content)
+      }
+      if (updates.title !== undefined) {
+        updateFields.push('title = ?')
+        updateValues.push(updates.title)
+      }
+      if (updates.description !== undefined) {
+        updateFields.push('description = ?')
+        updateValues.push(updates.description)
+      }
+
+      if (updateFields.length === 0) {
+        return existingNode
+      }
+
+      updateFields.push('updated_at = ?')
+      updateValues.push(new Date().toISOString())
+      updateValues.push(id)
+
+      const query = `
+        UPDATE nodes 
+        SET ${updateFields.join(', ')}
+        WHERE id = ?
+      `
+
+      this.db.run(query, updateValues)
+
+      const updatedNode = await this.findById(id)
+      if (!updatedNode) {
+        throw new DatabaseException(`Failed to retrieve updated node with id ${id}`)
+      }
+
+      return updatedNode
+    } catch (error) {
+      throw new DatabaseException(`Failed to update node: ${error}`)
+    }
+  }
+
   private mapRowToEntity(row: NodeRow): Node {
     return Node.fromDatabase(
       row.id.toString(),

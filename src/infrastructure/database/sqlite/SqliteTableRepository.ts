@@ -203,6 +203,52 @@ export class SqliteTableRepository implements ITableRepository {
     }
   }
 
+  async update(id: TableId, updates: Partial<Table>): Promise<Table> {
+    try {
+      const existingTable = await this.findById(id)
+      if (!existingTable) {
+        throw new DatabaseException(`Table with id ${id} not found`)
+      }
+
+      const updateFields = []
+      const updateValues = []
+
+      if (updates.identifier !== undefined) {
+        updateFields.push('identifier = ?')
+        updateValues.push(updates.identifier)
+      }
+      if (updates.description !== undefined) {
+        updateFields.push('description = ?')
+        updateValues.push(updates.description)
+      }
+
+      if (updateFields.length === 0) {
+        return existingTable
+      }
+
+      updateFields.push('updated_at = ?')
+      updateValues.push(new Date().toISOString())
+      updateValues.push(id)
+
+      const query = `
+        UPDATE tables 
+        SET ${updateFields.join(', ')}
+        WHERE id = ?
+      `
+
+      this.db.run(query, updateValues)
+
+      const updatedTable = await this.findById(id)
+      if (!updatedTable) {
+        throw new DatabaseException(`Failed to retrieve updated table with id ${id}`)
+      }
+
+      return updatedTable
+    } catch (error) {
+      throw new DatabaseException(`Failed to update table: ${error}`)
+    }
+  }
+
   private mapRowToEntity(row: TableRow): Table {
     return Table.fromDatabase(
       row.id.toString(),

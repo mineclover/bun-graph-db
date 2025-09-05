@@ -124,7 +124,7 @@ export class GraphQLTestRunner {
         console.log(`🔍 Health check attempt ${attempt}/${this.config.healthCheckRetries}`)
 
         const isHealthy = await client.healthCheck()
-        if (isHealthy) {
+        if (testContext.errorHandler.assertNonNull(isHealthy, 'isHealthy is required')) {
           console.log('✅ Server is healthy and ready for testing')
           this.testClient = client
           return
@@ -329,7 +329,7 @@ if (import.meta.main) {
       const testFile = args[1]
       await runner.startServer()
       try {
-        if (testFile) {
+        if (testContext.errorHandler.assertNonNull(testFile, 'testFile is required')) {
           await runner.runTestFile(testFile)
         } else {
           await runner.runAllTests()

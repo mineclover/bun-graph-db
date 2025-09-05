@@ -1,4 +1,12 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { 
+  createTestContext, 
+  TestFramework, 
+  type NodeDto, 
+  type TableDto, 
+  type PaginatedResult,
+  type StandardMutationResult
+} from '../../framework/TestFramework.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import type {
@@ -13,10 +21,10 @@ describe('TableMutations', () => {
   let tableMutations: TableMutations
   let mockCreateTableUseCase: CreateTableUseCase
   let mockDeleteTableUseCase: DeleteTableUseCase
-  let mockTableRepository: ITableRepository
-  let mockLogger: ILogger
+  let mockTableRepository: jest.Mocked<ITableRepository>
+  let mockLogger: jest.Mocked<ILogger>
 
-  const mockTable: Partial<Table> = {
+  const mockTableDto = TestFramework.TypeMapper.createMockTableDto = {
     identifier: 'test_table',
     description: 'Test table description',
     createdAt: new Date('2024-01-01'),

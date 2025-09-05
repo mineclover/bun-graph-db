@@ -1,4 +1,12 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { 
+  createTestContext, 
+  TestFramework, 
+  type NodeDto, 
+  type TableDto, 
+  type PaginatedResult,
+  type StandardMutationResult
+} from '../../framework/TestFramework.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import type { Node } from '@/domain/entities/Node.js'
@@ -9,11 +17,11 @@ import { NodeMutations } from '@/presentation/graphql/mutations/NodeMutations.js
 describe('NodeMutations', () => {
   let nodeMutations: NodeMutations
   let mockCreateNodeUseCase: CreateNodeUseCase
-  let mockNodeRepository: INodeRepository
-  let mockNodeAttributeRepository: INodeAttributeRepository
-  let mockLogger: ILogger
+  let mockNodeRepository: jest.Mocked<INodeRepository>
+  let mockNodeAttributeRepository: jest.Mocked<INodeAttributeRepository>
+  let mockLogger: jest.Mocked<ILogger>
 
-  const mockNode: Partial<Node> = {
+  const mockNodeDto = TestFramework.TypeMapper.createMockNodeDto = {
     getId: () => 'node-1',
     getContent: () => 'Test Node Content',
     getTableId: () => 'table-1',
@@ -23,12 +31,12 @@ describe('NodeMutations', () => {
 
   beforeEach(() => {
     mockCreateNodeUseCase = {
-      execute: mock(() => Promise.resolve(mockNode as Node)),
+      execute: mock(() => Promise.resolve(mockNodeDto)),
     } as any
 
     mockNodeRepository = {
-      findById: mock(() => Promise.resolve(mockNode as Node)),
-      update: mock(() => Promise.resolve(mockNode as Node)),
+      findById: mock(() => Promise.resolve(mockNodeDto)),
+      update: mock(() => Promise.resolve(mockNodeDto)),
       delete: mock(() => Promise.resolve()),
     } as any
 
@@ -63,7 +71,7 @@ describe('NodeMutations', () => {
 
       expect(result).toEqual({
         success: true,
-        node: mockNode as Node,
+        node: mockNodeDto,
         errors: [],
       })
 
@@ -99,7 +107,7 @@ describe('NodeMutations', () => {
     })
 
     it('should handle null result from use case', async () => {
-      mockCreateNodeUseCase.execute = mock(() => Promise.resolve({ node: mockNode as Node }))
+      mockCreateNodeUseCase.execute = mock(() => Promise.resolve({ node: mockNodeDto }))
 
       const result = await nodeMutations.createNode(
         {},
@@ -130,7 +138,7 @@ describe('NodeMutations', () => {
 
       expect(result).toEqual({
         success: true,
-        node: mockNode as Node,
+        node: mockNodeDto,
         errors: [],
       })
 

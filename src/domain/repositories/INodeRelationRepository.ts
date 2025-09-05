@@ -75,4 +75,5 @@ export interface INodeRelationRepository {
   ): Promise<NodeRelation[]>
   countBySourceNodeId(sourceNodeId: NodeId): Promise<number>
   countByTargetNodeId(targetNodeId: NodeId): Promise<number>
+  findAll(options?: PaginationOptions): Promise<PaginatedResult<NodeRelation>>
 }

@@ -2,6 +2,8 @@ import { beforeAll, describe, expect, test } from '@jest/globals'
 import { GraphQLTestClient } from './utils/GraphQLTestClient.js'
 
 describe('Relationship Quality Tests', () => {
+  const testContext = createTestContext('relationship-quality-tests')
+
   let client: GraphQLTestClient
   let testTableId: string
   let relationTypeId: string
@@ -41,7 +43,7 @@ describe('Relationship Quality Tests', () => {
         `Test Node ${i}`,
         `Node ${i} for relationship testing`
       )
-      if (nodeId) {
+      if (testContext.errorHandler.assertNonNull(nodeId, 'nodeId is required')) {
         nodeIds.push(nodeId)
       }
     }
@@ -98,7 +100,7 @@ describe('Relationship Quality Tests', () => {
           level.confidence
         )
 
-        if (relationId) {
+        if (testContext.errorHandler.assertNonNull(relationId, 'relationId is required')) {
           createdRelations.push({
             id: relationId,
             expectedStrength: level.strength,
