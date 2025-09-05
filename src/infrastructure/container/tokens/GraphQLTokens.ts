@@ -12,7 +12,6 @@ export const GraphQLTokens = {
   NODE_QUERIES: Symbol.for('NodeQueries'),
   ATTRIBUTE_QUERIES: Symbol.for('AttributeQueries'),
   RELATION_QUERIES: Symbol.for('RelationQueries'),
-  ANALYTICS_QUERIES: Symbol.for('AnalyticsQueries'),
   TEMPLATE_QUERIES: Symbol.for('TemplateQueries'),
   
   // Mutation resolvers

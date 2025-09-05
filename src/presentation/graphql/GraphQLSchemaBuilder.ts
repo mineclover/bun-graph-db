@@ -13,7 +13,6 @@ import type {
   NodeQueries,
   AttributeQueries,
   RelationQueries,
-  AnalyticsQueries,
   TemplateQueries
 } from './queries/index.js'
 import type { 
@@ -36,7 +35,6 @@ export interface GraphQLDependencies {
   nodeQueries: NodeQueries
   attributeQueries: AttributeQueries
   relationQueries: RelationQueries
-  analyticsQueries: AnalyticsQueries
   templateQueries: TemplateQueries
   
   // Mutation resolvers
@@ -68,7 +66,6 @@ export class GraphQLSchemaBuilder {
       nodeQueries: await this.container.resolve(GraphQLTokens.NODE_QUERIES),
       attributeQueries: await this.container.resolve(GraphQLTokens.ATTRIBUTE_QUERIES),
       relationQueries: await this.container.resolve(GraphQLTokens.RELATION_QUERIES),
-      analyticsQueries: await this.container.resolve(GraphQLTokens.ANALYTICS_QUERIES),
       templateQueries: await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES),
       
       // Mutation resolvers
@@ -137,15 +134,8 @@ export class GraphQLSchemaBuilder {
       nodeRelation: (_: any, args: any) => deps.relationQueries.nodeRelation(_, args),
       nodeRelations: (_: any, args: any) => deps.relationQueries.nodeRelations(_, args),
       searchRelatedNodes: (_: any, args: any) => deps.relationQueries.searchRelatedNodes(_, args),
-      findPathsBetweenNodes: (_: any, args: any) => deps.relationQueries.findPathsBetweenNodes(_, args),
       getDependencyChain: (_: any, args: any) => deps.relationQueries.getDependencyChain(_, args),
 
-      // Analytics queries
-      analyzeNodes: (_: any, args: any) => deps.analyticsQueries.analyzeNodes(_, args),
-      getPerformanceMetrics: (_: any, args: any) => deps.analyticsQueries.getPerformanceMetrics(_, args),
-      getTestSuiteStatus: (_: any, args: any) => deps.analyticsQueries.getTestSuiteStatus(_, args),
-      aggregateData: (_: any, args: any) => deps.analyticsQueries.aggregateData(_, args),
-      getSystemHealth: (_: any, args: any) => deps.analyticsQueries.getSystemHealth(_, args),
 
       // Template queries
       getTemplate: (_: any, args: any) => deps.templateQueries.getTemplate(_, args),

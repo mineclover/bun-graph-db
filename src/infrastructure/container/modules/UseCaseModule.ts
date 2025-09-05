@@ -9,8 +9,6 @@ import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js
 import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
-import { NodeAnalyticsUseCase } from '@/application/use-cases/analytics/NodeAnalyticsUseCase.js'
-import { AdvancedSearchUseCase } from '@/application/use-cases/search/AdvancedSearchUseCase.js'
 import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import { ExecuteQueryTemplate } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
@@ -123,27 +121,7 @@ export function registerUseCaseModule(container: DIContainer): void {
     [RepositoryTokens.GRAPH_REPOSITORY, CommonTokens.LOGGER]
   )
 
-  // Analytics use cases
-  container.registerSingleton(
-    UseCaseTokens.NODE_ANALYTICS_USE_CASE,
-    async (c) => {
-      const graphRepository = await c.resolve(RepositoryTokens.GRAPH_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new NodeAnalyticsUseCase(graphRepository, logger)
-    },
-    [RepositoryTokens.GRAPH_REPOSITORY, CommonTokens.LOGGER]
-  )
 
-  // Search use cases
-  container.registerSingleton(
-    UseCaseTokens.ADVANCED_SEARCH_USE_CASE,
-    async (c) => {
-      const nodeSearchRepository = await c.resolve(RepositoryTokens.NODE_SEARCH_REPOSITORY)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new AdvancedSearchUseCase(nodeSearchRepository, logger)
-    },
-    [RepositoryTokens.NODE_SEARCH_REPOSITORY, CommonTokens.LOGGER]
-  )
 
   // Import/Export use cases
   container.registerSingleton(

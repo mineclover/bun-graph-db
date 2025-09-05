@@ -61,17 +61,18 @@ const PHASE_2A_ENDPOINTS: APIEndpoint[] = [
   { name: 'createRelationType', type: 'Mutation', expectedFile: 'mutations/RelationMutations.ts', phase: '2A', priority: 'Medium', status: 'implemented' },
 ]
 
-// Phase 3A: 고급 검색
+// Phase 3A: 고급 검색 (향후 구현 예정)
 const PHASE_3A_ENDPOINTS: APIEndpoint[] = [
-  { name: 'searchNodes', type: 'Query', expectedFile: 'queries/NodeQueries.ts', phase: '3A', priority: 'High', status: 'implemented' },
-  { name: 'advancedSearch', type: 'Query', expectedFile: 'use-cases/search/AdvancedSearchUseCase.ts', phase: '3A', priority: 'High', status: 'implemented' },
+  // searchNodes는 NodeQueries.ts에 이미 있음
+  // advancedSearch는 보안 이슈로 제거됨 (SQL Injection 위험)
+  // 향후 안전한 고급 검색 기능 새로 설계 예정
 ]
 
-// Phase 3B: 분석 및 집계
+// Phase 3B: 분석 및 집계 (향후 구현 예정)
 const PHASE_3B_ENDPOINTS: APIEndpoint[] = [
-  { name: 'analyzeNodes', type: 'Query', expectedFile: 'queries/AnalyticsQueries.ts', phase: '3B', priority: 'High', status: 'partial' },
-  { name: 'aggregateData', type: 'Query', expectedFile: 'queries/AnalyticsQueries.ts', phase: '3B', priority: 'High', status: 'partial' },
+  // 향후 새로운 설계로 구현 예정
 ]
+
 
 const ALL_ENDPOINTS = [
   ...PHASE_1A_ENDPOINTS,
@@ -229,8 +230,8 @@ class GraphQLAPIValidator {
       '1B': '🎯 Phase 1B: 기본 테이블 관리', 
       '1C': '🎯 Phase 1C: 템플릿 시스템 핵심',
       '2A': '🔗 Phase 2A: 관계 관리',
-      '3A': '🔍 Phase 3A: 고급 검색',
-      '3B': '🔍 Phase 3B: 분석 및 집계'
+      '3A': '🔍 Phase 3A: 고급 검색 (향후 구현)',
+      '3B': '🔍 Phase 3B: 분석 및 집계 (향후 구현)'
     }
     
     console.log(`\n${phaseNames[phase] || phase}`)
@@ -300,6 +301,7 @@ class GraphQLAPIValidator {
     
     console.log(`\n🎯 Phase 1 (핵심 기능) 완성도: ${phase1Ready}/${phase1Results.length} (${Math.round(phase1Ready/phase1Results.length*100)}%)`)
   }
+
 
   private printCriticalIssues(results: ValidationResult[]): void {
     const criticalResults = results.filter(r => 

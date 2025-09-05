@@ -20,12 +20,6 @@ export const UseCaseTokens = {
   CREATE_RELATION_TYPE_USE_CASE: Symbol.for('CreateRelationTypeUseCase'),
   SEARCH_RELATED_NODES_USE_CASE: Symbol.for('SearchRelatedNodesUseCase'),
   
-  // Analytics use cases
-  NODE_ANALYTICS_USE_CASE: Symbol.for('NodeAnalyticsUseCase'),
-  
-  // Search use cases
-  ADVANCED_SEARCH_USE_CASE: Symbol.for('AdvancedSearchUseCase'),
-  
   // Import/Export use cases
   SCHEMA_EXPORT_USE_CASE: Symbol.for('SchemaExportUseCase'),
   SCHEMA_IMPORT_USE_CASE: Symbol.for('SchemaImportUseCase'),

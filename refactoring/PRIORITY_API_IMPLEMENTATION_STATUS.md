@@ -109,37 +109,8 @@
 
 ---
 
-## 🔍 Phase 3A: 고급 검색 시스템 (3주차)
 
-### 사용자 경험 핵심 검색 기능
-| API | 상태 | 리졸버 | 보안/성능 이슈 |
-|-----|------|--------|---------------|
-| `searchNodes` | 🧪 | NodeQueries.ts | 성능 최적화 필요 |
-| **`advancedSearch`** | ⚠️ | AdvancedSearchUseCase | ⚠️ **보안**: SQL Injection 재검토 필요 |
-
-**🎯 목표**: 안전하고 빠른 검색 시스템
-- **보안 최우선**: `advancedSearch` Raw SQL 쿼리 생성 보안 감사
-- **성능 최적화**: 인덱스 활용, 쿼리 캐싱 구현
-- **복합 필터**: 11가지 연산자 정확성 테스트
-
----
-
-## 🔍 Phase 3B: 분석 및 집계 (AI 분석 지원 - 3-4주차)
-
-### AI가 활용할 그래프 분석 기능
-| API | 상태 | 리졸버 | 구현 필요사항 |
-|-----|------|--------|---------------|
-| **`analyzeNodes`** | 🚧 | AnalyticsQueries.ts | 실제 그래프 알고리즘 구현 필요 |
-| **`aggregateData`** | 🚧 | AnalyticsQueries.ts | Mock → 실제 SQL 집계 로직 전환 |
-
-**🎯 목표**: AI 친화적 분석 기능 구현
-- **그래프 분석**: 중심성(Centrality), PageRank, 클러스터링 알고리즘
-- **데이터 집계**: 실시간 통계 및 집계 쿼리
-- **성능**: 대용량 그래프 분석 최적화
-
----
-
-## 🚧 Phase 4A: 시스템 기능 (4주차)
+## 🚧 Phase 3A: 시스템 기능 (3주차)
 
 ### 운영 필수 기능
 | API | 상태 | 리졸버 | 중요도 |
@@ -153,31 +124,78 @@
 
 ---
 
-## 🚧 Phase 4B: 모니터링 시스템 (Mock → Real 전환)
+## 🔮 향후 구현 예정 기능들
 
-### 현재 Mock 데이터로 구현된 기능들
-| API | 현재 상태 | Phase 4B 목표 |
-|-----|----------|---------------|
-| `getMonitoringMetrics` | 🚧 Mock | 실제 메트릭 수집 시스템 연결 |
-| `getPerformanceMetrics` | 🚧 Mock | 실제 성능 모니터링 연결 |
-| `getSystemHealth` | 🚧 Mock | 실제 시스템 메트릭 연결 |
-| `getSystemStatus` | 🚧 Mock | 실제 시스템 모니터링 연결 |
-| `getTestSuiteStatus` | 🚧 Mock | 실제 테스트 시스템 연결 |
-| `getSearchPerformanceMetrics` | ❌ | 구현 필요 |
+### Phase 4A: 고급 검색 시스템 (향후 구현)
+
+#### AI 친화적 검색 기능 재설계
+| API | 구현 계획 | 우선순위 |
+|-----|----------|----------|
+| `advancedSearch` | SQL Injection 취약성 해결 후 재설계 | High |
+| `semanticSearch` | 벡터 기반 의미 검색 구현 | Medium |
+| `fuzzySearch` | 유사도 기반 검색 시스템 | Low |
+
+**🎯 목표**: 안전하고 AI 친화적인 검색 시스템 구현
+- **보안 우선**: 매개변수화된 쿼리, 입력 검증, SQL Injection 방지
+- **AI 친화성**: 자연어 쿼리 지원, 의미 기반 검색
+- **성능**: 인덱스 최적화, 캐싱 전략
+
+### Phase 4B: 그래프 분석 시스템 (향후 구현)
+
+#### AI가 활용할 그래프 분석 기능
+| API | 구현 계획 | 우선순위 |
+|-----|----------|----------|
+| `analyzeNodes` | 그래프 알고리즘 기반 노드 분석 | High |
+| `aggregateData` | 실시간 데이터 집계 시스템 | Medium |
+| `detectCommunities` | 클러스터링 알고리즘 구현 | Low |
+| `calculateCentrality` | 중심성 지표 계산 | Low |
+
+**🎯 목표**: AI 친화적 그래프 분석 기능 구현
+- **그래프 분석**: 중심성(Centrality), PageRank, 클러스터링 알고리즘
+- **데이터 집계**: 실시간 통계 및 집계 쿼리
+- **성능**: 대용량 그래프 분석 최적화
+
+### Phase 4C: 모니터링 시스템 (외부 도구 활용)
+
+#### 외부 모니터링 시스템 활용 권장
+| 기능 | 권장 도구 | 통합 방식 |
+|-----|----------|----------|
+| 메트릭 수집 | Prometheus + Grafana | REST API + 메트릭 노출 |
+| APM 모니터링 | DataDog, New Relic | SDK 통합 |
+| 로그 관리 | ELK Stack, Splunk | 구조화된 로깅 |
+| 헬스체크 | Built-in endpoint | GraphQL `health` 쿼리 |
+| 테스트 상태 | CI/CD 파이프라인 | GitHub Actions, Jenkins |
+
+**🎯 목표**: 외부 모니터링 도구와의 효과적 통합
+- **표준화**: 업계 표준 모니터링 도구 활용
+- **확장성**: 엔터프라이즈 환경 대응
+- **비용 효율성**: 자체 개발 대신 검증된 솔루션 활용
 
 ---
 
-## 🗑️ 제거 예정 기능들
+## ✅ 제거 완료된 기능들 (2025-09-05)
 
-### 불필요하거나 중복된 API
-| API | 상태 | 제거 사유 |
-|-----|------|----------|
-| ~~`findPathsBetweenNodes`~~ | 🗑️ | 목적 불분명, `searchRelatedNodes`로 대체 가능 |
-| ~~`previewNodeCreation`~~ | 🗑️ | 불필요한 복잡성, 클라이언트에서 처리 |
-| ~~`getAlertRules`~~ | 🗑️ | 외부 모니터링 시스템 사용 권장 |
-| ~~`createAlertRule`~~ | 🗑️ | 외부 모니터링 시스템 사용 권장 |
-| ~~`updateAlertRule`~~ | 🗑️ | 외부 모니터링 시스템 사용 권장 |
-| ~~`deleteAlertRule`~~ | 🗑️ | 외부 모니터링 시스템 사용 권장 |
+### 불필요하거나 중복된 API - 제거 완료
+| API | 제거 상태 | 제거 사유 |
+|-----|----------|----------|
+| ~~`findPathsBetweenNodes`~~ | ✅ **제거 완료** | 목적 불분명, `searchRelatedNodes`로 대체 가능 |
+| ~~`previewNodeCreation`~~ | ✅ **제거 완료** | 불필요한 복잡성, 클라이언트에서 처리 |
+| ~~`getAlertRules`~~ | ✅ **제거 완료** | 외부 모니터링 시스템 사용 권장 |
+| ~~`createAlertRule`~~ | ✅ **제거 완료** | 외부 모니터링 시스템 사용 권장 |
+| ~~`updateAlertRule`~~ | ✅ **제거 완료** | 외부 모니터링 시스템 사용 권장 |
+| ~~`deleteAlertRule`~~ | ✅ **제거 완료** | 외부 모니터링 시스템 사용 권장 |
+
+### Mock 데이터 API - 제거 완료
+| API | 제거 상태 | 제거 사유 |
+|-----|----------|----------|
+| ~~`getMonitoringMetrics`~~ | ✅ **제거 완료** | Mock 구현이었음, 외부 도구 사용 권장 |
+| ~~`getPerformanceMetrics`~~ | ✅ **제거 완료** | Mock 구현이었음, 외부 APM 사용 권장 |
+| ~~`getSystemHealth`~~ | ✅ **제거 완료** | Mock 구현이었음, health 엔드포인트로 충분 |
+| ~~`getSystemStatus`~~ | ✅ **제거 완료** | Mock 구현이었음, 외부 도구 사용 권장 |
+| ~~`getTestSuiteStatus`~~ | ✅ **제거 완료** | Mock 구현이었음, CI/CD 통합 권장 |
+| ~~`getSearchPerformanceMetrics`~~ | ✅ **제거 완료** | 미구현 상태였음 |
+| ~~`analyzeNodes`~~ | ✅ **제거 완료** | Mock 구현이었음, 향후 재설계 예정 |
+| ~~`aggregateData`~~ | ✅ **제거 완료** | Mock 구현이었음, 향후 재설계 예정 |
 
 ---
 
@@ -190,19 +208,24 @@ Phase 1B (테이블 관리): 🧪🧪🧪🧪🧪⚠️ 5/6 안전, 1/6 위험�
 Phase 1C (템플릿 시스템): 🧪🧪🧪🧪🧪🧪🧪 7/7 구현완료, 핵심검증 필요
 Phase 2A (관계 관리): 🧪🧪🧪🧪🧪🧪🧪🧪 8/8 구현완료, 테스트 필요  
 Phase 2B (속성 관리): 🧪🧪🧪🧪🧪🧪 6/6 구현완료, 테스트 필요
-Phase 3A (고급 검색): 🧪⚠️ 1/2 안전, 1/2 보안검토 필요
-Phase 3B (분석 기능): 🚧🚧 0/2 실제구현, 2/2 Mock상태
+Phase 3A (시스템 기능): ✅🧪🧪🧪🧪🧪 1/6 완전구현, 5/6 테스트 필요
+향후 구현 예정: Phase 4A (고급 검색), Phase 4B (분석), Phase 4C (모니터링)
 ```
 
 ### 🚨 즉시 해결 필요한 이슈
-1. **보안**: `advancedSearch` SQL Injection 방지 재검토
-2. **위험기능**: `deleteTable` 안전장치 구현  
-3. **핵심기능**: `executeTemplate` 완전 검증 (AI 친화성의 핵심!)
+1. **위험기능**: `deleteTable` 안전장치 구현  
+2. **핵심기능**: `executeTemplate` 완전 검증 (AI 친화성의 핵심!)
+
+### ✅ 완료된 정리 작업 (2025-09-05)
+1. **제거 완료**: 모든 Mock API 및 불필요한 기능 제거
+2. **코드 정리**: 관련 리졸버, 스키마, Use Case 삭제
+3. **DI 정리**: Container 및 Token 참조 제거
+4. **보안 개선**: `advancedSearch` API 제거 (SQL Injection 취약성)
 
 ### 🎯 이번 주 목표
 - [ ] Phase 1A: 노드 관리 API 완전 검증 완료
 - [ ] Phase 1B: 테이블 관리 API 안전장치 구현
 - [ ] Phase 1C: 템플릿 실행 시스템 완전 검증 ⚡
-- [ ] 보안 이슈: `advancedSearch` 보안 감사 완료
+- [ ] Phase 3A: 시스템 기능 테스트 및 검증
 
 **🎉 성공 기준**: Phase 1 (A+B+C) 모든 API가 프로덕션 준비 완료 상태가 되면 bun-graph-db의 핵심 가치인 "AI 친화적 GraphQL 그래프 데이터베이스"가 완성됩니다! 🚀

@@ -148,30 +148,6 @@ export class RelationResolver {
     }
   }
 
-  async findPathsBetweenNodes(args: {
-    tableId: string
-    startNodeIds: string[]
-    endNodeIds: string[]
-    maxDepth?: number
-    relationTypes?: string[]
-  }): Promise<Array<{
-    startNodeId: string
-    endNodeId: string
-    path: string[]
-    length: number
-  }>> {
-    try {
-      return await this.searchRelatedNodesUseCase.getDependencies(
-        args.tableId,
-        args.startNodeIds[0], // Simplified for now
-        'OUTGOING' as RelationDirection,
-        args.relationTypes
-      ) as any // TODO: Implement proper path finding
-    } catch (error) {
-      this.logger.error('Failed to find paths between nodes', { args, error })
-      throw error
-    }
-  }
 
   async getDependencyChain(args: {
     tableId: string

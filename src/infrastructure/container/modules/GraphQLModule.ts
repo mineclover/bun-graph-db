@@ -5,7 +5,6 @@ import {
   NodeQueries, 
   AttributeQueries, 
   RelationQueries, 
-  AnalyticsQueries, 
   TemplateQueries 
 } from '@/presentation/graphql/queries/index.js'
 import { 
@@ -73,15 +72,6 @@ export function registerGraphQLModule(container: DIContainer): void {
     [RepositoryTokens.NODE_RELATION_REPOSITORY, RepositoryTokens.RELATION_TYPE_REPOSITORY, UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE, CommonTokens.LOGGER]
   )
 
-  container.registerSingleton(
-    GraphQLTokens.ANALYTICS_QUERIES,
-    async (c) => {
-      const nodeAnalyticsUseCase = await c.resolve(UseCaseTokens.NODE_ANALYTICS_USE_CASE)
-      const logger = await c.resolve(CommonTokens.LOGGER)
-      return new AnalyticsQueries(nodeAnalyticsUseCase, logger)
-    },
-    [UseCaseTokens.NODE_ANALYTICS_USE_CASE, CommonTokens.LOGGER]
-  )
 
   container.registerSingleton(
     GraphQLTokens.TEMPLATE_QUERIES,

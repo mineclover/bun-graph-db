@@ -96,15 +96,6 @@ extend type Query {
   # Search related nodes with advanced graph queries
   searchRelatedNodes(input: SearchRelatedNodesInput!): SearchRelatedNodesResult!
   
-  # Find paths between nodes
-  findPathsBetweenNodes(
-    tableId: ID!
-    startNodeIds: [ID!]!
-    endNodeIds: [ID!]!
-    maxDepth: Int
-    relationTypes: [String!]
-  ): [PathResult!]!
-  
   # Get dependency chain
   getDependencyChain(
     tableId: ID!

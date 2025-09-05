@@ -8,7 +8,6 @@ import type {
   NodeRelationsArgs,
   RelationTypeArgs,
   SearchRelatedNodesArgs,
-  FindPathsBetweenNodesArgs,
   GetDependencyChainArgs
 } from '@/core/types/GraphQLTypes.js'
 
@@ -94,18 +93,6 @@ export class RelationQueries {
     }
   }
 
-  async findPathsBetweenNodes(_: GraphQLParent, args: FindPathsBetweenNodesArgs) {
-    try {
-      this.logger.info('Finding paths between nodes', { args })
-      
-      // This would need to be implemented in a use case or repository method
-      // For now, return empty array
-      return []
-    } catch (error) {
-      this.logger.error('Error finding paths between nodes', { error, args })
-      throw error
-    }
-  }
 
   async getDependencyChain(_: GraphQLParent, args: GetDependencyChainArgs) {
     try {

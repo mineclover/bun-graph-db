@@ -186,38 +186,3 @@ input AggregationInput {
   timeRange: TimeRangeInput
 }
 
-extend type Query {
-  # Analytics queries
-  analyzeNodes(input: NodeAnalyticsInput!): NodeAnalyticsResult!
-  
-  # Performance monitoring
-  getPerformanceMetrics(input: PerformanceAnalysisInput!): PerformanceMetrics!
-  
-  # Test suite management
-  getTestSuiteStatus(input: TestSuiteAnalysisInput!): [TestSuiteStatus!]!
-  
-  # Aggregation and reporting
-  aggregateData(input: AggregationInput!): [AggregationResult!]!
-  
-  # Real-time status
-  getSystemHealth(tableId: ID!): SystemHealth!
-}
-
-type SystemHealth {
-  status: HealthStatus!
-  databaseSize: String!
-  totalTables: Int!
-  totalNodes: Int!
-  totalRelations: Int!
-  uptime: Float!
-  memoryUsage: Float!
-  activeConnections: Int!
-  lastUpdate: DateTime!
-}
-
-enum HealthStatus {
-  HEALTHY
-  WARNING
-  CRITICAL
-  DOWN
-}
