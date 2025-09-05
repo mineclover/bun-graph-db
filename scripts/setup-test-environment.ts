@@ -506,10 +506,10 @@ async function testTemplateExecution(db: Database): Promise<void> {
     throw new Error('Test data not found')
   }
 
-  const tableId = tables[0].id.toString()
+  const tableId = (tables[0] as any).id?.toString() || (tables[0] as any).getId?.()
 
   console.log(`   📋 Found ${templates.length} templates`)
-  console.log(`   🏓 Using table: ${tables[0].identifier} (ID: ${tableId})`)
+  console.log(`   🏓 Using table: ${(tables[0] as any).identifier} (ID: ${tableId})`)
 
   let successCount = 0
   let failCount = 0
@@ -517,12 +517,12 @@ async function testTemplateExecution(db: Database): Promise<void> {
   // Test each template
   for (const template of templates) {
     try {
-      console.log(`   🔄 Testing template: ${template.identifier}`)
+      console.log(`   🔄 Testing template: ${(template as any).identifier}`)
 
       // Parse variables schema and defaults
-      const variablesSchema = template.variables_schema ? JSON.parse(template.variables_schema) : {}
-      const defaultVariables = template.default_variables
-        ? JSON.parse(template.default_variables)
+      const variablesSchema = (template as any).variables_schema ? JSON.parse((template as any).variables_schema) : {}
+      const defaultVariables = (template as any).default_variables
+        ? JSON.parse((template as any).default_variables)
         : {}
 
       // Prepare test variables
@@ -535,7 +535,7 @@ async function testTemplateExecution(db: Database): Promise<void> {
       if (variablesSchema.required?.includes('query')) {
         testVariables.query = 'Service'
       }
-      if (variablesSchema.required?.includes('content') && template.template_type === 'mutation') {
+      if (variablesSchema.required?.includes('content') && (template as any).template_type === 'mutation') {
         testVariables.content = `Test Node ${Date.now()}`
         testVariables.title = 'Test Title'
         testVariables.description = 'Test description for created node'
@@ -548,10 +548,10 @@ async function testTemplateExecution(db: Database): Promise<void> {
 
       // Simulate successful execution and increment usage count
       db.prepare('UPDATE query_templates SET usage_count = usage_count + 1 WHERE id = ?').run(
-        template.id
+        (template as any).id
       )
 
-      console.log(`   ✅ Template executed: ${template.name}`)
+      console.log(`   ✅ Template executed: ${(template as any).name}`)
       successCount++
     } catch (error) {
       console.log(`   ❌ Template failed: ${template.name} - ${error}`)
@@ -570,12 +570,12 @@ async function generateTestReport(db: Database): Promise<void> {
   console.log('=============================')
 
   // Database statistics
-  const tableCount = db.prepare('SELECT COUNT(*) as count FROM tables').get().count
-  const nodeCount = db.prepare('SELECT COUNT(*) as count FROM nodes').get().count
-  const relationCount = db.prepare('SELECT COUNT(*) as count FROM node_relations').get().count
-  const templateCount = db.prepare('SELECT COUNT(*) as count FROM query_templates').get().count
-  const attributeTypeCount = db.prepare('SELECT COUNT(*) as count FROM attribute_types').get().count
-  const relationTypeCount = db.prepare('SELECT COUNT(*) as count FROM relation_types').get().count
+  const tableCount = (db.prepare('SELECT COUNT(*) as count FROM tables').get() as any)?.count
+  const nodeCount = (db.prepare('SELECT COUNT(*) as count FROM nodes').get() as any)?.count
+  const relationCount = (db.prepare('SELECT COUNT(*) as count FROM node_relations').get() as any)?.count
+  const templateCount = (db.prepare('SELECT COUNT(*) as count FROM query_templates').get() as any)?.count
+  const attributeTypeCount = (db.prepare('SELECT COUNT(*) as count FROM attribute_types').get() as any)?.count
+  const relationTypeCount = (db.prepare('SELECT COUNT(*) as count FROM relation_types').get() as any)?.count
 
   console.log(`Tables: ${tableCount}`)
   console.log(`Nodes: ${nodeCount}`)
@@ -594,7 +594,7 @@ async function generateTestReport(db: Database): Promise<void> {
     .all()
 
   console.log('\nTemplate Usage Statistics:')
-  templateStats.forEach((template) => {
+  templateStats.forEach((template: any) => {
     console.log(
       `  ${template.identifier}: ${template.usage_count} executions (${template.template_type}, complexity: ${template.complexity_score})`
     )
@@ -603,7 +603,7 @@ async function generateTestReport(db: Database): Promise<void> {
   // Sample data preview
   const sampleNodes = db.prepare('SELECT id, content, title FROM nodes LIMIT 5').all()
   console.log('\nSample Nodes:')
-  sampleNodes.forEach((node) => {
+  sampleNodes.forEach((node: any) => {
     console.log(`  [${node.id}] ${node.content} - ${node.title}`)
   })
 
@@ -618,7 +618,7 @@ async function generateTestReport(db: Database): Promise<void> {
     .all()
 
   console.log('\nSample Relations:')
-  sampleRelations.forEach((rel) => {
+  sampleRelations.forEach((rel: any) => {
     console.log(
       `  [${rel.id}] ${rel.source} --[${rel.relation_type} (${rel.strength})]--> ${rel.target}`
     )
@@ -635,7 +635,7 @@ async function generateTestReport(db: Database): Promise<void> {
     .all()
 
   console.log('\nTemplate Complexity Distribution:')
-  complexityStats.forEach((stat) => {
+  complexityStats.forEach((stat: any) => {
     console.log(`  Complexity ${stat.complexity_score}: ${stat.count} templates`)
   })
 }
@@ -650,10 +650,10 @@ async function exportTestDataset(db: Database): Promise<SchemaExportResult> {
   const tables = db.prepare('SELECT * FROM tables').all()
   const exportedTables = []
 
-  for (const table of tables) {
+  for (const table of tables as any[]) {
     // Get nodes for this table
-    const nodes = db.prepare('SELECT * FROM nodes WHERE table_id = ?').all(table.id)
-    const exportedNodes = nodes.map((node) => ({
+    const nodes = db.prepare('SELECT * FROM nodes WHERE table_id = ?').all((table as any).id)
+    const exportedNodes = nodes.map((node: any) => ({
       id: node.id.toString(),
       content: node.content,
       title: node.title || undefined,
@@ -673,7 +673,7 @@ async function exportTestDataset(db: Database): Promise<SchemaExportResult> {
     `)
       .all(table.id)
 
-    const exportedRelations = relations.map((rel) => ({
+    const exportedRelations = relations.map((rel: any) => ({
       id: rel.id.toString(),
       sourceNodeId: rel.source_node_id.toString(),
       targetNodeId: rel.target_node_id.toString(),

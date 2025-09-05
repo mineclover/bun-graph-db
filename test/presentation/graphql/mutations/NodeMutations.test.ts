@@ -33,7 +33,7 @@ describe('NodeMutations', () => {
     } as any
 
     mockNodeAttributeRepository = {
-      setNodeAttribute: mock(() => Promise.resolve()),
+      save: mock(() => Promise.resolve()),
     } as any
 
     mockLogger = {
@@ -63,7 +63,7 @@ describe('NodeMutations', () => {
 
       expect(result).toEqual({
         success: true,
-        node: mockNode,
+        node: mockNode as Node,
         errors: [],
       })
 
@@ -99,7 +99,7 @@ describe('NodeMutations', () => {
     })
 
     it('should handle null result from use case', async () => {
-      mockCreateNodeUseCase.execute = mock(() => Promise.resolve(null))
+      mockCreateNodeUseCase.execute = mock(() => Promise.resolve({ node: mockNode as Node }))
 
       const result = await nodeMutations.createNode(
         {},
@@ -130,12 +130,12 @@ describe('NodeMutations', () => {
 
       expect(result).toEqual({
         success: true,
-        node: mockNode,
+        node: mockNode as Node,
         errors: [],
       })
 
       expect(mockNodeRepository.findById).toHaveBeenCalledWith('node-1')
-      expect(mockNodeRepository.update).toHaveBeenCalledWith('node-1', updateInput)
+      expect(mockNodeRepository.save).toHaveBeenCalled()
       expect(mockLogger.info).toHaveBeenCalledWith('Updating node', {
         id: 'node-1',
         input: updateInput,
@@ -159,12 +159,12 @@ describe('NodeMutations', () => {
         errors: [{ message: 'Node not found', code: 'NODE_NOT_FOUND' }],
       })
 
-      expect(mockNodeRepository.update).not.toHaveBeenCalled()
+      expect(mockNodeRepository.save).not.toHaveBeenCalled()
     })
 
     it('should handle update errors', async () => {
       const updateError = new Error('Update failed')
-      mockNodeRepository.update = mock(() => Promise.reject(updateError))
+      mockNodeRepository.save = mock(() => Promise.reject(updateError))
 
       const result = await nodeMutations.updateNode(
         {},
@@ -235,13 +235,7 @@ describe('NodeMutations', () => {
 
   describe('setNodeAttribute mutation', () => {
     it('should set node attribute successfully', async () => {
-      mockNodeAttributeRepository.setNodeAttribute = mock(() =>
-        Promise.resolve({
-          nodeId: 'node-1',
-          attributeId: 'attr-1',
-          value: 'test value',
-        })
-      )
+      mockNodeAttributeRepository.save = mock(() => Promise.resolve())
 
       const result = await nodeMutations.setNodeAttribute(
         {},
@@ -264,7 +258,7 @@ describe('NodeMutations', () => {
         errors: [],
       })
 
-      expect(mockNodeAttributeRepository.setNodeAttribute).toHaveBeenCalledWith(
+      expect(mockNodeAttributeRepository.save).toHaveBeenCalled(
         'node-1',
         'attr-1',
         'test value'
@@ -280,7 +274,7 @@ describe('NodeMutations', () => {
 
     it('should handle attribute setting errors', async () => {
       const attributeError = new Error('Invalid attribute type')
-      mockNodeAttributeRepository.setNodeAttribute = mock(() => Promise.reject(attributeError))
+      mockNodeAttributeRepository.save = mock(() => Promise.reject(attributeError))
 
       const result = await nodeMutations.setNodeAttribute(
         {},

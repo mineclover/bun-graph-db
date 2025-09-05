@@ -142,9 +142,9 @@ export class UnifiedTestRunner {
     }
   ): Promise<number> {
     return new Promise((resolve, reject) => {
-      const child = spawn(command[0], command.slice(1), {
+      const child = spawn(command[0]!, command.slice(1), {
         stdio: 'inherit',
-        env: options.env,
+        env: options.env as any,
       })
 
       const timeout = setTimeout(() => {
@@ -152,12 +152,12 @@ export class UnifiedTestRunner {
         reject(new Error(`Command timed out after ${options.timeout}ms`))
       }, options.timeout)
 
-      child.on('exit', (code) => {
+      child.on('exit', (code: any) => {
         clearTimeout(timeout)
         resolve(code || 0)
       })
 
-      child.on('error', (error) => {
+      child.on('error', (error: any) => {
         clearTimeout(timeout)
         reject(error)
       })
@@ -194,7 +194,7 @@ export class UnifiedTestRunner {
       // Run Bun coverage
       await this.executeCommand(['bun', 'test', '--coverage'], {
         timeout: 60000,
-        env: process.env,
+        env: process.env as Record<string, string>,
       })
 
       // Run Jest coverage
@@ -206,8 +206,8 @@ export class UnifiedTestRunner {
       console.log('✅ Coverage reports generated')
       console.log('  - Bun coverage: coverage/')
       console.log('  - Jest coverage: coverage/jest/')
-    } catch (error) {
-      console.error('❌ Failed to generate coverage report:', error)
+    } catch (error: any) {
+      console.error('❌ Failed to generate coverage report:', (error as any))
     }
   }
 }

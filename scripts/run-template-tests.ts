@@ -57,7 +57,7 @@ async function runTests(): Promise<void> {
     const testProcess = spawn(
       ['bun', 'test', 'tests/template-based-node-mutations.test.ts', '--verbose'],
       {
-        stdio: 'pipe',
+        stdio: ['ignore', 'pipe', 'pipe'],
         env: {
           ...process.env,
           NODE_ENV: 'test',
@@ -68,14 +68,18 @@ async function runTests(): Promise<void> {
     const decoder = new TextDecoder()
 
     // Handle stdout
-    testProcess.stdout.on('data', (chunk) => {
-      process.stdout.write(decoder.decode(chunk))
-    })
+    if (testProcess.stdout) {
+      testProcess.stdout.on('data', (chunk: any) => {
+        process.stdout.write(decoder.decode(chunk))
+      })
+    }
 
     // Handle stderr
-    testProcess.stderr.on('data', (chunk) => {
-      process.stderr.write(decoder.decode(chunk))
-    })
+    if (testProcess.stderr) {
+      testProcess.stderr.on('data', (chunk: any) => {
+        process.stderr.write(decoder.decode(chunk))
+      })
+    }
 
     const exitCode = await testProcess.exited
 

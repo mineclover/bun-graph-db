@@ -15,6 +15,20 @@ type TableNode implements Node {
   # Computed fields
   attributeCount: Int!
   relationCount: Int!
+
+  # 그래프 탐색 필드들
+  connectedNodes(
+    depth: Int = 1
+    direction: RelationDirection = BOTH
+    relationTypes: [ID!]
+  ): [ConnectedNode!]!
+  
+  shortestPath(
+    targetNodeId: ID!
+    maxDepth: Int = 6
+  ): GraphPath
+  
+  neighborsByRelationType(relationTypeId: ID!): [TableNode!]!
 }
 
 type NodeAttribute {
@@ -126,4 +140,17 @@ type SetNodeAttributePayload implements OperationResult {
   success: Boolean!
   nodeAttribute: NodeAttribute
   errors: [Error!]!
+}
+
+# 그래프 탐색 결과 타입들
+type ConnectedNode {
+  node: TableNode!
+  depth: Int!
+  path: [ID!]!
+}
+
+type GraphPath {
+  nodes: [TableNode!]!
+  relations: [NodeRelation!]!
+  distance: Int!
 }

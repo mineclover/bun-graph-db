@@ -61,4 +61,18 @@ export interface INodeRelationRepository {
     relationTypeId: RelationTypeId
   ): Promise<boolean>
   count(tableId?: TableId, relationTypeId?: RelationTypeId): Promise<number>
+
+  // 그래프 탐색용 메서드들
+  findBySourceNodeId(sourceNodeId: NodeId): Promise<NodeRelation[]>
+  findByTargetNodeId(targetNodeId: NodeId): Promise<NodeRelation[]>
+  findBySourceNodeIdAndRelationType(
+    sourceNodeId: NodeId,
+    relationTypeId: RelationTypeId
+  ): Promise<NodeRelation[]>
+  findByTargetNodeIdAndRelationType(
+    targetNodeId: NodeId,
+    relationTypeId: RelationTypeId
+  ): Promise<NodeRelation[]>
+  countBySourceNodeId(sourceNodeId: NodeId): Promise<number>
+  countByTargetNodeId(targetNodeId: NodeId): Promise<number>
 }

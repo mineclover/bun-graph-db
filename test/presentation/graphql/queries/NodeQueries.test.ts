@@ -22,7 +22,7 @@ describe('NodeQueries', () => {
   beforeEach(() => {
     mockNodeRepository = {
       findById: mock(() => Promise.resolve(mockNode as Node)),
-      findByContent: mock(() => Promise.resolve(mockNode as Node)),
+      searchByContent: mock(() => Promise.resolve({ items: [mockNode as Node], total: 1, hasNextPage: false, hasPreviousPage: false })),
       findAll: mock(() =>
         Promise.resolve({
           items: [mockNode as Node],
@@ -97,7 +97,7 @@ describe('NodeQueries', () => {
       )
 
       expect(result).toBe(mockNode)
-      expect(mockNodeRepository.findByContent).toHaveBeenCalledWith('Test Content', 'table-1')
+      expect(mockNodeRepository.searchByContent).toHaveBeenCalledWith('table-1', 'Test Content', undefined)
       expect(mockLogger.info).toHaveBeenCalledWith('Fetching node by content', {
         content: 'Test Content',
         tableId: 'table-1',
@@ -105,7 +105,7 @@ describe('NodeQueries', () => {
     })
 
     it('should handle content not found', async () => {
-      mockNodeRepository.findByContent = mock(() => Promise.resolve(null))
+      mockNodeRepository.searchByContent = mock(() => Promise.resolve({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false }))
 
       const result = await nodeQueries.nodeByContent(
         {},
@@ -120,7 +120,7 @@ describe('NodeQueries', () => {
 
     it('should handle errors in content search', async () => {
       const searchError = new Error('Content search failed')
-      mockNodeRepository.findByContent = mock(() => Promise.reject(searchError))
+      mockNodeRepository.searchByContent = mock(() => Promise.reject(searchError))
 
       await expect(
         nodeQueries.nodeByContent(
@@ -151,7 +151,7 @@ describe('NodeQueries', () => {
       const result = await nodeQueries.nodes({}, args)
 
       expect(result).toEqual({
-        nodes: [mockNode],
+        nodes: [mockNode] as NodeDto[],
         totalCount: 1,
         hasNextPage: false,
         hasPreviousPage: false,
@@ -197,7 +197,7 @@ describe('NodeQueries', () => {
       const result = await nodeQueries.searchNodes({}, searchArgs)
 
       expect(result).toEqual({
-        nodes: [mockNode],
+        nodes: [mockNode] as NodeDto[],
         totalCount: 1,
         hasNextPage: false,
         hasPreviousPage: false,

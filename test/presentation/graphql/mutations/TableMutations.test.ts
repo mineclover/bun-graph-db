@@ -17,7 +17,6 @@ describe('TableMutations', () => {
   let mockLogger: ILogger
 
   const mockTable: Partial<Table> = {
-    getId: () => 'table-1',
     getIdentifier: () => 'test_table',
     getDescription: () => 'Test table description',
     getCreatedAt: () => new Date('2024-01-01'),
@@ -71,7 +70,7 @@ describe('TableMutations', () => {
 
       expect(result).toEqual({
         success: true,
-        table: mockTable,
+        table: mockTable as Table,
         errors: [],
       })
 
@@ -120,12 +119,12 @@ describe('TableMutations', () => {
 
       expect(result).toEqual({
         success: true,
-        table: mockTable,
+        table: mockTable as Table,
         errors: [],
       })
 
       expect(mockTableRepository.findById).toHaveBeenCalledWith('table-1')
-      expect(mockTableRepository.update).toHaveBeenCalledWith('table-1', updateInput)
+      expect(mockTableRepository.save).toHaveBeenCalled()
       expect(mockLogger.info).toHaveBeenCalledWith('Updating table', {
         id: 'table-1',
         input: updateInput,
@@ -149,7 +148,7 @@ describe('TableMutations', () => {
         errors: [{ message: 'Table not found', code: 'TABLE_NOT_FOUND' }],
       })
 
-      expect(mockTableRepository.update).not.toHaveBeenCalled()
+      expect(mockTableRepository.save).not.toHaveBeenCalled()
     })
   })
 

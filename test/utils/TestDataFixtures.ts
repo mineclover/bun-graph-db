@@ -474,7 +474,7 @@ export class TestDataFixtures {
     // Create attributes
     const attributeIds: Record<string, string> = {}
     for (const attr of fixture.attributes) {
-      const attrTypeId = attributeTypeIds[attr.identifier] || Object.values(attributeTypeIds)[0]
+      const attrTypeId = attributeTypeIds[attr.identifier] || Object.values(attributeTypeIds)[0]!
       const id = await this.client.createAttribute(tableId, attr.identifier, attrTypeId)
       if (id) attributeIds[attr.identifier] = id
     }

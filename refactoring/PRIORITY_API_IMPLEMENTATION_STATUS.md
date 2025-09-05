@@ -83,10 +83,20 @@
 | `deleteRelation` | 🧪 | RelationMutations.ts | High - 관계 삭제 |
 | `createRelationType` | 🧪 | RelationMutations.ts | Medium - 타입 관리 |
 
+### 🆕 새로 추가된 그래프 탐색 Field Resolvers (2025-09-05)
+| Field Resolver | 상태 | 구현 위치 | 기능 |
+|---------------|------|----------|------|
+| `connectedNodes` | 🧪 | NodeFieldResolvers.ts | ⚡ **새 기능** - 깊이별 그래프 탐색 |
+| `shortestPath` | 🧪 | NodeFieldResolvers.ts | ⚡ **새 기능** - 두 노드간 최단 경로 |
+| `neighborsByRelationType` | 🧪 | NodeFieldResolvers.ts | ⚡ **새 기능** - 관계타입별 이웃 노드 |
+
 **🎯 목표**: 그래프 데이터베이스 관계 관리 완성
 - **핵심 테스트**: 복합 관계 쿼리 최적화
 - **데이터 정합성**: 순환 참조 방지, 관계 무결성
 - **성능**: 깊이 제한 및 관계 탐색 최적화
+- **🆕 그래프 탐색**: DFS/BFS 알고리즘 기반 연결 노드 탐색
+- **🆕 최단 경로**: BFS 기반 최단 경로 알고리즘 구현
+- **🆕 관계 필터링**: 관계 타입별 이웃 노드 필터링 기능
 
 ---
 
@@ -206,11 +216,17 @@
 Phase 1A (노드 관리): 🧪🧪🧪🧪🧪🧪 6/6 구현완료, 테스트 필요
 Phase 1B (테이블 관리): 🧪🧪🧪🧪🧪⚠️ 5/6 안전, 1/6 위험기능
 Phase 1C (템플릿 시스템): 🧪🧪🧪🧪🧪🧪🧪 7/7 구현완료, 핵심검증 필요
-Phase 2A (관계 관리): 🧪🧪🧪🧪🧪🧪🧪🧪 8/8 구현완료, 테스트 필요  
+Phase 2A (관계 관리): 🧪🧪🧪🧪🧪🧪🧪🧪➕🆕🆕🆕 8/8 + 3/3 새로운 그래프 탐색 기능 추가!  
 Phase 2B (속성 관리): 🧪🧪🧪🧪🧪🧪 6/6 구현완료, 테스트 필요
 Phase 3A (시스템 기능): ✅🧪🧪🧪🧪🧪 1/6 완전구현, 5/6 테스트 필요
 향후 구현 예정: Phase 4A (고급 검색), Phase 4B (분석), Phase 4C (모니터링)
 ```
+
+**🆕 2025-09-05 업데이트**: 
+- **그래프 탐색 Field Resolvers 3개 추가**: `connectedNodes`, `shortestPath`, `neighborsByRelationType`
+- **Repository 인터페이스 확장**: 그래프 탐색용 메서드 6개 추가
+- **GraphQL Schema 확장**: 새로운 그래프 탐색 타입 추가 (`ConnectedNode`, `GraphPath`)
+- **탐색 알고리즘 구현**: DFS(깊이 우선), BFS(너비 우선) 기반 탐색
 
 ### 🚨 즉시 해결 필요한 이슈
 1. **위험기능**: `deleteTable` 안전장치 구현  
