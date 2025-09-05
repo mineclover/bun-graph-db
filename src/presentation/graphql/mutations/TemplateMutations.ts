@@ -27,10 +27,10 @@ export class TemplateMutations extends BaseResolver {
         BaseResolver.validationRules.required('input', 'Create template input'),
         BaseResolver.validationRules.required('input.identifier', 'Template identifier'),
         BaseResolver.validationRules.required('input.name', 'Template name'),
-        BaseResolver.validationRules.required('input.queryText', 'Query text'),
+        BaseResolver.validationRules.required('input.query', 'Query text'),
         BaseResolver.validationRules.nonEmpty('input.identifier', 'Template identifier'),
         BaseResolver.validationRules.nonEmpty('input.name', 'Template name'),
-        BaseResolver.validationRules.nonEmpty('input.queryText', 'Query text'),
+        BaseResolver.validationRules.nonEmpty('input.query', 'Query text'),
       ],
       'createTemplate'
     )
