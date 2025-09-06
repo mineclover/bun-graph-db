@@ -1,0 +1,154 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T17:55:44.104Z",
+  "template": {
+    "identifier": "search-templates-advanced",
+    "name": "Advanced Template Search with Filters",
+    "description": "Advanced template search with filtering by tags, usage count, date ranges, and complex search patterns. Supports pagination and sorting.",
+    "query": "query SearchTemplatesAdvanced($filter: QueryTemplatesFilter, $pagination: PaginationInput, $sort: [SortInput!]) {\n  searchTemplates(filter: $filter, pagination: $pagination, sort: $sort) {\n    templates {\n      id\n      identifier\n      name\n      description\n      tags\n      isActive\n      usageCount\n      avgExecutionTimeMs\n      lastUsedAt\n      createdAt\n      updatedAt\n    }\n    totalCount\n    hasMore\n  }\n}",
+    "queryName": "SearchTemplatesAdvanced",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "variablesSchema": {
+        "type": "object",
+        "properties": {
+          "filter": {
+            "type": "object",
+            "properties": {
+              "search": {
+                "type": "string",
+                "description": "이름/설명에서 검색할 텍스트"
+              },
+              "isActive": {
+                "type": "boolean",
+                "default": true,
+                "description": "활성 템플릿만 포함 여부"
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "태그 필터 (예: [\"query\", \"table\"])"
+              },
+              "tagMatchMode": {
+                "type": "string",
+                "enum": [
+                  "ANY",
+                  "ALL"
+                ],
+                "default": "ANY",
+                "description": "태그 매칭 모드"
+              },
+              "createdAfter": {
+                "type": "string",
+                "format": "date-time",
+                "description": "생성일 이후 필터 (ISO 8601)"
+              },
+              "createdBefore": {
+                "type": "string",
+                "format": "date-time",
+                "description": "생성일 이전 필터 (ISO 8601)"
+              },
+              "usageCountMin": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "최소 사용 횟수 필터"
+              },
+              "complexityMin": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5,
+                "description": "최소 복잡도 필터 (1-5)"
+              },
+              "complexityMax": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5,
+                "description": "최대 복잡도 필터 (1-5)"
+              }
+            },
+            "description": "템플릿 검색 필터"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "limit": {
+                "type": "integer",
+                "default": 10,
+                "minimum": 1,
+                "maximum": 100,
+                "description": "결과 개수 제한"
+              },
+              "offset": {
+                "type": "integer",
+                "default": 0,
+                "minimum": 0,
+                "description": "건너뛸 결과 개수"
+              }
+            },
+            "description": "페이지네이션 설정"
+          },
+          "sort": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "field": {
+                  "type": "string",
+                  "enum": [
+                    "name",
+                    "createdAt",
+                    "usageCount",
+                    "complexityScore",
+                    "lastUsedAt"
+                  ],
+                  "description": "정렬 필드"
+                },
+                "direction": {
+                  "type": "string",
+                  "enum": [
+                    "ASC",
+                    "DESC"
+                  ],
+                  "default": "DESC",
+                  "description": "정렬 방향"
+                }
+              },
+              "required": [
+                "field"
+              ]
+            },
+            "description": "정렬 조건"
+          }
+        },
+        "required": []
+      },
+      "defaultVariables": {
+        "filter": {
+          "isActive": true,
+          "tagMatchMode": "ANY"
+        },
+        "pagination": {
+          "limit": 10,
+          "offset": 0
+        },
+        "sort": [
+          {
+            "field": "usageCount",
+            "direction": "DESC"
+          }
+        ]
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true
+  }
+}

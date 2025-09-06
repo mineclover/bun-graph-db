@@ -74,7 +74,11 @@
     "typecheck": "tsc --noEmit",
     "schema:generate": "bun scripts/generate-schema.ts",
     "codegen": "graphql-codegen",
-    "schema:update": "bun schema:generate && bun codegen"
+    "schema:update": "bun schema:generate && bun codegen",
+    "template:validate-single": "bun scripts/simple-validator.ts",
+    "template:check-server": "curl -s http://localhost:4000/graphql -d '{\"query\":\"query{__typename}\"}' || echo 'Server not running'",
+    "template:backup": "cp -r demo/templates demo/templates-backup-$(date +%Y%m%d-%H%M%S)",
+    "template:restore": "echo 'Usage: cp -r demo/templates-backup-YYYYMMDD-HHMMSS demo/templates'"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",
