@@ -133,23 +133,25 @@ export class GraphQLClient {
   async createTemplate(input: {
     identifier: string
     name: string
-    queryText: string
-    tags: string[]
+    query: string
     description?: string
-    variablesSchema?: any
+    variables?: any
   }) {
     return this.request({
       query: `
-        mutation CreateTemplate($input: CreateTemplateInput!) {
+        mutation CreateTemplate($input: CreateQueryTemplateInput!) {
           createTemplate(input: $input) {
-            id
-            identifier
-            name
-            queryName
-            operationType
-            complexityScore
-            tags
-            isActive
+            success
+            template {
+              id
+              identifier
+              name
+              isActive
+            }
+            errors {
+              message
+              code
+            }
           }
         }
       `,
@@ -157,19 +159,28 @@ export class GraphQLClient {
     })
   }
 
-  async executeTemplate(templateId: string, variables?: Record<string, any>) {
+  async executeTemplate(params: {
+    templateId?: string
+    templateIdentifier?: string
+    variables?: Record<string, any>
+  }) {
     return this.request({
       query: `
-        mutation ExecuteTemplate($templateId: ID!, $variables: JSON) {
-          executeTemplate(templateId: $templateId, variables: $variables) {
+        mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
+          executeTemplate(input: $input) {
             success
             data
-            executionTimeMs
-            errors
+            metadata {
+              executionTime
+            }
+            errors {
+              message
+              code
+            }
           }
         }
       `,
-      variables: { templateId, variables },
+      variables: { input: params },
     })
   }
 
@@ -220,6 +231,78 @@ export class GraphQLClient {
           }
         }
       `,
+    })
+  }
+
+  // 템플릿 내보내기
+  async exportTemplate(params: {
+    templateId?: string
+    templateIdentifier?: string
+    includeStatistics?: boolean
+  }) {
+    return this.request({
+      query: `
+        mutation ExportTemplate(
+          $templateId: ID
+          $templateIdentifier: String
+          $includeStatistics: Boolean
+        ) {
+          exportTemplate(
+            templateId: $templateId
+            templateIdentifier: $templateIdentifier
+            includeStatistics: $includeStatistics
+          ) {
+            success
+            exportData
+            filename
+            errors {
+              message
+              code
+            }
+          }
+        }
+      `,
+      variables: params,
+    })
+  }
+
+  // 템플릿 가져오기
+  async importTemplate(params: {
+    jsonData: string
+    overwriteExisting?: boolean
+    generateNewIdentifier?: boolean
+    newIdentifierPrefix?: string
+  }) {
+    return this.request({
+      query: `
+        mutation ImportTemplate(
+          $jsonData: String!
+          $overwriteExisting: Boolean
+          $generateNewIdentifier: Boolean
+          $newIdentifierPrefix: String
+        ) {
+          importTemplate(
+            jsonData: $jsonData
+            overwriteExisting: $overwriteExisting
+            generateNewIdentifier: $generateNewIdentifier
+            newIdentifierPrefix: $newIdentifierPrefix
+          ) {
+            success
+            template {
+              id
+              identifier
+              name
+              isActive
+            }
+            errors {
+              message
+              code
+            }
+            warnings
+          }
+        }
+      `,
+      variables: params,
     })
   }
 }

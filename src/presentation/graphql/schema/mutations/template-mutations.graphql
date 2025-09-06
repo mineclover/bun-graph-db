@@ -22,4 +22,18 @@ extend type Mutation {
     variables: JSON
     trackUsage: Boolean
   ): TemplateExecutionResult!
+
+  # Template import/export
+  exportTemplate(
+    templateId: ID
+    templateIdentifier: String
+    includeStatistics: Boolean
+  ): ExportTemplatePayload!
+
+  importTemplate(
+    jsonData: String!
+    overwriteExisting: Boolean
+    generateNewIdentifier: Boolean
+    newIdentifierPrefix: String
+  ): ImportTemplatePayload!
 }

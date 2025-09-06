@@ -12,8 +12,11 @@
 demo/
 ├── template-queries/           # 템플릿 쿼리 실행 데모
 │   ├── basic-demo.ts          # 기본 CRUD 데모
+│   ├── import-export-demo.ts  # Import/Export 기능 데모
+│   ├── file-import-export-demo.ts # 파일 기반 Import/Export 데모
 │   ├── advanced-demo.ts       # 고급 기능 데모  
 │   └── performance-demo.ts    # 성능 측정 데모
+├── exported-templates/         # Export된 JSON 파일들 저장소
 ├── fixtures/                  # 데모용 데이터
 │   ├── demo-templates.ts      # 데모용 템플릿들
 │   └── demo-queries.ts        # 데모용 쿼리들
@@ -37,6 +40,9 @@ bun run demo --server https://api.example.com/graphql
 
 # 특정 데모 실행
 bun run demo:basic
+bun run demo:import-export
+bun run demo:file-import-export
+bun run demo:cleanup-files
 bun run demo:advanced  
 bun run demo:performance
 ```
@@ -53,13 +59,31 @@ bun run demo:performance
 - GraphQL 쿼리 실행
 - 기본적인 CRUD 작업 시연
 
-### 2. Advanced Demo (`advanced-demo.ts`) 
+### 2. Import/Export Demo (`import-export-demo.ts`) 
+- 템플릿 JSON Export/Import 기능
+- ID 및 식별자 기반 내보내기
+- 중복 처리 옵션 (덮어쓰기/새 식별자)
+- 통계 정보 포함/제외 옵션
+- **실행**: `bun run demo:import-export`
+- **문서**: [완전한 사용 가이드](../docs/TEMPLATE_IMPORT_EXPORT.md)
+
+### 3. File Import/Export Demo (`file-import-export-demo.ts`) ⭐ **NEW**
+- **실제 파일 시스템**을 사용한 Import/Export 테스트
+- JSON 파일 저장 및 불러오기
+- 배치 Export/Import 기능
+- 백업 및 복원 시나리오 시뮬레이션
+- 파일 유효성 검사 및 메타데이터 관리
+- **실행**: `bun run demo:file-import-export`
+- **정리**: `bun run demo:cleanup-files`
+- **저장 위치**: `demo/exported-templates/`
+
+### 4. Advanced Demo (`advanced-demo.ts`) 
 - 복잡한 템플릿 검색
 - 필터링 및 정렬
 - 성능 통계 확인
 - 변수 스키마 검증
 
-### 3. Performance Demo (`performance-demo.ts`)
+### 5. Performance Demo (`performance-demo.ts`)
 - 대용량 템플릿 처리
 - 실행 시간 측정
 - 성능 메트릭 수집

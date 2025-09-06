@@ -120,3 +120,18 @@ type TemplateExecutionMetadata {
   version: String!
   executionTime: Int!
 }
+
+# Import/Export Types
+type ExportTemplatePayload implements OperationResult {
+  success: Boolean!
+  exportData: String
+  filename: String
+  errors: [Error!]!
+}
+
+type ImportTemplatePayload implements OperationResult {
+  success: Boolean!
+  template: QueryTemplate
+  errors: [Error!]!
+  warnings: [String!]
+}

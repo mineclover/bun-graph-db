@@ -6,9 +6,13 @@ import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { ExportTemplateUseCase } from '@/application/use-cases/templates/ExportTemplateUseCase.js'
+import { ImportTemplateUseCase } from '@/application/use-cases/templates/ImportTemplateUseCase.js'
 
 export class TemplateMutations extends BaseResolver {
   protected logger: ILogger
+  private exportTemplateUseCase: ExportTemplateUseCase
+  private importTemplateUseCase: ImportTemplateUseCase
 
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
@@ -18,6 +22,8 @@ export class TemplateMutations extends BaseResolver {
   ) {
     super()
     this.logger = logger
+    this.exportTemplateUseCase = new ExportTemplateUseCase(queryTemplateRepository, logger)
+    this.importTemplateUseCase = new ImportTemplateUseCase(queryTemplateRepository, logger)
   }
 
   async createTemplate(_: GraphQLParent, args: { input: any }, context?: GraphQLContext) {
@@ -355,6 +361,111 @@ export class TemplateMutations extends BaseResolver {
       'executeTemplateWithGraphQL',
       { templateIdentifier: args.templateIdentifier }
     )
+  }
+
+  async exportTemplate(_: GraphQLParent, args: any, context?: GraphQLContext) {
+    this.logger.info('Executing mutation: exportTemplate', { templateId: args.templateId, templateIdentifier: args.templateIdentifier })
+    
+    try {
+        // 인수 검증 - ID 또는 식별자 중 하나는 필수
+
+        // ID 또는 식별자 중 하나는 필수
+        if (!args.templateId && !args.templateIdentifier) {
+          throw new Error('Either templateId or templateIdentifier is required')
+        }
+
+        const exportResult = await this.exportTemplateUseCase.execute({
+          templateId: args.templateId,
+          templateIdentifier: args.templateIdentifier,
+          options: {
+            includeStatistics: args.includeStatistics,
+            includeMetadata: true,
+            prettyPrint: true,
+          },
+        })
+
+        this.logger.info('Export result from use case', {
+          success: exportResult.success,
+          hasExportData: !!exportResult.exportData,
+          filename: exportResult.filename,
+          errors: exportResult.errors
+        })
+
+        if (!exportResult.success) {
+          return {
+            success: false,
+            exportData: null,
+            filename: null,
+            errors: exportResult.errors.map(error => ({ message: error })),
+          }
+        }
+
+        const jsonData = JSON.stringify(exportResult.exportData, null, 2)
+        this.logger.info('Processed export data', {
+          jsonDataLength: jsonData.length,
+          filename: exportResult.filename
+        })
+
+        const result = {
+          success: true,
+          exportData: jsonData,
+          filename: exportResult.filename,
+          errors: [],
+        }
+
+        this.logger.info('Mutation completed: exportTemplate', { filename: exportResult.filename })
+        return result
+    } catch (error) {
+      this.logger.error('Mutation failed: exportTemplate', { error })
+      return {
+        success: false,
+        exportData: null,
+        filename: null,
+        errors: [{ message: error instanceof Error ? error.message : 'Unknown export error', code: 'EXPORT_ERROR' }],
+      }
+    }
+  }
+
+  async importTemplate(_: GraphQLParent, args: any, context?: GraphQLContext) {
+    this.logger.info('Executing mutation: importTemplate', { hasJsonData: !!args.jsonData })
+    
+    try {
+        // 인수 검증
+        if (!args.jsonData) {
+          throw new Error('JSON data is required')
+        }
+
+        const importResult = await this.importTemplateUseCase.execute({
+          jsonString: args.jsonData,
+          options: {
+            overwriteExisting: args.overwriteExisting,
+            generateNewIdentifier: args.generateNewIdentifier,
+            newIdentifierPrefix: args.newIdentifierPrefix,
+          },
+        })
+
+        const result = {
+          success: importResult.success,
+          template: importResult.template ? {
+            id: importResult.template.id,
+            identifier: importResult.template.identifier,
+            name: importResult.template.name,
+          } : null,
+          errors: importResult.errors.map(error => ({ message: error, code: 'IMPORT_ERROR' })),
+          warnings: importResult.warnings,
+        }
+
+        this.logger.info('Mutation completed: importTemplate', { success: importResult.success })
+        return result
+    } catch (error) {
+      this.logger.error('Mutation failed: importTemplate', { error })
+      return {
+        success: false,
+        template: null,
+        errors: [{ message: error instanceof Error ? error.message : 'Unknown import error', code: 'IMPORT_ERROR' }],
+        warnings: [],
+      }
+    }
   }
 
   setSchema(schema: GraphQLSchema) {

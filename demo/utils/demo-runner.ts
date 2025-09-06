@@ -32,6 +32,10 @@ export class DemoRunner {
     this.client = new GraphQLClient(options.serverUrl)
   }
 
+  get config() {
+    return this.options
+  }
+
   async runDemo(name: string, demoFn: (client: GraphQLClient) => Promise<any>): Promise<DemoResult> {
     console.log(`\n🚀 Running: ${name}`)
     console.log(`   Server: ${this.options.serverUrl}`)

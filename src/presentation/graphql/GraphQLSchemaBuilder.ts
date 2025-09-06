@@ -223,6 +223,10 @@ export class GraphQLSchemaBuilder {
           deps.templateMutations.executeTemplate(_, args, context),
         executeTemplateWithGraphQL: (_: any, args: any, context: any) =>
           deps.templateMutations.executeTemplateWithGraphQL(_, args, context),
+        exportTemplate: (_: any, args: any, context: any) =>
+          deps.templateMutations.exportTemplate(_, args, context),
+        importTemplate: (_: any, args: any, context: any) =>
+          deps.templateMutations.importTemplate(_, args, context),
 
         // Schema import mutations
         importSchema: (_: any, args: any) => deps.schemaResolvers.Mutation.importSchema(_, args),
