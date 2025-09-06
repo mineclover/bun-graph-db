@@ -4,6 +4,57 @@
 
 Complete guide for managing GraphQL query templates in the bun-graph-db system. This includes template lifecycle, best practices, and advanced management features.
 
+## 🏗️ System Architecture
+
+The template system follows hexagonal architecture with clean domain boundaries:
+
+```mermaid
+graph TB
+    subgraph "Presentation Layer"
+        GQL[GraphQL Schema]
+        QR[Query Resolvers<br/>- searchTemplates<br/>- getTemplate<br/>- getPopular]
+        MR[Mutation Resolvers<br/>- executeTemplate<br/>- createTemplate<br/>- updateTemplate]
+    end
+    
+    subgraph "Application Layer"
+        TES[Template Execution Service<br/>- Variable validation<br/>- GraphQL parsing<br/>- Usage tracking]
+    end
+    
+    subgraph "Domain Layer"
+        QTE[QueryTemplate Entity<br/>- Business rules<br/>- Variable schemas<br/>- Lifecycle management]
+    end
+    
+    subgraph "Infrastructure Layer"
+        SQLite[SQLite Repository<br/>- CRUD operations<br/>- JSON queries<br/>- Tag-based search<br/>- Performance indexes]
+    end
+    
+    GQL --> QR
+    GQL --> MR
+    QR --> TES
+    MR --> TES
+    TES --> QTE
+    QTE --> SQLite
+```
+
+### Core Components
+
+1. **QueryTemplate Domain Entity** (`src/domain/entities/QueryTemplate.ts`)
+   - Immutable value object with business rules
+   - Variable validation and schema management
+   - Template applicability and lifecycle methods
+
+2. **IQueryTemplateRepository Interface** (`src/domain/repositories/IQueryTemplateRepository.ts`)
+   - Repository contract with search capabilities
+   - Advanced filtering by tags, tables, and criteria
+
+3. **SQLiteQueryTemplateRepository** (`src/infrastructure/database/sqlite/SqliteQueryTemplateRepository.ts`)
+   - SQL implementation with JSON query support
+   - Performance optimized with proper indexing
+
+4. **Template Resolvers** (`src/presentation/graphql/`)
+   - GraphQL operations for template management
+   - Template execution with variable processing
+
 ## 🔄 Template Lifecycle
 
 ### 1. Template Creation
