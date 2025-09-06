@@ -69,7 +69,7 @@ export class TemplateSubscriptionResolver {
   }
 
   /**
-   * 대용량 데이터 처리를 위한 청킹 스트림
+   * 대용량 데이터 처리를 위한 청킹 스트림 (내부적으로 처리됨)
    */
   async executeTemplateStreamWithChunking(
     args: ExecuteTemplateStreamArgs & { chunkSize?: number },
@@ -88,10 +88,8 @@ export class TemplateSubscriptionResolver {
     }
 
     try {
-      return this.executeTemplateWithSubscriptionUseCase.executeWithChunking(
-        input,
-        args.chunkSize || 100
-      )
+      // 청킹은 UseCase 내부적으로 processDataInChunks 메서드에서 처리됨
+      return this.executeTemplateWithSubscriptionUseCase.execute(input)
     } catch (error) {
       this.logger.error('Template chunked stream subscription failed to start', {
         templateIdentifier: args.templateIdentifier,

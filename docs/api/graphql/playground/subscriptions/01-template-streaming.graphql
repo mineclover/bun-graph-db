@@ -1,0 +1,235 @@
+# ===================================================================
+# 🔥 Template Streaming - 실시간 템플릿 실행 (NEW!)
+# ===================================================================
+# 목적: 쿼리 템플릿을 실시간 스트리밍으로 실행합니다.
+# 난이도: ⭐⭐⭐ (고급) - 최신 기능!
+# 연결: WebSocket 필요
+# ===================================================================
+
+# 1. 기본 템플릿 스트리밍 실행
+subscription BasicTemplateStreaming {
+  executeTemplateStream(
+    templateIdentifier: "basic-user-query"
+    trackUsage: true
+  ) {
+    status        # STARTING → IN_PROGRESS → COMPLETED
+    data          # 실행 결과 (완료 시)
+    progress      # 0.0 ~ 1.0 진행률
+    timestamp     # 이벤트 발생 시간
+    error         # 에러 메시지 (에러 발생 시)
+    
+    metadata {
+      templateId
+      templateName
+      complexityScore
+      executionTime    # 현재까지 실행 시간 (ms)
+    }
+  }
+}
+
+# ===================================================================
+# 📋 Variables for Template Streaming (템플릿 스트리밍용 변수)
+# ===================================================================
+# Playground 하단 Variables 섹션에 붙여넣으세요:
+{
+  "templateIdentifier": "user-analytics-live",
+  "variables": {
+    "tableId": "users_table",
+    "timeWindow": "1h",
+    "limit": 100
+  }
+}
+
+# 2. 변수가 있는 고급 템플릿 스트리밍
+subscription AdvancedTemplateStreaming($templateId: String!, $variables: JSON) {
+  executeTemplateStream(
+    templateIdentifier: $templateId
+    variables: $variables
+    trackUsage: true
+  ) {
+    status
+    data
+    progress
+    timestamp
+    error
+    
+    metadata {
+      templateId
+      templateName
+      complexityScore
+      estimatedTokens
+      version
+      executionTime
+    }
+  }
+}
+
+# ===================================================================
+# 📊 Real-time Response Stream (실시간 응답 스트림 예시)
+# ===================================================================
+
+# 🟡 1단계: 시작 이벤트
+# {
+#   "data": {
+#     "executeTemplateStream": {
+#       "status": "STARTING",
+#       "data": null,
+#       "progress": 0.0,
+#       "timestamp": "2025-09-06T12:00:00.000Z",
+#       "error": null,
+#       "metadata": {
+#         "templateId": "template_123",
+#         "templateName": "User Analytics Live",
+#         "complexityScore": 5,
+#         "executionTime": 0
+#       }
+#     }
+#   }
+# }
+
+# 🔵 2단계: 진행 중 이벤트들
+# {
+#   "data": {
+#     "executeTemplateStream": {
+#       "status": "IN_PROGRESS",
+#       "data": null,
+#       "progress": 0.3,
+#       "timestamp": "2025-09-06T12:00:00.500Z",
+#       "executionTime": 500
+#     }
+#   }
+# }
+
+# {
+#   "data": {
+#     "executeTemplateStream": {
+#       "status": "IN_PROGRESS", 
+#       "data": null,
+#       "progress": 0.7,
+#       "timestamp": "2025-09-06T12:00:01.200Z",
+#       "executionTime": 1200
+#     }
+#   }
+# }
+
+# 🟢 3단계: 완료 이벤트 (실제 데이터 포함)
+# {
+#   "data": {
+#     "executeTemplateStream": {
+#       "status": "COMPLETED",
+#       "data": {
+#         "users": [
+#           {"id": "user_1", "name": "김철수", "activity": 85},
+#           {"id": "user_2", "name": "박영희", "activity": 92}
+#         ],
+#         "summary": {
+#           "totalUsers": 1547,
+#           "activeUsers": 1205,
+#           "avgActivity": 78.5
+#         }
+#       },
+#       "progress": 1.0,
+#       "timestamp": "2025-09-06T12:00:02.100Z",
+#       "executionTime": 2100
+#     }
+#   }
+# }
+
+# ===================================================================
+# 🚨 Error Handling (에러 처리)
+# ===================================================================
+
+# 3. 에러 상황 테스트용 쿼리
+subscription TestErrorHandling {
+  executeTemplateStream(
+    templateIdentifier: "non-existent-template"
+  ) {
+    status
+    data
+    error         # 에러 메시지
+    
+    metadata {
+      templateName
+      executionTime
+    }
+  }
+}
+
+# 🔴 에러 응답 예시:
+# {
+#   "data": {
+#     "executeTemplateStream": {
+#       "status": "ERROR",
+#       "data": null,
+#       "error": "Template not found: non-existent-template",
+#       "metadata": {
+#         "templateId": "unknown",
+#         "templateName": "unknown",
+#         "executionTime": 15
+#       }
+#     }
+#   }
+# }
+
+# ===================================================================
+# 🎯 Use Cases (사용 사례)
+# ===================================================================
+
+# 📈 Use Case 1: 실시간 대시보드
+# - 사용자 활동 실시간 모니터링
+# - 시스템 메트릭 라이브 업데이트
+# - 데이터 품질 지표 추적
+
+# 📊 Use Case 2: 장기 실행 분석
+# - 대용량 데이터 처리 진행률 추적
+# - 복잡한 그래프 분석 단계별 결과
+# - 배치 처리 상태 모니터링
+
+# 🔍 Use Case 3: 개발자 도구
+# - 쿼리 성능 프로파일링
+# - 실시간 디버깅 정보
+# - API 응답 시간 측정
+
+# ===================================================================
+# 🛠️ Client Implementation (클라이언트 구현 참고)
+# ===================================================================
+
+# JavaScript/TypeScript 예시:
+# ```javascript
+# import { createClient } from 'graphql-ws'
+# 
+# const client = createClient({
+#   url: 'ws://localhost:4000/graphql',
+# })
+# 
+# client.subscribe({
+#   query: `subscription { executeTemplateStream(...) { ... } }`,
+#   variables: { templateId: "analytics" }
+# }, {
+#   next: (data) => {
+#     const stream = data.data.executeTemplateStream
+#     switch (stream.status) {
+#       case 'STARTING':
+#         console.log('🟡 시작:', stream.metadata.templateName)
+#         break
+#       case 'IN_PROGRESS':
+#         console.log(`🔵 진행: ${(stream.progress * 100).toFixed(1)}%`)
+#         break
+#       case 'COMPLETED':
+#         console.log('🟢 완료:', stream.data)
+#         break
+#       case 'ERROR':
+#         console.error('🔴 에러:', stream.error)
+#         break
+#     }
+#   }
+# })
+# ```
+
+# ===================================================================
+# 🚀 Next Steps (다음 단계)
+# ===================================================================
+# 1. 이 쿼리를 실행하여 스트리밍 동작을 확인하세요
+# 2. Variables를 수정하여 다른 템플릿을 테스트해보세요
+# 3. 02-data-change-events.graphql로 이동하여 다른 구독 기능을 경험해보세요
+# 4. 클라이언트 앱에서 WebSocket 연결을 구현해보세요

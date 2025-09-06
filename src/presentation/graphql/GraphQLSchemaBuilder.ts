@@ -34,6 +34,7 @@ import type {
   TemplateQueries,
 } from './queries/index.js'
 import { createSchemaResolvers } from './resolvers/schema.js'
+import { templateSubscriptionResolvers } from './resolvers/TemplateSubscriptionResolver.js'
 
 export interface GraphQLDependencies {
   // Query resolvers
@@ -171,8 +172,6 @@ export class GraphQLSchemaBuilder {
         searchTemplates: (_: any, args: any) => deps.templateQueries.searchTemplates(_, args),
         getPopularTemplates: (_: any, args: any) =>
           deps.templateQueries.getPopularTemplates(_, args),
-        executeTemplate: (_: any, args: any, context: any) =>
-          deps.templateQueries.executeTemplate(_, args, context),
 
         // Schema export queries
         exportTable: (_: any, args: any) => deps.schemaResolvers.Query.exportTable(_, args),
@@ -219,8 +218,6 @@ export class GraphQLSchemaBuilder {
         activateTemplate: (_: any, args: any) => deps.templateMutations.activateTemplate(_, args),
         deactivateTemplate: (_: any, args: any) =>
           deps.templateMutations.deactivateTemplate(_, args),
-        executeTemplate: (_: any, args: any, context: any) =>
-          deps.templateMutations.executeTemplate(_, args, context),
         executeTemplateWithGraphQL: (_: any, args: any, context: any) =>
           deps.templateMutations.executeTemplateWithGraphQL(_, args, context),
         exportTemplate: (_: any, args: any, context: any) =>
@@ -233,7 +230,7 @@ export class GraphQLSchemaBuilder {
       },
 
       Subscription: {
-        _placeholder: () => null,
+        ...templateSubscriptionResolvers.Subscription,
       },
 
       // Field resolvers

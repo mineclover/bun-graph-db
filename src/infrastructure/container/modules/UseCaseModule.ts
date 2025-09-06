@@ -6,13 +6,14 @@ import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
 import { ExecuteTemplateWithSubscriptionUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithSubscriptionUseCase.js'
+import { ExecuteTemplateWithGraphQLUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithGraphQL.js'
 import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import { DeleteTableUseCase } from '@/application/use-cases/tables/DeleteTable.js'
 import type { DIContainer } from '../DIContainer.js'
-import { CommonTokens, RepositoryTokens, UseCaseTokens } from '../tokens/index.js'
+import { CommonTokens, GraphQLTokens, RepositoryTokens, UseCaseTokens } from '../tokens/index.js'
 
 /**
  * Use case module - registers all application use cases
@@ -316,10 +317,10 @@ export function registerUseCaseModule(container: DIContainer): void {
   )
 
   container.registerSingleton(
-    UseCaseTokens.EXECUTE_TEMPLATE_WITH_SUBSCRIPTION_USE_CASE,
+    UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE,
     async (c) => {
       const executeQueryTemplateUseCase = await c.resolve(UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE) as any
-      const graphqlSchema = await c.resolve(CommonTokens.GRAPHQL_SCHEMA) as any
+      const graphqlSchema = await c.resolve(GraphQLTokens.GRAPHQL_SCHEMA) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -327,8 +328,24 @@ export function registerUseCaseModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new ExecuteTemplateWithSubscriptionUseCase(executeQueryTemplateUseCase, graphqlSchema, simpleLogger)
+      return new ExecuteTemplateWithGraphQLUseCase(executeQueryTemplateUseCase, graphqlSchema, simpleLogger)
     },
-    [UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE, CommonTokens.GRAPHQL_SCHEMA]
+    [UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE, GraphQLTokens.GRAPHQL_SCHEMA]
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.EXECUTE_TEMPLATE_WITH_SUBSCRIPTION_USE_CASE,
+    async (c) => {
+      const executeTemplateWithGraphQLUseCase = await c.resolve(UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new ExecuteTemplateWithSubscriptionUseCase(executeTemplateWithGraphQLUseCase, simpleLogger)
+    },
+    [UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE]
   )
 }

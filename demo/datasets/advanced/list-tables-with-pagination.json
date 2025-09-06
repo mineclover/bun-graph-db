@@ -7,8 +7,10 @@
   "templateExecution": {
     "templateIdentifier": "test-list-tables",
     "variables": {
-      "first": 10,
-      "after": null
+      "pagination": {
+        "limit": 10,
+        "offset": 0
+      }
     }
   },
   

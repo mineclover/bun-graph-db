@@ -200,43 +200,6 @@ export class TemplateMutations extends BaseResolver {
     )
   }
 
-  async executeTemplate(
-    _: GraphQLParent,
-    args: {
-      input: {
-        templateId?: string
-        templateIdentifier?: string
-        variables?: Record<string, unknown>
-      }
-    },
-    context?: GraphQLContext
-  ) {
-    this.validateArgs(
-      args.input,
-      [
-        BaseResolver.validationRules.required('templateIdentifier', 'Template Identifier'),
-        BaseResolver.validationRules.nonEmpty('templateIdentifier', 'Template Identifier'),
-      ],
-      'executeTemplate'
-    )
-
-    return this.handleMutation(
-      async () => {
-        const result = await this.executeQueryTemplateUseCase.execute({
-          templateIdentifier: args.input.templateIdentifier!,
-          variables: args.input.variables,
-        })
-
-        return {
-          queryText: result.queryText,
-          processedVariables: result.processedVariables,
-          metadata: result.metadata,
-        }
-      },
-      'executeTemplate',
-      { templateIdentifier: args.input.templateIdentifier }
-    )
-  }
 
   async executeTemplateWithGraphQL(
     _: GraphQLParent,

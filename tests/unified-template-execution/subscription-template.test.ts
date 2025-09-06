@@ -8,6 +8,7 @@ import { GraphQLSchema, buildSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { ExecuteTemplateWithSubscriptionUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithSubscriptionUseCase.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
+import { ExecuteTemplateWithGraphQLUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithGraphQL.js'
 
 // Mock logger
 const mockLogger: ILogger = {
@@ -84,6 +85,7 @@ const mockQueryTemplateRepository = {
 
 describe('Unified Template Execution - Subscription Tests', () => {
   let executeQueryTemplateUseCase: ExecuteQueryTemplateUseCase
+  let executeTemplateWithGraphQLUseCase: ExecuteTemplateWithGraphQLUseCase
   let executeSubscriptionUseCase: ExecuteTemplateWithSubscriptionUseCase
 
   beforeAll(async () => {
@@ -93,9 +95,14 @@ describe('Unified Template Execution - Subscription Tests', () => {
       mockLogger
     )
 
-    executeSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
+    executeTemplateWithGraphQLUseCase = new ExecuteTemplateWithGraphQLUseCase(
       executeQueryTemplateUseCase,
       testSchema,
+      mockLogger
+    )
+
+    executeSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
+      executeTemplateWithGraphQLUseCase,
       mockLogger
     )
   })
@@ -217,9 +224,13 @@ describe('Unified Template Execution - Subscription Tests', () => {
     }
 
     const tempUseCase = new ExecuteQueryTemplateUseCase(mockRepo as any, mockLogger)
-    const tempSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
+    const tempGraphQLUseCase = new ExecuteTemplateWithGraphQLUseCase(
       tempUseCase,
       testSchema,
+      mockLogger
+    )
+    const tempSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
+      tempGraphQLUseCase,
       mockLogger
     )
 
@@ -242,22 +253,18 @@ describe('Unified Template Execution - Subscription Tests', () => {
 
   test('should support chunked streaming for large data', async () => {
     const events: any[] = []
-    const chunkSize = 2
 
-    const stream = executeSubscriptionUseCase.executeWithChunking(
-      {
-        templateIdentifier: 'simple-query',
-        variables: {},
-        trackUsage: true,
-      },
-      chunkSize
-    )
+    const stream = executeSubscriptionUseCase.execute({
+      templateIdentifier: 'simple-query',
+      variables: {},
+      trackUsage: true,
+    })
 
     for await (const event of stream) {
       events.push(event)
     }
 
-    // Verify chunking behavior
+    // Verify chunking behavior - data is chunked in the processDataInChunks method
     expect(events.length).toBeGreaterThanOrEqual(1)
     const completedEvent = events[events.length - 1]
     expect(completedEvent.status).toBe('COMPLETED')
@@ -298,9 +305,14 @@ describe('Template Execution Performance', () => {
       mockLogger
     )
 
-    const executeSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
+    const executeTemplateWithGraphQLUseCase = new ExecuteTemplateWithGraphQLUseCase(
       executeQueryTemplateUseCase,
       testSchema,
+      mockLogger
+    )
+
+    const executeSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
+      executeTemplateWithGraphQLUseCase,
       mockLogger
     )
 

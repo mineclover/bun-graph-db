@@ -1,0 +1,408 @@
+# ===================================================================
+# ✏️ Create Data - 기본 데이터 생성 연산
+# ===================================================================
+# 목적: 테이블, 노드, 관계를 생성하여 테스트 환경을 구축합니다.
+# 난이도: ⭐⭐ (기본)
+# 전제조건: 시스템이 정상 작동 중 (health check 통과)
+# ===================================================================
+
+# 1. 테이블 생성 - 사용자 정보를 저장할 테이블
+mutation CreateUserTable {
+  createTable(input: {
+    identifier: "users_table"
+    name: "사용자 테이블"
+    description: "시스템 사용자 정보를 관리하는 테이블"
+    attributeTypes: [
+      {
+        name: "email"
+        dataType: STRING
+        isRequired: true
+        validation: {
+          pattern: "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$"
+          maxLength: 100
+        }
+      }
+      {
+        name: "age"
+        dataType: NUMBER
+        isRequired: false
+        defaultValue: "0"
+        validation: {
+          min: 0
+          max: 150
+        }
+      }
+      {
+        name: "role"
+        dataType: STRING
+        isRequired: false
+        defaultValue: "user"
+        validation: {
+          enum: ["user", "admin", "manager"]
+        }
+      }
+    ]
+  }) {
+    success
+    table {
+      id
+      identifier
+      name
+      description
+      createdAt
+      
+      # 생성된 속성 타입들
+      attributeTypes {
+        id
+        name
+        dataType
+        isRequired
+        defaultValue
+        validation
+      }
+    }
+    errors {
+      message
+      code
+      field
+    }
+  }
+}
+
+# ===================================================================
+# 📋 Variables for Node Creation (노드 생성용 변수)
+# ===================================================================
+# 위 테이블 생성 후 반환된 tableId를 사용하세요:
+{
+  "tableId": "table_123",
+  "userData": {
+    "tableId": "table_123",
+    "content": "김철수 사용자 프로필",
+    "attributes": [
+      {
+        "name": "email",
+        "value": "kimcs@example.com"
+      },
+      {
+        "name": "age", 
+        "value": "28"
+      },
+      {
+        "name": "role",
+        "value": "manager"
+      }
+    ]
+  }
+}
+
+# 2. 노드 생성 - 사용자 데이터 추가
+mutation CreateUser($userData: CreateNodeInput!) {
+  createNode(input: $userData) {
+    success
+    node {
+      id
+      content
+      createdAt
+      
+      # 테이블 정보
+      table {
+        id
+        name
+        identifier
+      }
+      
+      # 생성된 속성들
+      attributes {
+        id
+        name
+        value
+        type {
+          name
+          dataType
+          validation
+        }
+      }
+    }
+    errors {
+      message
+      code
+      field
+    }
+  }
+}
+
+# 3. 여러 노드를 한번에 생성 - 대량 데이터 처리
+mutation CreateMultipleUsers($tableId: ID!) {
+  bulkCreateNodes(input: {
+    tableId: $tableId
+    nodes: [
+      {
+        content: "박영희 사용자"
+        attributes: [
+          { name: "email", value: "park@example.com" }
+          { name: "age", value: "25" }
+          { name: "role", value: "user" }
+        ]
+      }
+      {
+        content: "이민수 관리자"
+        attributes: [
+          { name: "email", value: "lee@example.com" }
+          { name: "age", value: "35" }
+          { name: "role", value: "admin" }
+        ]
+      }
+      {
+        content: "정지훈 사용자"
+        attributes: [
+          { name: "email", value: "jung@example.com" }
+          { name: "age", value: "30" }
+        ]
+      }
+    ]
+  }) {
+    success
+    createdCount
+    failedCount
+    
+    # 생성된 노드들
+    nodes {
+      id
+      content
+      attributes {
+        name
+        value
+      }
+    }
+    
+    # 개별 처리 결과
+    results {
+      success
+      nodeId
+      error {
+        message
+        code
+      }
+    }
+    
+    errors {
+      message
+      code
+    }
+  }
+}
+
+# ===================================================================
+# 📋 Variables for Relations (관계 생성용 변수)
+# ===================================================================
+# 위에서 생성된 노드 ID들을 사용하여 관계를 설정하세요:
+{
+  "sourceNodeId": "node_123",
+  "targetNodeId": "node_456",
+  "relationInput": {
+    "sourceNodeId": "node_123",
+    "targetNodeId": "node_456", 
+    "relationTypeId": "default_relation_type",
+    "strength": 0.8,
+    "confidence": 0.9,
+    "description": "관리 관계"
+  }
+}
+
+# 4. 관계 생성 - 노드들 간의 연결
+mutation CreateRelation($relationInput: CreateRelationInput!) {
+  createRelation(input: $relationInput) {
+    success
+    relation {
+      id
+      strength
+      confidence
+      description
+      createdAt
+      
+      # 관계 타입
+      type {
+        id
+        name
+        description
+      }
+      
+      # 연결된 노드들
+      sourceNode {
+        id
+        content
+        attributes {
+          name
+          value
+        }
+      }
+      targetNode {
+        id
+        content
+        attributes {
+          name
+          value
+        }
+      }
+    }
+    errors {
+      message
+      code
+      field
+    }
+  }
+}
+
+# 5. 속성이 있는 노드와 관계를 동시에 생성
+mutation CreateNodeWithRelations {
+  createNode(input: {
+    tableId: "users_table"
+    content: "홍길동 팀장"
+    attributes: [
+      { name: "email", value: "hong@example.com" }
+      { name: "age", value: "40" }
+      { name: "role", value: "manager" }
+    ]
+  }) {
+    success
+    node {
+      id
+      content
+      
+      # 생성 후 이 ID를 사용해서 관계를 생성할 수 있음
+      attributes {
+        name
+        value
+      }
+    }
+  }
+}
+
+# ===================================================================
+# 📊 Expected Success Response (성공 응답 예시)
+# ===================================================================
+# 테이블 생성 성공:
+# {
+#   "data": {
+#     "createTable": {
+#       "success": true,
+#       "table": {
+#         "id": "table_abc123",
+#         "identifier": "users_table",
+#         "name": "사용자 테이블",
+#         "description": "시스템 사용자 정보를 관리하는 테이블",
+#         "createdAt": "2025-09-06T12:00:00.000Z",
+#         "attributeTypes": [
+#           {
+#             "id": "attr_type_1",
+#             "name": "email",
+#             "dataType": "STRING",
+#             "isRequired": true,
+#             "validation": "{\"pattern\":\"^[\\\\w-\\\\.]+@([\\\\w-]+\\\\.)+[\\\\w-]{2,4}$\"}"
+#           }
+#         ]
+#       },
+#       "errors": []
+#     }
+#   }
+# }
+
+# 대량 노드 생성 성공:
+# {
+#   "data": {
+#     "bulkCreateNodes": {
+#       "success": true,
+#       "createdCount": 3,
+#       "failedCount": 0,
+#       "nodes": [
+#         {
+#           "id": "node_1",
+#           "content": "박영희 사용자",
+#           "attributes": [
+#             {"name": "email", "value": "park@example.com"}
+#           ]
+#         }
+#       ]
+#     }
+#   }
+# }
+
+# ===================================================================
+# ⚠️ Common Errors (일반적인 오류들)
+# ===================================================================
+
+# 🔴 테이블 식별자 중복:
+# {
+#   "data": {
+#     "createTable": {
+#       "success": false,
+#       "table": null,
+#       "errors": [
+#         {
+#           "message": "Table with identifier 'users_table' already exists",
+#           "code": "DUPLICATE_IDENTIFIER",
+#           "field": "identifier"
+#         }
+#       ]
+#     }
+#   }
+# }
+
+# 🔴 유효성 검증 실패:
+# {
+#   "data": {
+#     "createNode": {
+#       "success": false,
+#       "node": null,
+#       "errors": [
+#         {
+#           "message": "Email format is invalid",
+#           "code": "VALIDATION_ERROR",
+#           "field": "attributes.email"
+#         }
+#       ]
+#     }
+#   }
+# }
+
+# 🔴 필수 속성 누락:
+# {
+#   "data": {
+#     "createNode": {
+#       "success": false,
+#       "node": null,
+#       "errors": [
+#         {
+#           "message": "Required attribute 'email' is missing",
+#           "code": "REQUIRED_FIELD_MISSING", 
+#           "field": "attributes.email"
+#         }
+#       ]
+#     }
+#   }
+# }
+
+# ===================================================================
+# 🧪 Testing Workflow (테스트 워크플로우)
+# ===================================================================
+
+# 📝 단계별 실행 순서:
+# 1. CreateUserTable 실행 → table.id 값 복사
+# 2. Variables에서 tableId 업데이트
+# 3. CreateUser 실행 → node.id 값 복사
+# 4. CreateMultipleUsers 실행 → 여러 node.id 값들 복사
+# 5. Variables에서 sourceNodeId, targetNodeId 업데이트
+# 6. CreateRelation 실행 → 관계 생성 확인
+
+# 📝 검증 방법:
+# 1. queries/02-table-management.graphql로 생성된 테이블 확인
+# 2. queries/03-node-operations.graphql로 생성된 노드들 확인
+# 3. queries/04-relation-discovery.graphql로 관계 탐색 확인
+
+# ===================================================================
+# 🚀 Next Steps (다음 단계)
+# ===================================================================
+# 1. 데이터 생성 후: queries/03-node-operations.graphql로 노드 검색 테스트
+# 2. 관계 생성 후: queries/04-relation-discovery.graphql로 관계 탐색 테스트
+# 3. 템플릿 시스템: queries/05-template-queries.graphql로 템플릿 활용
+# 4. 실시간 기능: subscriptions/01-template-streaming.graphql로 스트리밍 테스트

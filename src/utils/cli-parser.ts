@@ -6,6 +6,7 @@
 
 export interface CliOptions {
   port?: number
+  wsPort?: number // WebSocket port (if different from HTTP)
   host?: string
   env?: string
   help?: boolean
@@ -57,6 +58,17 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
         break
       }
 
+      case '--ws-port':
+      case '--websocket-port': {
+        const wsPortValue = args[++i]
+        if (wsPortValue && !isNaN(Number(wsPortValue))) {
+          options.wsPort = Number(wsPortValue)
+        } else {
+          throw new Error(`Invalid WebSocket port value: ${wsPortValue}`)
+        }
+        break
+      }
+
       case '--help':
         options.help = true
         break
@@ -93,6 +105,15 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
                 options.env = value
               } else {
                 throw new Error('Environment value is required')
+              }
+              break
+
+            case '--ws-port':
+            case '--websocket-port':
+              if (value && !isNaN(Number(value))) {
+                options.wsPort = Number(value)
+              } else {
+                throw new Error(`Invalid WebSocket port value: ${value}`)
               }
               break
 

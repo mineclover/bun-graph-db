@@ -1,0 +1,207 @@
+# ===================================================================
+# 🗂️ Table Management - 테이블 관리 기본 연산
+# ===================================================================
+# 목적: 테이블 생성, 조회, 관리 기능을 테스트합니다.
+# 난이도: ⭐⭐ (기본)
+# 의존성: 01-basic-health.graphql 실행 권장
+# ===================================================================
+
+# 1. 모든 테이블 조회 - 현재 시스템의 테이블 목록
+query GetAllTables {
+  tables {
+    id
+    identifier
+    name
+    description
+    createdAt
+    updatedAt
+    nodeCount
+    relationCount
+    
+    # 속성 타입들
+    attributeTypes {
+      id
+      name
+      dataType
+      isRequired
+    }
+  }
+}
+
+# ===================================================================
+# 📋 Variables for Table Queries (테이블 쿼리용 변수)
+# ===================================================================
+# Playground 하단 Variables 섹션에 붙여넣으세요:
+{
+  "tableId": "table_123",
+  "page": 0,
+  "limit": 10
+}
+
+# 2. 페이지네이션이 적용된 테이블 조회
+query GetTablesPaginated($page: Int!, $limit: Int!) {
+  tables(
+    pagination: {
+      offset: $page
+      limit: $limit
+    }
+    sort: [
+      { field: "createdAt", direction: DESC }
+    ]
+  ) {
+    id
+    identifier
+    name
+    nodeCount
+    createdAt
+    
+    # 최근 생성된 노드 미리보기
+    nodes(limit: 3) {
+      id
+      content
+      createdAt
+    }
+  }
+}
+
+# 3. 단일 테이블 상세 조회 - 특정 테이블의 모든 정보
+query GetTableDetail($tableId: ID!) {
+  table(id: $tableId) {
+    id
+    identifier
+    name
+    description
+    createdAt
+    updatedAt
+    
+    # 통계 정보
+    nodeCount
+    relationCount
+    
+    # 속성 타입 정보
+    attributeTypes {
+      id
+      name
+      description
+      dataType        # STRING, NUMBER, BOOLEAN, DATE, JSON
+      isRequired
+      defaultValue
+      validation      # JSON 형태의 검증 규칙
+      usageCount      # 실제 사용 횟수
+    }
+    
+    # 최근 노드들 (5개)
+    nodes(limit: 5) {
+      id
+      content
+      createdAt
+      
+      # 속성들
+      attributes {
+        name
+        value
+        type {
+          name
+          dataType
+        }
+      }
+    }
+  }
+}
+
+# ===================================================================
+# 📊 Expected Response Examples (예상 응답 예시)
+# ===================================================================
+
+# 🟢 성공적인 테이블 목록 응답:
+# {
+#   "data": {
+#     "tables": [
+#       {
+#         "id": "table_users",
+#         "identifier": "users_table",
+#         "name": "사용자 테이블",
+#         "description": "시스템 사용자 정보 관리",
+#         "createdAt": "2025-09-06T10:00:00.000Z",
+#         "updatedAt": "2025-09-06T12:00:00.000Z",
+#         "nodeCount": 1247,
+#         "relationCount": 3456,
+#         "attributeTypes": [
+#           {
+#             "id": "attr_type_email",
+#             "name": "email",
+#             "dataType": "STRING",
+#             "isRequired": true
+#           },
+#           {
+#             "id": "attr_type_age", 
+#             "name": "age",
+#             "dataType": "NUMBER",
+#             "isRequired": false
+#           }
+#         ]
+#       }
+#     ]
+#   }
+# }
+
+# 🔴 테이블이 없는 경우 응답:
+# {
+#   "data": {
+#     "tables": []
+#   }
+# }
+
+# ❌ 잘못된 테이블 ID로 조회시:
+# {
+#   "data": {
+#     "table": null
+#   },
+#   "errors": [
+#     {
+#       "message": "Table not found with id: invalid_table_id",
+#       "locations": [{"line": 2, "column": 3}],
+#       "path": ["table"]
+#     }
+#   ]
+# }
+
+# ===================================================================
+# 🔍 Testing Scenarios (테스트 시나리오)
+# ===================================================================
+
+# 📝 시나리오 1: 빈 시스템 테스트
+# 1. GetAllTables 실행 → 빈 배열 확인
+# 2. 존재하지 않는 ID로 GetTableDetail 실행 → null 응답 확인
+
+# 📝 시나리오 2: 데이터가 있는 시스템 테스트  
+# 1. GetAllTables 실행 → 테이블 목록 확인
+# 2. 첫 번째 테이블 ID로 GetTableDetail 실행 → 상세 정보 확인
+# 3. 페이지네이션 테스트 (limit: 2로 설정)
+
+# 📝 시나리오 3: 성능 테스트
+# 1. 큰 limit 값으로 조회 (예: 1000) → 응답 시간 측정
+# 2. 복잡한 중첩 쿼리로 테이블 상세 조회 → 성능 확인
+
+# ===================================================================
+# 🛠️ Troubleshooting Guide (문제해결 가이드)
+# ===================================================================
+
+# ❌ "Cannot query field" 오류
+# → 스키마가 최신인지 확인: Docs 탭에서 최신 스키마 확인
+
+# ❌ 빈 결과가 계속 나올 때
+# → mutations/01-create-data.graphql로 테스트 데이터 생성 후 재시도
+
+# ❌ 성능이 느릴 때
+# → 불필요한 필드 제거, 페이지네이션 적용, limit 값 조정
+
+# ❌ Variables 오류
+# → Variables JSON 형식 확인, 타입 일치 확인 (ID는 문자열)
+
+# ===================================================================
+# 🚀 Next Steps (다음 단계)
+# ===================================================================
+# 1. 테이블 데이터를 생성하려면: mutations/01-create-data.graphql
+# 2. 노드 검색을 시도하려면: queries/03-node-operations.graphql  
+# 3. 관계 탐색을 해보려면: queries/04-relation-discovery.graphql

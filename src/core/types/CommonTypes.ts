@@ -77,6 +77,7 @@ export interface DatabaseConfig {
 
 export interface GraphQLConfig {
   port: number
+  websocketPort?: number // Explicit WebSocket port (defaults to same as HTTP)
   endpoint?: string
   playground?: boolean
   cors?: boolean | {
