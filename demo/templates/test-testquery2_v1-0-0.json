@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T01:43:08.149Z",
+  "template": {
+    "identifier": "test-testquery2",
+    "name": "TestQuery2",
+    "description": null,
+    "query": "query TestQuery2 { test }",
+    "queryName": "TestQuery2",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 1,
+    "version": "1.0.0",
+    "tags": [
+      "test"
+    ],
+    "statistics": {
+      "usageCount": 39,
+      "avgExecutionTimeMs": 209,
+      "lastUsedAt": "2025-09-05T16:43:08.000Z"
+    }
+  }
+}

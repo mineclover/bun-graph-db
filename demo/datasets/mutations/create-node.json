@@ -1,0 +1,37 @@
+{
+  "name": "Create Node Dataset",
+  "description": "Execute node creation with required input parameters",
+  "domain": "node_management",
+  "category": "mutations",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-create-node",
+    "variables": {
+      "input": {
+        "tableId": "1",
+        "content": "Demo node created via dataset testing",
+        "title": "Demo Node",
+        "description": "A test node created through the dataset testing system"
+      }
+    }
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "createNode": {
+        "id": "string",
+        "content": "string",
+        "title": "string",
+        "description": "string",
+        "tableId": "string",
+        "createdAt": "string"
+      }
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}

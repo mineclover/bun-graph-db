@@ -1,0 +1,31 @@
+{
+  "name": "List Tables with Pagination Dataset",
+  "description": "Execute table listing with pagination variables",
+  "domain": "table_management",
+  "category": "advanced",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-list-tables",
+    "variables": {
+      "first": 10,
+      "after": null
+    }
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "tables": {
+        "nodes": "array",
+        "totalCount": "number",
+        "hasNextPage": "boolean",
+        "hasPreviousPage": "boolean"
+      }
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}

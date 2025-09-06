@@ -1,0 +1,33 @@
+{
+  "name": "Get Table by ID Dataset",
+  "description": "Execute table lookup by ID using existing template",
+  "domain": "table_management",
+  "category": "advanced",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-get-table",
+    "variables": {
+      "tableId": "1"
+    }
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "table": {
+        "id": "string",
+        "identifier": "string",
+        "description": "string",
+        "nodeCount": "number",
+        "attributeCount": "number",
+        "createdAt": "string",
+        "updatedAt": "string"
+      }
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "Create Table Dataset",
+  "description": "Execute table creation with required input parameters",
+  "domain": "table_management",
+  "category": "mutations",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-create-table",
+    "variables": {
+      "input": {
+        "identifier": "demo-table",
+        "description": "Demo table created via dataset testing"
+      }
+    }
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "createTable": {
+        "id": "string",
+        "identifier": "string",
+        "description": "string",
+        "createdAt": "string"
+      }
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}

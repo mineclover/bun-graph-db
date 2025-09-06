@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T01:43:08.505Z",
+  "template": {
+    "identifier": "test-testmutation1",
+    "name": "TestMutation1",
+    "description": null,
+    "query": "mutation TestMutation1 { test }",
+    "queryName": "TestMutation1",
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 1,
+    "version": "1.0.0",
+    "tags": [
+      "test"
+    ],
+    "statistics": {
+      "usageCount": 75,
+      "avgExecutionTimeMs": 370,
+      "lastUsedAt": "2025-09-05T16:43:08.000Z"
+    }
+  }
+}

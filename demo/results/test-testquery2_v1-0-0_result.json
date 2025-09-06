@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:43:08.150Z",
+  "templateFilename": "test-testquery2_v1-0-0.json",
+  "dataset": {
+    "name": "Test Query 2 Dataset",
+    "description": "Execute basic test query without variables",
+    "domain": "testing",
+    "category": "basic",
+    "templateIdentifier": "test-testquery2",
+    "variables": null
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:43:08.150Z",
+    "executionTimeMs": 13,
+    "executionTimeFormatted": "13ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "query TestQuery2 { test }",
+      "processedVariables": {},
+      "metadata": {
+        "templateId": "45",
+        "templateName": "TestQuery2",
+        "complexityScore": 1,
+        "estimatedTokens": 7,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 182,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}

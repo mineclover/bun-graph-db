@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:29:52.777Z",
+  "executedAt": "2025-09-06T01:43:07.996Z",
   "templateFilename": "test-search-nodes_v1-0-0.json",
   "dataset": {
     "name": "Search Nodes Dataset",
@@ -15,9 +15,9 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:29:52.777Z",
-    "executionTimeMs": 15,
-    "executionTimeFormatted": "15ms"
+    "timestamp": "2025-09-06T01:43:07.996Z",
+    "executionTimeMs": 12,
+    "executionTimeFormatted": "12ms"
   },
   "result": {
     "data": {

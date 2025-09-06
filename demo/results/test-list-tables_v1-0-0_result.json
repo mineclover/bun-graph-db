@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:43:07.927Z",
+  "templateFilename": "test-list-tables_v1-0-0.json",
+  "dataset": {
+    "name": "List Tables Dataset",
+    "description": "Execute table listing using existing template",
+    "domain": "table_management",
+    "category": "basic",
+    "templateIdentifier": "test-list-tables",
+    "variables": null
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:43:07.927Z",
+    "executionTimeMs": 12,
+    "executionTimeFormatted": "12ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "query ListTables($first: Int, $after: String) {\n  tables(first: $first, after: $after) {\n    nodes {\n      id\n      identifier\n      description\n      nodeCount\n    }\n    totalCount\n    hasNextPage\n    hasPreviousPage\n  }\n}\n",
+      "processedVariables": {},
+      "metadata": {
+        "templateId": "18",
+        "templateName": "List All Tables",
+        "complexityScore": 1,
+        "estimatedTokens": 56,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 400,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:43:08.375Z",
+  "templateFilename": "test-create-table_v1-0-0.json",
+  "dataset": {
+    "name": "Create Table Dataset",
+    "description": "Execute table creation with required input parameters",
+    "domain": "table_management",
+    "category": "mutations",
+    "templateIdentifier": "test-create-table",
+    "variables": {
+      "input": {
+        "identifier": "demo-table",
+        "description": "Demo table created via dataset testing"
+      }
+    }
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:43:08.375Z",
+    "executionTimeMs": 49,
+    "executionTimeFormatted": "49ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "mutation CreateTable($input: CreateTableInput!) {\n  createTable(input: $input) {\n    id\n    identifier\n    description\n    createdAt\n  }\n}\n",
+      "processedVariables": {
+        "input": {
+          "identifier": "demo-table",
+          "description": "Demo table created via dataset testing"
+        }
+      },
+      "metadata": {
+        "templateId": "19",
+        "templateName": "Create New Table",
+        "complexityScore": 1,
+        "estimatedTokens": 35,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 401,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}

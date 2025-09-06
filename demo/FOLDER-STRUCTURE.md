@@ -122,18 +122,28 @@ SERVER_URL=http://localhost:3000/graphql bun run demo:test-dataset basic/health-
 find demo/datasets/basic -name "*.json" | xargs -I {} bun run demo:test-dataset {}
 ```
 
-## 📁 카테고리별 데이터셋
+## 📁 카테고리별 데이터셋 (총 15개)
 
-### basic/
-- `health-check.json`: 서버 상태 확인 (변수 없음)
-- `list-tables.json`: 테이블 목록 조회
-- `search-nodes.json`: 노드 검색 (필터, 리미트 변수)
+### basic/ (6개)
+- `health-check.json`: 시스템 상태 확인 (변수 없음) → `test-health-check`
+- `list-tables.json`: 테이블 목록 조회 (변수 없음) → `test-list-tables`  
+- `search-nodes.json`: 노드 검색 (필터, 리미트 변수) → `test-search-nodes`
+- `test-query1.json`: 기본 테스트 쿼리 1 (변수 없음) → `test-testquery1`
+- `test-query2.json`: 기본 테스트 쿼리 2 (변수 없음) → `test-testquery2`
 
-### advanced/
-- `get-table-by-name.json`: 테이블명으로 조회 (name 변수)
-- `get-node-by-id.json`: ID로 노드 조회 (id 변수)
+### advanced/ (5개)
+- `get-node-by-id.json`: ID로 노드 조회 (nodeId 변수) → `test-get-node`
+- `get-table-by-id-alt.json`: ID로 테이블 조회 (tableId 변수) → `test-get-table`
+- `get-table-by-id.json`: ID로 테이블 조회 (tableId 변수) → `test-get-table`
+- `list-tables-with-pagination.json`: 페이지네이션으로 테이블 목록 (first, after 변수) → `test-list-tables`
+- `search-nodes-with-table.json`: 테이블별 노드 검색 (tableId, filter 변수) → `test-search-nodes`
 
-### edge-cases/
+### mutations/ (3개)
+- `create-node.json`: 노드 생성 (input 변수) → `test-create-node`
+- `create-table.json`: 테이블 생성 (input 변수) → `test-create-table`
+- `test-mutation1.json`: 기본 테스트 뮤테이션 (변수 없음) → `test-testmutation1`
+
+### edge-cases/ (2개)
 - `invalid-query.json`: 존재하지 않는 템플릿 (에러 테스트)
 - `malformed-query.json`: 구문 오류 템플릿 (에러 테스트)
 

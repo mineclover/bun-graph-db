@@ -7,7 +7,7 @@
   "templateExecution": {
     "templateIdentifier": "test-get-table",
     "variables": {
-      "name": "sample_table"
+      "tableId": "1"
     }
   },
   

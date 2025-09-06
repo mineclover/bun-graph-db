@@ -1,0 +1,59 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:43:08.291Z",
+  "templateFilename": "test-create-node_v1-0-0.json",
+  "dataset": {
+    "name": "Create Node Dataset",
+    "description": "Execute node creation with required input parameters",
+    "domain": "node_management",
+    "category": "mutations",
+    "templateIdentifier": "test-create-node",
+    "variables": {
+      "input": {
+        "tableId": "1",
+        "content": "Demo node created via dataset testing",
+        "title": "Demo Node",
+        "description": "A test node created through the dataset testing system"
+      }
+    }
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:43:08.291Z",
+    "executionTimeMs": 12,
+    "executionTimeFormatted": "12ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "mutation CreateNode($input: CreateNodeInput!) {\n  createNode(input: $input) {\n    id\n    content\n    title\n    description\n    tableId\n    createdAt\n  }\n}\n",
+      "processedVariables": {
+        "input": {
+          "tableId": "1",
+          "content": "Demo node created via dataset testing",
+          "title": "Demo Node",
+          "description": "A test node created through the dataset testing system"
+        }
+      },
+      "metadata": {
+        "templateId": "21",
+        "templateName": "Create New Node",
+        "complexityScore": 1,
+        "estimatedTokens": 39,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 492,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}

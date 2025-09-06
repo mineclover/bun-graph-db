@@ -1,0 +1,23 @@
+{
+  "name": "Test Query 1 Dataset",
+  "description": "Execute basic test query without variables",
+  "domain": "testing",
+  "category": "basic",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-testquery1",
+    "variables": null
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "test": "string"
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}
