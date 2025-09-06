@@ -109,20 +109,18 @@ export class GraphQLClient {
     return this.request({
       query: `
         query GetAllTemplates($limit: Int) {
-          templates(limit: $limit) {
-            id
-            identifier
-            name
-            description
-            queryName
-            operationType
-            complexityScore
-            usageCount
-            avgExecutionTimeMs
-            tags
-            isActive
-            createdAt
-            updatedAt
+          searchTemplates(pagination: { limit: $limit }) {
+            nodes {
+              id
+              identifier
+              name
+              description
+              usageCount
+              isActive
+              createdAt
+              updatedAt
+            }
+            totalCount
           }
         }
       `,
@@ -184,34 +182,39 @@ export class GraphQLClient {
     })
   }
 
-  async searchTemplates(criteria: {
-    queryName?: string
-    operationType?: string
-    tags?: string[]
+  async searchTemplates(filter: {
+    search?: string
+    isActive?: boolean
+    createdBy?: string
+    createdAfter?: string
+    createdBefore?: string
     limit?: number
   }) {
     return this.request({
       query: `
-        query SearchTemplates($criteria: SearchCriteria!) {
-          searchTemplates(criteria: $criteria) {
-            items {
+        query SearchTemplates($filter: QueryTemplatesFilter, $pagination: PaginationInput) {
+          searchTemplates(filter: $filter, pagination: $pagination) {
+            nodes {
               id
               identifier
               name
-              queryName
-              operationType
-              complexityScore
+              description
+              isActive
               usageCount
-              avgExecutionTimeMs
-              tags
+              createdBy
+              createdAt
+              updatedAt
             }
-            total
+            totalCount
             hasNextPage
             hasPreviousPage
           }
         }
       `,
-      variables: { criteria },
+      variables: { 
+        filter,
+        pagination: { limit: filter.limit || 10 }
+      },
     })
   }
 
@@ -220,14 +223,17 @@ export class GraphQLClient {
     return this.request({
       query: `
         query GetPerformanceStats {
-          templates(orderBy: "avgExecutionTimeMs", orderDirection: "DESC", limit: 10) {
-            id
-            name
-            queryName
-            operationType
-            usageCount
-            avgExecutionTimeMs
-            complexityScore
+          searchTemplates(pagination: { limit: 10 }) {
+            nodes {
+              id
+              name
+              identifier
+              usageCount
+              createdAt
+              updatedAt
+              isActive
+            }
+            totalCount
           }
         }
       `,

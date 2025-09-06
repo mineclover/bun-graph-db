@@ -1,0 +1,48 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T08:05:29.686Z",
+  "template": {
+    "identifier": "create-table",
+    "name": "Create Table",
+    "description": "Create a new table with identifier and description",
+    "query": "mutation CreateTable($input: CreateTableInput\\!) { createTable(input: $input) { table { id identifier description } errors { message } } }",
+    "queryName": null,
+    "operationType": "query",
+    "variables": {
+      "input": "example_table"
+    },
+    "variablesSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9_-]+$",
+          "minLength": 3,
+          "maxLength": 50,
+          "description": "Table identifier (alphanumeric, underscore, dash)"
+        }
+      },
+      "required": [
+        "input"
+      ]
+    },
+    "defaultVariables": {
+      "input": "example_table"
+    },
+    "applicableTables": null,
+    "complexityScore": 1,
+    "version": "1.0.0",
+    "tags": [
+      "table-creation",
+      "mutation",
+      "basic-operations",
+      "demo"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 9,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

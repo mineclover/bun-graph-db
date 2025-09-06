@@ -15,6 +15,13 @@ extend type Subscription {
   relationCreated(tableId: ID): NodeRelation!
   relationDeleted(tableId: ID): NodeRelation!
 
+  # Template execution subscriptions
+  executeTemplateStream(
+    templateIdentifier: String!
+    variables: JSON
+    trackUsage: Boolean = true
+  ): TemplateExecutionStream!
+
   # System subscriptions
   systemHealthChanged: SystemHealth!
   performanceAlert: PerformanceMetrics!
@@ -32,4 +39,30 @@ type NodeDeletedEvent {
   tableId: ID!
   content: String!
   deletedAt: DateTime!
+}
+
+# Template execution stream types
+type TemplateExecutionStream {
+  status: ExecutionStatus!
+  data: JSON
+  progress: Float
+  metadata: TemplateExecutionMetadata!
+  timestamp: DateTime!
+  error: String
+}
+
+enum ExecutionStatus {
+  STARTING
+  IN_PROGRESS
+  COMPLETED
+  ERROR
+}
+
+type TemplateExecutionMetadata {
+  templateId: ID!
+  templateName: String!
+  complexityScore: Int!
+  estimatedTokens: Int
+  version: String!
+  executionTime: Int!
 }

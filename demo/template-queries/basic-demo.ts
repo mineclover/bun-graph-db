@@ -30,14 +30,14 @@ export async function runBasicDemo(client: GraphQLClient): Promise<string> {
     if (templatesResponse.errors) {
       results.push(`❌ Error fetching templates: ${templatesResponse.errors[0]?.message}`)
     } else {
-      const templates = templatesResponse.data?.templates || []
+      const templates = templatesResponse.data?.searchTemplates?.nodes || []
       results.push(`📋 Found ${templates.length} templates`)
       
       templates.forEach((template: any, index: number) => {
         results.push(`${index + 1}. ${template.name} (${template.identifier})`)
-        results.push(`   Type: ${template.operationType || 'unknown'}`)
+        results.push(`   Active: ${template.isActive || false}`)
         results.push(`   Usage: ${template.usageCount || 0} times`)
-        results.push(`   Avg Time: ${template.avgExecutionTimeMs || 0}ms`)
+        results.push(`   Created: ${template.createdAt}`)
       })
     }
   } catch (error) {
@@ -57,21 +57,20 @@ export async function runBasicDemo(client: GraphQLClient): Promise<string> {
     const createResponse = await client.createTemplate({
       identifier: demoTemplate.identifier,
       name: demoTemplate.name,
-      query: demoTemplate.query, // Fix property name
-      tags: demoTemplate.tags,
+      query: demoTemplate.query,
       description: demoTemplate.description,
-      variables: demoTemplate.variables, // Fix property name
+      variables: demoTemplate.defaultVariables,
     })
     
     if (createResponse.errors) {
       results.push(`❌ Template creation failed: ${createResponse.errors[0]?.message}`)
     } else {
-      const template = createResponse.data?.createTemplate
+      const template = createResponse.data?.createTemplate?.template
       results.push(`✅ Template created successfully`)
       results.push(`   ID: ${template?.id}`)
-      results.push(`   Query Name: ${template?.queryName || 'anonymous'}`)
-      results.push(`   Operation: ${template?.operationType}`)
-      results.push(`   Complexity: ${template?.complexityScore}`)
+      results.push(`   Name: ${template?.name}`)
+      results.push(`   Identifier: ${template?.identifier}`)
+      results.push(`   Active: ${template?.isActive}`)
     }
   } catch (error) {
     results.push(`❌ Template creation error: ${error}`)
@@ -81,7 +80,7 @@ export async function runBasicDemo(client: GraphQLClient): Promise<string> {
   results.push('\n=== Template Search ===')
   try {
     const searchResponse = await client.searchTemplates({
-      tags: ['demo'],
+      search: 'demo',
       limit: 5,
     })
     
@@ -89,11 +88,11 @@ export async function runBasicDemo(client: GraphQLClient): Promise<string> {
       results.push(`❌ Search failed: ${searchResponse.errors[0]?.message}`)
     } else {
       const searchResult = searchResponse.data?.searchTemplates
-      results.push(`🔍 Search Results: ${searchResult?.items?.length || 0} templates found`)
-      results.push(`   Total: ${searchResult?.total || 0}`)
+      results.push(`🔍 Search Results: ${searchResult?.nodes?.length || 0} templates found`)
+      results.push(`   Total: ${searchResult?.totalCount || 0}`)
       results.push(`   Has Next: ${searchResult?.hasNextPage || false}`)
       
-      searchResult?.items?.forEach((template: any, index: number) => {
+      searchResult?.nodes?.forEach((template: any, index: number) => {
         results.push(`${index + 1}. ${template.name} (${template.identifier})`)
       })
     }
@@ -109,14 +108,14 @@ export async function runBasicDemo(client: GraphQLClient): Promise<string> {
     if (statsResponse.errors) {
       results.push(`❌ Stats failed: ${statsResponse.errors[0]?.message}`)
     } else {
-      const templates = statsResponse.data?.templates || []
-      results.push(`📊 Top Performance Templates:`)
+      const templates = statsResponse.data?.searchTemplates?.nodes || []
+      results.push(`📊 Top Templates:`)
       
       templates.slice(0, 3).forEach((template: any, index: number) => {
         results.push(`${index + 1}. ${template.name}`)
         results.push(`   Usage: ${template.usageCount} times`)
-        results.push(`   Avg Time: ${template.avgExecutionTimeMs}ms`)
-        results.push(`   Complexity: ${template.complexityScore}`)
+        results.push(`   Identifier: ${template.identifier}`)
+        results.push(`   Active: ${template.isActive}`)
       })
     }
   } catch (error) {

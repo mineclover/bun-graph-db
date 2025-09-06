@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T06:25:54.773Z",
+  "template": {
+    "identifier": "list-templates-v1-1757139954739",
+    "name": "List Templates",
+    "description": "모든 템플릿 목록을 조회하는 템플릿 (v1.0)",
+    "query": "query ListTemplates($limit: Int = 10) { searchTemplates(first: $limit) { nodes { id identifier name isActive } totalCount } }",
+    "queryName": "ListTemplates",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

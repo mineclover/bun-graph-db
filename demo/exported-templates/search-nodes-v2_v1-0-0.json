@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T06:25:54.774Z",
+  "template": {
+    "identifier": "search-nodes-v2-1757139954739",
+    "name": "Search Nodes Template",
+    "description": "노드를 검색하는 복잡한 템플릿 (v2.0 - 향상된 필터링)",
+    "query": "query SearchNodes($filter: String, $limit: Int = 5) { searchNodes(filter: $filter, limit: $limit) { nodes { id content } totalFound } }",
+    "queryName": "SearchNodes",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

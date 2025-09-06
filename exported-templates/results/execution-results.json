@@ -1,0 +1,86 @@
+{
+  "executionSession": {
+    "sessionId": "template-demo-20250906",
+    "executedAt": "2025-09-06T08:05:29.687Z",
+    "totalTemplatesExecuted": 2,
+    "successfulExecutions": 2,
+    "failedExecutions": 0
+  },
+  "templateExecutions": [
+    {
+      "templateId": "12",
+      "templateIdentifier": "create-table",
+      "templateName": "Create Table (Enhanced Demo)",
+      "operationType": "mutation",
+      "executionStatus": "SUCCESS",
+      "executedAt": "2025-09-06T08:05:29.686Z",
+      "executionTimeMs": 1,
+      "inputVariables": {
+        "input": "demo_table_1757145929685"
+      },
+      "executionResult": {
+        "success": true,
+        "errors": [],
+        "table": {
+          "id": "52",
+          "identifier": "demo_table_1757145929685",
+          "description": null,
+          "createdAt": "2025-09-06T08:05:29.685Z",
+          "updatedAt": "2025-09-06T08:05:29.685Z",
+          "tableNodeCount": 0,
+          "attributeCount": 0
+        }
+      },
+      "validationPassed": true
+    },
+    {
+      "templateIdentifier": "get-table-enhanced-demo",
+      "templateName": "Get Table (Enhanced Demo)",
+      "operationType": "query",
+      "executionStatus": "SUCCESS",
+      "executedAt": "2025-09-06T08:05:29.686Z",
+      "executionTimeMs": 0,
+      "inputVariables": {
+        "identifier": "demo_table_1757145929685"
+      },
+      "executionResult": {
+        "tableByIdentifier": {
+          "id": "52",
+          "identifier": "demo_table_1757145929685",
+          "description": null,
+          "createdAt": "2025-09-06T08:05:29.685Z",
+          "updatedAt": "2025-09-06T08:05:29.685Z",
+          "tableNodeCount": 0,
+          "attributeCount": 0
+        }
+      },
+      "validationPassed": true
+    }
+  ],
+  "datasetInfo": {
+    "tablesCreated": 1,
+    "nodesCreated": 0,
+    "attributesCreated": 0,
+    "relationsCreated": 0,
+    "createdResources": [
+      {
+        "type": "table",
+        "id": "52",
+        "identifier": "demo_table_1757145929685",
+        "createdAt": "2025-09-06T08:05:29.685Z",
+        "metadata": {
+          "templateIdentifier": "create-table",
+          "templateId": "12",
+          "purpose": "automated-demo"
+        }
+      }
+    ]
+  },
+  "performanceMetrics": {
+    "averageExecutionTime": 0.5,
+    "totalExecutionTime": 1,
+    "templatesPerSecond": 2000,
+    "memoryUsage": "moderate",
+    "serverResponseTime": "excellent"
+  }
+}

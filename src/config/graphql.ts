@@ -13,7 +13,6 @@ export function createGraphQLConfig(cliOptions?: CliOptions): GraphQLConfig {
     cors: {
       origin: process.env.CORS_ORIGIN?.split(',') || [
         'http://localhost:3000',
-        `http://localhost:${port}`,
       ],
       credentials: true,
     },

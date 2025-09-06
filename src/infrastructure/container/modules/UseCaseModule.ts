@@ -5,6 +5,7 @@ import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImport
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
+import { ExecuteTemplateWithSubscriptionUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithSubscriptionUseCase.js'
 import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
@@ -312,5 +313,22 @@ export function registerUseCaseModule(container: DIContainer): void {
       return new ExecuteQueryTemplateUseCase(queryTemplateRepository, simpleLogger)
     },
     [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY]
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.EXECUTE_TEMPLATE_WITH_SUBSCRIPTION_USE_CASE,
+    async (c) => {
+      const executeQueryTemplateUseCase = await c.resolve(UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE) as any
+      const graphqlSchema = await c.resolve(CommonTokens.GRAPHQL_SCHEMA) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new ExecuteTemplateWithSubscriptionUseCase(executeQueryTemplateUseCase, graphqlSchema, simpleLogger)
+    },
+    [UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE, CommonTokens.GRAPHQL_SCHEMA]
   )
 }

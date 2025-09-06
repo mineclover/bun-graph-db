@@ -9,7 +9,7 @@ export const demoTemplates = [
     identifier: 'demo-get-user',
     name: 'Get User by ID',
     description: 'Retrieve a single user by their unique identifier',
-    queryText: `
+    query: `
       query GetUser($userId: ID!) {
         node(id: $userId) {
           id
@@ -45,7 +45,7 @@ export const demoTemplates = [
     identifier: 'demo-list-users',
     name: 'List Users with Pagination',
     description: 'Get a paginated list of users with filtering options',
-    queryText: `
+    query: `
       query ListUsers($filter: NodesFilter, $limit: Int, $offset: Int) {
         nodes(filter: $filter, limit: $limit, offset: $offset) {
           items {
@@ -93,7 +93,7 @@ export const demoTemplates = [
     identifier: 'demo-create-user',
     name: 'Create New User',
     description: 'Create a new user account with profile information',
-    queryText: `
+    query: `
       mutation CreateUser($input: CreateUserInput!) {
         createUser(input: $input) {
           success
@@ -147,7 +147,7 @@ export const demoTemplates = [
     identifier: 'demo-complex-search',
     name: 'Complex Search Query',
     description: 'Advanced search with multiple criteria and relations',
-    queryText: `
+    query: `
       query ComplexSearch($searchQuery: SearchInput!) {
         search(input: $searchQuery) {
           results {
@@ -215,7 +215,7 @@ export const demoTemplates = [
     identifier: 'demo-health-check',
     name: 'System Health Check',
     description: 'Check system health and status information',
-    queryText: `
+    query: `
       query HealthCheck {
         health {
           status
@@ -238,7 +238,7 @@ export const demoTemplates = [
     identifier: 'demo-performance-test',
     name: 'Performance Test Query',
     description: 'Query designed to measure system performance',
-    queryText: `
+    query: `
       query PerformanceTest($complexity: Int) {
         nodes(limit: $complexity) {
           items {
@@ -291,7 +291,7 @@ export function generatePerformanceTemplates(count: number = 50) {
       identifier: `perf-test-${i.toString().padStart(3, '0')}`,
       name: `Performance Test ${i}`,
       description: `Auto-generated performance test template #${i}`,
-      queryText: `
+      query: `
         query PerfTest${i}($id: ID!, $limit: Int) {
           node(id: $id) {
             id
