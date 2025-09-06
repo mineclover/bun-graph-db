@@ -1,4 +1,4 @@
-import { buildSchema, getIntrospectionQuery, graphqlSync, OperationDefinitionNode, parse } from 'graphql'
+import { buildSchema, getIntrospectionQuery, graphqlSync, parse, type OperationDefinitionNode } from 'graphql'
 
 export interface GraphQLOperationInfo {
   queryName: string | null

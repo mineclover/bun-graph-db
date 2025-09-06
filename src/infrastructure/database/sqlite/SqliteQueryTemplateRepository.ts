@@ -18,7 +18,6 @@ interface QueryTemplateRow {
   variables_schema: string | null
   default_variables: string | null
   applicable_tables: string | null
-  template_type: string // Legacy field
   complexity_score: number | null
   usage_count: number | null
   last_used_at: string | null
@@ -52,11 +51,11 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.description,
         row.query_text,
         row.query_name,
-        row.operation_type,
+        row.operation_type || 'query',
         row.variables_schema,
         row.default_variables,
         row.applicable_tables,
-        row.template_type,
+        row.operation_type || 'query', // Pass operation_type as templateType for compatibility
         row.complexity_score || 0,
         row.usage_count || 0,
         row.last_used_at,
@@ -89,11 +88,11 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.description,
         row.query_text,
         row.query_name,
-        row.operation_type,
+        row.operation_type || 'query',
         row.variables_schema,
         row.default_variables,
         row.applicable_tables,
-        row.template_type,
+        row.operation_type || 'query', // Pass operation_type as templateType for compatibility
         row.complexity_score || 0,
         row.usage_count || 0,
         row.last_used_at,
@@ -126,9 +125,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         params.push(criteria.isActive ? 1 : 0)
       }
 
-      // Template type filter
+      // Operation type filter (legacy templateType support)
       if (criteria.templateType) {
-        query += ` AND template_type = ?`
+        query += ` AND operation_type = ?`
         params.push(criteria.templateType)
       }
 
@@ -187,12 +186,16 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           row.name,
           row.description,
           row.query_text,
+          row.query_name,
+          row.operation_type || 'query',
           row.variables_schema,
           row.default_variables,
           row.applicable_tables,
-          row.template_type,
+          row.operation_type || 'query', // Pass operation_type as templateType for compatibility
           row.complexity_score || 0,
           row.usage_count || 0,
+          row.last_used_at,
+          row.avg_execution_time_ms,
           row.version || '1.0',
           Boolean(row.is_active),
           row.tags,
@@ -221,9 +224,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         INSERT INTO templates (
           identifier, name, description, query_text, query_name, operation_type,
           variables_schema, default_variables, applicable_tables,
-          template_type, complexity_score, usage_count, last_used_at, avg_execution_time_ms,
+          complexity_score, usage_count, last_used_at, avg_execution_time_ms,
           version, is_active, tags
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
       const result = this.db.run(query, [
         data.identifier,
@@ -235,7 +238,6 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.variables_schema,
         data.default_variables,
         data.applicable_tables,
-        data.template_type,
         data.complexity_score,
         data.usage_count,
         data.last_used_at,
@@ -257,7 +259,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.variables_schema,
         data.default_variables,
         data.applicable_tables,
-        data.template_type,
+        data.operation_type || 'query', // Pass operation_type as templateType for compatibility
         data.complexity_score,
         data.usage_count,
         data.last_used_at,
@@ -293,7 +295,6 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           variables_schema = ?,
           default_variables = ?,
           applicable_tables = ?,
-          template_type = ?,
           complexity_score = ?,
           usage_count = ?,
           last_used_at = ?,
@@ -314,7 +315,6 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.variables_schema,
         data.default_variables,
         data.applicable_tables,
-        data.template_type,
         data.complexity_score,
         data.usage_count,
         data.last_used_at,
@@ -409,11 +409,11 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
           row.description,
           row.query_text,
           row.query_name,
-          row.operation_type,
+          row.operation_type || 'query',
           row.variables_schema,
           row.default_variables,
           row.applicable_tables,
-          row.template_type,
+          row.operation_type || 'query', // Pass operation_type as templateType for compatibility
           row.complexity_score || 0,
           row.usage_count || 0,
           row.last_used_at,

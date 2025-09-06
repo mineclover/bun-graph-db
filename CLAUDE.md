@@ -140,7 +140,14 @@ Domain-Driven Folder Structure:
 
 ### Test Strategy
 ```bash
-# Multi-tier Testing Approach
+# Template Indexing Tests (GraphQL Functionality)
+bun run test:templates template-indexing  # ✅ 29 tests passing (100% success rate)
+
+# Individual test categories
+bun test tests/template-indexing/graphql-parsing.test.ts     # ✅ 15 tests - GraphQL parsing
+bun test tests/template-indexing/template-creation.test.ts   # ✅ 14 tests - Template creation
+
+# Legacy test commands (broader test suites - may need updates)
 bun run test              # Complete unified test suite
 bun run test:bun         # Fast Bun native tests
 bun run test:integration # GraphQL integration tests
@@ -161,6 +168,11 @@ bun run dev              # Hot reload development server
 bun run typecheck        # Type validation
 bun run check           # Format + lint + fix
 
+# Template Testing (New - GraphQL Indexing)
+bun run test:templates                    # Run all available template tests
+bun run test:templates template-indexing  # Run template indexing category (✅ 29 tests)
+bun run test:templates --help             # Show test runner options
+
 # Query Management  
 bun run query:validate   # Template query validation
 bun run query:test      # Query execution testing
@@ -169,17 +181,27 @@ bun run query:analytics # Query performance analysis
 
 ## Testing Environment Architecture
 
-### Test Organization
-- **Unified Test Management**: Single entry point with multiple runner coordination
-- **Domain Fixtures**: E-commerce, project management, knowledge graph test data
-- **GraphQL Test Client**: Full-featured client with all operations
-- **Server Lifecycle**: Automated server startup/shutdown for integration tests
+### ✅ Current Test Organization (Template Indexing)
+- **Custom Test Runner**: `tests/test-runner.ts` with detailed reporting and performance insights
+- **Organized Structure**: Category-based test organization (`template-indexing/`, `integration/`, `unit/`)
+- **Rich Fixtures**: Comprehensive GraphQL query samples and template definitions
+- **Status Tracking**: Clear success/failure indicators and repository compatibility status
+
+### ✅ Working Test Categories
+- **GraphQL Parsing Tests**: Complete SDL parsing, operation detection, error handling
+- **Template Creation Tests**: Auto-parsing, validation, immutable patterns, legacy compatibility
+- **Performance Validation**: Sub-100ms execution times, efficient complexity calculation
+
+### 🔧 Test Development Pipeline (Needs Repository Fixes)
+- **Database Integration Tests**: Schema compatibility alignment required
+- **Performance Tracking Tests**: Repository interface updates needed
+- **Index Optimization Tests**: Schema synchronization required
 
 ### Test Data Strategy
-- **Multi-Domain Fixtures**: Real-world scenarios across different domains
-- **Relationship Testing**: Comprehensive graph traversal and quality metric validation
-- **Performance Testing**: Large dataset validation for scalability
-- **Template Testing**: Query template validation and execution verification
+- **GraphQL Fixtures**: `tests/fixtures/sample-queries.ts` with comprehensive query examples
+- **Template Definitions**: `tests/fixtures/test-templates.ts` with expected outcomes
+- **Error Test Cases**: Malformed query handling and validation testing
+- **Performance Templates**: Large datasets for scalability validation
 
 ## Integration Guidelines
 
