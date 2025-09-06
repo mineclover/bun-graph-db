@@ -1,0 +1,29 @@
+{
+  "name": "Get Table By Name Dataset",
+  "description": "Execute table lookup by name using existing template with variable",
+  "domain": "table_management",
+  "category": "advanced",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-get-table",
+    "variables": {
+      "name": "sample_table"
+    }
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "table": {
+        "id": "string",
+        "name": "string",
+        "description": "string"
+      }
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "Search Nodes Dataset",
+  "description": "Execute node search using existing template with variables",
+  "domain": "node_management",
+  "category": "basic",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-search-nodes",
+    "variables": {
+      "filter": "",
+      "limit": 5
+    }
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "searchNodes": {
+        "nodes": "array",
+        "totalFound": "number"
+      }
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "List Tables Dataset",
+  "description": "Execute table listing using existing template",
+  "domain": "table_management",
+  "category": "basic",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-list-tables",
+    "variables": null
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "tables": "array"
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}

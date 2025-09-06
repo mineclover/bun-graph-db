@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:13:34.263Z",
+  "templateFilename": "invalid-query-test_v1-0-0.json",
+  "dataset": {
+    "name": "Invalid Query Dataset",
+    "description": "Test dataset with invalid GraphQL query to test error handling",
+    "domain": "testing",
+    "category": "edge_case",
+    "templateIdentifier": "invalid-query-test",
+    "templateName": "Invalid Query Template",
+    "operationType": "query",
+    "variables": null
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:13:34.263Z",
+    "executionTimeMs": 10,
+    "executionTimeFormatted": "10ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "query InvalidQuery { invalidField { nonExistentField } }",
+      "processedVariables": {},
+      "metadata": {
+        "templateId": "97",
+        "templateName": "Invalid Query Template",
+        "complexityScore": 2,
+        "estimatedTokens": 14,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 226,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Malformed Query Dataset",
+  "description": "Test dataset with malformed GraphQL syntax to test error handling",
+  "domain": "testing",
+  "category": "edge_case",
+  
+  "templateSpec": {
+    "identifier": "malformed-query-test",
+    "name": "Malformed Query Template",
+    "description": "Template with malformed GraphQL syntax",
+    "query": "query MalformedQuery { invalidField { nonExistentField ",
+    "operationType": "query"
+  },
+  
+  "variables": null,
+  
+  "expectedResult": {
+    "success": false,
+    "errorPatterns": ["syntax", "parse"]
+  },
+  
+  "testConfig": {
+    "shouldExport": false,
+    "retryOnFailure": false,
+    "skipCreation": false
+  }
+}

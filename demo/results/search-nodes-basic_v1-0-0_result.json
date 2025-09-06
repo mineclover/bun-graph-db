@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:09:26.120Z",
+  "templateFilename": "search-nodes-basic_v1-0-0.json",
+  "dataset": {
+    "name": "Search Nodes Dataset",
+    "description": "Search nodes with filter and pagination parameters",
+    "domain": "graph_traversal",
+    "category": "basic",
+    "templateIdentifier": "search-nodes-basic",
+    "templateName": "Search Nodes Template",
+    "operationType": "query",
+    "variables": {
+      "filter": "",
+      "limit": 5
+    }
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:09:26.120Z",
+    "executionTimeMs": 17,
+    "executionTimeFormatted": "17ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "query SearchNodes($filter: String, $limit: Int = 10) { searchNodes(filter: $filter, limit: $limit) { nodes { id content title createdAt } totalFound } }",
+      "processedVariables": {
+        "filter": "",
+        "limit": 5
+      },
+      "metadata": {
+        "templateId": "95",
+        "templateName": "Search Nodes Template",
+        "complexityScore": 3,
+        "estimatedTokens": 38,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 342,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}

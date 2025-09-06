@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:09:26.710Z",
+  "templateFilename": "health-check-dataset-test_v1-0-0.json",
+  "dataset": {
+    "name": "Health Check Dataset",
+    "description": "Basic server health check query without variables",
+    "domain": "system",
+    "category": "basic",
+    "templateIdentifier": "health-check-dataset-test",
+    "templateName": "Health Check Template",
+    "operationType": "query",
+    "variables": null
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:09:26.710Z",
+    "executionTimeMs": 17,
+    "executionTimeFormatted": "17ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "query HealthCheck { health { status timestamp version } }",
+      "processedVariables": {},
+      "metadata": {
+        "templateId": "96",
+        "templateName": "Health Check Template",
+        "complexityScore": 2,
+        "estimatedTokens": 15,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 226,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T01:29:52.776Z",
+  "template": {
+    "identifier": "test-search-nodes",
+    "name": "Search Nodes",
+    "description": "노드 검색 기능 테스트",
+    "query": "query SearchNodes($tableId: ID!, $filter: NodeFilter) {\n  nodes(tableId: $tableId, filter: $filter) {\n    nodes {\n      id\n      content\n      title\n    }\n    totalCount\n    hasNextPage\n  }\n}\n",
+    "queryName": null,
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 1,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "statistics": {
+      "usageCount": 23,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-05T16:29:52.000Z"
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "Health Check Dataset",
+  "description": "Execute health check using existing template",
+  "domain": "system",
+  "category": "basic",
+  
+  "templateExecution": {
+    "templateIdentifier": "test-health-check",
+    "variables": null
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "health": {
+        "status": "string",
+        "timestamp": "string", 
+        "version": "string"
+      }
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": true,
+    "retryOnFailure": false
+  }
+}

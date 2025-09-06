@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:29:52.777Z",
+  "templateFilename": "test-search-nodes_v1-0-0.json",
+  "dataset": {
+    "name": "Search Nodes Dataset",
+    "description": "Execute node search using existing template with variables",
+    "domain": "node_management",
+    "category": "basic",
+    "templateIdentifier": "test-search-nodes",
+    "variables": {
+      "filter": "",
+      "limit": 5
+    }
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:29:52.777Z",
+    "executionTimeMs": 15,
+    "executionTimeFormatted": "15ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "query SearchNodes($tableId: ID!, $filter: NodeFilter) {\n  nodes(tableId: $tableId, filter: $filter) {\n    nodes {\n      id\n      content\n      title\n    }\n    totalCount\n    hasNextPage\n  }\n}\n",
+      "processedVariables": {
+        "filter": "",
+        "limit": 5
+      },
+      "metadata": {
+        "templateId": "22",
+        "templateName": "Search Nodes",
+        "complexityScore": 1,
+        "estimatedTokens": 48,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 384,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}

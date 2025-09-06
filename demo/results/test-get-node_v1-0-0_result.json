@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "executedAt": "2025-09-06T01:30:40.273Z",
+  "templateFilename": "test-get-node_v1-0-0.json",
+  "dataset": {
+    "name": "Get Node By ID Dataset",
+    "description": "Execute node lookup by ID using existing template with variable",
+    "domain": "node_management",
+    "category": "advanced",
+    "templateIdentifier": "test-get-node",
+    "variables": {
+      "id": "1"
+    }
+  },
+  "execution": {
+    "success": true,
+    "timestamp": "2025-09-06T01:30:40.273Z",
+    "executionTimeMs": 37,
+    "executionTimeFormatted": "37ms"
+  },
+  "result": {
+    "data": {
+      "queryText": "query GetNode($nodeId: ID!) {\n  node(id: $nodeId) {\n    id\n    content\n    title\n    description\n    tableId\n    createdAt\n    updatedAt\n  }\n}\n",
+      "processedVariables": {
+        "id": "1"
+      },
+      "metadata": {
+        "templateId": "20",
+        "templateName": "Get Node Information",
+        "complexityScore": 1,
+        "estimatedTokens": 36,
+        "version": "1.0.0"
+      }
+    },
+    "error": null
+  },
+  "metadata": {
+    "resultType": "success",
+    "dataSize": 330,
+    "hasData": true,
+    "dataFields": [
+      "queryText",
+      "processedVariables",
+      "metadata"
+    ],
+    "serverUrl": "http://localhost:4000/graphql",
+    "generatedBy": "curl-template-tester"
+  }
+}
