@@ -1,30 +1,34 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:43:07.996Z",
+  "executedAt": "2025-09-06T01:46:17.565Z",
   "templateFilename": "test-search-nodes_v1-0-0.json",
   "dataset": {
-    "name": "Search Nodes Dataset",
-    "description": "Execute node search using existing template with variables",
+    "name": "Search Nodes with Table ID Dataset",
+    "description": "Execute node search with required table ID and optional filter",
     "domain": "node_management",
-    "category": "basic",
+    "category": "advanced",
     "templateIdentifier": "test-search-nodes",
     "variables": {
-      "filter": "",
-      "limit": 5
+      "tableId": "1",
+      "filter": {
+        "content": "sample"
+      }
     }
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:43:07.996Z",
-    "executionTimeMs": 12,
-    "executionTimeFormatted": "12ms"
+    "timestamp": "2025-09-06T01:46:17.565Z",
+    "executionTimeMs": 11,
+    "executionTimeFormatted": "11ms"
   },
   "result": {
     "data": {
       "queryText": "query SearchNodes($tableId: ID!, $filter: NodeFilter) {\n  nodes(tableId: $tableId, filter: $filter) {\n    nodes {\n      id\n      content\n      title\n    }\n    totalCount\n    hasNextPage\n  }\n}\n",
       "processedVariables": {
-        "filter": "",
-        "limit": 5
+        "tableId": "1",
+        "filter": {
+          "content": "sample"
+        }
       },
       "metadata": {
         "templateId": "22",
@@ -38,7 +42,7 @@
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 384,
+    "dataSize": 406,
     "hasData": true,
     "dataFields": [
       "queryText",

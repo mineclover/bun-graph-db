@@ -628,8 +628,13 @@ Examples:
     let datasetPath = args[0]
     
     if (args[0] === '--server') {
-      serverUrl = args[1]
-      datasetPath = args[2]
+      serverUrl = args[1] || 'http://localhost:4000/graphql'
+      datasetPath = args[2] || ''
+    }
+    
+    if (!datasetPath) {
+      console.error('❌ Dataset path is required')
+      process.exit(1)
     }
     
     const customTester = new CurlTemplateTester(serverUrl)

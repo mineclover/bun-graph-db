@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:43:07.882Z",
+  "executedAt": "2025-09-06T01:46:16.970Z",
   "templateFilename": "test-health-check_v1-0-0.json",
   "dataset": {
     "name": "Health Check Dataset",
@@ -12,9 +12,9 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:43:07.882Z",
-    "executionTimeMs": 11,
-    "executionTimeFormatted": "11ms"
+    "timestamp": "2025-09-06T01:46:16.970Z",
+    "executionTimeMs": 44,
+    "executionTimeFormatted": "44ms"
   },
   "result": {
     "data": {

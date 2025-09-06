@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:43:07.604Z",
+  "executedAt": "2025-09-06T01:46:17.303Z",
   "templateFilename": "test-get-node_v1-0-0.json",
   "dataset": {
     "name": "Get Node By ID Dataset",
@@ -14,9 +14,9 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:43:07.604Z",
-    "executionTimeMs": 104,
-    "executionTimeFormatted": "104ms"
+    "timestamp": "2025-09-06T01:46:17.303Z",
+    "executionTimeMs": 46,
+    "executionTimeFormatted": "46ms"
   },
   "result": {
     "data": {

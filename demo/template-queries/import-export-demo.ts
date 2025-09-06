@@ -70,13 +70,14 @@ export async function runImportExportDemo(runner: DemoRunner) {
       includeStatistics: true,
     })
     
-    if (!exportByIdentifierResult.success || !exportByIdentifierResult.exportData) {
-      console.error('❌ 템플릿 내보내기 실패 (식별자):', exportByIdentifierResult.errors)
+    const exportByIdentifierData = exportByIdentifierResult.data?.exportTemplate
+    if (!exportByIdentifierData?.success || !exportByIdentifierData.exportData) {
+      console.error('❌ 템플릿 내보내기 실패 (식별자):', exportByIdentifierData?.errors || exportByIdentifierResult.errors)
       return
     }
     
     console.log('✅ 템플릿 내보내기 완료 (식별자)')
-    console.log(`📋 파일명: ${exportByIdentifierResult.filename}`)
+    console.log(`📋 파일명: ${exportByIdentifierData.filename}`)
     
     // 4. 템플릿 가져오기 (새 식별자 생성)
     console.log('\n📥 4. 템플릿 가져오기 (새 식별자 생성)')
@@ -86,20 +87,21 @@ export async function runImportExportDemo(runner: DemoRunner) {
       newIdentifierPrefix: 'imported',
     })
     
-    if (!importResult.success || !importResult.template) {
-      console.error('❌ 템플릿 가져오기 실패:', importResult.errors)
+    const importData = importResult.data?.importTemplate
+    if (!importData?.success || !importData.template) {
+      console.error('❌ 템플릿 가져오기 실패:', importData?.errors || importResult.errors)
       return
     }
     
     console.log('✅ 템플릿 가져오기 완료')
     console.log(`📋 가져온 템플릿:`)
-    console.log(`   - ID: ${importResult.template.id}`)
-    console.log(`   - 식별자: ${importResult.template.identifier}`)
-    console.log(`   - 이름: ${importResult.template.name}`)
+    console.log(`   - ID: ${importData.template.id}`)
+    console.log(`   - 식별자: ${importData.template.identifier}`)
+    console.log(`   - 이름: ${importData.template.name}`)
     
-    if (importResult.warnings && importResult.warnings.length > 0) {
+    if (importData.warnings && importData.warnings.length > 0) {
       console.log('⚠️ 경고사항:')
-      importResult.warnings.forEach(warning => {
+      importData.warnings.forEach((warning: string) => {
         console.log(`   - ${warning}`)
       })
     }
@@ -107,7 +109,7 @@ export async function runImportExportDemo(runner: DemoRunner) {
     // 5. 가져온 템플릿 실행 테스트
     console.log('\n🔄 5. 가져온 템플릿 실행 테스트')
     const executeResult = await client.executeTemplate({
-      templateIdentifier: importResult.template.identifier,
+      templateIdentifier: importData.template.identifier,
       variables: { limit: 3 },
     })
     

@@ -48,14 +48,19 @@ export async function runBasicDemo(client: GraphQLClient): Promise<string> {
   results.push('\n=== Creating Demo Template ===')
   const demoTemplate = demoTemplates[0] // Get User by ID template
   
+  if (!demoTemplate) {
+    results.push('❌ No demo template available')
+    return results.join('\n')
+  }
+  
   try {
     const createResponse = await client.createTemplate({
       identifier: demoTemplate.identifier,
       name: demoTemplate.name,
-      queryText: demoTemplate.queryText,
+      query: demoTemplate.query, // Fix property name
       tags: demoTemplate.tags,
       description: demoTemplate.description,
-      variablesSchema: demoTemplate.variablesSchema,
+      variables: demoTemplate.variables, // Fix property name
     })
     
     if (createResponse.errors) {

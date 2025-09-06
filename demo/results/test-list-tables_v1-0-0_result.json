@@ -1,25 +1,31 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:43:07.927Z",
+  "executedAt": "2025-09-06T01:46:17.523Z",
   "templateFilename": "test-list-tables_v1-0-0.json",
   "dataset": {
-    "name": "List Tables Dataset",
-    "description": "Execute table listing using existing template",
+    "name": "List Tables with Pagination Dataset",
+    "description": "Execute table listing with pagination variables",
     "domain": "table_management",
-    "category": "basic",
+    "category": "advanced",
     "templateIdentifier": "test-list-tables",
-    "variables": null
+    "variables": {
+      "first": 10,
+      "after": null
+    }
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:43:07.927Z",
+    "timestamp": "2025-09-06T01:46:17.523Z",
     "executionTimeMs": 12,
     "executionTimeFormatted": "12ms"
   },
   "result": {
     "data": {
       "queryText": "query ListTables($first: Int, $after: String) {\n  tables(first: $first, after: $after) {\n    nodes {\n      id\n      identifier\n      description\n      nodeCount\n    }\n    totalCount\n    hasNextPage\n    hasPreviousPage\n  }\n}\n",
-      "processedVariables": {},
+      "processedVariables": {
+        "first": 10,
+        "after": null
+      },
       "metadata": {
         "templateId": "18",
         "templateName": "List All Tables",
@@ -32,7 +38,7 @@
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 400,
+    "dataSize": 423,
     "hasData": true,
     "dataFields": [
       "queryText",

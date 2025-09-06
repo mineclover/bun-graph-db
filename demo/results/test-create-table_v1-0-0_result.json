@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:43:08.375Z",
+  "executedAt": "2025-09-06T01:46:17.649Z",
   "templateFilename": "test-create-table_v1-0-0.json",
   "dataset": {
     "name": "Create Table Dataset",
@@ -17,9 +17,9 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:43:08.375Z",
-    "executionTimeMs": 49,
-    "executionTimeFormatted": "49ms"
+    "timestamp": "2025-09-06T01:46:17.649Z",
+    "executionTimeMs": 11,
+    "executionTimeFormatted": "11ms"
   },
   "result": {
     "data": {

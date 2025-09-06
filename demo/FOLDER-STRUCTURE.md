@@ -116,10 +116,43 @@ bun run demo:test-dataset basic/health-check.json
 SERVER_URL=http://localhost:3000/graphql bun run demo:test-dataset basic/health-check.json
 ```
 
+### 체계적 순차 테스팅 워크플로우
+```bash
+# 1. 전체 배치 테스트 (추천)
+./test-all-datasets.sh
+
+# 2. 카테고리별 순차 테스팅
+# Basic queries (변수 없는 간단한 쿼리들)
+bun run demo:test-dataset basic/health-check.json
+bun run demo:test-dataset basic/test-query1.json  
+bun run demo:test-dataset basic/test-query2.json
+bun run demo:test-dataset basic/list-tables.json
+bun run demo:test-dataset basic/search-nodes.json
+
+# Advanced queries (변수가 필요한 복잡한 쿼리들)
+bun run demo:test-dataset advanced/get-node-by-id.json
+bun run demo:test-dataset advanced/get-table-by-id.json
+bun run demo:test-dataset advanced/get-table-by-id-alt.json
+bun run demo:test-dataset advanced/list-tables-with-pagination.json
+bun run demo:test-dataset advanced/search-nodes-with-table.json
+
+# Mutations (데이터 변경 작업들)
+bun run demo:test-dataset mutations/test-mutation1.json
+bun run demo:test-dataset mutations/create-table.json  
+bun run demo:test-dataset mutations/create-node.json
+
+# Edge cases (에러 시나리오 - 실패 예상)
+bun run demo:test-dataset edge-cases/invalid-query.json
+bun run demo:test-dataset edge-cases/malformed-query.json
+```
+
 ### 전체 데이터셋 배치 테스트
 ```bash
 # 모든 basic 데이터셋 테스트
 find demo/datasets/basic -name "*.json" | xargs -I {} bun run demo:test-dataset {}
+
+# 성공한 테스트만 재실행
+./test-all-datasets.sh | grep "✅ SUCCESS" -B1
 ```
 
 ## 📁 카테고리별 데이터셋 (총 15개)

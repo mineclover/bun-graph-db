@@ -40,13 +40,13 @@
   },
   "include": [
     "src/**/*",
-    "index.ts",
-    "**/*.ts",
-    "**/*.tsx"
+    "index.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "build"
+    "build",
+    "demo/**/*",
+    "tests/**/*"
   ]
 }

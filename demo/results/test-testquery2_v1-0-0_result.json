@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:43:08.150Z",
+  "executedAt": "2025-09-06T01:46:17.056Z",
   "templateFilename": "test-testquery2_v1-0-0.json",
   "dataset": {
     "name": "Test Query 2 Dataset",
@@ -12,9 +12,9 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:43:08.150Z",
-    "executionTimeMs": 13,
-    "executionTimeFormatted": "13ms"
+    "timestamp": "2025-09-06T01:46:17.056Z",
+    "executionTimeMs": 11,
+    "executionTimeFormatted": "11ms"
   },
   "result": {
     "data": {

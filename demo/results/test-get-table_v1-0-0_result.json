@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:43:07.748Z",
+  "executedAt": "2025-09-06T01:46:17.480Z",
   "templateFilename": "test-get-table_v1-0-0.json",
   "dataset": {
-    "name": "Get Table by ID Dataset",
-    "description": "Execute table lookup by ID using existing template",
+    "name": "Get Table By Name Dataset",
+    "description": "Execute table lookup by name using existing template with variable",
     "domain": "table_management",
     "category": "advanced",
     "templateIdentifier": "test-get-table",
@@ -14,9 +14,9 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:43:07.748Z",
-    "executionTimeMs": 12,
-    "executionTimeFormatted": "12ms"
+    "timestamp": "2025-09-06T01:46:17.480Z",
+    "executionTimeMs": 11,
+    "executionTimeFormatted": "11ms"
   },
   "result": {
     "data": {

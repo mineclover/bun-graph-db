@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:43:08.506Z",
+  "executedAt": "2025-09-06T01:46:17.607Z",
   "templateFilename": "test-testmutation1_v1-0-0.json",
   "dataset": {
     "name": "Test Mutation 1 Dataset",
@@ -12,9 +12,9 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:43:08.506Z",
-    "executionTimeMs": 47,
-    "executionTimeFormatted": "47ms"
+    "timestamp": "2025-09-06T01:46:17.607Z",
+    "executionTimeMs": 12,
+    "executionTimeFormatted": "12ms"
   },
   "result": {
     "data": {

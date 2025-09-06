@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-06T01:43:08.091Z",
+  "exportedAt": "2025-09-06T01:46:17.012Z",
   "template": {
     "identifier": "test-testquery1",
     "name": "TestQuery1",
@@ -18,9 +18,9 @@
       "test"
     ],
     "statistics": {
-      "usageCount": 95,
+      "usageCount": 96,
       "avgExecutionTimeMs": 371,
-      "lastUsedAt": "2025-09-05T16:43:08.000Z"
+      "lastUsedAt": "2025-09-05T16:46:17.000Z"
     }
   }
 }
