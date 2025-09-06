@@ -61,32 +61,52 @@ export class TemplateQueries extends BaseResolver {
   async searchTemplates(
     _: GraphQLParent,
     args: {
-      tags?: string[]
-      tagMatchMode?: 'ANY' | 'ALL'
-      applicableToTable?: string
-      includeUniversal?: boolean
-      templateType?: string
-      isActive?: boolean
-      orderBy?: string
-      orderDirection?: 'ASC' | 'DESC'
-      limit?: number
-      offset?: number
+      filter?: {
+        search?: string
+        isActive?: boolean
+        createdBy?: string
+        createdAfter?: string
+        createdBefore?: string
+        tags?: string[]
+        tagMatchMode?: 'ANY' | 'ALL'
+        applicableToTable?: string
+        includeUniversal?: boolean
+        templateType?: string
+      }
+      pagination?: {
+        limit?: number
+        offset?: number
+      }
+      sort?: Array<{
+        field: string
+        direction: 'ASC' | 'DESC'
+      }>
     },
     context?: GraphQLContext
   ) {
     return this.handleQuery(
       async () => {
+        // Extract pagination parameters
+        const limit = args.pagination?.limit || 10
+        const offset = args.pagination?.offset || 0
+        
+        // Extract filter parameters
+        const filter = args.filter || {}
+        
+        // Extract sort parameters (use first sort or default)
+        const sort = args.sort?.[0]
+        
         const result = await this.queryTemplateRepository.search({
-          tags: args.tags,
-          tagMatchMode: args.tagMatchMode,
-          applicableToTable: args.applicableToTable,
-          includeUniversal: args.includeUniversal,
-          templateType: args.templateType,
-          isActive: args.isActive,
-          orderBy: args.orderBy,
-          orderDirection: args.orderDirection,
-          limit: args.limit || 10,
-          offset: args.offset || 0,
+          tags: filter.tags,
+          tagMatchMode: filter.tagMatchMode,
+          applicableToTable: filter.applicableToTable,
+          includeUniversal: filter.includeUniversal,
+          templateType: filter.templateType,
+          isActive: filter.isActive,
+          orderBy: sort?.field,
+          orderDirection: sort?.direction,
+          limit,
+          offset,
         })
 
         return {
@@ -112,52 +132,6 @@ export class TemplateQueries extends BaseResolver {
     )
   }
 
-  async executeTemplate(
-    _: GraphQLParent,
-    args: {
-      input: {
-        templateId?: string
-        templateIdentifier?: string
-        variables?: Record<string, unknown>
-      }
-    },
-    context?: GraphQLContext
-  ) {
-    this.validateArgs(
-      args.input,
-      [
-        BaseResolver.validationRules.required('templateIdentifier', 'Template Identifier'),
-        BaseResolver.validationRules.nonEmpty('templateIdentifier', 'Template Identifier'),
-      ],
-      'executeTemplate'
-    )
-
-    return this.handleQuery(
-      async () => {
-        // Simple implementation without use case to avoid circular dependency
-        const template = await this.queryTemplateRepository.findByIdentifier(
-          args.input.templateIdentifier!
-        )
-        if (!template) {
-          throw new Error(`Template with identifier ${args.input.templateIdentifier} not found`)
-        }
-
-        // For now, return a simple result structure
-        // TODO: Implement proper query template execution logic later
-        return {
-          queryText: template.getQueryText(),
-          processedVariables: args.input.variables || {},
-          metadata: {
-            templateId: template.getId(),
-            templateName: template.getName(),
-            executedAt: new Date().toISOString(),
-          },
-        }
-      },
-      'executeTemplate',
-      { templateIdentifier: args.input.templateIdentifier }
-    )
-  }
 
   setSchema(schema: GraphQLSchema) {
     ;(this as any).schema = schema

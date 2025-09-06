@@ -1,30 +1,41 @@
 # Template Execution Examples
 
+## 🚀 executeTemplateWithGraphQL Usage Guide
+
+**Important**: executeTemplateWithGraphQL is only available in mutations, not queries, due to usage tracking side effects.
+
 ## 템플릿 실행 리졸버 사용 예시
 
-### 1. 기본 템플릿 실행
+### 1. executeTemplateWithGraphQL 기본 사용법
 
-#### 템플릿 ID로 실행
+#### ✅ Correct Usage (Mutation)
 ```graphql
-query ExecuteByTemplateId {
-  executeTemplate(input: {
-    templateId: "1"
-    variables: {
-      tableId: "users_table"
-    }
-  })
-}
-```
-
-#### 템플릿 Identifier로 실행
-```graphql
-query ExecuteByIdentifier {
-  executeTemplate(input: {
+mutation ExecuteTemplateByIdentifier {
+  executeTemplateWithGraphQL(
     templateIdentifier: "minimal-table-with-nodes"
     variables: {
       tableId: "1"
     }
-  })
+  ) {
+    success
+    data
+    errors { message }
+  }
+}
+```
+
+#### ❌ Incorrect Usage (Query - Not Available)
+```graphql
+# This will NOT work - executeTemplateWithGraphQL is mutation-only
+query ExecuteTemplate {
+  executeTemplateWithGraphQL(templateIdentifier: "template-id") # Error!
+}
+```
+
+#### 실제 사용 패턴 (JSON Request)
+```json
+{
+  "query": "mutation ExecuteTemplate { executeTemplateWithGraphQL(templateIdentifier: \"search-templates-advanced\") { success data errors { message } } }"
 }
 ```
 
@@ -33,17 +44,26 @@ query ExecuteByIdentifier {
 템플릿의 기본 변수값을 사용자 입력으로 오버라이드:
 
 ```graphql
-query ExecuteWithCustomVariables {
-  executeTemplate(input: {
-    templateIdentifier: "detailed-table-with-nodes"
+mutation ExecuteWithCustomVariables {
+  executeTemplateWithGraphQL(
+    templateIdentifier: "search-templates-advanced"
     variables: {
-      tableId: "2",
-      limit: 50,
-      includeRelations: true
+      filter: { isActive: true }
+      pagination: { limit: 5, offset: 0 }
+      sort: [{ field: "name", direction: "ASC" }]
     }
-    trackUsage: true
-    validateVariables: true
-  })
+  ) {
+    success
+    data
+    errors { message }
+  }
+}
+```
+
+#### JSON Request Format
+```json
+{
+  "query": "mutation ExecuteCustomSearch { executeTemplateWithGraphQL(templateIdentifier: \"search-templates-advanced\", variables: { pagination: { limit: 5, offset: 0 }, sort: [{ field: \"name\", direction: \"ASC\" }] }) { success data errors { message } } }"
 }
 ```
 
@@ -71,15 +91,19 @@ query FindTemplatesByTags {
 }
 ```
 
-#### Step 2: 선택한 템플릿 실행
+#### Step 2: 선택한 템플릿 실행 (executeTemplateWithGraphQL)
 ```graphql
-query ExecuteSelectedTemplate {
-  executeTemplate(input: {
+mutation ExecuteSelectedTemplate {
+  executeTemplateWithGraphQL(
     templateIdentifier: "minimal-table-with-nodes"
     variables: {
       tableId: "3"
     }
-  })
+  ) {
+    success
+    data
+    errors { message }
+  }
 }
 ```
 
@@ -171,16 +195,20 @@ mutation CreateRelationTemplate {
 }
 ```
 
-#### 실행
+#### 실행 (executeTemplateWithGraphQL)
 ```graphql
-query ExecuteRelationTemplate {
-  executeTemplate(input: {
+mutation ExecuteRelationTemplate {
+  executeTemplateWithGraphQL(
     templateIdentifier: "nodes-with-relations"
     variables: {
       tableId: "1",
       includeIncoming: true
     }
-  })
+  ) {
+    success
+    data
+    errors { message }
+  }
 }
 ```
 
@@ -234,10 +262,10 @@ mutation CreateNodeTemplate {
 }
 ```
 
-#### 뮤테이션 실행
+#### 뮤테이션 실행 (executeTemplateWithGraphQL)
 ```graphql
 mutation ExecuteCreateNode {
-  executeTemplate(input: {
+  executeTemplateWithGraphQL(
     templateIdentifier: "create-node-with-attributes"
     variables: {
       tableId: "1"
@@ -247,7 +275,11 @@ mutation ExecuteCreateNode {
         { attributeId: "2", value: "value2" }
       ]
     }
-  })
+  ) {
+    success
+    data
+    errors { message }
+  }
 }
 ```
 
@@ -264,58 +296,75 @@ query GetAndExecutePopular {
     tags
   }
   
-  # 가장 인기있는 템플릿 실행
-  result: executeTemplate(input: {
-    templateIdentifier: "minimal-table-with-nodes"
-    variables: { tableId: "1" }
-  })
+  # 가장 인기있는 템플릿 실행 (별도 mutation 필요)
+}
 }
 ```
 
 ### 8. 에러 처리
 
-#### 템플릿을 찾을 수 없는 경우
+#### 템플릿을 찾을 수 없는 경우 (executeTemplateWithGraphQL)
 ```graphql
-query ExecuteNonExistentTemplate {
-  executeTemplate(input: {
+mutation ExecuteNonExistentTemplate {
+  executeTemplateWithGraphQL(
     templateIdentifier: "non-existent-template"
     variables: {}
-  })
+  ) {
+    success
+    data
+    errors { message }
+  }
 }
-# Error: TEMPLATE_NOT_FOUND
+# Result: { "success": false, "errors": [{ "message": "Template not found" }] }
 ```
 
 #### 필수 변수 누락
 ```graphql
-query ExecuteMissingVariables {
-  executeTemplate(input: {
-    templateIdentifier: "minimal-table-with-nodes"
-    variables: {}  # tableId 누락
-    validateVariables: true
-  })
+mutation ExecuteMissingVariables {
+  executeTemplateWithGraphQL(
+    templateIdentifier: "search-templates-advanced"
+    variables: { invalidParam: "value" }
+  ) {
+    success
+    data
+    errors { message }
+  }
 }
-# Error: INVALID_VARIABLES - Missing required variable: tableId
+# Result: { "success": false, "errors": [{ "message": "Invalid variables" }] }
 ```
 
 #### 비활성 템플릿 실행 시도
 ```graphql
-query ExecuteInactiveTemplate {
-  executeTemplate(input: {
-    templateId: "999"  # inactive template
-    variables: { tableId: "1" }
-  })
+mutation ExecuteInactiveTemplate {
+  executeTemplateWithGraphQL(
+    templateIdentifier: "inactive-template"
+    variables: {}
+  ) {
+    success
+    data
+    errors { message }
+  }
 }
-# Error: TEMPLATE_INACTIVE
+# Result: { "success": false, "errors": [{ "message": "Template is inactive" }] }
 ```
 
-## 실행 플로우 요약
+## 🔄 executeTemplateWithGraphQL 실행 플로우
 
-1. **템플릿 선택**: ID 또는 identifier로 템플릿 지정
-2. **변수 제공**: 템플릿에 필요한 변수 전달
-3. **검증**: 변수 스키마 검증 (옵션)
-4. **실행**: 실제 GraphQL 쿼리/뮤테이션 실행
-5. **결과 반환**: 실행 결과를 JSON으로 반환
-6. **통계 업데이트**: 사용 횟수 자동 증가 (옵션)
+1. **Mutation 사용**: executeTemplateWithGraphQL은 mutation에서만 사용 가능
+2. **템플릿 선택**: templateIdentifier로 템플릿 지정
+3. **변수 제공**: 템플릿에 필요한 변수 전달 (JSON 형태)
+4. **자동 검증**: 변수 스키마 자동 검증
+5. **실행**: 실제 GraphQL 쿼리/뮤테이션 실행
+6. **결과 반환**: { success, data, errors } 형태로 결과 반환
+7. **사용량 추적**: 사용 횟수 자동 증가 및 실행 시간 기록
+
+### 실제 사용 예시
+```bash
+# cURL로 테스트
+curl -X POST -H "Content-Type: application/json" \
+  -d @test-search-template-custom.json \
+  http://localhost:4000/graphql
+```
 
 ## 장점
 

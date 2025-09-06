@@ -162,8 +162,8 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
       // Get total count
       const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total')
-      const totalResult = this.db.query<{ count: number }, any[]>(countQuery).get(...params)
-      const total = totalResult?.count || 0
+      const totalResult = this.db.query<{ total: number }, any[]>(countQuery).get(...params)
+      const total = totalResult?.total || 0
 
       // Ordering
       const orderBy = criteria.orderBy || 'usage_count'

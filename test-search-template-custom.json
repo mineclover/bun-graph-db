@@ -1,0 +1,3 @@
+{
+  "query": "mutation TestSearchTemplateCustom { executeTemplateWithGraphQL(templateIdentifier: \"search-templates-advanced\", variables: { pagination: { limit: 5, offset: 0 }, sort: [{ field: \"name\", direction: \"ASC\" }] }) { success data errors { message } } }"
+}
