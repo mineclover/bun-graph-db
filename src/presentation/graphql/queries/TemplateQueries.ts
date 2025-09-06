@@ -115,14 +115,16 @@ export class TemplateQueries extends BaseResolver {
   async executeTemplate(
     _: GraphQLParent,
     args: {
-      templateIdentifier: string
-      variables?: Record<string, unknown>
-      trackUsage?: boolean
+      input: {
+        templateId?: string
+        templateIdentifier?: string
+        variables?: Record<string, unknown>
+      }
     },
     context?: GraphQLContext
   ) {
     this.validateArgs(
-      args,
+      args.input,
       [
         BaseResolver.validationRules.required('templateIdentifier', 'Template Identifier'),
         BaseResolver.validationRules.nonEmpty('templateIdentifier', 'Template Identifier'),
@@ -134,17 +136,17 @@ export class TemplateQueries extends BaseResolver {
       async () => {
         // Simple implementation without use case to avoid circular dependency
         const template = await this.queryTemplateRepository.findByIdentifier(
-          args.templateIdentifier
+          args.input.templateIdentifier!
         )
         if (!template) {
-          throw new Error(`Template with identifier ${args.templateIdentifier} not found`)
+          throw new Error(`Template with identifier ${args.input.templateIdentifier} not found`)
         }
 
         // For now, return a simple result structure
         // TODO: Implement proper query template execution logic later
         return {
           queryText: template.getQueryText(),
-          processedVariables: args.variables || {},
+          processedVariables: args.input.variables || {},
           metadata: {
             templateId: template.getId(),
             templateName: template.getName(),
@@ -153,7 +155,7 @@ export class TemplateQueries extends BaseResolver {
         }
       },
       'executeTemplate',
-      { templateIdentifier: args.templateIdentifier }
+      { templateIdentifier: args.input.templateIdentifier }
     )
   }
 

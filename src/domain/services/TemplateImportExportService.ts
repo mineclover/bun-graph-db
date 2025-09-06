@@ -57,6 +57,7 @@ export class TemplateImportExportService {
           complexityScore: template.getComplexityScore(),
           version: template.getVersion(),
           tags: template.getTags(),
+          isActive: template.getIsActive(),
         },
       }
 
@@ -165,14 +166,19 @@ export class TemplateImportExportService {
         exportData.template.query,
         exportData.template.tags,
         {
-          description: exportData.template.description,
-          variablesSchema: exportData.template.variablesSchema,
-          defaultVariables: exportData.template.defaultVariables,
-          applicableTables: exportData.template.applicableTables,
+          description: exportData.template.description || undefined,
+          variablesSchema: exportData.template.variablesSchema || undefined,
+          defaultVariables: exportData.template.defaultVariables || undefined,
+          applicableTables: exportData.template.applicableTables || undefined,
           complexityScore: exportData.template.complexityScore,
           version: exportData.template.version,
         }
       )
+
+      // Handle isActive field (if imported template should be inactive, deactivate it)
+      const finalTemplate = exportData.template.isActive !== undefined && !exportData.template.isActive
+        ? newTemplate.deactivate()
+        : newTemplate
 
       // 기존 템플릿 덮어쓰기 또는 새 템플릿 생성
       let createdTemplate: QueryTemplate
@@ -180,9 +186,9 @@ export class TemplateImportExportService {
       if (existingTemplate && options.overwriteExisting) {
         // 업데이트 로직 (현재는 삭제 후 재생성)
         await this.templateRepository.delete(existingTemplate.getId()!)
-        createdTemplate = await this.templateRepository.create(newTemplate)
+        createdTemplate = await this.templateRepository.create(finalTemplate)
       } else {
-        createdTemplate = await this.templateRepository.create(newTemplate)
+        createdTemplate = await this.templateRepository.create(finalTemplate)
       }
 
       return {

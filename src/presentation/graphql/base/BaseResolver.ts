@@ -303,7 +303,7 @@ export abstract class BaseResolver {
       <T>(field: string, fieldName: string) =>
       (args: T): void => {
         // Handle nested field access like 'input.identifier'
-        const value = this.getNestedValue(args, field)
+        const value = BaseResolver.getNestedValue(args, field)
         if (!value) {
           console.log(`Validation failed for field: ${field}`, { args, value })
           throw new Error(`${fieldName} is required`)

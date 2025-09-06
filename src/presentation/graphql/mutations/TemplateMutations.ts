@@ -204,9 +204,9 @@ export class TemplateMutations extends BaseResolver {
     _: GraphQLParent,
     args: {
       input: {
-        templateIdentifier: string
+        templateId?: string
+        templateIdentifier?: string
         variables?: Record<string, unknown>
-        trackUsage?: boolean
       }
     },
     context?: GraphQLContext
@@ -223,9 +223,9 @@ export class TemplateMutations extends BaseResolver {
     return this.handleMutation(
       async () => {
         const result = await this.executeQueryTemplateUseCase.execute({
+          templateId: args.input.templateId,
           templateIdentifier: args.input.templateIdentifier,
           variables: args.input.variables,
-          trackUsage: args.input.trackUsage,
         })
 
         return {

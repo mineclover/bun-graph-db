@@ -26,6 +26,7 @@ export interface TemplateExportFormat {
     complexityScore: number
     version: string
     tags: string[]
+    isActive: boolean
     
     // 선택적 통계 정보 (export 시에만 포함)
     statistics?: {
