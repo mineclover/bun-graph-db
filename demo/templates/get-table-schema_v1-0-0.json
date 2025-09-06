@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T19:16:53.930Z",
+  "template": {
+    "identifier": "get-table-schema",
+    "name": "Get Table Schema",
+    "description": "Comprehensive table schema retrieval including attributes, relationships, data types, and sample nodes for database structure analysis.",
+    "query": "query GetTableSchema($tableIdentifier: String!, $includeNodes: Boolean = true, $nodeSampleLimit: Int = 5) { tableByIdentifier(identifier: $tableIdentifier) { id identifier name description nodeCount attributeCount createdAt updatedAt attributes { id identifier name description dataType defaultValue isRequired isUnique table { id identifier } } nodes(pagination: { limit: $nodeSampleLimit }) @include(if: $includeNodes) { nodes { id content title description createdAt } totalCount } } }",
+    "queryName": "GetTableSchema",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "type": "object",
+      "properties": {
+        "tableIdentifier": {
+          "type": "string",
+          "description": "스키마를 조회할 테이블의 식별자"
+        },
+        "includeNodes": {
+          "type": "boolean",
+          "default": true,
+          "description": "샘플 노드를 포함할지 여부"
+        },
+        "nodeSampleLimit": {
+          "type": "integer",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 20,
+          "description": "포함할 샘플 노드의 개수"
+        }
+      },
+      "required": [
+        "tableIdentifier"
+      ]
+    },
+    "applicableTables": null,
+    "complexityScore": 7,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true
+  }
+}

@@ -41,8 +41,6 @@ async function validateTemplate(templateIdentifier: string) {
         executeTemplateWithGraphQL(templateIdentifier: $templateIdentifier, variables: $variables) {
           success
           data
-          errors
-          executionTimeMs
         }
       }
     `;
@@ -55,7 +53,7 @@ async function validateTemplate(templateIdentifier: string) {
     const execution = testResult.executeTemplateWithGraphQL;
     
     if (execution.success) {
-      console.log(`✅ 실행 테스트 통과 (${execution.executionTimeMs}ms)`);
+      console.log(`✅ 실행 테스트 통과`);
       
       // 3. Export 실행
       const exportQuery = `
@@ -85,7 +83,7 @@ async function validateTemplate(templateIdentifier: string) {
         return false;
       }
     } else {
-      console.log(`❌ 실행 테스트 실패: ${execution.errors.join(', ')}`);
+      console.log(`❌ 실행 테스트 실패`);
       return false;
     }
     
