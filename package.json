@@ -78,7 +78,17 @@
     "template:validate-single": "bun scripts/simple-validator.ts",
     "template:check-server": "curl -s http://localhost:4000/graphql -d '{\"query\":\"query{__typename}\"}' || echo 'Server not running'",
     "template:backup": "cp -r demo/templates demo/templates-backup-$(date +%Y%m%d-%H%M%S)",
-    "template:restore": "echo 'Usage: cp -r demo/templates-backup-YYYYMMDD-HHMMSS demo/templates'"
+    "template:restore": "echo 'Usage: cp -r demo/templates-backup-YYYYMMDD-HHMMSS demo/templates'",
+    "pipeline:validate": "bun scripts/template-pipeline.ts --mode validate",
+    "pipeline:sync": "bun scripts/template-pipeline.ts --mode sync",
+    "pipeline:test": "bun scripts/template-pipeline.ts --mode test",
+    "pipeline:deploy": "bun scripts/template-pipeline.ts --mode deploy",
+    "pipeline:rollback": "bun scripts/template-pipeline.ts --mode rollback",
+    "batch:test": "bun scripts/test-batch-operations.ts",
+    "batch:manager": "bun scripts/batch-template-manager.ts",
+    "export:fixed": "bun scripts/export-all-templates-fixed.ts",
+    "import:final": "bun scripts/import-all-exported-final.ts",
+    "report:system": "bun scripts/final-system-report.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",

@@ -69,39 +69,34 @@ class TemplateSyncTool {
    * 서버에서 템플릿 최신 정보 조회
    */
   async getLatestTemplateInfo(identifier: string) {
-    // searchTemplates를 사용해서 특정 identifier 검색
+    // getTemplateByIdentifier를 사용해서 정확한 identifier로 검색
     const query = `
-      query SearchTemplate($identifier: String!) {
-        searchTemplates(filter: { identifier: $identifier }, pagination: { limit: 1 }) {
-          nodes {
-            id
-            identifier
-            name
-            description
-            query
-            variables
-            operationType
-            complexityScore
-            version
-            tags
-            isActive
-            usageCount
-            avgExecutionTimeMs
-            lastUsedAt
-          }
+      query GetTemplateByIdentifier($identifier: String!) {
+        getTemplateByIdentifier(identifier: $identifier) {
+          id
+          identifier
+          name
+          description
+          query
+          variables
+          isActive
+          usageCount
+          createdBy
+          createdAt
+          updatedAt
         }
       }
     `;
 
     try {
       const result = await this.client.request(query, { identifier });
-      const templates = result.searchTemplates.nodes;
-      return templates.length > 0 ? {
-        ...templates[0],
+      const template = result.getTemplateByIdentifier;
+      return template ? {
+        ...template,
         statistics: {
-          usageCount: templates[0].usageCount,
-          avgExecutionTimeMs: templates[0].avgExecutionTimeMs,
-          lastUsedAt: templates[0].lastUsedAt
+          usageCount: template.usageCount,
+          avgExecutionTimeMs: 0, // Not available in QueryTemplate
+          lastUsedAt: template.updatedAt // Use updatedAt as fallback
         }
       } : null;
     } catch (error) {
