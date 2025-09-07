@@ -75,7 +75,7 @@ enum TagMatchMode {
 
 # Connection types for query templates
 type QueryTemplatesConnection implements Connection {
-  nodes: [QueryTemplate!]!
+  templates: [QueryTemplate!]!
   totalCount: Int!
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!

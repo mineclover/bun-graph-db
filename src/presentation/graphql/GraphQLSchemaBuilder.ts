@@ -237,6 +237,7 @@ export class GraphQLSchemaBuilder {
       // Field resolvers
       Table: {
         attributes: (parent: any) => deps.tableFieldResolvers.attributes(parent),
+        attributeTypes: (parent: any) => deps.tableFieldResolvers.attributeTypes(parent),
         tableNodes: (parent: any) => deps.tableFieldResolvers.tableNodes(parent),
         tableNodeCount: (parent: any) => deps.tableFieldResolvers.tableNodeCount(parent),
         attributeCount: (parent: any) => deps.tableFieldResolvers.attributeCount(parent),

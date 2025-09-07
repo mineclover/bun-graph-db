@@ -34,7 +34,22 @@ export class AttributeQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        return await this.attributeTypeRepository.findById(args.id)
+        const attributeType = await this.attributeTypeRepository.findById(args.id)
+        if (!attributeType) return null
+        
+        // Map entity to GraphQL format
+        return {
+          id: attributeType.getId(),
+          identifier: attributeType.getIdentifier(),
+          name: attributeType.getIdentifier(), // Use identifier as name for now
+          description: attributeType.getDescription(),
+          dataType: attributeType.getJsonType(),
+          format: attributeType.getFormat(),
+          constraints: attributeType.getParsedValidationSchema(),
+          defaultValue: attributeType.getDefaultValue(),
+          createdAt: attributeType.getCreatedAt(),
+          updatedAt: attributeType.getUpdatedAt(),
+        }
       },
       'findAttributeTypeById',
       { id: args.id }
@@ -57,7 +72,22 @@ export class AttributeQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        return await this.attributeTypeRepository.findByIdentifier(args.identifier)
+        const attributeType = await this.attributeTypeRepository.findByIdentifier(args.identifier)
+        if (!attributeType) return null
+        
+        // Map entity to GraphQL format
+        return {
+          id: attributeType.getId(),
+          identifier: attributeType.getIdentifier(),
+          name: attributeType.getIdentifier(), // Use identifier as name for now
+          description: attributeType.getDescription(),
+          dataType: attributeType.getJsonType(),
+          format: attributeType.getFormat(),
+          constraints: attributeType.getParsedValidationSchema(),
+          defaultValue: attributeType.getDefaultValue(),
+          createdAt: attributeType.getCreatedAt(),
+          updatedAt: attributeType.getUpdatedAt(),
+        }
       },
       'findAttributeTypeByIdentifier',
       { identifier: args.identifier }
@@ -68,12 +98,26 @@ export class AttributeQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         const result = await this.attributeTypeRepository.findAll({ limit: 100, offset: 0 })
+        
+        // Map entities to GraphQL format
+        const nodes = (result.data || result.nodes || []).map(attributeType => ({
+          id: attributeType.getId(),
+          identifier: attributeType.getIdentifier(),
+          name: attributeType.getIdentifier(), // Use identifier as name for now
+          description: attributeType.getDescription(),
+          dataType: attributeType.getJsonType(),
+          format: attributeType.getFormat(),
+          constraints: attributeType.getParsedValidationSchema(),
+          defaultValue: attributeType.getDefaultValue(),
+          createdAt: attributeType.getCreatedAt(),
+          updatedAt: attributeType.getUpdatedAt(),
+        }))
 
         return {
-          nodes: result.items,
-          totalCount: result.total,
-          hasNextPage: result.hasNextPage,
-          hasPreviousPage: result.hasPreviousPage,
+          nodes,
+          totalCount: result.total || result.totalCount || 0,
+          hasNextPage: result.hasNextPage || false,
+          hasPreviousPage: result.hasPreviousPage || false,
         }
       },
       'findAttributeTypes',

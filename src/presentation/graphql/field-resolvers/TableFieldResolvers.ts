@@ -1,6 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLContext, TableParent } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
@@ -9,6 +10,7 @@ export class TableFieldResolvers extends BaseResolver {
 
   constructor(
     private readonly attributeRepository: IAttributeRepository,
+    private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly nodeRepository: INodeRepository,
     logger: ILogger
   ) {
@@ -20,9 +22,44 @@ export class TableFieldResolvers extends BaseResolver {
     return this.handleFieldResolution(
       async () => {
         const result = await this.attributeRepository.findByTableId(parent.id)
-        return result.items || []
+        return result.data || result.nodes || result.items || []
       },
       'attributes',
+      'Table',
+      { tableId: parent.id }
+    )
+  }
+
+  async attributeTypes(parent: TableParent, args?: any, context?: GraphQLContext) {
+    return this.handleFieldResolution(
+      async () => {
+        // Get all attributes for this table
+        const attributesResult = await this.attributeRepository.findByTableId(parent.id)
+        const attributes = attributesResult.data || attributesResult.nodes || attributesResult.items || []
+        
+        // Get unique attribute type IDs
+        const attributeTypeIds = [...new Set(attributes.map(attr => attr.getAttributeTypeId ? attr.getAttributeTypeId() : attr.attributeTypeId).filter(Boolean))]
+        
+        // Fetch all attribute types for these IDs
+        const attributeTypes = await Promise.all(
+          attributeTypeIds.map(id => this.attributeTypeRepository.findById(id))
+        )
+        
+        // Map to GraphQL format
+        return attributeTypes.filter(Boolean).map(at => ({
+          id: at.getId(),
+          identifier: at.getIdentifier(),
+          name: at.getIdentifier(),
+          description: at.getDescription(),
+          dataType: at.getJsonType(),
+          format: at.getFormat(),
+          constraints: at.getParsedValidationSchema(),
+          defaultValue: at.getDefaultValue(),
+          createdAt: at.getCreatedAt(),
+          updatedAt: at.getUpdatedAt(),
+        }))
+      },
+      'attributeTypes',
       'Table',
       { tableId: parent.id }
     )

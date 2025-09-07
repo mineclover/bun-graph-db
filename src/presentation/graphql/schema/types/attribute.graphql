@@ -6,6 +6,7 @@ type AttributeType implements Node {
   name: String!
   description: String
   dataType: String!
+  format: String
   constraints: JSON
   defaultValue: String
   createdAt: DateTime!
@@ -31,6 +32,7 @@ input CreateAttributeTypeInput {
   name: String!
   description: String
   dataType: String!
+  format: String
   constraints: JSON
   defaultValue: String
 }

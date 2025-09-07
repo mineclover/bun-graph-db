@@ -56,21 +56,30 @@ export class AttributeMutations extends BaseResolver {
         const result = await this.createAttributeTypeUseCase.execute({
           identifier: args.input.identifier,
           jsonType: args.input.dataType,
-          format: args.input.name,
+          format: args.input.format ?? undefined,
           description: args.input.description ?? undefined,
-          validationSchema: args.input.constraints ?? undefined,
+          validationSchema: args.input.constraints,
           defaultValue: args.input.defaultValue ?? undefined,
         })
 
-        return {
-          success: !!result,
-          data: result,
-          errors: [],
+        // Map the DTO to GraphQL format
+        if (result?.attributeType) {
+          return {
+            ...result.attributeType,
+            dataType: result.attributeType.jsonType,
+            name: args.input.name,
+            constraints: result.attributeType.validationSchema,
+          }
         }
+        return null
       },
       'createAttributeType',
       { input: args.input }
-    )
+    ).then(mutationResult => ({
+      success: mutationResult.success,
+      attributeType: mutationResult.data,
+      errors: mutationResult.errors || [],
+    }))
   }
 
   async updateAttributeType(
@@ -92,24 +101,23 @@ export class AttributeMutations extends BaseResolver {
       async () => {
         const existingAttributeType = await this.attributeTypeRepository.findById(args.id)
         if (!existingAttributeType) {
-          return {
-            success: false,
-            data: null,
-            errors: [{ message: 'Attribute type not found', code: 'ATTRIBUTE_TYPE_NOT_FOUND' }],
-          }
+          throw new Error('Attribute type not found')
         }
 
-        const updatedAttributeType = await this.attributeTypeRepository.update(args.id, existingAttributeType)
+        const updatedAttributeType = await this.attributeTypeRepository.update(args.id, {
+          ...existingAttributeType,
+          ...args.input,
+        })
 
-        return {
-          success: !!updatedAttributeType,
-          data: updatedAttributeType,
-          errors: [],
-        }
+        return updatedAttributeType
       },
       'updateAttributeType',
       { id: args.id, input: args.input }
-    )
+    ).then(mutationResult => ({
+      success: mutationResult.success,
+      attributeType: mutationResult.data,
+      errors: mutationResult.errors || [],
+    }))
   }
 
   async deleteAttributeType(
@@ -130,22 +138,18 @@ export class AttributeMutations extends BaseResolver {
       async () => {
         const existingAttributeType = await this.attributeTypeRepository.findById(args.id)
         if (!existingAttributeType) {
-          return {
-            success: false,
-            errors: [{ message: 'Attribute type not found', code: 'ATTRIBUTE_TYPE_NOT_FOUND' }],
-          }
+          throw new Error('Attribute type not found')
         }
 
         await this.attributeTypeRepository.delete(args.id)
-
-        return {
-          success: true,
-          errors: [],
-        }
+        return null
       },
       'deleteAttributeType',
       { id: args.id }
-    )
+    ).then(mutationResult => ({
+      success: mutationResult.success,
+      errors: mutationResult.errors || [],
+    }))
   }
 
   async createAttribute(_: GraphQLParent, args: MutationCreateAttributeArgs, context?: GraphQLContext) {
@@ -174,15 +178,15 @@ export class AttributeMutations extends BaseResolver {
           tableId: args.input.tableId,
         })
 
-        return {
-          success: !!result,
-          data: result,
-          errors: [],
-        }
+        return result
       },
       'createAttribute',
       { input: args.input }
-    )
+    ).then(mutationResult => ({
+      success: mutationResult.success,
+      attribute: mutationResult.data,
+      errors: mutationResult.errors || [],
+    }))
   }
 
   async updateAttribute(_: GraphQLParent, args: MutationUpdateAttributeArgs, context?: GraphQLContext) {
@@ -200,24 +204,23 @@ export class AttributeMutations extends BaseResolver {
       async () => {
         const existingAttribute = await this.attributeRepository.findById(args.id)
         if (!existingAttribute) {
-          return {
-            success: false,
-            data: null,
-            errors: [{ message: 'Attribute not found', code: 'ATTRIBUTE_NOT_FOUND' }],
-          }
+          throw new Error('Attribute not found')
         }
 
-        const updatedAttribute = await this.attributeRepository.update(args.id, existingAttribute)
+        const updatedAttribute = await this.attributeRepository.update(args.id, {
+          ...existingAttribute,
+          ...args.input,
+        })
 
-        return {
-          success: !!updatedAttribute,
-          data: updatedAttribute,
-          errors: [],
-        }
+        return updatedAttribute
       },
       'updateAttribute',
       { id: args.id, input: args.input }
-    )
+    ).then(mutationResult => ({
+      success: mutationResult.success,
+      attribute: mutationResult.data,
+      errors: mutationResult.errors || [],
+    }))
   }
 
   async deleteAttribute(_: GraphQLParent, args: MutationDeleteAttributeArgs, context?: GraphQLContext) {
@@ -234,21 +237,17 @@ export class AttributeMutations extends BaseResolver {
       async () => {
         const existingAttribute = await this.attributeRepository.findById(args.id)
         if (!existingAttribute) {
-          return {
-            success: false,
-            errors: [{ message: 'Attribute not found', code: 'ATTRIBUTE_NOT_FOUND' }],
-          }
+          throw new Error('Attribute not found')
         }
 
         await this.attributeRepository.delete(args.id)
-
-        return {
-          success: true,
-          errors: [],
-        }
+        return null
       },
       'deleteAttribute',
       { id: args.id }
-    )
+    ).then(mutationResult => ({
+      success: mutationResult.success,
+      errors: mutationResult.errors || [],
+    }))
   }
 }

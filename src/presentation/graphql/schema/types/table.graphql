@@ -9,6 +9,7 @@ type Table implements Node {
 
   # Relationships
   attributes: [Attribute!]!
+  attributeTypes: [AttributeType!]!
   tableNodes: [TableNode!]!
 
   # Computed fields

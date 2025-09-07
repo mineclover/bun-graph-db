@@ -270,6 +270,7 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.TABLE_FIELD_RESOLVERS,
     async (c) => {
       const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as IAttributeRepository
+      const attributeTypeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as IAttributeTypeRepository
       const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as INodeRepository
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
@@ -278,9 +279,9 @@ export function registerGraphQLModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new TableFieldResolvers(attributeRepository, nodeRepository, simpleLogger)
+      return new TableFieldResolvers(attributeRepository, attributeTypeRepository, nodeRepository, simpleLogger)
     },
-    [RepositoryTokens.ATTRIBUTE_REPOSITORY, RepositoryTokens.NODE_REPOSITORY]
+    [RepositoryTokens.ATTRIBUTE_REPOSITORY, RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY, RepositoryTokens.NODE_REPOSITORY]
   )
 
   container.registerSingleton(
