@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T07:24:57.273Z",
+  "exportedAt": "2025-09-07T07:38:32.983Z",
   "template": {
     "identifier": "create-attribute-with-type",
     "name": "Create Attribute with Type",
@@ -19,9 +19,9 @@
     ],
     "isActive": true,
     "statistics": {
-      "usageCount": 1,
+      "usageCount": 2,
       "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-06T22:24:57.000Z"
+      "lastUsedAt": "2025-09-06T22:38:32.000Z"
     }
   }
 }

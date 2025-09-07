@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T07:24:51.436Z",
+  "exportedAt": "2025-09-07T07:38:31.550Z",
   "template": {
     "identifier": "get-table-attribute-types",
     "name": "Get Table AttributeTypes",
@@ -19,9 +19,9 @@
     ],
     "isActive": true,
     "statistics": {
-      "usageCount": 1,
+      "usageCount": 3,
       "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-06T22:24:51.000Z"
+      "lastUsedAt": "2025-09-06T22:38:31.000Z"
     }
   }
 }

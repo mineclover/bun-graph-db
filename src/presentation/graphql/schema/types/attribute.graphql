@@ -77,7 +77,7 @@ input AttributesFilter {
 
 # Connection types for attribute types
 type AttributeTypesConnection implements Connection {
-  nodes: [AttributeType!]!
+  attributeTypes: [AttributeType!]!
   totalCount: Int!
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -85,7 +85,7 @@ type AttributeTypesConnection implements Connection {
 
 # Connection types for attributes
 type AttributesConnection implements Connection {
-  nodes: [Attribute!]!
+  attributes: [Attribute!]!
   totalCount: Int!
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!

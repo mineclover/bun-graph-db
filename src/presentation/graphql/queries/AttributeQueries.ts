@@ -114,7 +114,7 @@ export class AttributeQueries extends BaseResolver {
         }))
 
         return {
-          nodes,
+          attributeTypes: nodes,
           totalCount: result.total || result.totalCount || 0,
           hasNextPage: result.hasNextPage || false,
           hasPreviousPage: result.hasPreviousPage || false,
@@ -180,7 +180,7 @@ export class AttributeQueries extends BaseResolver {
         )
 
         return {
-          nodes: result.items,
+          attributes: result.items,
           totalCount: result.total,
           hasNextPage: result.hasNextPage,
           hasPreviousPage: result.hasPreviousPage,
