@@ -18,6 +18,37 @@
 - **수동 확인 지점**: 중요한 변경사항은 사람이 확인
 - **간단한 도구**: 복잡한 기능보다 안정적인 기본 기능
 
+## 🔄 표준 템플릿 작업 루프 (2025-09-07 검증됨)
+
+### **핵심 워크플로우**: 서버 작업 → 검증 & Export
+1. **서버에서 템플릿 작업** (GraphQL 뮤테이션으로 생성/수정)
+2. **검증 및 Export**: `bun run template:validate-single {template-name}`
+
+### **구체적인 단계별 진행:**
+```bash
+# 1. 서버 상태 확인
+bun run template:check-server
+
+# 2. 백업 생성 (중요한 변경시 권장)
+bun run template:backup
+# → 저장 위치: demo/templates-backup-YYYYMMDD-HHMMSS/
+
+# 3. 서버에서 템플릿 작업 (createTemplate, updateTemplate 등)
+
+# 4. 검증 + 자동 Export (핵심!)
+bun run template:validate-single {template-name}
+# → 결과: demo/templates/{template-name}_v1-0-0.json
+
+# 5. 필요시 복원 가이드 확인
+bun run template:restore
+```
+
+**검증된 안전장치:**
+- ✅ **스키마 호환성**: GraphQL 스키마와 템플릿 일치 확인
+- ✅ **실행 테스트**: 실제 쿼리 실행으로 동작 검증
+- ✅ **자동 백업**: 타임스탬프 기반 백업 디렉토리 생성
+- ✅ **완전한 메타데이터**: variables, variablesSchema, defaultVariables 포함
+
 ## 🛠️ 검증된 워크플로우
 
 ### 1. 기본 템플릿 관리 워크플로우
@@ -76,19 +107,65 @@ bun demo/curl-tester.ts --all
 - ✅ 표준 명명 규칙: `{template-name}_v1-0-0_result.json`
 - ✅ 실행 메타데이터: 시간, 통계, 에러 정보
 
-### 3. 새 템플릿 생성 (검증된 방법)
+### 3. 서버에서 템플릿 작업 (검증된 쿼리들)
 
+#### **A. 새 템플릿 생성** 
 ```bash
-# 단순한 구조로 생성 (tags 필드 제외)
+# 기본 템플릿 생성
 curl -s -X POST http://localhost:4000/graphql \
   -H "Content-Type: application/json" \
-  -d '{"query": "mutation { createTemplate(input: { identifier: \"my-template\", name: \"My Template\", description: \"설명\", query: \"query { __typename }\" }) { success template { id identifier } errors { message } } }"}' | jq '.'
+  -d '{"query": "mutation { createTemplate(input: { identifier: \"my-new-template\", name: \"My New Template\", description: \"템플릿 설명\", query: \"query { __typename }\" }) { success template { id identifier name } errors { message } } }"}' | jq '.'
+
+# 변수가 있는 템플릿 생성
+curl -s -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { createTemplate(input: { identifier: \"my-query-template\", name: \"My Query Template\", description: \"변수가 있는 템플릿\", query: \"query MyQuery($tableId: ID!) { tableById(id: $tableId) { id identifier name } }\" }) { success template { id identifier } errors { message } } }"}' | jq '.'
 ```
 
-**주의사항:**
+#### **B. 기존 템플릿 수정**
+```bash
+# 템플릿 쿼리 수정
+curl -s -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { updateTemplate(identifier: \"my-template\", input: { query: \"query { __schema { queryType { name } } }\" }) { success template { identifier name query } errors { message } } }"}' | jq '.'
+
+# 템플릿 이름/설명 수정
+curl -s -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { updateTemplate(identifier: \"my-template\", input: { name: \"Updated Template Name\", description: \"업데이트된 설명\" }) { success template { identifier name description } errors { message } } }"}' | jq '.'
+```
+
+#### **C. 템플릿 조회**
+```bash
+# 특정 템플릿 조회
+curl -s -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { templateByIdentifier(identifier: \"search-templates-advanced\") { id identifier name description query operationType isActive } }"}' | jq '.'
+
+# 템플릿 목록 조회
+curl -s -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "query { searchTemplates(pagination: { limit: 5 }) { templates { identifier name description isActive usageCount } totalCount } }"}' | jq '.'
+```
+
+#### **D. 템플릿 실행 테스트**
+```bash
+# 변수 없는 템플릿 실행
+curl -s -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { executeTemplateWithGraphQL(templateIdentifier: \"test-health-check\") { success data metadata { executionTime } } }"}' | jq '.'
+
+# 변수가 있는 템플릿 실행
+curl -s -X POST http://localhost:4000/graphql \
+  -H "Content-Type: application/json" \
+  -d '{"query": "mutation { executeTemplateWithGraphQL(templateIdentifier: \"get-table-schema\", variables: { \"tableIdentifier\": \"test-table\", \"includeNodes\": true, \"nodeSampleLimit\": 3 }) { success data errors } }"}' | jq '.'
+```
+
+**주요 주의사항:**
 - `tags` 필드는 현재 스키마에서 지원하지 않음
 - 쿼리는 유효한 GraphQL 구문이어야 함
 - 식별자는 프로젝트 내 고유해야 함
+- 변수가 있는 쿼리는 올바른 GraphQL 변수 구문 사용 (`$변수명: 타입!`)
 
 ## 📁 파일 관리 시스템 (검증된 구조)
 
@@ -203,19 +280,48 @@ curl -d '{"query": "mutation { createTemplate(input: { identifier, name, query }
 ```bash
 # 1. 서버 상태 확인 (패키지 명령어 사용)
 bun run template:check-server
+# 예상 결과: {"errors":[{"message":"Must provide query string.","extensions":{"code":"BAD_REQUEST"}}]}
+# → 이 에러 메시지가 나오면 서버가 정상 작동 중
 
 # 2. 템플릿 변경 전 백업 생성
 bun run template:backup
+# 실행 결과: demo/templates → demo/templates-backup-YYYYMMDD-HHMMSS/ 복사
+# 예시: demo/templates-backup-20250907-111741/
 
 # 3. 템플릿 검증 (변경 전/후 필수)
 bun run template:validate-single {template-identifier}
+# 예시: bun run template:validate-single search-templates-advanced
 
 # 4. 복원 방법 확인 (필요시)
-bun run template:restore  # 사용법 가이드 출력
+bun run template:restore
+# 사용법 가이드 출력: cp -r demo/templates-backup-YYYYMMDD-HHMMSS demo/templates
+```
+
+#### **백업 시스템 세부사항**
+**백업 파일 구조:**
+```bash
+demo/templates-backup-20250907-111741/  # 타임스탬프 기반 디렉토리명
+├── search-templates-advanced_v1-0-0.json
+├── list-nodes-by-table_v1-0-0.json
+├── get-table-schema_v1-0-0.json
+└── ... (모든 템플릿 파일들)
+```
+
+**복원 방법:**
+```bash
+# 1. 백업 디렉토리 확인
+ls -la demo/templates-backup-*
+
+# 2. 특정 백업으로 복원
+cp -r demo/templates-backup-20250907-111741 demo/templates
+
+# 3. 복원 후 검증
+bun run template:validate-single {template-name}
 ```
 
 **검증된 안전장치들:**
-- ✅ **자동 백업**: 날짜/시간 스탬프로 템플릿 디렉토리 백업
+- ✅ **타임스탬프 백업**: `YYYYMMDD-HHMMSS` 형식으로 고유한 백업 디렉토리 생성
+- ✅ **전체 디렉토리 복사**: `demo/templates/` 전체를 안전하게 백업
 - ✅ **스키마 호환성 검증**: GraphQL 스키마와 템플릿 호환성 확인  
 - ✅ **실행 테스트**: 실제 쿼리 실행으로 동작 검증
 - ✅ **자동 Export**: 검증 통과시에만 파일 저장
@@ -227,14 +333,51 @@ bun run template:restore  # 사용법 가이드 출력
 
 ## 🎯 권장 개발 워크플로우
 
-### 일반적인 템플릿 작업 순서 (2025-09-07 검증된 워크플로우)
-1. **서버 확인**: `bun run template:check-server`
-2. **백업 생성**: `bun run template:backup` (중요한 변경 전)
-3. **기존 상태 검증**: `bun run template:validate-single {template-name}` (변경 전)
-4. **템플릿 생성/수정**: GraphQL 쿼리 편집 또는 새 템플릿 생성
-5. **변경후 검증**: `bun run template:validate-single {template-name}` (변경 후)
-6. **자동 Export**: 검증 통과시 `demo/templates/` 디렉토리에 자동 저장됨
-7. **추가 테스트**: curl-tester.ts로 배치 테스트 (선택사항)
+### ✅ 표준 템플릿 작업 루프 (2025-09-07 최종 검증)
+
+#### **핵심 2단계: 서버 작업 → 검증 & Export**
+
+**Phase 1: 준비 및 서버 작업**
+```bash
+# 1. 서버 상태 확인
+bun run template:check-server
+
+# 2. 백업 생성 (중요한 변경시)
+bun run template:backup
+# → 결과: demo/templates-backup-YYYYMMDD-HHMMSS/
+
+# 3. 서버에서 템플릿 작업
+# createTemplate, updateTemplate, 또는 executeTemplateWithGraphQL 사용
+# (위의 "서버에서 템플릿 작업" 섹션 참조)
+```
+
+**Phase 2: 검증 및 Export**
+```bash
+# 4. 검증 + 자동 Export (핵심!)
+bun run template:validate-single {template-identifier}
+# 예시: bun run template:validate-single my-new-template
+
+# → 자동 결과:
+# ✅ 템플릿 발견: Template Name
+# ✅ 실행 테스트 통과  
+# 📁 Export 완료: demo/templates/{template-identifier}_v1-0-0.json
+```
+
+**선택사항: 추가 검증**
+```bash
+# 5. 배치 테스트 (선택사항)
+bun demo/curl-tester.ts {template-file}.json
+
+# 6. 복원 (문제 발생시)
+cp -r demo/templates-backup-YYYYMMDD-HHMMSS demo/templates
+```
+
+#### **완전 자동화된 워크플로우**
+이 루프는 **서버 → 검증 → Export**의 **자동화된 흐름**으로:
+- ✅ 스키마 호환성 자동 검증
+- ✅ 실행 테스트 자동 수행
+- ✅ 성공시 자동 Export (실패시 중단)
+- ✅ 완전한 메타데이터 자동 생성
 
 ### 문제 해결 접근법
 1. **단계별 확인**: 각 단계마다 결과 확인
