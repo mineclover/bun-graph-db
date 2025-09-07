@@ -1,11 +1,11 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-06T19:16:53.992Z",
+  "exportedAt": "2025-09-07T02:56:35.815Z",
   "template": {
     "identifier": "list-tables-with-pagination",
     "name": "UPDATED: List Tables with Enhanced Pagination",
     "description": "Enhanced table listing with comprehensive pagination, search filtering, and sorting capabilities. Supports dynamic filtering by table metadata.",
-    "query": "query ListTablesWithPagination($pagination: PaginationInput, $filter: String, $sortBy: String = \"createdAt\", $sortOrder: String = \"DESC\", $minNodeCount: Int, $maxNodeCount: Int) { tables(pagination: $pagination, filter: $filter, sortBy: $sortBy, sortOrder: $sortOrder, minNodeCount: $minNodeCount, maxNodeCount: $maxNodeCount) { nodes { id identifier name description nodeCount attributeCount createdAt updatedAt } totalCount hasNextPage hasPreviousPage } }",
+    "query": "query ListTablesWithPagination($pagination: TablesPagination, $filter: TablesFilter) { tables(pagination: $pagination, filter: $filter) { nodes { id identifier description attributeCount createdAt updatedAt } totalCount hasNextPage hasPreviousPage } }",
     "queryName": "ListTablesWithPagination",
     "operationType": "query",
     "variables": null,

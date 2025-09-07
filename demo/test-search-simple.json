@@ -1,0 +1,9 @@
+{
+  "query": "mutation ExecuteTemplate($templateIdentifier: String!, $variables: JSON) { executeTemplateWithGraphQL(templateIdentifier: $templateIdentifier, variables: $variables) { success data errors { message } } }",
+  "variables": {
+    "templateIdentifier": "search-templates-advanced",
+    "variables": {
+      "first": 5
+    }
+  }
+}

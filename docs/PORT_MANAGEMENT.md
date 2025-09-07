@@ -40,12 +40,14 @@ bun index.ts --port 8500 --env production
 
 ### 2. Environment Variables
 ```bash
-# Set via environment variable
+# Set HTTP and WebSocket port via environment variable
 GRAPHQL_PORT=4001 bun index.ts
 
 # Combine with NODE_ENV
 NODE_ENV=production GRAPHQL_PORT=8080 bun index.ts
 ```
+
+**Note**: WebSocket port can only be configured via CLI arguments (`--ws-port`), not environment variables.
 
 ### 3. Priority Order
 1. CLI arguments (highest priority)

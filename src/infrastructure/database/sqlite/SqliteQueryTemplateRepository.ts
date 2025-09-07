@@ -283,7 +283,48 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         throw new DomainException('Template not found', { code: 'NOT_FOUND' })
       }
 
-      const data = existing.toDatabase()
+      // Apply updates to the existing template
+      const updatedTemplate = Object.assign(Object.create(Object.getPrototypeOf(existing)), existing)
+      
+      // Update properties that are provided in updates
+      if (updates.name !== undefined) {
+        ;(updatedTemplate as any).name = updates.name
+      }
+      if (updates.description !== undefined) {
+        ;(updatedTemplate as any).description = updates.description
+      }
+      if (updates.queryText !== undefined) {
+        ;(updatedTemplate as any).queryText = updates.queryText
+      }
+      if (updates.defaultVariables !== undefined) {
+        ;(updatedTemplate as any).defaultVariables = updates.defaultVariables
+      }
+      if (updates.variablesSchema !== undefined) {
+        ;(updatedTemplate as any).variablesSchema = updates.variablesSchema
+      }
+      if (updates.applicableTables !== undefined) {
+        ;(updatedTemplate as any).applicableTables = updates.applicableTables
+      }
+      if (updates.templateType !== undefined) {
+        ;(updatedTemplate as any).templateType = updates.templateType
+      }
+      if (updates.complexityScore !== undefined) {
+        ;(updatedTemplate as any).complexityScore = updates.complexityScore
+      }
+      if (updates.version !== undefined) {
+        ;(updatedTemplate as any).version = updates.version
+      }
+      if (updates.isActive !== undefined) {
+        ;(updatedTemplate as any).isActive = updates.isActive
+      }
+      if (updates.tags !== undefined) {
+        ;(updatedTemplate as any).tags = updates.tags
+      }
+
+      // Set the updated timestamp
+      ;(updatedTemplate as any).updatedAt = new Date()
+
+      const data = updatedTemplate.toDatabase()
 
       const query = `
         UPDATE templates SET
@@ -325,7 +366,13 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         id
       )
 
-      return existing
+      // Return the updated template by querying from database to ensure consistency
+      const result = await this.findById(id)
+      if (!result) {
+        throw new DomainException('Template not found after update', { code: 'UPDATE_ERROR' })
+      }
+      
+      return result
     } catch (error) {
       this.logger.error('Failed to update template', { id, updates, error })
       throw new DomainException('Failed to update template', { code: 'DATABASE_ERROR' })

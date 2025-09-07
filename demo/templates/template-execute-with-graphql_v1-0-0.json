@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T04:25:25.581Z",
+  "template": {
+    "identifier": "template-execute-with-graphql",
+    "name": "Execute Template with GraphQL",
+    "description": "기존 템플릿을 실행하는 뮤테이션 템플릿",
+    "query": "mutation ExecuteTemplate($templateIdentifier: String!, $variables: JSON, $trackUsage: Boolean) { executeTemplateWithGraphQL(templateIdentifier: $templateIdentifier, variables: $variables, trackUsage: $trackUsage) { success data } }",
+    "queryName": "ExecuteTemplate",
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T19:25:25.000Z"
+    }
+  }
+}

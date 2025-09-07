@@ -1,0 +1,12 @@
+{
+  "query": "mutation ExecuteTemplate($templateIdentifier: String!, $variables: JSON) { executeTemplateWithGraphQL(templateIdentifier: $templateIdentifier, variables: $variables) { success data metadata { executionTime } errors { message } } }",
+  "variables": {
+    "templateIdentifier": "search-templates-advanced",
+    "variables": {
+      "tags": ["query"],
+      "tagMatchMode": "ANY",
+      "sortBy": "usageCount",
+      "first": 5
+    }
+  }
+}

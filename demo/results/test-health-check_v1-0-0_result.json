@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:46:16.970Z",
+  "executedAt": "2025-09-06T18:25:10.819Z",
   "templateFilename": "test-health-check_v1-0-0.json",
   "dataset": {
     "name": "Health Check Dataset",
@@ -12,31 +12,39 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:46:16.970Z",
-    "executionTimeMs": 44,
-    "executionTimeFormatted": "44ms"
+    "timestamp": "2025-09-06T18:25:10.819Z",
+    "executionTimeMs": 37,
+    "executionTimeFormatted": "37ms"
   },
   "result": {
     "data": {
-      "queryText": "query HealthCheck {\n  health {\n    status\n    timestamp\n    database\n    version\n  }\n}\n",
-      "processedVariables": {},
+      "success": true,
+      "data": {
+        "health": {
+          "status": "OK",
+          "timestamp": "2025-09-06T18:25:10.798Z",
+          "database": true,
+          "version": "1.0.0"
+        }
+      },
       "metadata": {
         "templateId": "17",
         "templateName": "System Health Check",
         "complexityScore": 1,
         "estimatedTokens": 22,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "executionTime": 2
       }
     },
     "error": null
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 262,
+    "dataSize": 268,
     "hasData": true,
     "dataFields": [
-      "queryText",
-      "processedVariables",
+      "success",
+      "data",
       "metadata"
     ],
     "serverUrl": "http://localhost:4000/graphql",

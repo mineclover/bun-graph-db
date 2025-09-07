@@ -1,0 +1,27 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T04:24:05.725Z",
+  "template": {
+    "identifier": "template-create-new-template",
+    "name": "Create New Template",
+    "description": "새로운 쿼리 템플릿을 생성하는 뮤테이션 템플릿",
+    "query": "mutation CreateTemplate($identifier: String!, $name: String!, $description: String, $query: String!) { createTemplate(input: { identifier: $identifier, name: $name, description: $description, query: $query }) { success template { id identifier name description query createdAt isActive } errors { message } } }",
+    "queryName": "CreateTemplate",
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T19:24:05.000Z"
+    }
+  }
+}

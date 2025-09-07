@@ -1,0 +1,7 @@
+{
+  "query": "mutation UpdateSearchTemplatesQuery($templateId: ID!, $query: String!) { updateTemplateQuery(templateId: $templateId, query: $query) { id identifier name query variablesSchema defaultVariables } }",
+  "variables": {
+    "templateId": "188",
+    "query": "query SearchTemplatesAdvanced($filter: QueryTemplatesFilter, $pagination: PaginationInput, $sort: [SortInput!]) {\n  searchTemplates(filter: $filter, pagination: $pagination, sort: $sort) {\n    templates {\n      id\n      identifier\n      name\n      description\n      tags\n      isActive\n      usageCount\n      avgExecutionTimeMs\n      lastUsedAt\n      createdAt\n      updatedAt\n    }\n    totalCount\n    hasMore\n  }\n}"
+  }
+}

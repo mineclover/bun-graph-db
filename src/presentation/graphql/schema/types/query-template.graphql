@@ -58,6 +58,19 @@ input QueryTemplatesFilter {
   createdBy: String
   createdAfter: DateTime
   createdBefore: DateTime
+  templateType: String
+  tags: [String!]
+  tagMatchMode: TagMatchMode
+  applicableToTable: String
+  includeUniversal: Boolean
+  usageCountMin: Int
+  complexityMin: Int
+  complexityMax: Int
+}
+
+enum TagMatchMode {
+  ANY
+  ALL
 }
 
 # Connection types for query templates
@@ -79,6 +92,13 @@ type UpdateQueryTemplatePayload implements OperationResult {
   success: Boolean!
   template: QueryTemplate
   errors: [Error!]!
+}
+
+type UpdateTemplateQueryPayload implements OperationResult {
+  success: Boolean!
+  template: QueryTemplate
+  errors: [Error!]!
+  previousQuery: String
 }
 
 type DeleteQueryTemplatePayload implements OperationResult {

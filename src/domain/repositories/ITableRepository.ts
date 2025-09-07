@@ -1,4 +1,4 @@
-import type { PaginatedResult, PaginationOptions, TableId } from '@/core/types/CommonTypes.js'
+import type { PaginatedResult, PaginationOptions, TableId, TableSearchOptions } from '@/core/types/CommonTypes.js'
 import type { Table } from '@/domain/entities/Table.js'
 
 // Repository interface (Port) - defines what the domain needs from persistence
@@ -7,7 +7,7 @@ export interface ITableRepository {
   save(table: Table): Promise<void>
   findById(id: TableId): Promise<Table | null>
   findByIdentifier(identifier: string): Promise<Table | null>
-  findAll(options?: PaginationOptions): Promise<PaginatedResult<Table>>
+  findAll(options?: TableSearchOptions): Promise<PaginatedResult<Table>>
   delete(id: TableId): Promise<void>
 
   // Business-specific queries

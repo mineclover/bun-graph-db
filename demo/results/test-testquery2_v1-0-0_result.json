@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:46:17.056Z",
+  "executedAt": "2025-09-06T14:41:20.779Z",
   "templateFilename": "test-testquery2_v1-0-0.json",
   "dataset": {
     "name": "Test Query 2 Dataset",
@@ -12,31 +12,32 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:46:17.056Z",
-    "executionTimeMs": 11,
-    "executionTimeFormatted": "11ms"
+    "timestamp": "2025-09-06T14:41:20.779Z",
+    "executionTimeMs": 13,
+    "executionTimeFormatted": "13ms"
   },
   "result": {
     "data": {
-      "queryText": "query TestQuery2 { test }",
-      "processedVariables": {},
+      "success": true,
+      "data": {},
       "metadata": {
         "templateId": "45",
         "templateName": "TestQuery2",
         "complexityScore": 1,
         "estimatedTokens": 7,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "executionTime": 1
       }
     },
     "error": null
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 182,
+    "dataSize": 161,
     "hasData": true,
     "dataFields": [
-      "queryText",
-      "processedVariables",
+      "success",
+      "data",
       "metadata"
     ],
     "serverUrl": "http://localhost:4000/graphql",

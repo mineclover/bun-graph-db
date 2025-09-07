@@ -102,17 +102,42 @@ const yoga = createYoga({
   landingPage: false,
 })
 
-// Import schema route handler
+// Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes.js'
+import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes.js'
 
-// Create schema handler
+// Create route handlers
 const schemaHandler = await createSchemaHandler(container)
+const templateFileHandler = await createTemplateFileHandler(container)
 
 // Combined request handler
 const requestHandler = async (request: Request): Promise<Response> => {
   const url = new URL(request.url)
+  const pathname = url.pathname
 
-  // Handle schema routes first
+  // Serve static HTML for root path
+  if (pathname === '/') {
+    try {
+      const htmlFile = await Bun.file('./public/index.html')
+      return new Response(await htmlFile.text(), {
+        headers: {
+          'Content-Type': 'text/html',
+          'Cache-Control': 'no-cache'
+        }
+      })
+    } catch (error) {
+      logger.error('Failed to serve index.html', { error })
+      return new Response('Frontend not available', { status: 404 })
+    }
+  }
+
+  // Handle template file routes first
+  const templateFileResponse = await templateFileHandler(request)
+  if (templateFileResponse) {
+    return templateFileResponse
+  }
+
+  // Handle schema routes second
   const schemaResponse = await schemaHandler(request)
   if (schemaResponse) {
     return schemaResponse

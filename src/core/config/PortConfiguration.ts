@@ -162,5 +162,7 @@ export function getPortConfiguration(
     DEFAULT_PORTS[environment]
   )
   
-  return PortManager.generatePortConfig(basePort, environment)
+  const config = PortManager.generatePortConfig(basePort, environment)
+  
+  return config
 }

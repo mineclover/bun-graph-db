@@ -214,6 +214,7 @@ export class GraphQLSchemaBuilder {
         // Template mutations
         createTemplate: (_: any, args: any) => deps.templateMutations.createTemplate(_, args),
         updateTemplate: (_: any, args: any) => deps.templateMutations.updateTemplate(_, args),
+        updateTemplateQuery: (_: any, args: any) => deps.templateMutations.updateTemplateQuery(_, args),
         deleteTemplate: (_: any, args: any) => deps.templateMutations.deleteTemplate(_, args),
         activateTemplate: (_: any, args: any) => deps.templateMutations.activateTemplate(_, args),
         deactivateTemplate: (_: any, args: any) =>

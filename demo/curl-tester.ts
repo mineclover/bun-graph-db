@@ -241,38 +241,30 @@ class CurlTemplateTester {
   
   private async executeTemplate(identifier: string, variables?: Record<string, any>): Promise<{success: boolean, data?: any, error?: string}> {
     const mutation = `
-      mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
-        executeTemplate(input: $input) {
+      mutation ExecuteTemplateWithGraphQL($templateIdentifier: String!, $variables: JSON) {
+        executeTemplateWithGraphQL(templateIdentifier: $templateIdentifier, variables: $variables) {
           success
+          data
           errors {
             message
-            code
-            field
-          }
-          data
-          execution {
-            id
-            executedAt
-            duration
+            path
           }
         }
       }
     `
     
-    const input: any = { templateIdentifier: identifier }
-    if (variables) {
-      input.variables = variables
-    }
+    const result = await this.executeCurl(mutation, { 
+      templateIdentifier: identifier,
+      variables: variables || {}
+    })
     
-    const result = await this.executeCurl(mutation, { input })
-    
-    if (result.success && result.data?.executeTemplate?.success) {
+    if (result.success && result.data?.executeTemplateWithGraphQL?.success) {
       return { 
         success: true, 
-        data: result.data.executeTemplate.data 
+        data: result.data.executeTemplateWithGraphQL.data 
       }
     } else {
-      const errors = result.data?.executeTemplate?.errors || []
+      const errors = result.data?.executeTemplateWithGraphQL?.errors || []
       const errorMessages = errors.map((e: any) => e.message || e).join(', ') || result.error || 'Unknown error'
       return { success: false, error: errorMessages }
     }

@@ -1,5 +1,5 @@
 import type { Database } from 'bun:sqlite'
-import type { PaginatedResult, PaginationOptions, TableId } from '@/core/types/CommonTypes.js'
+import type { PaginatedResult, PaginationOptions, TableId, TableSearchOptions } from '@/core/types/CommonTypes.js'
 import { Table } from '@/domain/entities/Table.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
@@ -89,21 +89,59 @@ export class SqliteTableRepository implements ITableRepository {
     }
   }
 
-  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<Table>> {
-    const { limit = 10, offset = 0 } = options
+  async findAll(options: TableSearchOptions = {}): Promise<PaginatedResult<Table>> {
+    const { 
+      limit = 10, 
+      offset = 0, 
+      search, 
+      createdAfter, 
+      createdBefore, 
+      sortBy = 'created_at', 
+      sortDirection = 'DESC' 
+    } = options
+
+    // Build WHERE clause with filtering
+    let whereConditions: string[] = []
+    let queryParams: (string | number)[] = []
+
+    if (search) {
+      whereConditions.push('(identifier LIKE ? OR description LIKE ?)')
+      queryParams.push(`%${search}%`, `%${search}%`)
+    }
+
+    if (createdAfter) {
+      whereConditions.push('created_at >= ?')
+      queryParams.push(createdAfter)
+    }
+
+    if (createdBefore) {
+      whereConditions.push('created_at <= ?')
+      queryParams.push(createdBefore)
+    }
+
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : ''
+
+    // Validate and sanitize sort parameters
+    const validSortFields = ['id', 'identifier', 'description', 'created_at', 'updated_at']
+    const safeSortBy = validSortFields.includes(sortBy) ? sortBy : 'created_at'
+    const safeSortDirection = sortDirection === 'ASC' ? 'ASC' : 'DESC'
 
     const dataQuery = `
       SELECT id, identifier, description, created_at, updated_at
       FROM tables
-      ORDER BY created_at DESC
+      ${whereClause}
+      ORDER BY ${safeSortBy} ${safeSortDirection}
       LIMIT ? OFFSET ?
     `
 
-    const countQuery = `SELECT COUNT(*) as count FROM tables`
+    const countQuery = `SELECT COUNT(*) as count FROM tables ${whereClause}`
 
     try {
-      const rows = this.db.query<TableRow, [number, number]>(dataQuery).all(limit, offset)
-      const countResult = this.db.query<{ count: number }, []>(countQuery).get()
+      // Add limit and offset to query parameters
+      const dataParams = [...queryParams, limit, offset]
+      
+      const rows = this.db.query<TableRow, any[]>(dataQuery).all(...dataParams)
+      const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...queryParams)
       const total = countResult?.count || 0
 
       const tables = rows.map((row) => this.mapRowToEntity(row))

@@ -1,0 +1,6 @@
+{
+  "query": "mutation ExportTemplate($templateId: ID!) { exportTemplate(templateId: $templateId, includeStatistics: true) { success exportData filename errors { message } } }",
+  "variables": {
+    "templateId": "188"
+  }
+}

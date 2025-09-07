@@ -1,48 +1,101 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:46:17.523Z",
+  "executedAt": "2025-09-06T14:41:20.625Z",
   "templateFilename": "test-list-tables_v1-0-0.json",
   "dataset": {
-    "name": "List Tables with Pagination Dataset",
-    "description": "Execute table listing with pagination variables",
+    "name": "List Tables Dataset",
+    "description": "Execute table listing using existing template",
     "domain": "table_management",
-    "category": "advanced",
+    "category": "basic",
     "templateIdentifier": "test-list-tables",
-    "variables": {
-      "first": 10,
-      "after": null
-    }
+    "variables": null
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:46:17.523Z",
-    "executionTimeMs": 12,
-    "executionTimeFormatted": "12ms"
+    "timestamp": "2025-09-06T14:41:20.625Z",
+    "executionTimeMs": 13,
+    "executionTimeFormatted": "13ms"
   },
   "result": {
     "data": {
-      "queryText": "query ListTables($first: Int, $after: String) {\n  tables(first: $first, after: $after) {\n    nodes {\n      id\n      identifier\n      description\n      nodeCount\n    }\n    totalCount\n    hasNextPage\n    hasPreviousPage\n  }\n}\n",
-      "processedVariables": {
-        "first": 10,
-        "after": null
+      "success": true,
+      "data": {
+        "tables": {
+          "nodes": [
+            {
+              "id": "55",
+              "identifier": "demo-table",
+              "description": "Demo table created via dataset testing"
+            },
+            {
+              "id": "54",
+              "identifier": "test_table_playwright",
+              "description": "Test table created via Playwright automation"
+            },
+            {
+              "id": "53",
+              "identifier": "test_table_via_graphql_exec",
+              "description": "Test table created via executeTemplateWithGraphQL"
+            },
+            {
+              "id": "52",
+              "identifier": "demo_table_1757145929685",
+              "description": null
+            },
+            {
+              "id": "51",
+              "identifier": "demo_table_1757145615363",
+              "description": null
+            },
+            {
+              "id": "50",
+              "identifier": "demo_table_1757145353330",
+              "description": null
+            },
+            {
+              "id": "49",
+              "identifier": "demo_table_1757144146935",
+              "description": null
+            },
+            {
+              "id": "48",
+              "identifier": "demo_table_1757143831334",
+              "description": null
+            },
+            {
+              "id": "47",
+              "identifier": "test_correct_format",
+              "description": "Testing correct variable format"
+            },
+            {
+              "id": "46",
+              "identifier": "demo_table_1757143019232",
+              "description": "Demo table created via automated script"
+            }
+          ],
+          "totalCount": 55,
+          "hasNextPage": true,
+          "hasPreviousPage": false
+        }
       },
       "metadata": {
         "templateId": "18",
         "templateName": "List All Tables",
         "complexityScore": 1,
         "estimatedTokens": 56,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "executionTime": 1
       }
     },
     "error": null
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 423,
+    "dataSize": 1128,
     "hasData": true,
     "dataFields": [
-      "queryText",
-      "processedVariables",
+      "success",
+      "data",
       "metadata"
     ],
     "serverUrl": "http://localhost:4000/graphql",

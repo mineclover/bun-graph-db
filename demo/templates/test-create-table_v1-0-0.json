@@ -1,26 +1,56 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-06T01:46:17.648Z",
+  "exportedAt": "2025-09-06T17:31:52.783Z",
   "template": {
     "identifier": "test-create-table",
     "name": "Create New Table",
     "description": "새 테이블 생성 테스트",
     "query": "mutation CreateTable($input: CreateTableInput!) {\n  createTable(input: $input) {\n    id\n    identifier\n    description\n    createdAt\n  }\n}\n",
     "queryName": null,
-    "operationType": "query",
-    "variables": null,
-    "variablesSchema": null,
-    "defaultVariables": null,
+    "operationType": "mutation",
+    "variables": {
+      "input": {
+        "identifier": "test-table",
+        "description": "A test table for demonstration"
+      }
+    },
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "description": "테이블 생성을 위한 입력 데이터",
+        "required": true,
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "테이블의 식별자",
+            "required": true,
+            "example": "test-table"
+          },
+          "description": {
+            "type": "string",
+            "description": "테이블의 설명",
+            "required": true
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "identifier": "test-table",
+        "description": "A test table for demonstration"
+      }
+    },
     "applicableTables": null,
     "complexityScore": 1,
     "version": "1.0.0",
     "tags": [
       "general"
     ],
+    "isActive": true,
     "statistics": {
-      "usageCount": 25,
+      "usageCount": 29,
       "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-05T16:46:17.000Z"
+      "lastUsedAt": "2025-09-06T05:41:20.000Z"
     }
   }
 }

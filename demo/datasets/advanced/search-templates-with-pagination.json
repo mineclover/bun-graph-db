@@ -1,0 +1,36 @@
+{
+  "name": "Search Templates with Pagination Dataset",
+  "description": "Test advanced template search functionality with pagination and sorting",
+  "domain": "template_management",
+  "category": "advanced",
+  
+  "templateExecution": {
+    "templateIdentifier": "search-templates-advanced",
+    "variables": {
+      "pagination": {
+        "limit": 5,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "name",
+          "direction": "ASC"
+        }
+      ]
+    }
+  },
+  
+  "expectedResult": {
+    "success": true,
+    "dataShape": {
+      "templates": "array",
+      "totalCount": "number",
+      "hasNextPage": "boolean"
+    }
+  },
+  
+  "testConfig": {
+    "shouldExport": false,
+    "retryOnFailure": false
+  }
+}

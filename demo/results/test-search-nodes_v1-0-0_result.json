@@ -1,52 +1,67 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:46:17.565Z",
+  "executedAt": "2025-09-06T14:41:20.676Z",
   "templateFilename": "test-search-nodes_v1-0-0.json",
   "dataset": {
-    "name": "Search Nodes with Table ID Dataset",
-    "description": "Execute node search with required table ID and optional filter",
+    "name": "Search Nodes Dataset",
+    "description": "Execute node search using existing template with variables",
     "domain": "node_management",
-    "category": "advanced",
+    "category": "basic",
     "templateIdentifier": "test-search-nodes",
     "variables": {
-      "tableId": "1",
-      "filter": {
-        "content": "sample"
-      }
+      "filter": "",
+      "limit": 5
     }
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:46:17.565Z",
-    "executionTimeMs": 11,
-    "executionTimeFormatted": "11ms"
+    "timestamp": "2025-09-06T14:41:20.676Z",
+    "executionTimeMs": 13,
+    "executionTimeFormatted": "13ms"
   },
   "result": {
     "data": {
-      "queryText": "query SearchNodes($tableId: ID!, $filter: NodeFilter) {\n  nodes(tableId: $tableId, filter: $filter) {\n    nodes {\n      id\n      content\n      title\n    }\n    totalCount\n    hasNextPage\n  }\n}\n",
-      "processedVariables": {
-        "tableId": "1",
-        "filter": {
-          "content": "sample"
+      "success": false,
+      "errors": [
+        {
+          "message": "Variable \"$tableId\" of required type \"ID!\" was not provided.",
+          "locations": [
+            {
+              "line": 1,
+              "column": 19
+            }
+          ],
+          "code": "GRAPHQL_EXECUTION_ERROR"
+        },
+        {
+          "message": "Variable \"$filter\" expected value of type \"NodeFilter\" which cannot be used as an input type.",
+          "locations": [
+            {
+              "line": 1,
+              "column": 43
+            }
+          ],
+          "code": "GRAPHQL_EXECUTION_ERROR"
         }
-      },
+      ],
       "metadata": {
         "templateId": "22",
         "templateName": "Search Nodes",
         "complexityScore": 1,
         "estimatedTokens": 48,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "executionTime": 1
       }
     },
     "error": null
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 406,
+    "dataSize": 497,
     "hasData": true,
     "dataFields": [
-      "queryText",
-      "processedVariables",
+      "success",
+      "errors",
       "metadata"
     ],
     "serverUrl": "http://localhost:4000/graphql",

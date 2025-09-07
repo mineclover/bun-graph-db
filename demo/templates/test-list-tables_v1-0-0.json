@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-06T01:46:17.522Z",
+  "exportedAt": "2025-09-06T17:29:01.943Z",
   "template": {
     "identifier": "test-list-tables",
     "name": "List All Tables",
@@ -17,10 +17,11 @@
     "tags": [
       "general"
     ],
+    "isActive": true,
     "statistics": {
-      "usageCount": 79,
+      "usageCount": 91,
       "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-05T16:46:17.000Z"
+      "lastUsedAt": "2025-09-06T05:41:20.000Z"
     }
   }
 }

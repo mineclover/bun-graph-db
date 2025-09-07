@@ -69,20 +69,27 @@ export class TableResolver extends BaseResolver {
     )
   }
 
-  async tables(args: { filter?: TablesFilter; pagination?: TablesPagination }): Promise<{
+  async tables(args: { filter?: TablesFilter; pagination?: TablesPagination; sort?: Array<{ field: string; direction: 'ASC' | 'DESC' }> }): Promise<{
     nodes: TableDto[]
     totalCount: number
     hasNextPage: boolean
     hasPreviousPage: boolean
   }> {
     try {
-      const { pagination = { limit: 10, offset: 0 } } = args
+      const { pagination = { limit: 10, offset: 0 }, filter, sort } = args
 
-      // TODO: Implement filtering in repository
-      const result = await this.tableRepository.findAll({
+      // Implement filtering with repository search
+      const searchOptions = {
         limit: pagination.limit || 10,
         offset: pagination.offset || 0,
-      })
+        search: filter?.search,
+        createdAfter: filter?.createdAfter,
+        createdBefore: filter?.createdBefore,
+        sortBy: sort?.[0]?.field || 'createdAt',
+        sortDirection: (sort?.[0]?.direction || 'DESC') as 'ASC' | 'DESC',
+      }
+
+      const result = await this.tableRepository.findAll(searchOptions)
 
       return {
         nodes: (result.data || []).map((table) => TableDto.fromEntity(table)),

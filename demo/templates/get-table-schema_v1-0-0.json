@@ -8,8 +8,31 @@
     "query": "query GetTableSchema($tableIdentifier: String!, $includeNodes: Boolean = true, $nodeSampleLimit: Int = 5) { tableByIdentifier(identifier: $tableIdentifier) { id identifier name description nodeCount attributeCount createdAt updatedAt attributes { id identifier name description dataType defaultValue isRequired isUnique table { id identifier } } nodes(pagination: { limit: $nodeSampleLimit }) @include(if: $includeNodes) { nodes { id content title description createdAt } totalCount } } }",
     "queryName": "GetTableSchema",
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": null,
+    "variables": {
+      "tableIdentifier": "test-table",
+      "includeNodes": true,
+      "nodeSampleLimit": 5
+    },
+    "variablesSchema": {
+      "tableIdentifier": {
+        "type": "string",
+        "description": "스키마를 조회할 테이블의 식별자",
+        "required": true,
+        "example": "test-table"
+      },
+      "includeNodes": {
+        "type": "boolean",
+        "description": "샘플 노드를 포함할지 여부",
+        "default": true
+      },
+      "nodeSampleLimit": {
+        "type": "integer",
+        "description": "포함할 샘플 노드의 개수",
+        "default": 5,
+        "minimum": 1,
+        "maximum": 20
+      }
+    },
     "defaultVariables": {
       "type": "object",
       "properties": {

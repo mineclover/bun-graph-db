@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-06T19:16:53.876Z",
+  "exportedAt": "2025-09-07T03:07:40.527Z",
   "template": {
     "identifier": "list-nodes-by-table",
     "name": "List Nodes by Table",
@@ -51,6 +51,11 @@
     "tags": [
       "general"
     ],
-    "isActive": true
+    "isActive": true,
+    "statistics": {
+      "usageCount": 2,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T10:16:53.000Z"
+    }
   }
 }

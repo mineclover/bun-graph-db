@@ -85,12 +85,14 @@ bun run template:validate-single list-tables-with-pagination
 bun run template:validate-single test-health-check
 ```
 
-**검증된 결과 (2025-09-07 기준):**
+**검증된 결과 (2025-09-07 기준 - 통합 후):**
 - ✅ **5개 핵심 템플릿 100% 검증 통과**
 - ✅ GraphQL 스키마 호환성 확인 (Relay → offset pagination 수정 완료)
 - ✅ 자동 Export: `demo/templates/{template-identifier}_v1-0-0.json`
 - ✅ 실행 시간: 37-57ms (매우 빠름)
+- ✅ **사용 통계 포함**: usageCount, avgExecutionTimeMs, lastUsedAt 자동 포함
 - ✅ 완전한 변수 정보 포함 (variables, variablesSchema, defaultVariables)
+- ✅ **통합 도구**: 검증 + 배치 처리 + 통계를 하나의 도구로 통일
 
 #### **B. 배치 테스트 시스템**
 ```bash
@@ -494,98 +496,111 @@ done
 
 ### 실용적인 도구 사용법
 
-#### **Export 도구** - 두 가지 방법
+#### **통합된 Export 시스템** (2025-09-07 업데이트)
 
-##### **Method 1: 검증 + Export (권장)**
+**🎯 통합 완료**: `template-export.ts`와 `simple-validator.ts`를 하나로 통합하여 **검증 + 통계 + 배치 처리**를 모두 지원하는 단일 도구 완성
+
+##### **통합 템플릿 도구: `scripts/simple-validator.ts`**
+
 ```bash
-# 개별 템플릿 검증 + 자동 Export (표준 워크플로우)
+# 1. 개별 템플릿 검증 + Export (기본 모드)
 bun run template:validate-single {template-identifier}
-# → 스키마 검증 → 실행 테스트 → demo/templates/{template-name}_v1-0-0.json
+# → 스키마 검증 → 실행 테스트 → 사용 통계 포함 Export
 
-# 예시: 핵심 템플릿들 검증 + Export
-bun run template:validate-single search-templates-advanced
-bun run template:validate-single list-nodes-by-table
+# 2. 모든 활성 템플릿 배치 Export (검증 포함)
+bun scripts/simple-validator.ts all
+
+# 3. 빠른 배치 Export (검증 생략)
+bun scripts/simple-validator.ts all --skip-validation
+
+# 4. 특정 템플릿들만 Export
+bun scripts/simple-validator.ts templates template1 template2 template3
+
+# 5. 사용자 지정 디렉토리로 Export
+bun scripts/simple-validator.ts all --output ./backups/$(date +%Y%m%d)
+
+# 6. 템플릿 목록만 확인
+bun scripts/simple-validator.ts list
 ```
 
-**장점:**
-- ✅ **완전한 검증**: GraphQL 스키마 호환성 + 실행 테스트
-- ✅ **안전성**: 검증 통과시에만 Export
+**✨ 통합된 기능:**
+- ✅ **완전한 검증**: GraphQL 스키마 호환성 + 실행 테스트 (선택 가능)
+- ✅ **사용 통계 포함**: usageCount, avgExecutionTimeMs, lastUsedAt 자동 포함
+- ✅ **배치 처리**: 여러 템플릿 동시 처리 지원
+- ✅ **출력 디렉토리 지정**: `--output` 옵션으로 백업 위치 선택
+- ✅ **진행상황 표시**: Export 진행률과 성공/실패 통계
+- ✅ **검증 옵션**: `--skip-validation`으로 빠른 Export 가능
 - ✅ **완전한 메타데이터**: variables, variablesSchema, defaultVariables 포함
+- ✅ **서버 부하 방지**: 200ms 지연으로 안전한 배치 처리
 
-##### **Method 2: 배치 Export (추가 도구)**
-```bash
-# 모든 활성 템플릿 일괄 Export (검증 없음)
-bun scripts/template-export.ts all --output ./backups/$(date +%Y%m%d)
+#### **Export 사용법 선택 가이드**
 
-# 특정 템플릿들만 Export
-bun scripts/template-export.ts templates test-health-check search-templates-advanced
+| 상황 | 권장 명령어 | 이유 |
+|------|------------|------|
+| **일반적인 템플릿 작업** | `bun run template:validate-single {id}` | 표준 워크플로우, 완전 검증 |
+| **개발 워크플로우** | `bun run template:validate-single {id}` | 서버 작업 → 검증 & Export |
+| **대량 백업 (안전)** | `bun scripts/simple-validator.ts all` | 검증 + 배치 처리 |
+| **대량 백업 (빠름)** | `bun scripts/simple-validator.ts all --skip-validation` | 검증 생략, 고속 처리 |
+| **특정 디렉토리 Export** | `bun scripts/simple-validator.ts all --output ./backups` | 출력 위치 지정 |
+| **템플릿 목록 확인** | `bun scripts/simple-validator.ts list` | 빠른 목록 조회 |
+| **특정 템플릿들만** | `bun scripts/simple-validator.ts templates id1 id2` | 선택적 Export |
 
-# 템플릿 목록만 확인
-bun scripts/template-export.ts list
-```
+**🎯 통일된 우선순위:**
+1. 🥇 **일상 작업**: `bun run template:validate-single` (기존 호환성 + 안전성)
+2. 🥈 **배치 작업**: `bun scripts/simple-validator.ts all` (통합된 기능)
+3. 🥉 **고속 백업**: `bun scripts/simple-validator.ts all --skip-validation` (속도 우선)
 
-**장점:**
-- 🔧 **배치 처리**: 여러 템플릿 동시 Export
-- 📁 **출력 디렉토리 지정**: `--output` 옵션으로 백업 위치 선택
-- 📊 **진행상황 표시**: Export 진행률과 성공/실패 통계
+### 🔗 **통합 Export 명령어 완전 가이드**
 
-**주의사항:**
-- ⚠️ **검증 없음**: GraphQL 호환성 검증하지 않음
-- ⚠️ **Export만 수행**: 실행 테스트 없이 파일만 생성
-
-#### **Export 방법 선택 가이드**
-
-| 상황 | 권장 방법 | 이유 |
-|------|----------|------|
-| **일반적인 템플릿 작업** | Method 1 (`validate-single`) | 검증 + Export 통합, 안전성 보장 |
-| **개발 워크플로우** | Method 1 (`validate-single`) | 표준 루프: 서버 작업 → 검증 & Export |
-| **대량 백업** | Method 2 (`template-export.ts`) | 모든 템플릿 일괄 처리 |
-| **특정 디렉토리 Export** | Method 2 (`template-export.ts`) | `--output` 옵션으로 위치 지정 |
-| **템플릿 목록 확인** | Method 2 (`template-export.ts list`) | 빠른 템플릿 목록 조회 |
-
-**권장 우선순위:**
-1. 🥇 **일상 작업**: `bun run template:validate-single` (안전성)
-2. 🥈 **대량 백업**: `bun scripts/template-export.ts all` (효율성)
-
-### 🔗 **Export 명령어 완전 가이드**
-
-#### **표준 워크플로우 (권장)**
+#### **표준 워크플로우 (권장, 기존 호환성 유지)**
 ```bash
 # 1. 서버에서 템플릿 작업 후
-# 2. 검증 + 자동 Export
+# 2. 검증 + 자동 Export (사용 통계 포함)
 bun run template:validate-single {template-identifier}
-# → 결과: demo/templates/{template-identifier}_v1-0-0.json
+# → 결과: demo/templates/{template-identifier}_v1-0-0.json (통계 포함)
 ```
 
-#### **배치 Export 도구**
+#### **통합된 배치 Export 도구**
 ```bash
-# 모든 활성 템플릿 Export
-bun scripts/template-export.ts all
+# 모든 활성 템플릿 Export (검증 + 통계 포함)
+bun scripts/simple-validator.ts all
+
+# 빠른 배치 Export (검증 생략, 통계 포함)
+bun scripts/simple-validator.ts all --skip-validation
 
 # 특정 템플릿들 Export  
-bun scripts/template-export.ts templates template1 template2 template3
+bun scripts/simple-validator.ts templates template1 template2 template3
 
 # 사용자 지정 디렉토리로 Export
-bun scripts/template-export.ts all --output ./my-backups/$(date +%Y%m%d)
+bun scripts/simple-validator.ts all --output ./my-backups/$(date +%Y%m%d)
 
 # 템플릿 목록만 확인 (Export 없이)
-bun scripts/template-export.ts list
+bun scripts/simple-validator.ts list
 ```
 
 #### **실제 사용 예시**
 ```bash
-# 예시 1: 일반적인 개발 워크플로우
+# 예시 1: 일반적인 개발 워크플로우 (기존과 동일)
 bun run template:check-server
 bun run template:backup  
 # (서버에서 템플릿 생성/수정)
 bun run template:validate-single my-new-template
 
-# 예시 2: 프로젝트 백업 생성
-bun scripts/template-export.ts all --output ./project-backup-$(date +%Y%m%d)
+# 예시 2: 프로젝트 백업 생성 (통계 포함, 검증 있음)
+bun scripts/simple-validator.ts all --output ./project-backup-$(date +%Y%m%d)
 
-# 예시 3: 특정 템플릿들만 다른 디렉토리로
-bun scripts/template-export.ts templates search-templates-advanced list-nodes-by-table --output ./core-templates
+# 예시 3: 빠른 백업 (검증 생략)
+bun scripts/simple-validator.ts all --skip-validation --output ./quick-backup-$(date +%Y%m%d)
+
+# 예시 4: 핵심 템플릿들만 별도 디렉토리로
+bun scripts/simple-validator.ts templates search-templates-advanced list-nodes-by-table --output ./core-templates
 ```
+
+**🔄 통합 완료 사항:**
+- ❌ **제거**: `scripts/template-export.ts` (중복 도구 정리)
+- ✅ **통합**: `scripts/simple-validator.ts`에 모든 기능 통합
+- ✅ **호환성**: 기존 `bun run template:validate-single` 명령어 유지
+- ✅ **향상**: 모든 Export에 사용 통계 자동 포함
 
 #### **Import 도구** - 안전한 템플릿 복구
 ```bash

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:46:17.303Z",
+  "executedAt": "2025-09-06T14:41:20.122Z",
   "templateFilename": "test-get-node_v1-0-0.json",
   "dataset": {
     "name": "Get Node By ID Dataset",
@@ -14,33 +14,43 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:46:17.303Z",
-    "executionTimeMs": 46,
-    "executionTimeFormatted": "46ms"
+    "timestamp": "2025-09-06T14:41:20.122Z",
+    "executionTimeMs": 28,
+    "executionTimeFormatted": "28ms"
   },
   "result": {
     "data": {
-      "queryText": "query GetNode($nodeId: ID!) {\n  node(id: $nodeId) {\n    id\n    content\n    title\n    description\n    tableId\n    createdAt\n    updatedAt\n  }\n}\n",
-      "processedVariables": {
-        "id": "1"
-      },
+      "success": false,
+      "errors": [
+        {
+          "message": "Variable \"$nodeId\" of required type \"ID!\" was not provided.",
+          "locations": [
+            {
+              "line": 1,
+              "column": 15
+            }
+          ],
+          "code": "GRAPHQL_EXECUTION_ERROR"
+        }
+      ],
       "metadata": {
         "templateId": "20",
         "templateName": "Get Node Information",
         "complexityScore": 1,
         "estimatedTokens": 36,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "executionTime": 2
       }
     },
     "error": null
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 330,
+    "dataSize": 322,
     "hasData": true,
     "dataFields": [
-      "queryText",
-      "processedVariables",
+      "success",
+      "errors",
       "metadata"
     ],
     "serverUrl": "http://localhost:4000/graphql",

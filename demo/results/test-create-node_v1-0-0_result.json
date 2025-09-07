@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:46:17.691Z",
+  "executedAt": "2025-09-06T14:41:20.894Z",
   "templateFilename": "test-create-node_v1-0-0.json",
   "dataset": {
     "name": "Create Node Dataset",
@@ -19,38 +19,53 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:46:17.691Z",
-    "executionTimeMs": 12,
-    "executionTimeFormatted": "12ms"
+    "timestamp": "2025-09-06T14:41:20.894Z",
+    "executionTimeMs": 14,
+    "executionTimeFormatted": "14ms"
   },
   "result": {
     "data": {
-      "queryText": "mutation CreateNode($input: CreateNodeInput!) {\n  createNode(input: $input) {\n    id\n    content\n    title\n    description\n    tableId\n    createdAt\n  }\n}\n",
-      "processedVariables": {
-        "input": {
-          "tableId": "1",
-          "content": "Demo node created via dataset testing",
-          "title": "Demo Node",
-          "description": "A test node created through the dataset testing system"
+      "success": false,
+      "errors": [
+        {
+          "message": "Variable \"$input\" got invalid value { tableId: \"1\", content: \"Demo node created via dataset testing\", title: \"Demo Node\", description: \"A test node created through the dataset testing system\" }; Field \"title\" is not defined by type \"CreateNodeInput\".",
+          "locations": [
+            {
+              "line": 1,
+              "column": 21
+            }
+          ],
+          "code": "GRAPHQL_EXECUTION_ERROR"
+        },
+        {
+          "message": "Variable \"$input\" got invalid value { tableId: \"1\", content: \"Demo node created via dataset testing\", title: \"Demo Node\", description: \"A test node created through the dataset testing system\" }; Field \"description\" is not defined by type \"CreateNodeInput\".",
+          "locations": [
+            {
+              "line": 1,
+              "column": 21
+            }
+          ],
+          "code": "GRAPHQL_EXECUTION_ERROR"
         }
-      },
+      ],
       "metadata": {
         "templateId": "21",
         "templateName": "Create New Node",
         "complexityScore": 1,
         "estimatedTokens": 39,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "executionTime": 1
       }
     },
     "error": null
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 492,
+    "dataSize": 873,
     "hasData": true,
     "dataFields": [
-      "queryText",
-      "processedVariables",
+      "success",
+      "errors",
       "metadata"
     ],
     "serverUrl": "http://localhost:4000/graphql",

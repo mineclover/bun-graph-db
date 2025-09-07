@@ -272,6 +272,7 @@ export class QueryTemplateResolver extends BaseResolver {
         // Map the input properties that can be updated
         ...(input.name && { name: input.name }),
         ...(input.description !== undefined && { description: input.description }),
+        ...((input as any).query && { queryText: (input as any).query }),
         ...(input.queryText && { queryText: input.queryText }),
         ...(input.variablesSchema !== undefined && { variablesSchema: input.variablesSchema }),
         ...(input.defaultVariables !== undefined && { defaultVariables: input.defaultVariables }),
@@ -290,6 +291,69 @@ export class QueryTemplateResolver extends BaseResolver {
       throw new GraphQLError('Failed to update template', {
         extensions: { code: 'TEMPLATE_UPDATE_FAILED' },
       })
+    }
+  }
+
+  async updateTemplateQuery(args: {
+    templateId?: string
+    templateIdentifier?: string
+    newQuery: string
+    updateVariables?: Record<string, unknown>
+  }): Promise<{
+    success: boolean
+    template?: QueryTemplateDto
+    errors: Array<{ message: string }>
+    previousQuery?: string
+  }> {
+    this.logger.info('Updating template query', { 
+      templateId: args.templateId, 
+      templateIdentifier: args.templateIdentifier 
+    })
+
+    try {
+      // Find template by ID or identifier
+      let template: QueryTemplate | null = null
+      
+      if (args.templateId) {
+        template = await this.queryTemplateRepository.findById(args.templateId)
+      } else if (args.templateIdentifier) {
+        template = await this.queryTemplateRepository.findByIdentifier(args.templateIdentifier)
+      }
+
+      if (!template) {
+        return {
+          success: false,
+          errors: [{ message: 'Template not found' }],
+        }
+      }
+
+      // Store previous query for rollback if needed
+      const previousQuery = template.queryText
+
+      // Update the query and variables
+      const updateData: Partial<QueryTemplate> = {
+        queryText: args.newQuery,
+        updatedAt: new Date(),
+      }
+
+      if (args.updateVariables) {
+        updateData.variablesSchema = args.updateVariables as QueryVariablesSchema
+      }
+
+      const updatedTemplate = await this.queryTemplateRepository.update(template.id, updateData)
+
+      return {
+        success: true,
+        template: QueryTemplateDtoMapper.toDto(updatedTemplate),
+        errors: [],
+        previousQuery,
+      }
+    } catch (error) {
+      this.logger.error('Update template query error:', error)
+      return {
+        success: false,
+        errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }],
+      }
     }
   }
 

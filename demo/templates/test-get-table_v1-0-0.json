@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-06T01:46:17.479Z",
+  "exportedAt": "2025-09-06T17:29:42.055Z",
   "template": {
     "identifier": "test-get-table",
     "name": "Get Table Information",
@@ -8,19 +8,31 @@
     "query": "query GetTable($tableId: ID!) {\n  table(id: $tableId) {\n    id\n    identifier\n    description\n    nodeCount\n    attributeCount\n    createdAt\n    updatedAt\n  }\n}\n",
     "queryName": null,
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": null,
-    "defaultVariables": null,
+    "variables": {
+      "tableId": "1"
+    },
+    "variablesSchema": {
+      "tableId": {
+        "type": "ID!",
+        "description": "조회할 테이블의 고유 ID",
+        "required": true,
+        "example": "1"
+      }
+    },
+    "defaultVariables": {
+      "tableId": "1"
+    },
     "applicableTables": null,
     "complexityScore": 1,
     "version": "1.0.0",
     "tags": [
       "general"
     ],
+    "isActive": true,
     "statistics": {
-      "usageCount": 32,
+      "usageCount": 37,
       "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-05T16:46:17.000Z"
+      "lastUsedAt": "2025-09-06T05:41:20.000Z"
     }
   }
 }

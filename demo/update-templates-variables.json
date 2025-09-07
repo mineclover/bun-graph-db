@@ -1,0 +1,76 @@
+{
+  "query": "mutation UpdateTemplateQuery($templateId: ID!, $newQuery: String!, $updateVariables: JSON) { updateTemplateQuery(templateId: $templateId, newQuery: $newQuery, updateVariables: $updateVariables) { success previousQuery template { id identifier name } errors { message } } }",
+  "variables": {
+    "templateId": "188",
+    "newQuery": "query SearchTemplatesAdvanced($tags: [String!], $tagMatchMode: String = \"ANY\", $includeInactive: Boolean = false, $sortBy: String = \"usageCount\", $sortOrder: String = \"DESC\", $minUsageCount: Int, $maxUsageCount: Int, $createdAfter: String, $createdBefore: String, $searchText: String, $first: Int = 10, $after: String) { searchTemplates(tags: $tags, tagMatchMode: $tagMatchMode, includeInactive: $includeInactive, sortBy: $sortBy, sortOrder: $sortOrder, minUsageCount: $minUsageCount, maxUsageCount: $maxUsageCount, createdAfter: $createdAfter, createdBefore: $createdBefore, searchText: $searchText, first: $first, after: $after) { nodes { id identifier name description tags isActive usageCount avgExecutionTimeMs lastUsedAt createdAt updatedAt } totalCount hasNextPage hasPreviousPage } }",
+    "updateVariables": {
+      "type": "object",
+      "properties": {
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "태그 필터 (예: [\"query\", \"table\"])"
+        },
+        "tagMatchMode": {
+          "type": "string",
+          "enum": ["ANY", "ALL"],
+          "default": "ANY",
+          "description": "태그 매칭 모드"
+        },
+        "includeInactive": {
+          "type": "boolean",
+          "default": false,
+          "description": "비활성 템플릿 포함 여부"
+        },
+        "sortBy": {
+          "type": "string",
+          "enum": ["usageCount", "createdAt", "name", "lastUsedAt"],
+          "default": "usageCount",
+          "description": "정렬 기준"
+        },
+        "sortOrder": {
+          "type": "string",
+          "enum": ["ASC", "DESC"],
+          "default": "DESC",
+          "description": "정렬 순서"
+        },
+        "minUsageCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "최소 사용 횟수 필터"
+        },
+        "maxUsageCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "최대 사용 횟수 필터"
+        },
+        "createdAfter": {
+          "type": "string",
+          "format": "date",
+          "description": "생성일 이후 필터 (YYYY-MM-DD)"
+        },
+        "createdBefore": {
+          "type": "string",
+          "format": "date",
+          "description": "생성일 이전 필터 (YYYY-MM-DD)"
+        },
+        "searchText": {
+          "type": "string",
+          "description": "이름/설명에서 검색할 텍스트"
+        },
+        "first": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 100,
+          "description": "결과 개수 제한"
+        },
+        "after": {
+          "type": "string",
+          "description": "페이지네이션 커서"
+        }
+      },
+      "required": []
+    }
+  }
+}

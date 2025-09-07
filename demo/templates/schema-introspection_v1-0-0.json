@@ -1,0 +1,25 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T10:00:00.000Z",
+  "template": {
+    "identifier": "schema-introspection",
+    "name": "GraphQL Schema Introspection",
+    "description": "GraphQL 스키마 구조 확인 및 서버 상태 검증용 쿼리",
+    "query": "query SchemaIntrospection { __schema { queryType { name fields { name description } } mutationType { name fields { name description } } types(includeBuiltIn: false) { name kind description fields { name type { name } } } } }",
+    "queryName": "SchemaIntrospection",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "basic",
+      "introspection",
+      "schema",
+      "debug"
+    ],
+    "isActive": true
+  }
+}

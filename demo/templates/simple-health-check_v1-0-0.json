@@ -1,0 +1,24 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T10:00:00.000Z",
+  "template": {
+    "identifier": "simple-health-check",
+    "name": "Simple Health Check",
+    "description": "가장 간단한 서버 연결 상태 확인 쿼리 (__typename만 조회)",
+    "query": "query SimpleHealthCheck { __schema { queryType { name } } }",
+    "queryName": "SimpleHealthCheck",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 1,
+    "version": "1.0.0",
+    "tags": [
+      "basic",
+      "health",
+      "test"
+    ],
+    "isActive": true
+  }
+}

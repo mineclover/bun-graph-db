@@ -30,6 +30,14 @@ export interface PaginationInput {
   offset?: number
 }
 
+export interface TableSearchOptions extends PaginationInput {
+  search?: string
+  createdAfter?: string
+  createdBefore?: string
+  sortBy?: string
+  sortDirection?: 'ASC' | 'DESC'
+}
+
 export interface PaginatedResult<T> {
   nodes: T[]
   totalCount: number

@@ -1,0 +1,6 @@
+{
+  "query": "mutation ExportFixedTemplate($templateIdentifier: String!) { exportTemplate(templateIdentifier: $templateIdentifier) { template { id identifier name description query queryName operationType variables variablesSchema defaultVariables applicableTables complexityScore version tags isActive statistics { usageCount avgExecutionTimeMs lastUsedAt } createdAt updatedAt } exportedAt version } }",
+  "variables": {
+    "templateIdentifier": "search-templates-advanced"
+  }
+}

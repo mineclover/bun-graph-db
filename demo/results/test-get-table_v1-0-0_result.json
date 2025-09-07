@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "executedAt": "2025-09-06T01:46:17.480Z",
+  "executedAt": "2025-09-06T14:41:20.226Z",
   "templateFilename": "test-get-table_v1-0-0.json",
   "dataset": {
-    "name": "Get Table By Name Dataset",
-    "description": "Execute table lookup by name using existing template with variable",
+    "name": "Get Table by ID Dataset",
+    "description": "Execute table lookup by ID using existing template",
     "domain": "table_management",
     "category": "advanced",
     "templateIdentifier": "test-get-table",
@@ -14,33 +14,41 @@
   },
   "execution": {
     "success": true,
-    "timestamp": "2025-09-06T01:46:17.480Z",
-    "executionTimeMs": 11,
-    "executionTimeFormatted": "11ms"
+    "timestamp": "2025-09-06T14:41:20.226Z",
+    "executionTimeMs": 13,
+    "executionTimeFormatted": "13ms"
   },
   "result": {
     "data": {
-      "queryText": "query GetTable($tableId: ID!) {\n  table(id: $tableId) {\n    id\n    identifier\n    description\n    nodeCount\n    attributeCount\n    createdAt\n    updatedAt\n  }\n}\n",
-      "processedVariables": {
-        "tableId": "1"
+      "success": true,
+      "data": {
+        "table": {
+          "id": "1",
+          "identifier": "products",
+          "description": "Product catalog management",
+          "attributeCount": 0,
+          "createdAt": "2025-09-04T14:40:50.174Z",
+          "updatedAt": "2025-09-04T14:40:50.174Z"
+        }
       },
       "metadata": {
         "templateId": "16",
         "templateName": "Get Table Information",
         "complexityScore": 1,
         "estimatedTokens": 41,
-        "version": "1.0.0"
+        "version": "1.0.0",
+        "executionTime": 1
       }
     },
     "error": null
   },
   "metadata": {
     "resultType": "success",
-    "dataSize": 354,
+    "dataSize": 355,
     "hasData": true,
     "dataFields": [
-      "queryText",
-      "processedVariables",
+      "success",
+      "data",
       "metadata"
     ],
     "serverUrl": "http://localhost:4000/graphql",

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-06T01:46:17.606Z",
+  "exportedAt": "2025-09-06T14:41:20.992Z",
   "template": {
     "identifier": "test-testmutation1",
     "name": "TestMutation1",
@@ -17,10 +17,11 @@
     "tags": [
       "test"
     ],
+    "isActive": true,
     "statistics": {
-      "usageCount": 76,
+      "usageCount": 78,
       "avgExecutionTimeMs": 370,
-      "lastUsedAt": "2025-09-05T16:46:17.000Z"
+      "lastUsedAt": "2025-09-06T05:41:20.000Z"
     }
   }
 }

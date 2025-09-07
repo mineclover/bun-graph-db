@@ -98,37 +98,56 @@ export class TemplateMutations extends BaseResolver {
       'updateTemplate'
     )
 
-    return this.handleMutation(
-      async () => {
-        const existingTemplate = await this.queryTemplateRepository.findById(args.id)
-        if (!existingTemplate) {
-          throw new Error('Template not found')
-        }
+    try {
+      this.logger.info('Executing mutation: updateTemplate', { id: args.id, input: args.input })
 
-        // Build update object with only available fields from GraphQL input
-        // Note: The repository expects fields to match QueryTemplate entity structure
-        const updateData: Record<string, unknown> = {}
-        
-        if (args.input.name !== undefined) {
-          updateData.name = args.input.name
+      const existingTemplate = await this.queryTemplateRepository.findById(args.id)
+      if (!existingTemplate) {
+        return {
+          success: false,
+          template: null,
+          errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }]
         }
-        if (args.input.description !== undefined) {
-          updateData.description = args.input.description
-        }
-        if (args.input.query !== undefined) {
-          updateData.queryText = args.input.query // Map 'query' field to 'queryText'
-        }
-        if (args.input.variables !== undefined) {
-          updateData.defaultVariables = args.input.variables // Map 'variables' to 'defaultVariables'
-        }
+      }
 
-        const updatedTemplate = await this.queryTemplateRepository.update(args.id, updateData as Partial<QueryTemplate>)
+      // Build update object with only available fields from GraphQL input
+      // Note: The repository expects fields to match QueryTemplate entity structure
+      const updateData: Record<string, unknown> = {}
+      
+      if (args.input.name !== undefined) {
+        updateData.name = args.input.name
+      }
+      if (args.input.description !== undefined) {
+        updateData.description = args.input.description
+      }
+      if (args.input.query !== undefined) {
+        updateData.queryText = args.input.query // Map 'query' field to 'queryText'
+      }
+      if (args.input.variables !== undefined) {
+        updateData.defaultVariables = args.input.variables // Map 'variables' to 'defaultVariables'
+      }
 
-        return updatedTemplate
-      },
-      'updateTemplate',
-      { id: args.id, input: args.input }
-    )
+      const updatedTemplate = await this.queryTemplateRepository.update(args.id, updateData as Partial<QueryTemplate>)
+
+      this.logger.info('Template updated successfully', { templateId: updatedTemplate.getId(), identifier: updatedTemplate.getIdentifier() })
+
+      return {
+        success: true,
+        template: updatedTemplate,
+        errors: []
+      }
+    } catch (error) {
+      this.logger.error('Failed to update template', { id: args.id, error })
+      
+      return {
+        success: false,
+        template: null,
+        errors: [{
+          message: error instanceof Error ? error.message : 'Failed to update template',
+          code: 'TEMPLATE_UPDATE_ERROR'
+        }]
+      }
+    }
   }
 
   async deleteTemplate(_: GraphQLParent, args: { id: string }, context?: GraphQLContext) {
@@ -426,6 +445,73 @@ export class TemplateMutations extends BaseResolver {
         template: null,
         errors: [{ message: error instanceof Error ? error.message : 'Unknown import error', code: 'IMPORT_ERROR' }],
         warnings: [],
+      }
+    }
+  }
+
+  async updateTemplateQuery(_: any, args: {
+    templateId?: string
+    templateIdentifier?: string
+    newQuery: string
+    updateVariables?: Record<string, unknown>
+  }): Promise<{
+    success: boolean
+    template?: any
+    errors: Array<{ message: string }>
+    previousQuery?: string
+  }> {
+    this.logger.info('Executing mutation: updateTemplateQuery', { 
+      templateId: args.templateId, 
+      templateIdentifier: args.templateIdentifier 
+    })
+
+    try {
+      // Find template by ID or identifier
+      let template = null
+      
+      if (args.templateId) {
+        template = await this.queryTemplateRepository.findById(args.templateId)
+      } else if (args.templateIdentifier) {
+        template = await this.queryTemplateRepository.findByIdentifier(args.templateIdentifier)
+      }
+
+      if (!template) {
+        return {
+          success: false,
+          errors: [{ message: 'Template not found' }],
+        }
+      }
+
+      // Store previous query for rollback if needed
+      const previousQuery = template.getQueryText()
+
+      // Update the query
+      const updateData = {
+        queryText: args.newQuery,
+      }
+
+      if (args.updateVariables) {
+        updateData.defaultVariables = args.updateVariables
+      }
+
+      const updatedTemplate = await this.queryTemplateRepository.update(template.getId(), updateData)
+
+      this.logger.info('Template query updated successfully', { 
+        templateId: updatedTemplate.getId(), 
+        identifier: updatedTemplate.getIdentifier() 
+      })
+
+      return {
+        success: true,
+        template: updatedTemplate,
+        errors: [],
+        previousQuery,
+      }
+    } catch (error) {
+      this.logger.error('Mutation failed: updateTemplateQuery', { error })
+      return {
+        success: false,
+        errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }],
       }
     }
   }

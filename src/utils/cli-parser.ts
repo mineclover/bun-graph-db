@@ -6,7 +6,6 @@
 
 export interface CliOptions {
   port?: number
-  wsPort?: number // WebSocket port (if different from HTTP)
   host?: string
   env?: string
   help?: boolean
@@ -58,16 +57,6 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
         break
       }
 
-      case '--ws-port':
-      case '--websocket-port': {
-        const wsPortValue = args[++i]
-        if (wsPortValue && !isNaN(Number(wsPortValue))) {
-          options.wsPort = Number(wsPortValue)
-        } else {
-          throw new Error(`Invalid WebSocket port value: ${wsPortValue}`)
-        }
-        break
-      }
 
       case '--help':
         options.help = true
@@ -108,14 +97,6 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
               }
               break
 
-            case '--ws-port':
-            case '--websocket-port':
-              if (value && !isNaN(Number(value))) {
-                options.wsPort = Number(value)
-              } else {
-                throw new Error(`Invalid WebSocket port value: ${value}`)
-              }
-              break
 
             default:
               unknown.push(arg)
@@ -147,14 +128,14 @@ Options:
   -v, --version            Show version information
 
 Environment Variables:
-  GRAPHQL_PORT              Port number (overridden by --port)
+  GRAPHQL_PORT              Port number for both HTTP and WebSocket (overridden by --port)
   GRAPHQL_HOST              Host address (overridden by --host)
   NODE_ENV                  Environment (overridden by --env)
   CORS_ORIGIN               CORS origins (comma-separated)
 
 Examples:
-  bun index.ts                          # Start with default settings
-  bun index.ts --port 3000              # Start on port 3000
+  bun index.ts                          # Start with default settings (port 4000)
+  bun index.ts --port 3000              # Start on port 3000 (unified port)
   bun index.ts --host 127.0.0.1 -p 8080 # Custom host and port
   bun index.ts --env production          # Production environment
   bun index.ts --port=5000               # Alternative syntax

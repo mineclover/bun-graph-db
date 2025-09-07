@@ -31,6 +31,10 @@ input TablesFilter {
   search: String
   createdAfter: DateTime
   createdBefore: DateTime
+  identifiers: [String!]
+  hasNodes: Boolean
+  nodeCountMin: Int
+  nodeCountMax: Int
 }
 
 # Pagination for tables
