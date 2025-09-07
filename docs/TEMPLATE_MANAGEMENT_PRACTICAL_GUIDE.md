@@ -494,13 +494,97 @@ done
 
 ### 실용적인 도구 사용법
 
-#### **Export 도구** - 백업 및 버전 관리용
+#### **Export 도구** - 두 가지 방법
+
+##### **Method 1: 검증 + Export (권장)**
 ```bash
-# 모든 활성 템플릿 export (변수 정보 포함)
+# 개별 템플릿 검증 + 자동 Export (표준 워크플로우)
+bun run template:validate-single {template-identifier}
+# → 스키마 검증 → 실행 테스트 → demo/templates/{template-name}_v1-0-0.json
+
+# 예시: 핵심 템플릿들 검증 + Export
+bun run template:validate-single search-templates-advanced
+bun run template:validate-single list-nodes-by-table
+```
+
+**장점:**
+- ✅ **완전한 검증**: GraphQL 스키마 호환성 + 실행 테스트
+- ✅ **안전성**: 검증 통과시에만 Export
+- ✅ **완전한 메타데이터**: variables, variablesSchema, defaultVariables 포함
+
+##### **Method 2: 배치 Export (추가 도구)**
+```bash
+# 모든 활성 템플릿 일괄 Export (검증 없음)
 bun scripts/template-export.ts all --output ./backups/$(date +%Y%m%d)
 
-# 특정 템플릿만 export
+# 특정 템플릿들만 Export
 bun scripts/template-export.ts templates test-health-check search-templates-advanced
+
+# 템플릿 목록만 확인
+bun scripts/template-export.ts list
+```
+
+**장점:**
+- 🔧 **배치 처리**: 여러 템플릿 동시 Export
+- 📁 **출력 디렉토리 지정**: `--output` 옵션으로 백업 위치 선택
+- 📊 **진행상황 표시**: Export 진행률과 성공/실패 통계
+
+**주의사항:**
+- ⚠️ **검증 없음**: GraphQL 호환성 검증하지 않음
+- ⚠️ **Export만 수행**: 실행 테스트 없이 파일만 생성
+
+#### **Export 방법 선택 가이드**
+
+| 상황 | 권장 방법 | 이유 |
+|------|----------|------|
+| **일반적인 템플릿 작업** | Method 1 (`validate-single`) | 검증 + Export 통합, 안전성 보장 |
+| **개발 워크플로우** | Method 1 (`validate-single`) | 표준 루프: 서버 작업 → 검증 & Export |
+| **대량 백업** | Method 2 (`template-export.ts`) | 모든 템플릿 일괄 처리 |
+| **특정 디렉토리 Export** | Method 2 (`template-export.ts`) | `--output` 옵션으로 위치 지정 |
+| **템플릿 목록 확인** | Method 2 (`template-export.ts list`) | 빠른 템플릿 목록 조회 |
+
+**권장 우선순위:**
+1. 🥇 **일상 작업**: `bun run template:validate-single` (안전성)
+2. 🥈 **대량 백업**: `bun scripts/template-export.ts all` (효율성)
+
+### 🔗 **Export 명령어 완전 가이드**
+
+#### **표준 워크플로우 (권장)**
+```bash
+# 1. 서버에서 템플릿 작업 후
+# 2. 검증 + 자동 Export
+bun run template:validate-single {template-identifier}
+# → 결과: demo/templates/{template-identifier}_v1-0-0.json
+```
+
+#### **배치 Export 도구**
+```bash
+# 모든 활성 템플릿 Export
+bun scripts/template-export.ts all
+
+# 특정 템플릿들 Export  
+bun scripts/template-export.ts templates template1 template2 template3
+
+# 사용자 지정 디렉토리로 Export
+bun scripts/template-export.ts all --output ./my-backups/$(date +%Y%m%d)
+
+# 템플릿 목록만 확인 (Export 없이)
+bun scripts/template-export.ts list
+```
+
+#### **실제 사용 예시**
+```bash
+# 예시 1: 일반적인 개발 워크플로우
+bun run template:check-server
+bun run template:backup  
+# (서버에서 템플릿 생성/수정)
+bun run template:validate-single my-new-template
+
+# 예시 2: 프로젝트 백업 생성
+bun scripts/template-export.ts all --output ./project-backup-$(date +%Y%m%d)
+
+# 예시 3: 특정 템플릿들만 다른 디렉토리로
+bun scripts/template-export.ts templates search-templates-advanced list-nodes-by-table --output ./core-templates
 ```
 
 #### **Import 도구** - 안전한 템플릿 복구
