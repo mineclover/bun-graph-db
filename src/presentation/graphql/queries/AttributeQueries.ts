@@ -137,7 +137,21 @@ export class AttributeQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        return await this.attributeRepository.findById(args.id)
+        const attribute = await this.attributeRepository.findById(args.id)
+        if (!attribute) return null
+        
+        // Get the associated AttributeType to resolve the name
+        const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
+        
+        // Map entity to GraphQL format
+        return {
+          id: attribute.getId(),
+          identifier: attribute.getIdentifier(),
+          name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
+          description: attribute.getDescription(),
+          createdAt: attribute.getCreatedAt(),
+          updatedAt: attribute.getUpdatedAt(),
+        }
       },
       'findAttributeById',
       { id: args.id }
@@ -165,7 +179,21 @@ export class AttributeQueries extends BaseResolver {
         // Note: The repository interface only accepts identifier, not tableId
         // This is a potential issue in the domain design that might need addressing
         // For now, we'll use only the identifier parameter
-        return await this.attributeRepository.findByIdentifier(args.identifier)
+        const attribute = await this.attributeRepository.findByIdentifier(args.identifier)
+        if (!attribute) return null
+        
+        // Get the associated AttributeType to resolve the name
+        const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
+        
+        // Map entity to GraphQL format
+        return {
+          id: attribute.getId(),
+          identifier: attribute.getIdentifier(),
+          name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
+          description: attribute.getDescription(),
+          createdAt: attribute.getCreatedAt(),
+          updatedAt: attribute.getUpdatedAt(),
+        }
       },
       'findAttributeByIdentifier',
       { identifier: args.identifier, tableId: args.tableId }
@@ -179,8 +207,23 @@ export class AttributeQueries extends BaseResolver {
           args.pagination || { limit: 10, offset: 0 }
         )
 
+        // Map entities to GraphQL format
+        const attributes = (result.items || result.nodes || result.data || []).map(async (attribute) => {
+          // Get the associated AttributeType to resolve the name
+          const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
+          
+          return {
+            id: attribute.getId(),
+            identifier: attribute.getIdentifier(),
+            name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
+            description: attribute.getDescription(),
+            createdAt: attribute.getCreatedAt(),
+            updatedAt: attribute.getUpdatedAt(),
+          }
+        })
+
         return {
-          attributes: result.items,
+          attributes: await Promise.all(attributes),
           totalCount: result.total,
           hasNextPage: result.hasNextPage,
           hasPreviousPage: result.hasPreviousPage,

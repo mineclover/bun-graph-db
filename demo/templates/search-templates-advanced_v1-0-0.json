@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T03:05:40.038Z",
+  "exportedAt": "2025-09-07T08:04:21.256Z",
   "template": {
     "identifier": "search-templates-advanced",
     "name": "Advanced Template Search with Filters",
@@ -149,6 +149,11 @@
     "tags": [
       "general"
     ],
-    "isActive": true
+    "isActive": true,
+    "statistics": {
+      "usageCount": 74,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T18:05:40.000Z"
+    }
   }
 }

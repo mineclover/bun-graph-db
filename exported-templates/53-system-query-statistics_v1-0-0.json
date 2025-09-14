@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T17:24:59.928Z",
+  "template": {
+    "id": "327",
+    "identifier": "system-query-statistics",
+    "name": "SystemQueryStats",
+    "description": "Analyze system query usage patterns and identify most commonly used GraphQL operations",
+    "query": "query SystemQueryStats($limit: Int = 20, $minComplexity: Int = 1, $isActive: Boolean = true) { searchTemplates(filter: { complexityMin: $minComplexity, isActive: $isActive }, limit: $limit, orderBy: \"usage_count\", orderDirection: \"DESC\") { templates { id name queryName operationType usageCount complexityScore lastUsedAt avgExecutionTimeMs } totalCount } }",
+    "queryName": [
+      "searchTemplates"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "statistics",
+      "analytics",
+      "system-queries",
+      "performance"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

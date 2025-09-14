@@ -1,0 +1,81 @@
+{
+  "operations": [
+    {
+      "name": "batch-create-test",
+      "description": "배치 생성 테스트 - 5개 테스트 템플릿 생성",
+      "operation": "create",
+      "query": "mutation CreateTemplate($input: CreateQueryTemplateInput!) { createTemplate(input: $input) { success template { id name } errors { message } } }",
+      "variables": [
+        {
+          "input": {
+            "identifier": "batch-test-template-1",
+            "name": "배치 테스트 템플릿 1",
+            "description": "배치 생성 테스트용 템플릿 1",
+            "query": "query BatchTest1 { systemHealth { status uptime } }",
+            "operationType": "query",
+            "tags": ["batch-test", "test", "generated"],
+            "complexityScore": 1
+          }
+        },
+        {
+          "input": {
+            "identifier": "batch-test-template-2",
+            "name": "배치 테스트 템플릿 2",
+            "description": "배치 생성 테스트용 템플릿 2",
+            "query": "query BatchTest2 { getTables { id name } }",
+            "operationType": "query",
+            "tags": ["batch-test", "test", "generated"],
+            "complexityScore": 1
+          }
+        },
+        {
+          "input": {
+            "identifier": "batch-test-template-3",
+            "name": "배치 테스트 템플릿 3",
+            "description": "배치 생성 테스트용 템플릿 3",
+            "query": "query BatchTest3 { getNodes { id content } }",
+            "operationType": "query",
+            "tags": ["batch-test", "test", "generated"],
+            "complexityScore": 2
+          }
+        },
+        {
+          "input": {
+            "identifier": "batch-test-template-4",
+            "name": "배치 테스트 템플릿 4",
+            "description": "배치 생성 테스트용 템플릿 4",
+            "query": "mutation BatchTest4($content: String!) { createNode(content: $content) { id content } }",
+            "operationType": "mutation",
+            "tags": ["batch-test", "test", "generated"],
+            "complexityScore": 2
+          }
+        },
+        {
+          "input": {
+            "identifier": "batch-test-template-5",
+            "name": "배치 테스트 템플릿 5",
+            "description": "배치 생성 테스트용 템플릿 5",
+            "query": "subscription BatchTest5 { nodeChanged { id content timestamp } }",
+            "operationType": "subscription",
+            "tags": ["batch-test", "test", "generated"],
+            "complexityScore": 3
+          }
+        }
+      ]
+    },
+    {
+      "name": "batch-update-test",
+      "description": "배치 업데이트 테스트 - 생성된 템플릿들의 태그 업데이트",
+      "operation": "update",
+      "query": "mutation UpdateTemplate($id: ID!, $input: UpdateQueryTemplateInput!) { updateTemplate(id: $id, input: $input) { success template { id name tags } errors { message } } }",
+      "variables": "DYNAMIC_FROM_PREVIOUS_CREATE"
+    },
+    {
+      "name": "batch-delete-test",
+      "description": "배치 삭제 테스트 - 생성된 템플릿들 모두 삭제",
+      "operation": "delete",
+      "query": "mutation DeleteTemplate($id: ID!) { deleteTemplate(id: $id) { success errors { message } } }",
+      "variables": "DYNAMIC_FROM_PREVIOUS_CREATE"
+    }
+  ]
+}

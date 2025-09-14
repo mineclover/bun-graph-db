@@ -1,60 +1,34 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T10:00:00.000Z",
+  "exportedAt": "2025-09-07T08:28:17.881Z",
   "template": {
     "identifier": "basic-search-templates",
     "name": "Basic Template Search",
     "description": "기본적인 템플릿 검색으로 사용 가능한 템플릿 목록 조회",
-    "query": "query SearchTemplates($pagination: PaginationInput, $filter: String) { searchTemplates(pagination: $pagination, filter: $filter) { nodes { identifier name description usageCount isActive createdAt } totalCount hasNextPage hasPreviousPage } }",
+    "query": "query SearchTemplates($pagination: PaginationInput) { searchTemplates(pagination: $pagination) { templates { identifier name description usageCount isActive createdAt } totalCount hasNextPage hasPreviousPage } }",
     "queryName": "SearchTemplates",
     "operationType": "query",
-    "variables": {
-      "pagination": {
-        "limit": 10,
-        "offset": 0
-      },
-      "filter": ""
-    },
-    "variablesSchema": {
-      "pagination": {
-        "type": "object",
-        "description": "페이지네이션 옵션",
-        "properties": {
-          "limit": {
-            "type": "integer",
-            "description": "페이지당 결과 개수",
-            "default": 10,
-            "minimum": 1,
-            "maximum": 100
-          },
-          "offset": {
-            "type": "integer",
-            "description": "건너뛸 결과 개수",
-            "default": 0,
-            "minimum": 0
-          }
-        }
-      },
-      "filter": {
-        "type": "string",
-        "description": "템플릿 이름이나 설명에서 검색할 텍스트"
-      }
-    },
+    "variables": null,
+    "variablesSchema": null,
     "defaultVariables": {
       "pagination": {
         "limit": 10,
         "offset": 0
-      },
-      "filter": ""
+      }
     },
     "applicableTables": null,
-    "complexityScore": 2,
+    "complexityScore": 3,
     "version": "1.0.0",
     "tags": [
       "basic",
       "search",
       "management"
     ],
-    "isActive": true
+    "isActive": true,
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T23:28:17.000Z"
+    }
   }
 }

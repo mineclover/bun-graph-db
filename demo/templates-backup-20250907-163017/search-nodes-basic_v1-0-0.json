@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T01:09:26.119Z",
+  "template": {
+    "identifier": "search-nodes-basic-1757120966033",
+    "name": "Search Nodes Template",
+    "description": "Search nodes with optional filter and limit",
+    "query": "query SearchNodes($filter: String, $limit: Int = 10) { searchNodes(filter: $filter, limit: $limit) { nodes { id content title createdAt } totalFound } }",
+    "queryName": "SearchNodes",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-05T16:09:26.000Z"
+    }
+  }
+}

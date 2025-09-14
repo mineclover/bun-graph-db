@@ -2,6 +2,7 @@ import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-ty
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
+import { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
@@ -347,5 +348,21 @@ export function registerUseCaseModule(container: DIContainer): void {
       return new ExecuteTemplateWithSubscriptionUseCase(executeTemplateWithGraphQLUseCase, simpleLogger)
     },
     [UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE]
+  )
+
+  // Monitoring use cases
+  container.registerSingleton(
+    UseCaseTokens.SYSTEM_MONITORING_USE_CASE,
+    async (c) => {
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new SystemMonitoringUseCase(simpleLogger)
+    },
+    []
   )
 }

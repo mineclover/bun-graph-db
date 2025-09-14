@@ -101,6 +101,10 @@ export class Attribute {
     return this.identifier
   }
 
+  getName(): string {
+    return this.identifier // Use identifier as name for now
+  }
+
   getAttributeTypeId(): AttributeTypeId {
     return this.attributeTypeId
   }

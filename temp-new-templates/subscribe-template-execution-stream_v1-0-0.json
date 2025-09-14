@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:11:22.820Z",
+  "template": {
+    "identifier": "subscribe-template-execution-stream_v1-0-0",
+    "name": "SubscribeTemplateExecutionStream",
+    "description": "Subscribes to real-time template execution progress with streaming data, status updates, and metadata for monitoring long-running template operations.",
+    "query": "subscription SubscribeTemplateExecutionStream($templateIdentifier: String!, $variables: JSON, $trackUsage: Boolean = true) {\n  executeTemplateStream(\n    templateIdentifier: $templateIdentifier\n    variables: $variables\n    trackUsage: $trackUsage\n  ) {\n    status\n    data\n    progress\n    metadata {\n      templateId\n      templateName\n      complexityScore\n      estimatedTokens\n      version\n      executionTime\n    }\n    timestamp\n    error\n  }\n}",
+    "queryName": [
+      "executeTemplateStream"
+    ],
+    "operationType": "subscription",
+    "variables": {
+      "templateIdentifier": "system-health-check_v1-0-0",
+      "variables": null,
+      "trackUsage": true
+    },
+    "variablesSchema": {
+      "type": "object",
+      "properties": {
+        "templateIdentifier": {
+          "type": "string",
+          "description": "Identifier of the template to execute"
+        },
+        "variables": {
+          "type": "object",
+          "description": "Optional variables to pass to the template"
+        },
+        "trackUsage": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to track usage statistics for the template execution"
+        }
+      },
+      "required": [
+        "templateIdentifier"
+      ]
+    },
+    "defaultVariables": {
+      "trackUsage": true
+    },
+    "applicableTables": [],
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "subscription",
+      "realtime",
+      "template",
+      "execution",
+      "streaming",
+      "monitoring"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

@@ -30,6 +30,7 @@ import type {
   AttributeQueries,
   NodeQueries,
   RelationQueries,
+  SystemQueries,
   TableQueries,
   TemplateQueries,
 } from './queries/index.js'
@@ -43,6 +44,7 @@ export interface GraphQLDependencies {
   attributeQueries: AttributeQueries
   relationQueries: RelationQueries
   templateQueries: TemplateQueries
+  systemQueries?: SystemQueries
 
   // Mutation resolvers
   tableMutations: TableMutations
@@ -78,6 +80,7 @@ export class GraphQLSchemaBuilder {
       attributeQueries: await this.container.resolve(GraphQLTokens.ATTRIBUTE_QUERIES),
       relationQueries: await this.container.resolve(GraphQLTokens.RELATION_QUERIES),
       templateQueries: await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES),
+      systemQueries: await this.container.resolve(GraphQLTokens.SYSTEM_QUERIES),
 
       // Mutation resolvers
       tableMutations: await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS),
@@ -172,6 +175,11 @@ export class GraphQLSchemaBuilder {
         searchTemplates: (_: any, args: any) => deps.templateQueries.searchTemplates(_, args),
         getPopularTemplates: (_: any, args: any) =>
           deps.templateQueries.getPopularTemplates(_, args),
+
+        // System monitoring queries
+        systemStats: (_: any, args: any) => deps.systemQueries?.systemStats() || null,
+        memoryStats: (_: any, args: any) => deps.systemQueries?.memoryStats() || null,
+        healthCheck: (_: any, args: any) => deps.systemQueries?.healthCheck() || null,
 
         // Schema export queries
         exportTable: (_: any, args: any) => deps.schemaResolvers.Query.exportTable(_, args),
@@ -270,6 +278,24 @@ export class GraphQLSchemaBuilder {
 
       QueryTemplate: {
         query: (parent: any) => deps.queryTemplateFieldResolvers.query(parent),
+        queryName: (parent: any) => deps.queryTemplateFieldResolvers.queryName(parent),
+        operationType: (parent: any) => deps.queryTemplateFieldResolvers.operationType(parent),
+        variables: (parent: any) => deps.queryTemplateFieldResolvers.variables(parent),
+        variablesSchema: (parent: any) => deps.queryTemplateFieldResolvers.variablesSchema(parent),
+        defaultVariables: (parent: any) => deps.queryTemplateFieldResolvers.defaultVariables(parent),
+        applicableTables: (parent: any) => deps.queryTemplateFieldResolvers.applicableTables(parent),
+        complexityScore: (parent: any) => deps.queryTemplateFieldResolvers.complexityScore(parent),
+        usageCount: (parent: any) => deps.queryTemplateFieldResolvers.usageCount(parent),
+        lastUsedAt: (parent: any) => deps.queryTemplateFieldResolvers.lastUsedAt(parent),
+        avgExecutionTimeMs: (parent: any) => deps.queryTemplateFieldResolvers.avgExecutionTimeMs(parent),
+        version: (parent: any) => deps.queryTemplateFieldResolvers.version(parent),
+        isActive: (parent: any) => deps.queryTemplateFieldResolvers.isActive(parent),
+        tags: (parent: any) => deps.queryTemplateFieldResolvers.tags(parent),
+        createdBy: (parent: any) => deps.queryTemplateFieldResolvers.createdBy(parent),
+        createdAt: (parent: any) => deps.queryTemplateFieldResolvers.createdAt(parent),
+        updatedAt: (parent: any) => deps.queryTemplateFieldResolvers.updatedAt(parent),
+        isValid: (parent: any) => deps.queryTemplateFieldResolvers.isValid(parent),
+        validationErrors: (parent: any) => deps.queryTemplateFieldResolvers.validationErrors(parent),
       },
     }
 

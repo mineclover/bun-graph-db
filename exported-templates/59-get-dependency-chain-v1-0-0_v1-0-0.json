@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T17:25:00.030Z",
+  "template": {
+    "id": "333",
+    "identifier": "get-dependency-chain_v1-0-0",
+    "name": "GetDependencyChain",
+    "description": "Retrieves dependency chains and related nodes with configurable direction and depth for analyzing node dependencies and hierarchical relationships.",
+    "query": "query GetDependencyChain($nodeId: ID!, $direction: RelationDirection = OUTGOING, $maxDepth: Int = 5, $relationTypeIds: [ID!]) {\n  getDependencyChain(\n    input: {\n      nodeId: $nodeId\n      direction: $direction\n      maxDepth: $maxDepth\n      relationTypeIds: $relationTypeIds\n    }\n  ) {\n    nodes {\n      id\n      content\n      table {\n        id\n        identifier\n      }\n      attributeCount\n      relationCount\n    }\n    relations {\n      id\n      relationType {\n        identifier\n        name\n        description\n      }\n      sourceNode {\n        id\n        content\n      }\n      targetNode {\n        id\n        content\n      }\n    }\n    totalCount\n    hasNextPage\n    hasPreviousPage\n  }\n}",
+    "queryName": [
+      "getDependencyChain"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 10,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

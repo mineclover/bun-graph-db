@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:21:12.030Z",
+  "template": {
+    "id": "223",
+    "identifier": "search-by-system-queries",
+    "name": "SearchBySystemQueries",
+    "description": "Advanced template for searching templates by their system queries",
+    "query": "query SearchBySystemQueries($systemQueries: [String!], $matchMode: TagMatchMode) { searchTemplates(filter: { systemQueries: $systemQueries, systemQueryMatchMode: $matchMode }) { templates { id identifier name queryName operationType tags complexityScore } totalCount hasNextPage } }",
+    "queryName": [
+      "searchTemplates"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "search",
+      "system-queries",
+      "advanced"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

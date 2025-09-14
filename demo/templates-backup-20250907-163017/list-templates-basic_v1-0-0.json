@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-06T01:09:25.530Z",
+  "template": {
+    "identifier": "list-templates-basic-1757120965454",
+    "name": "List Templates",
+    "description": "Get paginated list of all query templates",
+    "query": "query ListTemplates($limit: Int = 10, $offset: Int = 0) { searchTemplates(first: $limit, offset: $offset) { nodes { id identifier name description isActive createdAt } totalCount } }",
+    "queryName": "ListTemplates",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-05T16:09:25.000Z"
+    }
+  }
+}

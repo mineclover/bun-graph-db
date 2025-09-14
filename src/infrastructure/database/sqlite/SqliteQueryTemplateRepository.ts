@@ -149,6 +149,26 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         }
       }
 
+      // System Queries filtering - search in query_text since most query_name fields are empty
+      if (criteria.systemQueries && criteria.systemQueries.length > 0) {
+        if (criteria.systemQueryMatchMode === 'ALL') {
+          // Must have all system queries
+          for (const systemQuery of criteria.systemQueries) {
+            query += ` AND (query_text LIKE ? OR json_extract(query_name, '$') LIKE ?)`
+            params.push(`%${systemQuery}%`, `%"${systemQuery}"%`)
+          }
+        } else {
+          // Must have at least one system query (ANY mode)
+          const systemQueryConditions = criteria.systemQueries
+            .map(() => `(query_text LIKE ? OR json_extract(query_name, '$') LIKE ?)`)
+            .join(' OR ')
+          query += ` AND (${systemQueryConditions})`
+          criteria.systemQueries.forEach((systemQuery) => {
+            params.push(`%${systemQuery}%`, `%"${systemQuery}"%`)
+          })
+        }
+      }
+
       // Table filtering
       if (criteria.applicableToTable) {
         if (criteria.includeUniversal !== false) {

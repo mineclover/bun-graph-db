@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:21:11.211Z",
+  "template": {
+    "id": "212",
+    "identifier": "list-all-attribute-types",
+    "name": "List All AttributeTypes",
+    "description": "모든 AttributeType 목록을 조회합니다",
+    "query": "query ListAllAttributeTypes($limit: Int, $offset: Int) {\n  attributeTypes {\n    attributeTypes {\n      id\n      identifier\n      name\n      description\n      dataType\n      format\n      constraints\n      defaultValue\n      createdAt\n      updatedAt\n    }\n    totalCount\n    hasNextPage\n    hasPreviousPage\n  }\n}",
+    "queryName": [
+      "attributeTypes"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 7,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": "2025-09-06T22:38:23.000Z",
+    "statistics": {
+      "usageCount": 7,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T22:38:23.000Z"
+    }
+  }
+}

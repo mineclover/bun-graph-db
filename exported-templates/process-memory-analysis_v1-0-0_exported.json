@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T12:13:59.726Z",
+  "template": {
+    "identifier": "process-memory-analysis_v1-0-0",
+    "name": "ProcessMemoryAnalysis",
+    "description": "Detailed analysis of current process memory usage including RSS, heap, external memory, and code segment breakdown for performance optimization.",
+    "query": "query ProcessMemoryAnalysis {\n  systemStats {\n    process {\n      pid\n      cpu\n      version\n      platform\n    }\n    memory {\n      used\n      free\n      total\n      percentage\n      heap {\n        used\n        total\n        external\n        arrayBuffers\n      }\n    }\n    timestamp\n    uptime\n  }\n  \n  memoryStats {\n    used\n    free\n    total\n    percentage\n    heap {\n      used\n      total\n      external\n      arrayBuffers\n    }\n  }\n}",
+    "queryName": [
+      "systemStats",
+      "memoryStats"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": [],
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "monitoring",
+      "process",
+      "memory",
+      "analysis",
+      "performance",
+      "optimization"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

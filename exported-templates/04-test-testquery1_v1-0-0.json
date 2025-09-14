@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T17:24:58.911Z",
+  "template": {
+    "id": "273",
+    "identifier": "test-testquery1",
+    "name": "TestQuery1",
+    "description": null,
+    "query": "query TestQuery1 { test }",
+    "queryName": [
+      "test"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 1,
+    "version": "1.0.0",
+    "tags": [
+      "test"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

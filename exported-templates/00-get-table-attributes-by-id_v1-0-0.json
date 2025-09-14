@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:13:27.438Z",
+  "template": {
+    "identifier": "get-table-attributes-by-id",
+    "name": "Get Table Attributes by ID",
+    "description": "테이블 ID를 기반으로 해당 테이블의 모든 속성 조회",
+    "query": "query GetTableAttributesById($tableId: ID!) { table(id: $tableId) { id identifier name attributeCount attributes { id identifier name attributeType { dataType name } } } }",
+    "queryName": "GetTableAttributesById",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 5,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T17:56:09.000Z"
+    },
+    "usageStats": {
+      "usageCount": 5,
+      "priority": "LOW",
+      "category": "table",
+      "notes": "✅ 정상 템플릿"
+    }
+  }
+}

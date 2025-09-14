@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T02:58:59.689Z",
+  "exportedAt": "2025-09-07T08:04:15.165Z",
   "template": {
     "identifier": "search-attributes-with-table-filter",
     "name": "Advanced Attribute Search with Table Filter",
@@ -17,6 +17,11 @@
     "tags": [
       "general"
     ],
-    "isActive": true
+    "isActive": true,
+    "statistics": {
+      "usageCount": 5,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T17:58:59.000Z"
+    }
   }
 }

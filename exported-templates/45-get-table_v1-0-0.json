@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T17:24:59.725Z",
+  "template": {
+    "id": "314",
+    "identifier": "get-table",
+    "name": "GetTable",
+    "description": "Enhanced table retrieval template with complete variables and schema validation",
+    "query": "query GetTable($identifier: String!) {\n  tableByIdentifier(identifier: $identifier) {\n    id\n    identifier\n    description\n    createdAt\n    updatedAt\n    tableNodeCount\n    attributeCount\n  }\n}",
+    "queryName": [
+      "tableByIdentifier"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

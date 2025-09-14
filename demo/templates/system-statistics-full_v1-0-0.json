@@ -1,0 +1,45 @@
+{
+  "identifier": "system-statistics-full_v1-0-0",
+  "name": "Complete System Statistics",
+  "description": "Comprehensive system monitoring query that retrieves detailed information about memory usage, process statistics, database performance metrics, and server uptime.",
+  "version": "1.0.0",
+  "query": "query SystemStatisticsFull {\n  systemStats {\n    memory {\n      used\n      free\n      total\n      percentage\n      heap {\n        used\n        total\n        external\n        arrayBuffers\n      }\n    }\n    process {\n      pid\n      cpu\n      version\n      platform\n    }\n    database {\n      connectionCount\n      queryCount\n      averageQueryTime\n    }\n    timestamp\n    uptime\n  }\n}",
+  "operationType": "query",
+  "variables": [],
+  "defaultVariables": {},
+  "tags": ["monitoring", "performance", "system", "metrics", "comprehensive"],
+  "complexity": 5,
+  "estimatedExecutionTime": 75,
+  "applicableTables": [],
+  "isActive": true,
+  "createdBy": "system",
+  "validationRules": [
+    {
+      "rule": "response_time",
+      "threshold": 150,
+      "description": "Full system stats should complete within 150ms"
+    },
+    {
+      "rule": "memory_usage",
+      "threshold": 90,
+      "description": "Alert when memory usage exceeds 90%"
+    }
+  ],
+  "metadata": {
+    "purpose": "Complete system performance monitoring and resource tracking",
+    "usage": "Use for comprehensive system analysis, performance debugging, and resource planning",
+    "frequency": "Recommended for periodic monitoring (every 30-60 seconds)",
+    "metrics_included": [
+      "Memory: Used, free, total, percentage, heap details",
+      "Process: PID, CPU usage, Node.js version, platform",
+      "Database: Connection count, query statistics, performance",
+      "System: Timestamp, uptime"
+    ],
+    "use_cases": [
+      "Performance monitoring dashboards",
+      "Resource usage analysis",
+      "System capacity planning",
+      "Troubleshooting performance issues"
+    ]
+  }
+}

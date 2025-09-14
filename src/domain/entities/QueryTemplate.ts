@@ -30,7 +30,7 @@ export class QueryTemplate {
     private readonly name: string,
     private readonly description: string | null,
     private readonly queryText: string,
-    private readonly queryName: string | null,
+    private readonly queryName: string[],
     private readonly operationType: OperationType,
     private readonly variablesSchema: QueryVariablesSchema | null,
     private readonly defaultVariables: Record<string, unknown> | null,
@@ -71,15 +71,16 @@ export class QueryTemplate {
     
     // Extract operation info from GraphQL query text
     const operationInfo = GraphQLParser.extractOperationInfo(queryText)
+    const systemQueries = GraphQLParser.extractSystemQueries(queryText)
     const autoComplexity = options?.complexityScore || GraphQLParser.calculateComplexityScore(queryText)
 
     return new QueryTemplate(
       null,
       identifier,
-      name,
+      operationInfo.queryName || name, // Use operation name as display name, fallback to provided name
       options?.description || null,
       queryText,
-      operationInfo.queryName,
+      systemQueries, // Store system queries in queryName field
       operationInfo.operationType,
       options?.variablesSchema || null,
       options?.defaultVariables || null,
@@ -130,6 +131,30 @@ export class QueryTemplate {
       : null
     const parsedTags = tags ? (JSON.parse(tags) as string[]) : []
     
+    // Parse queryName field - support both legacy single string and new array format
+    let parsedQueryName: string[]
+    if (queryName) {
+      try {
+        // Try parsing as JSON array first (new format)
+        const parsed = JSON.parse(queryName)
+        parsedQueryName = Array.isArray(parsed) ? parsed : [parsed]
+      } catch {
+        // Legacy format - single string, extract system queries from queryText
+        try {
+          parsedQueryName = GraphQLParser.extractSystemQueries(queryText)
+        } catch {
+          parsedQueryName = []
+        }
+      }
+    } else {
+      // No queryName stored, extract from queryText
+      try {
+        parsedQueryName = GraphQLParser.extractSystemQueries(queryText)
+      } catch {
+        parsedQueryName = []
+      }
+    }
+    
     // Use operationType if available, fallback to templateType, then parse from queryText
     let finalOperationType: OperationType
     if (operationType && ['query', 'mutation', 'subscription'].includes(operationType)) {
@@ -152,7 +177,7 @@ export class QueryTemplate {
       name,
       description,
       queryText,
-      queryName,
+      parsedQueryName,
       finalOperationType,
       parsedVariablesSchema,
       parsedDefaultVariables,
@@ -217,7 +242,7 @@ export class QueryTemplate {
   getQueryText(): string {
     return this.queryText
   }
-  getQueryName(): string | null {
+  getQueryName(): string[] {
     return this.queryName
   }
   getOperationType(): OperationType {
@@ -478,7 +503,7 @@ export class QueryTemplate {
       name: this.name,
       description: this.description,
       query_text: this.queryText,
-      query_name: this.queryName,
+      query_name: this.queryName.length > 0 ? JSON.stringify(this.queryName) : null,
       operation_type: this.operationType,
       variables_schema: this.variablesSchema ? JSON.stringify(this.variablesSchema) : null,
       default_variables: this.defaultVariables ? JSON.stringify(this.defaultVariables) : null,

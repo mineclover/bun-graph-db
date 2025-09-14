@@ -30,6 +30,7 @@ import {
   AttributeQueries,
   NodeQueries,
   RelationQueries,
+  SystemQueries,
   TableQueries,
   TemplateQueries,
 } from '@/presentation/graphql/queries/index.js'
@@ -134,6 +135,22 @@ export function registerGraphQLModule(container: DIContainer): void {
       return new TemplateQueries(queryTemplateRepository, simpleLogger)
     },
     [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY]
+  )
+
+  container.registerSingleton(
+    GraphQLTokens.SYSTEM_QUERIES,
+    async (c) => {
+      const systemMonitoringUseCase = await c.resolve(UseCaseTokens.SYSTEM_MONITORING_USE_CASE) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new SystemQueries(systemMonitoringUseCase, simpleLogger)
+    },
+    [UseCaseTokens.SYSTEM_MONITORING_USE_CASE]
   )
 
   // Mutation resolvers
@@ -393,6 +410,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const attributeQueries = await c.resolve(GraphQLTokens.ATTRIBUTE_QUERIES) as any
       const relationQueries = await c.resolve(GraphQLTokens.RELATION_QUERIES) as any
       const templateQueries = await c.resolve(GraphQLTokens.TEMPLATE_QUERIES) as any
+      const systemQueries = await c.resolve(GraphQLTokens.SYSTEM_QUERIES) as any
 
       const tableMutations = await c.resolve(GraphQLTokens.TABLE_MUTATIONS) as any
       const nodeMutations = await c.resolve(GraphQLTokens.NODE_MUTATIONS) as any
@@ -413,6 +431,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         attributeQueries,
         relationQueries,
         templateQueries,
+        systemQueries,
         // Mutations
         tableMutations,
         nodeMutations,
@@ -436,6 +455,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.ATTRIBUTE_QUERIES,
       GraphQLTokens.RELATION_QUERIES,
       GraphQLTokens.TEMPLATE_QUERIES,
+      GraphQLTokens.SYSTEM_QUERIES,
       GraphQLTokens.TABLE_MUTATIONS,
       GraphQLTokens.NODE_MUTATIONS,
       GraphQLTokens.ATTRIBUTE_MUTATIONS,

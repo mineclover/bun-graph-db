@@ -22,7 +22,26 @@ export class TableFieldResolvers extends BaseResolver {
     return this.handleFieldResolution(
       async () => {
         const result = await this.attributeRepository.findByTableId(parent.id)
-        return result.data || result.nodes || result.items || []
+        const attributes = result.data || result.nodes || result.items || []
+        
+        // Map entities to GraphQL format with proper name resolution
+        const mappedAttributes = await Promise.all(
+          attributes.map(async (attribute) => {
+            // Get the associated AttributeType to resolve the name
+            const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
+            
+            return {
+              id: attribute.getId(),
+              identifier: attribute.getIdentifier(),
+              name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
+              description: attribute.getDescription(),
+              createdAt: attribute.getCreatedAt(),
+              updatedAt: attribute.getUpdatedAt(),
+            }
+          })
+        )
+        
+        return mappedAttributes
       },
       'attributes',
       'Table',

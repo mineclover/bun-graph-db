@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T17:24:59.827Z",
+  "template": {
+    "id": "319",
+    "identifier": "test-system-queries",
+    "name": "MyTestQuery",
+    "description": "Test template for system query analysis",
+    "query": "query MyTestQuery { table(id: \"1\") { id name } attributeByIdentifier(identifier: \"test\", tableId: \"1\") { id value } getTemplateByIdentifier(identifier: \"example\") { id name } }",
+    "queryName": [
+      "table",
+      "attributeByIdentifier",
+      "getTemplateByIdentifier"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "test",
+      "system-queries"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

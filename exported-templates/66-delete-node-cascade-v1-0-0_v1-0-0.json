@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:21:12.338Z",
+  "template": {
+    "id": "238",
+    "identifier": "delete-node-cascade_v1-0-0",
+    "name": "DeleteNodeCascade",
+    "description": "Deletes a node and optionally cascades to remove associated relationships and attributes, providing cleanup functionality for graph maintenance.",
+    "query": "mutation DeleteNodeCascade($id: ID!) {\n  deleteNode(id: $id) {\n    success\n    errors {\n      message\n      code\n      field\n    }\n  }\n}",
+    "queryName": [
+      "deleteNode"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

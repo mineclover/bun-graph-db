@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T17:25:00.030Z",
+  "template": {
+    "id": "334",
+    "identifier": "create-node-with-attributes_v1-0-0",
+    "name": "CreateNodeWithAttributes",
+    "description": "Creates a new node with attributes in a specified table, supporting bulk attribute assignment during node creation for efficient data entry.",
+    "query": "mutation CreateNodeWithAttributes($content: String!, $tableId: ID!, $attributes: [NodeAttributeInput!]) {\n  createNode(\n    input: {\n      content: $content\n      tableId: $tableId\n      attributes: $attributes\n    }\n  ) {\n    success\n    node {\n      id\n      content\n      table {\n        id\n        identifier\n      }\n      attributes {\n        id\n        value\n        attribute {\n          identifier\n          name\n          attributeType {\n            name\n            dataType\n          }\n        }\n        createdAt\n      }\n      attributeCount\n      createdAt\n      updatedAt\n    }\n    errors {\n      message\n      code\n      field\n    }\n  }\n}",
+    "queryName": [
+      "createNode"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 10,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

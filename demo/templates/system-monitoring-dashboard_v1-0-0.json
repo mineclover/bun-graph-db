@@ -1,0 +1,59 @@
+{
+  "identifier": "system-monitoring-dashboard_v1-0-0", 
+  "name": "System Monitoring Dashboard",
+  "description": "Complete monitoring dashboard query that combines health check, system statistics, and memory monitoring into a single comprehensive query for real-time system monitoring dashboards.",
+  "version": "1.0.0",
+  "query": "query SystemMonitoringDashboard {\n  healthCheck {\n    status\n    timestamp\n    database\n    version\n    memory {\n      status\n      percentage\n      message\n    }\n  }\n  \n  systemStats {\n    memory {\n      used\n      free\n      total\n      percentage\n      heap {\n        used\n        total\n        external\n        arrayBuffers\n      }\n    }\n    process {\n      pid\n      cpu\n      version\n      platform\n    }\n    database {\n      connectionCount\n      queryCount\n      averageQueryTime\n    }\n    timestamp\n    uptime\n  }\n  \n  memoryStats {\n    used\n    free\n    total\n    percentage\n    heap {\n      used\n      total\n      external\n      arrayBuffers\n    }\n  }\n}",
+  "operationType": "query",
+  "variables": [],
+  "defaultVariables": {},
+  "tags": ["monitoring", "dashboard", "comprehensive", "realtime", "analytics"],
+  "complexity": 8,
+  "estimatedExecutionTime": 120,
+  "applicableTables": [],
+  "isActive": true,
+  "createdBy": "system",
+  "validationRules": [
+    {
+      "rule": "response_time",
+      "threshold": 200,
+      "description": "Dashboard query should complete within 200ms"
+    },
+    {
+      "rule": "data_consistency",
+      "threshold": 100,
+      "description": "All three queries should return consistent memory data"
+    }
+  ],
+  "metadata": {
+    "purpose": "Complete system monitoring dashboard with all metrics in single query",
+    "usage": "Perfect for monitoring dashboards, admin panels, and system overview screens",
+    "frequency": "Recommended for periodic dashboard updates (every 60-120 seconds)",
+    "data_structure": {
+      "healthCheck": "Overall system health and status indicators",
+      "systemStats": "Comprehensive system, process, and database metrics", 
+      "memoryStats": "Detailed memory usage breakdown"
+    },
+    "dashboard_widgets": [
+      "Health Status Indicator",
+      "Memory Usage Chart",
+      "CPU Usage Meter", 
+      "Process Information Panel",
+      "Database Performance Metrics",
+      "System Uptime Display",
+      "Memory Distribution Chart"
+    ],
+    "use_cases": [
+      "Real-time monitoring dashboards",
+      "System admin panels",
+      "Performance monitoring tools",
+      "Health check endpoints",
+      "DevOps monitoring solutions"
+    ],
+    "performance_notes": {
+      "cache_friendly": "Results can be cached for 30-60 seconds",
+      "lightweight": "Optimized for frequent polling",
+      "comprehensive": "Single query provides complete system overview"
+    }
+  }
+}

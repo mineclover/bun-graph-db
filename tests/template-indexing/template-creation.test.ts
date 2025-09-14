@@ -55,8 +55,12 @@ describe('Template Creation with Auto-Parsing', () => {
           }
         )
 
-        expect(queryTemplate.queryName).toBe(template.expectedQueryName)
-        expect(queryTemplate.operationType).toBe(template.expectedOperationType)
+        // queryName is now an array of system queries, operation name is stored in name
+        expect(queryTemplate.getOperationType()).toBe(template.expectedOperationType)
+        // The name should be the GraphQL operation name, not the template name
+        if (template.expectedQueryName && template.expectedQueryName !== null) {
+          expect(queryTemplate.getName()).toBe(template.expectedQueryName)
+        }
       })
     })
 
@@ -78,9 +82,9 @@ describe('Template Creation with Auto-Parsing', () => {
         ['test']
       )
 
-      expect(simple.complexityScore).toBeLessThan(complex.complexityScore)
-      expect(simple.complexityScore).toBeGreaterThan(0)
-      expect(complex.complexityScore).toBeGreaterThan(3)
+      expect(simple.getComplexityScore()).toBeLessThan(complex.getComplexityScore())
+      expect(simple.getComplexityScore()).toBeGreaterThan(0)
+      expect(complex.getComplexityScore()).toBeGreaterThan(3)
     })
 
     it('should allow manual complexity score override', () => {
@@ -97,7 +101,7 @@ describe('Template Creation with Auto-Parsing', () => {
         }
       )
 
-      expect(queryTemplate.complexityScore).toBe(customComplexity)
+      expect(queryTemplate.getComplexityScore()).toBe(customComplexity)
     })
 
     it('should handle anonymous queries correctly', () => {
@@ -110,10 +114,11 @@ describe('Template Creation with Auto-Parsing', () => {
         ['test']
       )
 
-      expect(queryTemplate.queryName).toBeNull()
-      expect(queryTemplate.operationType).toBe('query')
-      expect(queryTemplate.complexityScore).toBeGreaterThan(0)
-      expect(queryTemplate.complexityScore).toBeLessThan(5)
+      // Anonymous queries extract system queries like 'health'
+      expect(queryTemplate.getQueryName()).toEqual(['health'])
+      expect(queryTemplate.getOperationType()).toBe('query')
+      expect(queryTemplate.getComplexityScore()).toBeGreaterThan(0)
+      expect(queryTemplate.getComplexityScore()).toBeLessThan(5)
     })
 
     it('should set default values for optional fields', () => {
@@ -126,10 +131,10 @@ describe('Template Creation with Auto-Parsing', () => {
         ['test']
       )
 
-      expect(queryTemplate.usageCount).toBe(0)
-      expect(queryTemplate.avgExecutionTimeMs).toBe(0)
-      expect(queryTemplate.lastUsedAt).toBeNull()
-      expect(queryTemplate.createdAt).toBeInstanceOf(Date)
+      expect(queryTemplate.getUsageCount()).toBe(0)
+      expect(queryTemplate.getAvgExecutionTimeMs()).toBe(0)
+      expect(queryTemplate.getLastUsedAt()).toBeNull()
+      expect(queryTemplate.getCreatedAt()).toBeInstanceOf(Date)
     })
   })
 
@@ -150,9 +155,13 @@ describe('Template Creation with Auto-Parsing', () => {
         const dbRow = queryTemplate.toDatabase()
 
         expect(dbRow.identifier).toBe(template.identifier)
-        expect(dbRow.name).toBe(template.name)
+        // Name is now the GraphQL operation name, not the template name
+        if (template.expectedQueryName && template.expectedQueryName !== null) {
+          expect(dbRow.name).toBe(template.expectedQueryName)
+        } else {
+          expect(dbRow.name).toBe(template.name)
+        }
         expect(dbRow.query_text).toBe(template.queryText)
-        expect(dbRow.query_name).toBe(template.expectedQueryName)
         expect(dbRow.operation_type).toBe(template.expectedOperationType)
         if (template.variablesSchema) {
           expect(dbRow.variables_schema).toBe(JSON.stringify(template.variablesSchema))
@@ -176,7 +185,7 @@ describe('Template Creation with Auto-Parsing', () => {
 
       const dbRow = queryTemplate.toDatabase()
 
-      expect(dbRow.query_name).toBeNull()
+      expect(dbRow.query_name).toBe('["health"]') // Anonymous query extracts 'health' system query
       expect(dbRow.variables_schema).toBeNull()
       expect(dbRow.description).toBeNull()
       expect(dbRow.last_used_at).toBeNull()
@@ -212,8 +221,8 @@ describe('Template Creation with Auto-Parsing', () => {
       )
 
       // Both properties should return the same value
-      expect(queryTemplate.operationType).toBe('mutation')
-      expect(queryTemplate.templateType).toBe('mutation')
+      expect(queryTemplate.getOperationType()).toBe('mutation')
+      expect(queryTemplate.getTemplateType()).toBe('mutation')
     })
 
     it('should handle legacy templateType in constructor', () => {
@@ -225,7 +234,7 @@ describe('Template Creation with Auto-Parsing', () => {
         template.name,
         null, // description
         template.queryText,
-        null, // queryName
+        [], // queryName (empty array)
         'query', // operationType
         null, // variablesSchema
         null, // defaultVariables
@@ -242,8 +251,8 @@ describe('Template Creation with Auto-Parsing', () => {
         new Date() // updatedAt
       )
 
-      expect(queryTemplate.operationType).toBe('query')
-      expect(queryTemplate.templateType).toBe('query')
+      expect(queryTemplate.getOperationType()).toBe('query')
+      expect(queryTemplate.getTemplateType()).toBe('query')
     })
   })
 
@@ -260,17 +269,17 @@ describe('Template Creation with Auto-Parsing', () => {
 
       // Simulate multiple executions (returns new instances)
       let updated1 = queryTemplate.updateExecutionStats(100) // 100ms
-      expect(updated1.usageCount).toBe(1)
-      expect(updated1.avgExecutionTimeMs).toBe(100)
-      expect(updated1.lastUsedAt).toBeInstanceOf(Date)
+      expect(updated1.getUsageCount()).toBe(1)
+      expect(updated1.getAvgExecutionTimeMs()).toBe(100)
+      expect(updated1.getLastUsedAt()).toBeInstanceOf(Date)
 
       let updated2 = updated1.updateExecutionStats(200) // 200ms
-      expect(updated2.usageCount).toBe(2)
-      expect(updated2.avgExecutionTimeMs).toBe(150) // (100 + 200) / 2
+      expect(updated2.getUsageCount()).toBe(2)
+      expect(updated2.getAvgExecutionTimeMs()).toBe(150) // (100 + 200) / 2
 
       let updated3 = updated2.updateExecutionStats(300) // 300ms
-      expect(updated3.usageCount).toBe(3)
-      expect(updated3.avgExecutionTimeMs).toBe(200) // (100 + 200 + 300) / 3
+      expect(updated3.getUsageCount()).toBe(3)
+      expect(updated3.getAvgExecutionTimeMs()).toBe(200) // (100 + 200 + 300) / 3
     })
 
     it('should handle edge cases in execution stats', () => {
@@ -285,13 +294,13 @@ describe('Template Creation with Auto-Parsing', () => {
 
       // Test with zero execution time
       let updated1 = queryTemplate.updateExecutionStats(0)
-      expect(updated1.avgExecutionTimeMs).toBe(0)
-      expect(updated1.usageCount).toBe(1)
+      expect(updated1.getAvgExecutionTimeMs()).toBe(0)
+      expect(updated1.getUsageCount()).toBe(1)
 
       // Test with floating point execution time
       let updated2 = updated1.updateExecutionStats(123.456)
-      expect(updated2.avgExecutionTimeMs).toBe(62) // Rounded average
-      expect(updated2.usageCount).toBe(2)
+      expect(updated2.getAvgExecutionTimeMs()).toBe(62) // Rounded average
+      expect(updated2.getUsageCount()).toBe(2)
     })
   })
 

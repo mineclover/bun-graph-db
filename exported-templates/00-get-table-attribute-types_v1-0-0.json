@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:13:27.439Z",
+  "template": {
+    "identifier": "get-table-attribute-types",
+    "name": "Get Table AttributeTypes",
+    "description": "특정 테이블이 사용하는 AttributeTypes 목록을 조회합니다",
+    "query": "query GetTableAttributeTypes($tableId: ID, $tableIdentifier: String) {\n  table: tableByIdentifier(identifier: $tableIdentifier) {\n    id\n    identifier\n    description\n    attributes {\n      id\n      identifier\n      name\n      attributeType {\n        id\n        identifier\n        name\n        dataType\n        format\n      }\n    }\n    attributeTypes {\n      id\n      identifier\n      name\n      description\n      dataType\n      format\n      constraints\n      defaultValue\n      createdAt\n    }\n    attributeCount\n  }\n}",
+    "queryName": "GetTableAttributeTypes",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 7,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 3,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T22:38:31.000Z"
+    },
+    "usageStats": {
+      "usageCount": 3,
+      "priority": "LOW",
+      "category": "table",
+      "notes": "✅ 정상 템플릿"
+    }
+  }
+}

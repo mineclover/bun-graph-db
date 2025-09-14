@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:21:11.518Z",
+  "template": {
+    "id": "196",
+    "identifier": "validation-test-template",
+    "name": "Validation Test Template",
+    "description": "검증용 테스트 템플릿",
+    "query": "query TestValidation { __typename tables(pagination: { limit: 3 }) { totalCount nodes { id identifier } } }",
+    "queryName": [
+      "__typename",
+      "tables"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 1,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": "2025-09-06T09:26:15.000Z",
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T09:26:15.000Z"
+    }
+  }
+}

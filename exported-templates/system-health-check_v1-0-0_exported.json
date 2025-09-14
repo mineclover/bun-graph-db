@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T12:13:59.724Z",
+  "template": {
+    "identifier": "system-health-check_v1-0-0",
+    "name": "SystemHealthCheck",
+    "description": "Comprehensive health check query that monitors system status, memory usage, and database connectivity with detailed health indicators.",
+    "query": "query SystemHealthCheck {\n  healthCheck {\n    status\n    timestamp\n    database\n    version\n    memory {\n      status\n      percentage\n      message\n    }\n  }\n}",
+    "queryName": [
+      "healthCheck"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": [],
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "monitoring",
+      "health",
+      "system",
+      "diagnostics"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

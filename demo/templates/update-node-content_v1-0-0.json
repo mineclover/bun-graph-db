@@ -1,0 +1,38 @@
+{
+  "identifier": "update-node-content_v1-0-0",
+  "name": "UpdateNodeContent",
+  "description": "Updates the content of an existing node with validation and timestamp tracking for data maintenance and content management.",
+  "query": "mutation UpdateNodeContent($id: ID!, $content: String!) {\n  updateNode(\n    id: $id\n    input: {\n      content: $content\n    }\n  ) {\n    success\n    node {\n      id\n      content\n      table {\n        id\n        identifier\n      }\n      attributes {\n        id\n        value\n        attribute {\n          identifier\n          name\n        }\n      }\n      attributeCount\n      relationCount\n      createdAt\n      updatedAt\n    }\n    errors {\n      message\n      code\n      field\n    }\n  }\n}",
+  "queryName": ["updateNode"],
+  "operationType": "mutation",
+  "variables": {
+    "id": "node-1",
+    "content": "Updated node content"
+  },
+  "variablesSchema": {
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "ID of the node to update"
+      },
+      "content": {
+        "type": "string",
+        "minLength": 1,
+        "description": "New content for the node"
+      }
+    },
+    "required": ["id", "content"]
+  },
+  "defaultVariables": {},
+  "applicableTables": [],
+  "complexityScore": 2,
+  "version": "1.0.0",
+  "tags": ["mutation", "update", "node", "content", "maintenance"],
+  "isActive": true,
+  "statistics": {
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null
+  }
+}

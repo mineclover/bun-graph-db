@@ -1,0 +1,73 @@
+{
+  "version": "1.0.0",
+  "description": "System Query Search Templates - Templates for searching and analyzing system queries",
+  "templates": [
+    {
+      "identifier": "basic-system-query-search",
+      "name": "Basic System Query Search",
+      "description": "Search templates by specific system queries they use",
+      "query": "query BasicSystemQuerySearch($limit: Int = 20) { searchTemplates(limit: $limit, orderBy: \"usage_count\", orderDirection: \"DESC\") { templates { id identifier name queryName operationType usageCount complexityScore isActive } totalCount } }",
+      "tags": ["search", "system-queries", "basic"]
+    },
+    {
+      "identifier": "system-query-analytics",
+      "name": "System Query Usage Analytics", 
+      "description": "Analyze system query usage patterns and identify most commonly used GraphQL operations",
+      "query": "query SystemQueryAnalytics($minComplexity: Int = 1, $minUsage: Int = 0, $limit: Int = 50) { searchTemplates(filter: { complexityMin: $minComplexity, usageCountMin: $minUsage, isActive: true }, limit: $limit, orderBy: \"usage_count\", orderDirection: \"DESC\") { templates { id name queryName operationType usageCount complexityScore avgExecutionTimeMs lastUsedAt tags } totalCount } }",
+      "tags": ["analytics", "system-queries", "usage-patterns"]
+    },
+    {
+      "identifier": "high-complexity-templates",
+      "name": "High Complexity Template Analysis",
+      "description": "Find templates with high complexity scores and multiple system queries",
+      "query": "query HighComplexityTemplates($minComplexity: Int = 5, $limit: Int = 20) { searchTemplates(filter: { complexityMin: $minComplexity, isActive: true }, limit: $limit, orderBy: \"complexity_score\", orderDirection: \"DESC\") { templates { id name queryName operationType complexityScore usageCount avgExecutionTimeMs description tags } totalCount } }",
+      "tags": ["analysis", "complexity", "performance"]
+    },
+    {
+      "identifier": "table-operation-templates", 
+      "name": "Table Operation Templates",
+      "description": "Find all templates that perform table-related operations",
+      "query": "query TableOperationTemplates($limit: Int = 30) { searchTemplates(limit: $limit) { templates { id name queryName operationType usageCount complexityScore } totalCount } }",
+      "tags": ["table", "operations", "database"]
+    },
+    {
+      "identifier": "mutation-templates-analysis",
+      "name": "Mutation Templates Analysis", 
+      "description": "Analyze all mutation templates and their system query patterns",
+      "query": "query MutationTemplatesAnalysis($limit: Int = 25) { searchTemplates(limit: $limit, orderBy: \"updated_at\", orderDirection: \"DESC\") { templates { id name queryName operationType usageCount lastUsedAt avgExecutionTimeMs isActive } totalCount } }",
+      "tags": ["mutations", "analysis", "system-queries"]
+    },
+    {
+      "identifier": "performance-bottleneck-detection",
+      "name": "Performance Bottleneck Detection",
+      "description": "Identify templates with high execution times and analyze their system query patterns",
+      "query": "query PerformanceBottleneckDetection($minExecutionTime: Int = 100, $limit: Int = 15) { searchTemplates(filter: { usageCountMin: 1, isActive: true }, limit: $limit, orderBy: \"usage_count\", orderDirection: \"DESC\") { templates { id name queryName operationType avgExecutionTimeMs usageCount complexityScore lastUsedAt } totalCount } }",
+      "tags": ["performance", "bottlenecks", "optimization"]
+    },
+    {
+      "identifier": "recent-template-activity",
+      "name": "Recent Template Activity Analysis",
+      "description": "Track recently used templates and their system query patterns",
+      "query": "query RecentTemplateActivity($limit: Int = 20) { searchTemplates(filter: { usageCountMin: 1, isActive: true }, limit: $limit, orderBy: \"updated_at\", orderDirection: \"DESC\") { templates { id name queryName operationType usageCount lastUsedAt complexityScore tags } totalCount } }",
+      "tags": ["recent", "activity", "tracking"]
+    },
+    {
+      "identifier": "comprehensive-system-overview",
+      "name": "Comprehensive System Query Overview",
+      "description": "Complete overview of all system queries, usage patterns, and performance metrics",
+      "query": "query ComprehensiveSystemOverview($limit: Int = 100) { allTemplates: searchTemplates(limit: $limit) { templates { id name queryName operationType usageCount complexityScore avgExecutionTimeMs isActive tags createdAt } totalCount } }",
+      "tags": ["comprehensive", "overview", "system-wide"]
+    }
+  ],
+  "metadata": {
+    "createdAt": "2025-01-27T00:00:00Z",
+    "purpose": "System query search and analysis functionality",
+    "features": [
+      "Search templates by system queries",
+      "Analyze usage patterns",
+      "Performance monitoring",
+      "Complexity analysis",
+      "Activity tracking"
+    ]
+  }
+}

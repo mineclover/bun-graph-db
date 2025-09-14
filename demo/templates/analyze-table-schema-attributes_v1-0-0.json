@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T03:00:39.503Z",
+  "exportedAt": "2025-09-07T08:04:16.584Z",
   "template": {
     "identifier": "analyze-table-schema-attributes",
     "name": "Table Schema Attribute Analysis",
@@ -17,6 +17,11 @@
     "tags": [
       "general"
     ],
-    "isActive": true
+    "isActive": true,
+    "statistics": {
+      "usageCount": 4,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T18:00:39.000Z"
+    }
   }
 }

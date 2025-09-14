@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T17:24:59.725Z",
+  "template": {
+    "id": "311",
+    "identifier": "get-table-detailed-2025",
+    "name": "GetTableDetailed",
+    "description": "Retrieve table information with related nodes and attributes using tableByIdentifier query",
+    "query": "query GetTableDetailed($identifier: String!) {\n  tableByIdentifier(identifier: $identifier) {\n    id\n    identifier\n    description\n    createdAt\n    updatedAt\n    tableNodeCount\n    attributeCount\n    attributes {\n      id\n      identifier\n      description\n      dataType\n      isRequired\n      defaultValue\n    }\n    tableNodes {\n      id\n      content\n      title\n      description\n      createdAt\n      updatedAt\n    }\n  }\n}",
+    "queryName": [
+      "tableByIdentifier"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

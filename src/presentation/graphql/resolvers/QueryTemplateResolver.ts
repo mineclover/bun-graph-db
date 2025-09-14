@@ -7,6 +7,7 @@ import {
   type CreateQueryTemplateInput,
   type ExecuteTemplateInput,
   type QueryTemplateDto,
+  type QueryTemplatesConnection,
   QueryTemplateDtoMapper,
   type SearchTemplatesInput,
   type UpdateQueryTemplateInput,
@@ -113,13 +114,15 @@ export class QueryTemplateResolver extends BaseResolver {
   /**
    * 템플릿 검색
    */
-  async searchTemplates(input: SearchTemplatesInput): Promise<QueryTemplateDto[]> {
+  async searchTemplates(input: SearchTemplatesInput): Promise<QueryTemplatesConnection> {
     this.logger.info('Searching templates', { input })
 
     // 검색 조건 구성
     const searchCriteria = {
       tags: input.tags,
       tagMatchMode: input.tagMatchMode || 'ANY',
+      systemQueries: input.systemQueries,
+      systemQueryMatchMode: input.systemQueryMatchMode || 'ANY',
       applicableToTable: input.applicableToTable,
       includeUniversal: input.includeUniversal !== false,
       templateType: input.templateType?.toLowerCase(),
@@ -131,7 +134,12 @@ export class QueryTemplateResolver extends BaseResolver {
     }
 
     const result = await this.queryTemplateRepository.search(searchCriteria)
-    return QueryTemplateDtoMapper.toDtoList(result.items)
+    return {
+      templates: QueryTemplateDtoMapper.toDtoList(result.items),
+      totalCount: result.total,
+      hasNextPage: result.hasNextPage,
+      hasPreviousPage: result.hasPreviousPage,
+    }
   }
 
   /**
@@ -337,7 +345,7 @@ export class QueryTemplateResolver extends BaseResolver {
       }
 
       if (args.updateVariables) {
-        updateData.variablesSchema = args.updateVariables as QueryVariablesSchema
+        updateData.variablesSchema = args.updateVariables as any
       }
 
       const updatedTemplate = await this.queryTemplateRepository.update(template.id, updateData)

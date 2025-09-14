@@ -110,7 +110,7 @@ export class TemplateQueries extends BaseResolver {
         })
 
         return {
-          nodes: result.items,
+          templates: result.items,
           totalCount: result.total,
           hasNextPage: result.hasNextPage,
           hasPreviousPage: result.hasPreviousPage,

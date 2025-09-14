@@ -1,5 +1,6 @@
 import {
   QueryTemplate,
+  type OperationType,
   type QueryVariablesSchema,
   type TemplateType,
 } from '@/domain/entities/QueryTemplate.js'
@@ -10,6 +11,8 @@ export interface QueryTemplateDto {
   name: string
   description: string | null
   queryText: string
+  queryName: string[]
+  operationType: OperationType
   variablesSchema: QueryVariablesSchema | null
   defaultVariables: Record<string, unknown> | null
   applicableTables: string[] | null
@@ -58,6 +61,8 @@ export interface SearchTemplatesInput {
   applicableToTable?: string
   includeUniversal?: boolean
   templateType?: TemplateType
+  systemQueries?: string[]
+  systemQueryMatchMode?: 'ANY' | 'ALL'
   isActive?: boolean
   orderBy?: 'usage_count' | 'created_at' | 'updated_at' | 'name' | 'complexity_score'
   orderDirection?: 'ASC' | 'DESC'
@@ -73,6 +78,13 @@ export interface ExecuteTemplateInput {
   validateVariables?: boolean
 }
 
+export interface QueryTemplatesConnection {
+  templates: QueryTemplateDto[]
+  totalCount: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
 export class QueryTemplateDtoMapper {
   static toDto(entity: QueryTemplate): QueryTemplateDto {
     return {
@@ -81,6 +93,8 @@ export class QueryTemplateDtoMapper {
       name: entity.getName(),
       description: entity.getDescription(),
       queryText: entity.getQueryText(),
+      queryName: entity.getQueryName(),
+      operationType: entity.getOperationType(),
       variablesSchema: entity.getVariablesSchema(),
       defaultVariables: entity.getDefaultVariables(),
       applicableTables: entity.getApplicableTables(),

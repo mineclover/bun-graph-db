@@ -1,0 +1,38 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:11:22.820Z",
+  "template": {
+    "identifier": "subscribe-system-health_v1-0-0",
+    "name": "SubscribeSystemHealth",
+    "description": "Subscribes to real-time system health changes and performance alerts for continuous monitoring of system status and performance metrics.",
+    "query": "subscription SubscribeSystemHealth {\n  systemHealthChanged {\n    status\n    uptime\n    memoryUsage\n    diskUsage\n    databaseConnections\n    activeQueries\n    timestamp\n  }\n  \n  performanceAlert {\n    queryTime\n    memoryUsage\n    cpuUsage\n    cacheHitRate\n    throughput\n    timestamp\n  }\n}",
+    "queryName": [
+      "systemHealthChanged",
+      "performanceAlert"
+    ],
+    "operationType": "subscription",
+    "variables": {},
+    "variablesSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "defaultVariables": {},
+    "applicableTables": [],
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "subscription",
+      "realtime",
+      "monitoring",
+      "health",
+      "performance",
+      "alerts"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

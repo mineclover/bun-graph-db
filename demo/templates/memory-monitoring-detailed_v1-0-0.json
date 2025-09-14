@@ -1,0 +1,63 @@
+{
+  "identifier": "memory-monitoring-detailed_v1-0-0",
+  "name": "Detailed Memory Monitoring",
+  "description": "Focused memory monitoring query that provides comprehensive memory usage statistics including heap memory, system memory allocation, and memory efficiency metrics.",
+  "version": "1.0.0",
+  "query": "query MemoryMonitoringDetailed {\n  memoryStats {\n    used\n    free\n    total\n    percentage\n    heap {\n      used\n      total\n      external\n      arrayBuffers\n    }\n  }\n}",
+  "operationType": "query",
+  "variables": [],
+  "defaultVariables": {},
+  "tags": ["monitoring", "memory", "performance", "heap", "optimization"],
+  "complexity": 3,
+  "estimatedExecutionTime": 30,
+  "applicableTables": [],
+  "isActive": true,
+  "createdBy": "system",
+  "validationRules": [
+    {
+      "rule": "response_time",
+      "threshold": 50,
+      "description": "Memory monitoring should be very fast (<50ms)"
+    },
+    {
+      "rule": "memory_threshold_warning",
+      "threshold": 70,
+      "description": "Warning when memory usage exceeds 70%"
+    },
+    {
+      "rule": "memory_threshold_critical",
+      "threshold": 85,
+      "description": "Critical alert when memory usage exceeds 85%"
+    }
+  ],
+  "metadata": {
+    "purpose": "Detailed memory usage monitoring and analysis",
+    "usage": "Use for memory-specific monitoring, leak detection, and optimization analysis",
+    "frequency": "Can be called very frequently (every 10-30 seconds)",
+    "memory_metrics": {
+      "system_memory": {
+        "used": "Currently used system memory in MB",
+        "free": "Available system memory in MB", 
+        "total": "Total system memory in MB",
+        "percentage": "Memory usage percentage"
+      },
+      "heap_memory": {
+        "used": "Used heap memory in MB",
+        "total": "Total allocated heap in MB",
+        "external": "External memory used by C++ objects in MB",
+        "arrayBuffers": "Memory used by ArrayBuffers in MB"
+      }
+    },
+    "alerts": {
+      "high_usage": "Memory usage > 70%",
+      "critical_usage": "Memory usage > 85%",
+      "heap_bloat": "Heap usage significantly higher than expected"
+    },
+    "optimization_tips": [
+      "Monitor heap growth over time",
+      "Watch for memory leaks in external allocations",
+      "Track ArrayBuffer usage for large data operations",
+      "Compare heap used vs total for efficiency"
+    ]
+  }
+}

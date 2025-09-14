@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T10:00:00.000Z",
+  "exportedAt": "2025-09-07T08:28:10.265Z",
   "template": {
     "identifier": "simple-health-check",
     "name": "Simple Health Check",
@@ -12,13 +12,18 @@
     "variablesSchema": null,
     "defaultVariables": null,
     "applicableTables": null,
-    "complexityScore": 1,
+    "complexityScore": 2,
     "version": "1.0.0",
     "tags": [
       "basic",
       "health",
       "test"
     ],
-    "isActive": true
+    "isActive": true,
+    "statistics": {
+      "usageCount": 2,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T23:28:10.000Z"
+    }
   }
 }

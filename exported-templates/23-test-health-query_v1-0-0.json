@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:21:11.416Z",
+  "template": {
+    "id": "189",
+    "identifier": "test-health-query",
+    "name": "Test Health Query",
+    "description": null,
+    "query": "query { health { status timestamp database version } }",
+    "queryName": [
+      "health"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 2,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": "2025-09-06T03:03:33.000Z",
+    "statistics": {
+      "usageCount": 2,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T03:03:33.000Z"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T02:57:35.541Z",
+  "exportedAt": "2025-09-07T08:04:20.032Z",
   "template": {
     "identifier": "get-table-attributes-by-identifier",
     "name": "Get Table Attributes by Identifier",
@@ -17,6 +17,11 @@
     "tags": [
       "general"
     ],
-    "isActive": true
+    "isActive": true,
+    "statistics": {
+      "usageCount": 3,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T17:57:35.000Z"
+    }
   }
 }

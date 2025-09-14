@@ -1,0 +1,33 @@
+{
+  "identifier": "system-health-check_v1-0-0",
+  "name": "System Health Check",
+  "description": "Comprehensive health check query that monitors system status, memory usage, and database connectivity with detailed health indicators.",
+  "version": "1.0.0",
+  "query": "query SystemHealthCheck {\n  healthCheck {\n    status\n    timestamp\n    database\n    version\n    memory {\n      status\n      percentage\n      message\n    }\n  }\n}",
+  "operationType": "query",
+  "variables": [],
+  "defaultVariables": {},
+  "tags": ["monitoring", "health", "system", "diagnostics"],
+  "complexity": 2,
+  "estimatedExecutionTime": 50,
+  "applicableTables": [],
+  "isActive": true,
+  "createdBy": "system",
+  "validationRules": [
+    {
+      "rule": "response_time",
+      "threshold": 100,
+      "description": "Health check should complete within 100ms"
+    }
+  ],
+  "metadata": {
+    "purpose": "System health monitoring and status verification",
+    "usage": "Use this query to check overall system health including memory status and database connectivity",
+    "frequency": "Can be called frequently for real-time monitoring",
+    "alerts": {
+      "memory_warning": "Triggered when memory usage exceeds 70%",
+      "memory_critical": "Triggered when memory usage exceeds 85%",
+      "database_failure": "Triggered when database is not accessible"
+    }
+  }
+}

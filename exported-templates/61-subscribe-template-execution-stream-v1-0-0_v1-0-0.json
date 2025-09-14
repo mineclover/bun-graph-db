@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:21:12.235Z",
+  "template": {
+    "id": "233",
+    "identifier": "subscribe-template-execution-stream_v1-0-0",
+    "name": "SubscribeTemplateExecutionStream",
+    "description": "Subscribes to real-time template execution progress with streaming data, status updates, and metadata for monitoring long-running template operations.",
+    "query": "subscription SubscribeTemplateExecutionStream($templateIdentifier: String!, $variables: JSON, $trackUsage: Boolean = true) {\n  executeTemplateStream(\n    templateIdentifier: $templateIdentifier\n    variables: $variables\n    trackUsage: $trackUsage\n  ) {\n    status\n    data\n    progress\n    metadata {\n      templateId\n      templateName\n      complexityScore\n      estimatedTokens\n      version\n      executionTime\n    }\n    timestamp\n    error\n  }\n}",
+    "queryName": [
+      "executeTemplateStream"
+    ],
+    "operationType": "subscription",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

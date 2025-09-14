@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:11:22.820Z",
+  "template": {
+    "identifier": "export-import-schema_v1-0-0",
+    "name": "ExportImportSchema",
+    "description": "Comprehensive schema export with all tables, including data, relationships, and metadata for backup and migration purposes with statistics.",
+    "query": "query ExportImportSchema($includeData: Boolean = true, $includeRelations: Boolean = true, $format: String = \"json\", $compression: Boolean = false) {\n  exportAllTables(\n    options: {\n      includeData: $includeData\n      includeRelations: $includeRelations\n      format: $format\n      compression: $compression\n    }\n  ) {\n    metadata {\n      exportedAt\n      version\n      source\n      options\n      checksum\n    }\n    tables {\n      id\n      identifier\n      description\n      metadata\n      createdAt\n      updatedAt\n      attributes {\n        id\n        identifier\n        name\n        description\n        attributeType {\n          id\n          identifier\n          name\n          dataType\n          allowedValues\n          constraints\n        }\n        isRequired\n        defaultValue\n        createdAt\n        updatedAt\n      }\n      statistics {\n        nodeCount\n        attributeCount\n        relationCount\n      }\n    }\n    globalRelationTypes {\n      id\n      identifier\n      name\n      description\n      metadata\n      createdAt\n      updatedAt\n    }\n    globalAttributeTypes {\n      id\n      identifier\n      name\n      description\n      dataType\n      allowedValues\n      constraints\n      createdAt\n      updatedAt\n    }\n    statistics {\n      totalTables\n      totalNodes\n      totalRelations\n      totalAttributes\n      exportSize\n    }\n  }\n}",
+    "queryName": [
+      "exportAllTables"
+    ],
+    "operationType": "query",
+    "variables": {
+      "includeData": true,
+      "includeRelations": true,
+      "format": "json",
+      "compression": false
+    },
+    "variablesSchema": {
+      "type": "object",
+      "properties": {
+        "includeData": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to include node data in the export"
+        },
+        "includeRelations": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to include relationships in the export"
+        },
+        "format": {
+          "type": "string",
+          "default": "json",
+          "description": "Export format (json, csv, etc.)"
+        },
+        "compression": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether to compress the export data"
+        }
+      }
+    },
+    "defaultVariables": {
+      "includeData": true,
+      "includeRelations": true,
+      "format": "json",
+      "compression": false
+    },
+    "applicableTables": [],
+    "complexityScore": 8,
+    "version": "1.0.0",
+    "tags": [
+      "export",
+      "import",
+      "schema",
+      "backup",
+      "migration",
+      "comprehensive"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:13:27.861Z",
+  "template": {
+    "identifier": "create-template-basic",
+    "name": "Create Basic Template",
+    "description": "기본적인 새 템플릿 생성 (identifier, name, description, query 필수)",
+    "query": "mutation CreateTemplate($input: CreateQueryTemplateInput!) { createTemplate(input: $input) { success template { id identifier name description query operationType isActive createdAt } errors { message } } }",
+    "queryName": "CreateTemplate",
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "input": {
+        "identifier": "new-template",
+        "name": "New Template",
+        "description": "A new template for testing",
+        "query": "query { __typename }"
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "basic",
+      "create",
+      "management"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T23:28:30.000Z"
+    },
+    "usageStats": {
+      "usageCount": 1,
+      "priority": "LOW",
+      "category": "mutation",
+      "notes": "✅ 정상 템플릿"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T10:00:00.000Z",
+  "exportedAt": "2025-09-07T08:28:36.100Z",
   "template": {
     "identifier": "schema-introspection",
     "name": "GraphQL Schema Introspection",
@@ -12,7 +12,7 @@
     "variablesSchema": null,
     "defaultVariables": null,
     "applicableTables": null,
-    "complexityScore": 4,
+    "complexityScore": 10,
     "version": "1.0.0",
     "tags": [
       "basic",
@@ -20,6 +20,11 @@
       "schema",
       "debug"
     ],
-    "isActive": true
+    "isActive": true,
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T23:28:36.000Z"
+    }
   }
 }

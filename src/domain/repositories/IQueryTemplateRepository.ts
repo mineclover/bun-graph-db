@@ -3,6 +3,8 @@ import type { QueryTemplate } from '../entities/QueryTemplate.js'
 export interface SearchCriteria {
   tags?: string[]
   tagMatchMode?: 'ANY' | 'ALL'
+  systemQueries?: string[]
+  systemQueryMatchMode?: 'ANY' | 'ALL'
   applicableToTable?: string
   includeUniversal?: boolean
   templateType?: string

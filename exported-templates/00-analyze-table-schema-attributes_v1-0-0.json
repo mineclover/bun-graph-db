@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:13:27.439Z",
+  "template": {
+    "identifier": "analyze-table-schema-attributes",
+    "name": "Table Schema Attribute Analysis",
+    "description": "테이블의 전체 스키마 구조 분석",
+    "query": "query AnalyzeTableSchemaAttributes($tableIdentifier: String!) { tables(filter: { identifier: $tableIdentifier }) { nodes { id identifier name nodeCount attributeCount createdAt } } }",
+    "queryName": "AnalyzeTableSchemaAttributes",
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "statistics": {
+      "usageCount": 4,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T18:00:39.000Z"
+    },
+    "usageStats": {
+      "usageCount": 4,
+      "priority": "LOW",
+      "category": "table",
+      "notes": "✅ 정상 템플릿"
+    }
+  }
+}

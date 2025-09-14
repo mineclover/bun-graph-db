@@ -15,7 +15,7 @@ export interface TemplateExportFormat {
     
     // 쿼리 정보  
     query: string
-    queryName: string | null
+    queryName: string[]
     operationType: 'query' | 'mutation' | 'subscription'
     
     // 메타데이터

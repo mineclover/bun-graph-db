@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T17:24:59.115Z",
+  "template": {
+    "id": "280",
+    "identifier": "test-create-table",
+    "name": "CreateTable",
+    "description": "새 테이블 생성 테스트",
+    "query": "mutation CreateTable($input: CreateTableInput!) {\n  createTable(input: $input) {\n    id\n    identifier\n    description\n    createdAt\n  }\n}\n",
+    "queryName": [
+      "createTable"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 1,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

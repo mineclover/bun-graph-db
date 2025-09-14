@@ -28,4 +28,7 @@ export const UseCaseTokens = {
   EXECUTE_QUERY_TEMPLATE_USE_CASE: Symbol.for('ExecuteQueryTemplateUseCase'),
   EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE: Symbol.for('ExecuteTemplateWithGraphQLUseCase'),
   EXECUTE_TEMPLATE_WITH_SUBSCRIPTION_USE_CASE: Symbol.for('ExecuteTemplateWithSubscriptionUseCase'),
+
+  // Monitoring use cases
+  SYSTEM_MONITORING_USE_CASE: Symbol.for('SystemMonitoringUseCase'),
 } as const

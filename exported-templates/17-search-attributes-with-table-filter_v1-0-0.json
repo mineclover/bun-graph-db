@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-07T14:21:11.313Z",
+  "template": {
+    "id": "199",
+    "identifier": "search-attributes-with-table-filter",
+    "name": "Advanced Attribute Search with Table Filter",
+    "description": "테이블별 속성 검색 with 고급 필터링",
+    "query": "query SearchAttributesWithTableFilter($tableIdentifier: String!) { tables(filter: { identifier: $tableIdentifier }) { nodes { id identifier name attributeCount } } }",
+    "queryName": [
+      "tables"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 7,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 5,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": "2025-09-06T17:58:59.000Z",
+    "statistics": {
+      "usageCount": 5,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T17:58:59.000Z"
+    }
+  }
+}

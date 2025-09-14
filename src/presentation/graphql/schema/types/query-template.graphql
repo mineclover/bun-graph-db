@@ -6,16 +6,32 @@ type QueryTemplate implements Node {
   name: String!
   description: String
   query: String!
+  queryName: [String!]!
+  operationType: OperationType!
   variables: JSON
-  isActive: Boolean!
+  variablesSchema: JSON
+  defaultVariables: JSON
+  applicableTables: [String!]
+  complexityScore: Int!
   usageCount: Int!
+  lastUsedAt: DateTime
+  avgExecutionTimeMs: Int!
+  version: String!
+  isActive: Boolean!
+  tags: [String!]!
   createdBy: String
   createdAt: DateTime!
   updatedAt: DateTime!
 
-  # Validation
+  # Computed validation fields
   isValid: Boolean!
   validationErrors: [String!]!
+}
+
+enum OperationType {
+  QUERY
+  MUTATION
+  SUBSCRIPTION
 }
 
 type QueryTemplateExecution {
@@ -34,7 +50,14 @@ input CreateQueryTemplateInput {
   name: String!
   description: String
   query: String!
+  queryName: String
   variables: JSON
+  variablesSchema: JSON
+  defaultVariables: JSON
+  applicableTables: [String!]
+  complexityScore: Int
+  version: String
+  tags: [String!]
   createdBy: String
 }
 
@@ -42,7 +65,14 @@ input UpdateQueryTemplateInput {
   name: String
   description: String
   query: String
+  queryName: String
   variables: JSON
+  variablesSchema: JSON
+  defaultVariables: JSON
+  applicableTables: [String!]
+  complexityScore: Int
+  version: String
+  tags: [String!]
 }
 
 input ExecuteQueryTemplateInput {
@@ -61,6 +91,8 @@ input QueryTemplatesFilter {
   templateType: String
   tags: [String!]
   tagMatchMode: TagMatchMode
+  systemQueries: [String!]
+  systemQueryMatchMode: TagMatchMode
   applicableToTable: String
   includeUniversal: Boolean
   usageCountMin: Int

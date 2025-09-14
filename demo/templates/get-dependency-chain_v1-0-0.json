@@ -1,0 +1,58 @@
+{
+  "identifier": "get-dependency-chain_v1-0-0",
+  "name": "GetDependencyChain",
+  "description": "Retrieves dependency chains and related nodes with configurable direction and depth for analyzing node dependencies and hierarchical relationships.",
+  "query": "query GetDependencyChain($nodeId: ID!, $direction: RelationDirection = OUTGOING, $maxDepth: Int = 5, $relationTypeIds: [ID!]) {\n  getDependencyChain(\n    input: {\n      nodeId: $nodeId\n      direction: $direction\n      maxDepth: $maxDepth\n      relationTypeIds: $relationTypeIds\n    }\n  ) {\n    nodes {\n      id\n      content\n      table {\n        id\n        identifier\n      }\n      attributeCount\n      relationCount\n    }\n    relations {\n      id\n      relationType {\n        identifier\n        name\n        description\n      }\n      sourceNode {\n        id\n        content\n      }\n      targetNode {\n        id\n        content\n      }\n    }\n    totalCount\n    hasNextPage\n    hasPreviousPage\n  }\n}",
+  "queryName": ["getDependencyChain"],
+  "operationType": "query",
+  "variables": {
+    "nodeId": "node-1",
+    "direction": "OUTGOING",
+    "maxDepth": 5,
+    "relationTypeIds": null
+  },
+  "variablesSchema": {
+    "type": "object",
+    "properties": {
+      "nodeId": {
+        "type": "string",
+        "description": "ID of the node to analyze dependencies for"
+      },
+      "direction": {
+        "type": "string",
+        "enum": ["INCOMING", "OUTGOING", "BOTH"],
+        "default": "OUTGOING",
+        "description": "Direction of dependency analysis"
+      },
+      "maxDepth": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 10,
+        "default": 5,
+        "description": "Maximum depth for dependency traversal"
+      },
+      "relationTypeIds": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        },
+        "description": "Optional array of relation type IDs to filter dependencies"
+      }
+    },
+    "required": ["nodeId"]
+  },
+  "defaultVariables": {
+    "direction": "OUTGOING",
+    "maxDepth": 5
+  },
+  "applicableTables": [],
+  "complexityScore": 6,
+  "version": "1.0.0",
+  "tags": ["graph", "dependencies", "hierarchy", "relationships", "analysis"],
+  "isActive": true,
+  "statistics": {
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null
+  }
+}

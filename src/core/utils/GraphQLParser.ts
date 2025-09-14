@@ -193,4 +193,32 @@ export class GraphQLParser {
       return []
     }
   }
+
+  /**
+   * Extract root-level system queries (top-level fields only)
+   * These are the actual GraphQL operations being called
+   */
+  static extractSystemQueries(queryText: string): string[] {
+    try {
+      const document = parse(queryText.trim())
+      const systemQueries: string[] = []
+      
+      const operationDefinition = document.definitions.find(
+        (def) => def.kind === 'OperationDefinition'
+      ) as OperationDefinitionNode | undefined
+
+      if (operationDefinition?.selectionSet) {
+        // Only extract top-level selections (root queries/mutations)
+        for (const selection of operationDefinition.selectionSet.selections) {
+          if (selection.kind === 'Field' && selection.name?.value) {
+            systemQueries.push(selection.name.value)
+          }
+        }
+      }
+
+      return Array.from(new Set(systemQueries)) // Remove duplicates
+    } catch (error) {
+      return []
+    }
+  }
 }
