@@ -51,7 +51,6 @@ export class AttributeMutations extends BaseResolver {
         const result = await this.createAttributeTypeUseCase.execute({
           identifier: args.input.identifier,
           jsonType: args.input.dataType,
-          format: args.input.format ?? undefined,
           description: args.input.description ?? undefined,
           validationSchema: args.input.constraints,
           defaultValue: args.input.defaultValue ?? undefined,

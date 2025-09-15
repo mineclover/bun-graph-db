@@ -74,7 +74,8 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     _context?: GraphQLContext
   ): Promise<Record<string, unknown> | null> {
     try {
-      return parent.getVariablesSchema()
+      const schema = parent.getVariablesSchema()
+      return schema as Record<string, unknown> | null
     } catch (error) {
       this.logger.error('Failed to resolve variablesSchema field', {
         templateId: parent.getId(),

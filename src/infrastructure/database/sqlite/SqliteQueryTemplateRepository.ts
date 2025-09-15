@@ -4,6 +4,7 @@ import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type {
   IQueryTemplateRepository,
   SearchCriteria,
+  QueryTemplateUpdateData,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
@@ -296,55 +297,36 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
     }
   }
 
-  async update(id: string, updates: Partial<QueryTemplate>): Promise<QueryTemplate> {
+  async update(id: string, updates: QueryTemplateUpdateData): Promise<QueryTemplate> {
     try {
       const existing = await this.findById(id)
       if (!existing) {
         throw new DomainException('Template not found', { code: 'NOT_FOUND' })
       }
 
-      // Apply updates to the existing template
-      const updatedTemplate = Object.assign(
-        Object.create(Object.getPrototypeOf(existing)),
-        existing
+      // Create a new QueryTemplate instance with the updated values
+      const updatedTemplate = new QueryTemplate(
+        existing.getId(),
+        existing.getIdentifier(),
+        updates.name ?? existing.getName(),
+        updates.description ?? existing.getDescription(),
+        updates.queryText ?? existing.getQueryText(),
+        existing.getQueryName(),
+        existing.getOperationType(),
+        updates.variablesSchema ?? existing.getVariablesSchema(),
+        updates.defaultVariables ?? existing.getDefaultVariables(),
+        updates.applicableTables ?? existing.getApplicableTables(),
+        updates.templateType ?? existing.getTemplateType(),
+        updates.complexityScore ?? existing.getComplexityScore(),
+        existing.getUsageCount(),
+        existing.getLastUsedAt(),
+        existing.getAvgExecutionTimeMs(),
+        updates.version ?? existing.getVersion(),
+        updates.isActive ?? existing.getIsActive(),
+        updates.tags ?? existing.getTags(),
+        existing.getCreatedAt(),
+        new Date()
       )
-
-      // Update properties that are provided in updates
-      if (updates.name !== undefined) {
-        ;(updatedTemplate as any).name = updates.name
-      }
-      if (updates.description !== undefined) {
-        ;(updatedTemplate as any).description = updates.description
-      }
-      if (updates.queryText !== undefined) {
-        ;(updatedTemplate as any).queryText = updates.queryText
-      }
-      if (updates.defaultVariables !== undefined) {
-        ;(updatedTemplate as any).defaultVariables = updates.defaultVariables
-      }
-      if (updates.variablesSchema !== undefined) {
-        ;(updatedTemplate as any).variablesSchema = updates.variablesSchema
-      }
-      if (updates.applicableTables !== undefined) {
-        ;(updatedTemplate as any).applicableTables = updates.applicableTables
-      }
-      if (updates.templateType !== undefined) {
-        ;(updatedTemplate as any).templateType = updates.templateType
-      }
-      if (updates.complexityScore !== undefined) {
-        ;(updatedTemplate as any).complexityScore = updates.complexityScore
-      }
-      if (updates.version !== undefined) {
-        ;(updatedTemplate as any).version = updates.version
-      }
-      if (updates.isActive !== undefined) {
-        ;(updatedTemplate as any).isActive = updates.isActive
-      }
-      if (updates.tags !== undefined) {
-        ;(updatedTemplate as any).tags = updates.tags
-      }
-      // Set the updated timestamp
-      ;(updatedTemplate as any).updatedAt = new Date()
 
       const data = updatedTemplate.toDatabase()
 

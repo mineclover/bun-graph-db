@@ -63,9 +63,7 @@ export class TableFieldResolvers extends BaseResolver {
         const attributeTypeIds = [
           ...new Set(
             attributes
-              .map((attr) =>
-                attr.getAttributeTypeId ? attr.getAttributeTypeId() : attr.attributeTypeId
-              )
+              .map((attr) => attr.getAttributeTypeId())
               .filter(Boolean)
           ),
         ]
@@ -76,7 +74,7 @@ export class TableFieldResolvers extends BaseResolver {
         )
 
         // Map to GraphQL format
-        return attributeTypes.filter(Boolean).map((at) => ({
+        return attributeTypes.filter((at): at is NonNullable<typeof at> => at !== null).map((at) => ({
           id: at.getId(),
           identifier: at.getIdentifier(),
           name: at.getIdentifier(),

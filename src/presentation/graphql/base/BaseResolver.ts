@@ -298,7 +298,7 @@ export abstract class BaseResolver {
    */
   protected static validationRules = {
     required:
-      <T>(field: string, fieldName: string) =>
+      <T extends Record<string, unknown>>(field: string, fieldName: string) =>
       (args: T): void => {
         // Handle nested field access like 'input.identifier'
         const value = BaseResolver.getNestedValue(args, field)
@@ -309,7 +309,7 @@ export abstract class BaseResolver {
       },
 
     nonEmpty:
-      <T>(field: string, fieldName: string) =>
+      <T extends Record<string, unknown>>(field: string, fieldName: string) =>
       (args: T): void => {
         const value = BaseResolver.getNestedValue(args, field)
         if (typeof value === 'string' && value.trim().length === 0) {

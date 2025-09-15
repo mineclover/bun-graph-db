@@ -5,6 +5,7 @@ import { makeExecutableSchema } from '@graphql-tools/schema'
 import type { GraphQLSchema } from 'graphql'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
 import type { GraphQLContext, GraphQLParent, JsonValue } from '@/core/types/GraphQLTypes.js'
+import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { DIContainer } from '../../infrastructure/container/DIContainer.js'
 import {
   GraphQLTokens,
@@ -333,32 +334,32 @@ export class GraphQLSchemaBuilder {
       },
 
       QueryTemplate: {
-        query: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.query(parent),
-        queryName: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.queryName(parent),
+        query: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.query(parent as QueryTemplate),
+        queryName: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.queryName(parent as QueryTemplate),
         operationType: (parent: GraphQLParent) =>
-          deps.queryTemplateFieldResolvers.operationType(parent),
-        variables: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.variables(parent),
+          deps.queryTemplateFieldResolvers.operationType(parent as QueryTemplate),
+        variables: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.variables(parent as QueryTemplate),
         variablesSchema: (parent: GraphQLParent) =>
-          deps.queryTemplateFieldResolvers.variablesSchema(parent),
+          deps.queryTemplateFieldResolvers.variablesSchema(parent as QueryTemplate),
         defaultVariables: (parent: GraphQLParent) =>
-          deps.queryTemplateFieldResolvers.defaultVariables(parent),
+          deps.queryTemplateFieldResolvers.defaultVariables(parent as QueryTemplate),
         applicableTables: (parent: GraphQLParent) =>
-          deps.queryTemplateFieldResolvers.applicableTables(parent),
+          deps.queryTemplateFieldResolvers.applicableTables(parent as QueryTemplate),
         complexityScore: (parent: GraphQLParent) =>
-          deps.queryTemplateFieldResolvers.complexityScore(parent),
-        usageCount: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.usageCount(parent),
-        lastUsedAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.lastUsedAt(parent),
+          deps.queryTemplateFieldResolvers.complexityScore(parent as QueryTemplate),
+        usageCount: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.usageCount(parent as QueryTemplate),
+        lastUsedAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.lastUsedAt(parent as QueryTemplate),
         avgExecutionTimeMs: (parent: GraphQLParent) =>
-          deps.queryTemplateFieldResolvers.avgExecutionTimeMs(parent),
-        version: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.version(parent),
-        isActive: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.isActive(parent),
-        tags: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.tags(parent),
-        createdBy: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.createdBy(parent),
-        createdAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.createdAt(parent),
-        updatedAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.updatedAt(parent),
-        isValid: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.isValid(parent),
+          deps.queryTemplateFieldResolvers.avgExecutionTimeMs(parent as QueryTemplate),
+        version: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.version(parent as QueryTemplate),
+        isActive: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.isActive(parent as QueryTemplate),
+        tags: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.tags(parent as QueryTemplate),
+        createdBy: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.createdBy(parent as QueryTemplate),
+        createdAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.createdAt(parent as QueryTemplate),
+        updatedAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.updatedAt(parent as QueryTemplate),
+        isValid: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.isValid(parent as QueryTemplate),
         validationErrors: (parent: GraphQLParent) =>
-          deps.queryTemplateFieldResolvers.validationErrors(parent),
+          deps.queryTemplateFieldResolvers.validationErrors(parent as QueryTemplate),
       },
     }
 

@@ -1,6 +1,6 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { IQueryTemplateRepository, QueryTemplateUpdateData } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface UpdateQueryTemplateRequest {
@@ -56,7 +56,7 @@ export class UpdateQueryTemplate {
       }
 
       // Build update data (only include provided fields)
-      const updateData: any = {}
+      const updateData: QueryTemplateUpdateData = {}
 
       if (request.name !== undefined) updateData.name = request.name
       if (request.description !== undefined) updateData.description = request.description
