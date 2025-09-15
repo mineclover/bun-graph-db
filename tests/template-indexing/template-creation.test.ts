@@ -1,6 +1,6 @@
 /**
  * Template Creation Tests
- * 
+ *
  * Tests for template creation with automatic parsing:
  * - QueryTemplate.create() with auto-parsing
  * - Database serialization (toDatabase())
@@ -8,10 +8,10 @@
  * - Legacy compatibility (templateType vs operationType)
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
+import Database from 'bun:sqlite'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import { testTemplates } from '../fixtures/test-templates.js'
-import Database from 'bun:sqlite'
 
 describe('Template Creation with Auto-Parsing', () => {
   let testDb: Database
@@ -43,7 +43,7 @@ describe('Template Creation with Auto-Parsing', () => {
 
   describe('QueryTemplate.create() Auto-Parsing', () => {
     it('should automatically extract query name and operation type', () => {
-      testTemplates.forEach(template => {
+      testTemplates.forEach((template) => {
         const queryTemplate = QueryTemplate.create(
           template.identifier,
           template.name,
@@ -51,7 +51,7 @@ describe('Template Creation with Auto-Parsing', () => {
           ['test'], // tags
           {
             variablesSchema: template.variablesSchema,
-            description: template.description
+            description: template.description,
           }
         )
 
@@ -65,8 +65,8 @@ describe('Template Creation with Auto-Parsing', () => {
     })
 
     it('should calculate complexity score automatically', () => {
-      const simpleTemplate = testTemplates.find(t => t.identifier === 'test-simple-query')!
-      const complexTemplate = testTemplates.find(t => t.identifier === 'test-nested-query')!
+      const simpleTemplate = testTemplates.find((t) => t.identifier === 'test-simple-query')!
+      const complexTemplate = testTemplates.find((t) => t.identifier === 'test-nested-query')!
 
       const simple = QueryTemplate.create(
         simpleTemplate.identifier,
@@ -97,7 +97,7 @@ describe('Template Creation with Auto-Parsing', () => {
         template.queryText,
         ['test'],
         {
-          complexityScore: customComplexity
+          complexityScore: customComplexity,
         }
       )
 
@@ -105,7 +105,7 @@ describe('Template Creation with Auto-Parsing', () => {
     })
 
     it('should handle anonymous queries correctly', () => {
-      const anonymousTemplate = testTemplates.find(t => t.identifier === 'test-anonymous-query')!
+      const anonymousTemplate = testTemplates.find((t) => t.identifier === 'test-anonymous-query')!
 
       const queryTemplate = QueryTemplate.create(
         anonymousTemplate.identifier,
@@ -140,7 +140,7 @@ describe('Template Creation with Auto-Parsing', () => {
 
   describe('Database Serialization', () => {
     it('should serialize to database format correctly', () => {
-      testTemplates.forEach(template => {
+      testTemplates.forEach((template) => {
         const queryTemplate = QueryTemplate.create(
           template.identifier,
           template.name,
@@ -148,7 +148,7 @@ describe('Template Creation with Auto-Parsing', () => {
           ['test'],
           {
             variablesSchema: template.variablesSchema,
-            description: template.description
+            description: template.description,
           }
         )
 
@@ -174,7 +174,7 @@ describe('Template Creation with Auto-Parsing', () => {
     })
 
     it('should handle null values correctly in serialization', () => {
-      const template = testTemplates.find(t => t.identifier === 'test-anonymous-query')!
+      const template = testTemplates.find((t) => t.identifier === 'test-anonymous-query')!
 
       const queryTemplate = QueryTemplate.create(
         template.identifier,
@@ -211,7 +211,7 @@ describe('Template Creation with Auto-Parsing', () => {
 
   describe('Legacy Compatibility', () => {
     it('should maintain backwards compatibility with templateType', () => {
-      const template = testTemplates.find(t => t.expectedOperationType === 'mutation')!
+      const template = testTemplates.find((t) => t.expectedOperationType === 'mutation')!
 
       const queryTemplate = QueryTemplate.create(
         template.identifier,
@@ -268,16 +268,16 @@ describe('Template Creation with Auto-Parsing', () => {
       )
 
       // Simulate multiple executions (returns new instances)
-      let updated1 = queryTemplate.updateExecutionStats(100) // 100ms
+      const updated1 = queryTemplate.updateExecutionStats(100) // 100ms
       expect(updated1.getUsageCount()).toBe(1)
       expect(updated1.getAvgExecutionTimeMs()).toBe(100)
       expect(updated1.getLastUsedAt()).toBeInstanceOf(Date)
 
-      let updated2 = updated1.updateExecutionStats(200) // 200ms
+      const updated2 = updated1.updateExecutionStats(200) // 200ms
       expect(updated2.getUsageCount()).toBe(2)
       expect(updated2.getAvgExecutionTimeMs()).toBe(150) // (100 + 200) / 2
 
-      let updated3 = updated2.updateExecutionStats(300) // 300ms
+      const updated3 = updated2.updateExecutionStats(300) // 300ms
       expect(updated3.getUsageCount()).toBe(3)
       expect(updated3.getAvgExecutionTimeMs()).toBe(200) // (100 + 200 + 300) / 3
     })
@@ -293,12 +293,12 @@ describe('Template Creation with Auto-Parsing', () => {
       )
 
       // Test with zero execution time
-      let updated1 = queryTemplate.updateExecutionStats(0)
+      const updated1 = queryTemplate.updateExecutionStats(0)
       expect(updated1.getAvgExecutionTimeMs()).toBe(0)
       expect(updated1.getUsageCount()).toBe(1)
 
       // Test with floating point execution time
-      let updated2 = updated1.updateExecutionStats(123.456)
+      const updated2 = updated1.updateExecutionStats(123.456)
       expect(updated2.getAvgExecutionTimeMs()).toBe(62) // Rounded average
       expect(updated2.getUsageCount()).toBe(2)
     })
@@ -307,32 +307,17 @@ describe('Template Creation with Auto-Parsing', () => {
   describe('Error Handling', () => {
     it('should throw on invalid GraphQL syntax during creation', () => {
       expect(() => {
-        QueryTemplate.create(
-          'invalid-syntax',
-          'Invalid Query',
-          'query {',
-          ['test']
-        )
+        QueryTemplate.create('invalid-syntax', 'Invalid Query', 'query {', ['test'])
       }).toThrow()
     })
 
     it('should validate required fields', () => {
       expect(() => {
-        QueryTemplate.create(
-          '',
-          'Test',
-          'query { health }',
-          ['test']
-        )
+        QueryTemplate.create('', 'Test', 'query { health }', ['test'])
       }).toThrow() // Should throw due to empty identifier
 
       expect(() => {
-        QueryTemplate.create(
-          'test',
-          'Test',
-          '',
-          ['test']
-        )
+        QueryTemplate.create('test', 'Test', '', ['test'])
       }).toThrow() // Should throw due to empty queryText
     })
   })

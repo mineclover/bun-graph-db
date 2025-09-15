@@ -247,8 +247,8 @@ export class DataGenerator {
         },
         products: {
           content: (i) => `product_${i.toString().padStart(6, '0')}`,
-          title: (i) => this.generateProductName(),
-          attributes: (i) => ({
+          title: (_i) => this.generateProductName(),
+          attributes: (_i) => ({
             name: this.generateProductName(),
             price: this.randomFloat(9.99, 999.99),
             category: this.randomChoice(['Electronics', 'Clothing', 'Books', 'Home', 'Sports']),
@@ -278,7 +278,7 @@ export class DataGenerator {
       social: {
         users: {
           content: (i) => `social_user_${i}`,
-          title: (i) => this.generateName(),
+          title: (_i) => this.generateName(),
           attributes: (i) => ({
             username: `@user${i + 1}`,
             bio: this.generateBio(),
@@ -290,7 +290,7 @@ export class DataGenerator {
       enterprise: {
         employees: {
           content: (i) => `emp_${i.toString().padStart(4, '0')}`,
-          title: (i) => this.generateName(),
+          title: (_i) => this.generateName(),
           attributes: (i) => ({
             employeeId: `EMP${i + 1000}`,
             department: this.randomChoice(['Engineering', 'Sales', 'Marketing', 'HR', 'Finance']),
@@ -302,8 +302,8 @@ export class DataGenerator {
       knowledge: {
         concepts: {
           content: (i) => `concept_${i}`,
-          title: (i) => this.generateConceptName(),
-          attributes: (i) => ({
+          title: (_i) => this.generateConceptName(),
+          attributes: (_i) => ({
             definition: this.generateDefinition(),
             domain: this.randomChoice(['Science', 'Technology', 'Arts', 'Philosophy', 'History']),
             complexity: this.randomInt(1, 10),

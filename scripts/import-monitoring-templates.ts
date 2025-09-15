@@ -4,8 +4,8 @@
  * 시스템 모니터링 템플릿을 데이터베이스에 임포트하는 스크립트
  */
 
-import { readFileSync, readdirSync } from 'fs'
-import { join } from 'path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 interface MonitoringTemplate {
   identifier: string
@@ -55,29 +55,30 @@ async function createTemplate(template: MonitoringTemplate) {
       description: template.description,
       query: template.query,
       variables: template.variables.length > 0 ? template.variables : null,
-      defaultVariables: Object.keys(template.defaultVariables).length > 0 ? template.defaultVariables : null,
+      defaultVariables:
+        Object.keys(template.defaultVariables).length > 0 ? template.defaultVariables : null,
       applicableTables: template.applicableTables,
       complexityScore: template.complexity,
       version: template.version,
       tags: template.tags,
-      createdBy: template.createdBy
-    }
+      createdBy: template.createdBy,
+    },
   }
 
   try {
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         query: mutation,
-        variables
-      })
+        variables,
+      }),
     })
 
     const result = await response.json()
-    
+
     if (result.errors) {
       console.log(`❌ GraphQL 오류 - ${template.identifier}:`)
       result.errors.forEach((error: any) => {
@@ -108,28 +109,28 @@ async function importMonitoringTemplates() {
   // 모니터링 관련 템플릿 파일 찾기
   const monitoringTemplates = [
     'system-health-check_v1-0-0.json',
-    'system-statistics-full_v1-0-0.json', 
+    'system-statistics-full_v1-0-0.json',
     'memory-monitoring-detailed_v1-0-0.json',
     'system-monitoring-dashboard_v1-0-0.json',
-    'process-memory-analysis_v1-0-0.json'
+    'process-memory-analysis_v1-0-0.json',
   ]
 
   let successCount = 0
-  let totalCount = monitoringTemplates.length
+  const totalCount = monitoringTemplates.length
 
   for (const templateFile of monitoringTemplates) {
     const templatePath = join(TEMPLATES_DIR, templateFile)
-    
+
     try {
       console.log(`📄 처리 중: ${templateFile}`)
       const templateContent = readFileSync(templatePath, 'utf-8')
       const template = JSON.parse(templateContent) as MonitoringTemplate
-      
+
       const success = await createTemplate(template)
       if (success) {
         successCount++
       }
-      
+
       console.log('')
     } catch (error) {
       console.log(`❌ 파일 읽기 오류 - ${templateFile}: ${error}\n`)
@@ -139,7 +140,7 @@ async function importMonitoringTemplates() {
   console.log('📊 임포트 결과:')
   console.log(`   성공: ${successCount}/${totalCount}`)
   console.log(`   실패: ${totalCount - successCount}/${totalCount}`)
-  
+
   if (successCount === totalCount) {
     console.log('\n🎉 모든 모니터링 템플릿이 성공적으로 임포트되었습니다!')
     console.log('\n📋 생성된 템플릿:')

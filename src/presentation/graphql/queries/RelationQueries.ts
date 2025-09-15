@@ -26,7 +26,7 @@ export class RelationQueries extends BaseResolver {
     this.logger = logger
   }
 
-  async relationType(_: GraphQLParent, args: RelationTypeArgs, context?: GraphQLContext) {
+  async relationType(_: GraphQLParent, args: RelationTypeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -45,14 +45,14 @@ export class RelationQueries extends BaseResolver {
     )
   }
 
-  async relationTypes(_: GraphQLParent, args?: any, context?: GraphQLContext) {
+  async relationTypes(_: GraphQLParent, _args?: any, _context?: GraphQLContext) {
     return this.handleQuery(async () => {
       const result = await this.relationTypeRepository.findAll({ limit: 100, offset: 0 })
       return result.items
     }, 'findAllRelationTypes')
   }
 
-  async nodeRelation(_: GraphQLParent, args: NodeRelationArgs, context?: GraphQLContext) {
+  async nodeRelation(_: GraphQLParent, args: NodeRelationArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -71,7 +71,7 @@ export class RelationQueries extends BaseResolver {
     )
   }
 
-  async nodeRelations(_: GraphQLParent, args: NodeRelationsArgs, context?: GraphQLContext) {
+  async nodeRelations(_: GraphQLParent, args: NodeRelationsArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         // Note: The repository only accepts PaginationOptions, filter/sort are not supported here
@@ -95,7 +95,7 @@ export class RelationQueries extends BaseResolver {
   async searchRelatedNodes(
     _: GraphQLParent,
     args: SearchRelatedNodesArgs,
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     return this.handleQuery(
       async () => {
@@ -142,7 +142,7 @@ export class RelationQueries extends BaseResolver {
   async getDependencyChain(
     _: GraphQLParent,
     args: GetDependencyChainArgs,
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,

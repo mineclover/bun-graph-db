@@ -107,10 +107,7 @@ export class ActivateDeactivateQueryTemplate {
         throw error
       }
 
-      throw new ValidationException(
-        `Failed to ${action} query template`,
-        { originalError: error }
-      )
+      throw new ValidationException(`Failed to ${action} query template`, { originalError: error })
     }
   }
 

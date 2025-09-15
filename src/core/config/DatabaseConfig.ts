@@ -20,8 +20,8 @@ export const createDatabaseConfig = (env: Record<string, string | undefined>): D
     connectionString: env.DATABASE_URL || 'data/bun-graph-db.sqlite',
     options: {
       enableWAL: env.DB_ENABLE_WAL === 'true',
-      queryTimeout: parseInt(env.DB_QUERY_TIMEOUT || '30000'),
-      connectionPoolSize: parseInt(env.DB_POOL_SIZE || '10'),
+      queryTimeout: parseInt(env.DB_QUERY_TIMEOUT || '30000', 10),
+      connectionPoolSize: parseInt(env.DB_POOL_SIZE || '10', 10),
       enableQueryLogging: env.DB_ENABLE_QUERY_LOGGING === 'true',
       enableMetrics: env.DB_ENABLE_METRICS !== 'false',
     },

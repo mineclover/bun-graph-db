@@ -1,13 +1,13 @@
 /**
  * Port Configuration Management for Bun Graph DB
- * 
+ *
  * Port Allocation Rules:
  * - HTTP/GraphQL Server: Base port (default: 4000)
  * - WebSocket Server: Base port (same as HTTP for GraphQL-Yoga integration)
  * - Development Range: 4000-4999
  * - Testing Range: 5000-5999
  * - Production Range: 8000-8999
- * 
+ *
  * Port Offset Rules:
  * - Main HTTP/GraphQL: Base port
  * - WebSocket: Same port (GraphQL-Yoga handles both HTTP and WS on same port)
@@ -43,18 +43,24 @@ export class PortManager {
     basePort: number,
     environment: 'development' | 'test' | 'production' = 'development'
   ): PortConfiguration {
-    const validatedPort = this.validatePort(basePort, environment)
+    const validatedPort = PortManager.validatePort(basePort, environment)
 
     return {
       http: validatedPort,
       websocket: validatedPort, // Same port for GraphQL-Yoga
       environment,
       // Optional ports for future use
-      metrics: this.isPortAvailable(validatedPort + this.PORT_OFFSETS.metrics, environment)
-        ? validatedPort + this.PORT_OFFSETS.metrics
+      metrics: PortManager.isPortAvailable(
+        validatedPort + PortManager.PORT_OFFSETS.metrics,
+        environment
+      )
+        ? validatedPort + PortManager.PORT_OFFSETS.metrics
         : undefined,
-      healthCheck: this.isPortAvailable(validatedPort + this.PORT_OFFSETS.healthCheck, environment)
-        ? validatedPort + this.PORT_OFFSETS.healthCheck
+      healthCheck: PortManager.isPortAvailable(
+        validatedPort + PortManager.PORT_OFFSETS.healthCheck,
+        environment
+      )
+        ? validatedPort + PortManager.PORT_OFFSETS.healthCheck
         : undefined,
     }
   }
@@ -62,24 +68,30 @@ export class PortManager {
   /**
    * Validate port is within allowed range for environment
    */
-  private static validatePort(port: number, environment: keyof typeof PortManager.PORT_RANGES): number {
-    const range = this.PORT_RANGES[environment]
-    
+  private static validatePort(
+    port: number,
+    environment: keyof typeof PortManager.PORT_RANGES
+  ): number {
+    const range = PortManager.PORT_RANGES[environment]
+
     if (port < range.min || port > range.max) {
       console.warn(
         `Port ${port} is outside ${environment} range (${range.min}-${range.max}). Using default: ${range.min}`
       )
       return range.min
     }
-    
+
     return port
   }
 
   /**
    * Check if port is within valid range
    */
-  private static isPortAvailable(port: number, environment: keyof typeof PortManager.PORT_RANGES): boolean {
-    const range = this.PORT_RANGES[environment]
+  private static isPortAvailable(
+    port: number,
+    environment: keyof typeof PortManager.PORT_RANGES
+  ): boolean {
+    const range = PortManager.PORT_RANGES[environment]
     return port >= range.min && port <= range.max
   }
 
@@ -97,7 +109,7 @@ export class PortManager {
     if (typeof input === 'number') return input
     if (typeof input === 'string') {
       const parsed = parseInt(input, 10)
-      if (!isNaN(parsed)) return parsed
+      if (!Number.isNaN(parsed)) return parsed
     }
     return defaultPort
   }
@@ -109,7 +121,7 @@ export class PortManager {
     if (port >= 4000 && port <= 4999) return 'development'
     if (port >= 5000 && port <= 5999) return 'test'
     if (port >= 8000 && port <= 8999) return 'production'
-    
+
     // Default to development for unknown ranges
     return 'development'
   }
@@ -122,17 +134,17 @@ export class PortManager {
       `🌐 HTTP/GraphQL: http://localhost:${config.http}/graphql`,
       `🔌 WebSocket: ws://localhost:${config.websocket}/graphql`,
     ]
-    
+
     if (config.metrics) {
       lines.push(`📊 Metrics: http://localhost:${config.metrics}/metrics`)
     }
-    
+
     if (config.healthCheck) {
       lines.push(`❤️ Health: http://localhost:${config.healthCheck}/health`)
     }
-    
+
     lines.push(`🔧 Environment: ${config.environment}`)
-    
+
     return lines.join('\n')
   }
 }
@@ -154,15 +166,18 @@ export function getPortConfiguration(
   envPort?: string,
   nodeEnv?: string
 ): PortConfiguration {
-  const environment = (nodeEnv || process.env.NODE_ENV || 'development') as 'development' | 'test' | 'production'
-  
+  const environment = (nodeEnv || process.env.NODE_ENV || 'development') as
+    | 'development'
+    | 'test'
+    | 'production'
+
   // Priority: CLI > ENV > Default
   const basePort = PortManager.parsePort(
     cliPort || envPort || process.env.GRAPHQL_PORT,
     DEFAULT_PORTS[environment]
   )
-  
+
   const config = PortManager.generatePortConfig(basePort, environment)
-  
+
   return config
 }

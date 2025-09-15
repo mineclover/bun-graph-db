@@ -24,7 +24,7 @@ export class TableMutations extends BaseResolver {
     this.logger = logger
   }
 
-  async createTable(_: GraphQLParent, args: CreateTableArgs, context?: GraphQLContext) {
+  async createTable(_: GraphQLParent, args: CreateTableArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -55,7 +55,9 @@ export class TableMutations extends BaseResolver {
 
       const errorCode =
         (error as any).code ||
-        ((error as Error).message?.includes('already exists') ? 'CREATE_TABLE_ERROR' : 'INTERNAL_ERROR')
+        ((error as Error).message?.includes('already exists')
+          ? 'CREATE_TABLE_ERROR'
+          : 'INTERNAL_ERROR')
       const errorMessage = (error as Error).message || 'Unknown error occurred'
 
       return {
@@ -66,7 +68,7 @@ export class TableMutations extends BaseResolver {
     }
   }
 
-  async updateTable(_: GraphQLParent, args: UpdateTableArgs, context?: GraphQLContext) {
+  async updateTable(_: GraphQLParent, args: UpdateTableArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -111,7 +113,7 @@ export class TableMutations extends BaseResolver {
     }
   }
 
-  async deleteTable(_: GraphQLParent, args: DeleteTableArgs, context?: GraphQLContext) {
+  async deleteTable(_: GraphQLParent, args: DeleteTableArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [

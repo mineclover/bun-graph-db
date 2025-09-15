@@ -1,4 +1,10 @@
-import { buildSchema, getIntrospectionQuery, graphqlSync, parse, type OperationDefinitionNode } from 'graphql'
+import {
+  buildSchema,
+  getIntrospectionQuery,
+  graphqlSync,
+  type OperationDefinitionNode,
+  parse,
+} from 'graphql'
 
 export interface GraphQLOperationInfo {
   queryName: string | null
@@ -13,7 +19,7 @@ export class GraphQLParser {
     try {
       // Parse the GraphQL query
       const document = parse(queryText.trim())
-      
+
       // Find the first operation definition
       const operationDefinition = document.definitions.find(
         (def) => def.kind === 'OperationDefinition'
@@ -55,7 +61,7 @@ export class GraphQLParser {
   static extractVariableDefinitions(queryText: string): string[] {
     try {
       const document = parse(queryText.trim())
-      
+
       const operationDefinition = document.definitions.find(
         (def) => def.kind === 'OperationDefinition'
       ) as OperationDefinitionNode | undefined
@@ -64,10 +70,8 @@ export class GraphQLParser {
         return []
       }
 
-      return operationDefinition.variableDefinitions.map(
-        (varDef) => varDef.variable.name.value
-      )
-    } catch (error) {
+      return operationDefinition.variableDefinitions.map((varDef) => varDef.variable.name.value)
+    } catch (_error) {
       return []
     }
   }
@@ -75,14 +79,17 @@ export class GraphQLParser {
   /**
    * Build and validate schema from SDL query text against a base schema
    */
-  static validateAgainstSchema(queryText: string, baseSchemaSDL: string): {
+  static validateAgainstSchema(
+    queryText: string,
+    baseSchemaSDL: string
+  ): {
     isValid: boolean
     errors: string[]
   } {
     try {
       // Build the base schema
       const schema = buildSchema(baseSchemaSDL)
-      
+
       // Execute introspection to validate the query
       const result = graphqlSync({
         schema,
@@ -97,7 +104,7 @@ export class GraphQLParser {
       }
 
       // Try to parse and validate the query syntax
-      const syntaxValidation = this.validateQuerySyntax(queryText)
+      const syntaxValidation = GraphQLParser.validateQuerySyntax(queryText)
       return syntaxValidation
     } catch (error) {
       return {
@@ -113,26 +120,26 @@ export class GraphQLParser {
   static calculateComplexityScore(queryText: string): number {
     try {
       const document = parse(queryText.trim())
-      
+
       let complexity = 1
       let fieldCount = 0
       let nestedLevels = 0
-      
+
       // Simple complexity calculation based on query structure
       const countComplexity = (selections: any, depth = 0): void => {
         if (!selections) return
-        
+
         nestedLevels = Math.max(nestedLevels, depth)
-        
+
         for (const selection of selections) {
           fieldCount++
-          
+
           // Add complexity for nested fields
           if (selection.selectionSet) {
             complexity += depth * 0.5
             countComplexity(selection.selectionSet.selections, depth + 1)
           }
-          
+
           // Add complexity for arguments
           if (selection.arguments && selection.arguments.length > 0) {
             complexity += selection.arguments.length * 0.2
@@ -150,9 +157,9 @@ export class GraphQLParser {
 
       // Calculate final complexity score (1-10 scale)
       complexity += fieldCount * 0.1 + nestedLevels * 0.3
-      
+
       return Math.min(Math.max(Math.round(complexity), 1), 10)
-    } catch (error) {
+    } catch (_error) {
       // Return default complexity if parsing fails
       return 1
     }
@@ -165,15 +172,15 @@ export class GraphQLParser {
     try {
       const document = parse(queryText.trim())
       const fieldNames: string[] = []
-      
+
       const extractFields = (selections: any): void => {
         if (!selections) return
-        
+
         for (const selection of selections) {
           if (selection.name?.value) {
             fieldNames.push(selection.name.value)
           }
-          
+
           if (selection.selectionSet) {
             extractFields(selection.selectionSet.selections)
           }
@@ -189,7 +196,7 @@ export class GraphQLParser {
       }
 
       return Array.from(new Set(fieldNames)) // Remove duplicates
-    } catch (error) {
+    } catch (_error) {
       return []
     }
   }
@@ -202,7 +209,7 @@ export class GraphQLParser {
     try {
       const document = parse(queryText.trim())
       const systemQueries: string[] = []
-      
+
       const operationDefinition = document.definitions.find(
         (def) => def.kind === 'OperationDefinition'
       ) as OperationDefinitionNode | undefined
@@ -217,7 +224,7 @@ export class GraphQLParser {
       }
 
       return Array.from(new Set(systemQueries)) // Remove duplicates
-    } catch (error) {
+    } catch (_error) {
       return []
     }
   }

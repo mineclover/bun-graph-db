@@ -25,7 +25,7 @@ export class NodeMutations extends BaseResolver {
     this.logger = logger
   }
 
-  async createNode(_: GraphQLParent, args: CreateNodeArgs, context?: GraphQLContext) {
+  async createNode(_: GraphQLParent, args: CreateNodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -53,7 +53,7 @@ export class NodeMutations extends BaseResolver {
     )
   }
 
-  async updateNode(_: GraphQLParent, args: UpdateNodeArgs, context?: GraphQLContext) {
+  async updateNode(_: GraphQLParent, args: UpdateNodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -84,7 +84,7 @@ export class NodeMutations extends BaseResolver {
     )
   }
 
-  async deleteNode(_: GraphQLParent, args: DeleteNodeArgs, context?: GraphQLContext) {
+  async deleteNode(_: GraphQLParent, args: DeleteNodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -110,7 +110,7 @@ export class NodeMutations extends BaseResolver {
     )
   }
 
-  async setNodeAttribute(_: GraphQLParent, args: SetNodeAttributeArgs, context?: GraphQLContext) {
+  async setNodeAttribute(_: GraphQLParent, args: SetNodeAttributeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [

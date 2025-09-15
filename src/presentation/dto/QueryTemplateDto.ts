@@ -1,6 +1,6 @@
 import {
-  QueryTemplate,
   type OperationType,
+  QueryTemplate,
   type QueryVariablesSchema,
   type TemplateType,
 } from '@/domain/entities/QueryTemplate.js'

@@ -122,8 +122,8 @@ const requestHandler = async (request: Request): Promise<Response> => {
       return new Response(await htmlFile.text(), {
         headers: {
           'Content-Type': 'text/html',
-          'Cache-Control': 'no-cache'
-        }
+          'Cache-Control': 'no-cache',
+        },
       })
     } catch (error) {
       logger.error('Failed to serve index.html', { error })

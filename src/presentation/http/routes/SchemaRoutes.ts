@@ -4,12 +4,7 @@
  * Provides REST endpoints to serve GraphQL schema files for external consumption
  */
 
-import {
-  buildClientSchema,
-  getIntrospectionQuery,
-  introspectionFromSchema,
-  printSchema,
-} from 'graphql'
+import { getIntrospectionQuery, introspectionFromSchema, printSchema } from 'graphql'
 import type { ILogger } from '../../../application/ports/ILogger.js'
 import type { DIContainer } from '../../../infrastructure/container/DIContainer.js'
 import { CommonTokens } from '../../../infrastructure/container/tokens/CommonTokens.js'
@@ -159,7 +154,7 @@ export class SchemaRoutes {
   /**
    * GET /introspection - Returns introspection query string
    */
-  private async getIntrospectionQuery(request: Request): Promise<Response> {
+  private async getIntrospectionQuery(_request: Request): Promise<Response> {
     try {
       const introspectionQuery = getIntrospectionQuery()
 

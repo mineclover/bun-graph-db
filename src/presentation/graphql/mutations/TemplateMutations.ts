@@ -2,12 +2,12 @@ import type { ExecutionResult, GraphQLSchema } from 'graphql'
 import { execute, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
+import { ExportTemplateUseCase } from '@/application/use-cases/templates/ExportTemplateUseCase.js'
+import { ImportTemplateUseCase } from '@/application/use-cases/templates/ImportTemplateUseCase.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
-import { ExportTemplateUseCase } from '@/application/use-cases/templates/ExportTemplateUseCase.js'
-import { ImportTemplateUseCase } from '@/application/use-cases/templates/ImportTemplateUseCase.js'
 
 export class TemplateMutations extends BaseResolver {
   protected logger: ILogger
@@ -26,7 +26,7 @@ export class TemplateMutations extends BaseResolver {
     this.importTemplateUseCase = new ImportTemplateUseCase(queryTemplateRepository, logger)
   }
 
-  async createTemplate(_: GraphQLParent, args: { input: any }, context?: GraphQLContext) {
+  async createTemplate(_: GraphQLParent, args: { input: any }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -43,7 +43,7 @@ export class TemplateMutations extends BaseResolver {
 
     try {
       this.logger.info('Executing mutation: createTemplate', { input: args.input })
-      
+
       const template = QueryTemplate.create(
         args.input.identifier,
         args.input.name,
@@ -62,23 +62,28 @@ export class TemplateMutations extends BaseResolver {
 
       const result = await this.queryTemplateRepository.create(template)
 
-      this.logger.info('Template created successfully', { templateId: result.getId(), identifier: result.getIdentifier() })
-      
+      this.logger.info('Template created successfully', {
+        templateId: result.getId(),
+        identifier: result.getIdentifier(),
+      })
+
       return {
         success: true,
         template: result,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to create template', { error, input: args.input })
-      
+
       return {
         success: false,
         template: null,
-        errors: [{
-          message: error instanceof Error ? error.message : 'Failed to create template',
-          code: 'TEMPLATE_CREATION_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Failed to create template',
+            code: 'TEMPLATE_CREATION_ERROR',
+          },
+        ],
       }
     }
   }
@@ -86,7 +91,7 @@ export class TemplateMutations extends BaseResolver {
   async updateTemplate(
     _: GraphQLParent,
     args: { id: string; input: any },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -106,14 +111,14 @@ export class TemplateMutations extends BaseResolver {
         return {
           success: false,
           template: null,
-          errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }]
+          errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }],
         }
       }
 
       // Build update object with only available fields from GraphQL input
       // Note: The repository expects fields to match QueryTemplate entity structure
       const updateData: Record<string, unknown> = {}
-      
+
       if (args.input.name !== undefined) {
         updateData.name = args.input.name
       }
@@ -127,30 +132,38 @@ export class TemplateMutations extends BaseResolver {
         updateData.defaultVariables = args.input.variables // Map 'variables' to 'defaultVariables'
       }
 
-      const updatedTemplate = await this.queryTemplateRepository.update(args.id, updateData as Partial<QueryTemplate>)
+      const updatedTemplate = await this.queryTemplateRepository.update(
+        args.id,
+        updateData as Partial<QueryTemplate>
+      )
 
-      this.logger.info('Template updated successfully', { templateId: updatedTemplate.getId(), identifier: updatedTemplate.getIdentifier() })
+      this.logger.info('Template updated successfully', {
+        templateId: updatedTemplate.getId(),
+        identifier: updatedTemplate.getIdentifier(),
+      })
 
       return {
         success: true,
         template: updatedTemplate,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Failed to update template', { id: args.id, error })
-      
+
       return {
         success: false,
         template: null,
-        errors: [{
-          message: error instanceof Error ? error.message : 'Failed to update template',
-          code: 'TEMPLATE_UPDATE_ERROR'
-        }]
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Failed to update template',
+            code: 'TEMPLATE_UPDATE_ERROR',
+          },
+        ],
       }
     }
   }
 
-  async deleteTemplate(_: GraphQLParent, args: { id: string }, context?: GraphQLContext) {
+  async deleteTemplate(_: GraphQLParent, args: { id: string }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -179,7 +192,7 @@ export class TemplateMutations extends BaseResolver {
     )
   }
 
-  async activateTemplate(_: GraphQLParent, args: { id: string }, context?: GraphQLContext) {
+  async activateTemplate(_: GraphQLParent, args: { id: string }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -199,7 +212,7 @@ export class TemplateMutations extends BaseResolver {
     )
   }
 
-  async deactivateTemplate(_: GraphQLParent, args: { id: string }, context?: GraphQLContext) {
+  async deactivateTemplate(_: GraphQLParent, args: { id: string }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -218,7 +231,6 @@ export class TemplateMutations extends BaseResolver {
       { id: args.id }
     )
   }
-
 
   async executeTemplateWithGraphQL(
     _: GraphQLParent,
@@ -344,131 +356,149 @@ export class TemplateMutations extends BaseResolver {
     )
   }
 
-  async exportTemplate(_: GraphQLParent, args: any, context?: GraphQLContext) {
-    this.logger.info('Executing mutation: exportTemplate', { templateId: args.templateId, templateIdentifier: args.templateIdentifier })
-    
+  async exportTemplate(_: GraphQLParent, args: any, _context?: GraphQLContext) {
+    this.logger.info('Executing mutation: exportTemplate', {
+      templateId: args.templateId,
+      templateIdentifier: args.templateIdentifier,
+    })
+
     try {
-        // 인수 검증 - ID 또는 식별자 중 하나는 필수
+      // 인수 검증 - ID 또는 식별자 중 하나는 필수
 
-        // ID 또는 식별자 중 하나는 필수
-        if (!args.templateId && !args.templateIdentifier) {
-          throw new Error('Either templateId or templateIdentifier is required')
+      // ID 또는 식별자 중 하나는 필수
+      if (!args.templateId && !args.templateIdentifier) {
+        throw new Error('Either templateId or templateIdentifier is required')
+      }
+
+      const exportResult = await this.exportTemplateUseCase.execute({
+        templateId: args.templateId,
+        templateIdentifier: args.templateIdentifier,
+        options: {
+          includeStatistics: args.includeStatistics,
+          includeMetadata: true,
+          prettyPrint: true,
+        },
+      })
+
+      this.logger.info('Export result from use case', {
+        success: exportResult.success,
+        hasExportData: !!exportResult.exportData,
+        filename: exportResult.filename,
+        errors: exportResult.errors,
+      })
+
+      if (!exportResult.success) {
+        return {
+          success: false,
+          exportData: null,
+          filename: null,
+          errors: exportResult.errors.map((error) => ({ message: error })),
         }
+      }
 
-        const exportResult = await this.exportTemplateUseCase.execute({
-          templateId: args.templateId,
-          templateIdentifier: args.templateIdentifier,
-          options: {
-            includeStatistics: args.includeStatistics,
-            includeMetadata: true,
-            prettyPrint: true,
-          },
-        })
+      const jsonData = JSON.stringify(exportResult.exportData, null, 2)
+      this.logger.info('Processed export data', {
+        jsonDataLength: jsonData.length,
+        filename: exportResult.filename,
+      })
 
-        this.logger.info('Export result from use case', {
-          success: exportResult.success,
-          hasExportData: !!exportResult.exportData,
-          filename: exportResult.filename,
-          errors: exportResult.errors
-        })
+      const result = {
+        success: true,
+        exportData: jsonData,
+        filename: exportResult.filename,
+        errors: [],
+      }
 
-        if (!exportResult.success) {
-          return {
-            success: false,
-            exportData: null,
-            filename: null,
-            errors: exportResult.errors.map(error => ({ message: error })),
-          }
-        }
-
-        const jsonData = JSON.stringify(exportResult.exportData, null, 2)
-        this.logger.info('Processed export data', {
-          jsonDataLength: jsonData.length,
-          filename: exportResult.filename
-        })
-
-        const result = {
-          success: true,
-          exportData: jsonData,
-          filename: exportResult.filename,
-          errors: [],
-        }
-
-        this.logger.info('Mutation completed: exportTemplate', { filename: exportResult.filename })
-        return result
+      this.logger.info('Mutation completed: exportTemplate', { filename: exportResult.filename })
+      return result
     } catch (error) {
       this.logger.error('Mutation failed: exportTemplate', { error })
       return {
         success: false,
         exportData: null,
         filename: null,
-        errors: [{ message: error instanceof Error ? error.message : 'Unknown export error', code: 'EXPORT_ERROR' }],
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown export error',
+            code: 'EXPORT_ERROR',
+          },
+        ],
       }
     }
   }
 
-  async importTemplate(_: GraphQLParent, args: any, context?: GraphQLContext) {
+  async importTemplate(_: GraphQLParent, args: any, _context?: GraphQLContext) {
     this.logger.info('Executing mutation: importTemplate', { hasJsonData: !!args.jsonData })
-    
+
     try {
-        // 인수 검증
-        if (!args.jsonData) {
-          throw new Error('JSON data is required')
-        }
+      // 인수 검증
+      if (!args.jsonData) {
+        throw new Error('JSON data is required')
+      }
 
-        const importResult = await this.importTemplateUseCase.execute({
-          jsonString: args.jsonData,
-          options: {
-            overwriteExisting: args.overwriteExisting,
-            generateNewIdentifier: args.generateNewIdentifier,
-            newIdentifierPrefix: args.newIdentifierPrefix,
-          },
-        })
+      const importResult = await this.importTemplateUseCase.execute({
+        jsonString: args.jsonData,
+        options: {
+          overwriteExisting: args.overwriteExisting,
+          generateNewIdentifier: args.generateNewIdentifier,
+          newIdentifierPrefix: args.newIdentifierPrefix,
+        },
+      })
 
-        const result = {
-          success: importResult.success,
-          template: importResult.template ? {
-            id: importResult.template.id,
-            identifier: importResult.template.identifier,
-            name: importResult.template.name,
-          } : null,
-          errors: importResult.errors.map(error => ({ message: error, code: 'IMPORT_ERROR' })),
-          warnings: importResult.warnings,
-        }
+      const result = {
+        success: importResult.success,
+        template: importResult.template
+          ? {
+              id: importResult.template.id,
+              identifier: importResult.template.identifier,
+              name: importResult.template.name,
+            }
+          : null,
+        errors: importResult.errors.map((error) => ({ message: error, code: 'IMPORT_ERROR' })),
+        warnings: importResult.warnings,
+      }
 
-        this.logger.info('Mutation completed: importTemplate', { success: importResult.success })
-        return result
+      this.logger.info('Mutation completed: importTemplate', { success: importResult.success })
+      return result
     } catch (error) {
       this.logger.error('Mutation failed: importTemplate', { error })
       return {
         success: false,
         template: null,
-        errors: [{ message: error instanceof Error ? error.message : 'Unknown import error', code: 'IMPORT_ERROR' }],
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown import error',
+            code: 'IMPORT_ERROR',
+          },
+        ],
         warnings: [],
       }
     }
   }
 
-  async updateTemplateQuery(_: any, args: {
-    templateId?: string
-    templateIdentifier?: string
-    newQuery: string
-    updateVariables?: Record<string, unknown>
-  }): Promise<{
+  async updateTemplateQuery(
+    _: any,
+    args: {
+      templateId?: string
+      templateIdentifier?: string
+      newQuery: string
+      updateVariables?: Record<string, unknown>
+    }
+  ): Promise<{
     success: boolean
     template?: any
     errors: Array<{ message: string }>
     previousQuery?: string
   }> {
-    this.logger.info('Executing mutation: updateTemplateQuery', { 
-      templateId: args.templateId, 
-      templateIdentifier: args.templateIdentifier 
+    this.logger.info('Executing mutation: updateTemplateQuery', {
+      templateId: args.templateId,
+      templateIdentifier: args.templateIdentifier,
     })
 
     try {
       // Find template by ID or identifier
       let template = null
-      
+
       if (args.templateId) {
         template = await this.queryTemplateRepository.findById(args.templateId)
       } else if (args.templateIdentifier) {
@@ -494,11 +524,14 @@ export class TemplateMutations extends BaseResolver {
         updateData.defaultVariables = args.updateVariables
       }
 
-      const updatedTemplate = await this.queryTemplateRepository.update(template.getId(), updateData)
+      const updatedTemplate = await this.queryTemplateRepository.update(
+        template.getId(),
+        updateData
+      )
 
-      this.logger.info('Template query updated successfully', { 
-        templateId: updatedTemplate.getId(), 
-        identifier: updatedTemplate.getIdentifier() 
+      this.logger.info('Template query updated successfully', {
+        templateId: updatedTemplate.getId(),
+        identifier: updatedTemplate.getIdentifier(),
       })
 
       return {

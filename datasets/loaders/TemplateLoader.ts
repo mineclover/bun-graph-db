@@ -1,5 +1,5 @@
-import { readdir, readFile } from 'fs/promises'
-import { extname, join } from 'path'
+import { readdir, readFile } from 'node:fs/promises'
+import { extname, join } from 'node:path'
 import type {
   LoaderOptions,
   QueryTemplate,
@@ -69,7 +69,7 @@ export class TemplateLoader {
               templates.push(...collection.templates)
             }
           }
-        } catch (error) {
+        } catch (_error) {
           // Skip if directory doesn't exist
         }
       }
@@ -109,7 +109,7 @@ export class TemplateLoader {
             allTemplates.push(...collection.templates)
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Skip if directory doesn't exist
       }
     }
@@ -131,8 +131,7 @@ export class TemplateLoader {
       if (criteria.domain) {
         const hasDomain =
           template.tags.includes(criteria.domain) ||
-          (template.applicableTables &&
-            template.applicableTables.some((table) => table.includes(criteria.domain!)))
+          template.applicableTables?.some((table) => table.includes(criteria.domain!))
         if (!hasDomain) return false
       }
 
@@ -203,7 +202,7 @@ export class TemplateLoader {
           result[type] = files
             .filter((f) => extname(f) === '.json')
             .map((f) => f.replace('.json', ''))
-        } catch (error) {
+        } catch (_error) {
           // Directory doesn't exist, keep empty array
         }
       }
@@ -242,7 +241,7 @@ export class TemplateLoader {
             allTemplates.push(...collection.templates)
           }
         }
-      } catch (error) {
+      } catch (_error) {
         // Skip if directory doesn't exist
       }
     }

@@ -3,12 +3,12 @@
  * Tests the new subscription-based template execution system
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { GraphQLSchema, buildSchema } from 'graphql'
+import { beforeAll, describe, expect, test } from 'bun:test'
+import { buildSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { ExecuteTemplateWithSubscriptionUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithSubscriptionUseCase.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
 import { ExecuteTemplateWithGraphQLUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithGraphQL.js'
+import { ExecuteTemplateWithSubscriptionUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithSubscriptionUseCase.js'
 
 // Mock logger
 const mockLogger: ILogger = {
@@ -287,7 +287,7 @@ describe('Unified Template Execution - Subscription Tests', () => {
     for (const event of events) {
       expect(event.metadata).toBeDefined()
       expect(event.timestamp).toBeInstanceOf(Date)
-      
+
       if (event.status !== 'STARTING') {
         expect(event.metadata.templateId).toBeDefined()
         expect(event.metadata.templateName).toBeDefined()

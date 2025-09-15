@@ -1,13 +1,11 @@
 /**
  * Template System Examples
- * 
+ *
  * Comprehensive examples demonstrating the template system functionality
  * based on real-world testing experience and working patterns.
- * 
+ *
  * Run these examples against a running bun-graph-db server.
  */
-
-import { createYoga } from 'graphql-yoga'
 
 const SERVER_URL = 'http://localhost:4000/graphql'
 
@@ -19,11 +17,11 @@ class TemplateClient {
     const response = await fetch(SERVER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables }),
     })
 
     const data = await response.json()
-    
+
     if (data.errors) {
       console.error('GraphQL errors:', data.errors)
       throw new Error(`GraphQL Error: ${data.errors.map((e: any) => e.message).join(', ')}`)
@@ -41,7 +39,7 @@ const client = new TemplateClient()
 
 /**
  * Example 1: Basic Query Template Creation and Execution
- * 
+ *
  * This demonstrates the most common use case: creating a simple query template
  * for frequently used operations.
  */
@@ -49,7 +47,8 @@ export async function basicQueryTemplateExample() {
   console.log('🔹 Example 1: Basic Query Template')
 
   // Create a simple table query template
-  const createResult = await client.mutation(`
+  const createResult = await client.mutation(
+    `
     mutation CreateTemplate($input: CreateQueryTemplateInput!) {
       createTemplate(input: $input) {
         template {
@@ -66,21 +65,25 @@ export async function basicQueryTemplateExample() {
         }
       }
     }
-  `, {
-    input: {
-      identifier: 'basic-table-query',
-      name: 'Get Table Information',
-      description: 'Retrieve basic table information with node count',
-      query: 'query GetTable($tableId: ID!) { table(id: $tableId) { id identifier description nodeCount } }',
-      variables: { tableId: '1' },
-      createdBy: 'example-system'
+  `,
+    {
+      input: {
+        identifier: 'basic-table-query',
+        name: 'Get Table Information',
+        description: 'Retrieve basic table information with node count',
+        query:
+          'query GetTable($tableId: ID!) { table(id: $tableId) { id identifier description nodeCount } }',
+        variables: { tableId: '1' },
+        createdBy: 'example-system',
+      },
     }
-  })
+  )
 
   console.log('✅ Template created:', createResult.createTemplate.template.identifier)
 
   // Execute the template with different variables
-  const executeResult = await client.mutation(`
+  const executeResult = await client.mutation(
+    `
     mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
       executeTemplate(input: $input) {
         success
@@ -90,12 +93,14 @@ export async function basicQueryTemplateExample() {
         }
       }
     }
-  `, {
-    input: {
-      templateIdentifier: 'basic-table-query',
-      variables: { tableId: '2' }
+  `,
+    {
+      input: {
+        templateIdentifier: 'basic-table-query',
+        variables: { tableId: '2' },
+      },
     }
-  })
+  )
 
   if (executeResult.executeTemplate.success) {
     console.log('✅ Template executed successfully')
@@ -107,7 +112,7 @@ export async function basicQueryTemplateExample() {
 
 /**
  * Example 2: GraphQL Execution with Real Data
- * 
+ *
  * Demonstrates executing templates that return actual GraphQL data
  * rather than just query information.
  */
@@ -136,7 +141,8 @@ export async function graphqlExecutionExample() {
   console.log(`📋 Using table: ${tableId}`)
 
   // Execute with GraphQL to get real data
-  const realExecutionResult = await client.mutation(`
+  const realExecutionResult = await client.mutation(
+    `
     mutation ExecuteWithGraphQL($templateIdentifier: String!, $variables: JSON, $trackUsage: Boolean) {
       executeTemplateWithGraphQL(
         templateIdentifier: $templateIdentifier
@@ -150,11 +156,13 @@ export async function graphqlExecutionExample() {
         }
       }
     }
-  `, {
-    templateIdentifier: 'basic-table-query',
-    variables: { tableId },
-    trackUsage: true
-  })
+  `,
+    {
+      templateIdentifier: 'basic-table-query',
+      variables: { tableId },
+      trackUsage: true,
+    }
+  )
 
   if (realExecutionResult.executeTemplateWithGraphQL.success) {
     const result = realExecutionResult.executeTemplateWithGraphQL.data
@@ -167,7 +175,7 @@ export async function graphqlExecutionExample() {
 
 /**
  * Example 3: Template Search and Discovery
- * 
+ *
  * Shows how to discover and search through existing templates.
  */
 export async function templateSearchExample() {
@@ -200,7 +208,7 @@ export async function templateSearchExample() {
   const categories = {
     queries: templates.filter((t: any) => t.query.trim().startsWith('query')),
     mutations: templates.filter((t: any) => t.query.trim().startsWith('mutation')),
-    subscriptions: templates.filter((t: any) => t.query.trim().startsWith('subscription'))
+    subscriptions: templates.filter((t: any) => t.query.trim().startsWith('subscription')),
   }
 
   console.log('📋 Template Distribution:')
@@ -218,14 +226,15 @@ export async function templateSearchExample() {
 
 /**
  * Example 4: Template Usage Tracking
- * 
+ *
  * Demonstrates how usage tracking works and how to monitor template statistics.
  */
 export async function usageTrackingExample() {
   console.log('🔹 Example 4: Usage Tracking')
 
   // Get template before usage
-  const beforeResult = await client.query(`
+  const beforeResult = await client.query(
+    `
     query GetTemplate($identifier: String!) {
       getTemplateByIdentifier(identifier: $identifier) {
         id
@@ -233,14 +242,17 @@ export async function usageTrackingExample() {
         usageCount
       }
     }
-  `, {
-    identifier: 'basic-table-query'
-  })
+  `,
+    {
+      identifier: 'basic-table-query',
+    }
+  )
 
   const usageCountBefore = beforeResult.getTemplateByIdentifier.usageCount
 
   // Execute template with tracking enabled
-  await client.mutation(`
+  await client.mutation(
+    `
     mutation ExecuteWithGraphQL($templateIdentifier: String!, $variables: JSON, $trackUsage: Boolean) {
       executeTemplateWithGraphQL(
         templateIdentifier: $templateIdentifier
@@ -251,14 +263,17 @@ export async function usageTrackingExample() {
         data
       }
     }
-  `, {
-    templateIdentifier: 'basic-table-query',
-    variables: { tableId: '1' },
-    trackUsage: true
-  })
+  `,
+    {
+      templateIdentifier: 'basic-table-query',
+      variables: { tableId: '1' },
+      trackUsage: true,
+    }
+  )
 
   // Get template after usage
-  const afterResult = await client.query(`
+  const afterResult = await client.query(
+    `
     query GetTemplate($identifier: String!) {
       getTemplateByIdentifier(identifier: $identifier) {
         id
@@ -266,9 +281,11 @@ export async function usageTrackingExample() {
         usageCount
       }
     }
-  `, {
-    identifier: 'basic-table-query'
-  })
+  `,
+    {
+      identifier: 'basic-table-query',
+    }
+  )
 
   const usageCountAfter = afterResult.getTemplateByIdentifier.usageCount
 
@@ -278,7 +295,7 @@ export async function usageTrackingExample() {
 
 /**
  * Example 5: Mutation Template
- * 
+ *
  * Shows how to create and execute mutation templates for data modification.
  */
 export async function mutationTemplateExample() {
@@ -304,7 +321,8 @@ export async function mutationTemplateExample() {
   const tableId = tablesResult.tables.nodes[0].id
 
   // Create a mutation template for node creation
-  const createResult = await client.mutation(`
+  const createResult = await client.mutation(
+    `
     mutation CreateTemplate($input: CreateQueryTemplateInput!) {
       createTemplate(input: $input) {
         template {
@@ -318,26 +336,30 @@ export async function mutationTemplateExample() {
         }
       }
     }
-  `, {
-    input: {
-      identifier: 'create-simple-node',
-      name: 'Create Simple Node',
-      description: 'Template for creating a simple node',
-      query: 'mutation CreateNode($tableId: ID!, $content: String!, $title: String!) { createNode(input: { tableId: $tableId, content: $content, title: $title }) { id content title createdAt } }',
-      variables: {
-        tableId,
-        content: 'Sample content',
-        title: 'Sample title'
+  `,
+    {
+      input: {
+        identifier: 'create-simple-node',
+        name: 'Create Simple Node',
+        description: 'Template for creating a simple node',
+        query:
+          'mutation CreateNode($tableId: ID!, $content: String!, $title: String!) { createNode(input: { tableId: $tableId, content: $content, title: $title }) { id content title createdAt } }',
+        variables: {
+          tableId,
+          content: 'Sample content',
+          title: 'Sample title',
+        },
+        createdBy: 'example-system',
       },
-      createdBy: 'example-system'
     }
-  })
+  )
 
   if (createResult.createTemplate.errors.length === 0) {
     console.log('✅ Mutation template created:', createResult.createTemplate.template.identifier)
 
     // Execute the mutation template
-    const executeResult = await client.mutation(`
+    const executeResult = await client.mutation(
+      `
       mutation ExecuteWithGraphQL($templateIdentifier: String!, $variables: JSON, $trackUsage: Boolean) {
         executeTemplateWithGraphQL(
           templateIdentifier: $templateIdentifier
@@ -351,15 +373,17 @@ export async function mutationTemplateExample() {
           }
         }
       }
-    `, {
-      templateIdentifier: 'create-simple-node',
-      variables: {
-        tableId,
-        content: 'Example node from template',
-        title: 'Template-created Node'
-      },
-      trackUsage: true
-    })
+    `,
+      {
+        templateIdentifier: 'create-simple-node',
+        variables: {
+          tableId,
+          content: 'Example node from template',
+          title: 'Template-created Node',
+        },
+        trackUsage: true,
+      }
+    )
 
     if (executeResult.executeTemplateWithGraphQL.success) {
       const result = executeResult.executeTemplateWithGraphQL.data
@@ -377,7 +401,7 @@ export async function mutationTemplateExample() {
 
 /**
  * Example 6: Error Handling Patterns
- * 
+ *
  * Demonstrates proper error handling for template operations.
  */
 export async function errorHandlingExample() {
@@ -385,7 +409,8 @@ export async function errorHandlingExample() {
 
   // Try to execute a non-existent template
   try {
-    const result = await client.mutation(`
+    const result = await client.mutation(
+      `
       mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
         executeTemplate(input: $input) {
           success
@@ -395,12 +420,14 @@ export async function errorHandlingExample() {
           }
         }
       }
-    `, {
-      input: {
-        templateIdentifier: 'non-existent-template',
-        variables: {}
+    `,
+      {
+        input: {
+          templateIdentifier: 'non-existent-template',
+          variables: {},
+        },
       }
-    })
+    )
 
     if (!result.executeTemplate.success) {
       console.log('✅ Proper error handling for non-existent template:')
@@ -414,7 +441,8 @@ export async function errorHandlingExample() {
 
   // Try to execute template with missing variables
   try {
-    const result = await client.mutation(`
+    const result = await client.mutation(
+      `
       mutation ExecuteWithGraphQL($templateIdentifier: String!, $variables: JSON, $trackUsage: Boolean) {
         executeTemplateWithGraphQL(
           templateIdentifier: $templateIdentifier
@@ -428,11 +456,13 @@ export async function errorHandlingExample() {
           }
         }
       }
-    `, {
-      templateIdentifier: 'basic-table-query',
-      variables: {}, // Missing required tableId
-      trackUsage: false
-    })
+    `,
+      {
+        templateIdentifier: 'basic-table-query',
+        variables: {}, // Missing required tableId
+        trackUsage: false,
+      }
+    )
 
     if (result.executeTemplateWithGraphQL.success) {
       const executionResult = result.executeTemplateWithGraphQL.data
@@ -458,19 +488,19 @@ export async function runAllExamples() {
   try {
     await basicQueryTemplateExample()
     console.log()
-    
+
     await graphqlExecutionExample()
     console.log()
-    
+
     await templateSearchExample()
     console.log()
-    
+
     await usageTrackingExample()
     console.log()
-    
+
     await mutationTemplateExample()
     console.log()
-    
+
     await errorHandlingExample()
     console.log()
 

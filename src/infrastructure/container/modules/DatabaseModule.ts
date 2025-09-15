@@ -1,7 +1,7 @@
 import { Database } from 'bun:sqlite'
+import { getDatabasePath } from '@/config/database.js'
 import type { DIContainer } from '../DIContainer.js'
 import { DatabaseTokens } from '../tokens/index.js'
-import { getDatabasePath } from '@/config/database.js'
 
 /**
  * Database module - registers database connections and adapters
@@ -17,7 +17,7 @@ export function registerDatabaseModule(container: DIContainer): void {
   container.registerSingleton(
     DatabaseTokens.DATABASE_CONNECTION,
     async (c) => {
-      const config = await c.resolve(DatabaseTokens.DATABASE_CONFIG) as any
+      const config = (await c.resolve(DatabaseTokens.DATABASE_CONFIG)) as any
 
       // Create SQLite database connection using the configured path
       const db = new Database(config.url)

@@ -22,7 +22,7 @@ export class AttributeQueries extends BaseResolver {
     this.logger = logger
   }
 
-  async attributeType(_: GraphQLParent, args: AttributeArgs, context?: GraphQLContext) {
+  async attributeType(_: GraphQLParent, args: AttributeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -36,7 +36,7 @@ export class AttributeQueries extends BaseResolver {
       async () => {
         const attributeType = await this.attributeTypeRepository.findById(args.id)
         if (!attributeType) return null
-        
+
         // Map entity to GraphQL format
         return {
           id: attributeType.getId(),
@@ -59,7 +59,7 @@ export class AttributeQueries extends BaseResolver {
   async attributeTypeByIdentifier(
     _: GraphQLParent,
     args: AttributeByIdentifierArgs,
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -74,7 +74,7 @@ export class AttributeQueries extends BaseResolver {
       async () => {
         const attributeType = await this.attributeTypeRepository.findByIdentifier(args.identifier)
         if (!attributeType) return null
-        
+
         // Map entity to GraphQL format
         return {
           id: attributeType.getId(),
@@ -94,13 +94,13 @@ export class AttributeQueries extends BaseResolver {
     )
   }
 
-  async attributeTypes(_: GraphQLParent, args?: any, context?: GraphQLContext) {
+  async attributeTypes(_: GraphQLParent, _args?: any, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         const result = await this.attributeTypeRepository.findAll({ limit: 100, offset: 0 })
-        
+
         // Map entities to GraphQL format
-        const nodes = (result.data || result.nodes || []).map(attributeType => ({
+        const nodes = (result.data || result.nodes || []).map((attributeType) => ({
           id: attributeType.getId(),
           identifier: attributeType.getIdentifier(),
           name: attributeType.getIdentifier(), // Use identifier as name for now
@@ -125,7 +125,7 @@ export class AttributeQueries extends BaseResolver {
     )
   }
 
-  async attribute(_: GraphQLParent, args: AttributeArgs, context?: GraphQLContext) {
+  async attribute(_: GraphQLParent, args: AttributeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -139,10 +139,12 @@ export class AttributeQueries extends BaseResolver {
       async () => {
         const attribute = await this.attributeRepository.findById(args.id)
         if (!attribute) return null
-        
+
         // Get the associated AttributeType to resolve the name
-        const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
-        
+        const attributeType = await this.attributeTypeRepository.findById(
+          attribute.getAttributeTypeId()
+        )
+
         // Map entity to GraphQL format
         return {
           id: attribute.getId(),
@@ -161,7 +163,7 @@ export class AttributeQueries extends BaseResolver {
   async attributeByIdentifier(
     _: GraphQLParent,
     args: AttributeByIdentifierArgs & { tableId: string },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -181,10 +183,12 @@ export class AttributeQueries extends BaseResolver {
         // For now, we'll use only the identifier parameter
         const attribute = await this.attributeRepository.findByIdentifier(args.identifier)
         if (!attribute) return null
-        
+
         // Get the associated AttributeType to resolve the name
-        const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
-        
+        const attributeType = await this.attributeTypeRepository.findById(
+          attribute.getAttributeTypeId()
+        )
+
         // Map entity to GraphQL format
         return {
           id: attribute.getId(),
@@ -200,7 +204,7 @@ export class AttributeQueries extends BaseResolver {
     )
   }
 
-  async attributes(_: GraphQLParent, args: AttributesArgs, context?: GraphQLContext) {
+  async attributes(_: GraphQLParent, args: AttributesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         const result = await this.attributeRepository.findAll(
@@ -208,19 +212,23 @@ export class AttributeQueries extends BaseResolver {
         )
 
         // Map entities to GraphQL format
-        const attributes = (result.items || result.nodes || result.data || []).map(async (attribute) => {
-          // Get the associated AttributeType to resolve the name
-          const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
-          
-          return {
-            id: attribute.getId(),
-            identifier: attribute.getIdentifier(),
-            name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
-            description: attribute.getDescription(),
-            createdAt: attribute.getCreatedAt(),
-            updatedAt: attribute.getUpdatedAt(),
+        const attributes = (result.items || result.nodes || result.data || []).map(
+          async (attribute) => {
+            // Get the associated AttributeType to resolve the name
+            const attributeType = await this.attributeTypeRepository.findById(
+              attribute.getAttributeTypeId()
+            )
+
+            return {
+              id: attribute.getId(),
+              identifier: attribute.getIdentifier(),
+              name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
+              description: attribute.getDescription(),
+              createdAt: attribute.getCreatedAt(),
+              updatedAt: attribute.getUpdatedAt(),
+            }
           }
-        })
+        )
 
         return {
           attributes: await Promise.all(attributes),

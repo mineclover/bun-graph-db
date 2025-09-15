@@ -10,13 +10,13 @@ export class TemplateQueries extends BaseResolver {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     logger: ILogger,
-    private readonly schema?: GraphQLSchema
+    readonly _schema?: GraphQLSchema
   ) {
     super()
     this.logger = logger
   }
 
-  async getTemplate(_: GraphQLParent, args: { id: string }, context?: GraphQLContext) {
+  async getTemplate(_: GraphQLParent, args: { id: string }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -38,7 +38,7 @@ export class TemplateQueries extends BaseResolver {
   async getTemplateByIdentifier(
     _: GraphQLParent,
     args: { identifier: string },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -82,20 +82,20 @@ export class TemplateQueries extends BaseResolver {
         direction: 'ASC' | 'DESC'
       }>
     },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     return this.handleQuery(
       async () => {
         // Extract pagination parameters
         const limit = args.pagination?.limit || 10
         const offset = args.pagination?.offset || 0
-        
+
         // Extract filter parameters
         const filter = args.filter || {}
-        
+
         // Extract sort parameters (use first sort or default)
         const sort = args.sort?.[0]
-        
+
         const result = await this.queryTemplateRepository.search({
           tags: filter.tags,
           tagMatchMode: filter.tagMatchMode,
@@ -121,7 +121,7 @@ export class TemplateQueries extends BaseResolver {
     )
   }
 
-  async getPopularTemplates(_: GraphQLParent, args: { limit?: number }, context?: GraphQLContext) {
+  async getPopularTemplates(_: GraphQLParent, args: { limit?: number }, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         const result = await this.queryTemplateRepository.findPopular(args.limit || 10)
@@ -131,7 +131,6 @@ export class TemplateQueries extends BaseResolver {
       { limit: args.limit }
     )
   }
-
 
   setSchema(schema: GraphQLSchema) {
     ;(this as any).schema = schema

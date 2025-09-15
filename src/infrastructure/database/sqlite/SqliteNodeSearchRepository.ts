@@ -1,14 +1,9 @@
 import type { Database } from 'bun:sqlite'
 import type { AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
 import type { INodeSearchRepository } from '@/application/use-cases/nodes/SearchNodes.js'
-import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
-import { Attribute } from '@/domain/entities/Attribute.js'
+import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
-import type {
-  LogicalOperator,
-  SearchOperator,
-  SearchQuery,
-} from '@/domain/value-objects/SearchFilter.js'
+import type { SearchOperator, SearchQuery } from '@/domain/value-objects/SearchFilter.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface NodeWithAttributesRow {
@@ -204,65 +199,65 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     switch (filter.operator as SearchOperator) {
       case 'equals':
         params.push(filter.value)
-        return baseCondition + 'nav.value = ?)'
+        return `${baseCondition}nav.value = ?)`
 
       case 'not_equals':
         params.push(filter.value)
-        return baseCondition + 'nav.value != ?)'
+        return `${baseCondition}nav.value != ?)`
 
       case 'contains':
         params.push(`%${filter.value}%`)
-        return baseCondition + 'nav.value LIKE ?)'
+        return `${baseCondition}nav.value LIKE ?)`
 
       case 'starts_with':
         params.push(`${filter.value}%`)
-        return baseCondition + 'nav.value LIKE ?)'
+        return `${baseCondition}nav.value LIKE ?)`
 
       case 'ends_with':
         params.push(`%${filter.value}`)
-        return baseCondition + 'nav.value LIKE ?)'
+        return `${baseCondition}nav.value LIKE ?)`
 
       case 'gt':
         params.push(filter.value)
-        return baseCondition + this.buildComparisonClause(attributeInfo.dataType, '>') + ')'
+        return `${baseCondition + this.buildComparisonClause(attributeInfo.dataType, '>')})`
 
       case 'gte':
         params.push(filter.value)
-        return baseCondition + this.buildComparisonClause(attributeInfo.dataType, '>=') + ')'
+        return `${baseCondition + this.buildComparisonClause(attributeInfo.dataType, '>=')})`
 
       case 'lt':
         params.push(filter.value)
-        return baseCondition + this.buildComparisonClause(attributeInfo.dataType, '<') + ')'
+        return `${baseCondition + this.buildComparisonClause(attributeInfo.dataType, '<')})`
 
       case 'lte':
         params.push(filter.value)
-        return baseCondition + this.buildComparisonClause(attributeInfo.dataType, '<=') + ')'
+        return `${baseCondition + this.buildComparisonClause(attributeInfo.dataType, '<=')})`
 
       case 'range': {
         const range = filter.value as { min: any; max: any }
         params.push(range.min, range.max)
-        return baseCondition + this.buildRangeClause(attributeInfo.dataType) + ')'
+        return `${baseCondition + this.buildRangeClause(attributeInfo.dataType)})`
       }
 
       case 'in': {
         const values = Array.isArray(filter.value) ? filter.value : [filter.value]
         const placeholders = values.map(() => '?').join(',')
         params.push(...values)
-        return baseCondition + `nav.value IN (${placeholders}))`
+        return `${baseCondition}nav.value IN (${placeholders}))`
       }
 
       case 'not_in': {
         const notValues = Array.isArray(filter.value) ? filter.value : [filter.value]
         const notPlaceholders = notValues.map(() => '?').join(',')
         params.push(...notValues)
-        return baseCondition + `nav.value NOT IN (${notPlaceholders}))`
+        return `${baseCondition}nav.value NOT IN (${notPlaceholders}))`
       }
 
       case 'is_null':
-        return baseCondition + 'nav.value IS NULL)'
+        return `${baseCondition}nav.value IS NULL)`
 
       case 'is_not_null':
-        return baseCondition + 'nav.value IS NOT NULL)'
+        return `${baseCondition}nav.value IS NOT NULL)`
 
       default:
         throw new DatabaseException(`Unsupported operator: ${filter.operator}`)
@@ -297,7 +292,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     switch (dataType) {
       case 'number': {
         const num = Number(value)
-        return isNaN(num) ? value : num
+        return Number.isNaN(num) ? value : num
       }
 
       case 'boolean':

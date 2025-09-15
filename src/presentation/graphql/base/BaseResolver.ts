@@ -3,9 +3,7 @@ import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type {
   GraphQLError,
   PerformanceMetrics,
-  ResolverContext,
   StandardMutationResult,
-  StandardQueryResult,
 } from '@/presentation/graphql/types/StandardTypes.js'
 import { DomainException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
@@ -22,7 +20,7 @@ export abstract class BaseResolver {
     operationDetails?: Record<string, unknown>
   ): Promise<T> {
     const startTime = Date.now()
-    let success = true
+    let _success = true
     let errorCode: string | undefined
 
     try {
@@ -46,7 +44,7 @@ export abstract class BaseResolver {
 
       return result
     } catch (error) {
-      success = false
+      _success = false
       errorCode = this.extractErrorCode(error)
 
       this.logger.error(`Query failed: ${context}`, {
@@ -291,8 +289,8 @@ export abstract class BaseResolver {
   /**
    * Helper method to get nested object values
    */
-  private static getNestedValue(obj: any, path: string): any {
-    return path.split('.').reduce((current, key) => current?.[key], obj)
+  private static getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+    return path.split('.').reduce((current: any, key) => current?.[key], obj)
   }
 
   /**

@@ -18,7 +18,7 @@ export class RelationFieldResolvers extends BaseResolver {
     this.logger = logger
   }
 
-  async table(parent: NodeRelationParent, args?: any, context?: GraphQLContext) {
+  async table(parent: NodeRelationParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         return await this.tableRepository.findById(parent.tableId)
@@ -29,7 +29,7 @@ export class RelationFieldResolvers extends BaseResolver {
     )
   }
 
-  async sourceNode(parent: NodeRelationParent, args?: any, context?: GraphQLContext) {
+  async sourceNode(parent: NodeRelationParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         return await this.nodeRepository.findById(parent.sourceNodeId)
@@ -40,7 +40,7 @@ export class RelationFieldResolvers extends BaseResolver {
     )
   }
 
-  async targetNode(parent: NodeRelationParent, args?: any, context?: GraphQLContext) {
+  async targetNode(parent: NodeRelationParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         return await this.nodeRepository.findById(parent.targetNodeId)
@@ -51,7 +51,7 @@ export class RelationFieldResolvers extends BaseResolver {
     )
   }
 
-  async relationType(parent: NodeRelationParent, args?: any, context?: GraphQLContext) {
+  async relationType(parent: NodeRelationParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         return await this.relationTypeRepository.findById(parent.relationTypeId)

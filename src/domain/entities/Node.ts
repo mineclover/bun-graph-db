@@ -53,7 +53,9 @@ export class Node {
     }
 
     if (content.length > 1000) {
-      throw new DomainException('Node content cannot exceed 1000 characters', { code: 'DOMAIN_ERROR' })
+      throw new DomainException('Node content cannot exceed 1000 characters', {
+        code: 'DOMAIN_ERROR',
+      })
     }
   }
 

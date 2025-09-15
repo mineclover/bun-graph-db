@@ -36,16 +36,16 @@ export const createGraphQLConfig = (env: Record<string, string | undefined>): Gr
     },
     cache: {
       enabled: env.GRAPHQL_CACHE_ENABLED !== 'false',
-      ttl: parseInt(env.GRAPHQL_CACHE_TTL || '300'),
+      ttl: parseInt(env.GRAPHQL_CACHE_TTL || '300', 10),
     },
     rateLimit: {
       enabled: env.RATE_LIMIT_ENABLED === 'true',
-      max: parseInt(env.RATE_LIMIT_MAX || '1000'),
-      windowMs: parseInt(env.RATE_LIMIT_WINDOW_MS || '900000'),
+      max: parseInt(env.RATE_LIMIT_MAX || '1000', 10),
+      windowMs: parseInt(env.RATE_LIMIT_WINDOW_MS || '900000', 10),
     },
     complexity: {
-      maximumComplexity: parseInt(env.GRAPHQL_MAX_COMPLEXITY || '1000'),
-      maximumDepth: parseInt(env.GRAPHQL_MAX_DEPTH || '10'),
+      maximumComplexity: parseInt(env.GRAPHQL_MAX_COMPLEXITY || '1000', 10),
+      maximumDepth: parseInt(env.GRAPHQL_MAX_DEPTH || '10', 10),
     },
   }
 }

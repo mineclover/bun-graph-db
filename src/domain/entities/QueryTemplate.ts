@@ -1,5 +1,5 @@
-import { DomainException } from '@/shared/exceptions/DomainException.js'
 import { GraphQLParser } from '@/core/utils/GraphQLParser.js'
+import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export interface ValidationResult {
   isValid: boolean
@@ -68,11 +68,12 @@ export class QueryTemplate {
     }
   ): QueryTemplate {
     const now = new Date()
-    
+
     // Extract operation info from GraphQL query text
     const operationInfo = GraphQLParser.extractOperationInfo(queryText)
     const systemQueries = GraphQLParser.extractSystemQueries(queryText)
-    const autoComplexity = options?.complexityScore || GraphQLParser.calculateComplexityScore(queryText)
+    const autoComplexity =
+      options?.complexityScore || GraphQLParser.calculateComplexityScore(queryText)
 
     return new QueryTemplate(
       null,
@@ -130,7 +131,7 @@ export class QueryTemplate {
       ? (JSON.parse(applicableTables) as string[])
       : null
     const parsedTags = tags ? (JSON.parse(tags) as string[]) : []
-    
+
     // Parse queryName field - support both legacy single string and new array format
     let parsedQueryName: string[]
     if (queryName) {
@@ -154,7 +155,7 @@ export class QueryTemplate {
         parsedQueryName = []
       }
     }
-    
+
     // Use operationType if available, fallback to templateType, then parse from queryText
     let finalOperationType: OperationType
     if (operationType && ['query', 'mutation', 'subscription'].includes(operationType)) {
@@ -197,7 +198,9 @@ export class QueryTemplate {
 
   private validateIdentifier(identifier: string): void {
     if (!identifier || identifier.trim().length === 0) {
-      throw new DomainException('Query template identifier cannot be empty', { code: 'VALIDATION_ERROR' })
+      throw new DomainException('Query template identifier cannot be empty', {
+        code: 'VALIDATION_ERROR',
+      })
     }
 
     if (!/^[a-z0-9-_]+$/.test(identifier)) {
@@ -216,7 +219,9 @@ export class QueryTemplate {
 
   private validateComplexityScore(score: number): void {
     if (score < 1 || score > 10) {
-      throw new DomainException('Complexity score must be between 1 and 10', { code: 'VALIDATION_ERROR' })
+      throw new DomainException('Complexity score must be between 1 and 10', {
+        code: 'VALIDATION_ERROR',
+      })
     }
   }
 
@@ -315,10 +320,13 @@ export class QueryTemplate {
   }
 
   updateExecutionStats(executionTimeMs: number): QueryTemplate {
-    const newAvgTime = this.usageCount > 0 
-      ? Math.round((this.avgExecutionTimeMs * this.usageCount + executionTimeMs) / (this.usageCount + 1))
-      : executionTimeMs
-    
+    const newAvgTime =
+      this.usageCount > 0
+        ? Math.round(
+            (this.avgExecutionTimeMs * this.usageCount + executionTimeMs) / (this.usageCount + 1)
+          )
+        : executionTimeMs
+
     return new QueryTemplate(
       this.id,
       this.identifier,

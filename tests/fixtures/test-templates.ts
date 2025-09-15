@@ -1,6 +1,6 @@
 /**
  * Test Template Definitions
- * 
+ *
  * Pre-configured template data for testing template creation,
  * parsing, and database operations.
  */
@@ -16,7 +16,7 @@ export const testTemplates = [
     description: 'Basic query for retrieving a single user by ID',
     expectedQueryName: 'GetUser',
     expectedOperationType: 'query',
-    expectedComplexity: 2
+    expectedComplexity: 2,
   },
 
   {
@@ -27,7 +27,7 @@ export const testTemplates = [
     description: 'Advanced query with filtering and pagination',
     expectedQueryName: 'ListUsers',
     expectedOperationType: 'query',
-    expectedComplexity: 8
+    expectedComplexity: 8,
   },
 
   {
@@ -38,7 +38,7 @@ export const testTemplates = [
     description: 'Mutation for creating a new user',
     expectedQueryName: 'CreateUser',
     expectedOperationType: 'mutation',
-    expectedComplexity: 3
+    expectedComplexity: 3,
   },
 
   {
@@ -49,24 +49,24 @@ export const testTemplates = [
     description: 'Anonymous query without operation name',
     expectedQueryName: null,
     expectedOperationType: 'query',
-    expectedComplexity: 1
+    expectedComplexity: 1,
   },
 
   {
     identifier: 'test-subscription',
     name: 'Node Updates Subscription',
     queryText: sampleQueries.subscription,
-    variablesSchema: { 
-      type: 'object', 
-      properties: { 
-        nodeId: { type: 'string' } 
-      }, 
-      required: ['nodeId'] 
+    variablesSchema: {
+      type: 'object',
+      properties: {
+        nodeId: { type: 'string' },
+      },
+      required: ['nodeId'],
     },
     description: 'Real-time subscription for node updates',
     expectedQueryName: 'NodeUpdates',
     expectedOperationType: 'subscription',
-    expectedComplexity: 4
+    expectedComplexity: 4,
   },
 
   {
@@ -76,15 +76,15 @@ export const testTemplates = [
     variablesSchema: {
       type: 'object',
       properties: {
-        id: { type: 'string', description: 'Node ID' }
+        id: { type: 'string', description: 'Node ID' },
       },
-      required: ['id']
+      required: ['id'],
     },
     description: 'Complex nested query with fragments',
     expectedQueryName: 'GetNodeWithRelations',
     expectedOperationType: 'query',
-    expectedComplexity: 12
-  }
+    expectedComplexity: 12,
+  },
 ]
 
 export const performanceTestTemplates = [
@@ -96,12 +96,11 @@ export const performanceTestTemplates = [
     variablesSchema: {
       type: 'object',
       properties: { id: { type: 'string' } },
-      required: ['id']
+      required: ['id'],
     },
     description: `Performance test template ${i + 1}`,
     expectedQueryName: `PerfTest${i + 1}`,
     expectedOperationType: 'query',
-    expectedComplexity: 2
-  }))
+    expectedComplexity: 2,
+  })),
 ]
-

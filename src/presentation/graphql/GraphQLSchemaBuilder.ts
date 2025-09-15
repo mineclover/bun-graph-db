@@ -1,12 +1,12 @@
+import { join } from 'node:path'
 import { loadFilesSync } from '@graphql-tools/load-files'
 import { mergeTypeDefs } from '@graphql-tools/merge'
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import type { GraphQLSchema } from 'graphql'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
-import { join } from 'path'
+import type { GraphQLContext, GraphQLParent, JsonValue } from '@/core/types/GraphQLTypes.js'
 import type { DIContainer } from '../../infrastructure/container/DIContainer.js'
 import {
-  CommonTokens,
   GraphQLTokens,
   RepositoryTokens,
   UseCaseTokens,
@@ -96,7 +96,9 @@ export class GraphQLSchemaBuilder {
         GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS
       ),
       relationFieldResolvers: await this.container.resolve(GraphQLTokens.RELATION_FIELD_RESOLVERS),
-      queryTemplateFieldResolvers: await this.container.resolve(GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS),
+      queryTemplateFieldResolvers: await this.container.resolve(
+        GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS
+      ),
 
       // Schema resolvers
       schemaResolvers: createSchemaResolvers({
@@ -104,10 +106,14 @@ export class GraphQLSchemaBuilder {
         schemaExportUseCase: await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE),
         schemaImportUseCase: await this.container.resolve(UseCaseTokens.SCHEMA_IMPORT_USE_CASE),
         logger: {
-          info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
-          warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
-          error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
-          debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+          info: (msg: string, data?: Record<string, unknown>) =>
+            console.log(`[INFO] ${msg}`, data || ''),
+          warn: (msg: string, data?: Record<string, unknown>) =>
+            console.warn(`[WARN] ${msg}`, data || ''),
+          error: (msg: string, data?: Record<string, unknown>) =>
+            console.error(`[ERROR] ${msg}`, data || ''),
+          debug: (msg: string, data?: Record<string, unknown>) =>
+            console.debug(`[DEBUG] ${msg}`, data || ''),
         },
       }),
     }
@@ -138,104 +144,151 @@ export class GraphQLSchemaBuilder {
         }),
 
         // Table queries
-        table: (_: any, args: any) => deps.tableQueries.table(_, args),
-        tableByIdentifier: (_: any, args: any) => deps.tableQueries.tableByIdentifier(_, args),
-        tables: (_: any, args: any) => deps.tableQueries.tables(_, args),
+        table: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tableQueries.table(_, args),
+        tableByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tableQueries.tableByIdentifier(_, args),
+        tables: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tableQueries.tables(_, args),
 
         // Attribute type queries
-        attributeType: (_: any, args: any) => deps.attributeQueries.attributeType(_, args),
-        attributeTypeByIdentifier: (_: any, args: any) =>
+        attributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.attributeQueries.attributeType(_, args),
+        attributeTypeByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.attributeQueries.attributeTypeByIdentifier(_, args),
-        attributeTypes: (_: any) => deps.attributeQueries.attributeTypes(_),
+        attributeTypes: (_: GraphQLParent) => deps.attributeQueries.attributeTypes(_),
 
         // Attribute queries
-        attribute: (_: any, args: any) => deps.attributeQueries.attribute(_, args),
-        attributeByIdentifier: (_: any, args: any) =>
+        attribute: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.attributeQueries.attribute(_, args),
+        attributeByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.attributeQueries.attributeByIdentifier(_, args),
-        attributes: (_: any, args: any) => deps.attributeQueries.attributes(_, args),
+        attributes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.attributeQueries.attributes(_, args),
 
         // Node queries
-        node: (_: any, args: any) => deps.nodeQueries.node(_, args),
-        nodeByContent: (_: any, args: any) => deps.nodeQueries.nodeByContent(_, args),
-        nodes: (_: any, args: any) => deps.nodeQueries.nodes(_, args),
-        searchNodes: (_: any, args: any) => deps.nodeQueries.searchNodes(_, args),
+        node: (_: GraphQLParent, args: Record<string, unknown>) => deps.nodeQueries.node(_, args),
+        nodeByContent: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeQueries.nodeByContent(_, args),
+        nodes: (_: GraphQLParent, args: Record<string, unknown>) => deps.nodeQueries.nodes(_, args),
+        searchNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeQueries.searchNodes(_, args),
 
         // Relation queries
-        relationType: (_: any, args: any) => deps.relationQueries.relationType(_, args),
-        relationTypes: (_: any) => deps.relationQueries.relationTypes(_),
-        nodeRelation: (_: any, args: any) => deps.relationQueries.nodeRelation(_, args),
-        nodeRelations: (_: any, args: any) => deps.relationQueries.nodeRelations(_, args),
-        searchRelatedNodes: (_: any, args: any) => deps.relationQueries.searchRelatedNodes(_, args),
-        getDependencyChain: (_: any, args: any) => deps.relationQueries.getDependencyChain(_, args),
+        relationType: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationQueries.relationType(_, args),
+        relationTypes: (_: GraphQLParent) => deps.relationQueries.relationTypes(_),
+        nodeRelation: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationQueries.nodeRelation(_, args),
+        nodeRelations: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationQueries.nodeRelations(_, args),
+        searchRelatedNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationQueries.searchRelatedNodes(_, args),
+        getDependencyChain: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationQueries.getDependencyChain(_, args),
 
         // Template queries
-        getTemplate: (_: any, args: any) => deps.templateQueries.getTemplate(_, args),
-        getTemplateByIdentifier: (_: any, args: any) =>
+        getTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateQueries.getTemplate(_, args),
+        getTemplateByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateQueries.getTemplateByIdentifier(_, args),
-        searchTemplates: (_: any, args: any) => deps.templateQueries.searchTemplates(_, args),
-        getPopularTemplates: (_: any, args: any) =>
+        searchTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateQueries.searchTemplates(_, args),
+        getPopularTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateQueries.getPopularTemplates(_, args),
 
         // System monitoring queries
-        systemStats: (_: any, args: any) => deps.systemQueries?.systemStats() || null,
-        memoryStats: (_: any, args: any) => deps.systemQueries?.memoryStats() || null,
-        healthCheck: (_: any, args: any) => deps.systemQueries?.healthCheck() || null,
+        systemStats: (_: GraphQLParent, _args: Record<string, unknown>) =>
+          deps.systemQueries?.systemStats() || null,
+        memoryStats: (_: GraphQLParent, _args: Record<string, unknown>) =>
+          deps.systemQueries?.memoryStats() || null,
+        healthCheck: (_: GraphQLParent, _args: Record<string, unknown>) =>
+          deps.systemQueries?.healthCheck() || null,
 
         // Schema export queries
-        exportTable: (_: any, args: any) => deps.schemaResolvers.Query.exportTable(_, args),
-        exportAllTables: (_: any, args: any) => deps.schemaResolvers.Query.exportAllTables(_, args),
+        exportTable: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.schemaResolvers.Query.exportTable(_, args),
+        exportAllTables: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.schemaResolvers.Query.exportAllTables(_, args),
       },
 
       Mutation: {
         _empty: () => null,
 
         // Table mutations
-        createTable: (_: any, args: any) => deps.tableMutations.createTable(_, args),
-        updateTable: (_: any, args: any) => deps.tableMutations.updateTable(_, args),
-        deleteTable: (_: any, args: any) => deps.tableMutations.deleteTable(_, args),
+        createTable: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tableMutations.createTable(_, args),
+        updateTable: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tableMutations.updateTable(_, args),
+        deleteTable: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tableMutations.deleteTable(_, args),
 
         // Attribute type mutations
-        createAttributeType: (_: any, args: any) =>
+        createAttributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.attributeMutations.createAttributeType(_, args),
-        updateAttributeType: (_: any, args: any) =>
+        updateAttributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.attributeMutations.updateAttributeType(_, args),
-        deleteAttributeType: (_: any, args: any) =>
+        deleteAttributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.attributeMutations.deleteAttributeType(_, args),
 
         // Attribute mutations
-        createAttribute: (_: any, args: any) => deps.attributeMutations.createAttribute(_, args),
-        updateAttribute: (_: any, args: any) => deps.attributeMutations.updateAttribute(_, args),
-        deleteAttribute: (_: any, args: any) => deps.attributeMutations.deleteAttribute(_, args),
+        createAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.attributeMutations.createAttribute(_, args),
+        updateAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.attributeMutations.updateAttribute(_, args),
+        deleteAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.attributeMutations.deleteAttribute(_, args),
 
         // Node mutations
-        createNode: (_: any, args: any) => deps.nodeMutations.createNode(_, args),
-        updateNode: (_: any, args: any) => deps.nodeMutations.updateNode(_, args),
-        deleteNode: (_: any, args: any) => deps.nodeMutations.deleteNode(_, args),
-        setNodeAttribute: (_: any, args: any) => deps.nodeMutations.setNodeAttribute(_, args),
+        createNode: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.createNode(_, args),
+        updateNode: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.updateNode(_, args),
+        deleteNode: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.deleteNode(_, args),
+        setNodeAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.setNodeAttribute(_, args),
 
         // Relation mutations
-        createRelationType: (_: any, args: any) =>
+        createRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.relationMutations.createRelationType(_, args),
-        createRelation: (_: any, args: any) => deps.relationMutations.createRelation(_, args),
-        deleteRelation: (_: any, args: any) => deps.relationMutations.deleteRelation(_, args),
+        createRelation: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationMutations.createRelation(_, args),
+        deleteRelation: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationMutations.deleteRelation(_, args),
 
         // Template mutations
-        createTemplate: (_: any, args: any) => deps.templateMutations.createTemplate(_, args),
-        updateTemplate: (_: any, args: any) => deps.templateMutations.updateTemplate(_, args),
-        updateTemplateQuery: (_: any, args: any) => deps.templateMutations.updateTemplateQuery(_, args),
-        deleteTemplate: (_: any, args: any) => deps.templateMutations.deleteTemplate(_, args),
-        activateTemplate: (_: any, args: any) => deps.templateMutations.activateTemplate(_, args),
-        deactivateTemplate: (_: any, args: any) =>
+        createTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateMutations.createTemplate(_, args),
+        updateTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateMutations.updateTemplate(_, args),
+        updateTemplateQuery: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateMutations.updateTemplateQuery(_, args),
+        deleteTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateMutations.deleteTemplate(_, args),
+        activateTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateMutations.activateTemplate(_, args),
+        deactivateTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateMutations.deactivateTemplate(_, args),
-        executeTemplateWithGraphQL: (_: any, args: any, context: any) =>
-          deps.templateMutations.executeTemplateWithGraphQL(_, args, context),
-        exportTemplate: (_: any, args: any, context: any) =>
-          deps.templateMutations.exportTemplate(_, args, context),
-        importTemplate: (_: any, args: any, context: any) =>
-          deps.templateMutations.importTemplate(_, args, context),
+        executeTemplateWithGraphQL: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          context: GraphQLContext
+        ) => deps.templateMutations.executeTemplateWithGraphQL(_, args, context),
+        exportTemplate: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          context: GraphQLContext
+        ) => deps.templateMutations.exportTemplate(_, args, context),
+        importTemplate: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          context: GraphQLContext
+        ) => deps.templateMutations.importTemplate(_, args, context),
 
         // Schema import mutations
-        importSchema: (_: any, args: any) => deps.schemaResolvers.Mutation.importSchema(_, args),
+        importSchema: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.schemaResolvers.Mutation.importSchema(_, args),
       },
 
       Subscription: {
@@ -244,58 +297,68 @@ export class GraphQLSchemaBuilder {
 
       // Field resolvers
       Table: {
-        attributes: (parent: any) => deps.tableFieldResolvers.attributes(parent),
-        attributeTypes: (parent: any) => deps.tableFieldResolvers.attributeTypes(parent),
-        tableNodes: (parent: any) => deps.tableFieldResolvers.tableNodes(parent),
-        tableNodeCount: (parent: any) => deps.tableFieldResolvers.tableNodeCount(parent),
-        attributeCount: (parent: any) => deps.tableFieldResolvers.attributeCount(parent),
+        attributes: (parent: GraphQLParent) => deps.tableFieldResolvers.attributes(parent),
+        attributeTypes: (parent: GraphQLParent) => deps.tableFieldResolvers.attributeTypes(parent),
+        tableNodes: (parent: GraphQLParent) => deps.tableFieldResolvers.tableNodes(parent),
+        tableNodeCount: (parent: GraphQLParent) => deps.tableFieldResolvers.tableNodeCount(parent),
+        attributeCount: (parent: GraphQLParent) => deps.tableFieldResolvers.attributeCount(parent),
       },
 
       Attribute: {
-        attributeType: (parent: any) => deps.attributeFieldResolvers.attributeType(parent),
-        table: (parent: any) => deps.attributeFieldResolvers.table(parent),
+        attributeType: (parent: GraphQLParent) =>
+          deps.attributeFieldResolvers.attributeType(parent),
+        table: (parent: GraphQLParent) => deps.attributeFieldResolvers.table(parent),
       },
 
       TableNode: {
-        table: (parent: any) => deps.nodeFieldResolvers.table(parent),
-        attributes: (parent: any) => deps.nodeFieldResolvers.attributes(parent),
-        attributeCount: (parent: any) => deps.nodeFieldResolvers.attributeCount(parent),
-        outgoingRelations: (parent: any) => deps.nodeFieldResolvers.outgoingRelations(parent),
-        incomingRelations: (parent: any) => deps.nodeFieldResolvers.incomingRelations(parent),
-        relationCount: (parent: any) => deps.nodeFieldResolvers.relationCount(parent),
+        table: (parent: GraphQLParent) => deps.nodeFieldResolvers.table(parent),
+        attributes: (parent: GraphQLParent) => deps.nodeFieldResolvers.attributes(parent),
+        attributeCount: (parent: GraphQLParent) => deps.nodeFieldResolvers.attributeCount(parent),
+        outgoingRelations: (parent: GraphQLParent) =>
+          deps.nodeFieldResolvers.outgoingRelations(parent),
+        incomingRelations: (parent: GraphQLParent) =>
+          deps.nodeFieldResolvers.incomingRelations(parent),
+        relationCount: (parent: GraphQLParent) => deps.nodeFieldResolvers.relationCount(parent),
       },
 
       NodeAttribute: {
-        attribute: (parent: any) => deps.attributeFieldResolvers.attribute(parent),
+        attribute: (parent: GraphQLParent) => deps.attributeFieldResolvers.attribute(parent),
       },
 
       NodeRelation: {
-        table: (parent: any) => deps.relationFieldResolvers.table(parent),
-        sourceNode: (parent: any) => deps.relationFieldResolvers.sourceNode(parent),
-        targetNode: (parent: any) => deps.relationFieldResolvers.targetNode(parent),
-        relationType: (parent: any) => deps.relationFieldResolvers.relationType(parent),
+        table: (parent: GraphQLParent) => deps.relationFieldResolvers.table(parent),
+        sourceNode: (parent: GraphQLParent) => deps.relationFieldResolvers.sourceNode(parent),
+        targetNode: (parent: GraphQLParent) => deps.relationFieldResolvers.targetNode(parent),
+        relationType: (parent: GraphQLParent) => deps.relationFieldResolvers.relationType(parent),
       },
 
       QueryTemplate: {
-        query: (parent: any) => deps.queryTemplateFieldResolvers.query(parent),
-        queryName: (parent: any) => deps.queryTemplateFieldResolvers.queryName(parent),
-        operationType: (parent: any) => deps.queryTemplateFieldResolvers.operationType(parent),
-        variables: (parent: any) => deps.queryTemplateFieldResolvers.variables(parent),
-        variablesSchema: (parent: any) => deps.queryTemplateFieldResolvers.variablesSchema(parent),
-        defaultVariables: (parent: any) => deps.queryTemplateFieldResolvers.defaultVariables(parent),
-        applicableTables: (parent: any) => deps.queryTemplateFieldResolvers.applicableTables(parent),
-        complexityScore: (parent: any) => deps.queryTemplateFieldResolvers.complexityScore(parent),
-        usageCount: (parent: any) => deps.queryTemplateFieldResolvers.usageCount(parent),
-        lastUsedAt: (parent: any) => deps.queryTemplateFieldResolvers.lastUsedAt(parent),
-        avgExecutionTimeMs: (parent: any) => deps.queryTemplateFieldResolvers.avgExecutionTimeMs(parent),
-        version: (parent: any) => deps.queryTemplateFieldResolvers.version(parent),
-        isActive: (parent: any) => deps.queryTemplateFieldResolvers.isActive(parent),
-        tags: (parent: any) => deps.queryTemplateFieldResolvers.tags(parent),
-        createdBy: (parent: any) => deps.queryTemplateFieldResolvers.createdBy(parent),
-        createdAt: (parent: any) => deps.queryTemplateFieldResolvers.createdAt(parent),
-        updatedAt: (parent: any) => deps.queryTemplateFieldResolvers.updatedAt(parent),
-        isValid: (parent: any) => deps.queryTemplateFieldResolvers.isValid(parent),
-        validationErrors: (parent: any) => deps.queryTemplateFieldResolvers.validationErrors(parent),
+        query: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.query(parent),
+        queryName: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.queryName(parent),
+        operationType: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.operationType(parent),
+        variables: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.variables(parent),
+        variablesSchema: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.variablesSchema(parent),
+        defaultVariables: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.defaultVariables(parent),
+        applicableTables: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.applicableTables(parent),
+        complexityScore: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.complexityScore(parent),
+        usageCount: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.usageCount(parent),
+        lastUsedAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.lastUsedAt(parent),
+        avgExecutionTimeMs: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.avgExecutionTimeMs(parent),
+        version: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.version(parent),
+        isActive: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.isActive(parent),
+        tags: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.tags(parent),
+        createdBy: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.createdBy(parent),
+        createdAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.createdAt(parent),
+        updatedAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.updatedAt(parent),
+        isValid: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.isValid(parent),
+        validationErrors: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.validationErrors(parent),
       },
     }
 

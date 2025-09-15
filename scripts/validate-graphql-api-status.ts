@@ -6,8 +6,8 @@
  * PRIORITY_API_IMPLEMENTATION_STATUS.md와 동기화합니다.
  */
 
-import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 interface APIEndpoint {
   name: string

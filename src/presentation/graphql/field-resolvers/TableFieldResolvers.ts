@@ -18,18 +18,20 @@ export class TableFieldResolvers extends BaseResolver {
     this.logger = logger
   }
 
-  async attributes(parent: TableParent, args?: any, context?: GraphQLContext) {
+  async attributes(parent: TableParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         const result = await this.attributeRepository.findByTableId(parent.id)
         const attributes = result.data || result.nodes || result.items || []
-        
+
         // Map entities to GraphQL format with proper name resolution
         const mappedAttributes = await Promise.all(
           attributes.map(async (attribute) => {
             // Get the associated AttributeType to resolve the name
-            const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
-            
+            const attributeType = await this.attributeTypeRepository.findById(
+              attribute.getAttributeTypeId()
+            )
+
             return {
               id: attribute.getId(),
               identifier: attribute.getIdentifier(),
@@ -40,7 +42,7 @@ export class TableFieldResolvers extends BaseResolver {
             }
           })
         )
-        
+
         return mappedAttributes
       },
       'attributes',
@@ -49,23 +51,32 @@ export class TableFieldResolvers extends BaseResolver {
     )
   }
 
-  async attributeTypes(parent: TableParent, args?: any, context?: GraphQLContext) {
+  async attributeTypes(parent: TableParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         // Get all attributes for this table
         const attributesResult = await this.attributeRepository.findByTableId(parent.id)
-        const attributes = attributesResult.data || attributesResult.nodes || attributesResult.items || []
-        
+        const attributes =
+          attributesResult.data || attributesResult.nodes || attributesResult.items || []
+
         // Get unique attribute type IDs
-        const attributeTypeIds = [...new Set(attributes.map(attr => attr.getAttributeTypeId ? attr.getAttributeTypeId() : attr.attributeTypeId).filter(Boolean))]
-        
+        const attributeTypeIds = [
+          ...new Set(
+            attributes
+              .map((attr) =>
+                attr.getAttributeTypeId ? attr.getAttributeTypeId() : attr.attributeTypeId
+              )
+              .filter(Boolean)
+          ),
+        ]
+
         // Fetch all attribute types for these IDs
         const attributeTypes = await Promise.all(
-          attributeTypeIds.map(id => this.attributeTypeRepository.findById(id))
+          attributeTypeIds.map((id) => this.attributeTypeRepository.findById(id))
         )
-        
+
         // Map to GraphQL format
-        return attributeTypes.filter(Boolean).map(at => ({
+        return attributeTypes.filter(Boolean).map((at) => ({
           id: at.getId(),
           identifier: at.getIdentifier(),
           name: at.getIdentifier(),
@@ -84,7 +95,7 @@ export class TableFieldResolvers extends BaseResolver {
     )
   }
 
-  async tableNodes(parent: TableParent, args?: any, context?: GraphQLContext) {
+  async tableNodes(parent: TableParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         const result = await this.nodeRepository.findByTableId(parent.id)
@@ -96,7 +107,7 @@ export class TableFieldResolvers extends BaseResolver {
     )
   }
 
-  async tableNodeCount(parent: TableParent, args?: any, context?: GraphQLContext) {
+  async tableNodeCount(parent: TableParent, _args?: any, _context?: GraphQLContext) {
     try {
       return await this.nodeRepository.countByTableId(parent.id)
     } catch (error) {
@@ -105,7 +116,7 @@ export class TableFieldResolvers extends BaseResolver {
     }
   }
 
-  async attributeCount(parent: TableParent, args?: any, context?: GraphQLContext) {
+  async attributeCount(parent: TableParent, _args?: any, _context?: GraphQLContext) {
     try {
       return await this.attributeRepository.countByTableId(parent.id)
     } catch (error) {

@@ -1,7 +1,6 @@
 import type { ExecutionResult, GraphQLSchema } from 'graphql'
 import { execute, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException } from '@/shared/exceptions/DomainException.js'
 import type { ExecuteQueryTemplateUseCase } from './ExecuteQueryTemplate.js'
 
 export interface ExecuteTemplateWithGraphQLInput {
@@ -151,30 +150,5 @@ export class ExecuteTemplateWithGraphQLUseCase {
         },
       }
     }
-  }
-
-  /**
-   * 템플릿의 쿼리 유형을 확인하여 적절한 실행 방법을 결정
-   */
-  private getOperationType(queryText: string): 'query' | 'mutation' | 'subscription' | 'unknown' {
-    const trimmed = queryText.trim().toLowerCase()
-
-    if (trimmed.startsWith('query')) return 'query'
-    if (trimmed.startsWith('mutation')) return 'mutation'
-    if (trimmed.startsWith('subscription')) return 'subscription'
-    if (trimmed.startsWith('{')) return 'query' // Shorthand query syntax
-
-    return 'unknown'
-  }
-
-  /**
-   * 쿼리 복잡도 분석 (간단한 구현)
-   */
-  private analyzeQueryComplexity(queryText: string): number {
-    const lines = queryText.split('\n').length
-    const nestedBraces = (queryText.match(/\{/g) || []).length
-    const fields = (queryText.match(/\w+\s*\{/g) || []).length
-
-    return Math.min(10, Math.ceil((lines + nestedBraces + fields) / 10))
   }
 }

@@ -1,8 +1,6 @@
 #!/usr/bin/env bun
 
-import * as fs from 'fs'
 import { GraphQLClient } from 'graphql-request'
-import * as path from 'path'
 
 const client = new GraphQLClient('http://localhost:4000/graphql')
 
@@ -424,8 +422,6 @@ switch (command) {
   case 'plan':
     await manager.generateImplementationPlan()
     break
-
-  case 'help':
   default:
     console.log(`
 🛠️  GraphQL Query Manager

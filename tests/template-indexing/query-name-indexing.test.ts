@@ -1,6 +1,6 @@
 /**
  * Query Name Indexing Tests
- * 
+ *
  * Tests for query name indexing and search functionality:
  * - Database index utilization
  * - Query performance with indexes
@@ -9,11 +9,11 @@
  * - Composite index queries
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'bun:test'
-import { SqliteQueryTemplateRepository } from '@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js'
-import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
-import { testTemplates, performanceTestTemplates } from '../fixtures/test-templates.js'
 import Database from 'bun:sqlite'
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test'
+import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import { SqliteQueryTemplateRepository } from '@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js'
+import { performanceTestTemplates, testTemplates } from '../fixtures/test-templates.js'
 
 describe('Query Name Indexing and Performance', () => {
   let testDb: Database
@@ -21,7 +21,7 @@ describe('Query Name Indexing and Performance', () => {
 
   beforeEach(async () => {
     testDb = new Database(':memory:')
-    
+
     // Create schema with all indexes
     testDb.exec(`
       CREATE TABLE templates (
@@ -69,7 +69,7 @@ describe('Query Name Indexing and Performance', () => {
         ['indexing-test'],
         {
           variablesSchema: template.variablesSchema,
-          description: template.description
+          description: template.description,
         }
       )
       await repository.create(queryTemplate)
@@ -83,42 +83,50 @@ describe('Query Name Indexing and Performance', () => {
   describe('Index Utilization Verification', () => {
     it('should use index for query name searches', async () => {
       // EXPLAIN QUERY PLAN to verify index usage
-      const plan = testDb.prepare(`
+      const plan = testDb
+        .prepare(`
         EXPLAIN QUERY PLAN 
         SELECT * FROM templates WHERE query_name = ?
-      `).all('GetUser')
+      `)
+        .all('GetUser')
 
-      const planText = plan.map(row => row.detail).join(' ')
+      const planText = plan.map((row) => row.detail).join(' ')
       expect(planText).toContain('idx_templates_query_name')
     })
 
     it('should use index for operation type searches', async () => {
-      const plan = testDb.prepare(`
+      const plan = testDb
+        .prepare(`
         EXPLAIN QUERY PLAN 
         SELECT * FROM templates WHERE operation_type = ?
-      `).all('query')
+      `)
+        .all('query')
 
-      const planText = plan.map(row => row.detail).join(' ')
+      const planText = plan.map((row) => row.detail).join(' ')
       expect(planText).toContain('idx_templates_operation_type')
     })
 
     it('should use composite index for combined searches', async () => {
-      const plan = testDb.prepare(`
+      const plan = testDb
+        .prepare(`
         EXPLAIN QUERY PLAN 
         SELECT * FROM templates WHERE query_name = ? AND operation_type = ?
-      `).all('GetUser', 'query')
+      `)
+        .all('GetUser', 'query')
 
-      const planText = plan.map(row => row.detail).join(' ')
+      const planText = plan.map((row) => row.detail).join(' ')
       expect(planText).toContain('idx_templates_query_op')
     })
 
     it('should use performance index for sorting by execution time', async () => {
-      const plan = testDb.prepare(`
+      const plan = testDb
+        .prepare(`
         EXPLAIN QUERY PLAN 
         SELECT * FROM templates ORDER BY avg_execution_time_ms, usage_count
-      `).all()
+      `)
+        .all()
 
-      const planText = plan.map(row => row.detail).join(' ')
+      const planText = plan.map((row) => row.detail).join(' ')
       expect(planText).toContain('idx_templates_performance')
     })
   })
@@ -126,9 +134,9 @@ describe('Query Name Indexing and Performance', () => {
   describe('Search Performance', () => {
     it('should search by query name in <0.1ms', async () => {
       const startTime = performance.now()
-      
+
       const results = await repository.searchByQueryName('GetUser')
-      
+
       const endTime = performance.now()
       const searchTime = endTime - startTime
 
@@ -139,25 +147,25 @@ describe('Query Name Indexing and Performance', () => {
 
     it('should search by operation type in <0.1ms', async () => {
       const startTime = performance.now()
-      
+
       const results = await repository.searchByOperationType('mutation')
-      
+
       const endTime = performance.now()
       const searchTime = endTime - startTime
 
       expect(results.length).toBeGreaterThan(0)
-      expect(results.every(t => t.operationType === 'mutation')).toBe(true)
+      expect(results.every((t) => t.operationType === 'mutation')).toBe(true)
       expect(searchTime).toBeLessThan(0.1)
     })
 
     it('should perform composite searches in <0.1ms', async () => {
       const startTime = performance.now()
-      
+
       const results = await repository.search({
         operationType: 'query',
-        queryName: 'GetUser'
+        queryName: 'GetUser',
       })
-      
+
       const endTime = performance.now()
       const searchTime = endTime - startTime
 
@@ -176,10 +184,10 @@ describe('Query Name Indexing and Performance', () => {
       }
 
       const startTime = performance.now()
-      
+
       const results = await repository.findAll()
       results.sort((a, b) => (a.avgExecutionTimeMs || 0) - (b.avgExecutionTimeMs || 0))
-      
+
       const endTime = performance.now()
       const sortTime = endTime - startTime
 
@@ -191,7 +199,8 @@ describe('Query Name Indexing and Performance', () => {
   describe('Large Dataset Performance', () => {
     beforeEach(async () => {
       // Add performance test templates for stress testing
-      for (const template of performanceTestTemplates.slice(0, 50)) { // Add 50 more templates
+      for (const template of performanceTestTemplates.slice(0, 50)) {
+        // Add 50 more templates
         const queryTemplate = QueryTemplate.create(
           template.identifier,
           template.name,
@@ -199,7 +208,7 @@ describe('Query Name Indexing and Performance', () => {
           ['performance-test'],
           {
             variablesSchema: template.variablesSchema,
-            description: template.description
+            description: template.description,
           }
         )
         await repository.create(queryTemplate)
@@ -208,12 +217,12 @@ describe('Query Name Indexing and Performance', () => {
 
     it('should maintain performance with larger dataset', async () => {
       const startTime = performance.now()
-      
+
       // Search in dataset of 50+ templates
       const results = await repository.search({
-        operationType: 'query'
+        operationType: 'query',
       })
-      
+
       const endTime = performance.now()
       const searchTime = endTime - startTime
 
@@ -223,9 +232,9 @@ describe('Query Name Indexing and Performance', () => {
 
     it('should efficiently find specific query names in large dataset', async () => {
       const startTime = performance.now()
-      
+
       const results = await repository.searchByQueryName('PerfTest25')
-      
+
       const endTime = performance.now()
       const searchTime = endTime - startTime
 
@@ -239,38 +248,44 @@ describe('Query Name Indexing and Performance', () => {
     it('should demonstrate index vs table scan performance difference', async () => {
       // Temporarily drop index
       testDb.exec('DROP INDEX IF EXISTS idx_templates_query_name')
-      
+
       const startWithoutIndex = performance.now()
-      const resultsWithoutIndex = testDb.prepare(`
+      const resultsWithoutIndex = testDb
+        .prepare(`
         SELECT * FROM templates WHERE query_name = ?
-      `).all('GetUser')
+      `)
+        .all('GetUser')
       const endWithoutIndex = performance.now()
       const timeWithoutIndex = endWithoutIndex - startWithoutIndex
 
       // Recreate index
       testDb.exec('CREATE INDEX idx_templates_query_name ON templates(query_name)')
-      
+
       const startWithIndex = performance.now()
-      const resultsWithIndex = testDb.prepare(`
+      const resultsWithIndex = testDb
+        .prepare(`
         SELECT * FROM templates WHERE query_name = ?
-      `).all('GetUser')
+      `)
+        .all('GetUser')
       const endWithIndex = performance.now()
       const timeWithIndex = endWithIndex - startWithIndex
 
       expect(resultsWithoutIndex).toHaveLength(1)
       expect(resultsWithIndex).toHaveLength(1)
-      
+
       // With such a small dataset, the difference might not be noticeable,
       // but the indexed query should not be slower
       expect(timeWithIndex).toBeLessThanOrEqual(timeWithoutIndex + 0.01) // Allow 0.01ms tolerance
     })
 
     it('should validate all indexes are created correctly', () => {
-      const indexes = testDb.prepare(`
+      const indexes = testDb
+        .prepare(`
         SELECT name, sql FROM sqlite_master 
         WHERE type = 'index' AND name LIKE 'idx_templates_%'
         ORDER BY name
-      `).all()
+      `)
+        .all()
 
       const expectedIndexes = [
         'idx_templates_complexity',
@@ -279,11 +294,11 @@ describe('Query Name Indexing and Performance', () => {
         'idx_templates_operation_type',
         'idx_templates_performance',
         'idx_templates_query_name',
-        'idx_templates_query_op'
+        'idx_templates_query_op',
       ]
 
       expect(indexes).toHaveLength(expectedIndexes.length)
-      
+
       indexes.forEach((index, i) => {
         expect(index.name).toBe(expectedIndexes[i])
         expect(index.sql).toContain('CREATE INDEX')
@@ -294,37 +309,41 @@ describe('Query Name Indexing and Performance', () => {
   describe('Complex Query Scenarios', () => {
     it('should handle null query names in searches', async () => {
       const results = await repository.search({
-        queryName: null
+        queryName: null,
       })
 
       // Should return templates with null query names (anonymous queries)
-      expect(results.some(r => r.queryName === null)).toBe(true)
+      expect(results.some((r) => r.queryName === null)).toBe(true)
     })
 
     it('should support partial name matching', async () => {
       // This would require LIKE operations - testing the concept
       const pattern = 'Get%'
-      const results = testDb.prepare(`
+      const results = testDb
+        .prepare(`
         SELECT * FROM templates WHERE query_name LIKE ?
-      `).all(pattern)
+      `)
+        .all(pattern)
 
-      expect(results.some(r => r.query_name?.startsWith('Get'))).toBe(true)
+      expect(results.some((r) => r.query_name?.startsWith('Get'))).toBe(true)
     })
 
     it('should efficiently filter by complexity ranges', async () => {
       const startTime = performance.now()
-      
-      const results = testDb.prepare(`
+
+      const results = testDb
+        .prepare(`
         SELECT * FROM templates 
         WHERE complexity_score BETWEEN ? AND ?
         ORDER BY complexity_score
-      `).all(1, 5)
-      
+      `)
+        .all(1, 5)
+
       const endTime = performance.now()
       const searchTime = endTime - startTime
 
       expect(results.length).toBeGreaterThan(0)
-      expect(results.every(r => r.complexity_score >= 1 && r.complexity_score <= 5)).toBe(true)
+      expect(results.every((r) => r.complexity_score >= 1 && r.complexity_score <= 5)).toBe(true)
       expect(searchTime).toBeLessThan(0.1)
     })
   })

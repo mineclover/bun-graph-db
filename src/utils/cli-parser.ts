@@ -29,7 +29,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
       case '--port':
       case '-p': {
         const portValue = args[++i]
-        if (portValue && !isNaN(Number(portValue))) {
+        if (portValue && !Number.isNaN(Number(portValue))) {
           options.port = Number(portValue)
         } else {
           throw new Error(`Invalid port value: ${portValue}`)
@@ -57,7 +57,6 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
         break
       }
 
-
       case '--help':
         options.help = true
         break
@@ -74,7 +73,7 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
 
           switch (key) {
             case '--port':
-              if (value && !isNaN(Number(value))) {
+              if (value && !Number.isNaN(Number(value))) {
                 options.port = Number(value)
               } else {
                 throw new Error(`Invalid port value: ${value}`)
@@ -96,7 +95,6 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
                 throw new Error('Environment value is required')
               }
               break
-
 
             default:
               unknown.push(arg)

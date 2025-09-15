@@ -1,19 +1,18 @@
 /**
  * Template Import/Export Service
- * 
+ *
  * 템플릿의 JSON 내보내기/가져오기 기능을 담당하는 도메인 서비스
  */
 
-import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
-import { QueryTemplate } from '../entities/QueryTemplate.js'
-import { DomainException } from '@/shared/exceptions/DomainException.js'
 import type {
   TemplateExportFormat,
-  TemplateImportResult,
+  TemplateExportOptions,
   TemplateExportResult,
   TemplateImportOptions,
-  TemplateExportOptions,
+  TemplateImportResult,
 } from '@/core/types/TemplateExport.js'
+import { QueryTemplate } from '../entities/QueryTemplate.js'
+import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
 
 export class TemplateImportExportService {
   constructor(private readonly templateRepository: IQueryTemplateRepository) {}
@@ -27,7 +26,7 @@ export class TemplateImportExportService {
   ): Promise<TemplateExportResult> {
     try {
       const template = await this.templateRepository.findById(templateId)
-      
+
       if (!template) {
         return {
           success: false,
@@ -43,12 +42,12 @@ export class TemplateImportExportService {
           identifier: template.getIdentifier(),
           name: template.getName(),
           description: template.getDescription(),
-          
+
           // 쿼리 정보
           query: template.getQueryText(),
           queryName: template.getQueryName(),
           operationType: template.getOperationType(),
-          
+
           // 메타데이터
           variables: null, // QueryTemplate에는 variables 필드가 없음
           variablesSchema: template.getVariablesSchema(),
@@ -72,7 +71,10 @@ export class TemplateImportExportService {
 
       // 버전 기반 파일명 생성 (타임스탬프 제거, 점을 하이픈으로 변경)
       const version = (template.getVersion() || '1-0-0').replace(/\./g, '-')
-      const cleanIdentifier = template.getIdentifier().replace(/[^a-zA-Z0-9-]/g, '-').replace(/-\d+$/, '')
+      const cleanIdentifier = template
+        .getIdentifier()
+        .replace(/[^a-zA-Z0-9-]/g, '-')
+        .replace(/-\d+$/, '')
       const filename = `${cleanIdentifier}_v${version}.json`
 
       return {
@@ -98,7 +100,7 @@ export class TemplateImportExportService {
   ): Promise<TemplateExportResult> {
     try {
       const template = await this.templateRepository.findByIdentifier(identifier)
-      
+
       if (!template) {
         return {
           success: false,
@@ -143,7 +145,7 @@ export class TemplateImportExportService {
 
       // 기존 템플릿 존재 여부 확인
       const existingTemplate = await this.templateRepository.findByIdentifier(finalIdentifier)
-      
+
       if (existingTemplate) {
         if (options.overwriteExisting) {
           warnings.push(`Overwriting existing template: ${finalIdentifier}`)
@@ -176,13 +178,14 @@ export class TemplateImportExportService {
       )
 
       // Handle isActive field (if imported template should be inactive, deactivate it)
-      const finalTemplate = exportData.template.isActive !== undefined && !exportData.template.isActive
-        ? newTemplate.deactivate()
-        : newTemplate
+      const finalTemplate =
+        exportData.template.isActive !== undefined && !exportData.template.isActive
+          ? newTemplate.deactivate()
+          : newTemplate
 
       // 기존 템플릿 덮어쓰기 또는 새 템플릿 생성
       let createdTemplate: QueryTemplate
-      
+
       if (existingTemplate && options.overwriteExisting) {
         // 업데이트 로직 (현재는 삭제 후 재생성)
         await this.templateRepository.delete(existingTemplate.getId()!)
@@ -218,7 +221,7 @@ export class TemplateImportExportService {
     try {
       const exportData = JSON.parse(jsonString) as TemplateExportFormat
       return this.importTemplate(exportData, options)
-    } catch (parseError) {
+    } catch (_parseError) {
       return {
         success: false,
         errors: ['Invalid JSON format'],
@@ -261,7 +264,10 @@ export class TemplateImportExportService {
       errors.push('Template query is required')
     }
 
-    if (!template.operationType || !['query', 'mutation', 'subscription'].includes(template.operationType)) {
+    if (
+      !template.operationType ||
+      !['query', 'mutation', 'subscription'].includes(template.operationType)
+    ) {
       errors.push('Valid operation type is required (query, mutation, subscription)')
     }
 
@@ -271,7 +277,9 @@ export class TemplateImportExportService {
 
     // identifier 형식 검증
     if (template.identifier && !/^[a-z0-9-_]+$/.test(template.identifier)) {
-      errors.push('Template identifier must contain only lowercase letters, numbers, hyphens, and underscores')
+      errors.push(
+        'Template identifier must contain only lowercase letters, numbers, hyphens, and underscores'
+      )
     }
 
     return errors
@@ -283,11 +291,11 @@ export class TemplateImportExportService {
   private generateUniqueIdentifier(originalIdentifier: string, prefix?: string): string {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0]
     const randomSuffix = Math.random().toString(36).substr(2, 4)
-    
+
     if (prefix) {
       return `${prefix}-${originalIdentifier}-${timestamp}-${randomSuffix}`
     }
-    
+
     return `${originalIdentifier}-import-${timestamp}-${randomSuffix}`
   }
 }

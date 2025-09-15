@@ -26,7 +26,7 @@ export class TableResolver extends BaseResolver {
   }
 
   // Query resolvers
-  async table(args: { id: string }, context?: GraphQLContext): Promise<TableDto | null> {
+  async table(args: { id: string }, _context?: GraphQLContext): Promise<TableDto | null> {
     this.validateArgs(
       args,
       [
@@ -48,7 +48,7 @@ export class TableResolver extends BaseResolver {
 
   async tableByIdentifier(
     args: { identifier: string },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ): Promise<TableDto | null> {
     this.validateArgs(
       args,
@@ -69,7 +69,11 @@ export class TableResolver extends BaseResolver {
     )
   }
 
-  async tables(args: { filter?: TablesFilter; pagination?: TablesPagination; sort?: Array<{ field: string; direction: 'ASC' | 'DESC' }> }): Promise<{
+  async tables(args: {
+    filter?: TablesFilter
+    pagination?: TablesPagination
+    sort?: Array<{ field: string; direction: 'ASC' | 'DESC' }>
+  }): Promise<{
     nodes: TableDto[]
     totalCount: number
     hasNextPage: boolean
@@ -106,7 +110,7 @@ export class TableResolver extends BaseResolver {
   // Mutation resolvers
   async createTable(
     args: { input: CreateTableInput },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ): Promise<{
     success: boolean
     data?: TableDto | null
@@ -227,29 +231,29 @@ export class TableResolver extends BaseResolver {
   }
 
   // Field resolvers
-  async nodeCount(table: TableDto, context?: GraphQLContext): Promise<number> {
+  async nodeCount(table: TableDto, _context?: GraphQLContext): Promise<number> {
     const result = await this.handleFieldResolution(
-        async () => {
-          // TODO: Implement node count query
-          return 0
-        },
-        'nodeCount',
-        'Table',
-        { tableId: table.id }
-      )
+      async () => {
+        // TODO: Implement node count query
+        return 0
+      },
+      'nodeCount',
+      'Table',
+      { tableId: table.id }
+    )
     return result ?? 0
   }
 
-  async attributeCount(table: TableDto, context?: GraphQLContext): Promise<number> {
+  async attributeCount(table: TableDto, _context?: GraphQLContext): Promise<number> {
     const result = await this.handleFieldResolution(
-        async () => {
-          // TODO: Implement attribute count query
-          return 0
-        },
-        'attributeCount',
-        'Table',
-        { tableId: table.id }
-      )
+      async () => {
+        // TODO: Implement attribute count query
+        return 0
+      },
+      'attributeCount',
+      'Table',
+      { tableId: table.id }
+    )
     return result ?? 0
   }
 

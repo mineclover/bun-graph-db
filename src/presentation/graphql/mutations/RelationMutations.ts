@@ -27,7 +27,7 @@ export class RelationMutations extends BaseResolver {
   async createRelationType(
     _: GraphQLParent,
     args: CreateRelationTypeArgs,
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -55,7 +55,7 @@ export class RelationMutations extends BaseResolver {
     )
   }
 
-  async createRelation(_: GraphQLParent, args: CreateRelationArgs, context?: GraphQLContext) {
+  async createRelation(_: GraphQLParent, args: CreateRelationArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -86,7 +86,7 @@ export class RelationMutations extends BaseResolver {
     )
   }
 
-  async deleteRelation(_: GraphQLParent, args: DeleteRelationArgs, context?: GraphQLContext) {
+  async deleteRelation(_: GraphQLParent, args: DeleteRelationArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [

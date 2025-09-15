@@ -1,14 +1,14 @@
-import { execute, GraphQLError, parse } from 'graphql'
+import { execute, GraphQLError, type GraphQLSchema, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
-import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { GraphQLContext, JsonValue } from '@/core/types/GraphQLTypes.js'
+import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import {
   type CreateQueryTemplateInput,
   type ExecuteTemplateInput,
   type QueryTemplateDto,
-  type QueryTemplatesConnection,
   QueryTemplateDtoMapper,
+  type QueryTemplatesConnection,
   type SearchTemplatesInput,
   type UpdateQueryTemplateInput,
 } from '@/presentation/dto/QueryTemplateDto.js'
@@ -20,7 +20,7 @@ export class QueryTemplateResolver extends BaseResolver {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     logger: ILogger,
-    private readonly schema: any // GraphQL Schema instance
+    private readonly schema: GraphQLSchema // GraphQL Schema instance
   ) {
     super()
     this.logger = logger
@@ -30,7 +30,7 @@ export class QueryTemplateResolver extends BaseResolver {
    * 템플릿 기반 쿼리 실행
    * 템플릿을 로드하고, 변수를 적용한 후 실제 GraphQL 쿼리를 실행합니다
    */
-  async executeTemplate(input: ExecuteTemplateInput, context: any): Promise<any> {
+  async executeTemplate(input: ExecuteTemplateInput, context: GraphQLContext): Promise<JsonValue> {
     this.logger.info('Executing template', {
       templateId: input.templateId,
       templateIdentifier: input.templateIdentifier,
@@ -91,7 +91,7 @@ export class QueryTemplateResolver extends BaseResolver {
         })
       }
 
-      return result.data
+      return result.data as JsonValue
     } catch (error) {
       this.logger.error('Failed to execute template', {
         templateId: template.id,
@@ -145,7 +145,7 @@ export class QueryTemplateResolver extends BaseResolver {
   /**
    * ID로 템플릿 조회
    */
-  async getTemplate(id: string, context?: GraphQLContext): Promise<QueryTemplateDto | null> {
+  async getTemplate(id: string, _context?: GraphQLContext): Promise<QueryTemplateDto | null> {
     this.validateArgs(
       { id },
       [
@@ -194,31 +194,36 @@ export class QueryTemplateResolver extends BaseResolver {
   }
 
   private processVariables(
-    defaultVariables: any,
-    userVariables: any,
-    schema: any,
+    defaultVariables: JsonValue,
+    userVariables: JsonValue,
+    schema: JsonValue,
     validate: boolean
   ): Record<string, any> {
     // 기본값과 사용자 입력 병합
     const merged = {
-      ...(defaultVariables || {}),
-      ...(userVariables || {}),
+      ...(typeof defaultVariables === 'object' && defaultVariables !== null
+        ? defaultVariables
+        : {}),
+      ...(typeof userVariables === 'object' && userVariables !== null ? userVariables : {}),
     }
 
     // 검증이 필요한 경우
-    if (validate && schema) {
-      this.validateVariables(merged, schema)
+    if (validate && schema && typeof schema === 'object' && schema !== null) {
+      this.validateVariables(merged, schema as Record<string, unknown>)
     }
 
     return merged
   }
 
-  private validateVariables(variables: any, schema: any): void {
+  private validateVariables(
+    variables: Record<string, unknown>,
+    schema: Record<string, unknown>
+  ): void {
     // JSON Schema 검증 로직
     // 실제 구현에서는 ajv 같은 JSON Schema validator 사용
     if (!schema) return
 
-    const required = schema.required || []
+    const required = (Array.isArray(schema.required) ? schema.required : []) as string[]
     for (const field of required) {
       if (!(field in variables)) {
         throw new GraphQLError(`Missing required variable: ${field}`, {
@@ -313,15 +318,15 @@ export class QueryTemplateResolver extends BaseResolver {
     errors: Array<{ message: string }>
     previousQuery?: string
   }> {
-    this.logger.info('Updating template query', { 
-      templateId: args.templateId, 
-      templateIdentifier: args.templateIdentifier 
+    this.logger.info('Updating template query', {
+      templateId: args.templateId,
+      templateIdentifier: args.templateIdentifier,
     })
 
     try {
       // Find template by ID or identifier
       let template: QueryTemplate | null = null
-      
+
       if (args.templateId) {
         template = await this.queryTemplateRepository.findById(args.templateId)
       } else if (args.templateIdentifier) {
@@ -336,10 +341,10 @@ export class QueryTemplateResolver extends BaseResolver {
       }
 
       // Store previous query for rollback if needed
-      const previousQuery = template.queryText
+      const previousQuery = template.getQueryText()
 
       // Update the query and variables
-      const updateData: Partial<QueryTemplate> = {
+      const updateData: Record<string, unknown> = {
         queryText: args.newQuery,
         updatedAt: new Date(),
       }
@@ -348,7 +353,13 @@ export class QueryTemplateResolver extends BaseResolver {
         updateData.variablesSchema = args.updateVariables as any
       }
 
-      const updatedTemplate = await this.queryTemplateRepository.update(template.id, updateData)
+      const templateId = template.getId()
+      if (!templateId) {
+        throw new GraphQLError('Template ID not found', {
+          extensions: { code: 'TEMPLATE_ID_MISSING' },
+        })
+      }
+      const updatedTemplate = await this.queryTemplateRepository.update(templateId, updateData)
 
       return {
         success: true,

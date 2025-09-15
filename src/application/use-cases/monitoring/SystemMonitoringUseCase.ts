@@ -33,7 +33,7 @@ export interface ProcessStats {
 
 export interface ProcessMemoryDetails {
   rss: number // Resident Set Size (MB)
-  heapUsed: number // 사용 중인 힙 메모리 (MB)  
+  heapUsed: number // 사용 중인 힙 메모리 (MB)
   heapTotal: number // 할당된 힙 메모리 (MB)
   external: number // C++ 객체 메모리 (MB)
   arrayBuffers: number // ArrayBuffer 메모리 (MB)
@@ -56,7 +56,7 @@ export class SystemMonitoringUseCase {
   async getSystemStats(): Promise<SystemStats> {
     const memoryUsage = process.memoryUsage()
     const cpuUsage = process.cpuUsage()
-    
+
     // Calculate memory statistics
     const totalMemory = this.getTotalSystemMemory()
     const freeMemory = this.getFreeSystemMemory()
@@ -92,7 +92,7 @@ export class SystemMonitoringUseCase {
       uptime: Math.round(process.uptime()),
     }
 
-    this.logger.debug('System stats collected', JSON.stringify(stats))
+    this.logger.debug('System stats collected', { stats: JSON.stringify(stats) })
     return stats
   }
 
@@ -116,7 +116,7 @@ export class SystemMonitoringUseCase {
     if (typeof Bun !== 'undefined' && 'allocUnsafe' in Bun) {
       return 4 * 1024 * 1024 * 1024 // 4GB
     }
-    
+
     // Default fallback (4GB)
     return 4 * 1024 * 1024 * 1024
   }
@@ -125,7 +125,7 @@ export class SystemMonitoringUseCase {
     const memoryUsage = process.memoryUsage()
     const totalMemory = this.getTotalSystemMemory()
     const usedByProcess = memoryUsage.rss
-    
+
     // Estimate free memory (this is approximate)
     return Math.max(totalMemory - usedByProcess, memoryUsage.heapTotal - memoryUsage.heapUsed)
   }
@@ -134,22 +134,25 @@ export class SystemMonitoringUseCase {
     // Simple CPU usage calculation
     const totalCpu = cpuUsage.user + cpuUsage.system
     const totalTime = process.uptime() * 1000000 // Convert to microseconds
-    
+
     if (totalTime === 0) return 0
-    
+
     return Math.round((totalCpu / totalTime) * 100 * 100) / 100
   }
 
-  private getProcessMemoryDetails(memoryUsage: NodeJS.MemoryUsage, systemMemoryPercentage: number): ProcessMemoryDetails {
+  private getProcessMemoryDetails(
+    memoryUsage: NodeJS.MemoryUsage,
+    systemMemoryPercentage: number
+  ): ProcessMemoryDetails {
     const rssInMB = Math.round(memoryUsage.rss / 1024 / 1024)
     const heapUsedInMB = Math.round(memoryUsage.heapUsed / 1024 / 1024)
     const heapTotalInMB = Math.round(memoryUsage.heapTotal / 1024 / 1024)
     const externalInMB = Math.round(memoryUsage.external / 1024 / 1024)
     const arrayBuffersInMB = Math.round(memoryUsage.arrayBuffers / 1024 / 1024)
-    
+
     // 힙 효율성 계산 (사용 중인 힙 / 할당된 힙)
     const heapEfficiency = heapTotalInMB > 0 ? Math.round((heapUsedInMB / heapTotalInMB) * 100) : 0
-    
+
     // 메모리 압박 수준 결정
     let memoryPressure: 'low' | 'medium' | 'high'
     if (systemMemoryPercentage < 60) {
@@ -167,7 +170,7 @@ export class SystemMonitoringUseCase {
       external: externalInMB,
       arrayBuffers: arrayBuffersInMB,
       heapEfficiency,
-      memoryPressure
+      memoryPressure,
     }
   }
 }

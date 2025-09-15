@@ -390,7 +390,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     )
   }
 
-  async update(id: AttributeId, updates: Partial<Attribute>): Promise<Attribute> {
+  async update(id: AttributeId, _updates: Partial<Attribute>): Promise<Attribute> {
     const existing = await this.findById(id)
     if (!existing) {
       throw new DatabaseException(`Attribute with id ${id} not found`)
@@ -410,7 +410,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
         data.description,
         data.is_required,
         data.metadata,
-        id
+        id,
       ])
 
       if (result.changes === 0) {

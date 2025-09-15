@@ -1,4 +1,4 @@
-import type { PaginatedResult, PaginationOptions, TableId, TableSearchOptions } from '@/core/types/CommonTypes.js'
+import type { PaginatedResult, TableId, TableSearchOptions } from '@/core/types/CommonTypes.js'
 import type { Table } from '@/domain/entities/Table.js'
 
 // Repository interface (Port) - defines what the domain needs from persistence

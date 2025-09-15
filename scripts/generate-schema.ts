@@ -50,7 +50,7 @@ async function combineSchemaFiles(): Promise<string> {
     try {
       const content = await readFile(filePath, 'utf-8')
       schemaFiles.push(`# ========== ${file} ==========\n${content}`)
-    } catch (error) {
+    } catch (_error) {
       console.log(`⚠️  Skipping ${file} (not found)`)
     }
   }
@@ -128,7 +128,7 @@ try {
     const output = await new Response(proc.stdout).text()
     await Bun.write(introspectionPath, output)
     console.log(`✅ Generated introspection: ${introspectionPath}`)
-  } catch (error) {
+  } catch (_error) {
     console.error('⚠️  Could not generate introspection (server may need to be running)')
   }
 

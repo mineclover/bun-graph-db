@@ -1,6 +1,6 @@
 export { AttributeQueries } from './AttributeQueries.js'
 export { NodeQueries } from './NodeQueries.js'
 export { RelationQueries } from './RelationQueries.js'
+export { SystemQueries } from './SystemQueries.js'
 export { TableQueries } from './TableQueries.js'
 export { TemplateQueries } from './TemplateQueries.js'
-export { SystemQueries } from './SystemQueries.js'

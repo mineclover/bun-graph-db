@@ -20,7 +20,7 @@ export class TableQueries extends BaseResolver {
     this.logger = logger
   }
 
-  async table(_: GraphQLParent, args: TableArgs, context?: GraphQLContext) {
+  async table(_: GraphQLParent, args: TableArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -39,7 +39,11 @@ export class TableQueries extends BaseResolver {
     )
   }
 
-  async tableByIdentifier(_: GraphQLParent, args: TableByIdentifierArgs, context?: GraphQLContext) {
+  async tableByIdentifier(
+    _: GraphQLParent,
+    args: TableByIdentifierArgs,
+    _context?: GraphQLContext
+  ) {
     this.validateArgs(
       args,
       [
@@ -58,10 +62,12 @@ export class TableQueries extends BaseResolver {
     )
   }
 
-  async tables(_: GraphQLParent, args: TablesArgs, context?: GraphQLContext) {
+  async tables(_: GraphQLParent, args: TablesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        const result = await this.tableRepository.findAll(args.pagination || { limit: 10, offset: 0 })
+        const result = await this.tableRepository.findAll(
+          args.pagination || { limit: 10, offset: 0 }
+        )
 
         return {
           nodes: result.data || [],

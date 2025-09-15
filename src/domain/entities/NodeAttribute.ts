@@ -43,10 +43,9 @@ export class NodeAttribute {
     // Value is stored as string (can be JSON for complex types)
     // Maximum size for TEXT in SQLite
     if (value.length > 65535) {
-      throw new DomainException(
-        'NodeAttribute value cannot exceed 65535 characters',
-        { code: 'DOMAIN_ERROR' }
-      )
+      throw new DomainException('NodeAttribute value cannot exceed 65535 characters', {
+        code: 'DOMAIN_ERROR',
+      })
     }
   }
 

@@ -71,7 +71,7 @@ export class DatasetManager {
     const fixtures = await this.generator.generateDomainFixtures(options)
 
     if (savePath) {
-      const fs = await import('fs/promises')
+      const fs = await import('node:fs/promises')
       await fs.writeFile(savePath, JSON.stringify(fixtures, null, 2))
     }
 

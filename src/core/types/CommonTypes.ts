@@ -88,10 +88,12 @@ export interface GraphQLConfig {
   websocketPort?: number // Explicit WebSocket port (defaults to same as HTTP)
   endpoint?: string
   playground?: boolean
-  cors?: boolean | {
-    origin?: string | string[]
-    credentials?: boolean
-  }
+  cors?:
+    | boolean
+    | {
+        origin?: string | string[]
+        credentials?: boolean
+      }
   introspection?: boolean
 }
 

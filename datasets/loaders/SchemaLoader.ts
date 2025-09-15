@@ -1,5 +1,5 @@
-import { readdir, readFile } from 'fs/promises'
-import { extname, join } from 'path'
+import { readdir, readFile } from 'node:fs/promises'
+import { extname, join } from 'node:path'
 import type { DomainSchema, LoaderOptions } from './types/DatasetTypes.js'
 
 export class SchemaLoader {
@@ -99,7 +99,7 @@ export class SchemaLoader {
         result.base = baseFiles
           .filter((f) => extname(f) === '.json')
           .map((f) => f.replace('.json', ''))
-      } catch (error) {
+      } catch (_error) {
         // Base directory might not exist
       }
 
@@ -109,7 +109,7 @@ export class SchemaLoader {
         result.templates = templateFiles
           .filter((f) => extname(f) === '.json')
           .map((f) => f.replace('.json', ''))
-      } catch (error) {
+      } catch (_error) {
         // Templates directory might not exist
       }
     } catch (error) {

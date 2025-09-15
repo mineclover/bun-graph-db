@@ -4,14 +4,14 @@
 
 // Import generated GraphQL types
 export type {
-  CreateTableInput,
-  UpdateTableInput,
-  TablesFilter,
-  TablesPagination,
   CreateRelationInput,
+  CreateTableInput,
   SearchNodesFilter,
   SearchRelatedNodesFilter,
+  TablesFilter,
+  TablesPagination,
   UpdateQueryTemplateInput,
+  UpdateTableInput,
 } from '../../../generated/graphql.types.js'
 
 export interface GraphQLContext {
@@ -24,7 +24,25 @@ export interface GraphQLContext {
   // Add database connection, services, etc.
 }
 
-export type GraphQLParent = any
+// JSON Value Types
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue }
+
+// Database Query Parameter Types
+export type DatabaseParams = (string | number | boolean | null)[]
+
+// Generic Property Record
+export interface PropertyRecord {
+  [key: string]: JsonValue
+}
+
+// GraphQL Parent Types
+export type GraphQLParent = unknown
 
 export interface ResolverInfo {
   fieldName: string
@@ -309,7 +327,7 @@ export interface ExportAllTablesArgs {
 }
 
 export interface ImportSchemaArgs {
-  exportData: any // JSON data
+  exportData: JsonValue // JSON data
   options?: {
     overwriteExisting?: boolean
     skipDuplicates?: boolean
@@ -362,8 +380,20 @@ export interface NodeRelationParent {
   tableId: string
   strength?: number
   confidence?: number
-  metadata?: Record<string, unknown>
+  metadata?: PropertyRecord
   createdAt: Date
   updatedAt: Date
   version: number
 }
+
+// Resolver function types
+export type GraphQLResolver<
+  TParent = unknown,
+  TArgs = Record<string, unknown>,
+  TResult = unknown,
+> = (
+  parent: TParent,
+  args: TArgs,
+  context: GraphQLContext,
+  info?: ResolverInfo
+) => TResult | Promise<TResult>

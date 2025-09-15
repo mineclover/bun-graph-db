@@ -156,7 +156,7 @@ async function importAllTemplates(): Promise<void> {
   const domains = new Set<string>()
 
   // Extract domains from file names
-  Object.entries(availableTemplates).forEach(([type, files]) => {
+  Object.entries(availableTemplates).forEach(([_type, files]) => {
     files.forEach((file) => {
       // Extract domain from filename (e.g., "ecommerce-basic" -> "ecommerce")
       const domain = file.split('-')[0]

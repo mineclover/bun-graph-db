@@ -23,7 +23,7 @@ export class NodeQueries extends BaseResolver {
     this.logger = logger
   }
 
-  async node(_: GraphQLParent, args: NodeArgs, context?: GraphQLContext) {
+  async node(_: GraphQLParent, args: NodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -43,7 +43,7 @@ export class NodeQueries extends BaseResolver {
     )
   }
 
-  async nodeByContent(_: GraphQLParent, args: NodeByContentArgs, context?: GraphQLContext) {
+  async nodeByContent(_: GraphQLParent, args: NodeByContentArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -67,7 +67,7 @@ export class NodeQueries extends BaseResolver {
     )
   }
 
-  async nodes(_: GraphQLParent, args: NodesArgs, context?: GraphQLContext) {
+  async nodes(_: GraphQLParent, args: NodesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         try {
@@ -102,7 +102,7 @@ export class NodeQueries extends BaseResolver {
     )
   }
 
-  async searchNodes(_: GraphQLParent, args: SearchNodesArgs, context?: GraphQLContext) {
+  async searchNodes(_: GraphQLParent, args: SearchNodesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         // Temporary fallback to basic findAll when SearchNodesUseCase is not available
@@ -127,13 +127,19 @@ export class NodeQueries extends BaseResolver {
           query: args.filter?.search,
           limit: args.pagination?.limit,
           offset: args.pagination?.offset,
-          sortBy: args.sort ? (Array.isArray(args.sort) ? args.sort.map((s: any) => ({
-            field: s.field,
-            direction: s.direction.toLowerCase() as 'asc' | 'desc'
-          })) : [{
-            field: (args.sort as any).field,
-            direction: ((args.sort as any).direction.toLowerCase() as 'asc' | 'desc')
-          }]) : undefined
+          sortBy: args.sort
+            ? Array.isArray(args.sort)
+              ? args.sort.map((s: any) => ({
+                  field: s.field,
+                  direction: s.direction.toLowerCase() as 'asc' | 'desc',
+                }))
+              : [
+                  {
+                    field: (args.sort as any).field,
+                    direction: (args.sort as any).direction.toLowerCase() as 'asc' | 'desc',
+                  },
+                ]
+            : undefined,
         }
 
         // Validate that tableId is provided

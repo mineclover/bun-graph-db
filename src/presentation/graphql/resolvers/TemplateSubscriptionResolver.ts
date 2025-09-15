@@ -1,9 +1,8 @@
-import type { GraphQLSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { 
-  ExecuteTemplateWithSubscriptionUseCase,
+import type {
   ExecuteTemplateStreamInput,
-  TemplateExecutionStreamEvent 
+  ExecuteTemplateWithSubscriptionUseCase,
+  TemplateExecutionStreamEvent,
 } from '@/application/use-cases/query-templates/ExecuteTemplateWithSubscriptionUseCase.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
@@ -59,7 +58,7 @@ export class TemplateSubscriptionResolver {
         templateIdentifier: args.templateIdentifier,
         error: error instanceof Error ? error.message : 'Unknown error',
       })
-      
+
       // 에러를 비동기 이터레이터로 래핑하여 반환
       return this.createErrorStream(
         error instanceof Error ? error.message : 'Unknown error occurred',
@@ -155,7 +154,7 @@ export const templateSubscriptionResolvers = {
         // DI 컨테이너에서 리졸버 인스턴스 가져오기
         // 실제 구현에서는 DI 컨테이너를 통해 주입받아야 함
         const resolver = context.extra?.templateSubscriptionResolver as TemplateSubscriptionResolver
-        
+
         if (!resolver) {
           throw new Error('TemplateSubscriptionResolver not found in context')
         }

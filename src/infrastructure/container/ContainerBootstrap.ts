@@ -5,7 +5,6 @@ import {
   registerGraphQLModule,
   registerRepositoryModule,
   registerUseCaseModule,
-  registerContextLayeredModule,
 } from './modules/index.js'
 
 /**
@@ -30,7 +29,6 @@ export class ContainerBootstrap {
     registerRepositoryModule(container)
     registerUseCaseModule(container)
     registerGraphQLModule(container)
-    registerContextLayeredModule(container)
 
     ContainerBootstrap.instance = container
     return container

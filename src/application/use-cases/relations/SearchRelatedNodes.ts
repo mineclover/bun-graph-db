@@ -1,6 +1,6 @@
 import { NodeDto } from '@/application/dtos/NodeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
+import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
@@ -74,8 +74,8 @@ export interface IGraphRepository {
 
 export class SearchRelatedNodesUseCase {
   constructor(
-    private readonly nodeRepository: INodeRepository,
-    private readonly relationRepository: INodeRelationRepository,
+    readonly _nodeRepository: INodeRepository,
+    readonly _relationRepository: INodeRelationRepository,
     private readonly graphRepository: IGraphRepository,
     private readonly tableRepository: ITableRepository,
     private readonly logger: ILogger

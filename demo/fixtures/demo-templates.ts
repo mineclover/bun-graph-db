@@ -1,6 +1,6 @@
 /**
  * Demo Templates
- * 
+ *
  * 실제 서버 테스트용 템플릿 데이터
  */
 
@@ -73,7 +73,7 @@ export const demoTemplates = [
           default: 10,
         },
         offset: {
-          type: 'integer', 
+          type: 'integer',
           description: 'Number of items to skip',
           default: 0,
         },
@@ -285,7 +285,7 @@ export const demoTemplates = [
 // 성능 테스트용 대용량 템플릿 생성기
 export function generatePerformanceTemplates(count: number = 50) {
   const templates = []
-  
+
   for (let i = 1; i <= count; i++) {
     templates.push({
       identifier: `perf-test-${i.toString().padStart(3, '0')}`,
@@ -324,10 +324,10 @@ export function generatePerformanceTemplates(count: number = 50) {
       },
       defaultVariables: {
         id: `node_${i}`,
-        limit: Math.min(10, i % 20 + 1),
+        limit: Math.min(10, (i % 20) + 1),
       },
     })
   }
-  
+
   return templates
 }

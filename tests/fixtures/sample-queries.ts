@@ -1,6 +1,6 @@
 /**
  * Sample GraphQL Queries for Testing
- * 
+ *
  * Provides standardized GraphQL query samples for testing parsing,
  * template creation, and indexing functionality.
  */
@@ -107,7 +107,7 @@ export const sampleQueries = {
         count
       }
     }
-  }`
+  }`,
 }
 
 export const errorTestCases = [
@@ -115,29 +115,29 @@ export const errorTestCases = [
     identifier: 'test-invalid-syntax',
     queryText: 'query InvalidSyntax { invalid syntax here',
     expectError: true,
-    errorType: 'syntax'
+    errorType: 'syntax',
   },
   {
     identifier: 'test-empty-query',
     queryText: '',
     expectError: true,
-    errorType: 'empty'
+    errorType: 'empty',
   },
   {
     identifier: 'test-malformed-operation',
     queryText: 'not a graphql query at all',
     expectError: true,
-    errorType: 'malformed'
-  }
+    errorType: 'malformed',
+  },
 ]
 
 export const sampleVariablesSchemas = {
   simpleQuery: {
     type: 'object',
     properties: {
-      id: { type: 'string', description: 'Node ID' }
+      id: { type: 'string', description: 'Node ID' },
     },
-    required: ['id']
+    required: ['id'],
   },
 
   complexQuery: {
@@ -148,11 +148,11 @@ export const sampleVariablesSchemas = {
         properties: {
           contentContains: { type: 'string' },
           createdAfter: { type: 'string', format: 'date-time' },
-          hasRelations: { type: 'boolean' }
-        }
+          hasRelations: { type: 'boolean' },
+        },
       },
-      limit: { type: 'integer', minimum: 1, maximum: 100 }
-    }
+      limit: { type: 'integer', minimum: 1, maximum: 100 },
+    },
   },
 
   mutation: {
@@ -162,11 +162,11 @@ export const sampleVariablesSchemas = {
         type: 'object',
         properties: {
           content: { type: 'string' },
-          metadata: { type: 'object' }
+          metadata: { type: 'object' },
         },
-        required: ['content']
-      }
+        required: ['content'],
+      },
     },
-    required: ['input']
-  }
+    required: ['input'],
+  },
 }

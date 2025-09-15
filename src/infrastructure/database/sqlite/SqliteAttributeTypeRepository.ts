@@ -268,7 +268,7 @@ export class SqliteAttributeTypeRepository implements IAttributeTypeRepository {
     }
   }
 
-  async update(id: AttributeTypeId, updates: Partial<AttributeType>): Promise<AttributeType> {
+  async update(id: AttributeTypeId, _updates: Partial<AttributeType>): Promise<AttributeType> {
     const existing = await this.findById(id)
     if (!existing) {
       throw new DatabaseException(`AttributeType with id ${id} not found`)
@@ -290,7 +290,7 @@ export class SqliteAttributeTypeRepository implements IAttributeTypeRepository {
         data.reference_config,
         data.default_value,
         data.examples,
-        id
+        id,
       ])
 
       if (result.changes === 0) {

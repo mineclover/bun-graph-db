@@ -2,12 +2,12 @@
 
 /**
  * Convert Template Format Script
- * 
+ *
  * Converts templates from direct format to export format for import
  */
 
-import { readFileSync, writeFileSync, readdirSync } from 'fs'
-import { join } from 'path'
+import { readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 interface DirectTemplate {
   identifier: string
@@ -76,8 +76,8 @@ function convertToExportFormat(directTemplate: DirectTemplate): ExportTemplate {
       version: directTemplate.version,
       tags: directTemplate.tags,
       isActive: directTemplate.isActive,
-      statistics: directTemplate.statistics
-    }
+      statistics: directTemplate.statistics,
+    },
   }
 }
 
@@ -87,7 +87,7 @@ async function main() {
 
   const newTemplateFiles = [
     'find-paths-between-nodes_v1-0-0.json',
-    'get-dependency-chain_v1-0-0.json', 
+    'get-dependency-chain_v1-0-0.json',
     'search-related-nodes_v1-0-0.json',
     'create-node-with-attributes_v1-0-0.json',
     'create-relation-between-nodes_v1-0-0.json',
@@ -97,23 +97,23 @@ async function main() {
     'subscribe-system-health_v1-0-0.json',
     'subscribe-template-execution-stream_v1-0-0.json',
     'export-import-schema_v1-0-0.json',
-    'search-nodes-advanced-filtering_v1-0-0.json'
+    'search-nodes-advanced-filtering_v1-0-0.json',
   ]
 
   let convertedCount = 0
 
   for (const filename of newTemplateFiles) {
     console.log(`🔄 Converting: ${filename}`)
-    
+
     try {
       const filePath = join('./demo/templates', filename)
       const directTemplate: DirectTemplate = JSON.parse(readFileSync(filePath, 'utf-8'))
-      
+
       const exportTemplate = convertToExportFormat(directTemplate)
-      
+
       const outputPath = join('./temp-new-templates', filename)
       writeFileSync(outputPath, JSON.stringify(exportTemplate, null, 2))
-      
+
       console.log(`   ✅ Converted to export format`)
       convertedCount++
     } catch (error) {
@@ -125,7 +125,7 @@ async function main() {
   console.log(`✅ Converted: ${convertedCount}`)
   console.log(`❌ Failed: ${newTemplateFiles.length - convertedCount}`)
   console.log(`📈 Success Rate: ${Math.round((convertedCount / newTemplateFiles.length) * 100)}%`)
-  
+
   console.log('\n🎉 Template conversion complete!')
 }
 

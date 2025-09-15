@@ -543,9 +543,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     `
 
     try {
-      const rows = this.db
-        .query<NodeRelationRow, [string]>(query)
-        .all(sourceNodeId)
+      const rows = this.db.query<NodeRelationRow, [string]>(query).all(sourceNodeId)
       return rows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by source node id: ${error}`)
@@ -563,9 +561,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     `
 
     try {
-      const rows = this.db
-        .query<NodeRelationRow, [string]>(query)
-        .all(targetNodeId)
+      const rows = this.db.query<NodeRelationRow, [string]>(query).all(targetNodeId)
       return rows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by target node id: ${error}`)
@@ -591,7 +587,9 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
         .all(sourceNodeId, relationTypeId)
       return rows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
-      throw new DatabaseException(`Failed to find node relations by source node id and relation type: ${error}`)
+      throw new DatabaseException(
+        `Failed to find node relations by source node id and relation type: ${error}`
+      )
     }
   }
 
@@ -614,7 +612,9 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
         .all(targetNodeId, relationTypeId)
       return rows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
-      throw new DatabaseException(`Failed to find node relations by target node id and relation type: ${error}`)
+      throw new DatabaseException(
+        `Failed to find node relations by target node id and relation type: ${error}`
+      )
     }
   }
 
@@ -655,12 +655,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     const countQuery = `SELECT COUNT(*) as count FROM node_relations`
 
     try {
-      const rows = this.db
-        .query<NodeRelationRow, [number, number]>(dataQuery)
-        .all(limit, offset)
-      const countResult = this.db
-        .query<{ count: number }, []>(countQuery)
-        .get()
+      const rows = this.db.query<NodeRelationRow, [number, number]>(dataQuery).all(limit, offset)
+      const countResult = this.db.query<{ count: number }, []>(countQuery).get()
       const total = countResult?.count || 0
 
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))

@@ -22,7 +22,7 @@ export const loadEnvironmentConfig = (): EnvironmentConfig => {
 
   return {
     nodeEnv: (env.NODE_ENV as EnvironmentConfig['nodeEnv']) || 'development',
-    port: parseInt(env.PORT || '3000'),
+    port: parseInt(env.PORT || '3000', 10),
     host: env.HOST || '0.0.0.0',
     database: createDatabaseConfig(env),
     graphql: createGraphQLConfig(env),

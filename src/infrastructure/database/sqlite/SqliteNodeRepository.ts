@@ -330,7 +330,10 @@ export class SqliteNodeRepository implements INodeRepository {
     }
   }
 
-  async update(id: NodeId, updates: { content?: string; title?: string | null; description?: string | null }): Promise<Node> {
+  async update(
+    id: NodeId,
+    updates: { content?: string; title?: string | null; description?: string | null }
+  ): Promise<Node> {
     try {
       const existingNode = await this.findById(id)
       if (!existingNode) {

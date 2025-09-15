@@ -8,9 +8,7 @@
  * Usage: bun run scripts/comprehensive-test-runner.ts
  */
 
-import { Database } from 'bun:sqlite'
 import type { SchemaExportResult } from '../src/application/use-cases/export/SchemaExportUseCase.js'
-import type { ImportResult } from '../src/application/use-cases/import/SchemaImportUseCase.js'
 
 // Test execution results
 interface TestResults {
@@ -352,7 +350,7 @@ async function testExportFunctionality(): Promise<TestResults['export']> {
       relationsExported: testData.statistics.totalRelations,
       executionTime: Date.now() - startTime,
     }
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       tablesExported: 0,
@@ -387,7 +385,7 @@ async function testImportFunctionality(
       relationsImported: exportData.statistics.totalRelations,
       executionTime: Date.now() - startTime,
     }
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       tablesImported: 0,
@@ -413,7 +411,7 @@ async function cleanup(): Promise<TestResults['cleanup']> {
       success: true,
       filesRemoved: 0, // No permanent files created
     }
-  } catch (error) {
+  } catch (_error) {
     return {
       success: false,
       filesRemoved: 0,

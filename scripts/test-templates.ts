@@ -61,7 +61,7 @@ const testScenarios = [
     templateId: 'create-table',
     variables: {
       input: {
-        identifier: 'test-table-' + Date.now(),
+        identifier: `test-table-${Date.now()}`,
         name: 'Test Table',
         description: 'A table created via template testing',
       },
@@ -107,12 +107,12 @@ async function testComplexTemplate() {
           templateIdentifier: 'create-table',
           variables: {
             input: {
-              identifier: 'template-test-' + Date.now(),
+              identifier: `template-test-${Date.now()}`,
               name: 'Template Test Table',
               description: 'Created via template execution',
             },
           },
-          },
+        },
       }
     )
 
@@ -150,7 +150,7 @@ async function testComplexTemplate() {
                 isRequired: true,
               },
             },
-              },
+          },
         }
       )
 
@@ -274,7 +274,7 @@ async function testVariableValidation() {
     }
   )
 
-  const hasValidationError = invalidResult.error && invalidResult.error.includes('Missing required')
+  const hasValidationError = invalidResult.error?.includes('Missing required')
 
   console.log(
     hasValidationError

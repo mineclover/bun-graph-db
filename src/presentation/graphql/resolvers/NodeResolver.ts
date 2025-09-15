@@ -1,4 +1,3 @@
-import { AttributeDto } from '@/application/dtos/AttributeDto.js'
 import { NodeAttributeDto, NodeDto } from '@/application/dtos/NodeDto.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
@@ -12,11 +11,7 @@ import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttrib
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
-import {
-  ConflictException,
-  NotFoundException,
-  ValidationException,
-} from '@/shared/exceptions/DomainException.js'
+import { NotFoundException } from '@/shared/exceptions/DomainException.js'
 
 // Input types matching GraphQL schema
 interface CreateNodeInput {
@@ -61,7 +56,7 @@ export class NodeResolver extends BaseResolver {
   }
 
   // Query resolvers
-  async node(args: { id: string }, context?: GraphQLContext): Promise<NodeDto | null> {
+  async node(args: { id: string }, _context?: GraphQLContext): Promise<NodeDto | null> {
     this.validateArgs(
       args,
       [
@@ -96,7 +91,7 @@ export class NodeResolver extends BaseResolver {
 
   async nodeByContent(
     args: { tableId: string; content: string },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ): Promise<NodeDto | null> {
     this.validateArgs(
       args,
@@ -231,7 +226,7 @@ export class NodeResolver extends BaseResolver {
   // Mutation resolvers
   async createNode(
     args: { input: CreateNodeInput },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ): Promise<{
     success: boolean
     data?: NodeDto | null
@@ -341,7 +336,7 @@ export class NodeResolver extends BaseResolver {
 
   async deleteNode(
     args: { id: string },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ): Promise<{
     success: boolean
     data?: boolean
@@ -456,7 +451,7 @@ export class NodeResolver extends BaseResolver {
   }
 
   // Field resolvers
-  async table_field(node: NodeDto, context?: GraphQLContext): Promise<TableDto | null> {
+  async table_field(node: NodeDto, _context?: GraphQLContext): Promise<TableDto | null> {
     return this.handleFieldResolution(
       async () => {
         const table = await this.tableRepository.findById(node.tableId as TableId)
@@ -468,7 +463,7 @@ export class NodeResolver extends BaseResolver {
     )
   }
 
-  async attributeCount_field(node: NodeDto, context?: GraphQLContext): Promise<number> {
+  async attributeCount_field(node: NodeDto, _context?: GraphQLContext): Promise<number> {
     const result = await this.handleFieldResolution(
       async () => {
         const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
@@ -481,7 +476,7 @@ export class NodeResolver extends BaseResolver {
     return result ?? 0
   }
 
-  async attributes_field(node: NodeDto, context?: GraphQLContext): Promise<NodeAttributeDto[]> {
+  async attributes_field(node: NodeDto, _context?: GraphQLContext): Promise<NodeAttributeDto[]> {
     const result = await this.handleFieldResolution(
       async () => {
         const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)

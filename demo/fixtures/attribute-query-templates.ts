@@ -1,6 +1,6 @@
 /**
  * Attribute Query Templates
- * 
+ *
  * Template Management Guide 기반 Attribute 조회 템플릿 모음
  * 테이블 식별자/ID를 변수로 사용하는 Production-Ready 템플릿들
  */
@@ -11,9 +11,9 @@ export const attributeQueryTemplates = [
   // ==========================================
 
   {
-    identifier: "get-table-attributes-by-id",
-    name: "Get Table Attributes by Table ID",
-    description: "테이블 ID를 기반으로 해당 테이블의 모든 속성 조회 (관계형 데이터 포함)",
+    identifier: 'get-table-attributes-by-id',
+    name: 'Get Table Attributes by Table ID',
+    description: '테이블 ID를 기반으로 해당 테이블의 모든 속성 조회 (관계형 데이터 포함)',
     query: `
       query GetTableAttributesById($tableId: ID!, $limit: Int = 50, $offset: Int = 0) {
         table(id: $tableId) {
@@ -41,21 +41,21 @@ export const attributeQueryTemplates = [
       }
     `,
     variables: {
-      tableId: "1",
+      tableId: '1',
       limit: 50,
-      offset: 0
+      offset: 0,
     },
-    tags: ["attribute", "table", "query", "production"],
-    operationType: "query",
-    version: "1.0.0",
+    tags: ['attribute', 'table', 'query', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 3.2,
-    usagePattern: "data-analysis"
+    usagePattern: 'data-analysis',
   },
 
   {
-    identifier: "get-table-attributes-by-identifier", 
-    name: "Get Table Attributes by Table Identifier",
-    description: "테이블 식별자(identifier)를 기반으로 해당 테이블의 모든 속성 조회",
+    identifier: 'get-table-attributes-by-identifier',
+    name: 'Get Table Attributes by Table Identifier',
+    description: '테이블 식별자(identifier)를 기반으로 해당 테이블의 모든 속성 조회',
     query: `
       query GetTableAttributesByIdentifier($tableIdentifier: String!, $includeInactive: Boolean = false) {
         tables(filter: { identifier: $tableIdentifier }) {
@@ -90,20 +90,20 @@ export const attributeQueryTemplates = [
       }
     `,
     variables: {
-      tableIdentifier: "users",
-      includeInactive: false
+      tableIdentifier: 'users',
+      includeInactive: false,
     },
-    tags: ["attribute", "table", "identifier-based", "production"],
-    operationType: "query", 
-    version: "1.0.0",
+    tags: ['attribute', 'table', 'identifier-based', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 3.5,
-    usagePattern: "schema-analysis"
+    usagePattern: 'schema-analysis',
   },
 
   {
-    identifier: "search-attributes-by-table-filter",
-    name: "Search Attributes with Table Filtering",
-    description: "고급 필터링과 페이지네이션을 사용한 테이블별 속성 검색",
+    identifier: 'search-attributes-by-table-filter',
+    name: 'Search Attributes with Table Filtering',
+    description: '고급 필터링과 페이지네이션을 사용한 테이블별 속성 검색',
     query: `
       query SearchAttributesByTableFilter(
         $tableId: ID
@@ -171,19 +171,19 @@ export const attributeQueryTemplates = [
     `,
     variables: {
       tableId: null,
-      tableIdentifier: "users", 
-      search: "",
-      dataType: "",
+      tableIdentifier: 'users',
+      search: '',
+      dataType: '',
       limit: 20,
       offset: 0,
-      sortField: "name",
-      sortDirection: "ASC"
+      sortField: 'name',
+      sortDirection: 'ASC',
     },
-    tags: ["attribute", "search", "advanced", "pagination", "production"],
-    operationType: "query",
-    version: "1.0.0", 
+    tags: ['attribute', 'search', 'advanced', 'pagination', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 4.1,
-    usagePattern: "administrative-interface"
+    usagePattern: 'administrative-interface',
   },
 
   // ==========================================
@@ -191,9 +191,9 @@ export const attributeQueryTemplates = [
   // ==========================================
 
   {
-    identifier: "analyze-table-schema-attributes",
-    name: "Table Schema Attribute Analysis", 
-    description: "테이블의 전체 스키마 구조 분석 (속성 타입, 제약조건, 통계 포함)",
+    identifier: 'analyze-table-schema-attributes',
+    name: 'Table Schema Attribute Analysis',
+    description: '테이블의 전체 스키마 구조 분석 (속성 타입, 제약조건, 통계 포함)',
     query: `
       query AnalyzeTableSchemaAttributes($tableId: ID, $tableIdentifier: String) {
         # ID로 조회
@@ -267,19 +267,19 @@ export const attributeQueryTemplates = [
     `,
     variables: {
       tableId: null,
-      tableIdentifier: "users"
+      tableIdentifier: 'users',
     },
-    tags: ["attribute", "schema", "analysis", "statistics", "production"],
-    operationType: "query",
-    version: "1.0.0",
+    tags: ['attribute', 'schema', 'analysis', 'statistics', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 4.5,
-    usagePattern: "data-modeling"
+    usagePattern: 'data-modeling',
   },
 
   {
-    identifier: "get-attribute-type-usage-by-table",
-    name: "Attribute Type Usage by Table",
-    description: "특정 테이블에서 사용되는 속성 타입들의 사용 현황 분석",
+    identifier: 'get-attribute-type-usage-by-table',
+    name: 'Attribute Type Usage by Table',
+    description: '특정 테이블에서 사용되는 속성 타입들의 사용 현황 분석',
     query: `
       query GetAttributeTypeUsageByTable($tableId: ID, $tableIdentifier: String, $dataTypeFilter: String) {
         # 테이블 정보 조회 (ID 우선)
@@ -362,24 +362,24 @@ export const attributeQueryTemplates = [
     `,
     variables: {
       tableId: null,
-      tableIdentifier: "users",
-      dataTypeFilter: ""
+      tableIdentifier: 'users',
+      dataTypeFilter: '',
     },
-    tags: ["attribute", "usage", "statistics", "type-analysis", "production"],
-    operationType: "query",
-    version: "1.0.0",
+    tags: ['attribute', 'usage', 'statistics', 'type-analysis', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 4.2,
-    usagePattern: "system-analysis"
+    usagePattern: 'system-analysis',
   },
 
   // ==========================================
-  // Multi-Table Attribute Templates  
+  // Multi-Table Attribute Templates
   // ==========================================
 
   {
-    identifier: "compare-table-attributes-schemas",
-    name: "Compare Multiple Table Attribute Schemas",
-    description: "여러 테이블의 속성 구조를 비교 분석 (스키마 호환성 검사용)",
+    identifier: 'compare-table-attributes-schemas',
+    name: 'Compare Multiple Table Attribute Schemas',
+    description: '여러 테이블의 속성 구조를 비교 분석 (스키마 호환성 검사용)',
     query: `
       query CompareTableAttributeSchemas($tableIds: [ID!], $tableIdentifiers: [String!]) {
         # ID 기반 테이블들 조회
@@ -434,20 +434,20 @@ export const attributeQueryTemplates = [
       }
     `,
     variables: {
-      tableIds: ["1", "2"],
-      tableIdentifiers: ["users", "products"]
+      tableIds: ['1', '2'],
+      tableIdentifiers: ['users', 'products'],
     },
-    tags: ["attribute", "schema", "comparison", "multi-table", "production"],
-    operationType: "query",
-    version: "1.0.0",
+    tags: ['attribute', 'schema', 'comparison', 'multi-table', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 4.8,
-    usagePattern: "schema-migration"
+    usagePattern: 'schema-migration',
   },
 
   {
-    identifier: "search-similar-attributes-across-tables",
-    name: "Search Similar Attributes Across Tables", 
-    description: "여러 테이블에 걸쳐 유사한 속성들을 검색 (중복 검사 및 표준화용)",
+    identifier: 'search-similar-attributes-across-tables',
+    name: 'Search Similar Attributes Across Tables',
+    description: '여러 테이블에 걸쳐 유사한 속성들을 검색 (중복 검사 및 표준화용)',
     query: `
       query SearchSimilarAttributesAcrossTables(
         $attributeNamePattern: String
@@ -523,17 +523,17 @@ export const attributeQueryTemplates = [
       }
     `,
     variables: {
-      attributeNamePattern: "email",
-      dataType: "String",
+      attributeNamePattern: 'email',
+      dataType: 'String',
       includeTableIds: [],
       excludeTableIds: [],
-      limit: 50
+      limit: 50,
     },
-    tags: ["attribute", "search", "similarity", "cross-table", "production"],
-    operationType: "query",
-    version: "1.0.0",
+    tags: ['attribute', 'search', 'similarity', 'cross-table', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 4.3,
-    usagePattern: "data-governance"
+    usagePattern: 'data-governance',
   },
 
   // ==========================================
@@ -541,9 +541,9 @@ export const attributeQueryTemplates = [
   // ==========================================
 
   {
-    identifier: "quick-table-attribute-summary",
-    name: "Quick Table Attribute Summary",
-    description: "테이블별 속성 개요 정보를 빠르게 조회 (대시보드용 최적화)",
+    identifier: 'quick-table-attribute-summary',
+    name: 'Quick Table Attribute Summary',
+    description: '테이블별 속성 개요 정보를 빠르게 조회 (대시보드용 최적화)',
     query: `
       query QuickTableAttributeSummary($tableId: ID, $tableIdentifier: String) {
         # 핵심 정보만 빠르게 조회
@@ -590,19 +590,19 @@ export const attributeQueryTemplates = [
     `,
     variables: {
       tableId: null,
-      tableIdentifier: "users"
+      tableIdentifier: 'users',
     },
-    tags: ["attribute", "summary", "performance", "dashboard", "production"],
-    operationType: "query", 
-    version: "1.0.0",
+    tags: ['attribute', 'summary', 'performance', 'dashboard', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 2.1,
-    usagePattern: "dashboard-widget"
+    usagePattern: 'dashboard-widget',
   },
 
   {
-    identifier: "batch-table-attributes-lookup",
-    name: "Batch Table Attributes Lookup",
-    description: "여러 테이블의 속성을 한 번에 조회 (배치 처리 최적화)",
+    identifier: 'batch-table-attributes-lookup',
+    name: 'Batch Table Attributes Lookup',
+    description: '여러 테이블의 속성을 한 번에 조회 (배치 처리 최적화)',
     query: `
       query BatchTableAttributesLookup(
         $tableIds: [ID!]
@@ -667,26 +667,26 @@ export const attributeQueryTemplates = [
     `,
     variables: {
       tableIds: [],
-      tableIdentifiers: ["users", "products", "orders"],
+      tableIdentifiers: ['users', 'products', 'orders'],
       includeAttributeTypes: true,
-      limit: 100
+      limit: 100,
     },
-    tags: ["attribute", "batch", "performance", "bulk-operation", "production"],
-    operationType: "query",
-    version: "1.0.0",
+    tags: ['attribute', 'batch', 'performance', 'bulk-operation', 'production'],
+    operationType: 'query',
+    version: '1.0.0',
     complexityScore: 3.8,
-    usagePattern: "bulk-processing"
-  }
+    usagePattern: 'bulk-processing',
+  },
 ]
 
 // 성능 테스트용 Attribute 쿼리 템플릿 생성기
 export function generateAttributeQueryPerformanceTemplates(count: number = 10) {
   const templates = []
   const tableIdentifiers = ['users', 'products', 'orders', 'customers', 'inventory']
-  
+
   for (let i = 1; i <= count; i++) {
     const tableIdentifier = tableIdentifiers[i % tableIdentifiers.length]
-    
+
     templates.push({
       identifier: `perf-attr-query-${i.toString().padStart(3, '0')}`,
       name: `Attribute Query Performance Test ${i}`,
@@ -715,16 +715,16 @@ export function generateAttributeQueryPerformanceTemplates(count: number = 10) {
       `,
       variables: {
         tableIdentifier: tableIdentifier,
-        limit: Math.min(50, i % 30 + 10)
+        limit: Math.min(50, (i % 30) + 10),
       },
       tags: ['performance', 'attribute-query', 'auto-generated', `test-${i}`],
       operationType: 'query',
       version: '1.0.0',
       complexityScore: Math.round((2.0 + (i % 3) * 0.5) * 10) / 10,
-      usagePattern: 'performance-testing'
+      usagePattern: 'performance-testing',
     })
   }
-  
+
   return templates
 }
 
@@ -732,9 +732,9 @@ export function generateAttributeQueryPerformanceTemplates(count: number = 10) {
 export function generateProductionAttributeTemplates() {
   return [
     {
-      identifier: "production-table-attribute-audit",
-      name: "Production Table Attribute Audit",
-      description: "프로덕션 환경에서 테이블 속성 감사 및 검증",
+      identifier: 'production-table-attribute-audit',
+      name: 'Production Table Attribute Audit',
+      description: '프로덕션 환경에서 테이블 속성 감사 및 검증',
       query: `
         query ProductionTableAttributeAudit($tableIdentifier: String!, $checkConstraints: Boolean = true) {
           tables(filter: { identifier: $tableIdentifier }) {
@@ -771,20 +771,20 @@ export function generateProductionAttributeTemplates() {
         }
       `,
       variables: {
-        tableIdentifier: "users",
-        checkConstraints: true
+        tableIdentifier: 'users',
+        checkConstraints: true,
       },
-      tags: ["production", "audit", "attribute", "compliance"],
-      operationType: "query",
-      version: "1.0.0",
+      tags: ['production', 'audit', 'attribute', 'compliance'],
+      operationType: 'query',
+      version: '1.0.0',
       complexityScore: 3.7,
-      usagePattern: "compliance-audit"
+      usagePattern: 'compliance-audit',
     },
-    
+
     {
-      identifier: "production-attribute-health-check",
-      name: "Production Attribute Health Check", 
-      description: "프로덕션 속성 시스템 상태 확인 및 이상 탐지",
+      identifier: 'production-attribute-health-check',
+      name: 'Production Attribute Health Check',
+      description: '프로덕션 속성 시스템 상태 확인 및 이상 탐지',
       query: `
         query ProductionAttributeHealthCheck($tableIds: [ID!], $alertThreshold: Int = 1000) {
           # 지정된 테이블들의 상태 확인
@@ -837,14 +837,14 @@ export function generateProductionAttributeTemplates() {
         }
       `,
       variables: {
-        tableIds: ["1", "2", "3"],
-        alertThreshold: 1000
+        tableIds: ['1', '2', '3'],
+        alertThreshold: 1000,
       },
-      tags: ["production", "health-check", "monitoring", "attribute"],
-      operationType: "query",
-      version: "1.0.0", 
+      tags: ['production', 'health-check', 'monitoring', 'attribute'],
+      operationType: 'query',
+      version: '1.0.0',
       complexityScore: 4.0,
-      usagePattern: "system-monitoring"
-    }
+      usagePattern: 'system-monitoring',
+    },
   ]
 }

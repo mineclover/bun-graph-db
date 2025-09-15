@@ -265,7 +265,9 @@ export class SchemaExportUseCase {
     const exportedAttributes: ExportedAttribute[] = []
 
     for (const attribute of attributesResult.data || []) {
-      const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
+      const attributeType = await this.attributeTypeRepository.findById(
+        attribute.getAttributeTypeId()
+      )
       if (attributeType) {
         exportedAttributes.push({
           id: attribute.getId(),
@@ -318,7 +320,9 @@ export class SchemaExportUseCase {
       })
 
       for (const relation of relationsResult.data || []) {
-        const relationType = await this.relationTypeRepository.findById(relation.getRelationTypeId())
+        const relationType = await this.relationTypeRepository.findById(
+          relation.getRelationTypeId()
+        )
         if (relationType) {
           exportedRelations.push({
             id: relation.getId(),
@@ -363,15 +367,17 @@ export class SchemaExportUseCase {
       offset: 0,
     })
 
-    return relationTypesResult.data?.map((rt) => ({
-      id: rt.getId(),
-      identifier: rt.getIdentifier() || 'unknown',
-      name: rt.getIdentifier() || 'Unknown Relation Type', // Use identifier as name
-      description: rt.getDescription() || undefined,
-      metadata: null, // Set to null for now
-      createdAt: rt.getCreatedAt().toISOString(),
-      updatedAt: rt.getUpdatedAt().toISOString(),
-    })) || []
+    return (
+      relationTypesResult.data?.map((rt) => ({
+        id: rt.getId(),
+        identifier: rt.getIdentifier() || 'unknown',
+        name: rt.getIdentifier() || 'Unknown Relation Type', // Use identifier as name
+        description: rt.getDescription() || undefined,
+        metadata: null, // Set to null for now
+        createdAt: rt.getCreatedAt().toISOString(),
+        updatedAt: rt.getUpdatedAt().toISOString(),
+      })) || []
+    )
   }
 
   private async exportGlobalAttributeTypes(): Promise<any[]> {
@@ -380,17 +386,19 @@ export class SchemaExportUseCase {
       offset: 0,
     })
 
-    return attributeTypesResult.data?.map((at) => ({
-      id: at.getId(),
-      identifier: at.getIdentifier() || 'unknown',
-      name: at.getIdentifier() || 'Unknown Attribute Type', // Use identifier as name
-      description: at.getDescription() || undefined,
-      dataType: 'STRING', // Default data type
-      allowedValues: undefined, // Not available
-      constraints: undefined, // Not available
-      createdAt: at.getCreatedAt().toISOString(),
-      updatedAt: at.getUpdatedAt().toISOString(),
-    })) || []
+    return (
+      attributeTypesResult.data?.map((at) => ({
+        id: at.getId(),
+        identifier: at.getIdentifier() || 'unknown',
+        name: at.getIdentifier() || 'Unknown Attribute Type', // Use identifier as name
+        description: at.getDescription() || undefined,
+        dataType: 'STRING', // Default data type
+        allowedValues: undefined, // Not available
+        constraints: undefined, // Not available
+        createdAt: at.getCreatedAt().toISOString(),
+        updatedAt: at.getUpdatedAt().toISOString(),
+      })) || []
+    )
   }
 
   private calculateSize(tables: ExportedTable[]): string {

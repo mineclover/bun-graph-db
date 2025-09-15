@@ -16,7 +16,7 @@ import { Database } from 'bun:sqlite'
 import type { SchemaExportResult } from '../src/application/use-cases/export/SchemaExportUseCase.js'
 
 const TEST_DB_PATH = './data/test-bun-graph-db.sqlite'
-const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
+const _GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
 
 /**
  * Initialize test database with complete schema
@@ -828,7 +828,7 @@ async function runComprehensiveTestEnvironment(): Promise<void> {
 
     // Phase 6: Export verification
     console.log('\n🔄 Phase 6: Export Verification')
-    const exportResult = await exportTestDataset(db)
+    const _exportResult = await exportTestDataset(db)
     console.log('   ✅ Dataset export verified successfully')
 
     console.log('\n✅ COMPREHENSIVE TEST ENVIRONMENT SETUP COMPLETED!')

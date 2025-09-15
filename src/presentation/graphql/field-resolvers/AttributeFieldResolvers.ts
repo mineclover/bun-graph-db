@@ -18,7 +18,7 @@ export class AttributeFieldResolvers extends BaseResolver {
     this.logger = logger
   }
 
-  async attributeType(parent: AttributeParent, args?: any, context?: GraphQLContext) {
+  async attributeType(parent: AttributeParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         return await this.attributeTypeRepository.findById(parent.attributeTypeId)
@@ -29,7 +29,7 @@ export class AttributeFieldResolvers extends BaseResolver {
     )
   }
 
-  async table(parent: AttributeParent, args?: any, context?: GraphQLContext) {
+  async table(parent: AttributeParent, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         return await this.tableRepository.findById(parent.tableId)
@@ -40,7 +40,7 @@ export class AttributeFieldResolvers extends BaseResolver {
     )
   }
 
-  async attribute(parent: any, args?: any, context?: GraphQLContext) {
+  async attribute(parent: any, _args?: any, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         return await this.attributeRepository.findById(parent.attributeId)

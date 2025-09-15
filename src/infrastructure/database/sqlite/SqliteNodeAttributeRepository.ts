@@ -262,10 +262,14 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
     }
   }
 
-  async setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: any): Promise<NodeAttribute> {
+  async setNodeAttribute(
+    nodeId: NodeId,
+    attributeId: AttributeId,
+    value: any
+  ): Promise<NodeAttribute> {
     try {
       const existing = await this.findByNodeIdAndAttributeId(nodeId, attributeId)
-      
+
       if (existing) {
         const existingId = existing.getId()
         if (!existingId) {

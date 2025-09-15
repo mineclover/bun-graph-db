@@ -1,12 +1,5 @@
 import { NodeDto } from '@/application/dtos/NodeDto.js'
-import {
-  NodeRelationDto,
-  RelationTypeDto,
-} from '@/application/dtos/RelationDto.js'
-import type {
-  CreateRelationOutput,
-  CreateRelationTypeOutput,
-} from '@/application/dtos/RelationDto.js'
+import { NodeRelationDto, RelationTypeDto } from '@/application/dtos/RelationDto.js'
 import { TableDto } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
@@ -86,7 +79,7 @@ export class RelationResolver extends BaseResolver {
   // Query resolvers
   async nodeRelation(
     args: { id: string },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ): Promise<NodeRelationDto | null> {
     this.validateArgs(
       args,
@@ -449,10 +442,13 @@ export class RelationResolver extends BaseResolver {
     try {
       if (!node.id) return []
 
-      const result = await this.nodeRelationRepository.findBySourceNodeIdPaginated(node.id as NodeId, {
-        limit: 100,
-        offset: 0,
-      })
+      const result = await this.nodeRelationRepository.findBySourceNodeIdPaginated(
+        node.id as NodeId,
+        {
+          limit: 100,
+          offset: 0,
+        }
+      )
       return NodeRelationDto.fromEntities(result.items || [])
     } catch (error) {
       this.logger.error('Failed to resolve outgoing relations', { nodeId: node.id, error })
@@ -464,10 +460,13 @@ export class RelationResolver extends BaseResolver {
     try {
       if (!node.id) return []
 
-      const result = await this.nodeRelationRepository.findByTargetNodeIdPaginated(node.id as NodeId, {
-        limit: 100,
-        offset: 0,
-      })
+      const result = await this.nodeRelationRepository.findByTargetNodeIdPaginated(
+        node.id as NodeId,
+        {
+          limit: 100,
+          offset: 0,
+        }
+      )
       return NodeRelationDto.fromEntities(result.items || [])
     } catch (error) {
       this.logger.error('Failed to resolve incoming relations', { nodeId: node.id, error })

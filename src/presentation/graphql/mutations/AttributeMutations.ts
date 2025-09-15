@@ -1,9 +1,10 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
+import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type {
-  CreateAttributeInput,
-  CreateAttributeTypeInput,
   MutationCreateAttributeArgs,
   MutationCreateAttributeTypeArgs,
   MutationDeleteAttributeArgs,
@@ -11,12 +12,6 @@ import type {
   MutationUpdateAttributeArgs,
   MutationUpdateAttributeTypeArgs,
 } from '../../../../generated/graphql.types.js'
-import type {
-  GraphQLContext,
-  GraphQLParent,
-} from '@/core/types/GraphQLTypes.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class AttributeMutations extends BaseResolver {
@@ -36,7 +31,7 @@ export class AttributeMutations extends BaseResolver {
   async createAttributeType(
     _: GraphQLParent,
     args: MutationCreateAttributeTypeArgs,
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -75,7 +70,7 @@ export class AttributeMutations extends BaseResolver {
       },
       'createAttributeType',
       { input: args.input }
-    ).then(mutationResult => ({
+    ).then((mutationResult) => ({
       success: mutationResult.success,
       attributeType: mutationResult.data,
       errors: mutationResult.errors || [],
@@ -85,7 +80,7 @@ export class AttributeMutations extends BaseResolver {
   async updateAttributeType(
     _: GraphQLParent,
     args: MutationUpdateAttributeTypeArgs,
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -113,7 +108,7 @@ export class AttributeMutations extends BaseResolver {
       },
       'updateAttributeType',
       { id: args.id, input: args.input }
-    ).then(mutationResult => ({
+    ).then((mutationResult) => ({
       success: mutationResult.success,
       attributeType: mutationResult.data,
       errors: mutationResult.errors || [],
@@ -123,7 +118,7 @@ export class AttributeMutations extends BaseResolver {
   async deleteAttributeType(
     _: GraphQLParent,
     args: MutationDeleteAttributeTypeArgs,
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -146,13 +141,17 @@ export class AttributeMutations extends BaseResolver {
       },
       'deleteAttributeType',
       { id: args.id }
-    ).then(mutationResult => ({
+    ).then((mutationResult) => ({
       success: mutationResult.success,
       errors: mutationResult.errors || [],
     }))
   }
 
-  async createAttribute(_: GraphQLParent, args: MutationCreateAttributeArgs, context?: GraphQLContext) {
+  async createAttribute(
+    _: GraphQLParent,
+    args: MutationCreateAttributeArgs,
+    _context?: GraphQLContext
+  ) {
     this.validateArgs(
       args,
       [
@@ -182,14 +181,18 @@ export class AttributeMutations extends BaseResolver {
       },
       'createAttribute',
       { input: args.input }
-    ).then(mutationResult => ({
+    ).then((mutationResult) => ({
       success: mutationResult.success,
       attribute: mutationResult.data,
       errors: mutationResult.errors || [],
     }))
   }
 
-  async updateAttribute(_: GraphQLParent, args: MutationUpdateAttributeArgs, context?: GraphQLContext) {
+  async updateAttribute(
+    _: GraphQLParent,
+    args: MutationUpdateAttributeArgs,
+    _context?: GraphQLContext
+  ) {
     this.validateArgs(
       args,
       [
@@ -216,14 +219,18 @@ export class AttributeMutations extends BaseResolver {
       },
       'updateAttribute',
       { id: args.id, input: args.input }
-    ).then(mutationResult => ({
+    ).then((mutationResult) => ({
       success: mutationResult.success,
       attribute: mutationResult.data,
       errors: mutationResult.errors || [],
     }))
   }
 
-  async deleteAttribute(_: GraphQLParent, args: MutationDeleteAttributeArgs, context?: GraphQLContext) {
+  async deleteAttribute(
+    _: GraphQLParent,
+    args: MutationDeleteAttributeArgs,
+    _context?: GraphQLContext
+  ) {
     this.validateArgs(
       args,
       [
@@ -245,7 +252,7 @@ export class AttributeMutations extends BaseResolver {
       },
       'deleteAttribute',
       { id: args.id }
-    ).then(mutationResult => ({
+    ).then((mutationResult) => ({
       success: mutationResult.success,
       errors: mutationResult.errors || [],
     }))

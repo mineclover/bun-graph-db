@@ -2,7 +2,7 @@
 
 /**
  * Demo Runner Utility
- * 
+ *
  * 데모 실행을 위한 공통 유틸리티
  */
 
@@ -36,7 +36,10 @@ export class DemoRunner {
     return this.options
   }
 
-  async runDemo(name: string, demoFn: (client: GraphQLClient) => Promise<any>): Promise<DemoResult> {
+  async runDemo(
+    name: string,
+    demoFn: (client: GraphQLClient) => Promise<any>
+  ): Promise<DemoResult> {
     console.log(`\n🚀 Running: ${name}`)
     console.log(`   Server: ${this.options.serverUrl}`)
     console.log('─'.repeat(80))
@@ -90,7 +93,7 @@ export class DemoRunner {
 
   async testConnection(): Promise<boolean> {
     console.log(`\n🔗 Testing connection to ${this.options.serverUrl}`)
-    
+
     try {
       const isConnected = await this.client.testConnection()
       if (isConnected) {
@@ -107,11 +110,11 @@ export class DemoRunner {
   }
 
   printSummary(): void {
-    const passed = this.results.filter(r => r.success)
-    const failed = this.results.filter(r => !r.success)
+    const passed = this.results.filter((r) => r.success)
+    const failed = this.results.filter((r) => !r.success)
     const totalDuration = this.results.reduce((sum, r) => sum + r.duration, 0)
 
-    console.log('\n' + '═'.repeat(80))
+    console.log(`\n${'═'.repeat(80)}`)
     console.log('📊 DEMO SUMMARY')
     console.log('═'.repeat(80))
 
@@ -122,7 +125,7 @@ export class DemoRunner {
 
     if (failed.length > 0) {
       console.log('\n🔍 FAILED DEMOS:')
-      failed.forEach(result => {
+      failed.forEach((result) => {
         console.log(`   • ${result.name}`)
         if (result.error) {
           console.log(`     Error: ${result.error}`)
@@ -138,8 +141,8 @@ export class DemoRunner {
       console.log(`   ${emoji} ${result.name}: ${result.duration}ms`)
     })
 
-    console.log('\n' + '═'.repeat(80))
-    
+    console.log(`\n${'═'.repeat(80)}`)
+
     if (failed.length === 0) {
       console.log('🎉 All demos completed successfully!')
     } else {
@@ -165,12 +168,13 @@ export class DemoRunner {
   collectMetrics(): Record<string, any> {
     return {
       totalDemos: this.results.length,
-      successCount: this.results.filter(r => r.success).length,
-      failureCount: this.results.filter(r => !r.success).length,
+      successCount: this.results.filter((r) => r.success).length,
+      failureCount: this.results.filter((r) => !r.success).length,
       totalDuration: this.results.reduce((sum, r) => sum + r.duration, 0),
-      averageDuration: this.results.length > 0 
-        ? Math.round(this.results.reduce((sum, r) => sum + r.duration, 0) / this.results.length)
-        : 0,
+      averageDuration:
+        this.results.length > 0
+          ? Math.round(this.results.reduce((sum, r) => sum + r.duration, 0) / this.results.length)
+          : 0,
       serverUrl: this.options.serverUrl,
       timestamp: new Date().toISOString(),
     }
@@ -189,7 +193,7 @@ export function parseCliArgs(): DemoOptions {
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i]
-    
+
     switch (arg) {
       case '--server':
       case '-s':
@@ -203,7 +207,7 @@ export function parseCliArgs(): DemoOptions {
         options.dryRun = true
         break
       case '--timeout':
-        options.timeout = parseInt(args[++i])
+        options.timeout = parseInt(args[++i], 10)
         break
       case '--help':
       case '-h':

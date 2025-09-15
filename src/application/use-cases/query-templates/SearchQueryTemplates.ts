@@ -81,10 +81,7 @@ export class SearchQueryTemplates {
         throw error
       }
 
-      throw new ValidationException(
-        'Failed to search query templates',
-        { originalError: error }
-      )
+      throw new ValidationException('Failed to search query templates', { originalError: error })
     }
   }
 

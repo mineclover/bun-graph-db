@@ -13,7 +13,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     this.logger = logger
   }
 
-  async query(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string> {
+  async query(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string> {
     try {
       return parent.getQueryText()
     } catch (error) {
@@ -22,7 +26,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async queryName(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string[]> {
+  async queryName(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string[]> {
     try {
       return parent.getQueryName()
     } catch (error) {
@@ -31,16 +39,27 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async operationType(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string> {
+  async operationType(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string> {
     try {
       return parent.getOperationType().toUpperCase()
     } catch (error) {
-      this.logger.error('Failed to resolve operationType field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve operationType field', {
+        templateId: parent.getId(),
+        error,
+      })
       throw error
     }
   }
 
-  async variables(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<Record<string, unknown> | null> {
+  async variables(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<Record<string, unknown> | null> {
     try {
       return parent.getDefaultVariables()
     } catch (error) {
@@ -49,43 +68,75 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async variablesSchema(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<Record<string, unknown> | null> {
+  async variablesSchema(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<Record<string, unknown> | null> {
     try {
       return parent.getVariablesSchema()
     } catch (error) {
-      this.logger.error('Failed to resolve variablesSchema field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve variablesSchema field', {
+        templateId: parent.getId(),
+        error,
+      })
       throw error
     }
   }
 
-  async defaultVariables(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<Record<string, unknown> | null> {
+  async defaultVariables(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<Record<string, unknown> | null> {
     try {
       return parent.getDefaultVariables()
     } catch (error) {
-      this.logger.error('Failed to resolve defaultVariables field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve defaultVariables field', {
+        templateId: parent.getId(),
+        error,
+      })
       throw error
     }
   }
 
-  async applicableTables(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string[] | null> {
+  async applicableTables(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string[] | null> {
     try {
       return parent.getApplicableTables()
     } catch (error) {
-      this.logger.error('Failed to resolve applicableTables field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve applicableTables field', {
+        templateId: parent.getId(),
+        error,
+      })
       throw error
     }
   }
 
-  async complexityScore(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<number> {
+  async complexityScore(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<number> {
     try {
       return parent.getComplexityScore()
     } catch (error) {
-      this.logger.error('Failed to resolve complexityScore field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve complexityScore field', {
+        templateId: parent.getId(),
+        error,
+      })
       throw error
     }
   }
 
-  async usageCount(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<number> {
+  async usageCount(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<number> {
     try {
       return parent.getUsageCount()
     } catch (error) {
@@ -94,7 +145,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async lastUsedAt(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string | null> {
+  async lastUsedAt(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string | null> {
     try {
       const lastUsed = parent.getLastUsedAt()
       return lastUsed ? lastUsed.toISOString() : null
@@ -104,16 +159,27 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async avgExecutionTimeMs(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<number> {
+  async avgExecutionTimeMs(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<number> {
     try {
       return parent.getAvgExecutionTimeMs()
     } catch (error) {
-      this.logger.error('Failed to resolve avgExecutionTimeMs field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve avgExecutionTimeMs field', {
+        templateId: parent.getId(),
+        error,
+      })
       throw error
     }
   }
 
-  async version(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string> {
+  async version(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string> {
     try {
       return parent.getVersion()
     } catch (error) {
@@ -122,7 +188,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async isActive(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<boolean> {
+  async isActive(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<boolean> {
     try {
       return parent.getIsActive()
     } catch (error) {
@@ -131,7 +201,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async tags(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string[]> {
+  async tags(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string[]> {
     try {
       return parent.getTags()
     } catch (error) {
@@ -140,7 +214,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async createdBy(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string | null> {
+  async createdBy(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string | null> {
     try {
       return null // Not tracked in current implementation
     } catch (error) {
@@ -149,7 +227,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async createdAt(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string> {
+  async createdAt(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string> {
     try {
       return parent.getCreatedAt().toISOString()
     } catch (error) {
@@ -158,7 +240,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async updatedAt(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string> {
+  async updatedAt(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string> {
     try {
       return parent.getUpdatedAt().toISOString()
     } catch (error) {
@@ -167,7 +253,11 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async isValid(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<boolean> {
+  async isValid(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<boolean> {
     try {
       return this.validateQuery(parent.getQueryText())
     } catch (error) {
@@ -176,41 +266,48 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async validationErrors(parent: QueryTemplateParent, args?: any, context?: GraphQLContext): Promise<string[]> {
+  async validationErrors(
+    parent: QueryTemplateParent,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string[]> {
     try {
       const errors: string[] = []
-      
+
       if (!parent.getQueryText() || parent.getQueryText().trim().length === 0) {
         errors.push('Query text cannot be empty')
       }
-      
+
       if (!parent.getName() || parent.getName().trim().length === 0) {
         errors.push('Template name cannot be empty')
       }
-      
+
       if (!parent.getIdentifier() || parent.getIdentifier().trim().length === 0) {
         errors.push('Template identifier cannot be empty')
       }
-      
+
       if (parent.getTags().length === 0) {
         errors.push('At least one tag is required')
       }
-      
+
       return errors
     } catch (error) {
-      this.logger.error('Failed to resolve validationErrors field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve validationErrors field', {
+        templateId: parent.getId(),
+        error,
+      })
       throw error
     }
   }
 
   private validateQuery(queryText: string): boolean {
     if (!queryText || queryText.trim().length === 0) return false
-    
+
     try {
       const trimmed = queryText.trim()
       const hasValidStart = /^(query|mutation|subscription|\{)/.test(trimmed.toLowerCase())
       const hasMatchingBraces = this.validateBraces(trimmed)
-      
+
       return hasValidStart && hasMatchingBraces
     } catch {
       return false

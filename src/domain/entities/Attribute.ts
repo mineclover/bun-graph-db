@@ -75,7 +75,9 @@ export class Attribute {
     }
 
     if (identifier.length > 50) {
-      throw new DomainException('Attribute identifier cannot exceed 50 characters', { code: 'DOMAIN_ERROR' })
+      throw new DomainException('Attribute identifier cannot exceed 50 characters', {
+        code: 'DOMAIN_ERROR',
+      })
     }
   }
 
@@ -83,7 +85,7 @@ export class Attribute {
     if (this.metadata !== null) {
       try {
         JSON.parse(this.metadata)
-      } catch (error) {
+      } catch (_error) {
         throw new DomainException('Attribute metadata must be valid JSON', { code: 'DOMAIN_ERROR' })
       }
     }
@@ -170,7 +172,7 @@ export class Attribute {
     if (metadata !== null) {
       try {
         JSON.parse(metadata)
-      } catch (error) {
+      } catch (_error) {
         throw new DomainException('Attribute metadata must be valid JSON', { code: 'DOMAIN_ERROR' })
       }
     }

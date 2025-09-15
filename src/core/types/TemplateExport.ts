@@ -1,6 +1,6 @@
 /**
  * Template Export/Import Types
- * 
+ *
  * JSON으로 내보내기/가져오기를 위한 타입 정의
  */
 
@@ -12,12 +12,12 @@ export interface TemplateExportFormat {
     identifier: string
     name: string
     description: string | null
-    
-    // 쿼리 정보  
+
+    // 쿼리 정보
     query: string
     queryName: string[]
     operationType: 'query' | 'mutation' | 'subscription'
-    
+
     // 메타데이터
     variables: Record<string, unknown> | null
     variablesSchema: QueryVariablesSchema | null
@@ -27,7 +27,7 @@ export interface TemplateExportFormat {
     version: string
     tags: string[]
     isActive: boolean
-    
+
     // 선택적 통계 정보 (export 시에만 포함)
     statistics?: {
       usageCount: number

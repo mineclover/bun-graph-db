@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import type { IGraphRepository } from '@/application/use-cases/relations/SearchRelatedNodes.js'
-import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
+import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { GraphQuery } from '@/domain/value-objects/RelationQuery.js'
 import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'

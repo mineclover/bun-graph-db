@@ -304,8 +304,11 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       }
 
       // Apply updates to the existing template
-      const updatedTemplate = Object.assign(Object.create(Object.getPrototypeOf(existing)), existing)
-      
+      const updatedTemplate = Object.assign(
+        Object.create(Object.getPrototypeOf(existing)),
+        existing
+      )
+
       // Update properties that are provided in updates
       if (updates.name !== undefined) {
         ;(updatedTemplate as any).name = updates.name
@@ -340,7 +343,6 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       if (updates.tags !== undefined) {
         ;(updatedTemplate as any).tags = updates.tags
       }
-
       // Set the updated timestamp
       ;(updatedTemplate as any).updatedAt = new Date()
 
@@ -391,7 +393,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       if (!result) {
         throw new DomainException('Template not found after update', { code: 'UPDATE_ERROR' })
       }
-      
+
       return result
     } catch (error) {
       this.logger.error('Failed to update template', { id, updates, error })
@@ -434,14 +436,15 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       if (!currentTemplate) {
         throw new DomainException('Template not found', { code: 'NOT_FOUND' })
       }
-      
+
       const currentCount = currentTemplate.getUsageCount()
       const currentAvg = currentTemplate.getAvgExecutionTimeMs()
       const newCount = currentCount + 1
-      const newAvg = currentCount > 0 
-        ? Math.round((currentAvg * currentCount + executionTimeMs) / newCount)
-        : executionTimeMs
-      
+      const newAvg =
+        currentCount > 0
+          ? Math.round((currentAvg * currentCount + executionTimeMs) / newCount)
+          : executionTimeMs
+
       const query = `
         UPDATE templates 
         SET usage_count = ?,
@@ -506,7 +509,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       }
 
       const updatedTemplate = isActive ? template.activate() : template.deactivate()
-      const data = updatedTemplate.toDatabase()
+      const _data = updatedTemplate.toDatabase()
 
       const query = `
         UPDATE templates 

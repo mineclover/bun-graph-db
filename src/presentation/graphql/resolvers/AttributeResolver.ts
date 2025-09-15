@@ -62,7 +62,7 @@ export class AttributeResolver extends BaseResolver {
   // Query resolvers - Attribute Types
   async attributeType(
     args: { id: string },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ): Promise<AttributeTypeDto | null> {
     this.validateArgs(
       args,
@@ -389,7 +389,7 @@ export class AttributeResolver extends BaseResolver {
   // Field resolvers for Attribute type
   async attributeType_field(
     attribute: AttributeDto,
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ): Promise<AttributeTypeDto | null> {
     return this.handleFieldResolution(
       async () => {
@@ -404,7 +404,7 @@ export class AttributeResolver extends BaseResolver {
     )
   }
 
-  async table_field(attribute: AttributeDto, context?: GraphQLContext): Promise<TableDto | null> {
+  async table_field(attribute: AttributeDto, _context?: GraphQLContext): Promise<TableDto | null> {
     return this.handleFieldResolution(
       async () => {
         const table = await this.tableRepository.findById(attribute.tableId as TableId)

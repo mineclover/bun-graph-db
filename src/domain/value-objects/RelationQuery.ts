@@ -113,7 +113,7 @@ export class RelationSearchPatternParser {
     const directionalPattern = /(\w+)\s*-\[([^\]]+)\]->\s*(\w+)/g
     let match = directionalPattern.exec(pattern)
 
-    if (match && match[2]) {
+    if (match?.[2]) {
       patterns.push({
         pattern: match[0],
         direction: RelationDirection.OUTGOING,
@@ -125,7 +125,7 @@ export class RelationSearchPatternParser {
     const incomingPattern = /(\w+)\s*<-\[([^\]]+)\]-\s*(\w+)/g
     match = incomingPattern.exec(pattern)
 
-    if (match && match[2]) {
+    if (match?.[2]) {
       patterns.push({
         pattern: match[0],
         direction: RelationDirection.INCOMING,
@@ -137,11 +137,11 @@ export class RelationSearchPatternParser {
     const depthPattern = /(\w+)\s*-\[\*(\d+)\]->\s*(\w+)/g
     match = depthPattern.exec(pattern)
 
-    if (match && match[2]) {
+    if (match?.[2]) {
       patterns.push({
         pattern: match[0],
         direction: RelationDirection.OUTGOING,
-        depth: parseInt(match[2]),
+        depth: parseInt(match[2], 10),
       })
     }
 

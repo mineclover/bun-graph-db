@@ -5,7 +5,6 @@
  */
 
 import { readFile, stat } from 'node:fs/promises'
-import { join } from 'node:path'
 import type { ILogger } from '../../../application/ports/ILogger.js'
 import type { DIContainer } from '../../../infrastructure/container/DIContainer.js'
 import { CommonTokens } from '../../../infrastructure/container/tokens/CommonTokens.js'
@@ -85,7 +84,7 @@ export class TemplateFileRoutes {
       try {
         const fileStats = await stat(filePath)
         const fileContent = await readFile(filePath, 'utf-8')
-        
+
         // 파일이 유효한 JSON인지 확인
         let isValidJson = false
         let templateName = ''
@@ -103,13 +102,18 @@ export class TemplateFileRoutes {
         return new Response(
           JSON.stringify({
             path: filePath,
-            name: templateName || extractedName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            name:
+              templateName ||
+              extractedName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
             fileName,
             lastModified: fileStats.mtime.toISOString(),
             size: fileStats.size,
             isValid: isValidJson,
-            category: fileName.includes('system') ? 'system' : 
-                     fileName.includes('statistics') ? 'statistics' : 'general',
+            category: fileName.includes('system')
+              ? 'system'
+              : fileName.includes('statistics')
+                ? 'statistics'
+                : 'general',
           }),
           {
             status: 200,
@@ -124,7 +128,7 @@ export class TemplateFileRoutes {
         )
       } catch (fileError) {
         logger.warn('Failed to read template file', { filePath, error: fileError })
-        
+
         return new Response(
           JSON.stringify({
             error: 'File not found or inaccessible',

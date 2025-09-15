@@ -2,13 +2,12 @@
 
 /**
  * Custom Test Runner for Template Functionality
- * 
+ *
  * Provides structured test execution with detailed reporting
  * for GraphQL query template indexing functionality.
  */
 
 import { spawn } from 'bun'
-import { join } from 'path'
 
 interface TestSuite {
   name: string
@@ -22,14 +21,14 @@ const testSuites: TestSuite[] = [
     name: 'GraphQL Parsing',
     path: 'tests/template-indexing/graphql-parsing.test.ts',
     description: 'GraphQL SDL parsing and operation extraction',
-    category: 'template-indexing'
+    category: 'template-indexing',
   },
   {
     name: 'Template Creation',
     path: 'tests/template-indexing/template-creation.test.ts',
     description: 'Template creation with auto-parsing functionality',
-    category: 'template-indexing'
-  }
+    category: 'template-indexing',
+  },
   // Note: Query Name Indexing and Performance Tracking tests require Repository/Schema compatibility fixes
   // {
   //   name: 'Query Name Indexing',
@@ -38,7 +37,7 @@ const testSuites: TestSuite[] = [
   //   category: 'template-indexing'
   // },
   // {
-  //   name: 'Performance Tracking', 
+  //   name: 'Performance Tracking',
   //   path: 'tests/template-indexing/performance-tracking.test.ts',
   //   description: 'Execution time tracking and statistics (needs repository fixes)',
   //   category: 'template-indexing'
@@ -66,12 +65,12 @@ class TestRunner {
     try {
       const proc = spawn(['bun', 'test', suite.path], {
         stdout: 'pipe',
-        stderr: 'pipe'
+        stderr: 'pipe',
       })
 
       const output = await new Response(proc.stdout).text()
       const error = await new Response(proc.stderr).text()
-      
+
       await proc.exited
       const duration = Date.now() - startTime
 
@@ -82,7 +81,7 @@ class TestRunner {
         success,
         duration,
         output,
-        error: success ? undefined : error
+        error: success ? undefined : error,
       }
 
       this.results.push(result)
@@ -97,7 +96,6 @@ class TestRunner {
       }
 
       return result
-
     } catch (err) {
       const duration = Date.now() - startTime
       const result: TestResult = {
@@ -105,7 +103,7 @@ class TestRunner {
         success: false,
         duration,
         output: '',
-        error: err instanceof Error ? err.message : String(err)
+        error: err instanceof Error ? err.message : String(err),
       }
 
       this.results.push(result)
@@ -115,8 +113,8 @@ class TestRunner {
   }
 
   async runAll(category?: TestSuite['category']): Promise<void> {
-    const suitesToRun = category 
-      ? testSuites.filter(suite => suite.category === category)
+    const suitesToRun = category
+      ? testSuites.filter((suite) => suite.category === category)
       : testSuites
 
     console.log(`🚀 Running ${suitesToRun.length} test suite(s)`)
@@ -139,10 +137,10 @@ class TestRunner {
   }
 
   private printSummary(totalDuration: number): void {
-    const passed = this.results.filter(r => r.success)
-    const failed = this.results.filter(r => !r.success)
+    const passed = this.results.filter((r) => r.success)
+    const failed = this.results.filter((r) => !r.success)
 
-    console.log('\n' + '═'.repeat(80))
+    console.log(`\n${'═'.repeat(80)}`)
     console.log('📊 TEST SUMMARY')
     console.log('═'.repeat(80))
 
@@ -153,7 +151,7 @@ class TestRunner {
 
     if (failed.length > 0) {
       console.log('\n🔍 FAILED TESTS:')
-      failed.forEach(result => {
+      failed.forEach((result) => {
         console.log(`   • ${result.suite.name}`)
         if (result.error) {
           console.log(`     Error: ${result.error.split('\n')[0]}`)
@@ -170,18 +168,18 @@ class TestRunner {
     })
 
     // Category breakdown
-    const categories = [...new Set(this.results.map(r => r.suite.category))]
+    const categories = [...new Set(this.results.map((r) => r.suite.category))]
     if (categories.length > 1) {
       console.log('\n📂 CATEGORY BREAKDOWN:')
-      categories.forEach(category => {
-        const categoryResults = this.results.filter(r => r.suite.category === category)
-        const categoryPassed = categoryResults.filter(r => r.success)
+      categories.forEach((category) => {
+        const categoryResults = this.results.filter((r) => r.suite.category === category)
+        const categoryPassed = categoryResults.filter((r) => r.success)
         console.log(`   • ${category}: ${categoryPassed.length}/${categoryResults.length} passed`)
       })
     }
 
-    console.log('\n' + '═'.repeat(80))
-    
+    console.log(`\n${'═'.repeat(80)}`)
+
     if (failed.length === 0) {
       console.log('🎉 All tests passed! Template indexing functionality is working correctly.')
     } else {

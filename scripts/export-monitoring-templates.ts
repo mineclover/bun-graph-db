@@ -4,8 +4,8 @@
  * 시스템 모니터링 템플릿 export 스크립트
  */
 
-import { writeFileSync } from 'fs'
-import { join } from 'path'
+import { writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
 const EXPORT_DIR = join(process.cwd(), 'exported-templates')
@@ -46,16 +46,16 @@ async function exportTemplate(identifier: string) {
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         query: mutation,
-        variables: { templateIdentifier: identifier }
-      })
+        variables: { templateIdentifier: identifier },
+      }),
     })
 
     const result = await response.json()
-    
+
     if (result.errors) {
       console.log(`❌ GraphQL 오류 - ${identifier}:`)
       result.errors.forEach((error: any) => {
@@ -74,7 +74,7 @@ async function exportTemplate(identifier: string) {
       console.log(`✅ 템플릿 export 성공 - ${identifier}`)
       return {
         data: result.data.exportTemplate.exportData,
-        filename: result.data.exportTemplate.filename
+        filename: result.data.exportTemplate.filename,
       }
     }
   } catch (error) {
@@ -123,13 +123,13 @@ async function searchMonitoringTemplates() {
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query }),
     })
 
     const result = await response.json()
-    
+
     if (result.errors) {
       console.log(`❌ 모니터링 템플릿 검색 실패:`)
       result.errors.forEach((error: any) => {
@@ -151,7 +151,7 @@ async function exportMonitoringTemplates() {
   // 모니터링 템플릿 검색
   console.log('🔍 모니터링 템플릿 검색 중...')
   const templates = await searchMonitoringTemplates()
-  
+
   if (templates.length === 0) {
     console.log('❌ 모니터링 템플릿을 찾을 수 없습니다.')
     return
@@ -165,17 +165,17 @@ async function exportMonitoringTemplates() {
   // 각 템플릿 export
   for (const template of templates) {
     console.log(`📄 Export 중: ${template.identifier}`)
-    
+
     const exported = await exportTemplate(template.identifier)
     if (exported) {
       try {
         const exportData = JSON.parse(exported.data)
         exportedTemplates.push(exportData)
-        
+
         // 개별 파일로 저장
         const filename = `${template.identifier}_exported.json`
         const filepath = join(process.cwd(), 'exported-templates', filename)
-        
+
         try {
           writeFileSync(filepath, JSON.stringify(exportData, null, 2))
           console.log(`   💾 파일 저장됨: ${filename}`)
@@ -193,19 +193,26 @@ async function exportMonitoringTemplates() {
   // 통합 파일 생성
   if (exportedTemplates.length > 0) {
     try {
-      const combinedFilePath = join(process.cwd(), 'exported-templates', 'all-monitoring-templates.json')
+      const combinedFilePath = join(
+        process.cwd(),
+        'exported-templates',
+        'all-monitoring-templates.json'
+      )
       const combinedExport = {
         exportedAt: new Date().toISOString(),
         totalTemplates: exportedTemplates.length,
         templates: exportedTemplates,
         summary: {
-          templateTypes: [...new Set(exportedTemplates.map(t => t.operationType))],
-          tags: [...new Set(exportedTemplates.flatMap(t => t.tags || []))],
-          avgComplexity: Math.round(exportedTemplates.reduce((sum, t) => sum + (t.complexity || 0), 0) / exportedTemplates.length),
-          totalUsage: exportedTemplates.reduce((sum, t) => sum + (t.usageCount || 0), 0)
-        }
+          templateTypes: [...new Set(exportedTemplates.map((t) => t.operationType))],
+          tags: [...new Set(exportedTemplates.flatMap((t) => t.tags || []))],
+          avgComplexity: Math.round(
+            exportedTemplates.reduce((sum, t) => sum + (t.complexity || 0), 0) /
+              exportedTemplates.length
+          ),
+          totalUsage: exportedTemplates.reduce((sum, t) => sum + (t.usageCount || 0), 0),
+        },
       }
-      
+
       writeFileSync(combinedFilePath, JSON.stringify(combinedExport, null, 2))
       console.log(`📦 통합 export 파일 생성: all-monitoring-templates.json`)
     } catch (error) {
@@ -216,15 +223,15 @@ async function exportMonitoringTemplates() {
   console.log('\n📊 Export 결과:')
   console.log(`   성공: ${successCount}/${templates.length}`)
   console.log(`   실패: ${templates.length - successCount}/${templates.length}`)
-  
+
   if (successCount === templates.length) {
     console.log('\n🎉 모든 모니터링 템플릿이 성공적으로 export되었습니다!')
     console.log('\n📋 Export된 템플릿 종류:')
-    const uniqueTags = [...new Set(exportedTemplates.flatMap(t => t.tags || []))]
-    uniqueTags.forEach(tag => {
+    const uniqueTags = [...new Set(exportedTemplates.flatMap((t) => t.tags || []))]
+    uniqueTags.forEach((tag) => {
       console.log(`   • ${tag}`)
     })
-    
+
     console.log('\n📂 Export 위치:')
     console.log(`   • 개별 파일: ./exported-templates/`)
     console.log(`   • 통합 파일: ./exported-templates/all-monitoring-templates.json`)
@@ -235,7 +242,7 @@ async function exportMonitoringTemplates() {
 
 // 디렉토리 생성
 try {
-  const fs = require('fs')
+  const fs = require('node:fs')
   if (!fs.existsSync(EXPORT_DIR)) {
     fs.mkdirSync(EXPORT_DIR, { recursive: true })
   }

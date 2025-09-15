@@ -76,7 +76,9 @@ export class AttributeType {
 
   private validateIdentifier(identifier: string): void {
     if (!identifier || identifier.trim() === '') {
-      throw new DomainException('AttributeType identifier cannot be empty', { code: 'DOMAIN_ERROR' })
+      throw new DomainException('AttributeType identifier cannot be empty', {
+        code: 'DOMAIN_ERROR',
+      })
     }
 
     if (!/^[a-z][a-z0-9_]*$/.test(identifier)) {
@@ -87,20 +89,18 @@ export class AttributeType {
     }
 
     if (identifier.length > 50) {
-      throw new DomainException(
-        'AttributeType identifier cannot exceed 50 characters',
-        { code: 'DOMAIN_ERROR' }
-      )
+      throw new DomainException('AttributeType identifier cannot exceed 50 characters', {
+        code: 'DOMAIN_ERROR',
+      })
     }
   }
 
   private validateJsonType(jsonType: string): void {
     const validJsonTypes = ['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']
     if (!validJsonTypes.includes(jsonType)) {
-      throw new DomainException(
-        `Invalid JSON type. Must be one of: ${validJsonTypes.join(', ')}`,
-        { code: 'DOMAIN_ERROR' }
-      )
+      throw new DomainException(`Invalid JSON type. Must be one of: ${validJsonTypes.join(', ')}`, {
+        code: 'DOMAIN_ERROR',
+      })
     }
   }
 
@@ -109,10 +109,9 @@ export class AttributeType {
 
     const validFormats = ['date', 'time', 'date-time', 'email', 'uri', 'uuid', 'reference']
     if (!validFormats.includes(format)) {
-      throw new DomainException(
-        `Invalid format. Must be one of: ${validFormats.join(', ')}`,
-        { code: 'DOMAIN_ERROR' }
-      )
+      throw new DomainException(`Invalid format. Must be one of: ${validFormats.join(', ')}`, {
+        code: 'DOMAIN_ERROR',
+      })
     }
   }
 
@@ -128,7 +127,7 @@ export class AttributeType {
       if (value !== null) {
         try {
           JSON.parse(value)
-        } catch (error) {
+        } catch (_error) {
           throw new DomainException(`${field} must be valid JSON`, { code: 'DOMAIN_ERROR' })
         }
       }

@@ -1,11 +1,5 @@
 // Search query parser for converting query strings to SearchQuery objects
 
-import type {
-  RelationDepth,
-  RelationDirection,
-  RelationFilter,
-} from '@/domain/value-objects/RelationQuery.js'
-import { RelationSearchPatternParser } from '@/domain/value-objects/RelationQuery.js'
 import type { RangeValue, SearchFilter, SearchQuery } from '@/domain/value-objects/SearchFilter.js'
 import {
   LogicalOperator,
@@ -214,7 +208,7 @@ export class SearchQueryParser {
     switch (dataType) {
       case 'number': {
         const num = Number(value)
-        if (isNaN(num)) {
+        if (Number.isNaN(num)) {
           throw new ValidationException(`Invalid number: ${value}`)
         }
         return num
@@ -227,7 +221,7 @@ export class SearchQueryParser {
 
       case 'datetime': {
         const date = new Date(value)
-        if (isNaN(date.getTime())) {
+        if (Number.isNaN(date.getTime())) {
           throw new ValidationException(`Invalid date: ${value}`)
         }
         return date.toISOString()
@@ -240,8 +234,6 @@ export class SearchQueryParser {
           // If not valid JSON, treat as string for JSON field search
           return value
         }
-
-      case 'string':
       default:
         return value
     }

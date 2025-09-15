@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
-import { mkdir, writeFile } from 'fs/promises'
-import { join } from 'path'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { DataGenerator } from '../loaders/generators/DataGenerator.js'
 import type { DatasetSize, DomainType } from '../loaders/types/DatasetTypes.js'
 

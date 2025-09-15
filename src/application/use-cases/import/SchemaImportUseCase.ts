@@ -267,10 +267,7 @@ export class SchemaImportUseCase {
           }
         }
 
-        const relationType = RelationType.create(
-          rtData.identifier,
-          rtData.description
-        )
+        const relationType = RelationType.create(rtData.identifier, rtData.description)
 
         await this.relationTypeRepository.save(relationType)
         result.statistics.relationTypesImported++
@@ -435,12 +432,7 @@ export class SchemaImportUseCase {
           continue
         }
 
-        const node = Node.create(
-          tableId,
-          nodeData.content,
-          nodeData.title,
-          nodeData.description
-        )
+        const node = Node.create(tableId, nodeData.content, nodeData.title, nodeData.description)
 
         await this.nodeRepository.save(node)
 
@@ -464,7 +456,7 @@ export class SchemaImportUseCase {
     tableId: string,
     relations: ExportedRelation[],
     nodeIdMapping: Map<string, string>,
-    options: SchemaImportOptions,
+    _options: SchemaImportOptions,
     result: ImportResult
   ): Promise<void> {
     for (const relationData of relations) {

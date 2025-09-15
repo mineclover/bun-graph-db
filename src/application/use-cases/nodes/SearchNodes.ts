@@ -45,7 +45,7 @@ export interface INodeSearchRepository {
 
 export class SearchNodesUseCase {
   constructor(
-    private readonly nodeRepository: INodeRepository,
+    readonly _nodeRepository: INodeRepository,
     private readonly nodeSearchRepository: INodeSearchRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly tableRepository: ITableRepository,

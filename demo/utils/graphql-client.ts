@@ -2,7 +2,7 @@
 
 /**
  * GraphQL Client for Demo
- * 
+ *
  * 실제 서버에 요청을 보내는 GraphQL 클라이언트
  */
 
@@ -36,7 +36,7 @@ export class GraphQLClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
           ...this.defaultHeaders,
         },
         body: JSON.stringify({
@@ -51,7 +51,7 @@ export class GraphQLClient {
       }
 
       const result: GraphQLResponse<T> = await response.json()
-      
+
       if (result.errors && result.errors.length > 0) {
         console.warn('⚠️ GraphQL Errors:', result.errors)
       }
@@ -211,9 +211,9 @@ export class GraphQLClient {
           }
         }
       `,
-      variables: { 
+      variables: {
         filter,
-        pagination: { limit: filter.limit || 10 }
+        pagination: { limit: filter.limit || 10 },
       },
     })
   }
@@ -314,14 +314,17 @@ export class GraphQLClient {
 }
 
 // 팩토리 함수
-export function createGraphQLClient(endpoint: string, headers?: Record<string, string>): GraphQLClient {
+export function createGraphQLClient(
+  endpoint: string,
+  headers?: Record<string, string>
+): GraphQLClient {
   return new GraphQLClient(endpoint, headers)
 }
 
 // 기본 클라이언트 생성 헬퍼
 export function createDefaultClient(serverUrl?: string): GraphQLClient {
   const endpoint = serverUrl || process.env.GRAPHQL_SERVER || 'http://localhost:4000/graphql'
-  
+
   return createGraphQLClient(endpoint, {
     'User-Agent': 'BunGraphDB-Demo/1.0.0',
   })

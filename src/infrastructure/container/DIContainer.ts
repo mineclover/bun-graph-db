@@ -3,7 +3,7 @@
  * Type-safe container for managing application dependencies
  */
 
-export type ServiceToken<T = any> = symbol | string
+export type ServiceToken<_T = any> = symbol | string
 
 export interface ServiceRegistration<T = any> {
   token: ServiceToken<T>
@@ -90,7 +90,7 @@ export class DIContainer {
 
     try {
       // Resolve dependencies first
-      const dependencyInstances = await Promise.all(
+      const _dependencyInstances = await Promise.all(
         registration.dependencies.map((depToken) => this.resolve(depToken))
       )
 

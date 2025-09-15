@@ -1,17 +1,17 @@
 /**
  * Import Template Use Case
- * 
+ *
  * JSON 데이터로부터 템플릿을 가져오는 유스케이스
  */
 
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
-import type { 
-  TemplateImportResult, 
-  TemplateImportOptions, 
-  TemplateExportFormat 
+import type {
+  TemplateExportFormat,
+  TemplateImportOptions,
+  TemplateImportResult,
 } from '@/core/types/TemplateExport.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
 
 export interface ImportTemplateRequest {
   jsonData?: TemplateExportFormat
@@ -23,7 +23,7 @@ export class ImportTemplateUseCase {
   private importExportService: TemplateImportExportService
 
   constructor(
-    private readonly templateRepository: IQueryTemplateRepository,
+    readonly templateRepository: IQueryTemplateRepository,
     private readonly logger: ILogger
   ) {
     this.importExportService = new TemplateImportExportService(templateRepository)
@@ -33,10 +33,10 @@ export class ImportTemplateUseCase {
     const { jsonData, jsonString, options = {} } = request
 
     try {
-      this.logger.info('Importing template', { 
-        hasJsonData: !!jsonData, 
-        hasJsonString: !!jsonString, 
-        options 
+      this.logger.info('Importing template', {
+        hasJsonData: !!jsonData,
+        hasJsonString: !!jsonString,
+        options,
       })
 
       // JSON 데이터 또는 JSON 문자열 중 하나는 필수
@@ -81,7 +81,7 @@ export class ImportTemplateUseCase {
           })
         }
       } else {
-        this.logger.error('Template import failed', { 
+        this.logger.error('Template import failed', {
           errors: result.errors,
           warnings: result.warnings,
         })
@@ -90,7 +90,7 @@ export class ImportTemplateUseCase {
       return result
     } catch (error) {
       this.logger.error('Unexpected error during template import', { error, request })
-      
+
       return {
         success: false,
         errors: [error instanceof Error ? error.message : 'Unknown error occurred'],

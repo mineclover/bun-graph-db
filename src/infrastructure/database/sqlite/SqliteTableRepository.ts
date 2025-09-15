@@ -1,5 +1,5 @@
 import type { Database } from 'bun:sqlite'
-import type { PaginatedResult, PaginationOptions, TableId, TableSearchOptions } from '@/core/types/CommonTypes.js'
+import type { PaginatedResult, TableId, TableSearchOptions } from '@/core/types/CommonTypes.js'
 import { Table } from '@/domain/entities/Table.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
@@ -90,19 +90,19 @@ export class SqliteTableRepository implements ITableRepository {
   }
 
   async findAll(options: TableSearchOptions = {}): Promise<PaginatedResult<Table>> {
-    const { 
-      limit = 10, 
-      offset = 0, 
-      search, 
-      createdAfter, 
-      createdBefore, 
-      sortBy = 'created_at', 
-      sortDirection = 'DESC' 
+    const {
+      limit = 10,
+      offset = 0,
+      search,
+      createdAfter,
+      createdBefore,
+      sortBy = 'created_at',
+      sortDirection = 'DESC',
     } = options
 
     // Build WHERE clause with filtering
-    let whereConditions: string[] = []
-    let queryParams: (string | number)[] = []
+    const whereConditions: string[] = []
+    const queryParams: (string | number)[] = []
 
     if (search) {
       whereConditions.push('(identifier LIKE ? OR description LIKE ?)')
@@ -139,7 +139,7 @@ export class SqliteTableRepository implements ITableRepository {
     try {
       // Add limit and offset to query parameters
       const dataParams = [...queryParams, limit, offset]
-      
+
       const rows = this.db.query<TableRow, any[]>(dataQuery).all(...dataParams)
       const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...queryParams)
       const total = countResult?.count || 0

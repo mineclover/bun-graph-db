@@ -36,7 +36,7 @@ async function searchTemplates(query: string) {
   const manager = new DatasetManager()
 
   console.log(`🔍 Searching templates for: "${query}"`)
-  console.log('=' + '='.repeat(25 + query.length) + '\n')
+  console.log(`=${'='.repeat(25 + query.length)}\n`)
 
   const results = await manager.templates.searchTemplates(
     {
@@ -161,8 +161,6 @@ async function main() {
     case 'import':
       await importAllTemplates()
       break
-
-    case 'help':
     default:
       console.log('📋 Template Manager CLI')
       console.log('=======================\\n')
