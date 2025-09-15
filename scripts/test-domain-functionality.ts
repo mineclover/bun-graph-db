@@ -43,21 +43,25 @@ class DomainTester {
     console.log('─'.repeat(50))
 
     // 모든 도메인 조회
-    const domains = this.db.prepare(`
+    const domains = this.db
+      .prepare(`
       SELECT DISTINCT domain
       FROM templates
       WHERE domain IS NOT NULL AND is_active = 1
       ORDER BY domain
-    `).all() as { domain: string }[]
+    `)
+      .all() as { domain: string }[]
 
     for (const { domain } of domains) {
-      const templates = this.db.prepare(`
+      const templates = this.db
+        .prepare(`
         SELECT id, identifier, name, tags, complexity_score
         FROM templates
         WHERE domain = ? AND is_active = 1
         ORDER BY usage_count DESC
         LIMIT 5
-      `).all(domain) as TemplateInfo[]
+      `)
+        .all(domain) as TemplateInfo[]
 
       console.log(`\n📂 ${domain.toUpperCase()} 도메인 (${templates.length}개 템플릿):`)
 
@@ -75,7 +79,8 @@ class DomainTester {
     console.log('\n\n📊 2. 도메인 통계 조회 테스트')
     console.log('─'.repeat(50))
 
-    const stats = this.db.prepare(`
+    const stats = this.db
+      .prepare(`
       SELECT
         domain,
         COUNT(*) as count,
@@ -86,7 +91,8 @@ class DomainTester {
       WHERE domain IS NOT NULL AND is_active = 1
       GROUP BY domain
       ORDER BY count DESC
-    `).all()
+    `)
+      .all()
 
     console.log('┌─────────────┬────────┬──────────┬────────────┐')
     console.log('│ 도메인      │ 개수   │ 비율     │ 평균복잡도 │')
@@ -107,13 +113,15 @@ class DomainTester {
     console.log('\n🏷️  도메인별 주요 태그:')
     for (const stat of stats) {
       const s = stat as any
-      const allTags = s.allTags ? s.allTags.split(',').flatMap((tagGroup: string) => {
-        try {
-          return JSON.parse(tagGroup)
-        } catch {
-          return []
-        }
-      }) : []
+      const allTags = s.allTags
+        ? s.allTags.split(',').flatMap((tagGroup: string) => {
+            try {
+              return JSON.parse(tagGroup)
+            } catch {
+              return []
+            }
+          })
+        : []
 
       const tagCounts: Record<string, number> = {}
       for (const tag of allTags) {
@@ -138,13 +146,14 @@ class DomainTester {
       { domain: 'relation', keyword: 'create' },
       { domain: 'table', keyword: 'get' },
       { domain: 'system', keyword: 'health' },
-      { domain: 'node', keyword: 'search' }
+      { domain: 'node', keyword: 'search' },
     ]
 
     for (const { domain, keyword } of searchTests) {
       console.log(`\n🔍 "${domain}" 도메인에서 "${keyword}" 검색:`)
 
-      const results = this.db.prepare(`
+      const results = this.db
+        .prepare(`
         SELECT identifier, name, domain
         FROM templates
         WHERE domain = ?
@@ -155,7 +164,8 @@ class DomainTester {
           )
           AND is_active = 1
         LIMIT 3
-      `).all(domain, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
+      `)
+        .all(domain, `%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
 
       if (results.length > 0) {
         for (const result of results) {
@@ -174,7 +184,8 @@ class DomainTester {
     console.log('─'.repeat(50))
 
     // 관련 도메인 템플릿 찾기
-    const crossReferences = this.db.prepare(`
+    const crossReferences = this.db
+      .prepare(`
       SELECT
         t1.domain as source_domain,
         t2.domain as target_domain,
@@ -191,7 +202,8 @@ class DomainTester {
       HAVING connection_count > 0
       ORDER BY connection_count DESC
       LIMIT 10
-    `).all()
+    `)
+      .all()
 
     if (crossReferences.length > 0) {
       console.log('도메인 간 연관성:')
@@ -209,21 +221,24 @@ class DomainTester {
     console.log('─'.repeat(50))
 
     // 마이그레이션 완성도 확인
-    const migrationStatus = this.db.prepare(`
+    const migrationStatus = this.db
+      .prepare(`
       SELECT
         COUNT(*) as total_templates,
         COUNT(CASE WHEN domain IS NOT NULL THEN 1 END) as templates_with_domain,
         COUNT(CASE WHEN domain IS NULL THEN 1 END) as templates_without_domain
       FROM templates
       WHERE is_active = 1
-    `).get() as any
+    `)
+      .get() as any
 
     console.log(`📊 마이그레이션 상태:`)
     console.log(`   총 활성 템플릿: ${migrationStatus.total_templates}개`)
     console.log(`   도메인 할당: ${migrationStatus.templates_with_domain}개`)
     console.log(`   도메인 미할당: ${migrationStatus.templates_without_domain}개`)
 
-    const completionRate = (migrationStatus.templates_with_domain / migrationStatus.total_templates) * 100
+    const completionRate =
+      (migrationStatus.templates_with_domain / migrationStatus.total_templates) * 100
     console.log(`   완료율: ${completionRate.toFixed(1)}%`)
 
     if (completionRate === 100) {
@@ -232,12 +247,14 @@ class DomainTester {
       console.log(`   ⚠️  일부 템플릿에 도메인이 할당되지 않았습니다.`)
 
       // 도메인이 없는 템플릿 목록
-      const unassigned = this.db.prepare(`
+      const unassigned = this.db
+        .prepare(`
         SELECT identifier, name
         FROM templates
         WHERE domain IS NULL AND is_active = 1
         LIMIT 5
-      `).all()
+      `)
+        .all()
 
       console.log('\n   도메인 미할당 템플릿:')
       for (const template of unassigned) {
@@ -248,7 +265,8 @@ class DomainTester {
 
     // 도메인별 품질 지표
     console.log('\n📈 도메인별 품질 지표:')
-    const qualityMetrics = this.db.prepare(`
+    const qualityMetrics = this.db
+      .prepare(`
       SELECT
         domain,
         COUNT(*) as template_count,
@@ -259,7 +277,8 @@ class DomainTester {
       WHERE domain IS NOT NULL AND is_active = 1
       GROUP BY domain
       ORDER BY template_count DESC
-    `).all()
+    `)
+      .all()
 
     for (const metric of qualityMetrics) {
       const m = metric as any
@@ -267,7 +286,9 @@ class DomainTester {
       console.log(`     템플릿 수: ${m.template_count}개`)
       console.log(`     평균 복잡도: ${Number(m.avg_complexity).toFixed(1)}`)
       console.log(`     평균 사용횟수: ${Number(m.avg_usage).toFixed(1)}`)
-      console.log(`     마지막 활동: ${m.last_activity === '1970-01-01' ? '없음' : m.last_activity}`)
+      console.log(
+        `     마지막 활동: ${m.last_activity === '1970-01-01' ? '없음' : m.last_activity}`
+      )
     }
   }
 
@@ -289,7 +310,6 @@ class DomainTester {
       console.log('   ✅ 도메인 기반 검색 기능')
       console.log('   ✅ 도메인 간 연관성 분석')
       console.log('   ✅ 마이그레이션 무결성 검증')
-
     } catch (error) {
       console.error('\n❌ 테스트 실행 중 오류 발생:', error)
       throw error
@@ -303,7 +323,8 @@ class DomainTester {
 if (import.meta.main) {
   const tester = new DomainTester()
 
-  tester.runAllTests()
+  tester
+    .runAllTests()
     .then(() => {
       console.log('\n🎯 다음 권장 사항:')
       console.log('   1. GraphQL 스키마에 domain 필터링 추가')

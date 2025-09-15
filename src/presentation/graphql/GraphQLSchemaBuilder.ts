@@ -200,6 +200,14 @@ export class GraphQLSchemaBuilder {
         getPopularTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateQueries.getPopularTemplates(_, args as any),
 
+        // Table dependency queries
+        templatesByTable: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateQueries.templatesByTable(_, args as any),
+        templatesWithTableDependencies: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateQueries.templatesWithTableDependencies(_, args as any),
+        tableDependencyTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateQueries.tableDependencyTemplates(_, args as any),
+
         // System monitoring queries
         systemStats: (_: GraphQLParent, _args: Record<string, unknown>) =>
           deps.systemQueries?.systemStats() || null,

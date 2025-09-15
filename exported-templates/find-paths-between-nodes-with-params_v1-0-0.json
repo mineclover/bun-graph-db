@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.237Z",
+  "template": {
+    "id": "843",
+    "identifier": "find-paths-between-nodes-with-params",
+    "name": "FindPathsBetweenNodesWithParams",
+    "description": "파라미터를 사용하여 노드 간 경로를 찾습니다",
+    "query": "query FindPathsBetweenNodesWithParams($input: FindPathsInput!) {\n  findPathsBetweenNodes(input: $input) {\n    paths {\n      nodes {\n        id\n        title\n      }\n      relationships {\n        type\n        strength\n      }\n      totalDistance\n      pathStrength\n    }\n    totalPaths\n    executionTime\n  }\n}",
+    "queryName": [
+      "findPathsBetweenNodes"
+    ],
+    "operationType": "query",
+    "variables": {
+      "input": {
+        "sourceNodeId": "example-source-node-id",
+        "targetNodeId": "example-target-node-id",
+        "maxDepth": 5,
+        "algorithm": "SHORTEST_PATH"
+      }
+    },
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "sourceNodeId": {
+            "type": "string",
+            "required": true,
+            "description": "시작 노드 ID"
+          },
+          "targetNodeId": {
+            "type": "string",
+            "required": true,
+            "description": "목표 노드 ID"
+          },
+          "maxDepth": {
+            "type": "number",
+            "description": "최대 탐색 깊이"
+          },
+          "algorithm": {
+            "type": "string",
+            "description": "경로 찾기 알고리즘"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "sourceNodeId": "example-source-node-id",
+        "targetNodeId": "example-target-node-id",
+        "maxDepth": 5,
+        "algorithm": "SHORTEST_PATH"
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 6,
+    "version": "1.0.0",
+    "tags": [
+      "node",
+      "query",
+      "pathfinding",
+      "graph",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

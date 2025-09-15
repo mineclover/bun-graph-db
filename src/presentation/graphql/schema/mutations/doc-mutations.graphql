@@ -1,0 +1,22 @@
+# Doc Mutation extensions
+
+extend type Mutation {
+  # Create new doc
+  createDoc(input: CreateDocInput!): CreateDocPayload!
+
+  # Update existing doc
+  updateDoc(id: ID!, input: UpdateDocInput!): UpdateDocPayload!
+
+  # Delete doc
+  deleteDoc(id: ID!): DeleteDocPayload!
+
+  # Activate specific doc version (deactivates others in same category)
+  activateDoc(id: ID!): ActivateDocPayload!
+
+  # Create new version of existing doc
+  createDocVersion(
+    tableId: ID!
+    category: DocCategory!
+    content: String!
+  ): CreateDocPayload!
+}

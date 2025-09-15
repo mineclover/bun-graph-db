@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.648Z",
+  "template": {
+    "id": "860",
+    "identifier": "get-dependency-chain-working",
+    "name": "GetDependencyChain",
+    "description": "노드의 의존성 체인을 조회합니다",
+    "query": "query GetDependencyChain($input: DependencyChainInput!) {\n  getDependencyChain(input: $input) {\n    nodes {\n      id\n      title\n      content\n      tableId\n      createdAt\n      updatedAt\n    }\n    relations {\n      id\n      relationType {\n        id\n        identifier\n        name\n        description\n      }\n      sourceNode {\n        id\n        title\n      }\n      targetNode {\n        id\n        title\n      }\n    }\n    totalCount\n    hasNextPage\n    hasPreviousPage\n  }\n}",
+    "queryName": [
+      "getDependencyChain"
+    ],
+    "operationType": "query",
+    "variables": {
+      "input": {
+        "nodeId": "example-node-id",
+        "direction": "OUTGOING",
+        "maxDepth": 5
+      }
+    },
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "required": true,
+            "description": "Node to trace dependencies from"
+          },
+          "direction": {
+            "type": "string",
+            "description": "Direction to trace (INCOMING, OUTGOING, BOTH)",
+            "default": "OUTGOING"
+          },
+          "maxDepth": {
+            "type": "number",
+            "description": "Maximum depth for dependency tracing",
+            "default": 5
+          },
+          "relationTypeIds": {
+            "type": "array",
+            "description": "Filter by specific relation types"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "nodeId": "example-node-id",
+        "direction": "OUTGOING",
+        "maxDepth": 5
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "relation",
+      "dependency",
+      "chain",
+      "query",
+      "tracing",
+      "working",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

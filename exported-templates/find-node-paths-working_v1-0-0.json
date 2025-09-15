@@ -1,0 +1,77 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.546Z",
+  "template": {
+    "id": "859",
+    "identifier": "find-node-paths-working",
+    "name": "FindPathsBetweenNodes",
+    "description": "두 노드 간의 경로를 찾습니다",
+    "query": "query FindPathsBetweenNodes($input: FindPathsInput!) {\n  findPathsBetweenNodes(input: $input) {\n    nodes {\n      id\n      title\n      content\n      tableId\n    }\n    relations {\n      id\n      relationType {\n        id\n        identifier\n        name\n      }\n      sourceNode {\n        id\n        title\n      }\n      targetNode {\n        id\n        title\n      }\n    }\n    length\n    totalWeight\n  }\n}",
+    "queryName": [
+      "findPathsBetweenNodes"
+    ],
+    "operationType": "query",
+    "variables": {
+      "input": {
+        "sourceNodeId": "source-node-id",
+        "targetNodeId": "target-node-id",
+        "maxDepth": 3
+      }
+    },
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "sourceNodeId": {
+            "type": "string",
+            "required": true,
+            "description": "Starting node ID"
+          },
+          "targetNodeId": {
+            "type": "string",
+            "required": true,
+            "description": "Target node ID"
+          },
+          "maxDepth": {
+            "type": "number",
+            "description": "Maximum path depth to search",
+            "default": 3
+          },
+          "relationTypeIds": {
+            "type": "array",
+            "description": "Filter by specific relation types"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "sourceNodeId": "source-node-id",
+        "targetNodeId": "target-node-id",
+        "maxDepth": 3
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "relation",
+      "pathfinding",
+      "query",
+      "graph",
+      "traversal",
+      "working",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

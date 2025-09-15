@@ -38,7 +38,7 @@ class TemplateRegistrationManager {
         return {
           success: false,
           message: 'Validation failed',
-          errors: validation.errors
+          errors: validation.errors,
         }
       }
 
@@ -48,7 +48,7 @@ class TemplateRegistrationManager {
         return {
           success: false,
           message: `Template ${input.identifier} already exists`,
-          errors: ['Template identifier must be unique']
+          errors: ['Template identifier must be unique'],
         }
       }
 
@@ -68,15 +68,14 @@ class TemplateRegistrationManager {
         success: true,
         templateId: createResult.templateId,
         message: `Template ${input.identifier} registered successfully`,
-        errors: []
+        errors: [],
       }
-
     } catch (error) {
       console.error(`❌ Registration failed: ${error}`)
       return {
         success: false,
         message: `Registration failed: ${error}`,
-        errors: [String(error)]
+        errors: [String(error)],
       }
     }
   }
@@ -106,12 +105,14 @@ class TemplateRegistrationManager {
 
     // Validate identifier format
     if (input.identifier && !/^[a-z0-9-_]+$/.test(input.identifier)) {
-      errors.push('Template identifier must contain only lowercase letters, numbers, hyphens, and underscores')
+      errors.push(
+        'Template identifier must contain only lowercase letters, numbers, hyphens, and underscores'
+      )
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     }
   }
 
@@ -137,14 +138,13 @@ class TemplateRegistrationManager {
       if (!trimmedQuery.includes('{') || !trimmedQuery.includes('}')) {
         errors.push('GraphQL query must contain field selections')
       }
-
     } catch (error) {
       errors.push(`GraphQL syntax validation failed: ${error}`)
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     }
   }
 
@@ -163,8 +163,8 @@ class TemplateRegistrationManager {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
-          variables: { identifier }
-        })
+          variables: { identifier },
+        }),
       })
 
       const result = await response.json()
@@ -199,7 +199,7 @@ class TemplateRegistrationManager {
       query: input.query,
       tags: input.tags || [],
       variables: input.variables || {},
-      applicableTables: input.applicableTables || []
+      applicableTables: input.applicableTables || [],
     }
 
     try {
@@ -208,8 +208,8 @@ class TemplateRegistrationManager {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: mutation,
-          variables: { input: createInput }
-        })
+          variables: { input: createInput },
+        }),
       })
 
       const result = await response.json()
@@ -218,7 +218,7 @@ class TemplateRegistrationManager {
         return {
           success: false,
           message: 'GraphQL errors occurred',
-          errors: result.errors.map((e: any) => e.message)
+          errors: result.errors.map((e: any) => e.message),
         }
       }
 
@@ -227,7 +227,7 @@ class TemplateRegistrationManager {
         return {
           success: false,
           message: 'Template creation failed',
-          errors: createResult?.errors?.map((e: any) => e.message) || ['Unknown error']
+          errors: createResult?.errors?.map((e: any) => e.message) || ['Unknown error'],
         }
       }
 
@@ -235,14 +235,13 @@ class TemplateRegistrationManager {
         success: true,
         templateId: createResult.template.id,
         message: 'Template created successfully',
-        errors: []
+        errors: [],
       }
-
     } catch (error) {
       return {
         success: false,
         message: `Template creation failed: ${error}`,
-        errors: [String(error)]
+        errors: [String(error)],
       }
     }
   }
@@ -277,7 +276,7 @@ class TemplateRegistrationManager {
         console.log(`   ✅ Success`)
       } else {
         console.log(`   ❌ Failed: ${result.message}`)
-        result.errors.forEach(error => {
+        result.errors.forEach((error) => {
           console.log(`      - ${error}`)
         })
       }
@@ -310,8 +309,8 @@ class TemplateRegistrationManager {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: mutation,
-          variables: { identifier }
-        })
+          variables: { identifier },
+        }),
       })
 
       const result = await response.json()
@@ -320,7 +319,7 @@ class TemplateRegistrationManager {
         return {
           success: false,
           message: 'GraphQL errors occurred',
-          errors: result.errors.map((e: any) => e.message)
+          errors: result.errors.map((e: any) => e.message),
         }
       }
 
@@ -329,7 +328,7 @@ class TemplateRegistrationManager {
         return {
           success: false,
           message: 'Template deletion failed',
-          errors: deleteResult?.errors?.map((e: any) => e.message) || ['Unknown error']
+          errors: deleteResult?.errors?.map((e: any) => e.message) || ['Unknown error'],
         }
       }
 
@@ -337,19 +336,21 @@ class TemplateRegistrationManager {
       return {
         success: true,
         message: `Template ${identifier} deleted successfully`,
-        errors: []
+        errors: [],
       }
-
     } catch (error) {
       return {
         success: false,
         message: `Template deletion failed: ${error}`,
-        errors: [String(error)]
+        errors: [String(error)],
       }
     }
   }
 
-  async updateTemplate(identifier: string, updates: Partial<TemplateRegistrationInput>): Promise<RegistrationResult> {
+  async updateTemplate(
+    identifier: string,
+    updates: Partial<TemplateRegistrationInput>
+  ): Promise<RegistrationResult> {
     console.log(`✏️ Updating template: ${identifier}`)
 
     const mutation = `
@@ -380,8 +381,8 @@ class TemplateRegistrationManager {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: mutation,
-          variables: { identifier, input: updateInput }
-        })
+          variables: { identifier, input: updateInput },
+        }),
       })
 
       const result = await response.json()
@@ -390,7 +391,7 @@ class TemplateRegistrationManager {
         return {
           success: false,
           message: 'GraphQL errors occurred',
-          errors: result.errors.map((e: any) => e.message)
+          errors: result.errors.map((e: any) => e.message),
         }
       }
 
@@ -399,7 +400,7 @@ class TemplateRegistrationManager {
         return {
           success: false,
           message: 'Template update failed',
-          errors: updateResult?.errors?.map((e: any) => e.message) || ['Unknown error']
+          errors: updateResult?.errors?.map((e: any) => e.message) || ['Unknown error'],
         }
       }
 
@@ -408,14 +409,13 @@ class TemplateRegistrationManager {
         success: true,
         templateId: updateResult.template.id,
         message: `Template ${identifier} updated successfully`,
-        errors: []
+        errors: [],
       }
-
     } catch (error) {
       return {
         success: false,
         message: `Template update failed: ${error}`,
-        errors: [String(error)]
+        errors: [String(error)],
       }
     }
   }
@@ -439,7 +439,7 @@ class TemplateRegistrationManager {
         query: 'query HealthCheck { health { status timestamp database version } }',
         tags: ['system', 'health', 'basic'],
         priority: 'high',
-        category: 'System Operations'
+        category: 'System Operations',
       },
       {
         identifier: 'list-tables-simple',
@@ -448,7 +448,7 @@ class TemplateRegistrationManager {
         query: 'query ListTables { tables { nodes { id identifier description } totalCount } }',
         tags: ['table', 'list', 'basic'],
         priority: 'medium',
-        category: 'Query Operations'
+        category: 'Query Operations',
       },
       {
         identifier: 'create-node-basic',
@@ -464,12 +464,12 @@ class TemplateRegistrationManager {
         variables: {
           tableId: '',
           content: '',
-          title: ''
+          title: '',
         },
         tags: ['node', 'create', 'basic'],
         priority: 'medium',
-        category: 'CRUD Operations'
-      }
+        category: 'CRUD Operations',
+      },
     ]
   }
 }
@@ -481,14 +481,16 @@ async function main() {
   const command = args[0]
 
   switch (command) {
-    case 'register':
+    case 'register': {
       if (args.length < 4) {
-        console.error('❌ Usage: bun template-registration.ts register <identifier> <name> <query> [description] [tags]')
+        console.error(
+          '❌ Usage: bun template-registration.ts register <identifier> <name> <query> [description] [tags]'
+        )
         process.exit(1)
       }
 
       const [, identifier, name, query, description, tagsStr] = args
-      const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()) : []
+      const tags = tagsStr ? tagsStr.split(',').map((t) => t.trim()) : []
 
       const result = await manager.registerTemplate({
         identifier,
@@ -496,7 +498,7 @@ async function main() {
         description: description || `Template: ${name}`,
         query,
         tags,
-        priority: 'medium'
+        priority: 'medium',
       })
 
       if (result.success) {
@@ -504,25 +506,27 @@ async function main() {
         console.log(`   Template ID: ${result.templateId}`)
       } else {
         console.log(`\\n❌ Registration failed: ${result.message}`)
-        result.errors.forEach(error => console.log(`   - ${error}`))
+        result.errors.forEach((error) => console.log(`   - ${error}`))
         process.exit(1)
       }
       break
+    }
 
-    case 'batch':
+    case 'batch': {
       console.log('📋 Running batch registration with example templates...')
       const examples = manager.getTemplateExamples()
       const results = await manager.batchRegister(examples)
 
-      const successful = results.filter(r => r.success).length
+      const successful = results.filter((r) => r.success).length
       if (successful === results.length) {
         console.log('\\n🎉 All templates registered successfully!')
       } else {
         console.log(`\\n⚠️ ${successful}/${results.length} templates registered successfully`)
       }
       break
+    }
 
-    case 'delete':
+    case 'delete': {
       if (args.length < 2) {
         console.error('❌ Usage: bun template-registration.ts delete <identifier>')
         process.exit(1)
@@ -534,8 +538,9 @@ async function main() {
         process.exit(1)
       }
       break
+    }
 
-    case 'examples':
+    case 'examples': {
       console.log('📋 Available template examples:')
       const exampleTemplates = manager.getTemplateExamples()
       exampleTemplates.forEach((template, index) => {
@@ -546,6 +551,7 @@ async function main() {
         console.log(`   Tags: ${template.tags?.join(', ')}`)
       })
       break
+    }
 
     case 'help':
     default:

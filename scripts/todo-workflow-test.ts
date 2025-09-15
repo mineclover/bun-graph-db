@@ -62,7 +62,6 @@ class TodoWorkflowTest {
 
       console.log('✅ Complete Todo Workflow Test finished successfully!')
       console.log(`📊 Created ${this.createdTodoIds.length} test todos during workflow`)
-
     } catch (error) {
       console.error('❌ Workflow test failed:', error)
       throw error
@@ -78,7 +77,7 @@ class TodoWorkflowTest {
       status: 'TODO',
       priority: 'HIGH',
       category: 'LEARNING',
-      dueDate: '2024-12-31'
+      dueDate: '2024-12-31',
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -89,10 +88,14 @@ class TodoWorkflowTest {
         console.log(`   ✅ Todo created successfully (ID: ${todoId})`)
         console.log(`      Title: ${result.data.createNode.node.content}`)
       } else {
-        console.log(`   ❌ Failed to create todo: ${result.data?.createNode?.errors?.[0]?.message || 'Unknown error'}`)
+        console.log(
+          `   ❌ Failed to create todo: ${result.data?.createNode?.errors?.[0]?.message || 'Unknown error'}`
+        )
       }
     } else {
-      console.log(`   ❌ Template execution failed: ${template.data?.executeTemplate?.errors?.[0]?.message || 'Unknown error'}`)
+      console.log(
+        `   ❌ Template execution failed: ${template.data?.executeTemplate?.errors?.[0]?.message || 'Unknown error'}`
+      )
     }
   }
 
@@ -106,7 +109,7 @@ class TodoWorkflowTest {
 
     const todoId = this.createdTodoIds[0]
     const template = await this.executeTemplate('get-todo', {
-      todoId: todoId
+      todoId: todoId,
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -138,7 +141,7 @@ class TodoWorkflowTest {
       title: '업데이트된 워크플로우 테스트 할일',
       description: '이 할일이 성공적으로 업데이트되었습니다',
       status: 'IN_PROGRESS',
-      priority: 'MEDIUM'
+      priority: 'MEDIUM',
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -147,7 +150,9 @@ class TodoWorkflowTest {
         console.log(`   ✅ Todo updated successfully`)
         console.log(`      New content: ${result.data.updateNode.node.content}`)
       } else {
-        console.log(`   ❌ Failed to update todo: ${result.data?.updateNode?.errors?.[0]?.message || 'Unknown error'}`)
+        console.log(
+          `   ❌ Failed to update todo: ${result.data?.updateNode?.errors?.[0]?.message || 'Unknown error'}`
+        )
       }
     } else {
       console.log(`   ❌ Template execution failed`)
@@ -160,7 +165,7 @@ class TodoWorkflowTest {
     const template = await this.executeTemplate('list-todos', {
       limit: 10,
       offset: 0,
-      status: ''
+      status: '',
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -187,7 +192,7 @@ class TodoWorkflowTest {
       searchTerm: '워크플로우',
       category: '',
       priority: '',
-      status: ''
+      status: '',
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -212,39 +217,39 @@ class TodoWorkflowTest {
 
     const bulkTodos = [
       {
-        content: "대량 생성 테스트 1",
+        content: '대량 생성 테스트 1',
         attributes: [
-          { name: "title", value: "대량 생성 테스트 1" },
-          { name: "description", value: "첫 번째 대량 생성 할일" },
-          { name: "status", value: "TODO" },
-          { name: "priority", value: "LOW" },
-          { name: "category", value: "WORK" }
-        ]
+          { name: 'title', value: '대량 생성 테스트 1' },
+          { name: 'description', value: '첫 번째 대량 생성 할일' },
+          { name: 'status', value: 'TODO' },
+          { name: 'priority', value: 'LOW' },
+          { name: 'category', value: 'WORK' },
+        ],
       },
       {
-        content: "대량 생성 테스트 2",
+        content: '대량 생성 테스트 2',
         attributes: [
-          { name: "title", value: "대량 생성 테스트 2" },
-          { name: "description", value: "두 번째 대량 생성 할일" },
-          { name: "status", value: "TODO" },
-          { name: "priority", value: "MEDIUM" },
-          { name: "category", value: "PERSONAL" }
-        ]
+          { name: 'title', value: '대량 생성 테스트 2' },
+          { name: 'description', value: '두 번째 대량 생성 할일' },
+          { name: 'status', value: 'TODO' },
+          { name: 'priority', value: 'MEDIUM' },
+          { name: 'category', value: 'PERSONAL' },
+        ],
       },
       {
-        content: "대량 생성 테스트 3",
+        content: '대량 생성 테스트 3',
         attributes: [
-          { name: "title", value: "대량 생성 테스트 3" },
-          { name: "description", value: "세 번째 대량 생성 할일" },
-          { name: "status", value: "TODO" },
-          { name: "priority", value: "HIGH" },
-          { name: "category", value: "LEARNING" }
-        ]
-      }
+          { name: 'title', value: '대량 생성 테스트 3' },
+          { name: 'description', value: '세 번째 대량 생성 할일' },
+          { name: 'status', value: 'TODO' },
+          { name: 'priority', value: 'HIGH' },
+          { name: 'category', value: 'LEARNING' },
+        ],
+      },
     ]
 
     const template = await this.executeTemplate('bulk-import-todos', {
-      todos: bulkTodos
+      todos: bulkTodos,
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -282,7 +287,7 @@ class TodoWorkflowTest {
     const template = await this.executeTemplate('bulk-update-todo-status', {
       todoIds: idsToUpdate,
       newStatus: 'DONE',
-      completedAt: new Date().toISOString()
+      completedAt: new Date().toISOString(),
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -304,10 +309,10 @@ class TodoWorkflowTest {
 
     const template = await this.executeTemplate('todo-statistics', {
       dateRange: {
-        start: "2024-01-01",
-        end: "2024-12-31"
+        start: '2024-01-01',
+        end: '2024-12-31',
       },
-      includeArchived: false
+      includeArchived: false,
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -333,7 +338,7 @@ class TodoWorkflowTest {
       status: '',
       category: '',
       priority: '',
-      includeCompleted: true
+      includeCompleted: true,
     })
 
     if (template.data?.executeTemplate?.success) {
@@ -361,7 +366,7 @@ class TodoWorkflowTest {
     let deletedCount = 0
     for (const todoId of this.createdTodoIds) {
       const template = await this.executeTemplate('delete-todo', {
-        todoId: todoId
+        todoId: todoId,
       })
 
       if (template.data?.executeTemplate?.success) {
@@ -390,7 +395,7 @@ class TodoWorkflowTest {
 
     return await this.executeGraphQL(mutation, {
       identifier,
-      variables
+      variables,
     })
   }
 
@@ -399,7 +404,7 @@ class TodoWorkflowTest {
       const response = await fetch(this.serverUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, variables })
+        body: JSON.stringify({ query, variables }),
       })
 
       return await response.json()
@@ -450,8 +455,17 @@ class TodoWorkflowTest {
       console.log(`   ✅ Active templates: ${activeTemplates.length}`)
 
       const templateCategories = {
-        crud: activeTemplates.filter((t: any) => ['create-todo', 'get-todo', 'update-todo', 'delete-todo', 'list-todos', 'search-todos'].includes(t.identifier)).length,
-        bulk: activeTemplates.filter((t: any) => t.identifier.includes('bulk')).length
+        crud: activeTemplates.filter((t: any) =>
+          [
+            'create-todo',
+            'get-todo',
+            'update-todo',
+            'delete-todo',
+            'list-todos',
+            'search-todos',
+          ].includes(t.identifier)
+        ).length,
+        bulk: activeTemplates.filter((t: any) => t.identifier.includes('bulk')).length,
       }
 
       console.log(`   📝 CRUD templates: ${templateCategories.crud}/6`)

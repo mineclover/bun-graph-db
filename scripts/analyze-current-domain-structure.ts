@@ -70,22 +70,26 @@ class DomainAnalyzer {
 
   async analyzeCurrentStructure() {
     console.log('🔍 현재 템플릿 도메인 구조 분석')
-    console.log('=' .repeat(50))
+    console.log('='.repeat(50))
 
     // 모든 활성 템플릿 조회
-    const templates = this.db.prepare(`
+    const templates = this.db
+      .prepare(`
       SELECT
         id, identifier, name, tags, template_type, operation_type,
         applicable_tables, complexity_score, usage_count
       FROM templates
       WHERE is_active = 1
       ORDER BY usage_count DESC, identifier
-    `).all()
+    `)
+      .all()
 
-    const analyzedTemplates: TemplateAnalysis[] = templates.map(t => {
+    const analyzedTemplates: TemplateAnalysis[] = templates.map((t) => {
       const template = t as any
       const tags = template.tags ? JSON.parse(template.tags) : []
-      const applicableTables = template.applicable_tables ? JSON.parse(template.applicable_tables) : null
+      const applicableTables = template.applicable_tables
+        ? JSON.parse(template.applicable_tables)
+        : null
 
       const analysis: TemplateAnalysis = {
         id: template.id,
@@ -97,7 +101,7 @@ class DomainAnalyzer {
         applicableTables,
         complexityScore: template.complexity_score || 1,
         usageCount: template.usage_count || 0,
-        inferredDomain: ''
+        inferredDomain: '',
       }
 
       analysis.inferredDomain = this.inferDomainFromTemplate(analysis)
@@ -122,7 +126,7 @@ class DomainAnalyzer {
           percentage: 0,
           templates: [],
           avgComplexity: 0,
-          totalUsage: 0
+          totalUsage: 0,
         })
       }
 
@@ -137,8 +141,9 @@ class DomainAnalyzer {
     for (const stats of domainMap.values()) {
       stats.percentage = (stats.count / totalTemplates) * 100
 
-      const domainTemplates = templates.filter(t => t.inferredDomain === stats.domain)
-      stats.avgComplexity = domainTemplates.reduce((sum, t) => sum + t.complexityScore, 0) / domainTemplates.length
+      const domainTemplates = templates.filter((t) => t.inferredDomain === stats.domain)
+      stats.avgComplexity =
+        domainTemplates.reduce((sum, t) => sum + t.complexityScore, 0) / domainTemplates.length
     }
 
     return Array.from(domainMap.values()).sort((a, b) => b.count - a.count)
@@ -171,7 +176,7 @@ class DomainAnalyzer {
       console.log(`\n📂 ${stat.domain.toUpperCase()} 도메인 (${stat.count}개 템플릿)`)
 
       const domainTemplates = templates
-        .filter(t => t.inferredDomain === stat.domain)
+        .filter((t) => t.inferredDomain === stat.domain)
         .sort((a, b) => b.usageCount - a.usageCount)
         .slice(0, 5) // 상위 5개만 표시
 
@@ -179,7 +184,9 @@ class DomainAnalyzer {
         console.log(`   • ${template.identifier}`)
         console.log(`     ${template.name}`)
         console.log(`     태그: [${template.tags.join(', ')}]`)
-        console.log(`     타입: ${template.operationType} | 복잡도: ${template.complexityScore} | 사용: ${template.usageCount}회`)
+        console.log(
+          `     타입: ${template.operationType} | 복잡도: ${template.complexityScore} | 사용: ${template.usageCount}회`
+        )
 
         if (template.applicableTables && template.applicableTables.length > 0) {
           console.log(`     적용테이블: [${template.applicableTables.join(', ')}]`)
@@ -226,7 +233,7 @@ class DomainAnalyzer {
     console.log('\n⚙️  Operation Type 분석')
     console.log('─'.repeat(50))
 
-    const operationStats = new Map<string, { count: number, domains: Set<string> }>()
+    const operationStats = new Map<string, { count: number; domains: Set<string> }>()
 
     for (const template of templates) {
       if (!operationStats.has(template.operationType)) {
@@ -241,7 +248,9 @@ class DomainAnalyzer {
     console.log('Operation Type 분포:')
     for (const [opType, stats] of operationStats) {
       const domains = Array.from(stats.domains).join(', ')
-      console.log(`   ${opType.padEnd(12)} | ${String(stats.count).padStart(3)}개 | 도메인: ${domains}`)
+      console.log(
+        `   ${opType.padEnd(12)} | ${String(stats.count).padStart(3)}개 | 도메인: ${domains}`
+      )
     }
   }
 
@@ -250,14 +259,16 @@ class DomainAnalyzer {
     console.log('─'.repeat(50))
 
     // 1. 태그 표준화 권장사항
-    const inconsistentTemplates = templates.filter(t =>
-      !t.tags.includes(t.inferredDomain) && t.inferredDomain !== 'general'
+    const inconsistentTemplates = templates.filter(
+      (t) => !t.tags.includes(t.inferredDomain) && t.inferredDomain !== 'general'
     )
 
     if (inconsistentTemplates.length > 0) {
       console.log('\n1. 태그 표준화 필요 템플릿:')
       for (const template of inconsistentTemplates.slice(0, 5)) {
-        console.log(`   ${template.identifier}: [${template.tags.join(', ')}] → 추천: ${template.inferredDomain}`)
+        console.log(
+          `   ${template.identifier}: [${template.tags.join(', ')}] → 추천: ${template.inferredDomain}`
+        )
       }
       if (inconsistentTemplates.length > 5) {
         console.log(`   ... 외 ${inconsistentTemplates.length - 5}개`)
@@ -273,7 +284,9 @@ class DomainAnalyzer {
     }
 
     // 3. 성능 개선 권장사항
-    const highUsageDomains = stats.filter(s => s.totalUsage > 0).sort((a, b) => b.totalUsage - a.totalUsage)
+    const highUsageDomains = stats
+      .filter((s) => s.totalUsage > 0)
+      .sort((a, b) => b.totalUsage - a.totalUsage)
     if (highUsageDomains.length > 0) {
       console.log('\n3. 성능 최적화 우선순위:')
       for (const domain of highUsageDomains.slice(0, 3)) {
@@ -303,10 +316,14 @@ class DomainAnalyzer {
       console.log('\n📋 요약:')
       console.log(`   총 템플릿: ${templates.length}개`)
       console.log(`   도메인 분류: ${stats.length}개 도메인`)
-      console.log(`   주요 도메인: ${stats.slice(0, 3).map(s => s.domain).join(', ')}`)
+      console.log(
+        `   주요 도메인: ${stats
+          .slice(0, 3)
+          .map((s) => s.domain)
+          .join(', ')}`
+      )
 
       return { templates, stats }
-
     } catch (error) {
       console.error('❌ 분석 실행 중 오류:', error)
       throw error
@@ -323,7 +340,8 @@ if (import.meta.main) {
 
   const analyzer = new DomainAnalyzer()
 
-  analyzer.runAnalysis()
+  analyzer
+    .runAnalysis()
     .then(({ templates, stats }) => {
       console.log('\n🎯 다음 단계 권장사항:')
       console.log('   1. 태그 표준화로 도메인 분류 일관성 확보')

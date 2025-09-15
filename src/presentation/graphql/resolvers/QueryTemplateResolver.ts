@@ -6,10 +6,12 @@ import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTempl
 import {
   type CreateQueryTemplateInput,
   type ExecuteTemplateInput,
+  type FindTemplatesByTableInput,
   type QueryTemplateDto,
   QueryTemplateDtoMapper,
   type QueryTemplatesConnection,
   type SearchTemplatesInput,
+  type TableDependencyTemplateResult,
   type UpdateQueryTemplateInput,
 } from '@/presentation/dto/QueryTemplateDto.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
@@ -303,6 +305,80 @@ export class QueryTemplateResolver extends BaseResolver {
       this.logger.error('Failed to update template', { id, error })
       throw new GraphQLError('Failed to update template', {
         extensions: { code: 'TEMPLATE_UPDATE_FAILED' },
+      })
+    }
+  }
+
+  /**
+   * 특정 테이블과 연관된 템플릿 검색
+   */
+  async findTemplatesByTable(input: FindTemplatesByTableInput): Promise<QueryTemplateDto[]> {
+    this.logger.info('Finding templates by table', input)
+
+    try {
+      const templates = await this.queryTemplateRepository.findByApplicableTable(
+        input.tableName,
+        input.includeUniversal ?? true
+      )
+
+      return templates.map(QueryTemplateDtoMapper.toDto)
+    } catch (error) {
+      this.logger.error('Failed to find templates by table', { input, error })
+      throw new GraphQLError('Failed to find templates by table', {
+        extensions: { code: 'TEMPLATE_SEARCH_FAILED' },
+      })
+    }
+  }
+
+  /**
+   * 테이블 의존성이 있는 모든 템플릿 조회
+   */
+  async findTemplatesWithTableDependencies(): Promise<QueryTemplateDto[]> {
+    this.logger.info('Finding templates with table dependencies')
+
+    try {
+      const templates = await this.queryTemplateRepository.findTemplatesWithTableDependencies()
+      return templates.map(QueryTemplateDtoMapper.toDto)
+    } catch (error) {
+      this.logger.error('Failed to find templates with table dependencies', { error })
+      throw new GraphQLError('Failed to find templates with table dependencies', {
+        extensions: { code: 'TEMPLATE_SEARCH_FAILED' },
+      })
+    }
+  }
+
+  /**
+   * 테이블별 템플릿 그룹화 결과
+   */
+  async getTableDependencyTemplates(): Promise<TableDependencyTemplateResult[]> {
+    this.logger.info('Getting table dependency templates grouped by table')
+
+    try {
+      const templates = await this.queryTemplateRepository.findTemplatesWithTableDependencies()
+
+      // 테이블별로 그룹화
+      const groupedByTable = new Map<string, QueryTemplate[]>()
+
+      templates.forEach((template) => {
+        const applicableTables = template.applicableTables || []
+        applicableTables.forEach((tableName) => {
+          if (!groupedByTable.has(tableName)) {
+            groupedByTable.set(tableName, [])
+          }
+          groupedByTable.get(tableName)!.push(template)
+        })
+      })
+
+      // 결과 변환
+      return Array.from(groupedByTable.entries()).map(([tableName, tableTemplates]) => ({
+        tableName,
+        templates: tableTemplates.map(QueryTemplateDtoMapper.toDto),
+        totalCount: tableTemplates.length,
+      }))
+    } catch (error) {
+      this.logger.error('Failed to get table dependency templates', { error })
+      throw new GraphQLError('Failed to get table dependency templates', {
+        extensions: { code: 'TEMPLATE_SEARCH_FAILED' },
       })
     }
   }

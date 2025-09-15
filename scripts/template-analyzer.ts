@@ -55,7 +55,9 @@ class TemplateAnalyzer {
         processed++
 
         const status = analysis.success ? '✅' : '❌'
-        console.log(`${status} [${processed}/${files.length}] ${analysis.identifier} (${analysis.category})`)
+        console.log(
+          `${status} [${processed}/${files.length}] ${analysis.identifier} (${analysis.category})`
+        )
 
         if (!analysis.success && analysis.error) {
           console.log(`   └─ Error: ${analysis.error}`)
@@ -71,7 +73,7 @@ class TemplateAnalyzer {
 
   private async getTemplateFiles(): Promise<string[]> {
     const files = await readdir(this.templatesPath)
-    return files.filter(f => f.endsWith('.json') && f.includes('_v1-0-0'))
+    return files.filter((f) => f.endsWith('.json') && f.includes('_v1-0-0'))
   }
 
   private async analyzeTemplate(filename: string): Promise<TemplateAnalysis> {
@@ -101,11 +103,13 @@ class TemplateAnalyzer {
       tags: template.tags || [],
       operationType: this.getOperationType(template),
       hasVariables: Object.keys(template.variables || {}).length > 0,
-      recommendation
+      recommendation,
     }
   }
 
-  private async testExecution(template: TemplateFile): Promise<{ success: boolean; error?: string }> {
+  private async testExecution(
+    template: TemplateFile
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       // Basic GraphQL syntax validation
       if (!template.query || typeof template.query !== 'string') {
@@ -114,10 +118,12 @@ class TemplateAnalyzer {
 
       // Check for basic GraphQL structure
       const trimmedQuery = template.query.trim()
-      if (!trimmedQuery.startsWith('query') &&
-          !trimmedQuery.startsWith('mutation') &&
-          !trimmedQuery.startsWith('subscription') &&
-          !trimmedQuery.startsWith('{')) {
+      if (
+        !trimmedQuery.startsWith('query') &&
+        !trimmedQuery.startsWith('mutation') &&
+        !trimmedQuery.startsWith('subscription') &&
+        !trimmedQuery.startsWith('{')
+      ) {
         return { success: false, error: 'Invalid GraphQL operation' }
       }
 
@@ -184,9 +190,15 @@ class TemplateAnalyzer {
     // Base score by operation type
     const operationType = this.getOperationType(template)
     switch (operationType) {
-      case 'query': score += 3; break
-      case 'mutation': score += 2; break
-      case 'subscription': score += 1; break
+      case 'query':
+        score += 3
+        break
+      case 'mutation':
+        score += 2
+        break
+      case 'subscription':
+        score += 1
+        break
     }
 
     // Generality score (fewer specific hardcoded values = higher reuse)
@@ -200,13 +212,27 @@ class TemplateAnalyzer {
 
     // Common operations get higher scores
     const commonPatterns = [
-      'health', 'status', 'list', 'search', 'get', 'create', 'update', 'delete',
-      'node', 'table', 'attribute', 'relation', 'template', 'system'
+      'health',
+      'status',
+      'list',
+      'search',
+      'get',
+      'create',
+      'update',
+      'delete',
+      'node',
+      'table',
+      'attribute',
+      'relation',
+      'template',
+      'system',
     ]
 
     for (const pattern of commonPatterns) {
-      if (template.identifier.toLowerCase().includes(pattern) ||
-          template.name.toLowerCase().includes(pattern)) {
+      if (
+        template.identifier.toLowerCase().includes(pattern) ||
+        template.name.toLowerCase().includes(pattern)
+      ) {
         score += 0.5
         break
       }
@@ -226,7 +252,11 @@ class TemplateAnalyzer {
     const query = template.query.toLowerCase()
 
     // System operations
-    if (identifier.includes('system') || identifier.includes('health') || identifier.includes('statistics')) {
+    if (
+      identifier.includes('system') ||
+      identifier.includes('health') ||
+      identifier.includes('statistics')
+    ) {
       return 'System'
     }
 
@@ -261,8 +291,12 @@ class TemplateAnalyzer {
     }
 
     // CRUD operations
-    if (identifier.includes('create') || identifier.includes('update') ||
-        identifier.includes('delete') || identifier.includes('get')) {
+    if (
+      identifier.includes('create') ||
+      identifier.includes('update') ||
+      identifier.includes('delete') ||
+      identifier.includes('get')
+    ) {
       return 'CRUD Operations'
     }
 
@@ -280,7 +314,11 @@ class TemplateAnalyzer {
     return 'query'
   }
 
-  private getRecommendation(template: TemplateFile, success: boolean, reuseScore: number): 'core' | 'useful' | 'specialized' | 'deprecated' {
+  private getRecommendation(
+    template: TemplateFile,
+    success: boolean,
+    reuseScore: number
+  ): 'core' | 'useful' | 'specialized' | 'deprecated' {
     if (!success) return 'deprecated'
 
     if (reuseScore >= 4.5) return 'core'
@@ -296,13 +334,13 @@ class TemplateAnalyzer {
 
     // Summary statistics
     const total = this.results.length
-    const successful = this.results.filter(r => r.success).length
+    const successful = this.results.filter((r) => r.success).length
     const failed = total - successful
 
     console.log(`\n📊 Summary:`)
     console.log(`   Total Templates: ${total}`)
-    console.log(`   Successful: ${successful} (${Math.round(successful/total*100)}%)`)
-    console.log(`   Failed: ${failed} (${Math.round(failed/total*100)}%)`)
+    console.log(`   Successful: ${successful} (${Math.round((successful / total) * 100)}%)`)
+    console.log(`   Failed: ${failed} (${Math.round((failed / total) * 100)}%)`)
 
     // Categories breakdown
     console.log(`\n📁 Categories:`)
@@ -315,25 +353,28 @@ class TemplateAnalyzer {
     console.log(`\n🎯 Recommendations:`)
     const recommendations = this.groupBy(this.results, 'recommendation')
     for (const [rec, templates] of Object.entries(recommendations)) {
-      const icon = rec === 'core' ? '⭐' : rec === 'useful' ? '👍' : rec === 'specialized' ? '🔧' : '⚠️'
+      const icon =
+        rec === 'core' ? '⭐' : rec === 'useful' ? '👍' : rec === 'specialized' ? '🔧' : '⚠️'
       console.log(`   ${icon} ${rec}: ${templates.length}`)
     }
 
     // Core templates (high reuse value)
     console.log(`\n⭐ CORE TEMPLATES (Recommended for base library):`)
     const coreTemplates = this.results
-      .filter(r => r.recommendation === 'core')
+      .filter((r) => r.recommendation === 'core')
       .sort((a, b) => b.reuseScore - a.reuseScore)
 
     coreTemplates.forEach((template, index) => {
       console.log(`   ${index + 1}. ${template.identifier}`)
-      console.log(`      └─ ${template.name} (Score: ${template.reuseScore}, Category: ${template.category})`)
+      console.log(
+        `      └─ ${template.name} (Score: ${template.reuseScore}, Category: ${template.category})`
+      )
     })
 
     // Useful templates
     console.log(`\n👍 USEFUL TEMPLATES:`)
     const usefulTemplates = this.results
-      .filter(r => r.recommendation === 'useful')
+      .filter((r) => r.recommendation === 'useful')
       .sort((a, b) => b.reuseScore - a.reuseScore)
       .slice(0, 10) // Top 10
 
@@ -344,7 +385,7 @@ class TemplateAnalyzer {
     // Failed templates
     if (failed > 0) {
       console.log(`\n⚠️  FAILED TEMPLATES (Need attention):`)
-      const failedTemplates = this.results.filter(r => !r.success)
+      const failedTemplates = this.results.filter((r) => !r.success)
       failedTemplates.forEach((template, index) => {
         console.log(`   ${index + 1}. ${template.identifier}`)
         console.log(`      └─ Error: ${template.error}`)
@@ -354,21 +395,28 @@ class TemplateAnalyzer {
     // Performance insights
     console.log(`\n⚡ Performance Insights:`)
     const avgExecutionTime = this.results.reduce((sum, r) => sum + r.executionTime, 0) / total
-    const slowestTemplate = this.results.reduce((a, b) => a.executionTime > b.executionTime ? a : b)
+    const slowestTemplate = this.results.reduce((a, b) =>
+      a.executionTime > b.executionTime ? a : b
+    )
 
     console.log(`   Average execution time: ${avgExecutionTime.toFixed(2)}ms`)
-    console.log(`   Slowest template: ${slowestTemplate.identifier} (${slowestTemplate.executionTime.toFixed(2)}ms)`)
+    console.log(
+      `   Slowest template: ${slowestTemplate.identifier} (${slowestTemplate.executionTime.toFixed(2)}ms)`
+    )
 
     console.log('\n' + '='.repeat(80))
   }
 
   private groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-    return array.reduce((groups, item) => {
-      const value = String(item[key])
-      groups[value] = groups[value] || []
-      groups[value].push(item)
-      return groups
-    }, {} as Record<string, T[]>)
+    return array.reduce(
+      (groups, item) => {
+        const value = String(item[key])
+        groups[value] = groups[value] || []
+        groups[value].push(item)
+        return groups
+      },
+      {} as Record<string, T[]>
+    )
   }
 
   // Export results to JSON for further processing
@@ -377,12 +425,12 @@ class TemplateAnalyzer {
       timestamp: new Date().toISOString(),
       summary: {
         total: this.results.length,
-        successful: this.results.filter(r => r.success).length,
-        failed: this.results.filter(r => !r.success).length
+        successful: this.results.filter((r) => r.success).length,
+        failed: this.results.filter((r) => !r.success).length,
       },
       categories: this.groupBy(this.results, 'category'),
       recommendations: this.groupBy(this.results, 'recommendation'),
-      results: this.results
+      results: this.results,
     }
 
     await Bun.write(filename, JSON.stringify(report, null, 2))

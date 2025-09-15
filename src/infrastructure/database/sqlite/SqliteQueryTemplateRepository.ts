@@ -248,7 +248,8 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const searchPattern = `%"${queryName}"%`
       const queryTextPattern = `%${queryName}%`
 
-      const rows = this.db.query<QueryTemplateRow, [string, string]>(query)
+      const rows = this.db
+        .query<QueryTemplateRow, [string, string]>(query)
         .all(searchPattern, queryTextPattern)
 
       return rows.map((row) =>
@@ -277,7 +278,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       )
     } catch (error) {
       this.logger.error('Failed to search templates by query name', { queryName, error })
-      throw new DomainException('Failed to search templates by query name', { code: 'DATABASE_ERROR' })
+      throw new DomainException('Failed to search templates by query name', {
+        code: 'DATABASE_ERROR',
+      })
     }
   }
 
@@ -317,7 +320,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       )
     } catch (error) {
       this.logger.error('Failed to search templates by operation type', { operationType, error })
-      throw new DomainException('Failed to search templates by operation type', { code: 'DATABASE_ERROR' })
+      throw new DomainException('Failed to search templates by operation type', {
+        code: 'DATABASE_ERROR',
+      })
     }
   }
 
@@ -549,12 +554,103 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
     }
   }
 
+  async findByApplicableTable(
+    tableName: string,
+    includeUniversal: boolean = true
+  ): Promise<QueryTemplate[]> {
+    try {
+      let query = `
+        SELECT * FROM templates
+        WHERE is_active = 1
+        AND (json_extract(applicable_tables, '$') LIKE ?`
+
+      if (includeUniversal) {
+        query += ` OR applicable_tables IS NULL`
+      }
+
+      query += `) ORDER BY usage_count DESC, created_at DESC`
+
+      const searchPattern = `%"${tableName}"%`
+      const rows = this.db.query<any, [string]>(query).all(searchPattern)
+
+      return rows.map((row) =>
+        QueryTemplate.fromDatabase(
+          String(row.id),
+          row.identifier,
+          row.name,
+          row.description,
+          row.query_text,
+          row.query_name,
+          row.operation_type || 'query',
+          row.variables_schema,
+          row.default_variables,
+          row.applicable_tables,
+          row.operation_type || 'query',
+          row.complexity_score || 0,
+          row.usage_count || 0,
+          row.last_used_at,
+          row.avg_execution_time_ms,
+          row.version || '1.0',
+          row.is_active === 1,
+          row.tags,
+          row.created_at,
+          row.updated_at
+        )
+      )
+    } catch (error) {
+      this.logger?.error('Error finding templates by applicable table:', error)
+      throw error
+    }
+  }
+
+  async findTemplatesWithTableDependencies(): Promise<QueryTemplate[]> {
+    try {
+      const query = `
+        SELECT * FROM templates
+        WHERE is_active = 1
+        AND applicable_tables IS NOT NULL
+        AND applicable_tables != 'null'
+        AND applicable_tables != '[]'
+        ORDER BY created_at DESC
+      `
+      const rows = this.db.query<any>(query).all()
+
+      return rows.map((row) =>
+        QueryTemplate.fromDatabase(
+          String(row.id),
+          row.identifier,
+          row.name,
+          row.description,
+          row.query_text,
+          row.query_name,
+          row.operation_type || 'query',
+          row.variables_schema,
+          row.default_variables,
+          row.applicable_tables,
+          row.operation_type || 'query',
+          row.complexity_score || 0,
+          row.usage_count || 0,
+          row.last_used_at,
+          row.avg_execution_time_ms,
+          row.version || '1.0',
+          row.is_active === 1,
+          row.tags,
+          row.created_at,
+          row.updated_at
+        )
+      )
+    } catch (error) {
+      this.logger?.error('Error finding templates with table dependencies:', error)
+      throw error
+    }
+  }
+
   async findPopular(limit: number = 10): Promise<QueryTemplate[]> {
     try {
       const query = `
-        SELECT * FROM templates 
-        WHERE is_active = 1 
-        ORDER BY usage_count DESC 
+        SELECT * FROM templates
+        WHERE is_active = 1
+        ORDER BY usage_count DESC
         LIMIT ?
       `
       const rows = this.db.query<any, [number]>(query).all(limit)

@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:49.723Z",
+  "template": {
+    "id": "671",
+    "identifier": "test-health-check",
+    "name": "HealthCheck",
+    "description": "시스템 상태 확인 테스트",
+    "query": "query HealthCheck {\n  health {\n    status\n    timestamp\n    database\n    version\n  }\n}\n",
+    "queryName": [
+      "health"
+    ],
+    "operationType": "query",
+    "variables": {
+      "healthCheck": true,
+      "includeDatabase": true
+    },
+    "variablesSchema": null,
+    "defaultVariables": {
+      "healthCheck": true,
+      "includeDatabase": true
+    },
+    "applicableTables": null,
+    "complexityScore": 1,
+    "version": "1.0.0",
+    "tags": [
+      "general",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

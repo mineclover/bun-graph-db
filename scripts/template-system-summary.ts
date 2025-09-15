@@ -11,9 +11,9 @@ class TemplateSystemSummary {
   private coreManager = new CoreTemplateManager()
 
   async generateComprehensiveReport(): Promise<void> {
-    console.log('=' .repeat(80))
+    console.log('='.repeat(80))
     console.log('🎯 TEMPLATE SYSTEM IMPROVEMENT SUMMARY REPORT')
-    console.log('=' .repeat(80))
+    console.log('='.repeat(80))
     console.log(`📅 Generated: ${new Date().toLocaleString('ko-KR')}`)
     console.log(`🔧 System Version: bun-graph-db v1.0.0`)
 
@@ -38,12 +38,12 @@ class TemplateSystemSummary {
     // 7. 다음 단계 권장사항
     await this.printNextSteps()
 
-    console.log('=' .repeat(80))
+    console.log('='.repeat(80))
   }
 
   private async printWorkOverview(): Promise<void> {
     console.log('\n📋 WORK OVERVIEW')
-    console.log('-' .repeat(50))
+    console.log('-'.repeat(50))
 
     const completedTasks = [
       '✅ GraphQL 기반 템플릿 분석 시스템 구축',
@@ -51,10 +51,10 @@ class TemplateSystemSummary {
       '✅ 7개 핵심 누락 템플릿 생성 (2 high + 5 medium priority)',
       '✅ 코어 템플릿 관리 시스템 개발',
       '✅ 자동화된 템플릿 등록 및 검증 시스템',
-      '✅ 종합적인 템플릿 시스템 가이드 문서화'
+      '✅ 종합적인 템플릿 시스템 가이드 문서화',
     ]
 
-    completedTasks.forEach(task => console.log(`   ${task}`))
+    completedTasks.forEach((task) => console.log(`   ${task}`))
 
     console.log('\n📊 Work Statistics:')
     console.log('   • 분석된 기존 템플릿: 65개')
@@ -66,7 +66,7 @@ class TemplateSystemSummary {
 
   private async printGapAnalysisResults(): Promise<void> {
     console.log('\n🔍 GAP ANALYSIS RESULTS')
-    console.log('-' .repeat(50))
+    console.log('-'.repeat(50))
 
     console.log('📈 Coverage Analysis (Before → After):')
     console.log('   • Well Covered (≥80%): 0 → 7 scenarios (70% improvement)')
@@ -84,17 +84,21 @@ class TemplateSystemSummary {
       { scenario: '사용자 권한 관리', status: '✅ 해결', template: 'user-management' },
       { scenario: '백업 및 복원', status: '📝 계획됨', template: 'backup-restore (Low Priority)' },
       { scenario: '스키마 진화', status: '📝 계획됨', template: 'schema-evolution (Low Priority)' },
-      { scenario: '협업 편집', status: '📝 계획됨', template: 'collaborative-editing (Low Priority)' }
+      {
+        scenario: '협업 편집',
+        status: '📝 계획됨',
+        template: 'collaborative-editing (Low Priority)',
+      },
     ]
 
-    gaps.forEach(gap => {
+    gaps.forEach((gap) => {
       console.log(`   ${gap.status} ${gap.scenario} → ${gap.template}`)
     })
   }
 
   private async printNewTemplates(): Promise<void> {
     console.log('\n🆕 NEW TEMPLATES CREATED')
-    console.log('-' .repeat(50))
+    console.log('-'.repeat(50))
 
     const newTemplates = [
       {
@@ -103,7 +107,7 @@ class TemplateSystemSummary {
         priority: 'HIGH',
         category: 'Data Operations',
         description: 'CSV, JSON 등의 파일에서 대량의 노드를 한번에 생성',
-        features: ['Batch Processing', 'Error Handling', 'Progress Tracking']
+        features: ['Batch Processing', 'Error Handling', 'Progress Tracking'],
       },
       {
         id: 'real-time-monitoring',
@@ -111,7 +115,7 @@ class TemplateSystemSummary {
         priority: 'HIGH',
         category: 'System Operations',
         description: '시스템 성능, 메모리 사용량, 쿼리 성능을 실시간으로 모니터링',
-        features: ['Subscription', 'Real-time Metrics', 'Alert System']
+        features: ['Subscription', 'Real-time Metrics', 'Alert System'],
       },
       {
         id: 'data-validation',
@@ -119,7 +123,7 @@ class TemplateSystemSummary {
         priority: 'MEDIUM',
         category: 'Data Quality',
         description: '스키마 규칙 위반, 고아 노드, 중복 데이터 등을 검사',
-        features: ['Integrity Check', 'Validation Rules', 'Report Generation']
+        features: ['Integrity Check', 'Validation Rules', 'Report Generation'],
       },
       {
         id: 'advanced-analytics',
@@ -127,7 +131,7 @@ class TemplateSystemSummary {
         priority: 'MEDIUM',
         category: 'Analytics',
         description: '중심성 분석, 클러스터링, 경로 최적화 등의 그래프 알고리즘',
-        features: ['Centrality Analysis', 'Clustering', 'Path Finding']
+        features: ['Centrality Analysis', 'Clustering', 'Path Finding'],
       },
       {
         id: 'data-export',
@@ -135,7 +139,7 @@ class TemplateSystemSummary {
         priority: 'MEDIUM',
         category: 'Data Operations',
         description: '다양한 형식으로 데이터를 내보내는 고급 내보내기',
-        features: ['Multiple Formats', 'Streaming', 'Large Dataset Handling']
+        features: ['Multiple Formats', 'Streaming', 'Large Dataset Handling'],
       },
       {
         id: 'query-optimization',
@@ -143,7 +147,7 @@ class TemplateSystemSummary {
         priority: 'MEDIUM',
         category: 'Performance',
         description: '느린 쿼리 식별, 인덱스 제안, 성능 튜닝',
-        features: ['Query Profiling', 'Index Recommendations', 'Performance Metrics']
+        features: ['Query Profiling', 'Index Recommendations', 'Performance Metrics'],
       },
       {
         id: 'user-management',
@@ -151,8 +155,8 @@ class TemplateSystemSummary {
         priority: 'MEDIUM',
         category: 'Security',
         description: '사용자별 접근 권한 설정 및 관리',
-        features: ['Role Management', 'Access Control', 'Audit Trail']
-      }
+        features: ['Role Management', 'Access Control', 'Audit Trail'],
+      },
     ]
 
     newTemplates.forEach((template, index) => {
@@ -168,19 +172,21 @@ class TemplateSystemSummary {
 
   private async printCoreTemplateStatus(): Promise<void> {
     console.log('\n🏆 CORE TEMPLATE MANAGEMENT')
-    console.log('-' .repeat(50))
+    console.log('-'.repeat(50))
 
     await this.coreManager.initialize()
     const config = this.coreManager.getConfiguration()
 
     console.log('📊 Core Template Statistics:')
     console.log(`   • Total Core Templates: ${config.coreTemplates.length}`)
-    console.log(`   • Active Templates: ${config.coreTemplates.filter(t => t.status === 'active').length}`)
+    console.log(
+      `   • Active Templates: ${config.coreTemplates.filter((t) => t.status === 'active').length}`
+    )
     console.log(`   • Categories: ${Object.keys(config.categories).length}`)
 
     console.log('\n🎯 Top Priority Categories:')
     const sortedCategories = Object.entries(config.categories)
-      .sort(([,a], [,b]) => b.priority - a.priority)
+      .sort(([, a], [, b]) => b.priority - a.priority)
       .slice(0, 5)
 
     sortedCategories.forEach(([category, info]) => {
@@ -189,7 +195,7 @@ class TemplateSystemSummary {
 
     console.log('\n⭐ High Priority Core Templates:')
     const highPriorityTemplates = config.coreTemplates
-      .filter(t => t.priority === 'high')
+      .filter((t) => t.priority === 'high')
       .sort((a, b) => b.reuseScore - a.reuseScore)
       .slice(0, 5)
 
@@ -200,49 +206,49 @@ class TemplateSystemSummary {
 
   private async printUserScenarioMatching(): Promise<void> {
     console.log('\n🎯 USER SCENARIO MATCHING')
-    console.log('-' .repeat(50))
+    console.log('-'.repeat(50))
 
     const scenarioMatching = [
       {
         scenario: '데이터 마이그레이션',
         templates: ['bulk-data-import', 'create-template-basic', 'data-validation'],
-        coverage: '90%'
+        coverage: '90%',
       },
       {
         scenario: '시스템 모니터링',
         templates: ['real-time-monitoring', 'simple-health-check', 'get-system-statistics'],
-        coverage: '85%'
+        coverage: '85%',
       },
       {
         scenario: '데이터 품질 관리',
         templates: ['data-validation', 'schema-introspection', 'get-table-schema'],
-        coverage: '80%'
+        coverage: '80%',
       },
       {
         scenario: '고급 분석',
         templates: ['advanced-analytics', 'search-templates-advanced'],
-        coverage: '75%'
+        coverage: '75%',
       },
       {
         scenario: '데이터 내보내기',
         templates: ['data-export', 'list-tables-with-pagination'],
-        coverage: '70%'
+        coverage: '70%',
       },
       {
         scenario: '성능 최적화',
         templates: ['query-optimization', 'execute-template-with-variables'],
-        coverage: '65%'
+        coverage: '65%',
       },
       {
         scenario: '보안 관리',
         templates: ['user-management'],
-        coverage: '60%'
-      }
+        coverage: '60%',
+      },
     ]
 
-    scenarioMatching.forEach(match => {
-      const coverageIcon = parseInt(match.coverage) >= 80 ? '✅' :
-                         parseInt(match.coverage) >= 60 ? '⚠️' : '❌'
+    scenarioMatching.forEach((match) => {
+      const coverageIcon =
+        parseInt(match.coverage) >= 80 ? '✅' : parseInt(match.coverage) >= 60 ? '⚠️' : '❌'
       console.log(`   ${coverageIcon} ${match.scenario} (${match.coverage} coverage)`)
       console.log(`      Templates: ${match.templates.join(', ')}`)
     })
@@ -250,7 +256,7 @@ class TemplateSystemSummary {
 
   private async printPerformanceMetrics(): Promise<void> {
     console.log('\n⚡ PERFORMANCE & QUALITY METRICS')
-    console.log('-' .repeat(50))
+    console.log('-'.repeat(50))
 
     console.log('🚀 System Performance:')
     console.log('   • Template Execution Success Rate: 65% → 90%+ (새 템플릿 포함)')
@@ -273,7 +279,7 @@ class TemplateSystemSummary {
 
   private async printNextSteps(): Promise<void> {
     console.log('\n🚀 NEXT STEPS & RECOMMENDATIONS')
-    console.log('-' .repeat(50))
+    console.log('-'.repeat(50))
 
     console.log('📋 Immediate Actions (완료된 작업):')
     console.log('   ✅ 7개 핵심 템플릿 구현 및 테스트')

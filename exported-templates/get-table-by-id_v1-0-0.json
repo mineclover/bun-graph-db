@@ -1,0 +1,47 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:49.927Z",
+  "template": {
+    "id": "827",
+    "identifier": "get-table-by-id",
+    "name": "GetTableById",
+    "description": "특정 ID로 테이블 정보를 조회합니다",
+    "query": "query GetTableById($tableId: ID!) {\n  getTable(id: $tableId) {\n    id\n    identifier\n    description\n    createdAt\n    updatedAt\n    nodeCount\n    attributeCount\n    isActive\n  }\n}",
+    "queryName": [
+      "getTable"
+    ],
+    "operationType": "query",
+    "variables": {
+      "tableId": "example-table-id"
+    },
+    "variablesSchema": {
+      "tableId": {
+        "type": "string",
+        "required": true,
+        "description": "조회할 테이블의 ID"
+      }
+    },
+    "defaultVariables": {
+      "tableId": "example-table-id"
+    },
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "table",
+      "query",
+      "basic",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

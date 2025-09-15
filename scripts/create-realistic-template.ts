@@ -80,8 +80,8 @@ class RealisticTemplateCreator {
       priority: 'medium',
       variables: {
         templateId: '',
-        operation: 'GET_STATUS'
-      }
+        operation: 'GET_STATUS',
+      },
     }
 
     const result = await this.registrationManager.registerTemplate(template)
@@ -91,7 +91,7 @@ class RealisticTemplateCreator {
       console.log(`   Template ID: ${result.templateId}`)
     } else {
       console.log(`❌ Failed to create template: ${result.message}`)
-      result.errors.forEach(error => console.log(`   - ${error}`))
+      result.errors.forEach((error) => console.log(`   - ${error}`))
     }
 
     return
@@ -172,8 +172,8 @@ class RealisticTemplateCreator {
       priority: 'medium',
       variables: {
         nodeId: '',
-        analysisDepth: 3
-      }
+        analysisDepth: 3,
+      },
     }
 
     const result = await this.registrationManager.registerTemplate(template)
@@ -183,7 +183,7 @@ class RealisticTemplateCreator {
       console.log(`   Template ID: ${result.templateId}`)
     } else {
       console.log(`❌ Failed to create template: ${result.message}`)
-      result.errors.forEach(error => console.log(`   - ${error}`))
+      result.errors.forEach((error) => console.log(`   - ${error}`))
     }
   }
 
@@ -271,8 +271,8 @@ class RealisticTemplateCreator {
       tags: ['schema', 'evolution', 'tracking', 'analytics'],
       priority: 'medium',
       variables: {
-        tableId: ''
-      }
+        tableId: '',
+      },
     }
 
     const result = await this.registrationManager.registerTemplate(template)
@@ -282,7 +282,7 @@ class RealisticTemplateCreator {
       console.log(`   Template ID: ${result.templateId}`)
     } else {
       console.log(`❌ Failed to create template: ${result.message}`)
-      result.errors.forEach(error => console.log(`   - ${error}`))
+      result.errors.forEach((error) => console.log(`   - ${error}`))
     }
   }
 

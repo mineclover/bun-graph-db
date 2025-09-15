@@ -77,18 +77,18 @@ class TodoBulkOperations {
       variables: {
         todos: [
           {
-            content: "샘플 할일 1",
+            content: '샘플 할일 1',
             attributes: [
-              { name: "title", value: "샘플 할일 1" },
-              { name: "description", value: "첫 번째 샘플 할일입니다" },
-              { name: "status", value: "TODO" },
-              { name: "priority", value: "HIGH" },
-              { name: "category", value: "WORK" },
-              { name: "created_at", value: "{{ now }}" }
-            ]
-          }
-        ]
-      }
+              { name: 'title', value: '샘플 할일 1' },
+              { name: 'description', value: '첫 번째 샘플 할일입니다' },
+              { name: 'status', value: 'TODO' },
+              { name: 'priority', value: 'HIGH' },
+              { name: 'category', value: 'WORK' },
+              { name: 'created_at', value: '{{ now }}' },
+            ],
+          },
+        ],
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -156,8 +156,8 @@ class TodoBulkOperations {
         status: '',
         category: '',
         priority: '',
-        includeCompleted: false
-      }
+        includeCompleted: false,
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -205,8 +205,8 @@ class TodoBulkOperations {
       variables: {
         todoIds: [],
         newStatus: 'DONE',
-        completedAt: '{{ now }}'
-      }
+        completedAt: '{{ now }}',
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -249,8 +249,8 @@ class TodoBulkOperations {
       tags: ['todo', 'bulk', 'complete'],
       priority: 'medium',
       variables: {
-        todoIds: []
-      }
+        todoIds: [],
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -298,8 +298,8 @@ class TodoBulkOperations {
       tags: ['todo', 'archive', 'maintenance'],
       priority: 'low',
       variables: {
-        olderThanDays: 30
-      }
+        olderThanDays: 30,
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -362,11 +362,11 @@ class TodoBulkOperations {
       priority: 'medium',
       variables: {
         dateRange: {
-          start: "{{ date:30_days_ago }}",
-          end: "{{ date:today }}"
+          start: '{{ date:30_days_ago }}',
+          end: '{{ date:today }}',
         },
-        includeArchived: false
-      }
+        includeArchived: false,
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -377,7 +377,9 @@ class TodoBulkOperations {
     }
   }
 
-  private async registerTemplate(template: any): Promise<{ success: boolean, templateId?: string, message?: string }> {
+  private async registerTemplate(
+    template: any
+  ): Promise<{ success: boolean; templateId?: string; message?: string }> {
     const mutation = `
       mutation CreateTemplate($input: CreateQueryTemplateInput!) {
         createTemplate(input: $input) {
@@ -402,8 +404,8 @@ class TodoBulkOperations {
         query: template.query,
         tags: template.tags,
         complexityScore: this.calculateComplexity(template.query),
-        variables: template.variables
-      }
+        variables: template.variables,
+      },
     }
 
     const result = await this.executeGraphQL(mutation, variables)
@@ -411,21 +413,32 @@ class TodoBulkOperations {
     if (result.data?.createTemplate?.success) {
       return {
         success: true,
-        templateId: result.data.createTemplate.template.id
+        templateId: result.data.createTemplate.template.id,
       }
     } else {
       return {
         success: false,
-        message: result.data?.createTemplate?.errors?.[0]?.message || result.errors?.[0]?.message || 'Unknown error'
+        message:
+          result.data?.createTemplate?.errors?.[0]?.message ||
+          result.errors?.[0]?.message ||
+          'Unknown error',
       }
     }
   }
 
   private calculateComplexity(query: string): number {
-    const complexityKeywords = ['mutation', 'query', 'subscription', 'filter', 'attributes', 'bulk', 'statistics']
+    const complexityKeywords = [
+      'mutation',
+      'query',
+      'subscription',
+      'filter',
+      'attributes',
+      'bulk',
+      'statistics',
+    ]
     let complexity = Math.min(Math.floor(query.length / 150), 5)
 
-    complexityKeywords.forEach(keyword => {
+    complexityKeywords.forEach((keyword) => {
       if (query.includes(keyword)) complexity += 1
     })
 
@@ -437,7 +450,7 @@ class TodoBulkOperations {
       const response = await fetch(this.serverUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, variables })
+        body: JSON.stringify({ query, variables }),
       })
 
       return await response.json()

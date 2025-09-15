@@ -86,8 +86,8 @@ class TodoTemplates {
         status: 'TODO',
         priority: 'MEDIUM',
         category: 'PERSONAL',
-        dueDate: ''
-      }
+        dueDate: '',
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -123,8 +123,8 @@ class TodoTemplates {
       tags: ['todo', 'read', 'crud'],
       priority: 'high',
       variables: {
-        todoId: ''
-      }
+        todoId: '',
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -180,8 +180,8 @@ class TodoTemplates {
         priority: '',
         category: '',
         dueDate: '',
-        completedAt: ''
-      }
+        completedAt: '',
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -210,8 +210,8 @@ class TodoTemplates {
       tags: ['todo', 'delete', 'crud'],
       priority: 'medium',
       variables: {
-        todoId: ''
-      }
+        todoId: '',
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -252,8 +252,8 @@ class TodoTemplates {
       variables: {
         limit: 20,
         offset: 0,
-        status: ''
-      }
+        status: '',
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -299,8 +299,8 @@ class TodoTemplates {
         searchTerm: '',
         category: '',
         priority: '',
-        status: ''
-      }
+        status: '',
+      },
     }
 
     const result = await this.registerTemplate(template)
@@ -311,7 +311,9 @@ class TodoTemplates {
     }
   }
 
-  private async registerTemplate(template: any): Promise<{ success: boolean, templateId?: string, message?: string }> {
+  private async registerTemplate(
+    template: any
+  ): Promise<{ success: boolean; templateId?: string; message?: string }> {
     const mutation = `
       mutation CreateTemplate($input: CreateQueryTemplateInput!) {
         createTemplate(input: $input) {
@@ -336,8 +338,8 @@ class TodoTemplates {
         query: template.query,
         tags: template.tags,
         complexityScore: this.calculateComplexity(template.query),
-        variables: template.variables
-      }
+        variables: template.variables,
+      },
     }
 
     const result = await this.executeGraphQL(mutation, variables)
@@ -345,12 +347,15 @@ class TodoTemplates {
     if (result.data?.createTemplate?.success) {
       return {
         success: true,
-        templateId: result.data.createTemplate.template.id
+        templateId: result.data.createTemplate.template.id,
       }
     } else {
       return {
         success: false,
-        message: result.data?.createTemplate?.errors?.[0]?.message || result.errors?.[0]?.message || 'Unknown error'
+        message:
+          result.data?.createTemplate?.errors?.[0]?.message ||
+          result.errors?.[0]?.message ||
+          'Unknown error',
       }
     }
   }
@@ -360,7 +365,7 @@ class TodoTemplates {
     const complexityKeywords = ['mutation', 'query', 'subscription', 'filter', 'attributes']
     let complexity = Math.min(Math.floor(query.length / 100), 5)
 
-    complexityKeywords.forEach(keyword => {
+    complexityKeywords.forEach((keyword) => {
       if (query.includes(keyword)) complexity += 1
     })
 
@@ -372,7 +377,7 @@ class TodoTemplates {
       const response = await fetch(this.serverUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, variables })
+        body: JSON.stringify({ query, variables }),
       })
 
       return await response.json()

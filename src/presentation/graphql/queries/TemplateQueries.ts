@@ -132,6 +132,73 @@ export class TemplateQueries extends BaseResolver {
     )
   }
 
+  async templatesByTable(
+    _: GraphQLParent,
+    args: { input: { tableName: string; includeUniversal?: boolean } },
+    _context?: GraphQLContext
+  ) {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('input', 'Input'),
+        BaseResolver.validationRules.required('input.tableName', 'Table Name'),
+        BaseResolver.validationRules.nonEmpty('input.tableName', 'Table Name'),
+      ],
+      'templatesByTable'
+    )
+
+    return this.handleQuery(
+      async () => {
+        return await this.queryTemplateRepository.findByApplicableTable(
+          args.input.tableName,
+          args.input.includeUniversal ?? true
+        )
+      },
+      'findTemplatesByTable',
+      { tableName: args.input.tableName, includeUniversal: args.input.includeUniversal }
+    )
+  }
+
+  async templatesWithTableDependencies(_: GraphQLParent, _args: {}, _context?: GraphQLContext) {
+    return this.handleQuery(
+      async () => {
+        return await this.queryTemplateRepository.findTemplatesWithTableDependencies()
+      },
+      'findTemplatesWithTableDependencies',
+      {}
+    )
+  }
+
+  async tableDependencyTemplates(_: GraphQLParent, _args: {}, _context?: GraphQLContext) {
+    return this.handleQuery(
+      async () => {
+        const templates = await this.queryTemplateRepository.findTemplatesWithTableDependencies()
+
+        // 테이블별로 그룹화
+        const groupedByTable = new Map<string, any[]>()
+
+        templates.forEach((template) => {
+          const applicableTables = template.applicableTables || []
+          applicableTables.forEach((tableName) => {
+            if (!groupedByTable.has(tableName)) {
+              groupedByTable.set(tableName, [])
+            }
+            groupedByTable.get(tableName)!.push(template)
+          })
+        })
+
+        // 결과 변환
+        return Array.from(groupedByTable.entries()).map(([tableName, tableTemplates]) => ({
+          tableName,
+          templates: tableTemplates,
+          totalCount: tableTemplates.length,
+        }))
+      },
+      'getTableDependencyTemplates',
+      {}
+    )
+  }
+
   setSchema(schema: GraphQLSchema) {
     ;(this as any).schema = schema
   }

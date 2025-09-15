@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.341Z",
+  "template": {
+    "id": "848",
+    "identifier": "analyze-table-relationships-with-params",
+    "name": "AnalyzeTableRelationshipsWithParams",
+    "description": "파라미터를 사용하여 테이블 간 관계를 분석합니다",
+    "query": "query AnalyzeTableRelationshipsWithParams($tableId: ID!, $depth: Int, $includeStats: Boolean) {\n  analyzeTableRelationships(tableId: $tableId, maxDepth: $depth, includeStatistics: $includeStats) {\n    sourceTable {\n      id\n      identifier\n      nodeCount\n    }\n    relationships {\n      targetTable {\n        id\n        identifier\n        nodeCount\n      }\n      relationshipType\n      strength\n      connectionCount\n      bidirectional\n    }\n    statistics {\n      totalRelationships\n      strongRelationships\n      weakRelationships\n      averageStrength\n      networkDensity\n    }\n    analysis {\n      centralityScore\n      clusteringCoefficient\n      recommendations\n    }\n  }\n}",
+    "queryName": [
+      "analyzeTableRelationships"
+    ],
+    "operationType": "query",
+    "variables": {
+      "tableId": "example-table-id",
+      "depth": 2,
+      "includeStats": true
+    },
+    "variablesSchema": {
+      "tableId": {
+        "type": "string",
+        "required": true,
+        "description": "분석할 테이블 ID"
+      },
+      "depth": {
+        "type": "number",
+        "description": "분석 깊이 (1-5)"
+      },
+      "includeStats": {
+        "type": "boolean",
+        "description": "통계 정보 포함 여부"
+      }
+    },
+    "defaultVariables": {
+      "tableId": "example-table-id",
+      "depth": 2,
+      "includeStats": true
+    },
+    "applicableTables": null,
+    "complexityScore": 7,
+    "version": "1.0.0",
+    "tags": [
+      "table",
+      "analysis",
+      "relationships",
+      "statistics",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

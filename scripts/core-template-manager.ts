@@ -39,7 +39,7 @@ class CoreTemplateManager {
     version: '1.0.0',
     lastUpdated: new Date().toISOString(),
     coreTemplates: [],
-    categories: {}
+    categories: {},
   }
 
   // Core template identifiers based on analysis results
@@ -66,7 +66,7 @@ class CoreTemplateManager {
     // Tier 3: CRUD Operations (Score >= 5.0)
     'create-table',
     'test-create-node',
-    'delete-template-by-id'
+    'delete-template-by-id',
   ]
 
   async initialize(): Promise<void> {
@@ -129,8 +129,8 @@ class CoreTemplateManager {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
-          variables: { identifiers: CoreTemplateManager.TOP_CORE_TEMPLATES }
-        })
+          variables: { identifiers: CoreTemplateManager.TOP_CORE_TEMPLATES },
+        }),
       })
 
       const result = await response.json()
@@ -169,7 +169,7 @@ class CoreTemplateManager {
     const response = await fetch(this.serverUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({ query }),
     })
 
     const result = await response.json()
@@ -184,15 +184,15 @@ class CoreTemplateManager {
   }
 
   private processTemplateData(templates: any[]): void {
-    this.coreTemplates = templates.map(template => ({
+    this.coreTemplates = templates.map((template) => ({
       identifier: template.identifier,
       name: template.name,
       description: template.description || 'No description available',
       category: this.categorizeTemplate(template),
       reuseScore: this.calculateReuseScore(template),
       priority: this.determinePriority(template),
-      status: template.isActive ? 'active' : 'deprecated' as const,
-      tags: template.tags || []
+      status: template.isActive ? 'active' : ('deprecated' as const),
+      tags: template.tags || [],
     }))
 
     console.log(`📋 Processed ${this.coreTemplates.length} core templates`)
@@ -202,7 +202,12 @@ class CoreTemplateManager {
     const identifier = template.identifier.toLowerCase()
 
     if (identifier.includes('search') || identifier.includes('list')) return 'Query Operations'
-    if (identifier.includes('create') || identifier.includes('delete') || identifier.includes('update')) return 'CRUD Operations'
+    if (
+      identifier.includes('create') ||
+      identifier.includes('delete') ||
+      identifier.includes('update')
+    )
+      return 'CRUD Operations'
     if (identifier.includes('template')) return 'Template Management'
     if (identifier.includes('table')) return 'Table Operations'
     if (identifier.includes('node')) return 'Node Operations'
@@ -243,17 +248,20 @@ class CoreTemplateManager {
 
     // High priority: Essential operations
     const highPriorityPatterns = [
-      'search-templates-advanced', 'get-table-schema', 'list-tables-with-pagination',
-      'execute-template-with-variables', 'create-template-basic'
+      'search-templates-advanced',
+      'get-table-schema',
+      'list-tables-with-pagination',
+      'execute-template-with-variables',
+      'create-template-basic',
     ]
 
-    if (highPriorityPatterns.some(pattern => identifier.includes(pattern))) {
+    if (highPriorityPatterns.some((pattern) => identifier.includes(pattern))) {
       return 'high'
     }
 
     // Medium priority: Common operations
     const mediumPriorityPatterns = ['get-table', 'get-node', 'list-', 'create-']
-    if (mediumPriorityPatterns.some(pattern => identifier.includes(pattern))) {
+    if (mediumPriorityPatterns.some((pattern) => identifier.includes(pattern))) {
       return 'medium'
     }
 
@@ -277,9 +285,7 @@ class CoreTemplateManager {
       this.config.categories[categoryName] = {
         description: this.getCategoryDescription(categoryName),
         priority: this.getCategoryPriority(categoryName),
-        templates: templates
-          .sort((a, b) => b.reuseScore - a.reuseScore)
-          .map(t => t.identifier)
+        templates: templates.sort((a, b) => b.reuseScore - a.reuseScore).map((t) => t.identifier),
       }
     }
 
@@ -296,7 +302,7 @@ class CoreTemplateManager {
       'Node Operations': 'Templates for node management and relationships',
       'Attribute Operations': 'Templates for attribute and attribute type management',
       'System Operations': 'Templates for system health and monitoring',
-      'General': 'General-purpose templates'
+      General: 'General-purpose templates',
     }
     return descriptions[category] || 'Templates for various operations'
   }
@@ -310,7 +316,7 @@ class CoreTemplateManager {
       'CRUD Operations': 6,
       'Attribute Operations': 5,
       'System Operations': 4,
-      'General': 3
+      General: 3,
     }
     return priorities[category] || 1
   }
@@ -331,13 +337,16 @@ class CoreTemplateManager {
 
     console.log(`\n📊 Summary:`)
     console.log(`   Total Core Templates: ${this.coreTemplates.length}`)
-    console.log(`   Active Templates: ${this.coreTemplates.filter(t => t.status === 'active').length}`)
+    console.log(
+      `   Active Templates: ${this.coreTemplates.filter((t) => t.status === 'active').length}`
+    )
     console.log(`   Categories: ${Object.keys(this.config.categories).length}`)
 
     // Category breakdown
     console.log(`\n📁 Categories by Priority:`)
-    const sortedCategories = Object.entries(this.config.categories)
-      .sort(([,a], [,b]) => b.priority - a.priority)
+    const sortedCategories = Object.entries(this.config.categories).sort(
+      ([, a], [, b]) => b.priority - a.priority
+    )
 
     for (const [category, info] of sortedCategories) {
       console.log(`   ${info.priority}. ${category}: ${info.templates.length} templates`)
@@ -347,21 +356,24 @@ class CoreTemplateManager {
     // Top templates by priority
     console.log(`\n⭐ HIGH PRIORITY CORE TEMPLATES:`)
     const highPriorityTemplates = this.coreTemplates
-      .filter(t => t.priority === 'high')
+      .filter((t) => t.priority === 'high')
       .sort((a, b) => b.reuseScore - a.reuseScore)
 
     highPriorityTemplates.forEach((template, index) => {
       console.log(`   ${index + 1}. ${template.identifier}`)
-      console.log(`      └─ ${template.name} (Score: ${template.reuseScore}, Category: ${template.category})`)
+      console.log(
+        `      └─ ${template.name} (Score: ${template.reuseScore}, Category: ${template.category})`
+      )
     })
 
     // Templates by category
     console.log(`\n📋 TEMPLATES BY CATEGORY:`)
     for (const [category, info] of sortedCategories) {
       console.log(`\n   ${category}:`)
-      const categoryTemplates = this.coreTemplates.filter(t => t.category === category)
+      const categoryTemplates = this.coreTemplates.filter((t) => t.category === category)
       categoryTemplates.forEach((template, index) => {
-        const statusIcon = template.status === 'active' ? '✅' : template.status === 'deprecated' ? '⚠️' : '🔧'
+        const statusIcon =
+          template.status === 'active' ? '✅' : template.status === 'deprecated' ? '⚠️' : '🔧'
         console.log(`     ${statusIcon} ${template.identifier} (${template.reuseScore})`)
       })
     }
@@ -392,8 +404,8 @@ class CoreTemplateManager {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query,
-          variables: { identifier }
-        })
+          variables: { identifier },
+        }),
       })
 
       const result = await response.json()
@@ -418,11 +430,11 @@ class CoreTemplateManager {
   }
 
   getCoreTemplatesByCategory(category: string): CoreTemplate[] {
-    return this.coreTemplates.filter(t => t.category === category)
+    return this.coreTemplates.filter((t) => t.category === category)
   }
 
   getCoreTemplatesByPriority(priority: 'high' | 'medium' | 'low'): CoreTemplate[] {
-    return this.coreTemplates.filter(t => t.priority === priority)
+    return this.coreTemplates.filter((t) => t.priority === priority)
   }
 
   getAllCoreTemplates(): CoreTemplate[] {
@@ -447,7 +459,7 @@ async function main() {
       await manager.generateReport()
       break
 
-    case 'register':
+    case 'register': {
       const identifier = args[1]
       if (!identifier) {
         console.error('❌ Usage: bun core-template-manager.ts register <template-identifier>')
@@ -456,13 +468,14 @@ async function main() {
       await manager.initialize()
       await manager.registerCoreTemplate(identifier)
       break
+    }
 
     case 'report':
       await manager.initialize()
       await manager.generateReport()
       break
 
-    case 'list':
+    case 'list': {
       const category = args[1]
       await manager.initialize()
 
@@ -480,6 +493,7 @@ async function main() {
         })
       }
       break
+    }
 
     default:
       console.log(`

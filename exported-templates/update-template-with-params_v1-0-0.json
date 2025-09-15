@@ -1,0 +1,81 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.341Z",
+  "template": {
+    "id": "845",
+    "identifier": "update-template-with-params",
+    "name": "UpdateTemplateWithParams",
+    "description": "파라미터를 사용하여 템플릿을 업데이트합니다",
+    "query": "mutation UpdateTemplateWithParams($id: ID!, $input: UpdateQueryTemplateInput!) {\n  updateTemplate(id: $id, input: $input) {\n    success\n    template {\n      id\n      identifier\n      name\n      description\n      tags\n      updatedAt\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
+    "queryName": [
+      "updateTemplate"
+    ],
+    "operationType": "mutation",
+    "variables": {
+      "id": "example-template-id",
+      "input": {
+        "name": "업데이트된 템플릿 이름",
+        "description": "업데이트된 설명",
+        "tags": [
+          "updated",
+          "modified"
+        ]
+      }
+    },
+    "variablesSchema": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "description": "업데이트할 템플릿 ID"
+      },
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "새로운 이름"
+          },
+          "description": {
+            "type": "string",
+            "description": "새로운 설명"
+          },
+          "tags": {
+            "type": "array",
+            "description": "새로운 태그 목록"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "id": "example-template-id",
+      "input": {
+        "name": "업데이트된 템플릿 이름",
+        "description": "업데이트된 설명",
+        "tags": [
+          "updated",
+          "modified"
+        ]
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "template",
+      "mutation",
+      "update",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

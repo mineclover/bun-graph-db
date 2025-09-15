@@ -44,6 +44,8 @@ export interface IQueryTemplateRepository {
   }>
   searchByQueryName(queryName: string): Promise<QueryTemplate[]>
   searchByOperationType(operationType: string): Promise<QueryTemplate[]>
+  findByApplicableTable(tableName: string, includeUniversal?: boolean): Promise<QueryTemplate[]>
+  findTemplatesWithTableDependencies(): Promise<QueryTemplate[]>
   create(template: QueryTemplate): Promise<QueryTemplate>
   update(id: string, updates: QueryTemplateUpdateData): Promise<QueryTemplate>
   delete(id: string): Promise<boolean>

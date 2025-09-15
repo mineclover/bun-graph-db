@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:49.927Z",
+  "template": {
+    "id": "828",
+    "identifier": "list-tables-with-filter",
+    "name": "ListTablesWithFilter",
+    "description": "필터와 페이지네이션을 사용하여 테이블 목록을 조회합니다",
+    "query": "query ListTablesWithFilter($filter: TablesFilter, $pagination: TablesPagination, $sort: [TableSortInput!]) {\n  tables(filter: $filter, pagination: $pagination, sort: $sort) {\n    id\n    identifier\n    description\n    nodeCount\n    attributeCount\n    isActive\n    createdAt\n    updatedAt\n  }\n}",
+    "queryName": [
+      "tables"
+    ],
+    "operationType": "query",
+    "variables": {
+      "filter": {
+        "isActive": true
+      },
+      "pagination": {
+        "limit": 10,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "createdAt",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "variablesSchema": {
+      "filter": {
+        "type": "object",
+        "properties": {
+          "isActive": {
+            "type": "boolean",
+            "description": "활성 상태 필터"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "식별자 필터"
+          }
+        }
+      },
+      "pagination": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "조회할 개수"
+          },
+          "offset": {
+            "type": "number",
+            "description": "시작 위치"
+          }
+        }
+      },
+      "sort": {
+        "type": "array",
+        "description": "정렬 옵션"
+      }
+    },
+    "defaultVariables": {
+      "filter": {
+        "isActive": true
+      },
+      "pagination": {
+        "limit": 10,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "createdAt",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "table",
+      "query",
+      "list",
+      "filter",
+      "pagination",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

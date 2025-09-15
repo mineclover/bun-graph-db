@@ -1,0 +1,53 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.341Z",
+  "template": {
+    "id": "846",
+    "identifier": "get-detailed-system-metrics",
+    "name": "GetDetailedSystemMetrics",
+    "description": "파라미터를 사용하여 상세한 시스템 메트릭을 조회합니다",
+    "query": "query GetDetailedSystemMetrics($timeRange: String, $includeHistory: Boolean) {\n  systemMetrics(timeRange: $timeRange, includeHistory: $includeHistory) {\n    timestamp\n    cpu {\n      usage\n      loadAverage\n      cores\n    }\n    memory {\n      used\n      total\n      percentage\n      available\n    }\n    database {\n      connections {\n        active\n        idle\n        total\n      }\n      performance {\n        queriesPerSecond\n        avgQueryTime\n        slowQueries\n      }\n    }\n    history {\n      timestamp\n      cpuUsage\n      memoryUsage\n    }\n  }\n}",
+    "queryName": [
+      "systemMetrics"
+    ],
+    "operationType": "query",
+    "variables": {
+      "timeRange": "1h",
+      "includeHistory": true
+    },
+    "variablesSchema": {
+      "timeRange": {
+        "type": "string",
+        "description": "시간 범위 (1h, 24h, 7d)"
+      },
+      "includeHistory": {
+        "type": "boolean",
+        "description": "이력 데이터 포함 여부"
+      }
+    },
+    "defaultVariables": {
+      "timeRange": "1h",
+      "includeHistory": true
+    },
+    "applicableTables": null,
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "system",
+      "monitoring",
+      "metrics",
+      "query",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

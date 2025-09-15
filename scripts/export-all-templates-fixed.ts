@@ -1,10 +1,11 @@
 #!/usr/bin/env bun
 
 /**
- * All Templates Export Script (Fixed Version)
+ * Fixed Templates Export Script
  *
- * 시스템에 등록된 모든 템플릿을 개별 JSON 파일로 자동 export하는 스크립트
- * - 데이터베이스에서 완전한 템플릿 정보를 가져와 export
+ * 'fixed' 카테고리/태그가 있는 템플릿만 개별 JSON 파일로 export하는 스크립트
+ * - fixed 태그가 있는 템플릿만 선별적으로 export
+ * - 검증된 템플릿들만 export하여 품질 보장
  * - import 가능한 형태로 JSON 파일 생성
  */
 
@@ -49,47 +50,63 @@ const SERVER_URL = process.env.GRAPHQL_URL || 'http://localhost:4000/graphql'
 const OUTPUT_DIR = join(process.cwd(), 'exported-templates')
 
 async function main() {
-  console.log('🚀 모든 템플릿 자동 Export 시작 (Fixed Version)')
+  console.log('🚀 Fixed 카테고리 템플릿 Export 시작')
   console.log(`📡 서버: ${SERVER_URL}`)
   console.log(`📂 출력 디렉토리: ${OUTPUT_DIR}`)
 
   try {
-    // 1. 출력 디렉토리 생성
-    await ensureOutputDirectory()
+    // 1. 출력 디렉토리 정리 및 생성
+    await cleanAndEnsureOutputDirectory()
 
     // 2. 모든 템플릿 목록 가져오기
     console.log('\n📋 모든 템플릿 목록 조회 중...')
-    const templates = await getAllTemplatesDetailed()
-    console.log(`✅ 총 ${templates.length}개 템플릿 발견`)
+    const allTemplates = await getAllTemplatesDetailed()
+    console.log(`✅ 총 ${allTemplates.length}개 템플릿 발견`)
 
-    // 3. 사용량별 정렬
-    templates.sort((a, b) => b.usageCount - a.usageCount)
+    // 3. fixed 태그가 있는 템플릿만 필터링
+    const fixedTemplates = allTemplates.filter(
+      (template) => template.tags && template.tags.includes('fixed')
+    )
+    console.log(`🎯 Fixed 카테고리 템플릿: ${fixedTemplates.length}개`)
 
-    // 4. 모든 템플릿 Export
-    console.log('\n📤 모든 템플릿 Export 시작...')
-    const results = await exportAllTemplatesFixed(templates)
+    if (fixedTemplates.length === 0) {
+      console.log('⚠️ Fixed 태그가 있는 템플릿이 없습니다.')
+      return
+    }
 
-    // 5. 결과 요약
-    displayResults(results, templates)
+    // 4. 사용량별 정렬
+    fixedTemplates.sort((a, b) => b.usageCount - a.usageCount)
 
-    // 6. 인덱스 파일 생성
+    // 5. Fixed 템플릿 Export
+    console.log('\n📤 Fixed 템플릿 Export 시작...')
+    const results = await exportAllTemplatesFixed(fixedTemplates)
+
+    // 6. 결과 요약
+    displayResults(results, fixedTemplates)
+
+    // 7. 인덱스 파일 생성
     await generateIndexFile(results)
 
-    console.log('\n🎉 모든 템플릿 Export 완료!')
+    console.log('\n🎉 Fixed 템플릿 Export 완료!')
   } catch (error) {
     console.error('💥 Export 실행 중 오류:', error)
     process.exit(1)
   }
 }
 
-async function ensureOutputDirectory() {
+async function cleanAndEnsureOutputDirectory() {
   try {
+    // 디렉토리가 존재하면 삭제
     await fs.access(OUTPUT_DIR)
-    console.log(`📁 출력 디렉토리 확인: ${OUTPUT_DIR}`)
+    await fs.rm(OUTPUT_DIR, { recursive: true, force: true })
+    console.log(`🗑️ 기존 출력 디렉토리 삭제: ${OUTPUT_DIR}`)
   } catch {
-    await fs.mkdir(OUTPUT_DIR, { recursive: true })
-    console.log(`📁 출력 디렉토리 생성: ${OUTPUT_DIR}`)
+    // 디렉토리가 없으면 무시
   }
+
+  // 새로 디렉토리 생성
+  await fs.mkdir(OUTPUT_DIR, { recursive: true })
+  console.log(`📁 출력 디렉토리 생성: ${OUTPUT_DIR}`)
 }
 
 async function getAllTemplatesDetailed(): Promise<FullTemplate[]> {
@@ -149,10 +166,8 @@ async function exportAllTemplatesFixed(templates: FullTemplate[]): Promise<Expor
       `\n📦 배치 ${Math.floor(i / batchSize) + 1}/${Math.ceil(templates.length / batchSize)} 처리 중... (${i + 1}-${Math.min(i + batchSize, templates.length)}/${templates.length})`
     )
 
-    // 배치 단위로 병렬 처리
-    const batchPromises = batch.map((template, batchIndex) =>
-      exportSingleTemplateFixed(template, i + batchIndex + 1)
-    )
+    // 배치 단위로 병렬 처리 (순위 번호 제거)
+    const batchPromises = batch.map((template) => exportSingleTemplateFixed(template))
     const batchResults = await Promise.allSettled(batchPromises)
 
     // 결과 처리
@@ -183,10 +198,7 @@ async function exportAllTemplatesFixed(templates: FullTemplate[]): Promise<Expor
   return results
 }
 
-async function exportSingleTemplateFixed(
-  template: FullTemplate,
-  rank: number
-): Promise<ExportResult> {
+async function exportSingleTemplateFixed(template: FullTemplate): Promise<ExportResult> {
   try {
     // 1. Export 형태의 JSON 데이터 생성
     const exportData: ExportTemplate = {
@@ -205,12 +217,11 @@ async function exportSingleTemplateFixed(
       },
     }
 
-    // 2. 파일명 생성 (사용량 순위 기반)
-    const rankStr = String(rank).padStart(2, '0')
+    // 2. 파일명 생성 (번호 없이)
     const cleanIdentifier = template.identifier.replace(/[^a-zA-Z0-9-]/g, '-')
     const version = template.version || '1.0.0'
     const versionSuffix = version.replace(/\./g, '-')
-    const targetFile = `${rankStr}-${cleanIdentifier}_v${versionSuffix}.json`
+    const targetFile = `${cleanIdentifier}_v${versionSuffix}.json`
     const targetPath = join(OUTPUT_DIR, targetFile)
 
     // 3. 파일 저장
@@ -285,22 +296,21 @@ async function generateIndexFile(results: ExportResult[]) {
   console.log('\n📋 인덱스 파일 생성 중...')
 
   const successful = results.filter((r) => r.success)
-  const indexContent = `# 전체 템플릿 Export 결과 (Fixed Version)
+  const indexContent = `# Fixed 카테고리 템플릿 Export 결과
 
 **생성일**: ${new Date().toISOString()}
-**총 템플릿 수**: ${successful.length}개
+**Fixed 템플릿 수**: ${successful.length}개
 **Export 성공**: ${successful.length}개
 
-## 템플릿 목록 (사용량 순)
+## Fixed 템플릿 목록 (사용량 순)
 
-| 순위 | 파일명 | 템플릿명 | 사용횟수 | 카테고리 | 운영타입 |
-|------|--------|----------|----------|----------|----------|
+| 파일명 | 템플릿명 | 사용횟수 | 카테고리 | 운영타입 |
+|--------|----------|----------|----------|----------|
 ${successful
-  .map((result, index) => {
+  .map((result) => {
     const template = result.template!
-    const rank = index + 1
     const category = getCategory(template)
-    return `| ${rank} | \`${result.filename}\` | ${template.name} | ${template.usageCount}회 | ${category} | ${template.operationType} |`
+    return `| \`${result.filename}\` | ${template.name} | ${template.usageCount}회 | ${category} | ${template.operationType} |`
   })
   .join('\n')}
 
@@ -324,20 +334,27 @@ ${(() => {
 
 ## 사용 방법
 
-각 JSON 파일은 완전한 템플릿 정보를 포함하고 있습니다:
+각 JSON 파일은 완전한 Fixed 템플릿 정보를 포함하고 있습니다:
 - ✅ 완전한 GraphQL 쿼리/뮤테이션
 - ✅ 변수 스키마 및 기본값
-- ✅ 메타데이터 및 태그
+- ✅ 메타데이터 및 태그 (fixed 태그 포함)
 - ✅ 사용량 통계
 - ✅ Import 호환 형태
 
 \`\`\`bash
-# 개별 템플릿 import
-bun run scripts/template-import.ts exported-templates/01-template-name.json
+# 개별 Fixed 템플릿 import
+bun run scripts/template-import.ts exported-templates/template-name.json
 
-# 전체 템플릿 import
+# 전체 Fixed 템플릿 import
 bun run scripts/import-all-exported.ts
 \`\`\`
+
+## Fixed 카테고리란?
+
+Fixed 카테고리는 검증되고 안정적인 템플릿들을 의미합니다:
+- 🔍 충분히 테스트된 템플릿
+- ✅ 품질이 보장된 템플릿
+- 🚀 프로덕션 환경에서 사용 가능한 템플릿
 
 ---
 *자동 생성됨 by export-all-templates-fixed.ts*

@@ -1,0 +1,64 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.134Z",
+  "template": {
+    "id": "836",
+    "identifier": "create-table-with-params",
+    "name": "CreateTableWithParams",
+    "description": "파라미터를 사용하여 새 테이블을 생성합니다",
+    "query": "mutation CreateTableWithParams($input: CreateTableInput!) {\n  createTable(input: $input) {\n    success\n    table {\n      id\n      identifier\n      description\n      createdAt\n      isActive\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
+    "queryName": [
+      "createTable"
+    ],
+    "operationType": "mutation",
+    "variables": {
+      "input": {
+        "identifier": "new-table",
+        "description": "새로운 테이블입니다"
+      }
+    },
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "required": true,
+            "description": "테이블 식별자"
+          },
+          "description": {
+            "type": "string",
+            "required": true,
+            "description": "테이블 설명"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "identifier": "new-table",
+        "description": "새로운 테이블입니다"
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "table",
+      "mutation",
+      "create",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.237Z",
+  "template": {
+    "id": "841",
+    "identifier": "create-attribute-with-params",
+    "name": "CreateAttributeWithParams",
+    "description": "파라미터를 사용하여 새 속성을 생성합니다",
+    "query": "mutation CreateAttributeWithParams($input: CreateAttributeInput!) {\n  createAttribute(input: $input) {\n    success\n    attribute {\n      id\n      name\n      type\n      description\n      tableId\n      isRequired\n      defaultValue\n      createdAt\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
+    "queryName": [
+      "createAttribute"
+    ],
+    "operationType": "mutation",
+    "variables": {
+      "input": {
+        "name": "새_속성",
+        "type": "STRING",
+        "description": "새로운 속성입니다",
+        "tableId": "example-table-id",
+        "isRequired": false
+      }
+    },
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "name": {
+            "type": "string",
+            "required": true,
+            "description": "속성 이름"
+          },
+          "type": {
+            "type": "string",
+            "required": true,
+            "description": "속성 타입 (STRING, NUMBER, BOOLEAN, DATE)"
+          },
+          "description": {
+            "type": "string",
+            "description": "속성 설명"
+          },
+          "tableId": {
+            "type": "string",
+            "required": true,
+            "description": "소속 테이블 ID"
+          },
+          "isRequired": {
+            "type": "boolean",
+            "description": "필수 여부"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "name": "새_속성",
+        "type": "STRING",
+        "description": "새로운 속성입니다",
+        "tableId": "example-table-id",
+        "isRequired": false
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "attribute",
+      "mutation",
+      "create",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

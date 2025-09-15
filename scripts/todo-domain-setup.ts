@@ -74,22 +74,22 @@ class TodoDomainSetup {
         name: 'TodoStatus',
         description: '할일 상태',
         dataType: 'string',
-        constraints: ['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED']
+        constraints: ['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'],
       },
       {
         identifier: 'todo_priority',
         name: 'TodoPriority',
         description: '할일 우선순위',
         dataType: 'string',
-        constraints: ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
+        constraints: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'],
       },
       {
         identifier: 'todo_category',
         name: 'TodoCategory',
         description: '할일 카테고리',
         dataType: 'string',
-        constraints: ['WORK', 'PERSONAL', 'SHOPPING', 'HEALTH', 'LEARNING', 'OTHER']
-      }
+        constraints: ['WORK', 'PERSONAL', 'SHOPPING', 'HEALTH', 'LEARNING', 'OTHER'],
+      },
     ]
 
     for (const type of attributeTypes) {
@@ -116,8 +116,8 @@ class TodoDomainSetup {
           name: type.name,
           description: type.description,
           dataType: type.dataType,
-          constraints: type.constraints
-        }
+          constraints: type.constraints,
+        },
       }
 
       const result = await this.executeGraphQL(mutation, variables)
@@ -153,50 +153,50 @@ class TodoDomainSetup {
         identifier: 'todo_title',
         name: 'title',
         description: '할일 제목',
-        attributeTypeId: basicAttributeTypes.string || basicAttributeTypes.text
+        attributeTypeId: basicAttributeTypes.string || basicAttributeTypes.text,
       },
       {
         identifier: 'todo_description',
         name: 'description',
         description: '할일 상세 설명',
-        attributeTypeId: basicAttributeTypes.text || basicAttributeTypes.string
+        attributeTypeId: basicAttributeTypes.text || basicAttributeTypes.string,
       },
       {
         identifier: 'todo_status',
         name: 'status',
         description: '할일 상태',
-        attributeTypeId: attributeTypeIds.TodoStatus || attributeTypeIds.todo_status
+        attributeTypeId: attributeTypeIds.TodoStatus || attributeTypeIds.todo_status,
       },
       {
         identifier: 'todo_priority',
         name: 'priority',
         description: '할일 우선순위',
-        attributeTypeId: attributeTypeIds.TodoPriority || attributeTypeIds.todo_priority
+        attributeTypeId: attributeTypeIds.TodoPriority || attributeTypeIds.todo_priority,
       },
       {
         identifier: 'todo_category',
         name: 'category',
         description: '할일 카테고리',
-        attributeTypeId: attributeTypeIds.TodoCategory || attributeTypeIds.todo_category
+        attributeTypeId: attributeTypeIds.TodoCategory || attributeTypeIds.todo_category,
       },
       {
         identifier: 'todo_due_date',
         name: 'due_date',
         description: '마감일',
-        attributeTypeId: basicAttributeTypes.date || basicAttributeTypes.datetime
+        attributeTypeId: basicAttributeTypes.date || basicAttributeTypes.datetime,
       },
       {
         identifier: 'todo_created_at',
         name: 'created_at',
         description: '생성일',
-        attributeTypeId: basicAttributeTypes.datetime || basicAttributeTypes.date
+        attributeTypeId: basicAttributeTypes.datetime || basicAttributeTypes.date,
       },
       {
         identifier: 'todo_completed_at',
         name: 'completed_at',
         description: '완료일',
-        attributeTypeId: basicAttributeTypes.datetime || basicAttributeTypes.date
-      }
+        attributeTypeId: basicAttributeTypes.datetime || basicAttributeTypes.date,
+      },
     ]
 
     for (const attr of attributes) {
@@ -228,8 +228,8 @@ class TodoDomainSetup {
           name: attr.name,
           description: attr.description,
           tableId: todoTableId,
-          attributeTypeId: attr.attributeTypeId
-        }
+          attributeTypeId: attr.attributeTypeId,
+        },
       }
 
       const result = await this.executeGraphQL(mutation, variables)
@@ -308,7 +308,11 @@ class TodoDomainSetup {
 
     const basicTypes: Record<string, string> = {}
     attributeTypes.forEach((type: any) => {
-      if (['string', 'boolean', 'integer', 'number', 'date', 'datetime', 'text'].includes(type.dataType)) {
+      if (
+        ['string', 'boolean', 'integer', 'number', 'date', 'datetime', 'text'].includes(
+          type.dataType
+        )
+      ) {
         basicTypes[type.dataType] = type.id
         basicTypes[type.identifier] = type.id
         if (type.name) {
@@ -325,7 +329,7 @@ class TodoDomainSetup {
       const response = await fetch(this.serverUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, variables })
+        body: JSON.stringify({ query, variables }),
       })
 
       return await response.json()

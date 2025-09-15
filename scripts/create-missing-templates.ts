@@ -58,10 +58,10 @@ class MissingTemplateCreator {
           data: [],
           options: {
             skipErrors: true,
-            batchSize: 100
-          }
-        }
-      }
+            batchSize: 100,
+          },
+        },
+      },
     },
 
     {
@@ -118,9 +118,9 @@ class MissingTemplateCreator {
       priority: 'high',
       category: 'System Operations',
       variables: {
-        metrics: ['CPU', 'MEMORY', 'DATABASE', 'PERFORMANCE']
-      }
-    }
+        metrics: ['CPU', 'MEMORY', 'DATABASE', 'PERFORMANCE'],
+      },
+    },
   ]
 
   // 중간 우선순위 템플릿들
@@ -128,7 +128,8 @@ class MissingTemplateCreator {
     {
       identifier: 'data-validation',
       name: 'Data Integrity Validation',
-      description: '스키마 규칙 위반, 고아 노드, 중복 데이터 등을 검사하는 데이터 무결성 검증 템플릿',
+      description:
+        '스키마 규칙 위반, 고아 노드, 중복 데이터 등을 검사하는 데이터 무결성 검증 템플릿',
       query: `query ValidateDataIntegrity($options: ValidationOptions) {
   validateDataIntegrity(options: $options) {
     isValid
@@ -198,9 +199,9 @@ class MissingTemplateCreator {
           includeDuplicates: true,
           includeSchemaViolations: true,
           includeBrokenRelations: true,
-          sampleSize: 10
-        }
-      }
+          sampleSize: 10,
+        },
+      },
     },
 
     {
@@ -276,9 +277,9 @@ class MissingTemplateCreator {
         parameters: {
           algorithm: 'BETWEENNESS',
           nodeFilter: {},
-          relationFilter: {}
-        }
-      }
+          relationFilter: {},
+        },
+      },
     },
 
     {
@@ -329,11 +330,11 @@ class MissingTemplateCreator {
           compression: true,
           filter: {
             tables: [],
-            dateRange: {}
+            dateRange: {},
           },
-          streaming: true
-        }
-      }
+          streaming: true,
+        },
+      },
     },
 
     {
@@ -406,9 +407,9 @@ class MissingTemplateCreator {
           analyzeSlowQueries: true,
           suggestIndexes: true,
           includeExecutionPlans: true,
-          timePeriod: '7days'
-        }
-      }
+          timePeriod: '7days',
+        },
+      },
     },
 
     {
@@ -474,24 +475,24 @@ class MissingTemplateCreator {
           username: '',
           email: '',
           roles: ['viewer'],
-          permissions: {}
-        }
-      }
-    }
+          permissions: {},
+        },
+      },
+    },
   ]
 
   async createHighPriorityTemplates(): Promise<void> {
     console.log('🚀 Creating high-priority missing templates...\n')
 
     const results = await this.registrationManager.batchRegister(
-      this.HIGH_PRIORITY_TEMPLATES.map(template => ({
+      this.HIGH_PRIORITY_TEMPLATES.map((template) => ({
         identifier: template.identifier,
         name: template.name,
         description: template.description,
         query: template.query,
         tags: template.tags,
         variables: template.variables,
-        priority: template.priority
+        priority: template.priority,
       }))
     )
 
@@ -502,14 +503,14 @@ class MissingTemplateCreator {
     console.log('📋 Creating medium-priority missing templates...\n')
 
     const results = await this.registrationManager.batchRegister(
-      this.MEDIUM_PRIORITY_TEMPLATES.map(template => ({
+      this.MEDIUM_PRIORITY_TEMPLATES.map((template) => ({
         identifier: template.identifier,
         name: template.name,
         description: template.description,
         query: template.query,
         tags: template.tags,
         variables: template.variables,
-        priority: template.priority
+        priority: template.priority,
       }))
     )
 
@@ -532,8 +533,8 @@ class MissingTemplateCreator {
   }
 
   private reportResults(category: string, results: any[]): void {
-    const successful = results.filter(r => r.success).length
-    const failed = results.filter(r => !r.success).length
+    const successful = results.filter((r) => r.success).length
+    const failed = results.filter((r) => !r.success).length
 
     console.log(`📊 ${category} Templates Creation Results:`)
     console.log(`   ✅ Successful: ${successful}`)
@@ -541,18 +542,20 @@ class MissingTemplateCreator {
 
     if (failed > 0) {
       console.log('\n❌ Failed templates:')
-      results.filter(r => !r.success).forEach(result => {
-        console.log(`   - ${result.message}`)
-        result.errors.forEach((error: string) => {
-          console.log(`     └─ ${error}`)
+      results
+        .filter((r) => !r.success)
+        .forEach((result) => {
+          console.log(`   - ${result.message}`)
+          result.errors.forEach((error: string) => {
+            console.log(`     └─ ${error}`)
+          })
         })
-      })
     }
   }
 
   // 개별 템플릿 생성 메서드들
   async createBulkImportTemplate(): Promise<void> {
-    const template = this.HIGH_PRIORITY_TEMPLATES.find(t => t.identifier === 'bulk-data-import')!
+    const template = this.HIGH_PRIORITY_TEMPLATES.find((t) => t.identifier === 'bulk-data-import')!
     const result = await this.registrationManager.registerTemplate({
       identifier: template.identifier,
       name: template.name,
@@ -560,14 +563,16 @@ class MissingTemplateCreator {
       query: template.query,
       tags: template.tags,
       variables: template.variables,
-      priority: template.priority
+      priority: template.priority,
     })
 
     console.log(result.success ? '✅ Bulk import template created' : `❌ Failed: ${result.message}`)
   }
 
   async createMonitoringTemplate(): Promise<void> {
-    const template = this.HIGH_PRIORITY_TEMPLATES.find(t => t.identifier === 'real-time-monitoring')!
+    const template = this.HIGH_PRIORITY_TEMPLATES.find(
+      (t) => t.identifier === 'real-time-monitoring'
+    )!
     const result = await this.registrationManager.registerTemplate({
       identifier: template.identifier,
       name: template.name,
@@ -575,7 +580,7 @@ class MissingTemplateCreator {
       query: template.query,
       tags: template.tags,
       variables: template.variables,
-      priority: template.priority
+      priority: template.priority,
     })
 
     console.log(result.success ? '✅ Monitoring template created' : `❌ Failed: ${result.message}`)
@@ -583,8 +588,9 @@ class MissingTemplateCreator {
 
   // 템플릿 정보 조회
   getTemplateInfo(identifier: string): MissingTemplate | undefined {
-    return [...this.HIGH_PRIORITY_TEMPLATES, ...this.MEDIUM_PRIORITY_TEMPLATES]
-      .find(t => t.identifier === identifier)
+    return [...this.HIGH_PRIORITY_TEMPLATES, ...this.MEDIUM_PRIORITY_TEMPLATES].find(
+      (t) => t.identifier === identifier
+    )
   }
 
   getAllTemplates(): MissingTemplate[] {
@@ -619,12 +625,12 @@ async function main() {
       await creator.createMonitoringTemplate()
       break
 
-    case 'list':
+    case 'list': {
       console.log('📋 Available missing templates:')
       const templates = creator.getAllTemplates()
       templates.forEach((template, index) => {
-        const priorityIcon = template.priority === 'high' ? '⭐' :
-                           template.priority === 'medium' ? '👍' : '📝'
+        const priorityIcon =
+          template.priority === 'high' ? '⭐' : template.priority === 'medium' ? '👍' : '📝'
         console.log(`   ${priorityIcon} ${index + 1}. ${template.identifier}`)
         console.log(`      Name: ${template.name}`)
         console.log(`      Priority: ${template.priority}`)
@@ -632,6 +638,7 @@ async function main() {
         console.log(`      Tags: ${template.tags.join(', ')}`)
       })
       break
+    }
 
     case 'help':
     default:

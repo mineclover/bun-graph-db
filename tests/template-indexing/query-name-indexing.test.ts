@@ -173,7 +173,9 @@ describe('Query Name Indexing and Performance', () => {
       const searchTime = endTime - startTime
 
       expect(results.items.length).toBeGreaterThanOrEqual(1)
-      expect(results.items.every((t) => t.operationType === 'query' || t.templateType === 'query')).toBe(true)
+      expect(
+        results.items.every((t) => t.operationType === 'query' || t.templateType === 'query')
+      ).toBe(true)
       // Test passes if we find any query templates (which we should have from setup)
       expect(results.items.length).toBeGreaterThan(0)
       expect(searchTime).toBeLessThan(1) // Allow 1ms for test environment
@@ -190,7 +192,9 @@ describe('Query Name Indexing and Performance', () => {
       const startTime = performance.now()
 
       const results = await repository.search({ limit: 50 })
-      const sorted = results.items.sort((a, b) => (a.avgExecutionTimeMs || 0) - (b.avgExecutionTimeMs || 0))
+      const sorted = results.items.sort(
+        (a, b) => (a.avgExecutionTimeMs || 0) - (b.avgExecutionTimeMs || 0)
+      )
 
       const endTime = performance.now()
       const sortTime = endTime - startTime
@@ -243,7 +247,11 @@ describe('Query Name Indexing and Performance', () => {
       const searchTime = endTime - startTime
 
       expect(results).toHaveLength(1)
-      const found = results.find(r => Array.isArray(r.queryName) ? r.queryName.some(q => q.includes('node')) : (r.queryName || '').includes('node'))
+      const found = results.find((r) =>
+        Array.isArray(r.queryName)
+          ? r.queryName.some((q) => q.includes('node'))
+          : (r.queryName || '').includes('node')
+      )
       expect(found).toBeDefined()
       expect(searchTime).toBeLessThan(1) // Allow 1ms for test environment
     })
@@ -331,7 +339,11 @@ describe('Query Name Indexing and Performance', () => {
       `)
         .all(pattern)
 
-      expect(results.some((r) => r.query_name && (r.query_name.includes('node') || r.query_name.includes('Node')))).toBe(true)
+      expect(
+        results.some(
+          (r) => r.query_name && (r.query_name.includes('node') || r.query_name.includes('Node'))
+        )
+      ).toBe(true)
     })
 
     it('should efficiently filter by complexity ranges', async () => {

@@ -1,0 +1,110 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.546Z",
+  "template": {
+    "id": "855",
+    "identifier": "smart-search-with-params",
+    "name": "SmartSearchWithParams",
+    "description": "파라미터를 사용하여 지능형 검색을 수행합니다",
+    "query": "query SmartSearchWithParams($query: String!, $context: SearchContext, $options: SmartSearchOptions) {\n  smartSearch(query: $query, context: $context, options: $options) {\n    results {\n      nodes {\n        id\n        title\n        content\n        relevanceScore\n        matchedFields\n        highlights\n        relationships {\n          id\n          title\n          relationshipType\n          strength\n        }\n      }\n      tables {\n        id\n        identifier\n        description\n        relevanceScore\n        matchReason\n      }\n      templates {\n        id\n        identifier\n        name\n        relevanceScore\n        suggestedVariables\n      }\n    }\n    suggestions {\n      queryCorrections\n      semanticExpansions\n      relatedTerms\n      filters\n    }\n    analytics {\n      searchTime\n      indexesUsed\n      cacheHit\n      resultsCount\n    }\n    recommendations {\n      type\n      items\n      confidence\n      reasoning\n    }\n  }\n}",
+    "queryName": [
+      "smartSearch"
+    ],
+    "operationType": "query",
+    "variables": {
+      "query": "example search term",
+      "context": {
+        "userId": "current-user",
+        "previousSearches": [],
+        "currentTable": null
+      },
+      "options": {
+        "includeRelated": true,
+        "fuzzyMatch": true,
+        "semanticSearch": true,
+        "maxResults": 50,
+        "boostRecent": true
+      }
+    },
+    "variablesSchema": {
+      "query": {
+        "type": "string",
+        "required": true,
+        "description": "검색 쿼리"
+      },
+      "context": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "사용자 ID"
+          },
+          "previousSearches": {
+            "type": "array",
+            "description": "이전 검색 기록"
+          },
+          "currentTable": {
+            "type": "string",
+            "description": "현재 테이블 컨텍스트"
+          }
+        }
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "includeRelated": {
+            "type": "boolean",
+            "description": "관련 항목 포함"
+          },
+          "fuzzyMatch": {
+            "type": "boolean",
+            "description": "유사 매칭"
+          },
+          "semanticSearch": {
+            "type": "boolean",
+            "description": "의미 기반 검색"
+          },
+          "maxResults": {
+            "type": "number",
+            "description": "최대 결과 수"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "query": "example search term",
+      "context": {
+        "userId": "current-user",
+        "previousSearches": [],
+        "currentTable": null
+      },
+      "options": {
+        "includeRelated": true,
+        "fuzzyMatch": true,
+        "semanticSearch": true,
+        "maxResults": 50,
+        "boostRecent": true
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 8,
+    "version": "1.0.0",
+    "tags": [
+      "search",
+      "ai",
+      "smart",
+      "recommendations",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

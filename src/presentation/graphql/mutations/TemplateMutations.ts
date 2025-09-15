@@ -131,6 +131,15 @@ export class TemplateMutations extends BaseResolver {
       if (args.input.variables !== undefined) {
         updateData.defaultVariables = args.input.variables // Map 'variables' to 'defaultVariables'
       }
+      if (args.input.tags !== undefined) {
+        updateData.tags = args.input.tags
+      }
+      if (args.input.complexityScore !== undefined) {
+        updateData.complexityScore = args.input.complexityScore
+      }
+      if (args.input.version !== undefined) {
+        updateData.version = args.input.version
+      }
 
       const updatedTemplate = await this.queryTemplateRepository.update(args.id, updateData)
 

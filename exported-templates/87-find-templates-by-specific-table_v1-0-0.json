@@ -1,0 +1,44 @@
+{
+  "id": null,
+  "identifier": "find-templates-by-specific-table",
+  "name": "Find Templates by Specific Table",
+  "description": "Query to find all templates that are applicable to a specific table name, with optional inclusion of universal templates",
+  "query": "query FindTemplatesByTable($input: FindTemplatesByTableInput!) {\n  templatesByTable(input: $input) {\n    id\n    identifier\n    name\n    description\n    queryText\n    applicableTables\n    tags\n    complexityScore\n    usageCount\n    operationType\n    isActive\n    createdAt\n    updatedAt\n  }\n}",
+  "queryName": ["templatesByTable"],
+  "operationType": "query",
+  "variablesSchema": {
+    "input": {
+      "type": "FindTemplatesByTableInput",
+      "required": true,
+      "description": "Input for finding templates by table",
+      "properties": {
+        "tableName": {
+          "type": "string",
+          "required": true,
+          "description": "Name of the table to search templates for"
+        },
+        "includeUniversal": {
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to include universal templates (applicable_tables is null)",
+          "default": true
+        }
+      }
+    }
+  },
+  "defaultVariables": {
+    "input": {
+      "tableName": "users",
+      "includeUniversal": true
+    }
+  },
+  "applicableTables": null,
+  "templateType": "query",
+  "complexityScore": 3,
+  "usageCount": 0,
+  "version": "1.0.0",
+  "isActive": true,
+  "tags": ["template", "table", "search", "filter", "specific", "fixed"],
+  "createdAt": "2025-09-16T09:00:00.000Z",
+  "updatedAt": "2025-09-16T09:00:00.000Z"
+}

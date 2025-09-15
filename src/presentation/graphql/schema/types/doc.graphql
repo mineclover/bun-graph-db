@@ -1,0 +1,77 @@
+# Doc domain types
+
+type Doc implements Node {
+  id: ID!
+  category: DocCategory!
+  version: Int!
+  content: String!
+  isActive: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+
+  # Relationships
+  table: Table!
+}
+
+enum DocCategory {
+  USAGE
+  GUIDE
+  EXAMPLE
+  SPEC
+  GENERAL
+}
+
+# Input types for doc operations
+input CreateDocInput {
+  tableId: ID!
+  category: DocCategory!
+  content: String!
+  version: Int = 1
+}
+
+input UpdateDocInput {
+  content: String
+  isActive: Boolean
+}
+
+# Filter for docs
+input DocsFilter {
+  tableId: ID
+  category: DocCategory
+  isActive: Boolean
+  version: Int
+  createdAfter: DateTime
+  createdBefore: DateTime
+}
+
+# Connection types for docs
+type DocsConnection implements Connection {
+  docs: [Doc!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+}
+
+# Operation result types for docs
+type CreateDocPayload implements OperationResult {
+  success: Boolean!
+  doc: Doc
+  errors: [Error!]!
+}
+
+type UpdateDocPayload implements OperationResult {
+  success: Boolean!
+  doc: Doc
+  errors: [Error!]!
+}
+
+type DeleteDocPayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
+type ActivateDocPayload implements OperationResult {
+  success: Boolean!
+  doc: Doc
+  errors: [Error!]!
+}

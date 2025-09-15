@@ -1,0 +1,28 @@
+# Doc Query extensions
+
+extend type Query {
+  # Get single doc
+  getDoc(id: ID!): Doc
+
+  # Get active doc for specific table and category
+  getActiveDoc(tableId: ID!, category: DocCategory!): Doc
+
+  # Get all docs for a table
+  getDocs(
+    tableId: ID!
+    category: DocCategory
+    filter: DocsFilter
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): DocsConnection!
+
+  # Get doc versions
+  getDocVersions(tableId: ID!, category: DocCategory!): [Doc!]!
+
+  # Search docs across tables
+  searchDocs(
+    filter: DocsFilter!
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): DocsConnection!
+}

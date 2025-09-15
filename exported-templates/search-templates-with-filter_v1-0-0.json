@@ -1,0 +1,90 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.133Z",
+  "template": {
+    "id": "834",
+    "identifier": "search-templates-with-filter",
+    "name": "SearchTemplatesWithFilter",
+    "description": "필터와 페이지네이션을 사용하여 템플릿을 검색합니다",
+    "query": "query SearchTemplatesWithFilter($filter: QueryTemplatesFilter, $pagination: PaginationInput, $sort: [TemplateSortInput!]) {\n  searchTemplates(filter: $filter, pagination: $pagination, sort: $sort) {\n    id\n    identifier\n    name\n    description\n    tags\n    operationType\n    complexityScore\n    usageCount\n    avgExecutionTimeMs\n    isActive\n    createdAt\n  }\n}",
+    "queryName": [
+      "searchTemplates"
+    ],
+    "operationType": "query",
+    "variables": {
+      "filter": {
+        "tags": [
+          "fixed"
+        ],
+        "isActive": true
+      },
+      "pagination": {
+        "limit": 25,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "usageCount",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "variablesSchema": {
+      "filter": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "type": "array",
+            "description": "태그 필터"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "활성 상태 필터"
+          },
+          "operationType": {
+            "type": "string",
+            "description": "쿼리 타입 필터 (QUERY, MUTATION, SUBSCRIPTION)"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "filter": {
+        "tags": [
+          "fixed"
+        ],
+        "isActive": true
+      },
+      "pagination": {
+        "limit": 25,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "usageCount",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "template",
+      "query",
+      "search",
+      "filter",
+      "pagination",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.546Z",
+  "template": {
+    "id": "856",
+    "identifier": "create-relation-type-working",
+    "name": "CreateRelationType",
+    "description": "새로운 관계 타입을 생성합니다 (작동 검증됨)",
+    "query": "mutation CreateRelationType($input: CreateRelationTypeInput!) {\n  createRelationType(input: $input) {\n    success\n    relationType {\n      id\n      identifier\n      name\n      description\n      createdAt\n      updatedAt\n    }\n    errors {\n      message\n      code\n      field\n    }\n  }\n}",
+    "queryName": [
+      "createRelationType"
+    ],
+    "operationType": "mutation",
+    "variables": {
+      "input": {
+        "identifier": "RELATED_TO",
+        "name": "Related To",
+        "description": "General relationship between entities"
+      }
+    },
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "required": true,
+            "description": "Unique identifier for the relation type"
+          },
+          "name": {
+            "type": "string",
+            "required": true,
+            "description": "Human readable name for the relation type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description of the relation type"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "identifier": "RELATED_TO",
+        "name": "Related To",
+        "description": "General relationship between entities"
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "relation",
+      "type",
+      "create",
+      "mutation",
+      "management",
+      "working",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

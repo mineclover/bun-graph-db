@@ -1,0 +1,101 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T15:20:50.237Z",
+  "template": {
+    "id": "844",
+    "identifier": "create-template-with-params",
+    "name": "CreateTemplateWithParams",
+    "description": "파라미터를 사용하여 새 템플릿을 생성합니다",
+    "query": "mutation CreateTemplateWithParams($input: CreateQueryTemplateInput!) {\n  createTemplate(input: $input) {\n    success\n    template {\n      id\n      identifier\n      name\n      description\n      tags\n      complexityScore\n      version\n      createdAt\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
+    "queryName": [
+      "createTemplate"
+    ],
+    "operationType": "mutation",
+    "variables": {
+      "input": {
+        "identifier": "new-custom-template",
+        "name": "새 커스텀 템플릿",
+        "description": "사용자 정의 템플릿입니다",
+        "query": "query CustomQuery { health { status } }",
+        "tags": [
+          "custom",
+          "user-defined"
+        ],
+        "complexityScore": 1,
+        "version": "1.0.0"
+      }
+    },
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "required": true,
+            "description": "템플릿 식별자"
+          },
+          "name": {
+            "type": "string",
+            "required": true,
+            "description": "템플릿 이름"
+          },
+          "description": {
+            "type": "string",
+            "description": "템플릿 설명"
+          },
+          "query": {
+            "type": "string",
+            "required": true,
+            "description": "GraphQL 쿼리"
+          },
+          "tags": {
+            "type": "array",
+            "description": "태그 목록"
+          },
+          "complexityScore": {
+            "type": "number",
+            "description": "복잡도 점수"
+          },
+          "version": {
+            "type": "string",
+            "description": "버전"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "identifier": "new-custom-template",
+        "name": "새 커스텀 템플릿",
+        "description": "사용자 정의 템플릿입니다",
+        "query": "query CustomQuery { health { status } }",
+        "tags": [
+          "custom",
+          "user-defined"
+        ],
+        "complexityScore": 1,
+        "version": "1.0.0"
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "template",
+      "mutation",
+      "create",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

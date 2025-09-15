@@ -187,3 +187,15 @@ type ImportTemplatePayload implements OperationResult {
   errors: [Error!]!
   warnings: [String!]
 }
+
+# Table dependency specific types
+input FindTemplatesByTableInput {
+  tableName: String!
+  includeUniversal: Boolean = true
+}
+
+type TableDependencyTemplateResult {
+  tableName: String!
+  templates: [QueryTemplate!]!
+  totalCount: Int!
+}

@@ -70,6 +70,17 @@ export interface SearchTemplatesInput {
   offset?: number
 }
 
+export interface FindTemplatesByTableInput {
+  tableName: string
+  includeUniversal?: boolean
+}
+
+export interface TableDependencyTemplateResult {
+  tableName: string
+  templates: QueryTemplateDto[]
+  totalCount: number
+}
+
 export interface ExecuteTemplateInput {
   templateId?: string
   templateIdentifier?: string
