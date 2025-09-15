@@ -1,0 +1,22 @@
+{
+  "identifier": "list-todos",
+  "name": "ListTodos",
+  "description": "모든 할일을 조회하는 템플릿 (필터링, 페이징 지원)",
+  "query": "query ListTodos($limit: Int = 20, $offset: Int = 0, $status: String) {\n  nodes(\n    filter: { tableId: \"58\", attributeFilter: { name: \"status\", value: $status } }\n    pagination: { limit: $limit, offset: $offset }\n  ) {\n    nodes {\n      id\n      content\n      createdAt\n      attributes {\n        name\n        value\n      }\n    }\n    totalCount\n    hasNextPage\n  }\n}",
+  "operationType": "query",
+  "queryName": "ListTodos",
+  "tags": ["todo", "list", "crud"],
+  "complexityScore": 6,
+  "isActive": true,
+  "variables": {
+    "limit": 20,
+    "offset": 0,
+    "status": ""
+  },
+  "variablesSchema": {
+    "limit": { "type": "Int", "required": false, "default": 20, "description": "페이지당 항목 수 (최대 100)" },
+    "offset": { "type": "Int", "required": false, "default": 0, "description": "건너뛸 항목 수" },
+    "status": { "type": "String", "required": false, "description": "필터링할 상태 (비워두면 전체 조회)", "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] }
+  },
+  "version": "1.0.0"
+}

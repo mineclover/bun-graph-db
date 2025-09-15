@@ -1,0 +1,18 @@
+{
+  "identifier": "delete-todo",
+  "name": "DeleteTodo",
+  "description": "할일을 삭제하는 템플릿",
+  "query": "mutation DeleteTodo($todoId: ID!) {\n  deleteNode(id: $todoId) {\n    success\n    errors {\n      message\n    }\n  }\n}",
+  "operationType": "mutation",
+  "queryName": "DeleteTodo",
+  "tags": ["todo", "delete", "crud"],
+  "complexityScore": 2,
+  "isActive": true,
+  "variables": {
+    "todoId": "할일_ID"
+  },
+  "variablesSchema": {
+    "todoId": { "type": "ID", "required": true, "description": "삭제할 할일의 고유 ID" }
+  },
+  "version": "1.0.0"
+}

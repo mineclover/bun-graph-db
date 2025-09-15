@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.752Z",
+  "template": {
+    "id": "809",
+    "identifier": "data-validation",
+    "name": "ValidateDataIntegrity",
+    "description": "스키마 규칙 위반, 고아 노드, 중복 데이터 등을 검사하는 데이터 무결성 검증 템플릿",
+    "query": "query ValidateDataIntegrity($options: ValidationOptions) {\n  validateDataIntegrity(options: $options) {\n    isValid\n    summary {\n      totalChecks\n      passedChecks\n      failedChecks\n      warningCount\n    }\n    issues {\n      id\n      type\n      severity\n      message\n      affectedNodes {\n        id\n        table\n        title\n      }\n      recommendation\n      fixable\n    }\n    checks {\n      orphanNodes {\n        count\n        samples {\n          id\n          table\n          title\n        }\n      }\n      duplicateData {\n        count\n        duplicateGroups {\n          hash\n          nodes {\n            id\n            title\n          }\n        }\n      }\n      schemaViolations {\n        count\n        violations {\n          rule\n          affectedCount\n          samples\n        }\n      }\n      brokenRelations {\n        count\n        samples {\n          fromNode\n          toNode\n          relationType\n        }\n      }\n    }\n  }\n}",
+    "queryName": [
+      "validateDataIntegrity"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": [],
+    "complexityScore": 10,
+    "version": "1.0.0",
+    "tags": [
+      "validation",
+      "data-quality",
+      "integrity",
+      "schema"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.752Z",
+  "template": {
+    "id": "810",
+    "identifier": "advanced-analytics",
+    "name": "GraphAnalytics",
+    "description": "중심성 분석, 클러스터링, 경로 최적화 등의 고급 그래프 알고리즘 템플릿",
+    "query": "query GraphAnalytics($analysisType: AnalysisType!, $parameters: AnalysisParameters) {\n  graphAnalytics(type: $analysisType, parameters: $parameters) {\n    type\n    executionTime\n    results {\n      ... on CentralityAnalysis {\n        algorithm\n        nodes {\n          id\n          title\n          score\n          rank\n        }\n        statistics {\n          min\n          max\n          average\n          median\n        }\n      }\n      ... on ClusteringAnalysis {\n        algorithm\n        clusters {\n          id\n          size\n          density\n          nodes {\n            id\n            title\n          }\n          centroids\n        }\n        modularity\n        silhouetteScore\n      }\n      ... on PathAnalysis {\n        algorithm\n        paths {\n          source\n          target\n          length\n          weight\n          nodes {\n            id\n            title\n          }\n        }\n        statistics {\n          shortestPath\n          longestPath\n          averageLength\n        }\n      }\n    }\n    insights {\n      keyFindings\n      recommendations\n      visualizationData\n    }\n  }\n}",
+    "queryName": [
+      "graphAnalytics"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": [],
+    "complexityScore": 10,
+    "version": "1.0.0",
+    "tags": [
+      "analytics",
+      "graph-algorithms",
+      "centrality",
+      "clustering",
+      "pathfinding"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

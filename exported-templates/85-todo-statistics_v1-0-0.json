@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:25.058Z",
+  "template": {
+    "id": "826",
+    "identifier": "todo-statistics",
+    "name": "TodoStatistics",
+    "description": "할일 통계 및 분석 정보를 제공하는 템플릿",
+    "query": "query TodoStatistics($dateRange: DateRange, $includeArchived: Boolean = false) {\n  nodeStatistics(\n    tableId: \"58\"\n    dateRange: $dateRange\n    includeArchived: $includeArchived\n  ) {\n    totalCount\n    statusBreakdown {\n      TODO: statusCount(status: \"TODO\")\n      IN_PROGRESS: statusCount(status: \"IN_PROGRESS\")\n      DONE: statusCount(status: \"DONE\")\n      CANCELLED: statusCount(status: \"CANCELLED\")\n    }\n    priorityBreakdown {\n      LOW: priorityCount(priority: \"LOW\")\n      MEDIUM: priorityCount(priority: \"MEDIUM\")\n      HIGH: priorityCount(priority: \"HIGH\")\n      URGENT: priorityCount(priority: \"URGENT\")\n    }\n    categoryBreakdown {\n      WORK: categoryCount(category: \"WORK\")\n      PERSONAL: categoryCount(category: \"PERSONAL\")\n      SHOPPING: categoryCount(category: \"SHOPPING\")\n      HEALTH: categoryCount(category: \"HEALTH\")\n      LEARNING: categoryCount(category: \"LEARNING\")\n      OTHER: categoryCount(category: \"OTHER\")\n    }\n    timingAnalysis {\n      overdueTodos: overdueCount\n      dueTodayTodos: dueTodayCount\n      upcomingTodos: upcomingCount\n      averageCompletionTime: avgCompletionDays\n    }\n    productivity {\n      dailyCompletionRate: todosCompletedToday\n      weeklyCompletionRate: todosCompletedThisWeek\n      monthlyCompletionRate: todosCompletedThisMonth\n      completionTrend: completionTrendLastWeeks(weeks: 4)\n    }\n  }\n}",
+    "queryName": [
+      "nodeStatistics"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 6,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "statistics",
+      "analytics",
+      "reporting"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

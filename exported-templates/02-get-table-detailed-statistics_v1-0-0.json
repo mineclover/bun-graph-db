@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T17:24:58.911Z",
+  "exportedAt": "2025-09-15T09:39:23.428Z",
   "template": {
-    "id": "205",
+    "id": "670",
     "identifier": "get-table-detailed-statistics",
-    "name": "Get Table Comprehensive Details",
+    "name": "GetTableComprehensiveDetails",
     "description": "특정 테이블의 종합 정보 (기본 정보, 속성 목록, 관련 템플릿 개수)",
     "query": "query GetTableComprehensiveDetails($tableIdentifier: String!) { table: tableByIdentifier(identifier: $tableIdentifier) { id identifier description attributeCount tableNodeCount createdAt updatedAt attributes { id identifier name description attributeType { id name } } } relatedTemplates: searchTemplates(filter: { search: $tableIdentifier }) { totalCount nodes { identifier name usageCount isActive } } }",
     "queryName": [
@@ -37,13 +37,13 @@
       "general"
     ],
     "isActive": true,
-    "usageCount": 2,
+    "usageCount": 0,
     "avgExecutionTimeMs": 0,
-    "lastUsedAt": "2025-09-06T18:36:35.000Z",
+    "lastUsedAt": null,
     "statistics": {
-      "usageCount": 2,
+      "usageCount": 0,
       "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-06T18:36:35.000Z"
+      "lastUsedAt": null
     }
   }
 }

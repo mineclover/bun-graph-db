@@ -1,0 +1,278 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-09-15T09:11:39.578Z",
+  "coreTemplates": [
+    {
+      "identifier": "create-table",
+      "name": "CreateTable",
+      "description": "Create a new table with identifier and description",
+      "category": "CRUD Operations",
+      "reuseScore": 4.5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "table",
+        "create",
+        "schema"
+      ]
+    },
+    {
+      "identifier": "get-table-detailed-statistics",
+      "name": "GetTableComprehensiveDetails",
+      "description": "특정 테이블의 종합 정보 (기본 정보, 속성 목록, 관련 템플릿 개수)",
+      "category": "Table Operations",
+      "reuseScore": 5.5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "search-templates-advanced",
+      "name": "SearchTemplatesAdvanced",
+      "description": "Advanced template search with filtering by tags, usage count, date ranges, and complex search patterns. Supports pagination and sorting.",
+      "category": "Query Operations",
+      "reuseScore": 5.5,
+      "priority": "high",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "test-get-table",
+      "name": "GetTable",
+      "description": "테이블 기본 정보 조회 테스트",
+      "category": "Table Operations",
+      "reuseScore": 5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "test-search-nodes",
+      "name": "SearchNodes",
+      "description": "노드 검색 기능 테스트",
+      "category": "Query Operations",
+      "reuseScore": 5,
+      "priority": "low",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "list-tables-with-pagination",
+      "name": "ListTablesWithPagination",
+      "description": "Enhanced table listing with comprehensive pagination, search filtering, and sorting capabilities. Supports dynamic filtering by table metadata.",
+      "category": "Query Operations",
+      "reuseScore": 5,
+      "priority": "high",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "test-create-node",
+      "name": "CreateNode",
+      "description": "새 노드 생성 테스트",
+      "category": "CRUD Operations",
+      "reuseScore": 4.5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "test-get-node",
+      "name": "GetNode",
+      "description": "노드 기본 정보 조회 테스트",
+      "category": "Node Operations",
+      "reuseScore": 5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "get-table-attributes-by-id",
+      "name": "GetTableAttributesById",
+      "description": "테이블 ID를 기반으로 해당 테이블의 모든 속성 조회",
+      "category": "Table Operations",
+      "reuseScore": 5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "list-all-attribute-types",
+      "name": "ListAllAttributeTypes",
+      "description": "모든 AttributeType 목록을 조회합니다",
+      "category": "Query Operations",
+      "reuseScore": 5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "create-attribute-with-type",
+      "name": "CreateAttributeWithType",
+      "description": "AttributeType을 참조하여 Attribute를 생성합니다",
+      "category": "CRUD Operations",
+      "reuseScore": 4,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "get-table-schema",
+      "name": "GetTableSchema",
+      "description": "Comprehensive table schema retrieval including attributes, relationships, data types, and sample nodes for database structure analysis.",
+      "category": "Table Operations",
+      "reuseScore": 4.5,
+      "priority": "high",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "list-nodes-by-table",
+      "name": "ListNodesByTable",
+      "description": "Retrieve all nodes for a specific table with optional pagination",
+      "category": "Query Operations",
+      "reuseScore": 5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "template-create-new-template",
+      "name": "CreateTemplate",
+      "description": "새로운 쿼리 템플릿을 생성하는 뮤테이션 템플릿",
+      "category": "CRUD Operations",
+      "reuseScore": 4.5,
+      "priority": "medium",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "execute-template-with-graphql",
+      "name": "ExecuteTemplateWithGraphQL",
+      "description": "GraphQL 템플릿을 동적으로 실행하고 결과를 반환합니다. 템플릿 식별자와 변수를 받아 실행합니다.",
+      "category": "Template Management",
+      "reuseScore": 4.5,
+      "priority": "low",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    },
+    {
+      "identifier": "create-template-basic",
+      "name": "CreateTemplate",
+      "description": "기본적인 새 템플릿 생성 (identifier, name, description, query 필수)",
+      "category": "CRUD Operations",
+      "reuseScore": 4.5,
+      "priority": "high",
+      "status": "active",
+      "tags": [
+        "basic",
+        "create",
+        "management"
+      ]
+    },
+    {
+      "identifier": "execute-template-with-variables",
+      "name": "ExecuteTemplateWithVariables",
+      "description": "변수와 함께 기존 템플릿 실행하기 (executeTemplateWithGraphQL)",
+      "category": "Template Management",
+      "reuseScore": 4.5,
+      "priority": "high",
+      "status": "active",
+      "tags": [
+        "basic",
+        "execute",
+        "management"
+      ]
+    },
+    {
+      "identifier": "delete-template-by-id",
+      "name": "DeleteTemplateById",
+      "description": "Delete a query template by its unique identifier",
+      "category": "CRUD Operations",
+      "reuseScore": 4.5,
+      "priority": "low",
+      "status": "active",
+      "tags": [
+        "general"
+      ]
+    }
+  ],
+  "categories": {
+    "CRUD Operations": {
+      "description": "Templates for creating, reading, updating, and deleting entities",
+      "priority": 6,
+      "templates": [
+        "create-table",
+        "test-create-node",
+        "template-create-new-template",
+        "create-template-basic",
+        "delete-template-by-id",
+        "create-attribute-with-type"
+      ]
+    },
+    "Table Operations": {
+      "description": "Templates for table schema and metadata operations",
+      "priority": 8,
+      "templates": [
+        "get-table-detailed-statistics",
+        "test-get-table",
+        "get-table-attributes-by-id",
+        "get-table-schema"
+      ]
+    },
+    "Query Operations": {
+      "description": "Templates for searching and retrieving data",
+      "priority": 9,
+      "templates": [
+        "search-templates-advanced",
+        "test-search-nodes",
+        "list-tables-with-pagination",
+        "list-all-attribute-types",
+        "list-nodes-by-table"
+      ]
+    },
+    "Node Operations": {
+      "description": "Templates for node management and relationships",
+      "priority": 7,
+      "templates": [
+        "test-get-node"
+      ]
+    },
+    "Template Management": {
+      "description": "Templates for managing and executing other templates",
+      "priority": 10,
+      "templates": [
+        "execute-template-with-graphql",
+        "execute-template-with-variables"
+      ]
+    }
+  }
+}

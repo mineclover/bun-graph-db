@@ -1,0 +1,28 @@
+{
+  "identifier": "create-todo",
+  "name": "CreateTodo",
+  "description": "새로운 할일을 생성하는 템플릿",
+  "query": "mutation CreateTodo($title: String!, $description: String, $status: String = \"TODO\", $priority: String = \"MEDIUM\", $category: String = \"PERSONAL\", $dueDate: String) {\n  createNode(\n    tableId: \"58\"\n    content: $title\n    attributes: [\n      { name: \"title\", value: $title }\n      { name: \"description\", value: $description }\n      { name: \"status\", value: $status }\n      { name: \"priority\", value: $priority }\n      { name: \"category\", value: $category }\n      { name: \"due_date\", value: $dueDate }\n      { name: \"created_at\", value: \"{{ now }}\" }\n    ]\n  ) {\n    success\n    node {\n      id\n      content\n      attributes {\n        name\n        value\n      }\n    }\n    errors {\n      message\n    }\n  }\n}",
+  "operationType": "mutation",
+  "queryName": "CreateTodo",
+  "tags": ["todo", "create", "crud"],
+  "complexityScore": 6,
+  "isActive": true,
+  "variables": {
+    "title": "할일 제목",
+    "description": "할일 설명",
+    "status": "TODO",
+    "priority": "MEDIUM",
+    "category": "PERSONAL",
+    "dueDate": "2024-12-31"
+  },
+  "variablesSchema": {
+    "title": { "type": "String", "required": true, "description": "할일 제목" },
+    "description": { "type": "String", "required": false, "description": "할일 상세 설명" },
+    "status": { "type": "String", "required": false, "default": "TODO", "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] },
+    "priority": { "type": "String", "required": false, "default": "MEDIUM", "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+    "category": { "type": "String", "required": false, "default": "PERSONAL", "enum": ["WORK", "PERSONAL", "SHOPPING", "HEALTH", "LEARNING", "OTHER"] },
+    "dueDate": { "type": "String", "required": false, "description": "마감일 (YYYY-MM-DD 형식)" }
+  },
+  "version": "1.0.0"
+}

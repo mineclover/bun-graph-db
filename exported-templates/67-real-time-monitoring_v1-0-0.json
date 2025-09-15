@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.752Z",
+  "template": {
+    "id": "808",
+    "identifier": "real-time-monitoring",
+    "name": "SystemMonitoring",
+    "description": "시스템 성능, 메모리 사용량, 쿼리 성능을 실시간으로 모니터링하는 구독 템플릿",
+    "query": "subscription SystemMonitoring($metrics: [MetricType!]) {\n  systemMetrics(metrics: $metrics) {\n    timestamp\n    server {\n      cpu {\n        usage\n        loadAverage\n        cores\n      }\n      memory {\n        used\n        total\n        percentage\n        available\n      }\n      disk {\n        used\n        total\n        percentage\n      }\n    }\n    database {\n      connections {\n        active\n        idle\n        total\n      }\n      performance {\n        queriesPerSecond\n        avgQueryTime\n        slowQueries\n      }\n      storage {\n        size\n        tables\n        indexes\n      }\n    }\n    alerts {\n      level\n      message\n      timestamp\n      component\n    }\n  }\n}",
+    "queryName": [
+      "systemMetrics"
+    ],
+    "operationType": "subscription",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": [],
+    "complexityScore": 10,
+    "version": "1.0.0",
+    "tags": [
+      "monitoring",
+      "real-time",
+      "performance",
+      "subscription",
+      "system"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

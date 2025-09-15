@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.956Z",
+  "template": {
+    "id": "817",
+    "identifier": "get-todo",
+    "name": "GetTodo",
+    "description": "특정 할일을 조회하는 템플릿",
+    "query": "query GetTodo($todoId: ID!) {\n  node(id: $todoId) {\n    id\n    content\n    createdAt\n    updatedAt\n    attributes {\n      name\n      value\n    }\n    table {\n      identifier\n    }\n  }\n}",
+    "queryName": [
+      "node"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "read",
+      "crud"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.345Z",
+  "template": {
+    "id": "766",
+    "identifier": "search-nodes-advanced-filtering_v1-0-0",
+    "name": "SearchNodesAdvancedFiltering",
+    "description": "Advanced node search with attribute filters, relation filters, and comprehensive filtering options for complex data discovery and analysis.",
+    "query": "query SearchNodesAdvancedFiltering($content: String, $tableId: ID, $attributeFilters: [AttributeFilter!], $relationFilters: [RelationFilter!], $limit: Int = 20, $offset: Int = 0, $sortField: String = \"createdAt\", $sortDirection: SortDirection = DESC) {\n  searchNodes(\n    filter: {\n      content: $content\n      tableId: $tableId\n      attributeFilters: $attributeFilters\n      relationFilters: $relationFilters\n    }\n    pagination: {\n      limit: $limit\n      offset: $offset\n    }\n    sort: [\n      {\n        field: $sortField\n        direction: $sortDirection\n      }\n    ]\n  ) {\n    nodes {\n      id\n      content\n      table {\n        id\n        identifier\n      }\n      attributes {\n        id\n        value\n        attribute {\n          identifier\n          name\n          attributeType {\n            name\n            dataType\n          }\n        }\n      }\n      outgoingRelations {\n        id\n        relationType {\n          identifier\n          name\n        }\n        targetNode {\n          id\n          content\n        }\n      }\n      incomingRelations {\n        id\n        relationType {\n          identifier\n          name\n        }\n        sourceNode {\n          id\n          content\n        }\n      }\n      attributeCount\n      relationCount\n      createdAt\n      updatedAt\n    }\n    totalCount\n    hasNextPage\n    hasPreviousPage\n  }\n}",
+    "queryName": [
+      "searchNodes"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 10,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

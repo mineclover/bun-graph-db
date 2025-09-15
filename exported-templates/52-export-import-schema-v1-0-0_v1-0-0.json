@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.447Z",
+  "template": {
+    "id": "770",
+    "identifier": "export-import-schema_v1-0-0",
+    "name": "ExportImportSchema",
+    "description": "Comprehensive schema export with all tables, including data, relationships, and metadata for backup and migration purposes with statistics.",
+    "query": "query ExportImportSchema($includeData: Boolean = true, $includeRelations: Boolean = true, $format: String = \"json\", $compression: Boolean = false) {\n  exportAllTables(\n    options: {\n      includeData: $includeData\n      includeRelations: $includeRelations\n      format: $format\n      compression: $compression\n    }\n  ) {\n    metadata {\n      exportedAt\n      version\n      source\n      options\n      checksum\n    }\n    tables {\n      id\n      identifier\n      description\n      metadata\n      createdAt\n      updatedAt\n      attributes {\n        id\n        identifier\n        name\n        description\n        attributeType {\n          id\n          identifier\n          name\n          dataType\n          allowedValues\n          constraints\n        }\n        isRequired\n        defaultValue\n        createdAt\n        updatedAt\n      }\n      statistics {\n        nodeCount\n        attributeCount\n        relationCount\n      }\n    }\n    globalRelationTypes {\n      id\n      identifier\n      name\n      description\n      metadata\n      createdAt\n      updatedAt\n    }\n    globalAttributeTypes {\n      id\n      identifier\n      name\n      description\n      dataType\n      allowedValues\n      constraints\n      createdAt\n      updatedAt\n    }\n    statistics {\n      totalTables\n      totalNodes\n      totalRelations\n      totalAttributes\n      exportSize\n    }\n  }\n}",
+    "queryName": [
+      "exportAllTables"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 10,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

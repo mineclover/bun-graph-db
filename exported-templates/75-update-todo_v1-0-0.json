@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.855Z",
+  "template": {
+    "id": "816",
+    "identifier": "update-todo",
+    "name": "UpdateTodo",
+    "description": "할일을 업데이트하는 템플릿",
+    "query": "mutation UpdateTodo($todoId: ID!, $title: String, $description: String, $status: String, $priority: String, $category: String, $dueDate: String, $completedAt: String) {\n  updateNode(\n    id: $todoId\n    content: $title\n    attributes: [\n      { name: \"title\", value: $title }\n      { name: \"description\", value: $description }\n      { name: \"status\", value: $status }\n      { name: \"priority\", value: $priority }\n      { name: \"category\", value: $category }\n      { name: \"due_date\", value: $dueDate }\n      { name: \"completed_at\", value: $completedAt }\n    ]\n  ) {\n    success\n    node {\n      id\n      content\n      attributes {\n        name\n        value\n      }\n    }\n    errors {\n      message\n    }\n  }\n}",
+    "queryName": [
+      "updateNode"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 6,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "update",
+      "crud"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

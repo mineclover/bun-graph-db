@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.140Z",
+  "template": {
+    "id": "734",
+    "identifier": "execute-template-with-variables",
+    "name": "ExecuteTemplateWithVariables",
+    "description": "변수와 함께 기존 템플릿 실행하기 (executeTemplateWithGraphQL)",
+    "query": "mutation ExecuteTemplateWithVariables($templateIdentifier: String!, $variables: JSON) { executeTemplateWithGraphQL(templateIdentifier: $templateIdentifier, variables: $variables) { success data errors { message } metadata { executionTime templateUsageCount } } }",
+    "queryName": [
+      "executeTemplateWithGraphQL"
+    ],
+    "operationType": "mutation",
+    "variables": {
+      "templateIdentifier": "test-health-check",
+      "variables": {}
+    },
+    "variablesSchema": null,
+    "defaultVariables": {
+      "templateIdentifier": "test-health-check",
+      "variables": {}
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "basic",
+      "execute",
+      "management"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

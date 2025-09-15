@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T14:21:11.006Z",
+  "exportedAt": "2025-09-15T09:39:23.428Z",
   "template": {
-    "id": "188",
+    "id": "682",
     "identifier": "search-templates-advanced",
-    "name": "Advanced Template Search with Filters",
+    "name": "SearchTemplatesAdvanced",
     "description": "Advanced template search with filtering by tags, usage count, date ranges, and complex search patterns. Supports pagination and sorting.",
     "query": "query SearchTemplatesAdvanced($filter: QueryTemplatesFilter, $pagination: PaginationInput, $sort: [SortInput!]) {\n  searchTemplates(filter: $filter, pagination: $pagination, sort: $sort) {\n    templates {\n      id\n      identifier\n      name\n      description\n      tags\n      isActive\n      usageCount\n      avgExecutionTimeMs\n      lastUsedAt\n      createdAt\n      updatedAt\n    }\n    totalCount\n    hasMore\n  }\n}",
     "queryName": [
@@ -285,13 +285,13 @@
       "general"
     ],
     "isActive": true,
-    "usageCount": 74,
+    "usageCount": 0,
     "avgExecutionTimeMs": 0,
-    "lastUsedAt": "2025-09-06T18:05:40.000Z",
+    "lastUsedAt": null,
     "statistics": {
-      "usageCount": 74,
+      "usageCount": 0,
       "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-06T18:05:40.000Z"
+      "lastUsedAt": null
     }
   }
 }

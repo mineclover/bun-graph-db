@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.038Z",
+  "template": {
+    "id": "729",
+    "identifier": "template-get-by-id",
+    "name": "GetTemplateById",
+    "description": "ID로 특정 템플릿을 조회하는 쿼리 템플릿",
+    "query": "query GetTemplateById($id: ID!) { template(id: $id) { id identifier name description query variables createdAt updatedAt isActive } }",
+    "queryName": [
+      "template"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "general"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

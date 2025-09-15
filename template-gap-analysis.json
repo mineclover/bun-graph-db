@@ -1,0 +1,467 @@
+{
+  "timestamp": "2025-09-15T09:18:08.770Z",
+  "summary": {
+    "totalScenarios": 10,
+    "wellCovered": 0,
+    "partiallyCovered": 0,
+    "poorlyCovered": 10,
+    "averageCoverage": 3
+  },
+  "recommendations": [
+    {
+      "identifier": "bulk-data-import",
+      "name": "대량 데이터 가져오기",
+      "description": "CSV, JSON 등의 파일에서 대량의 노드를 한번에 생성 - 데이터 마이그레이션 및 초기 데이터 로드",
+      "priority": "high",
+      "estimatedEffort": "large",
+      "dependencies": [
+        "file-handling-system"
+      ],
+      "queryStructure": "mutation BulkImport($input: BulkImportInput!) {\n  bulkImport(input: $input) {\n    success\n    processedCount\n    errors { message line }\n    progress { total processed percentage }\n  }\n}"
+    },
+    {
+      "identifier": "real-time-monitoring",
+      "name": "실시간 시스템 모니터링",
+      "description": "시스템 성능, 메모리 사용량, 쿼리 성능을 실시간으로 모니터링 - 시스템 안정성 및 성능 관리",
+      "priority": "high",
+      "estimatedEffort": "large",
+      "dependencies": [
+        "monitoring-infrastructure"
+      ],
+      "queryStructure": "subscription SystemMonitoring {\n  systemMetrics {\n    timestamp\n    cpu { usage percentage }\n    memory { used total percentage }\n    database { connections queries_per_second }\n  }\n}"
+    },
+    {
+      "identifier": "data-validation",
+      "name": "데이터 무결성 검증",
+      "description": "스키마 규칙 위반, 고아 노드, 중복 데이터 등을 검사 - 데이터 품질 관리",
+      "priority": "medium",
+      "estimatedEffort": "medium",
+      "dependencies": [],
+      "queryStructure": "query ValidateData($options: ValidationOptions) {\n  validateDataIntegrity(options: $options) {\n    isValid\n    issues {\n      type\n      severity\n      message\n      affectedNodes\n    }\n    summary {\n      totalChecks\n      passedChecks\n      failedChecks\n    }\n  }\n}"
+    },
+    {
+      "identifier": "advanced-analytics",
+      "name": "고급 그래프 분석",
+      "description": "중심성 분석, 클러스터링, 경로 최적화 등의 그래프 알고리즘 - 데이터 인사이트 도출",
+      "priority": "medium",
+      "estimatedEffort": "large",
+      "dependencies": [],
+      "queryStructure": "query 고급그래프분석 {\n  # Implementation needed based on requirements\n}"
+    },
+    {
+      "identifier": "template-lifecycle-management",
+      "name": "템플릿 생명주기 관리",
+      "description": "템플릿의 생성부터 삭제까지 전체 생명주기 관리 및 버전 관리 - 템플릿 체계적 관리",
+      "priority": "medium",
+      "estimatedEffort": "medium",
+      "dependencies": [],
+      "queryStructure": "query 템플릿생명주기관리 {\n  # Implementation needed based on requirements\n}"
+    },
+    {
+      "identifier": "query-optimization",
+      "name": "쿼리 성능 최적화",
+      "description": "느린 쿼리 식별, 인덱스 제안, 성능 튜닝 - 시스템 성능 향상",
+      "priority": "medium",
+      "estimatedEffort": "large",
+      "dependencies": [],
+      "queryStructure": "query 쿼리성능최적화 {\n  # Implementation needed based on requirements\n}"
+    },
+    {
+      "identifier": "data-export",
+      "name": "데이터 내보내기",
+      "description": "다양한 형식(JSON, CSV, GraphML)으로 데이터 내보내기 - 데이터 이동 및 백업",
+      "priority": "medium",
+      "estimatedEffort": "medium",
+      "dependencies": [],
+      "queryStructure": "query 데이터내보내기 {\n  # Implementation needed based on requirements\n}"
+    },
+    {
+      "identifier": "collaborative-editing",
+      "name": "협업 편집",
+      "description": "여러 사용자가 동시에 데이터를 편집할 때의 충돌 해결 - 팀 협업 지원",
+      "priority": "medium",
+      "estimatedEffort": "large",
+      "dependencies": [],
+      "queryStructure": "query 협업편집 {\n  # Implementation needed based on requirements\n}"
+    },
+    {
+      "identifier": "backup-restore",
+      "name": "백업 및 복원",
+      "description": "시스템 전체 또는 특정 테이블의 백업 생성 및 복원 - 데이터 보호 및 재해 복구",
+      "priority": "low",
+      "estimatedEffort": "large",
+      "dependencies": [],
+      "queryStructure": "query 백업및복원 {\n  # Implementation needed based on requirements\n}"
+    },
+    {
+      "identifier": "schema-evolution",
+      "name": "스키마 진화",
+      "description": "스키마 변경 시 기존 데이터의 마이그레이션 - 시스템 업데이트 및 확장",
+      "priority": "low",
+      "estimatedEffort": "large",
+      "dependencies": [],
+      "queryStructure": "query 스키마진화 {\n  # Implementation needed based on requirements\n}"
+    }
+  ],
+  "gaps": [
+    {
+      "scenario": {
+        "id": "bulk-data-import",
+        "name": "대량 데이터 가져오기",
+        "description": "CSV, JSON 등의 파일에서 대량의 노드를 한번에 생성",
+        "userIntent": "데이터 마이그레이션 및 초기 데이터 로드",
+        "frequency": "high",
+        "complexity": "complex",
+        "requiredFeatures": [
+          "file-upload",
+          "batch-processing",
+          "error-handling",
+          "progress-tracking"
+        ]
+      },
+      "matchingTemplates": [
+        "bulk-data-import",
+        "data-export",
+        "create-attribute-type"
+      ],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "file-upload",
+        "batch-processing",
+        "error-handling",
+        "progress-tracking"
+      ],
+      "recommendedTemplate": {
+        "identifier": "bulk-data-import",
+        "name": "대량 데이터 가져오기",
+        "description": "CSV, JSON 등의 파일에서 대량의 노드를 한번에 생성 - 데이터 마이그레이션 및 초기 데이터 로드",
+        "priority": "high",
+        "estimatedEffort": "large",
+        "dependencies": [
+          "file-handling-system"
+        ],
+        "queryStructure": "mutation BulkImport($input: BulkImportInput!) {\n  bulkImport(input: $input) {\n    success\n    processedCount\n    errors { message line }\n    progress { total processed percentage }\n  }\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "real-time-monitoring",
+        "name": "실시간 시스템 모니터링",
+        "description": "시스템 성능, 메모리 사용량, 쿼리 성능을 실시간으로 모니터링",
+        "userIntent": "시스템 안정성 및 성능 관리",
+        "frequency": "high",
+        "complexity": "complex",
+        "requiredFeatures": [
+          "real-time-metrics",
+          "subscription",
+          "alerting",
+          "dashboard"
+        ]
+      },
+      "matchingTemplates": [
+        "real-time-monitoring",
+        "test-health-check",
+        "get-system-statistics"
+      ],
+      "coverageScore": 25,
+      "missingFeatures": [
+        "real-time-metrics",
+        "alerting",
+        "dashboard"
+      ],
+      "recommendedTemplate": {
+        "identifier": "real-time-monitoring",
+        "name": "실시간 시스템 모니터링",
+        "description": "시스템 성능, 메모리 사용량, 쿼리 성능을 실시간으로 모니터링 - 시스템 안정성 및 성능 관리",
+        "priority": "high",
+        "estimatedEffort": "large",
+        "dependencies": [
+          "monitoring-infrastructure"
+        ],
+        "queryStructure": "subscription SystemMonitoring {\n  systemMetrics {\n    timestamp\n    cpu { usage percentage }\n    memory { used total percentage }\n    database { connections queries_per_second }\n  }\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "data-validation",
+        "name": "데이터 무결성 검증",
+        "description": "스키마 규칙 위반, 고아 노드, 중복 데이터 등을 검사",
+        "userIntent": "데이터 품질 관리",
+        "frequency": "medium",
+        "complexity": "moderate",
+        "requiredFeatures": [
+          "validation-rules",
+          "integrity-check",
+          "report-generation"
+        ]
+      },
+      "matchingTemplates": [
+        "data-validation",
+        "schema-introspection",
+        "data-export"
+      ],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "validation-rules",
+        "integrity-check",
+        "report-generation"
+      ],
+      "recommendedTemplate": {
+        "identifier": "data-validation",
+        "name": "데이터 무결성 검증",
+        "description": "스키마 규칙 위반, 고아 노드, 중복 데이터 등을 검사 - 데이터 품질 관리",
+        "priority": "medium",
+        "estimatedEffort": "medium",
+        "dependencies": [],
+        "queryStructure": "query ValidateData($options: ValidationOptions) {\n  validateDataIntegrity(options: $options) {\n    isValid\n    issues {\n      type\n      severity\n      message\n      affectedNodes\n    }\n    summary {\n      totalChecks\n      passedChecks\n      failedChecks\n    }\n  }\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "advanced-analytics",
+        "name": "고급 그래프 분석",
+        "description": "중심성 분석, 클러스터링, 경로 최적화 등의 그래프 알고리즘",
+        "userIntent": "데이터 인사이트 도출",
+        "frequency": "medium",
+        "complexity": "complex",
+        "requiredFeatures": [
+          "graph-algorithms",
+          "statistical-analysis",
+          "visualization-data"
+        ]
+      },
+      "matchingTemplates": [
+        "advanced-analytics"
+      ],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "graph-algorithms",
+        "statistical-analysis",
+        "visualization-data"
+      ],
+      "recommendedTemplate": {
+        "identifier": "advanced-analytics",
+        "name": "고급 그래프 분석",
+        "description": "중심성 분석, 클러스터링, 경로 최적화 등의 그래프 알고리즘 - 데이터 인사이트 도출",
+        "priority": "medium",
+        "estimatedEffort": "large",
+        "dependencies": [],
+        "queryStructure": "query 고급그래프분석 {\n  # Implementation needed based on requirements\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "backup-restore",
+        "name": "백업 및 복원",
+        "description": "시스템 전체 또는 특정 테이블의 백업 생성 및 복원",
+        "userIntent": "데이터 보호 및 재해 복구",
+        "frequency": "low",
+        "complexity": "complex",
+        "requiredFeatures": [
+          "backup-creation",
+          "restore-process",
+          "incremental-backup",
+          "verification"
+        ]
+      },
+      "matchingTemplates": [
+        "template-lifecycle-management",
+        "get-table-detailed-statistics",
+        "get-system-statistics",
+        "analyze-table-schema-attributes",
+        "schema-introspection",
+        "user-management"
+      ],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "backup-creation",
+        "restore-process",
+        "incremental-backup",
+        "verification"
+      ],
+      "recommendedTemplate": {
+        "identifier": "backup-restore",
+        "name": "백업 및 복원",
+        "description": "시스템 전체 또는 특정 테이블의 백업 생성 및 복원 - 데이터 보호 및 재해 복구",
+        "priority": "low",
+        "estimatedEffort": "large",
+        "dependencies": [],
+        "queryStructure": "query 백업및복원 {\n  # Implementation needed based on requirements\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "template-lifecycle-management",
+        "name": "템플릿 생명주기 관리",
+        "description": "템플릿의 생성부터 삭제까지 전체 생명주기 관리 및 버전 관리",
+        "userIntent": "템플릿 체계적 관리",
+        "frequency": "medium",
+        "complexity": "moderate",
+        "requiredFeatures": [
+          "template-versioning",
+          "template-archiving",
+          "dependency-tracking",
+          "usage-analytics"
+        ]
+      },
+      "matchingTemplates": [
+        "template-lifecycle-management",
+        "user-management"
+      ],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "template-versioning",
+        "template-archiving",
+        "dependency-tracking",
+        "usage-analytics"
+      ],
+      "recommendedTemplate": {
+        "identifier": "template-lifecycle-management",
+        "name": "템플릿 생명주기 관리",
+        "description": "템플릿의 생성부터 삭제까지 전체 생명주기 관리 및 버전 관리 - 템플릿 체계적 관리",
+        "priority": "medium",
+        "estimatedEffort": "medium",
+        "dependencies": [],
+        "queryStructure": "query 템플릿생명주기관리 {\n  # Implementation needed based on requirements\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "query-optimization",
+        "name": "쿼리 성능 최적화",
+        "description": "느린 쿼리 식별, 인덱스 제안, 성능 튜닝",
+        "userIntent": "시스템 성능 향상",
+        "frequency": "medium",
+        "complexity": "complex",
+        "requiredFeatures": [
+          "query-profiling",
+          "performance-metrics",
+          "optimization-suggestions"
+        ]
+      },
+      "matchingTemplates": [
+        "query-optimization",
+        "real-time-monitoring",
+        "template-create-new-template",
+        "template-list-all-templates",
+        "template-get-by-id",
+        "schema-introspection"
+      ],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "query-profiling",
+        "performance-metrics",
+        "optimization-suggestions"
+      ],
+      "recommendedTemplate": {
+        "identifier": "query-optimization",
+        "name": "쿼리 성능 최적화",
+        "description": "느린 쿼리 식별, 인덱스 제안, 성능 튜닝 - 시스템 성능 향상",
+        "priority": "medium",
+        "estimatedEffort": "large",
+        "dependencies": [],
+        "queryStructure": "query 쿼리성능최적화 {\n  # Implementation needed based on requirements\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "data-export",
+        "name": "데이터 내보내기",
+        "description": "다양한 형식(JSON, CSV, GraphML)으로 데이터 내보내기",
+        "userIntent": "데이터 이동 및 백업",
+        "frequency": "medium",
+        "complexity": "moderate",
+        "requiredFeatures": [
+          "format-conversion",
+          "large-dataset-handling",
+          "streaming-export"
+        ]
+      },
+      "matchingTemplates": [
+        "data-export",
+        "data-validation"
+      ],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "format-conversion",
+        "large-dataset-handling",
+        "streaming-export"
+      ],
+      "recommendedTemplate": {
+        "identifier": "data-export",
+        "name": "데이터 내보내기",
+        "description": "다양한 형식(JSON, CSV, GraphML)으로 데이터 내보내기 - 데이터 이동 및 백업",
+        "priority": "medium",
+        "estimatedEffort": "medium",
+        "dependencies": [],
+        "queryStructure": "query 데이터내보내기 {\n  # Implementation needed based on requirements\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "schema-evolution",
+        "name": "스키마 진화",
+        "description": "스키마 변경 시 기존 데이터의 마이그레이션",
+        "userIntent": "시스템 업데이트 및 확장",
+        "frequency": "low",
+        "complexity": "complex",
+        "requiredFeatures": [
+          "migration-scripts",
+          "version-control",
+          "rollback-capability"
+        ]
+      },
+      "matchingTemplates": [
+        "analyze-table-schema-attributes",
+        "schema-introspection",
+        "data-validation"
+      ],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "migration-scripts",
+        "version-control",
+        "rollback-capability"
+      ],
+      "recommendedTemplate": {
+        "identifier": "schema-evolution",
+        "name": "스키마 진화",
+        "description": "스키마 변경 시 기존 데이터의 마이그레이션 - 시스템 업데이트 및 확장",
+        "priority": "low",
+        "estimatedEffort": "large",
+        "dependencies": [],
+        "queryStructure": "query 스키마진화 {\n  # Implementation needed based on requirements\n}"
+      }
+    },
+    {
+      "scenario": {
+        "id": "collaborative-editing",
+        "name": "협업 편집",
+        "description": "여러 사용자가 동시에 데이터를 편집할 때의 충돌 해결",
+        "userIntent": "팀 협업 지원",
+        "frequency": "medium",
+        "complexity": "complex",
+        "requiredFeatures": [
+          "conflict-resolution",
+          "real-time-sync",
+          "change-tracking"
+        ]
+      },
+      "matchingTemplates": [],
+      "coverageScore": 0,
+      "missingFeatures": [
+        "conflict-resolution",
+        "real-time-sync",
+        "change-tracking"
+      ],
+      "recommendedTemplate": {
+        "identifier": "collaborative-editing",
+        "name": "협업 편집",
+        "description": "여러 사용자가 동시에 데이터를 편집할 때의 충돌 해결 - 팀 협업 지원",
+        "priority": "medium",
+        "estimatedEffort": "large",
+        "dependencies": [],
+        "queryStructure": "query 협업편집 {\n  # Implementation needed based on requirements\n}"
+      }
+    }
+  ]
+}

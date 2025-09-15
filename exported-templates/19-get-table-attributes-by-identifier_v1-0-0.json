@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T14:21:11.313Z",
+  "exportedAt": "2025-09-15T09:39:23.734Z",
   "template": {
-    "id": "197",
+    "id": "706",
     "identifier": "get-table-attributes-by-identifier",
-    "name": "Get Table Attributes by Identifier",
+    "name": "GetTableAttributesByIdentifier",
     "description": "테이블 식별자를 기반으로 해당 테이블의 모든 속성 조회",
     "query": "query GetTableAttributesByIdentifier($tableIdentifier: String!) { tables(filter: { identifier: $tableIdentifier }) { nodes { id identifier name attributeCount attributes { id identifier name attributeType { dataType name } } } } }",
     "queryName": [
@@ -21,13 +21,13 @@
       "general"
     ],
     "isActive": true,
-    "usageCount": 3,
+    "usageCount": 0,
     "avgExecutionTimeMs": 0,
-    "lastUsedAt": "2025-09-06T17:57:35.000Z",
+    "lastUsedAt": null,
     "statistics": {
-      "usageCount": 3,
+      "usageCount": 0,
       "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-06T17:57:35.000Z"
+      "lastUsedAt": null
     }
   }
 }

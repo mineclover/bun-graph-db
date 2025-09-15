@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.651Z",
+  "template": {
+    "id": "788",
+    "identifier": "memory-monitoring-detailed_v1-0-0",
+    "name": "MemoryMonitoringDetailed",
+    "description": "Focused memory monitoring query that provides comprehensive memory usage statistics including heap memory, system memory allocation, and memory efficiency metrics.",
+    "query": "query MemoryMonitoringDetailed {\n  memoryStats {\n    used\n    free\n    total\n    percentage\n    heap {\n      used\n      total\n      external\n      arrayBuffers\n    }\n  }\n}",
+    "queryName": [
+      "memoryStats"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": [],
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "monitoring",
+      "memory",
+      "performance",
+      "heap",
+      "optimization"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

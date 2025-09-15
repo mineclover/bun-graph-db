@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:25.058Z",
+  "template": {
+    "id": "823",
+    "identifier": "bulk-update-todo-status",
+    "name": "BulkUpdateTodoStatus",
+    "description": "여러 할일의 상태를 한번에 업데이트하는 템플릿",
+    "query": "mutation BulkUpdateTodoStatus($todoIds: [ID!]!, $newStatus: String!, $completedAt: String) {\n  bulkUpdateNodes(\n    nodeIds: $todoIds\n    updates: [\n      { attributeName: \"status\", value: $newStatus }\n      { attributeName: \"completed_at\", value: $completedAt }\n    ]\n  ) {\n    success\n    updatedCount\n    totalCount\n    errors {\n      message\n      nodeId\n    }\n    nodes {\n      id\n      content\n      attributes {\n        name\n        value\n      }\n    }\n  }\n}",
+    "queryName": [
+      "bulkUpdateNodes"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 6,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "bulk",
+      "update",
+      "status"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

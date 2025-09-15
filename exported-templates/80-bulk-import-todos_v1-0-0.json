@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.957Z",
+  "template": {
+    "id": "821",
+    "identifier": "bulk-import-todos",
+    "name": "BulkImportTodos",
+    "description": "JSON 형태의 할일 목록을 대량으로 가져오는 템플릿",
+    "query": "mutation BulkImportTodos($todos: [TodoImportInput!]!) {\n  bulkCreateNodes(\n    tableId: \"58\"\n    nodes: $todos\n  ) {\n    success\n    createdCount\n    totalCount\n    errors {\n      message\n      line\n    }\n    nodes {\n      id\n      content\n      attributes {\n        name\n        value\n      }\n    }\n  }\n}",
+    "queryName": [
+      "bulkCreateNodes"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "bulk",
+      "import",
+      "data"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

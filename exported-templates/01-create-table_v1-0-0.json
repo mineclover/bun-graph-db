@@ -1,16 +1,16 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-07T17:24:58.911Z",
+  "exportedAt": "2025-09-15T09:39:23.427Z",
   "template": {
-    "id": "12",
+    "id": "668",
     "identifier": "create-table",
-    "name": "Create Table",
+    "name": "CreateTable",
     "description": "Create a new table with identifier and description",
     "query": "mutation CreateTable($input: CreateTableInput!) { createTable(input: $input) { table { id identifier description } errors { message } } }",
     "queryName": [
       "createTable"
     ],
-    "operationType": "query",
+    "operationType": "mutation",
     "variables": null,
     "variablesSchema": null,
     "defaultVariables": null,
@@ -23,11 +23,11 @@
       "schema"
     ],
     "isActive": true,
-    "usageCount": 9,
+    "usageCount": 0,
     "avgExecutionTimeMs": 0,
     "lastUsedAt": null,
     "statistics": {
-      "usageCount": 9,
+      "usageCount": 0,
       "avgExecutionTimeMs": 0,
       "lastUsedAt": null
     }

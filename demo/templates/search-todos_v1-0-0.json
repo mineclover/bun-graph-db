@@ -1,0 +1,24 @@
+{
+  "identifier": "search-todos",
+  "name": "SearchTodos",
+  "description": "할일을 검색하는 템플릿 (텍스트 검색 + 속성 필터)",
+  "query": "query SearchTodos($searchTerm: String!, $category: String, $priority: String, $status: String) {\n  searchNodes(\n    query: $searchTerm\n    tableId: \"58\"\n    filters: [\n      { attributeName: \"category\", value: $category }\n      { attributeName: \"priority\", value: $priority }\n      { attributeName: \"status\", value: $status }\n    ]\n  ) {\n    nodes {\n      id\n      content\n      attributes {\n        name\n        value\n      }\n      relevanceScore\n    }\n    totalMatches\n  }\n}",
+  "operationType": "query",
+  "queryName": "SearchTodos",
+  "tags": ["todo", "search", "crud"],
+  "complexityScore": 7,
+  "isActive": true,
+  "variables": {
+    "searchTerm": "검색어",
+    "category": "",
+    "priority": "",
+    "status": ""
+  },
+  "variablesSchema": {
+    "searchTerm": { "type": "String", "required": true, "description": "검색할 텍스트 (제목, 설명에서 검색)" },
+    "category": { "type": "String", "required": false, "description": "카테고리 필터", "enum": ["WORK", "PERSONAL", "SHOPPING", "HEALTH", "LEARNING", "OTHER"] },
+    "priority": { "type": "String", "required": false, "description": "우선순위 필터", "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"] },
+    "status": { "type": "String", "required": false, "description": "상태 필터", "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] }
+  },
+  "version": "1.0.0"
+}

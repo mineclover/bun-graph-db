@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.957Z",
+  "template": {
+    "id": "819",
+    "identifier": "list-todos",
+    "name": "ListTodos",
+    "description": "모든 할일을 조회하는 템플릿",
+    "query": "query ListTodos($limit: Int = 20, $offset: Int = 0, $status: String) {\n  nodes(\n    filter: { tableId: \"58\", attributeFilter: { name: \"status\", value: $status } }\n    pagination: { limit: $limit, offset: $offset }\n  ) {\n    nodes {\n      id\n      content\n      createdAt\n      attributes {\n        name\n        value\n      }\n    }\n    totalCount\n    hasNextPage\n  }\n}",
+    "queryName": [
+      "nodes"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": null,
+    "complexityScore": 6,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "list",
+      "crud"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-15T09:39:24.038Z",
+  "template": {
+    "id": "730",
+    "identifier": "basic-search-templates",
+    "name": "SearchTemplates",
+    "description": "기본적인 템플릿 검색으로 사용 가능한 템플릿 목록 조회",
+    "query": "query SearchTemplates($pagination: PaginationInput) { searchTemplates(pagination: $pagination) { templates { identifier name description usageCount isActive createdAt } totalCount hasNextPage hasPreviousPage } }",
+    "queryName": [
+      "searchTemplates"
+    ],
+    "operationType": "query",
+    "variables": {
+      "pagination": {
+        "limit": 10,
+        "offset": 0
+      }
+    },
+    "variablesSchema": null,
+    "defaultVariables": {
+      "pagination": {
+        "limit": 10,
+        "offset": 0
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "basic",
+      "search",
+      "management"
+    ],
+    "isActive": true,
+    "usageCount": 0,
+    "avgExecutionTimeMs": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
+  }
+}
