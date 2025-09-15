@@ -3,8 +3,8 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type {
   IQueryTemplateRepository,
-  SearchCriteria,
   QueryTemplateUpdateData,
+  SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
@@ -237,6 +237,90 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
     }
   }
 
+  async searchByQueryName(queryName: string): Promise<QueryTemplate[]> {
+    try {
+      const query = `
+        SELECT * FROM templates
+        WHERE json_extract(query_name, '$') LIKE ?
+        OR query_text LIKE ?
+        ORDER BY usage_count DESC
+      `
+      const searchPattern = `%"${queryName}"%`
+      const queryTextPattern = `%${queryName}%`
+
+      const rows = this.db.query<QueryTemplateRow, [string, string]>(query)
+        .all(searchPattern, queryTextPattern)
+
+      return rows.map((row) =>
+        QueryTemplate.fromDatabase(
+          String(row.id),
+          row.identifier,
+          row.name,
+          row.description,
+          row.query_text,
+          row.query_name,
+          row.operation_type || 'query',
+          row.variables_schema,
+          row.default_variables,
+          row.applicable_tables,
+          row.operation_type || 'query',
+          row.complexity_score || 0,
+          row.usage_count || 0,
+          row.last_used_at,
+          row.avg_execution_time_ms,
+          row.version || '1.0.0',
+          Boolean(row.is_active),
+          row.tags,
+          row.created_at,
+          row.updated_at
+        )
+      )
+    } catch (error) {
+      this.logger.error('Failed to search templates by query name', { queryName, error })
+      throw new DomainException('Failed to search templates by query name', { code: 'DATABASE_ERROR' })
+    }
+  }
+
+  async searchByOperationType(operationType: string): Promise<QueryTemplate[]> {
+    try {
+      const query = `
+        SELECT * FROM templates
+        WHERE operation_type = ?
+        ORDER BY usage_count DESC
+      `
+
+      const rows = this.db.query<QueryTemplateRow, [string]>(query).all(operationType)
+
+      return rows.map((row) =>
+        QueryTemplate.fromDatabase(
+          String(row.id),
+          row.identifier,
+          row.name,
+          row.description,
+          row.query_text,
+          row.query_name,
+          row.operation_type || 'query',
+          row.variables_schema,
+          row.default_variables,
+          row.applicable_tables,
+          row.operation_type || 'query',
+          row.complexity_score || 0,
+          row.usage_count || 0,
+          row.last_used_at,
+          row.avg_execution_time_ms,
+          row.version || '1.0.0',
+          Boolean(row.is_active),
+          row.tags,
+          row.created_at,
+          row.updated_at
+        )
+      )
+    } catch (error) {
+      this.logger.error('Failed to search templates by operation type', { operationType, error })
+      throw new DomainException('Failed to search templates by operation type', { code: 'DATABASE_ERROR' })
+    }
+  }
+
   async create(template: QueryTemplate): Promise<QueryTemplate> {
     try {
       const data = template.toDatabase()
@@ -396,15 +480,30 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
   async incrementUsage(id: string): Promise<void> {
     try {
+      // Try to find by ID first, then by identifier to get the actual database ID
+      let template = await this.findById(id)
+      if (!template) {
+        template = await this.findByIdentifier(id)
+      }
+      if (!template) {
+        // Silently return for non-existent templates
+        return
+      }
+
+      const templateId = template.getId()
+      if (!templateId) {
+        throw new DomainException('Template ID is null', { code: 'INVALID_STATE' })
+      }
+
       const query = `
-        UPDATE templates 
+        UPDATE templates
         SET usage_count = usage_count + 1,
             last_used_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `
       const stmt = this.db.prepare(query)
-      stmt.run(id)
+      stmt.run(templateId)
     } catch (error) {
       this.logger.error('Failed to increment usage', { id, error })
       throw new DomainException('Failed to increment usage', { code: 'DATABASE_ERROR' })
@@ -413,30 +512,37 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
   async updateExecutionStats(id: string, executionTimeMs: number): Promise<void> {
     try {
-      // Get current stats to calculate new average
-      const currentTemplate = await this.findById(id)
-      if (!currentTemplate) {
-        throw new DomainException('Template not found', { code: 'NOT_FOUND' })
+      // Try to find by ID first, then by identifier to get the actual database ID
+      let template = await this.findById(id)
+      if (!template) {
+        template = await this.findByIdentifier(id)
+      }
+      if (!template) {
+        // Silently return for non-existent templates as per interface documentation
+        return
       }
 
-      const currentCount = currentTemplate.getUsageCount()
-      const currentAvg = currentTemplate.getAvgExecutionTimeMs()
-      const newCount = currentCount + 1
-      const newAvg =
-        currentCount > 0
-          ? Math.round((currentAvg * currentCount + executionTimeMs) / newCount)
-          : executionTimeMs
+      const templateId = template.getId()
+      if (!templateId) {
+        throw new DomainException('Template ID is null', { code: 'INVALID_STATE' })
+      }
 
+      const validExecutionTime = Math.max(0, executionTimeMs)
+
+      // Use atomic SQL update to avoid race conditions
       const query = `
-        UPDATE templates 
-        SET usage_count = ?,
+        UPDATE templates
+        SET usage_count = usage_count + 1,
             last_used_at = CURRENT_TIMESTAMP,
-            avg_execution_time_ms = ?,
+            avg_execution_time_ms = CASE
+              WHEN usage_count = 0 THEN ?
+              ELSE CAST((avg_execution_time_ms * usage_count + ?) / (usage_count + 1) AS INTEGER)
+            END,
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `
       const stmt = this.db.prepare(query)
-      stmt.run(newCount, newAvg, id)
+      stmt.run(validExecutionTime, validExecutionTime, templateId)
     } catch (error) {
       this.logger.error('Failed to update execution stats', { id, executionTimeMs, error })
       throw new DomainException('Failed to update execution stats', { code: 'DATABASE_ERROR' })

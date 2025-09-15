@@ -24,7 +24,7 @@ export class AttributeQueries extends BaseResolver {
 
   async attributeType(_: GraphQLParent, args: AttributeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Attribute type ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Attribute type ID'),
@@ -62,7 +62,7 @@ export class AttributeQueries extends BaseResolver {
     _context?: GraphQLContext
   ) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('identifier', 'Attribute type identifier'),
         BaseResolver.validationRules.nonEmpty('identifier', 'Attribute type identifier'),
@@ -127,7 +127,7 @@ export class AttributeQueries extends BaseResolver {
 
   async attribute(_: GraphQLParent, args: AttributeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Attribute ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Attribute ID'),
@@ -166,7 +166,7 @@ export class AttributeQueries extends BaseResolver {
     _context?: GraphQLContext
   ) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('identifier', 'Attribute identifier'),
         BaseResolver.validationRules.required('tableId', 'Table ID'),

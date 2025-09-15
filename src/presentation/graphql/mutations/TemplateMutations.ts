@@ -132,10 +132,7 @@ export class TemplateMutations extends BaseResolver {
         updateData.defaultVariables = args.input.variables // Map 'variables' to 'defaultVariables'
       }
 
-      const updatedTemplate = await this.queryTemplateRepository.update(
-        args.id,
-        updateData as Partial<QueryTemplate>
-      )
+      const updatedTemplate = await this.queryTemplateRepository.update(args.id, updateData)
 
       this.logger.info('Template updated successfully', {
         templateId: updatedTemplate.getId(),
@@ -516,7 +513,7 @@ export class TemplateMutations extends BaseResolver {
       const previousQuery = template.getQueryText()
 
       // Update the query
-      const updateData = {
+      const updateData: any = {
         queryText: args.newQuery,
       }
 
@@ -524,10 +521,12 @@ export class TemplateMutations extends BaseResolver {
         updateData.defaultVariables = args.updateVariables
       }
 
-      const updatedTemplate = await this.queryTemplateRepository.update(
-        template.getId(),
-        updateData
-      )
+      const templateId = template.getId()
+      if (!templateId) {
+        throw new Error('Template ID is required for update')
+      }
+
+      const updatedTemplate = await this.queryTemplateRepository.update(templateId, updateData)
 
       this.logger.info('Template query updated successfully', {
         templateId: updatedTemplate.getId(),

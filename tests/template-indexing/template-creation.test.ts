@@ -299,7 +299,7 @@ describe('Template Creation with Auto-Parsing', () => {
 
       // Test with floating point execution time
       const updated2 = updated1.updateExecutionStats(123.456)
-      expect(updated2.getAvgExecutionTimeMs()).toBe(62) // Rounded average
+      expect(updated2.getAvgExecutionTimeMs()).toBe(61) // Floored average: (0 + 123) / 2 = 61.5, floored to 61
       expect(updated2.getUsageCount()).toBe(2)
     })
   })

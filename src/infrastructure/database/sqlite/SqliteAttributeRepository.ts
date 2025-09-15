@@ -8,7 +8,10 @@ import type {
 } from '@/core/types/CommonTypes.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type {
+  AttributeUpdateData,
+  IAttributeRepository,
+} from '@/domain/repositories/IAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface AttributeRow {
@@ -390,15 +393,28 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     )
   }
 
-  async update(id: AttributeId, _updates: Partial<Attribute>): Promise<Attribute> {
+  async update(id: AttributeId, updates: AttributeUpdateData): Promise<Attribute> {
     const existing = await this.findById(id)
     if (!existing) {
       throw new DatabaseException(`Attribute with id ${id} not found`)
     }
 
-    const data = existing.toDatabase()
+    // Create a new Attribute instance with the updated values
+    const updatedAttribute = new Attribute(
+      existing.getId(),
+      existing.getTableId(),
+      existing.getAttributeTypeId(),
+      updates.identifier ?? existing.getIdentifier(),
+      updates.description ?? existing.getDescription(),
+      updates.isRequired ?? existing.getIsRequired(),
+      existing.getMetadata(), // No update available for this
+      existing.getCreatedAt(),
+      existing.getUpdatedAt()
+    )
+
+    const data = updatedAttribute.toDatabase()
     const query = `
-      UPDATE attributes 
+      UPDATE attributes
       SET identifier = ?, attribute_type_id = ?, description = ?, is_required = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `
@@ -417,7 +433,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
         throw new DatabaseException(`Attribute with id ${id} not found for update`)
       }
 
-      return existing
+      return updatedAttribute
     } catch (error) {
       throw new DatabaseException(`Failed to update attribute: ${error}`)
     }

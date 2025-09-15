@@ -27,7 +27,7 @@ export class NodeMutations extends BaseResolver {
 
   async createNode(_: GraphQLParent, args: CreateNodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('input', 'Create node input'),
         BaseResolver.validationRules.required('input.content', 'Node content'),
@@ -55,7 +55,7 @@ export class NodeMutations extends BaseResolver {
 
   async updateNode(_: GraphQLParent, args: UpdateNodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Node ID'),
         BaseResolver.validationRules.required('input', 'Update node input'),
@@ -86,7 +86,7 @@ export class NodeMutations extends BaseResolver {
 
   async deleteNode(_: GraphQLParent, args: DeleteNodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Node ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
@@ -112,7 +112,7 @@ export class NodeMutations extends BaseResolver {
 
   async setNodeAttribute(_: GraphQLParent, args: SetNodeAttributeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('input', 'Set node attribute input'),
         BaseResolver.validationRules.required('input.nodeId', 'Node ID'),

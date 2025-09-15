@@ -1,6 +1,9 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
-import type { IQueryTemplateRepository, QueryTemplateUpdateData } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type {
+  IQueryTemplateRepository,
+  QueryTemplateUpdateData,
+} from '@/domain/repositories/IQueryTemplateRepository.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface UpdateQueryTemplateRequest {

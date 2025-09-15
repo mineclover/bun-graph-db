@@ -320,12 +320,15 @@ export class QueryTemplate {
   }
 
   updateExecutionStats(executionTimeMs: number): QueryTemplate {
+    // Handle negative execution times by treating them as 0
+    const validExecutionTime = Math.max(0, executionTimeMs)
+
     const newAvgTime =
       this.usageCount > 0
-        ? Math.round(
-            (this.avgExecutionTimeMs * this.usageCount + executionTimeMs) / (this.usageCount + 1)
+        ? Math.floor(
+            (this.avgExecutionTimeMs * this.usageCount + validExecutionTime) / (this.usageCount + 1)
           )
-        : executionTimeMs
+        : Math.floor(validExecutionTime)
 
     return new QueryTemplate(
       this.id,

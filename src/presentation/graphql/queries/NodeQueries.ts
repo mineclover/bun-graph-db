@@ -25,7 +25,7 @@ export class NodeQueries extends BaseResolver {
 
   async node(_: GraphQLParent, args: NodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Node ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
@@ -45,7 +45,7 @@ export class NodeQueries extends BaseResolver {
 
   async nodeByContent(_: GraphQLParent, args: NodeByContentArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('content', 'Content'),
         BaseResolver.validationRules.required('tableId', 'Table ID'),

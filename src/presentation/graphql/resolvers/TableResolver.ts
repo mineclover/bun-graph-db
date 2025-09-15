@@ -86,9 +86,9 @@ export class TableResolver extends BaseResolver {
       const searchOptions = {
         limit: pagination.limit || 10,
         offset: pagination.offset || 0,
-        search: filter?.search,
-        createdAfter: filter?.createdAfter,
-        createdBefore: filter?.createdBefore,
+        search: filter?.search || undefined,
+        createdAfter: filter?.createdAfter || undefined,
+        createdBefore: filter?.createdBefore || undefined,
         sortBy: sort?.[0]?.field || 'createdAt',
         sortDirection: (sort?.[0]?.direction || 'DESC') as 'ASC' | 'DESC',
       }

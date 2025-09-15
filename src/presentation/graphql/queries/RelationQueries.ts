@@ -28,7 +28,7 @@ export class RelationQueries extends BaseResolver {
 
   async relationType(_: GraphQLParent, args: RelationTypeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Relation Type ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Relation Type ID'),
@@ -54,7 +54,7 @@ export class RelationQueries extends BaseResolver {
 
   async nodeRelation(_: GraphQLParent, args: NodeRelationArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Node Relation ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Node Relation ID'),
@@ -145,7 +145,7 @@ export class RelationQueries extends BaseResolver {
     _context?: GraphQLContext
   ) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('nodeId', 'Node ID'),
         BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),

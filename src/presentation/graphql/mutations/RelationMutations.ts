@@ -30,7 +30,7 @@ export class RelationMutations extends BaseResolver {
     _context?: GraphQLContext
   ) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('input', 'Create relation type input'),
         BaseResolver.validationRules.required('input.identifier', 'Relation type identifier'),
@@ -57,7 +57,7 @@ export class RelationMutations extends BaseResolver {
 
   async createRelation(_: GraphQLParent, args: CreateRelationArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('input', 'Create relation input'),
         BaseResolver.validationRules.required('input.sourceNodeId', 'Source node ID'),
@@ -88,7 +88,7 @@ export class RelationMutations extends BaseResolver {
 
   async deleteRelation(_: GraphQLParent, args: DeleteRelationArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Relation ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Relation ID'),

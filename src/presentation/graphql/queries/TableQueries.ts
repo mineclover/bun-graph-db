@@ -22,7 +22,7 @@ export class TableQueries extends BaseResolver {
 
   async table(_: GraphQLParent, args: TableArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
@@ -45,7 +45,7 @@ export class TableQueries extends BaseResolver {
     _context?: GraphQLContext
   ) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('identifier', 'Table identifier'),
         BaseResolver.validationRules.nonEmpty('identifier', 'Table identifier'),

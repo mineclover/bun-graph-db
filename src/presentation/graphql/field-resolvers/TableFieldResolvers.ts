@@ -61,11 +61,7 @@ export class TableFieldResolvers extends BaseResolver {
 
         // Get unique attribute type IDs
         const attributeTypeIds = [
-          ...new Set(
-            attributes
-              .map((attr) => attr.getAttributeTypeId())
-              .filter(Boolean)
-          ),
+          ...new Set(attributes.map((attr) => attr.getAttributeTypeId()).filter(Boolean)),
         ]
 
         // Fetch all attribute types for these IDs
@@ -74,18 +70,20 @@ export class TableFieldResolvers extends BaseResolver {
         )
 
         // Map to GraphQL format
-        return attributeTypes.filter((at): at is NonNullable<typeof at> => at !== null).map((at) => ({
-          id: at.getId(),
-          identifier: at.getIdentifier(),
-          name: at.getIdentifier(),
-          description: at.getDescription(),
-          dataType: at.getJsonType(),
-          format: at.getFormat(),
-          constraints: at.getParsedValidationSchema(),
-          defaultValue: at.getDefaultValue(),
-          createdAt: at.getCreatedAt(),
-          updatedAt: at.getUpdatedAt(),
-        }))
+        return attributeTypes
+          .filter((at): at is NonNullable<typeof at> => at !== null)
+          .map((at) => ({
+            id: at.getId(),
+            identifier: at.getIdentifier(),
+            name: at.getIdentifier(),
+            description: at.getDescription(),
+            dataType: at.getJsonType(),
+            format: at.getFormat(),
+            constraints: at.getParsedValidationSchema(),
+            defaultValue: at.getDefaultValue(),
+            createdAt: at.getCreatedAt(),
+            updatedAt: at.getUpdatedAt(),
+          }))
       },
       'attributeTypes',
       'Table',

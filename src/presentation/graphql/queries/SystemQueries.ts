@@ -26,18 +26,15 @@ export class SystemQueries {
       this.logger.info('Fetching system statistics')
       const stats = await this.systemMonitoringUseCase.getSystemStats()
 
-      this.logger.debug(
-        'System stats retrieved',
-        JSON.stringify({
-          memoryUsage: stats.memory.percentage,
-          uptime: stats.uptime,
-          queryCount: stats.database.queryCount,
-        })
-      )
+      this.logger.debug('System stats retrieved', {
+        memoryUsage: stats.memory.percentage,
+        uptime: stats.uptime,
+        queryCount: stats.database.queryCount,
+      })
 
       return stats
     } catch (error) {
-      this.logger.error('Error fetching system statistics', error)
+      this.logger.error('Error fetching system statistics', { error })
       throw error
     }
   }
@@ -47,18 +44,15 @@ export class SystemQueries {
       this.logger.info('Fetching memory statistics')
       const memoryStats = await this.systemMonitoringUseCase.getMemoryStats()
 
-      this.logger.debug(
-        'Memory stats retrieved',
-        JSON.stringify({
-          used: memoryStats.used,
-          percentage: memoryStats.percentage,
-          heapUsed: memoryStats.heap.used,
-        })
-      )
+      this.logger.debug('Memory stats retrieved', {
+        used: memoryStats.used,
+        percentage: memoryStats.percentage,
+        heapUsed: memoryStats.heap.used,
+      })
 
       return memoryStats
     } catch (error) {
-      this.logger.error('Error fetching memory statistics', error)
+      this.logger.error('Error fetching memory statistics', { error })
       throw error
     }
   }
@@ -79,18 +73,15 @@ export class SystemQueries {
         memory: memoryHealth,
       }
 
-      this.logger.debug(
-        'Health check completed',
-        JSON.stringify({
-          status: healthStatus.status,
-          memoryStatus: memoryHealth.status,
-          memoryPercentage: memoryHealth.percentage,
-        })
-      )
+      this.logger.debug('Health check completed', {
+        status: healthStatus.status,
+        memoryStatus: memoryHealth.status,
+        memoryPercentage: memoryHealth.percentage,
+      })
 
       return healthStatus
     } catch (error) {
-      this.logger.error('Error during health check', error)
+      this.logger.error('Error during health check', { error })
 
       return {
         status: 'ERROR',

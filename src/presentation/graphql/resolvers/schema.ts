@@ -64,6 +64,11 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
       importSchema: async (_: GraphQLParent, args: ImportSchemaArgs) => {
         try {
           const { exportData, options = {} } = args
+
+          if (!exportData) {
+            throw new Error('Export data is required')
+          }
+
           const importOptions = {
             ...options,
             conflictResolution: ['skip', 'overwrite', 'merge', 'fail'].includes(
@@ -72,7 +77,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
               ? (options.conflictResolution as 'skip' | 'overwrite' | 'merge' | 'fail')
               : undefined,
           }
-          return await schemaImportUseCase.importSchema(exportData, importOptions)
+          return await schemaImportUseCase.importSchema(exportData as any, importOptions)
         } catch (error) {
           logger.error('Failed to import schema', { error })
           throw error

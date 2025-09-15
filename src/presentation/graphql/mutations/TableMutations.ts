@@ -26,7 +26,7 @@ export class TableMutations extends BaseResolver {
 
   async createTable(_: GraphQLParent, args: CreateTableArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('input', 'Create table input'),
         BaseResolver.validationRules.required('input.identifier', 'Table identifier'),
@@ -70,7 +70,7 @@ export class TableMutations extends BaseResolver {
 
   async updateTable(_: GraphQLParent, args: UpdateTableArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Table ID'),
         BaseResolver.validationRules.required('input', 'Update table input'),
@@ -115,7 +115,7 @@ export class TableMutations extends BaseResolver {
 
   async deleteTable(_: GraphQLParent, args: DeleteTableArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args,
+      args as any,
       [
         BaseResolver.validationRules.required('id', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Table ID'),

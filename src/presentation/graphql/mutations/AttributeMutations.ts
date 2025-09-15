@@ -99,8 +99,12 @@ export class AttributeMutations extends BaseResolver {
         }
 
         const updatedAttributeType = await this.attributeTypeRepository.update(args.id, {
-          ...existingAttributeType,
-          ...args.input,
+          identifier: args.input.name || undefined,
+          description: args.input.description || undefined,
+          jsonType: undefined, // Not available in input
+          format: undefined, // Not available in input
+          validationSchema: args.input.constraints || undefined,
+          defaultValue: args.input.defaultValue || undefined,
         })
 
         return updatedAttributeType
@@ -210,8 +214,10 @@ export class AttributeMutations extends BaseResolver {
         }
 
         const updatedAttribute = await this.attributeRepository.update(args.id, {
-          ...existingAttribute,
-          ...args.input,
+          identifier: args.input.name || undefined,
+          description: args.input.description || undefined,
+          isRequired: undefined, // Not available in input
+          defaultValue: undefined, // Not available in input
         })
 
         return updatedAttribute

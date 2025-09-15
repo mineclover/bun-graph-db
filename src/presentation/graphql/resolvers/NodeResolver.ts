@@ -233,7 +233,7 @@ export class NodeResolver extends BaseResolver {
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
     this.validateArgs(
-      args.input,
+      args.input as any,
       [
         BaseResolver.validationRules.required('tableId', 'Table ID'),
         BaseResolver.validationRules.required('content', 'Content'),

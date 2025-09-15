@@ -104,7 +104,9 @@ export class TemplateFileRoutes {
             path: filePath,
             name:
               templateName ||
-              extractedName.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+              (extractedName || fileName)
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, (l) => l.toUpperCase()),
             fileName,
             lastModified: fileStats.mtime.toISOString(),
             size: fileStats.size,

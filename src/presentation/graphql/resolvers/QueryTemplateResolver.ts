@@ -54,7 +54,7 @@ export class QueryTemplateResolver extends BaseResolver {
     // 3. 변수 처리 및 검증
     const processedVariables = this.processVariables(
       template.defaultVariables,
-      input.variables,
+      (input.variables as any) || null,
       template.variablesSchema,
       input.validateVariables !== false
     )
@@ -280,8 +280,8 @@ export class QueryTemplateResolver extends BaseResolver {
         })
       }
 
-      // Convert UpdateQueryTemplateInput to partial QueryTemplate entity update
-      const updateData: Partial<QueryTemplate> = {
+      // Convert UpdateQueryTemplateInput to QueryTemplateUpdateData
+      const updateData = {
         // Map the input properties that can be updated
         ...(input.name && { name: input.name }),
         ...(input.description !== undefined && { description: input.description }),
@@ -295,7 +295,7 @@ export class QueryTemplateResolver extends BaseResolver {
         ...(input.version && { version: input.version }),
         ...(input.isActive !== undefined && { isActive: input.isActive }),
         ...(input.tags !== undefined && { tags: input.tags }),
-      } as Partial<QueryTemplate>
+      }
 
       const savedTemplate = await this.queryTemplateRepository.update(id, updateData)
       return QueryTemplateDtoMapper.toDto(savedTemplate)
@@ -368,7 +368,7 @@ export class QueryTemplateResolver extends BaseResolver {
         previousQuery,
       }
     } catch (error) {
-      this.logger.error('Update template query error:', error)
+      this.logger.error('Update template query error:', { error })
       return {
         success: false,
         errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }],

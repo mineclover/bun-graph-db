@@ -168,10 +168,12 @@ export class GraphQLSchemaBuilder {
           deps.attributeQueries.attributes(_, args as any),
 
         // Node queries
-        node: (_: GraphQLParent, args: Record<string, unknown>) => deps.nodeQueries.node(_, args as any),
+        node: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeQueries.node(_, args as any),
         nodeByContent: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.nodeQueries.nodeByContent(_, args as any),
-        nodes: (_: GraphQLParent, args: Record<string, unknown>) => deps.nodeQueries.nodes(_, args as any),
+        nodes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeQueries.nodes(_, args as any),
         searchNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.nodeQueries.searchNodes(_, args as any),
 
@@ -299,10 +301,13 @@ export class GraphQLSchemaBuilder {
       // Field resolvers
       Table: {
         attributes: (parent: GraphQLParent) => deps.tableFieldResolvers.attributes(parent as any),
-        attributeTypes: (parent: GraphQLParent) => deps.tableFieldResolvers.attributeTypes(parent as any),
+        attributeTypes: (parent: GraphQLParent) =>
+          deps.tableFieldResolvers.attributeTypes(parent as any),
         tableNodes: (parent: GraphQLParent) => deps.tableFieldResolvers.tableNodes(parent as any),
-        tableNodeCount: (parent: GraphQLParent) => deps.tableFieldResolvers.tableNodeCount(parent as any),
-        attributeCount: (parent: GraphQLParent) => deps.tableFieldResolvers.attributeCount(parent as any),
+        tableNodeCount: (parent: GraphQLParent) =>
+          deps.tableFieldResolvers.tableNodeCount(parent as any),
+        attributeCount: (parent: GraphQLParent) =>
+          deps.tableFieldResolvers.attributeCount(parent as any),
       },
 
       Attribute: {
@@ -314,12 +319,14 @@ export class GraphQLSchemaBuilder {
       TableNode: {
         table: (parent: GraphQLParent) => deps.nodeFieldResolvers.table(parent as any),
         attributes: (parent: GraphQLParent) => deps.nodeFieldResolvers.attributes(parent as any),
-        attributeCount: (parent: GraphQLParent) => deps.nodeFieldResolvers.attributeCount(parent as any),
+        attributeCount: (parent: GraphQLParent) =>
+          deps.nodeFieldResolvers.attributeCount(parent as any),
         outgoingRelations: (parent: GraphQLParent) =>
           deps.nodeFieldResolvers.outgoingRelations(parent as any),
         incomingRelations: (parent: GraphQLParent) =>
           deps.nodeFieldResolvers.incomingRelations(parent as any),
-        relationCount: (parent: GraphQLParent) => deps.nodeFieldResolvers.relationCount(parent as any),
+        relationCount: (parent: GraphQLParent) =>
+          deps.nodeFieldResolvers.relationCount(parent as any),
       },
 
       NodeAttribute: {
@@ -328,17 +335,23 @@ export class GraphQLSchemaBuilder {
 
       NodeRelation: {
         table: (parent: GraphQLParent) => deps.relationFieldResolvers.table(parent as any),
-        sourceNode: (parent: GraphQLParent) => deps.relationFieldResolvers.sourceNode(parent as any),
-        targetNode: (parent: GraphQLParent) => deps.relationFieldResolvers.targetNode(parent as any),
-        relationType: (parent: GraphQLParent) => deps.relationFieldResolvers.relationType(parent as any),
+        sourceNode: (parent: GraphQLParent) =>
+          deps.relationFieldResolvers.sourceNode(parent as any),
+        targetNode: (parent: GraphQLParent) =>
+          deps.relationFieldResolvers.targetNode(parent as any),
+        relationType: (parent: GraphQLParent) =>
+          deps.relationFieldResolvers.relationType(parent as any),
       },
 
       QueryTemplate: {
-        query: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.query(parent as QueryTemplate),
-        queryName: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.queryName(parent as QueryTemplate),
+        query: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.query(parent as QueryTemplate),
+        queryName: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.queryName(parent as QueryTemplate),
         operationType: (parent: GraphQLParent) =>
           deps.queryTemplateFieldResolvers.operationType(parent as QueryTemplate),
-        variables: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.variables(parent as QueryTemplate),
+        variables: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.variables(parent as QueryTemplate),
         variablesSchema: (parent: GraphQLParent) =>
           deps.queryTemplateFieldResolvers.variablesSchema(parent as QueryTemplate),
         defaultVariables: (parent: GraphQLParent) =>
@@ -347,17 +360,26 @@ export class GraphQLSchemaBuilder {
           deps.queryTemplateFieldResolvers.applicableTables(parent as QueryTemplate),
         complexityScore: (parent: GraphQLParent) =>
           deps.queryTemplateFieldResolvers.complexityScore(parent as QueryTemplate),
-        usageCount: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.usageCount(parent as QueryTemplate),
-        lastUsedAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.lastUsedAt(parent as QueryTemplate),
+        usageCount: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.usageCount(parent as QueryTemplate),
+        lastUsedAt: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.lastUsedAt(parent as QueryTemplate),
         avgExecutionTimeMs: (parent: GraphQLParent) =>
           deps.queryTemplateFieldResolvers.avgExecutionTimeMs(parent as QueryTemplate),
-        version: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.version(parent as QueryTemplate),
-        isActive: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.isActive(parent as QueryTemplate),
-        tags: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.tags(parent as QueryTemplate),
-        createdBy: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.createdBy(parent as QueryTemplate),
-        createdAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.createdAt(parent as QueryTemplate),
-        updatedAt: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.updatedAt(parent as QueryTemplate),
-        isValid: (parent: GraphQLParent) => deps.queryTemplateFieldResolvers.isValid(parent as QueryTemplate),
+        version: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.version(parent as QueryTemplate),
+        isActive: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.isActive(parent as QueryTemplate),
+        tags: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.tags(parent as QueryTemplate),
+        createdBy: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.createdBy(parent as QueryTemplate),
+        createdAt: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.createdAt(parent as QueryTemplate),
+        updatedAt: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.updatedAt(parent as QueryTemplate),
+        isValid: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.isValid(parent as QueryTemplate),
         validationErrors: (parent: GraphQLParent) =>
           deps.queryTemplateFieldResolvers.validationErrors(parent as QueryTemplate),
       },

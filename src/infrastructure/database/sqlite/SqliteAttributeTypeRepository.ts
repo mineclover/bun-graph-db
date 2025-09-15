@@ -5,7 +5,10 @@ import type {
   PaginationOptions,
 } from '@/core/types/CommonTypes.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
-import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import type {
+  AttributeTypeUpdateData,
+  IAttributeTypeRepository,
+} from '@/domain/repositories/IAttributeTypeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface AttributeTypeRow {
@@ -268,21 +271,39 @@ export class SqliteAttributeTypeRepository implements IAttributeTypeRepository {
     }
   }
 
-  async update(id: AttributeTypeId, _updates: Partial<AttributeType>): Promise<AttributeType> {
+  async update(id: AttributeTypeId, updates: AttributeTypeUpdateData): Promise<AttributeType> {
     const existing = await this.findById(id)
     if (!existing) {
       throw new DatabaseException(`AttributeType with id ${id} not found`)
     }
 
-    const data = existing.toDatabase()
+    // Create a new AttributeType instance with the updated values
+    const updatedAttributeType = new AttributeType(
+      existing.getId(),
+      updates.identifier ?? existing.getIdentifier(),
+      updates.jsonType ?? existing.getJsonType(),
+      updates.format ?? existing.getFormat(),
+      updates.description ?? existing.getDescription(),
+      updates.validationSchema
+        ? JSON.stringify(updates.validationSchema)
+        : existing.getValidationSchema(),
+      existing.getReferenceConfig(), // No update available for this
+      updates.defaultValue ?? existing.getDefaultValue(),
+      existing.getExamples(), // No update available for this
+      existing.getCreatedAt(),
+      existing.getUpdatedAt()
+    )
+
+    const data = updatedAttributeType.toDatabase()
     const query = `
-      UPDATE attribute_types 
-      SET json_type = ?, format = ?, description = ?, validation_schema = ?, reference_config = ?, default_value = ?, examples = ?, updated_at = CURRENT_TIMESTAMP
+      UPDATE attribute_types
+      SET identifier = ?, json_type = ?, format = ?, description = ?, validation_schema = ?, reference_config = ?, default_value = ?, examples = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `
 
     try {
       const result = this.db.run(query, [
+        data.identifier,
         data.json_type,
         data.format,
         data.description,
@@ -297,7 +318,7 @@ export class SqliteAttributeTypeRepository implements IAttributeTypeRepository {
         throw new DatabaseException(`AttributeType with id ${id} not found for update`)
       }
 
-      return existing
+      return updatedAttributeType
     } catch (error) {
       throw new DatabaseException(`Failed to update attribute type: ${error}`)
     }

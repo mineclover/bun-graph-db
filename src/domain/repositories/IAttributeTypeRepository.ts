@@ -5,6 +5,15 @@ import type {
 } from '@/core/types/CommonTypes.js'
 import type { AttributeType } from '@/domain/entities/AttributeType.js'
 
+export interface AttributeTypeUpdateData {
+  identifier?: string
+  description?: string | null
+  jsonType?: string
+  format?: string | null
+  validationSchema?: Record<string, any> | null
+  defaultValue?: any
+}
+
 export interface IAttributeTypeRepository {
   save(attributeType: AttributeType): Promise<void>
   findById(id: AttributeTypeId): Promise<AttributeType | null>
@@ -19,5 +28,5 @@ export interface IAttributeTypeRepository {
   count(): Promise<number>
   saveMany(attributeTypes: AttributeType[]): Promise<void>
   findByIds(ids: AttributeTypeId[]): Promise<AttributeType[]>
-  update(id: AttributeTypeId, updates: Partial<AttributeType>): Promise<AttributeType>
+  update(id: AttributeTypeId, updates: AttributeTypeUpdateData): Promise<AttributeType>
 }

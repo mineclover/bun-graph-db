@@ -1,4 +1,8 @@
-import type { QueryTemplate, QueryVariablesSchema, TemplateType } from '../entities/QueryTemplate.js'
+import type {
+  QueryTemplate,
+  QueryVariablesSchema,
+  TemplateType,
+} from '../entities/QueryTemplate.js'
 
 export interface QueryTemplateUpdateData {
   name?: string
@@ -38,10 +42,13 @@ export interface IQueryTemplateRepository {
     hasNextPage: boolean
     hasPreviousPage: boolean
   }>
+  searchByQueryName(queryName: string): Promise<QueryTemplate[]>
+  searchByOperationType(operationType: string): Promise<QueryTemplate[]>
   create(template: QueryTemplate): Promise<QueryTemplate>
   update(id: string, updates: QueryTemplateUpdateData): Promise<QueryTemplate>
   delete(id: string): Promise<boolean>
   incrementUsage(id: string): Promise<void>
+  updateExecutionStats(id: string, executionTimeMs: number): Promise<void>
   findPopular(limit?: number): Promise<QueryTemplate[]>
   updateStatus(id: string, isActive: boolean): Promise<QueryTemplate>
 }

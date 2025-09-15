@@ -8,6 +8,13 @@ import type {
 import type { Attribute } from '@/domain/entities/Attribute.js'
 import type { AttributeType } from '@/domain/entities/AttributeType.js'
 
+export interface AttributeUpdateData {
+  identifier?: string
+  description?: string | null
+  isRequired?: boolean
+  defaultValue?: any
+}
+
 export interface IAttributeRepository {
   save(attribute: Attribute): Promise<void>
   findById(id: AttributeId): Promise<Attribute | null>
@@ -27,6 +34,6 @@ export interface IAttributeRepository {
   findByIds(ids: AttributeId[]): Promise<Attribute[]>
   findRequiredByTableId(tableId: TableId): Promise<Attribute[]>
   getAttributeTypeForAttribute(attributeId: AttributeId): Promise<AttributeType | null>
-  update(id: AttributeId, updates: Partial<Attribute>): Promise<Attribute>
+  update(id: AttributeId, updates: AttributeUpdateData): Promise<Attribute>
   findByIdentifier(identifier: string): Promise<Attribute | null>
 }
