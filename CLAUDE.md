@@ -16,6 +16,7 @@
 - Graph analytics with quality metrics
 - **Batch Operations**: Mass template create/update/delete with variable arrays
 - **CI/CD Automation**: Automated template synchronization and deployment
+- **🆕 Table Export/Import**: Selective table package export/import with dependency resolution and auto-generated templates
 
 ## Technical Architecture
 
@@ -39,7 +40,8 @@ Application Layer (Use Cases)
 ├── Template Execution Engine
 ├── Import/Export Utilities
 ├── Batch Operations Engine
-└── CI/CD Pipeline Management
+├── CI/CD Pipeline Management
+└── 🆕 Table Package Management (export/import with dependency resolution)
 
 Infrastructure Layer (External Concerns)
 ├── SQLite Repository Implementations
