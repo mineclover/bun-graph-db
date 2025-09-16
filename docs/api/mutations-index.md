@@ -39,11 +39,10 @@ GraphQL API Mutation 타입 참조 문서
 - `importTemplate(jsonData: String!, overwriteExisting: Boolean, generateNewIdentifier: Boolean, newIdentifierPrefix: String): ImportTemplatePayload!` - 템플릿 가져오기
 
 ## 📄 문서 관리
-- `createDoc(input: CreateDocInput!): CreateDocPayload!` - 새 문서 생성
-- `updateDoc(id: ID!, input: UpdateDocInput!): UpdateDocPayload!` - 문서 수정
-- `deleteDoc(id: ID!): DeleteDocPayload!` - 문서 삭제
-- `activateDoc(id: ID!): ActivateDocPayload!` - 문서 활성화
-- `createDocVersion(tableId: ID!, category: DocCategory!, content: String!): CreateDocPayload!` - 문서 새 버전 생성
+- `createDoc(input: CreateDocInput!): CreateDocPayload!` - 새 문서 생성 (자동 버전 관리)
+- `updateDoc(id: ID!, input: UpdateDocInput!): UpdateDocPayload!` - 기존 문서 내용/상태 수정
+- `deleteDoc(id: ID!): DeleteDocPayload!` - 문서 영구 삭제
+- `activateDoc(id: ID!): ActivateDocPayload!` - 문서 활성화 (같은 카테고리 다른 문서들 자동 비활성화)
 
 ## 📤 스키마 내보내기/가져오기
 - `importSchema(exportData: JSON!, options: SchemaImportOptions): ImportResult!` - 스키마 데이터 가져오기

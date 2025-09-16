@@ -21,6 +21,7 @@ import type {
 } from './field-resolvers/index.js'
 import type {
   AttributeMutations,
+  DocMutations,
   NodeMutations,
   RelationMutations,
   TableMutations,
@@ -29,6 +30,7 @@ import type {
 // Import resolver classes
 import type {
   AttributeQueries,
+  DocQueries,
   NodeQueries,
   RelationQueries,
   SystemQueries,
@@ -45,6 +47,7 @@ export interface GraphQLDependencies {
   attributeQueries: AttributeQueries
   relationQueries: RelationQueries
   templateQueries: TemplateQueries
+  docQueries: DocQueries
   systemQueries?: SystemQueries
 
   // Mutation resolvers
@@ -53,6 +56,7 @@ export interface GraphQLDependencies {
   attributeMutations: AttributeMutations
   relationMutations: RelationMutations
   templateMutations: TemplateMutations
+  docMutations: DocMutations
 
   // Field resolvers
   tableFieldResolvers: TableFieldResolvers
@@ -81,6 +85,7 @@ export class GraphQLSchemaBuilder {
       attributeQueries: await this.container.resolve(GraphQLTokens.ATTRIBUTE_QUERIES),
       relationQueries: await this.container.resolve(GraphQLTokens.RELATION_QUERIES),
       templateQueries: await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES),
+      docQueries: await this.container.resolve(GraphQLTokens.DOC_QUERIES),
       systemQueries: await this.container.resolve(GraphQLTokens.SYSTEM_QUERIES),
 
       // Mutation resolvers
@@ -89,6 +94,7 @@ export class GraphQLSchemaBuilder {
       attributeMutations: await this.container.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS),
       relationMutations: await this.container.resolve(GraphQLTokens.RELATION_MUTATIONS),
       templateMutations: await this.container.resolve(GraphQLTokens.TEMPLATE_MUTATIONS),
+      docMutations: await this.container.resolve(GraphQLTokens.DOC_MUTATIONS),
 
       // Field resolvers
       tableFieldResolvers: await this.container.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS),
@@ -208,6 +214,18 @@ export class GraphQLSchemaBuilder {
         tableDependencyTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateQueries.tableDependencyTemplates(_, args as any),
 
+        // Doc queries
+        getDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docQueries.getDoc(_, args as any),
+        getActiveDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docQueries.getActiveDoc(_, args as any),
+        getDocs: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docQueries.getDocs(_, args as any),
+        getDocVersions: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docQueries.getDocVersions(_, args as any),
+        searchDocs: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docQueries.searchDocs(_, args as any),
+
         // System monitoring queries
         systemStats: (_: GraphQLParent, _args: Record<string, unknown>) =>
           deps.systemQueries?.systemStats() || null,
@@ -296,6 +314,18 @@ export class GraphQLSchemaBuilder {
           args: Record<string, unknown>,
           context: GraphQLContext
         ) => deps.templateMutations.importTemplate(_, args, context),
+
+        // Doc mutations
+        createDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docMutations.createDoc(_, args as any),
+        updateDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docMutations.updateDoc(_, args as any),
+        deleteDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docMutations.deleteDoc(_, args as any),
+        activateDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docMutations.activateDoc(_, args as any),
+        createDocVersion: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.docMutations.createDocVersion(_, args as any),
 
         // Schema import mutations
         importSchema: (_: GraphQLParent, args: Record<string, unknown>) =>

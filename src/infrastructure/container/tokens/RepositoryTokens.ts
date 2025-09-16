@@ -12,6 +12,7 @@ export const RepositoryTokens = {
   NODE_RELATION_REPOSITORY: Symbol.for('NodeRelationRepository'),
   RELATION_TYPE_REPOSITORY: Symbol.for('RelationTypeRepository'),
   QUERY_TEMPLATE_REPOSITORY: Symbol.for('QueryTemplateRepository'),
+  DOC_REPOSITORY: Symbol.for('DocRepository'),
 
   // Search repositories
   NODE_SEARCH_REPOSITORY: Symbol.for('NodeSearchRepository'),

@@ -1,5 +1,6 @@
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
@@ -15,6 +16,7 @@ import {
 import { buildGraphQLSchema } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
 import {
   AttributeMutations,
+  DocMutations,
   NodeMutations,
   RelationMutations,
   TableMutations,
@@ -22,6 +24,7 @@ import {
 } from '@/presentation/graphql/mutations/index.js'
 import {
   AttributeQueries,
+  DocQueries,
   NodeQueries,
   RelationQueries,
   SystemQueries,
@@ -130,6 +133,22 @@ export function registerGraphQLModule(container: DIContainer): void {
       return new TemplateQueries(queryTemplateRepository, simpleLogger)
     },
     [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY]
+  )
+
+  container.registerSingleton(
+    GraphQLTokens.DOC_QUERIES,
+    async (c) => {
+      const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as IDocRepository
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new DocQueries(docRepository, simpleLogger)
+    },
+    [RepositoryTokens.DOC_REPOSITORY]
   )
 
   container.registerSingleton(
@@ -301,6 +320,36 @@ export function registerGraphQLModule(container: DIContainer): void {
     [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY, UseCaseTokens.EXECUTE_QUERY_TEMPLATE_USE_CASE]
   )
 
+  container.registerSingleton(
+    GraphQLTokens.DOC_MUTATIONS,
+    async (c) => {
+      const createDocUseCase = (await c.resolve(UseCaseTokens.CREATE_DOC_USE_CASE)) as any
+      const updateDocUseCase = (await c.resolve(UseCaseTokens.UPDATE_DOC_USE_CASE)) as any
+      const deleteDocUseCase = (await c.resolve(UseCaseTokens.DELETE_DOC_USE_CASE)) as any
+      const activateDocUseCase = (await c.resolve(UseCaseTokens.ACTIVATE_DOC_USE_CASE)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new DocMutations(
+        createDocUseCase,
+        updateDocUseCase,
+        deleteDocUseCase,
+        activateDocUseCase,
+        simpleLogger
+      )
+    },
+    [
+      UseCaseTokens.CREATE_DOC_USE_CASE,
+      UseCaseTokens.UPDATE_DOC_USE_CASE,
+      UseCaseTokens.DELETE_DOC_USE_CASE,
+      UseCaseTokens.ACTIVATE_DOC_USE_CASE,
+    ]
+  )
+
   // Field resolvers
   container.registerSingleton(
     GraphQLTokens.TABLE_FIELD_RESOLVERS,
@@ -458,6 +507,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const attributeQueries = (await c.resolve(GraphQLTokens.ATTRIBUTE_QUERIES)) as any
       const relationQueries = (await c.resolve(GraphQLTokens.RELATION_QUERIES)) as any
       const templateQueries = (await c.resolve(GraphQLTokens.TEMPLATE_QUERIES)) as any
+      const docQueries = (await c.resolve(GraphQLTokens.DOC_QUERIES)) as any
       const systemQueries = (await c.resolve(GraphQLTokens.SYSTEM_QUERIES)) as any
 
       const tableMutations = (await c.resolve(GraphQLTokens.TABLE_MUTATIONS)) as any
@@ -465,6 +515,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const attributeMutations = (await c.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS)) as any
       const relationMutations = (await c.resolve(GraphQLTokens.RELATION_MUTATIONS)) as any
       const templateMutations = (await c.resolve(GraphQLTokens.TEMPLATE_MUTATIONS)) as any
+      const docMutations = (await c.resolve(GraphQLTokens.DOC_MUTATIONS)) as any
 
       const tableFieldResolvers = (await c.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS)) as any
       const nodeFieldResolvers = (await c.resolve(GraphQLTokens.NODE_FIELD_RESOLVERS)) as any
@@ -485,6 +536,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         attributeQueries,
         relationQueries,
         templateQueries,
+        docQueries,
         systemQueries,
         // Mutations
         tableMutations,
@@ -492,6 +544,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         attributeMutations,
         relationMutations,
         templateMutations,
+        docMutations,
         // Field resolvers
         tableFieldResolvers,
         nodeFieldResolvers,
@@ -509,12 +562,14 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.ATTRIBUTE_QUERIES,
       GraphQLTokens.RELATION_QUERIES,
       GraphQLTokens.TEMPLATE_QUERIES,
+      GraphQLTokens.DOC_QUERIES,
       GraphQLTokens.SYSTEM_QUERIES,
       GraphQLTokens.TABLE_MUTATIONS,
       GraphQLTokens.NODE_MUTATIONS,
       GraphQLTokens.ATTRIBUTE_MUTATIONS,
       GraphQLTokens.RELATION_MUTATIONS,
       GraphQLTokens.TEMPLATE_MUTATIONS,
+      GraphQLTokens.DOC_MUTATIONS,
       GraphQLTokens.TABLE_FIELD_RESOLVERS,
       GraphQLTokens.NODE_FIELD_RESOLVERS,
       GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS,

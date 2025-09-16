@@ -732,6 +732,229 @@ query ExecuteTemplate(
 
 ---
 
+## 📚 문서 관리
+
+### `getDoc` - 단일 문서 조회
+
+**설명**: ID로 특정 문서를 조회합니다.
+
+**타입**: `Doc`
+
+**파라미터**:
+- `id: ID!` - 문서 ID
+
+#### 예제
+
+```graphql
+query GetDoc($docId: ID!) {
+  getDoc(id: $docId) {
+    id
+    category
+    version
+    content
+    isActive
+    createdAt
+    updatedAt
+
+    # 테이블 정보
+    table {
+      id
+      identifier
+      name
+    }
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "docId": "doc_123"
+}
+```
+
+### `getActiveDoc` - 활성 문서 조회
+
+**설명**: 특정 테이블과 카테고리의 현재 활성 문서를 조회합니다.
+
+**타입**: `Doc`
+
+**파라미터**:
+- `tableId: ID!` - 테이블 ID
+- `category: DocCategory!` - 문서 카테고리
+
+#### 예제
+
+```graphql
+query GetActiveDoc($tableId: ID!, $category: DocCategory!) {
+  getActiveDoc(tableId: $tableId, category: $category) {
+    id
+    content
+    version
+    isActive
+    createdAt
+    updatedAt
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "tableId": "table_123",
+  "category": "USAGE"
+}
+```
+
+### `getDocs` - 문서 목록 조회
+
+**설명**: 다양한 필터로 문서 목록을 조회합니다.
+
+**타입**: `DocsConnection!`
+
+**파라미터**:
+- `tableId` (선택) - 테이블 ID로 필터링
+- `category` (선택) - 카테고리로 필터링
+- `isActive` (선택) - 활성 상태로 필터링
+- `pagination` (선택) - 페이지네이션
+
+#### 예제
+
+**모든 문서 조회**:
+```graphql
+query GetAllDocs($tableId: ID) {
+  getDocs(tableId: $tableId) {
+    docs {
+      id
+      category
+      version
+      content
+      isActive
+      createdAt
+    }
+    totalCount
+    hasNextPage
+    hasPreviousPage
+  }
+}
+```
+
+**활성 문서만 조회**:
+```graphql
+query GetActiveDocs($tableId: ID!) {
+  getDocs(
+    tableId: $tableId
+    isActive: true
+    pagination: { limit: 20, offset: 0 }
+  ) {
+    docs {
+      id
+      category
+      content
+      version
+    }
+    totalCount
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "tableId": "table_123"
+}
+```
+
+### `getDocVersions` - 문서 버전 조회
+
+**설명**: 특정 테이블과 카테고리의 모든 버전을 조회합니다.
+
+**타입**: `DocsConnection!`
+
+**파라미터**:
+- `tableId: ID!` - 테이블 ID
+- `category: DocCategory!` - 문서 카테고리
+- `pagination` (선택) - 페이지네이션
+
+#### 예제
+
+```graphql
+query GetDocVersions($tableId: ID!, $category: DocCategory!) {
+  getDocVersions(
+    tableId: $tableId
+    category: $category
+    pagination: { limit: 10, offset: 0 }
+  ) {
+    docs {
+      id
+      version
+      content
+      isActive
+      createdAt
+      updatedAt
+    }
+    totalCount
+    hasNextPage
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "tableId": "table_123",
+  "category": "GUIDE"
+}
+```
+
+### `searchDocs` - 문서 검색
+
+**설명**: 문서 내용을 기반으로 검색합니다.
+
+**타입**: `DocsConnection!`
+
+**파라미터**:
+- `filter: DocsFilter!` - 검색 및 필터 조건
+- `pagination` (선택) - 페이지네이션
+
+#### 예제
+
+```graphql
+query SearchDocs($searchTerm: String!, $tableId: ID) {
+  searchDocs(
+    filter: {
+      searchTerm: $searchTerm
+      tableId: $tableId
+      category: "USAGE"
+    }
+    pagination: { limit: 20 }
+  ) {
+    docs {
+      id
+      category
+      content
+      version
+      table {
+        id
+        identifier
+        name
+      }
+    }
+    totalCount
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "searchTerm": "사용법",
+  "tableId": "table_123"
+}
+```
+
+---
+
 ## 📊 분석 및 통계
 
 ### 시스템 메트릭

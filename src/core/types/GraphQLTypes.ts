@@ -6,6 +6,9 @@
 export type {
   CreateRelationInput,
   CreateTableInput,
+  CreateDocInput,
+  UpdateDocInput,
+  DocsFilter,
   SearchNodesFilter,
   SearchRelatedNodesFilter,
   TablesFilter,

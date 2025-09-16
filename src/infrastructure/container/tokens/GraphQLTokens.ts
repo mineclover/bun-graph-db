@@ -13,6 +13,7 @@ export const GraphQLTokens = {
   ATTRIBUTE_QUERIES: Symbol.for('AttributeQueries'),
   RELATION_QUERIES: Symbol.for('RelationQueries'),
   TEMPLATE_QUERIES: Symbol.for('TemplateQueries'),
+  DOC_QUERIES: Symbol.for('DocQueries'),
   ANALYTICS_QUERIES: Symbol.for('AnalyticsQueries'),
   SYSTEM_QUERIES: Symbol.for('SystemQueries'),
 
@@ -22,6 +23,7 @@ export const GraphQLTokens = {
   ATTRIBUTE_MUTATIONS: Symbol.for('AttributeMutations'),
   RELATION_MUTATIONS: Symbol.for('RelationMutations'),
   TEMPLATE_MUTATIONS: Symbol.for('TemplateMutations'),
+  DOC_MUTATIONS: Symbol.for('DocMutations'),
 
   // Field resolvers
   TABLE_FIELD_RESOLVERS: Symbol.for('TableFieldResolvers'),

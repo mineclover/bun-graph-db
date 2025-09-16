@@ -849,6 +849,261 @@ mutation DeleteTemplate($input: DeleteQueryTemplateInput!) {
 
 ---
 
+## 📚 문서 관리
+
+### `createDoc` - 문서 생성
+
+**설명**: 테이블에 새로운 문서를 생성합니다.
+
+**타입**: `CreateDocPayload!`
+
+**파라미터**:
+- `input: CreateDocInput!` - 문서 생성 정보
+
+#### 예제
+
+```graphql
+mutation CreateDoc($input: CreateDocInput!) {
+  createDoc(input: $input) {
+    success
+    doc {
+      id
+      category
+      version
+      content
+      isActive
+      createdAt
+
+      # 테이블 정보
+      table {
+        id
+        identifier
+        name
+      }
+    }
+    errors {
+      message
+      field
+    }
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "input": {
+    "tableId": "table_123",
+    "category": "USAGE",
+    "content": "이 테이블은 사용자 정보를 관리하기 위한 테이블입니다. 다음과 같은 기능을 제공합니다:\n\n1. 사용자 기본 정보 저장\n2. 사용자 속성 관리\n3. 사용자 간 관계 설정",
+    "version": 1
+  }
+}
+```
+
+**응답 예시**:
+```json
+{
+  "data": {
+    "createDoc": {
+      "success": true,
+      "doc": {
+        "id": "doc_123",
+        "category": "USAGE",
+        "version": 1,
+        "content": "이 테이블은 사용자 정보를 관리하기 위한 테이블입니다...",
+        "isActive": true,
+        "createdAt": "2025-09-16T12:00:00.000Z",
+        "table": {
+          "id": "table_123",
+          "identifier": "users_table",
+          "name": "사용자 테이블"
+        }
+      },
+      "errors": []
+    }
+  }
+}
+```
+
+### `updateDoc` - 문서 수정
+
+**설명**: 기존 문서의 내용이나 상태를 수정합니다.
+
+**타입**: `UpdateDocPayload!`
+
+**파라미터**:
+- `id: ID!` - 문서 ID
+- `input: UpdateDocInput!` - 수정할 정보
+
+#### 예제
+
+```graphql
+mutation UpdateDoc($id: ID!, $input: UpdateDocInput!) {
+  updateDoc(id: $id, input: $input) {
+    success
+    doc {
+      id
+      content
+      isActive
+      updatedAt
+    }
+    errors {
+      message
+      field
+    }
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "id": "doc_123",
+  "input": {
+    "content": "업데이트된 사용자 테이블 사용법:\n\n1. 사용자 기본 정보 저장\n2. 사용자 속성 관리\n3. 사용자 간 관계 설정\n4. 사용자 권한 관리 (NEW)",
+    "isActive": true
+  }
+}
+```
+
+### `deleteDoc` - 문서 삭제
+
+**설명**: 문서를 영구적으로 삭제합니다.
+
+**타입**: `DeleteDocPayload!`
+
+**파라미터**:
+- `id: ID!` - 삭제할 문서 ID
+
+#### 예제
+
+```graphql
+mutation DeleteDoc($id: ID!) {
+  deleteDoc(id: $id) {
+    success
+    errors {
+      message
+    }
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "id": "doc_123"
+}
+```
+
+### `activateDoc` - 문서 활성화
+
+**설명**: 특정 문서를 활성 상태로 설정하고, 같은 카테고리의 다른 문서들은 비활성화합니다.
+
+**타입**: `ActivateDocPayload!`
+
+**파라미터**:
+- `id: ID!` - 활성화할 문서 ID
+
+#### 예제
+
+```graphql
+mutation ActivateDoc($id: ID!) {
+  activateDoc(id: $id) {
+    success
+    doc {
+      id
+      isActive
+      category
+      version
+      content
+    }
+    errors {
+      message
+    }
+  }
+}
+```
+
+**Variables**:
+```json
+{
+  "id": "doc_456"
+}
+```
+
+**비즈니스 규칙**:
+- 한 테이블의 같은 카테고리에는 하나의 활성 문서만 존재할 수 있습니다
+- 문서를 활성화하면 같은 카테고리의 다른 모든 문서는 자동으로 비활성화됩니다
+
+### 문서 관리 워크플로우 예제
+
+**새 버전 생성 및 활성화**:
+```graphql
+# 1. 새 버전 생성
+mutation CreateNewVersion {
+  createDoc(input: {
+    tableId: "table_123"
+    category: "USAGE"
+    content: "개선된 사용법 문서..."
+    version: 2
+  }) {
+    success
+    doc {
+      id
+      version
+      isActive
+    }
+  }
+}
+
+# 2. 새 버전 활성화
+mutation ActivateNewVersion {
+  activateDoc(id: "new_doc_id") {
+    success
+    doc {
+      isActive
+      version
+    }
+  }
+}
+```
+
+**카테고리별 문서 관리**:
+```graphql
+# 사용법, 가이드, 예제 문서를 각각 생성
+mutation CreateDocumentationSet {
+  usage: createDoc(input: {
+    tableId: "table_123"
+    category: "USAGE"
+    content: "테이블 사용법..."
+  }) {
+    success
+    doc { id category }
+  }
+
+  guide: createDoc(input: {
+    tableId: "table_123"
+    category: "GUIDE"
+    content: "단계별 가이드..."
+  }) {
+    success
+    doc { id category }
+  }
+
+  example: createDoc(input: {
+    tableId: "table_123"
+    category: "EXAMPLE"
+    content: "실제 사용 예제..."
+  }) {
+    success
+    doc { id category }
+  }
+}
+```
+
+---
+
 ## 📊 대량 데이터 처리
 
 ### `bulkCreateNodes` - 노드 대량 생성

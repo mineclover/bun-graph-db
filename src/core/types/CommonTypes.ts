@@ -13,6 +13,7 @@ export type RelationId = string
 export type NodeRelationId = string
 export type RelationTypeId = string
 export type QueryTemplateId = string
+export type DocId = string
 
 export interface BaseEntity {
   id: ID

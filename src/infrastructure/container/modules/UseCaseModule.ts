@@ -1,5 +1,9 @@
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
+import { ActivateDocUseCase } from '@/application/use-cases/docs/ActivateDoc.js'
+import { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
+import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
+import { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
 import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
@@ -399,6 +403,72 @@ export function registerUseCaseModule(container: DIContainer): void {
       )
     },
     [UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE]
+  )
+
+  // Doc use cases
+  container.registerSingleton(
+    UseCaseTokens.CREATE_DOC_USE_CASE,
+    async (c) => {
+      const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as any
+      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new CreateDocUseCase(docRepository, tableRepository, simpleLogger)
+    },
+    [RepositoryTokens.DOC_REPOSITORY, RepositoryTokens.TABLE_REPOSITORY]
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.UPDATE_DOC_USE_CASE,
+    async (c) => {
+      const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new UpdateDocUseCase(docRepository, simpleLogger)
+    },
+    [RepositoryTokens.DOC_REPOSITORY]
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.DELETE_DOC_USE_CASE,
+    async (c) => {
+      const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new DeleteDocUseCase(docRepository, simpleLogger)
+    },
+    [RepositoryTokens.DOC_REPOSITORY]
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.ACTIVATE_DOC_USE_CASE,
+    async (c) => {
+      const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new ActivateDocUseCase(docRepository, simpleLogger)
+    },
+    [RepositoryTokens.DOC_REPOSITORY]
   )
 
   // Monitoring use cases

@@ -1,4 +1,5 @@
 export { AttributeMutations } from './AttributeMutations.js'
+export { DocMutations } from './DocMutations.js'
 export { NodeMutations } from './NodeMutations.js'
 export { RelationMutations } from './RelationMutations.js'
 export { TableMutations } from './TableMutations.js'

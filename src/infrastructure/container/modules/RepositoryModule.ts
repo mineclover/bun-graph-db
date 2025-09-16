@@ -1,5 +1,6 @@
 import { SqliteAttributeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeRepository.js'
 import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeTypeRepository.js'
+import { SqliteDocRepository } from '@/infrastructure/database/sqlite/SqliteDocRepository.js'
 import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
 import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/SqliteNodeAttributeRepository.js'
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
@@ -119,6 +120,16 @@ export function registerRepositoryModule(container: DIContainer): void {
     async (c) => {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteGraphRepository(connection)
+    },
+    [DatabaseTokens.DATABASE_CONNECTION]
+  )
+
+  // Doc repository
+  container.registerSingleton(
+    RepositoryTokens.DOC_REPOSITORY,
+    async (c) => {
+      const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
+      return new SqliteDocRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )

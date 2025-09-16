@@ -50,11 +50,11 @@ GraphQL API Query 타입 참조 문서
 - `executeTemplate(input: ExecuteQueryTemplateInput!): ExecuteQueryTemplatePayload!` - 템플릿 실행
 
 ## 📄 문서 관리
-- `getDoc(id: ID!): Doc` - ID로 문서 조회
-- `getActiveDoc(tableId: ID!, category: DocCategory!): Doc` - 테이블의 활성 문서 조회
-- `getDocs(tableId: ID!, category: DocCategory, filter: DocsFilter, pagination: PaginationInput, sort: [SortInput!]): DocsConnection!` - 테이블 문서 목록 조회
-- `getDocVersions(tableId: ID!, category: DocCategory!): [Doc!]!` - 문서 버전 목록 조회
-- `searchDocs(filter: DocsFilter!, pagination: PaginationInput, sort: [SortInput!]): DocsConnection!` - 문서 검색
+- `getDoc(id: ID!): Doc` - ID로 특정 문서 조회
+- `getActiveDoc(tableId: ID!, category: DocCategory!): Doc` - 테이블+카테고리의 현재 활성 문서 조회
+- `getDocs(tableId: ID, category: DocCategory, isActive: Boolean, pagination: PaginationInput): DocsConnection!` - 문서 목록 조회 (필터링, 페이지네이션 지원)
+- `getDocVersions(tableId: ID!, category: DocCategory!, pagination: PaginationInput): DocsConnection!` - 특정 테이블+카테고리의 모든 버전 조회
+- `searchDocs(filter: DocsFilter!, pagination: PaginationInput): DocsConnection!` - 문서 내용 기반 검색
 
 ## 📤 스키마 내보내기
 - `exportTable(tableId: String!, options: SchemaExportOptions): SchemaExportResult!` - 특정 테이블 내보내기
