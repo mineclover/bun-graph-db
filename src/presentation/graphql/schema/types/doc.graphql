@@ -14,11 +14,11 @@ type Doc implements Node {
 }
 
 enum DocCategory {
-  USAGE
-  GUIDE
-  EXAMPLE
-  SPEC
-  GENERAL
+  usage
+  guide
+  example
+  spec
+  general
 }
 
 # Input types for doc operations

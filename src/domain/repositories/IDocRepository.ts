@@ -14,6 +14,18 @@ export interface DocSearchOptions {
   sortDirection?: 'ASC' | 'DESC'
 }
 
+export interface DocContentSearchOptions {
+  query: string
+  tableId?: TableId
+  category?: DocCategory
+  isActive?: boolean
+}
+
+export interface DocContentSearchPagination {
+  limit?: number
+  offset?: number
+}
+
 // Repository interface (Port) - defines what the domain needs from persistence
 export interface IDocRepository {
   // Basic CRUD operations
@@ -36,6 +48,9 @@ export interface IDocRepository {
   exists(tableId: TableId, category: DocCategory, version: number): Promise<boolean>
   count(tableId?: TableId): Promise<number>
   countByCategory(category: DocCategory): Promise<number>
+
+  // Content search operations
+  searchByContent(options: DocContentSearchOptions, pagination?: DocContentSearchPagination): Promise<PaginatedResult<Doc>>
 
   // Batch operations for performance
   saveMany(docs: Doc[]): Promise<void>

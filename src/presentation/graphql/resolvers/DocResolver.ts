@@ -31,6 +31,17 @@ export class DocResolver extends BaseResolver {
     this.logger = logger
   }
 
+  private mapGraphQLCategoryToDomain(category: any): DocCategory {
+    const categoryMapping: Record<string, DocCategory> = {
+      'USAGE': DocCategory.USAGE,
+      'GUIDE': DocCategory.GUIDE,
+      'EXAMPLE': DocCategory.EXAMPLE,
+      'SPEC': DocCategory.SPEC,
+      'GENERAL': DocCategory.GENERAL,
+    }
+    return categoryMapping[category] || category
+  }
+
   // Query resolvers
   async getDoc(args: { id: string }, _context?: GraphQLContext): Promise<DocDto | null> {
     this.validateArgs(
@@ -107,9 +118,9 @@ export class DocResolver extends BaseResolver {
         limit: pagination.limit || 10,
         offset: pagination.offset || 0,
         tableId: args.tableId as TableId,
-        category: args.category || filter?.category,
-        isActive: filter?.isActive,
-        version: filter?.version,
+        category: args.category ? this.mapGraphQLCategoryToDomain(args.category) : (filter?.category ? this.mapGraphQLCategoryToDomain(filter.category) : undefined),
+        isActive: filter?.isActive || undefined,
+        version: filter?.version || undefined,
         createdAfter: filter?.createdAfter ? new Date(filter.createdAfter) : undefined,
         createdBefore: filter?.createdBefore ? new Date(filter.createdBefore) : undefined,
         sortBy: sort?.[0]?.field || 'createdAt',
@@ -180,9 +191,9 @@ export class DocResolver extends BaseResolver {
         limit: pagination.limit || 10,
         offset: pagination.offset || 0,
         tableId: filter.tableId as TableId,
-        category: filter.category,
-        isActive: filter.isActive,
-        version: filter.version,
+        category: filter.category ? this.mapGraphQLCategoryToDomain(filter.category) : undefined,
+        isActive: filter.isActive || undefined,
+        version: filter.version || undefined,
         createdAfter: filter.createdAfter ? new Date(filter.createdAfter) : undefined,
         createdBefore: filter.createdBefore ? new Date(filter.createdBefore) : undefined,
         sortBy: sort?.[0]?.field || 'createdAt',
@@ -260,7 +271,9 @@ export class DocResolver extends BaseResolver {
     )
 
     try {
-      const result = await this.updateDocUseCase.execute(args.id as DocId, args.input)
+      const result = await this.updateDocUseCase.execute(args.id as DocId, {
+        content: args.input.content || undefined,
+      })
 
       return {
         success: true,

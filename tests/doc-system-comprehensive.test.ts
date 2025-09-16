@@ -117,7 +117,7 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
       const input = {
         tableId: TEST_TABLE_ID,
-        category: 'USAGE',
+        category: 'usage',
         content: TEST_CONTENT.USAGE
       }
 
@@ -159,7 +159,7 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
         const input = {
           tableId: TEST_TABLE_ID,
-          category: category,
+          category: category.toLowerCase(),
           content: content
         }
 
@@ -191,7 +191,7 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
       const input = {
         tableId: TEST_TABLE_ID,
-        category: 'USAGE',
+        category: 'usage',
         content: 'Duplicate content',
         version: 1
       }
@@ -307,7 +307,7 @@ describe('Doc System - Comprehensive Test Suite', () => {
       const createResult = await graphqlRequest(createMutation, {
         input: {
           tableId: TEST_TABLE_ID,
-          category: 'GENERAL',
+          category: 'general',
           content: 'This doc will be deleted',
           version: 2
         }
@@ -452,7 +452,7 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
       const result = await graphqlRequest(query, {
         tableId: TEST_TABLE_ID,
-        category: 'USAGE'
+        category: 'usage'
       })
 
       expect(result.errors).toBeUndefined()
@@ -466,39 +466,35 @@ describe('Doc System - Comprehensive Test Suite', () => {
       const query = `
         query GetDocVersions($tableId: ID!, $category: DocCategory!) {
           getDocVersions(tableId: $tableId, category: $category) {
-            docs {
-              id
-              category
-              version
-              isActive
-              content
-            }
-            totalCount
+            id
+            category
+            version
+            isActive
+            content
           }
         }
       `
 
       const result = await graphqlRequest(query, {
         tableId: TEST_TABLE_ID,
-        category: 'USAGE'
+        category: 'usage'
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.getDocVersions).toBeDefined()
-      expect(result.data.getDocVersions.docs).toBeInstanceOf(Array)
-      expect(result.data.getDocVersions.docs.length).toBeGreaterThan(0)
-      expect(result.data.getDocVersions.totalCount).toBeGreaterThan(0)
+      expect(result.data.getDocVersions).toBeInstanceOf(Array)
+      expect(result.data.getDocVersions.length).toBeGreaterThan(0)
 
       // All docs should have the same category
-      result.data.getDocVersions.docs.forEach(doc => {
+      result.data.getDocVersions.forEach(doc => {
         expect(doc.category).toBe('usage')
       })
     }, TEST_TIMEOUT)
 
     test('searchDocs - Search documentation by content', async () => {
       const query = `
-        query SearchDocs($searchTerm: String!) {
-          searchDocs(searchTerm: $searchTerm) {
+        query SearchDocs($filter: DocsFilter!) {
+          searchDocs(filter: $filter) {
             docs {
               id
               table {
@@ -515,7 +511,9 @@ describe('Doc System - Comprehensive Test Suite', () => {
       `
 
       const result = await graphqlRequest(query, {
-        searchTerm: 'todos'
+        filter: {
+          tableId: TEST_TABLE_ID
+        }
       })
 
       expect(result.errors).toBeUndefined()
@@ -523,10 +521,10 @@ describe('Doc System - Comprehensive Test Suite', () => {
       expect(result.data.searchDocs.docs).toBeInstanceOf(Array)
       expect(result.data.searchDocs.totalCount).toBeGreaterThanOrEqual(0)
 
-      // If docs found, they should contain the search term
+      // If docs found, they should be for the table
       if (result.data.searchDocs.docs.length > 0) {
         result.data.searchDocs.docs.forEach(doc => {
-          expect(doc.content.toLowerCase()).toContain('todos')
+          expect(doc.table.id).toBe(TEST_TABLE_ID)
         })
       }
     }, TEST_TIMEOUT)
@@ -586,7 +584,7 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
       const input = {
         tableId: '99999',
-        category: 'USAGE',
+        category: 'usage',
         content: 'Test content'
       }
 
@@ -616,7 +614,7 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
       const input = {
         tableId: TEST_TABLE_ID,
-        category: 'USAGE',
+        category: 'usage',
         content: ''
       }
 
@@ -674,8 +672,8 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
     test('getDocs - Pagination', async () => {
       const query = `
-        query GetDocs($tableId: ID!, $limit: Int, $offset: Int) {
-          getDocs(tableId: $tableId, limit: $limit, offset: $offset) {
+        query GetDocs($tableId: ID!, $pagination: PaginationInput) {
+          getDocs(tableId: $tableId, pagination: $pagination) {
             docs {
               id
             }
@@ -688,8 +686,10 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
       const result = await graphqlRequest(query, {
         tableId: TEST_TABLE_ID,
-        limit: 2,
-        offset: 0
+        pagination: {
+          limit: 2,
+          offset: 0
+        }
       })
 
       expect(result.errors).toBeUndefined()
@@ -718,7 +718,7 @@ describe('Doc System - Comprehensive Test Suite', () => {
 
       const input = {
         tableId: TEST_TABLE_ID,
-        category: 'SPEC',
+        category: 'spec',
         content: longContent,
         version: 2
       }

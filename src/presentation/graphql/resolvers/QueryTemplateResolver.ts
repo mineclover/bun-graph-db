@@ -313,7 +313,7 @@ export class QueryTemplateResolver extends BaseResolver {
    * 특정 테이블과 연관된 템플릿 검색
    */
   async findTemplatesByTable(input: FindTemplatesByTableInput): Promise<QueryTemplateDto[]> {
-    this.logger.info('Finding templates by table', input)
+    this.logger.info('Finding templates by table', input as any)
 
     try {
       const templates = await this.queryTemplateRepository.findByApplicableTable(
@@ -360,7 +360,7 @@ export class QueryTemplateResolver extends BaseResolver {
       const groupedByTable = new Map<string, QueryTemplate[]>()
 
       templates.forEach((template) => {
-        const applicableTables = template.applicableTables || []
+        const applicableTables = template.getApplicableTables() || []
         applicableTables.forEach((tableName) => {
           if (!groupedByTable.has(tableName)) {
             groupedByTable.set(tableName, [])

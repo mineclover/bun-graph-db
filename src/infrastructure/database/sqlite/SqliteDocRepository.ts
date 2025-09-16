@@ -1,7 +1,7 @@
 import type { Database } from 'bun:sqlite'
 import type { DocId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
-import type { DocSearchOptions, IDocRepository } from '@/domain/repositories/IDocRepository.js'
+import type { DocSearchOptions, IDocRepository, DocContentSearchOptions, DocContentSearchPagination } from '@/domain/repositories/IDocRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface DocRow {
@@ -205,6 +205,67 @@ export class SqliteDocRepository implements IDocRepository {
 
   async searchDocs(options: DocSearchOptions): Promise<PaginatedResult<Doc>> {
     return this.findAll(options)
+  }
+
+  async searchByContent(options: DocContentSearchOptions, pagination?: DocContentSearchPagination): Promise<PaginatedResult<Doc>> {
+    const {
+      query,
+      tableId,
+      category,
+      isActive,
+    } = options
+
+    const {
+      limit = 10,
+      offset = 0,
+    } = pagination || {}
+
+    const whereClauses: string[] = ['content LIKE ?']
+    const params: any[] = [`%${query}%`]
+
+    if (tableId) {
+      whereClauses.push('table_id = ?')
+      params.push(tableId)
+    }
+
+    if (category) {
+      whereClauses.push('category = ?')
+      params.push(category)
+    }
+
+    if (isActive !== undefined) {
+      whereClauses.push('is_active = ?')
+      params.push(isActive ? 1 : 0)
+    }
+
+    const whereClause = `WHERE ${whereClauses.join(' AND ')}`
+
+    try {
+      // Get total count
+      const countQuery = `SELECT COUNT(*) as count FROM docs ${whereClause}`
+      const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...params)
+      const totalCount = countResult?.count || 0
+
+      // Get docs with pagination
+      const dataQuery = `
+        SELECT id, table_id, category, version, content, is_active, created_at, updated_at
+        FROM docs
+        ${whereClause}
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+      `
+
+      const rows = this.db.query<DocRow, any[]>(dataQuery).all(...params, limit, offset)
+
+      return {
+        nodes: rows.map((row) => this.mapRowToEntity(row)),
+        totalCount,
+        hasNextPage: offset + limit < totalCount,
+        hasPreviousPage: offset > 0,
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to search docs by content: ${error}`)
+    }
   }
 
   async getLatestVersion(tableId: TableId, category: DocCategory): Promise<number> {

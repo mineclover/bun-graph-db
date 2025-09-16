@@ -88,7 +88,16 @@
     "batch:manager": "bun scripts/batch-template-manager.ts",
     "export:fixed": "bun scripts/export-all-templates-fixed.ts",
     "import:final": "bun scripts/import-all-exported-final.ts",
-    "report:system": "bun scripts/final-system-report.ts"
+    "report:system": "bun scripts/final-system-report.ts",
+    "table:export": "bun scripts/table-package-cli.ts export",
+    "table:import": "bun scripts/table-package-cli.ts import",
+    "table:batch-export": "bun scripts/table-package-cli.ts batch-export",
+    "table:batch-import": "bun scripts/table-package-cli.ts batch-import",
+    "table:analyze-deps": "bun scripts/table-package-cli.ts analyze-deps",
+    "table:resolve-order": "bun scripts/table-package-cli.ts resolve-order",
+    "table:generate-templates": "bun scripts/table-package-cli.ts generate-templates",
+    "table:validate": "bun scripts/table-package-cli.ts validate",
+    "table:help": "bun scripts/table-package-cli.ts help"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",

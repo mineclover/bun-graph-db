@@ -14,6 +14,7 @@ import {
 } from '../../infrastructure/container/tokens/index.js'
 import type {
   AttributeFieldResolvers,
+  DocFieldResolvers,
   NodeFieldResolvers,
   QueryTemplateFieldResolvers,
   RelationFieldResolvers,
@@ -27,6 +28,7 @@ import type {
   TableMutations,
   TemplateMutations,
 } from './mutations/index.js'
+import type { TablePackageResolver } from './resolvers/TablePackageResolver.js'
 // Import resolver classes
 import type {
   AttributeQueries,
@@ -57,6 +59,7 @@ export interface GraphQLDependencies {
   relationMutations: RelationMutations
   templateMutations: TemplateMutations
   docMutations: DocMutations
+  tablePackageResolver: TablePackageResolver
 
   // Field resolvers
   tableFieldResolvers: TableFieldResolvers
@@ -64,6 +67,7 @@ export interface GraphQLDependencies {
   attributeFieldResolvers: AttributeFieldResolvers
   relationFieldResolvers: RelationFieldResolvers
   queryTemplateFieldResolvers: QueryTemplateFieldResolvers
+  docFieldResolvers: DocFieldResolvers
 
   // Schema resolvers
   schemaResolvers: ReturnType<typeof createSchemaResolvers>
@@ -95,6 +99,7 @@ export class GraphQLSchemaBuilder {
       relationMutations: await this.container.resolve(GraphQLTokens.RELATION_MUTATIONS),
       templateMutations: await this.container.resolve(GraphQLTokens.TEMPLATE_MUTATIONS),
       docMutations: await this.container.resolve(GraphQLTokens.DOC_MUTATIONS),
+      tablePackageResolver: await this.container.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER),
 
       // Field resolvers
       tableFieldResolvers: await this.container.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS),
@@ -106,6 +111,7 @@ export class GraphQLSchemaBuilder {
       queryTemplateFieldResolvers: await this.container.resolve(
         GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS
       ),
+      docFieldResolvers: await this.container.resolve(GraphQLTokens.DOC_FIELD_RESOLVERS),
 
       // Schema resolvers
       schemaResolvers: createSchemaResolvers({
@@ -239,6 +245,14 @@ export class GraphQLSchemaBuilder {
           deps.schemaResolvers.Query.exportTable(_, args as any),
         exportAllTables: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.schemaResolvers.Query.exportAllTables(_, args as any),
+
+        // Table Package queries
+        validateTablePackage: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tablePackageResolver.validateTablePackage(_, args as any),
+        analyzeTableDependencies: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tablePackageResolver.analyzeTableDependencies(_, args as any),
+        getImportSession: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tablePackageResolver.getImportSession(_, args as any),
       },
 
       Mutation: {
@@ -330,6 +344,14 @@ export class GraphQLSchemaBuilder {
         // Schema import mutations
         importSchema: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.schemaResolvers.Mutation.importSchema(_, args as any),
+
+        // Table Package mutations
+        exportTablePackage: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tablePackageResolver.exportTablePackage(_, args as any),
+        importTablePackage: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tablePackageResolver.importTablePackage(_, args as any),
+        batchImportTablePackages: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tablePackageResolver.batchImportTablePackages(_, args as any),
       },
 
       Subscription: {
@@ -420,6 +442,11 @@ export class GraphQLSchemaBuilder {
           deps.queryTemplateFieldResolvers.isValid(parent as QueryTemplate),
         validationErrors: (parent: GraphQLParent) =>
           deps.queryTemplateFieldResolvers.validationErrors(parent as QueryTemplate),
+      },
+
+      Doc: {
+        table: (parent: GraphQLParent, args: any, context: any, info: any) =>
+          deps.docFieldResolvers.table(parent as any, args, context, info),
       },
     }
 

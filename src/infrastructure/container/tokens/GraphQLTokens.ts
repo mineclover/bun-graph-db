@@ -24,6 +24,7 @@ export const GraphQLTokens = {
   RELATION_MUTATIONS: Symbol.for('RelationMutations'),
   TEMPLATE_MUTATIONS: Symbol.for('TemplateMutations'),
   DOC_MUTATIONS: Symbol.for('DocMutations'),
+  TABLE_PACKAGE_RESOLVER: Symbol.for('TablePackageResolver'),
 
   // Field resolvers
   TABLE_FIELD_RESOLVERS: Symbol.for('TableFieldResolvers'),
@@ -31,6 +32,7 @@ export const GraphQLTokens = {
   ATTRIBUTE_FIELD_RESOLVERS: Symbol.for('AttributeFieldResolvers'),
   RELATION_FIELD_RESOLVERS: Symbol.for('RelationFieldResolvers'),
   QUERY_TEMPLATE_FIELD_RESOLVERS: Symbol.for('QueryTemplateFieldResolvers'),
+  DOC_FIELD_RESOLVERS: Symbol.for('DocFieldResolvers'),
 
   // GraphQL configuration
   GRAPHQL_CONFIG: Symbol.for('GraphQLConfig'),

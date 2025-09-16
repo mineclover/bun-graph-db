@@ -598,7 +598,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         )
       )
     } catch (error) {
-      this.logger?.error('Error finding templates by applicable table:', error)
+      this.logger?.error('Error finding templates by applicable table:', error as any)
       throw error
     }
   }
@@ -613,7 +613,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         AND applicable_tables != '[]'
         ORDER BY created_at DESC
       `
-      const rows = this.db.query<any>(query).all()
+      const rows = this.db.query<any, any>(query).all()
 
       return rows.map((row) =>
         QueryTemplate.fromDatabase(
@@ -640,7 +640,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         )
       )
     } catch (error) {
-      this.logger?.error('Error finding templates with table dependencies:', error)
+      this.logger?.error('Error finding templates with table dependencies:', error as any)
       throw error
     }
   }

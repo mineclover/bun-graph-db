@@ -6,15 +6,17 @@
 export type {
   CreateRelationInput,
   CreateTableInput,
-  CreateDocInput,
-  UpdateDocInput,
-  DocsFilter,
+  CreateNodeInput,
+  UpdateNodeInput,
   SearchNodesFilter,
   SearchRelatedNodesFilter,
   TablesFilter,
   TablesPagination,
   UpdateQueryTemplateInput,
   UpdateTableInput,
+  CreateDocInput,
+  UpdateDocInput,
+  DocsFilter,
 } from '../../../generated/graphql.types.js'
 
 export interface GraphQLContext {

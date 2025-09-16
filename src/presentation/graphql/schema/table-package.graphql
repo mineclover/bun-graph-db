@@ -1,0 +1,411 @@
+# Table Package System Schema
+# Export/Import system for tables with dependency resolution
+
+# Input Types
+input TablePackageExportOptionsInput {
+  includeData: Boolean = true
+  includeTemplates: Boolean = true
+  includeRelations: Boolean = true
+  includeRelatedTables: Boolean = false
+  outputPath: String
+  format: String = "json"
+}
+
+input TablePackageImportOptionsInput {
+  conflictResolution: ConflictResolutionStrategy = SKIP
+  generateTemplates: Boolean = true
+  newTablePrefix: String
+  overwriteExisting: Boolean = false
+}
+
+input ValidationOptionsInput {
+  conflictResolution: ConflictResolutionStrategy = SKIP
+  strictValidation: Boolean = false
+}
+
+input BatchImportOptionsInput {
+  conflictResolution: ConflictResolutionStrategy = SKIP
+  generateTemplates: Boolean = true
+  continueOnError: Boolean = true
+  newTablePrefix: String
+}
+
+# Table Package Structure Inputs
+input TablePackageInput {
+  version: String!
+  exportedAt: String!
+  sourceTable: SourceTableInput!
+  dependencies: [String!]!
+  package: TablePackageDataInput!
+}
+
+input SourceTableInput {
+  identifier: String!
+  description: String
+}
+
+input TablePackageDataInput {
+  schema: TableSchemaExportInput!
+  dataset: TableDataExportInput!
+  relations: TableRelationsExportInput!
+  templates: TableTemplatesExportInput!
+}
+
+input TableSchemaExportInput {
+  table: TableInfoInput!
+  attributes: [AttributeExportInput!]!
+  attributeTypes: [AttributeTypeExportInput!]!
+}
+
+input TableInfoInput {
+  identifier: String!
+  description: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+input AttributeExportInput {
+  identifier: String!
+  name: String!
+  description: String
+  attributeType: String!
+  isRequired: Boolean = false
+  defaultValue: String
+}
+
+input AttributeTypeExportInput {
+  identifier: String!
+  name: String!
+  description: String
+  dataType: String!
+  validationRules: JSON
+}
+
+input TableDataExportInput {
+  nodes: [NodeExportInput!]!
+  nodeAttributes: [NodeAttributeExportInput!]!
+}
+
+input NodeExportInput {
+  id: String!
+  content: String!
+  contentHash: String
+  metadata: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+input NodeAttributeExportInput {
+  nodeId: String!
+  attributeIdentifier: String!
+  value: String!
+  metadata: JSON
+}
+
+input TableRelationsExportInput {
+  relationTypes: [RelationTypeExportInput!]!
+  nodeRelations: [NodeRelationExportInput!]!
+}
+
+input RelationTypeExportInput {
+  identifier: String!
+  name: String!
+  description: String
+  isDirectional: Boolean = false
+  metadata: JSON
+}
+
+input NodeRelationExportInput {
+  fromNodeId: String!
+  toNodeId: String!
+  relationTypeIdentifier: String!
+  strength: Float
+  confidence: Float
+  metadata: JSON
+  createdAt: String!
+}
+
+input TableTemplatesExportInput {
+  templates: [TemplateExportInput!]!
+}
+
+input TemplateExportInput {
+  identifier: String!
+  name: String!
+  description: String
+  query: String!
+  variables: JSON
+  operationType: String!
+  tags: [String!]!
+  complexityScore: Int
+  metadata: JSON
+}
+
+# Export/Import Operation Inputs
+input ExportTablePackageInput {
+  tableIdentifier: String!
+  options: TablePackageExportOptionsInput
+}
+
+input ImportTablePackageInput {
+  packageData: TablePackageInput!
+  options: TablePackageImportOptionsInput
+}
+
+input BatchImportTablePackagesInput {
+  packages: [TablePackageInput!]!
+  options: BatchImportOptionsInput
+  createSession: Boolean = false
+}
+
+# Enums
+enum ConflictResolutionStrategy {
+  OVERWRITE
+  MERGE
+  RENAME
+  SKIP
+}
+
+enum ImportSessionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  ROLLED_BACK
+}
+
+# Response Types
+type TablePackageFormat {
+  version: String!
+  exportedAt: String!
+  sourceTable: SourceTable!
+  dependencies: [String!]!
+  package: TablePackageData!
+}
+
+type SourceTable {
+  identifier: String!
+  description: String
+}
+
+type TablePackageData {
+  schema: TableSchemaExport!
+  dataset: TableDataExport!
+  relations: TableRelationsExport!
+  templates: TableTemplatesExport!
+}
+
+type TableSchemaExport {
+  table: TableInfo!
+  attributes: [AttributeExport!]!
+  attributeTypes: [AttributeTypeExport!]!
+}
+
+type TableInfo {
+  identifier: String!
+  description: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type AttributeExport {
+  identifier: String!
+  name: String!
+  description: String
+  attributeType: String!
+  isRequired: Boolean!
+  defaultValue: String
+}
+
+type AttributeTypeExport {
+  identifier: String!
+  name: String!
+  description: String
+  dataType: String!
+  validationRules: JSON
+}
+
+type TableDataExport {
+  nodes: [NodeExport!]!
+  nodeAttributes: [NodeAttributeExport!]!
+}
+
+type NodeExport {
+  id: String!
+  content: String!
+  contentHash: String
+  metadata: JSON
+  createdAt: String!
+  updatedAt: String!
+}
+
+type NodeAttributeExport {
+  nodeId: String!
+  attributeIdentifier: String!
+  value: String!
+  metadata: JSON
+}
+
+type TableRelationsExport {
+  relationTypes: [RelationTypeExport!]!
+  nodeRelations: [NodeRelationExport!]!
+}
+
+type RelationTypeExport {
+  identifier: String!
+  name: String!
+  description: String
+  isDirectional: Boolean!
+  metadata: JSON
+}
+
+type NodeRelationExport {
+  fromNodeId: String!
+  toNodeId: String!
+  relationTypeIdentifier: String!
+  strength: Float
+  confidence: Float
+  metadata: JSON
+  createdAt: String!
+}
+
+type TableTemplatesExport {
+  templates: [TemplateExport!]!
+}
+
+type TemplateExport {
+  identifier: String!
+  name: String!
+  description: String
+  query: String!
+  variables: JSON
+  operationType: String!
+  tags: [String!]!
+  complexityScore: Int
+  metadata: JSON
+}
+
+# Operation Result Types
+type TablePackageExportResult {
+  success: Boolean!
+  errors: [String!]!
+  warnings: [String!]!
+  exportPath: String
+  package: TablePackageFormat
+}
+
+type ImportedTable {
+  id: ID!
+  identifier: String!
+  originalIdentifier: String!
+}
+
+type GeneratedTemplate {
+  id: ID!
+  name: String!
+  operationType: String!
+  identifier: String!
+}
+
+type TablePackageImportResult {
+  success: Boolean!
+  errors: [String!]!
+  warnings: [String!]!
+  importedTable: ImportedTable
+  generatedTemplates: [GeneratedTemplate!]!
+  resolvedConflicts: [ConflictResolution!]!
+}
+
+type ConflictResolution {
+  type: String!
+  originalValue: String!
+  resolvedValue: String!
+  strategy: ConflictResolutionStrategy!
+}
+
+type BatchImportSummary {
+  total: Int!
+  succeeded: Int!
+  failed: Int!
+  skipped: Int!
+}
+
+type BatchImportResult {
+  packageIdentifier: String!
+  success: Boolean!
+  errors: [String!]!
+  warnings: [String!]!
+  importedTable: ImportedTable
+  generatedTemplates: [GeneratedTemplate!]!
+}
+
+type BatchImportTablePackagesResult {
+  success: Boolean!
+  summary: BatchImportSummary!
+  results: [BatchImportResult!]!
+  session: ImportSession
+}
+
+# Session Management Types
+type RollbackInfo {
+  tablesCreated: [String!]!
+  templatesCreated: [String!]!
+  nodesCreated: [String!]!
+}
+
+type ImportSession {
+  sessionId: String!
+  status: ImportSessionStatus!
+  startedAt: DateTime!
+  completedAt: DateTime
+  packagesImported: [String!]!
+  packagesRemaining: [String!]!
+  rollbackInfo: RollbackInfo!
+  errors: [String!]!
+}
+
+# Validation Types
+type ValidationConflict {
+  type: String!
+  severity: String!
+  message: String!
+  context: JSON
+}
+
+# Dependency Analysis Types
+type TableDependencyAnalysis {
+  tableIdentifier: String!
+  dependencies: [String!]!
+  dependents: [String!]!
+  depth: Int!
+  circularReferences: [String!]!
+}
+
+# Extended Query type
+extend type Query {
+  # Validation
+  validateTablePackage(
+    packageData: TablePackageInput!
+    options: ValidationOptionsInput
+  ): [ValidationConflict!]!
+
+  # Dependency analysis
+  analyzeTableDependencies(
+    tableIdentifiers: [String!]!
+  ): [TableDependencyAnalysis!]!
+
+  # Session management
+  getImportSession(sessionId: String!): ImportSession
+}
+
+# Extended Mutation type
+extend type Mutation {
+  # Export operations
+  exportTablePackage(input: ExportTablePackageInput!): TablePackageExportResult!
+
+  # Import operations
+  importTablePackage(input: ImportTablePackageInput!): TablePackageImportResult!
+
+  # Batch operations
+  batchImportTablePackages(input: BatchImportTablePackagesInput!): BatchImportTablePackagesResult!
+}

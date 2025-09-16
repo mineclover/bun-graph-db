@@ -5,6 +5,7 @@ import {
   registerGraphQLModule,
   registerRepositoryModule,
   registerUseCaseModule,
+  registerTablePackageModule,
 } from './modules/index.js'
 
 /**
@@ -27,6 +28,7 @@ export class ContainerBootstrap {
     registerCoreModule(container)
     registerDatabaseModule(container)
     registerRepositoryModule(container)
+    registerTablePackageModule(container)
     registerUseCaseModule(container)
     registerGraphQLModule(container)
 
@@ -65,6 +67,7 @@ export class ContainerBootstrap {
 
     registerDatabaseModule(container)
     registerRepositoryModule(container)
+    registerTablePackageModule(container)
     registerUseCaseModule(container)
     registerGraphQLModule(container)
 

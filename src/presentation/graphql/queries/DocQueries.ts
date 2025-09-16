@@ -114,10 +114,10 @@ export class DocQueries extends BaseResolver {
         const result = await this.docRepository.findAll(options)
 
         return {
-          docs: DocDto.fromEntities(result.nodes || []),
-          totalCount: result.totalCount || 0,
-          hasNextPage: result.hasNextPage || false,
-          hasPreviousPage: result.hasPreviousPage || false,
+          docs: DocDto.fromEntities(Array.isArray(result) ? result : result.nodes || []),
+          totalCount: Array.isArray(result) ? result.length : result.totalCount || 0,
+          hasNextPage: Array.isArray(result) ? false : result.hasNextPage || false,
+          hasPreviousPage: Array.isArray(result) ? false : result.hasPreviousPage || false,
         }
       },
       'findDocs',
@@ -146,15 +146,14 @@ export class DocQueries extends BaseResolver {
       async () => {
         const result = await this.docRepository.findVersionsByTableAndCategory(
           args.tableId,
-          args.category,
-          args.pagination || { limit: 10, offset: 0 }
+          args.category
         )
 
         return {
-          docs: DocDto.fromEntities(result.nodes || []),
-          totalCount: result.totalCount || 0,
-          hasNextPage: result.hasNextPage || false,
-          hasPreviousPage: result.hasPreviousPage || false,
+          docs: DocDto.fromEntities(result),
+          totalCount: result.length,
+          hasNextPage: false,
+          hasPreviousPage: false,
         }
       },
       'findDocVersions',
@@ -186,10 +185,10 @@ export class DocQueries extends BaseResolver {
         }, args.pagination || { limit: 10, offset: 0 })
 
         return {
-          docs: DocDto.fromEntities(result.nodes || []),
-          totalCount: result.totalCount || 0,
-          hasNextPage: result.hasNextPage || false,
-          hasPreviousPage: result.hasPreviousPage || false,
+          docs: DocDto.fromEntities(Array.isArray(result) ? result : result.nodes || []),
+          totalCount: Array.isArray(result) ? result.length : result.totalCount || 0,
+          hasNextPage: Array.isArray(result) ? false : result.hasNextPage || false,
+          hasPreviousPage: Array.isArray(result) ? false : result.hasPreviousPage || false,
         }
       },
       'searchDocs',

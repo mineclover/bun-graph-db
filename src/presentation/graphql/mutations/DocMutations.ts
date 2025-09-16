@@ -87,7 +87,7 @@ export class DocMutations extends BaseResolver {
 
       return {
         success: !!result,
-        doc: result ? DocDto.fromEntity(result) : null,
+        doc: result ? result.doc : null,
         errors: [],
       }
     } catch (error) {
@@ -120,8 +120,7 @@ export class DocMutations extends BaseResolver {
     try {
       this.logger.info('Executing mutation: updateDoc', { id: args.id, input: args.input })
 
-      const result = await this.updateDocUseCase.execute({
-        id: args.id,
+      const result = await this.updateDocUseCase.execute(args.id, {
         content: args.input.content,
       })
 
@@ -129,7 +128,7 @@ export class DocMutations extends BaseResolver {
 
       return {
         success: !!result,
-        doc: result ? DocDto.fromEntity(result) : null,
+        doc: result ? result.doc : null,
         errors: [],
       }
     } catch (error) {
@@ -159,7 +158,7 @@ export class DocMutations extends BaseResolver {
     try {
       this.logger.info('Executing mutation: deleteDoc', { id: args.id })
 
-      await this.deleteDocUseCase.execute({ id: args.id })
+      await this.deleteDocUseCase.execute(args.id)
 
       this.logger.info('Mutation completed: deleteDoc', { id: args.id })
 
@@ -193,13 +192,13 @@ export class DocMutations extends BaseResolver {
     try {
       this.logger.info('Executing mutation: activateDoc', { id: args.id })
 
-      const result = await this.activateDocUseCase.execute({ id: args.id })
+      const result = await this.activateDocUseCase.execute(args.id)
 
       this.logger.info('Mutation completed: activateDoc', { id: args.id })
 
       return {
         success: !!result,
-        doc: result ? DocDto.fromEntity(result) : null,
+        doc: result ? result.doc : null,
         errors: [],
       }
     } catch (error) {
@@ -238,14 +237,13 @@ export class DocMutations extends BaseResolver {
         tableId: args.input.tableId,
         category: args.input.category,
         content: args.input.content,
-        createAsNewVersion: true,
       })
 
       this.logger.info('Mutation completed: createDocVersion', { input: args.input })
 
       return {
         success: !!result,
-        doc: result ? DocDto.fromEntity(result) : null,
+        doc: result ? result.doc : null,
         errors: [],
       }
     } catch (error) {

@@ -178,7 +178,7 @@ export class TemplateQueries extends BaseResolver {
         const groupedByTable = new Map<string, any[]>()
 
         templates.forEach((template) => {
-          const applicableTables = template.applicableTables || []
+          const applicableTables = template.getApplicableTables() || []
           applicableTables.forEach((tableName) => {
             if (!groupedByTable.has(tableName)) {
               groupedByTable.set(tableName, [])
