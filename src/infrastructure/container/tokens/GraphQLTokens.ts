@@ -6,6 +6,7 @@ export const GraphQLTokens = {
   // GraphQL schema and resolvers
   GRAPHQL_SCHEMA: Symbol.for('GraphQLSchema'),
   GRAPHQL_SCHEMA_BUILDER: Symbol.for('GraphQLSchemaBuilder'),
+  GRAPHQL_EXECUTOR: Symbol.for('GraphQLExecutor'),
 
   // Query resolvers
   TABLE_QUERIES: Symbol.for('TableQueries'),

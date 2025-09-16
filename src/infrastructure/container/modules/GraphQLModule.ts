@@ -533,6 +533,38 @@ export function registerGraphQLModule(container: DIContainer): void {
     [RepositoryTokens.TABLE_REPOSITORY]
   )
 
+  // GraphQL Schema Builder
+  container.registerSingleton(
+    GraphQLTokens.GRAPHQL_SCHEMA_BUILDER,
+    async (c) => {
+      const { GraphQLSchemaBuilder } = await import('@/presentation/graphql/GraphQLSchemaBuilder.js')
+      return new GraphQLSchemaBuilder(c)
+    },
+    []
+  )
+
+  // GraphQL Executor
+  container.registerSingleton(
+    GraphQLTokens.GRAPHQL_EXECUTOR,
+    async (c) => {
+      const { execute } = await import('graphql')
+      const schema = await c.resolve(GraphQLTokens.GRAPHQL_SCHEMA)
+
+      return {
+        executeSchema: async (query: string, variables?: any, context?: any) => {
+          return execute({
+            schema,
+            document: typeof query === 'string' ? await (await import('graphql')).parse(query) : query,
+            variableValues: variables,
+            contextValue: context,
+          })
+        },
+        getSchema: () => schema,
+      }
+    },
+    [GraphQLTokens.GRAPHQL_SCHEMA]
+  )
+
   // GraphQL Schema
   container.registerSingleton(
     GraphQLTokens.GRAPHQL_SCHEMA,
@@ -617,6 +649,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.RELATION_FIELD_RESOLVERS,
       GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS,
       GraphQLTokens.DOC_FIELD_RESOLVERS,
+      GraphQLTokens.GRAPHQL_SCHEMA_BUILDER,
     ]
   )
 }

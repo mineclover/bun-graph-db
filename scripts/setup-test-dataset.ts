@@ -638,7 +638,7 @@ export class TestDatasetSetup {
 
     // 3. Create table
     const table = Table.create(config.identifier, config.description)
-    await tableRepository.save(table)
+    const savedTable = await tableRepository.save(table)
     console.log(`    📊 Created table: ${config.identifier}`)
 
     // 4. Create attributes
@@ -649,7 +649,7 @@ export class TestDatasetSetup {
       }
 
       const attribute = Attribute.create(
-        table.id,
+        savedTable.id,
         attrConfig.identifier,
         attributeTypeId,
         attrConfig.description,
@@ -663,7 +663,7 @@ export class TestDatasetSetup {
     const nodeMap = new Map<string, string>()
     for (const nodeConfig of config.nodes) {
       const node = Node.create(
-        table.id,
+        savedTable.id,
         nodeConfig.content,
         nodeConfig.title,
         nodeConfig.description
@@ -685,7 +685,7 @@ export class TestDatasetSetup {
       }
 
       const relation = NodeRelation.create(
-        table.id,
+        savedTable.id,
         sourceNodeId,
         targetNodeId,
         relationTypeId,

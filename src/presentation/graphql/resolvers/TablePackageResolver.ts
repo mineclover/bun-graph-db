@@ -23,8 +23,8 @@ export class TablePackageResolver extends BaseResolver {
       const useCase = new ExportTablePackageUseCase(this.tablePackageService, this.logger)
 
       const response = await useCase.execute({
-        tableIdentifier: args.tableIdentifier,
-        options: args.options || {},
+        tableIdentifier: args.input.tableIdentifier,
+        options: args.input.options || {},
       })
 
       if (!response.success) {
@@ -61,15 +61,20 @@ export class TablePackageResolver extends BaseResolver {
         tablePackage: result.tablePackage ? this.mapTablePackageFormat(result.tablePackage) : null,
         dependencyOrder: result.dependencyOrder || [],
         packagePath: result.packagePath || null,
-        errors: result.errors || [],
-        warnings: result.warnings || [],
+        errors: result.errors ?? [],
+        warnings: result.warnings ?? [],
       }))
     }, "exportRelatedTablePackages")
   }
 
   async analyzeTableDependencies(_: any, args: any): Promise<any> {
     return this.handleQuery(async () => {
-      return await this.tablePackageService.analyzeDependencies(args.tableIdentifier)
+      const results = []
+      for (const tableIdentifier of args.tableIdentifiers) {
+        const result = await this.tablePackageService.analyzeDependencies(tableIdentifier)
+        results.push(result)
+      }
+      return results
     }, "operation-name")
   }
 
@@ -127,21 +132,40 @@ export class TablePackageResolver extends BaseResolver {
   // Mutation Resolvers
 
   async importTablePackage(_: any, args: any): Promise<any> {
-    return this.handleMutation(async () => {
-      const packageData = this.mapTablePackageInput(args.packageData)
-      const options = args.options ? this.mapImportOptions(args.options) : { conflictResolution: 'skip' }
+    try {
+      const packageData = this.mapTablePackageInput(args.input.packageData)
+      const options = args.input.options ? this.mapImportOptions(args.input.options) : { conflictResolution: 'skip' }
 
       const result = await this.tablePackageService.importTablePackage(packageData, options)
 
-      return {
+      // Debug logging to understand what's being returned
+      this.logger.info('Import result details', {
         success: result.success,
         importedTable: result.importedTable,
+        importedTableType: typeof result.importedTable,
+        importedTableId: result.importedTable?.id,
+        importedTableIdType: typeof result.importedTable?.id,
+      })
+
+      return {
+        success: result.success,
+        importedTable: result.success ? result.importedTable : null,
         generatedTemplates: result.generatedTemplates || [],
         resolvedConflicts: result.resolvedConflicts?.map(this.mapResolvedConflict) || [],
-        errors: result.errors || [],
-        warnings: result.warnings || [],
+        errors: result.errors ?? [],
+        warnings: result.warnings ?? [],
       }
-    }, "operation-name")
+    } catch (error) {
+      this.logger.error(`Import table package failed`, { error })
+      return {
+        success: false,
+        importedTable: null,
+        generatedTemplates: [],
+        resolvedConflicts: [],
+        errors: [error instanceof Error ? error.message : 'Unknown import error'],
+        warnings: [],
+      }
+    }
   }
 
   async importTablePackages(_: any, args: any): Promise<any> {
@@ -156,8 +180,8 @@ export class TablePackageResolver extends BaseResolver {
         importedTable: result.importedTable,
         generatedTemplates: result.generatedTemplates || [],
         resolvedConflicts: result.resolvedConflicts?.map(this.mapResolvedConflict) || [],
-        errors: result.errors || [],
-        warnings: result.warnings || [],
+        errors: result.errors ?? [],
+        warnings: result.warnings ?? [],
       }))
     }, "importTablePackages")
   }
@@ -183,8 +207,8 @@ export class TablePackageResolver extends BaseResolver {
           tablePackage: result.tablePackage ? this.mapTablePackageFormat(result.tablePackage) : null,
           dependencyOrder: result.dependencyOrder || [],
           packagePath: result.packagePath || null,
-          errors: result.errors || [],
-          warnings: result.warnings || [],
+          errors: result.errors ?? [],
+          warnings: result.warnings ?? [],
         }
       })
 
@@ -200,7 +224,7 @@ export class TablePackageResolver extends BaseResolver {
   }
 
   async batchImportTablePackages(_: any, args: any): Promise<any> {
-    return this.handleMutation(async () => {
+    try {
       const packages = args.input.packages.map((pkg: any) => this.mapTablePackageInput(pkg))
       const options = args.input.options ? this.mapImportOptions(args.input.options) : { conflictResolution: 'skip' }
 
@@ -224,20 +248,43 @@ export class TablePackageResolver extends BaseResolver {
 
       return {
         success: failedCount === 0,
-        results: results.map(result => ({
+        results: results.map((result, index) => ({
+          packageIdentifier: packages[index]?.sourceTable?.identifier || `package-${index}`,
           success: result.success,
           importedTable: result.importedTable,
           generatedTemplates: result.generatedTemplates || [],
           resolvedConflicts: result.resolvedConflicts?.map(this.mapResolvedConflict) || [],
-          errors: result.errors || [],
-          warnings: result.warnings || [],
+          errors: result.errors ?? [],
+          warnings: result.warnings ?? [],
         })),
+        summary: {
+          total: results.length,
+          succeeded: importedCount,
+          failed: failedCount,
+          skipped: 0,
+        },
         importedCount,
         failedCount,
         session: session ? this.mapImportSession(session) : null,
-        errors: results.flatMap(r => r.errors || []),
+        errors: results.flatMap(r => r.errors ?? []),
       }
-    }, "operation-name")
+    } catch (error) {
+      this.logger.error(`Batch import table packages failed`, { error })
+      return {
+        success: false,
+        results: [],
+        summary: {
+          total: 0,
+          succeeded: 0,
+          failed: 1,
+          skipped: 0,
+        },
+        importedCount: 0,
+        failedCount: 1,
+        session: null,
+        errors: [error instanceof Error ? error.message : 'Unknown batch import error'],
+      }
+    }
   }
 
   async createImportSession(_: any, args: any): Promise<any> {
@@ -327,8 +374,8 @@ export class TablePackageResolver extends BaseResolver {
           importedTable: result.importedTable,
           generatedTemplates: result.generatedTemplates || [],
           resolvedConflicts: result.resolvedConflicts?.map(this.mapResolvedConflict) || [],
-          errors: result.errors || [],
-          warnings: result.warnings || [],
+          errors: result.errors ?? [],
+          warnings: result.warnings ?? [],
         }
       } catch (error) {
         return {

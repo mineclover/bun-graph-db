@@ -15,7 +15,7 @@ interface TableRow {
 export class SqliteTableRepository implements ITableRepository {
   constructor(private readonly db: Database) {}
 
-  async save(table: Table): Promise<void> {
+  async save(table: Table): Promise<Table> {
     const tableData = table.toDatabase()
 
     if (tableData.id === null || tableData.id === 'null') {
@@ -34,6 +34,15 @@ export class SqliteTableRepository implements ITableRepository {
         ])
 
         console.log('New table created with ID:', result.lastInsertRowid)
+
+        // Return a new Table entity with the correct ID
+        return Table.fromDatabase(
+          String(result.lastInsertRowid),
+          tableData.identifier,
+          tableData.description,
+          new Date(tableData.created_at),
+          new Date(tableData.updated_at)
+        )
       } catch (error) {
         console.error('Save error:', error)
         throw new DatabaseException(`Failed to save table: ${error}`)
@@ -41,7 +50,7 @@ export class SqliteTableRepository implements ITableRepository {
     } else {
       // Update existing table
       const query = `
-        UPDATE tables 
+        UPDATE tables
         SET identifier = ?, description = ?, updated_at = ?
         WHERE id = ?
       `
@@ -53,6 +62,9 @@ export class SqliteTableRepository implements ITableRepository {
           tableData.updated_at,
           tableData.id,
         ])
+
+        // Return the same table for updates
+        return table
       } catch (error) {
         throw new DatabaseException(`Failed to update table: ${error}`)
       }

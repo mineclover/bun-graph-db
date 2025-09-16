@@ -320,7 +320,7 @@ export class SchemaImportUseCase {
         // Update table properties if needed
       } else {
         table = Table.create(tableData.identifier, tableData.description)
-        await this.tableRepository.save(table)
+        table = await this.tableRepository.save(table)
       }
 
       result.statistics.tablesImported++

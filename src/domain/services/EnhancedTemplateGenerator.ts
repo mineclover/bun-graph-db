@@ -160,6 +160,8 @@ export class EnhancedTemplateGenerator {
       // Create templates in repository
       for (const template of templates) {
         try {
+          // Template creation
+
           const queryTemplate = QueryTemplate.create(
             template.identifier,
             template.name,
@@ -357,7 +359,8 @@ export class EnhancedTemplateGenerator {
   $filter: ${tableNamePascal}FilterInput,
   $sort: ${tableNamePascal}SortInput,
   $pagination: PaginationInput,
-  $include: ${tableNamePascal}IncludeInput
+  $includeRelations: Boolean = false,
+  $includeAttributes: Boolean = false
 ) {
   ${tableNameCamel}s(
     filter: $filter,
@@ -368,12 +371,12 @@ export class EnhancedTemplateGenerator {
       ${outputFields}
 
       # Conditional fields
-      relations @include(if: $include.relations) {
+      relations @include(if: $includeRelations) {
         count
         types
       }
 
-      attributes @include(if: $include.attributes) {
+      attributes @include(if: $includeAttributes) {
         key
         value
         type
@@ -725,7 +728,7 @@ export class EnhancedTemplateGenerator {
 
     return tableSchema.attributes
       .filter((attr: any) => operation === 'update' || attr.required)
-      .map((attr: any) => `${attr.identifier}`)
+      .map((attr: any) => `${this.sanitizeFieldName(attr.identifier)}`)
       .join('\n  ') || 'content\n  metadata'
   }
 
@@ -741,10 +744,23 @@ export class EnhancedTemplateGenerator {
     if (simplified) return baseFields
 
     const attributeFields = tableSchema.attributes?.length > 0
-      ? `\n      attributes {\n        ${tableSchema.attributes.map((attr: any) => attr.identifier).join('\n        ')}\n      }`
+      ? `\n      attributes {\n        ${tableSchema.attributes
+          .map((attr: any) => this.sanitizeFieldName(attr.identifier))
+          .join('\n        ')}\n      }`
       : ''
 
     return baseFields + attributeFields
+  }
+
+  /**
+   * Sanitize field names for GraphQL compatibility
+   * Remove dots and other invalid characters
+   */
+  private sanitizeFieldName(fieldName: string): string {
+    return fieldName
+      .replace(/\./g, '_') // Replace dots with underscores
+      .replace(/[^a-zA-Z0-9_]/g, '_') // Replace other invalid chars with underscores
+      .replace(/^[^a-zA-Z_]/, '_') // Ensure it starts with a letter or underscore
   }
 
   private generateValidationFields(): string {
@@ -759,7 +775,8 @@ export class EnhancedTemplateGenerator {
 
     if (tableSchema.attributes) {
       for (const attr of tableSchema.attributes) {
-        properties[attr.identifier] = {
+        const sanitizedField = this.sanitizeFieldName(attr.identifier)
+        properties[sanitizedField] = {
           type: this.mapTypeToJsonSchema(attr.type),
           description: attr.description
         }
@@ -780,7 +797,8 @@ export class EnhancedTemplateGenerator {
 
     if (tableSchema.attributes) {
       for (const attr of tableSchema.attributes) {
-        properties[attr.identifier] = {
+        const sanitizedField = this.sanitizeFieldName(attr.identifier)
+        properties[sanitizedField] = {
           type: this.mapTypeToJsonSchema(attr.type),
           description: `Filter by ${attr.identifier}`
         }
@@ -804,14 +822,14 @@ export class EnhancedTemplateGenerator {
 
     return tableSchema.attributes
       .filter((attr: any) => operation === 'create' && attr.required)
-      .map((attr: any) => attr.identifier)
+      .map((attr: any) => this.sanitizeFieldName(attr.identifier))
   }
 
   private getFieldNames(tableSchema: any): string[] {
     const baseFields = ['id', 'createdAt', 'updatedAt']
 
     if (tableSchema.attributes) {
-      return [...baseFields, ...tableSchema.attributes.map((attr: any) => attr.identifier)]
+      return [...baseFields, ...tableSchema.attributes.map((attr: any) => this.sanitizeFieldName(attr.identifier))]
     }
 
     return baseFields
@@ -1325,14 +1343,17 @@ export class EnhancedTemplateGenerator {
       description: `Complex nested query for ${tableIdentifier} with related data`,
       query: `query ${tableNamePascal}NestedQueryEnhanced(
   $filter: ${tableNamePascal}FilterInput,
-  $includeRelated: ${tableNamePascal}IncludeInput = {}
+  $includeNodes: Boolean = false,
+  $includeAttributes: Boolean = false,
+  $includeHistory: Boolean = false,
+  $includeAnalytics: Boolean = false
 ) {
   ${tableNameCamel}s(filter: $filter) {
     items {
       ${this.generateOutputFields(tableSchema, true)}
 
       # Related nodes (conditional)
-      relatedNodes @include(if: $includeRelated.nodes) {
+      relatedNodes @include(if: $includeNodes) {
         type
         items {
           id
@@ -1345,7 +1366,7 @@ export class EnhancedTemplateGenerator {
       }
 
       # Attributes (conditional)
-      attributes @include(if: $includeRelated.attributes) {
+      attributes @include(if: $includeAttributes) {
         key
         value
         type
@@ -1353,7 +1374,7 @@ export class EnhancedTemplateGenerator {
       }
 
       # History (conditional)
-      history @include(if: $includeRelated.history) {
+      history @include(if: $includeHistory) {
         version
         changes {
           field
@@ -1365,7 +1386,7 @@ export class EnhancedTemplateGenerator {
       }
 
       # Analytics (conditional)
-      analytics @include(if: $includeRelated.analytics) {
+      analytics @include(if: $includeAnalytics) {
         views
         lastAccessed
         popularity
@@ -1490,7 +1511,8 @@ export class EnhancedTemplateGenerator {
 
     if (tableSchema.attributes) {
       for (const attr of tableSchema.attributes) {
-        properties[attr.identifier] = this.generateFieldWhereClause(attr.type)
+        const sanitizedField = this.sanitizeFieldName(attr.identifier)
+        properties[sanitizedField] = this.generateFieldWhereClause(attr.type)
       }
     }
 

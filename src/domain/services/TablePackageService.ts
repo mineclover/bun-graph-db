@@ -292,6 +292,9 @@ export class TablePackageService implements ITablePackageService {
       })
       return {
         success: false,
+        importedTable: null,
+        generatedTemplates: [],
+        resolvedConflicts: [],
         errors: [error instanceof Error ? error.message : 'Unknown import error'],
         warnings: [],
       }
@@ -955,7 +958,7 @@ export class TablePackageService implements ITablePackageService {
     // Create the table
     const Table = (await import('../entities/Table.js')).Table
     const table = Table.create(resolvedIdentifier, schema.table.description || undefined)
-    await this.tableRepository.save(table)
+    const savedTable = await this.tableRepository.save(table)
 
     // Create attributes
     for (const attrData of schema.attributes) {
@@ -971,7 +974,7 @@ export class TablePackageService implements ITablePackageService {
 
         const Attribute = (await import('../entities/Attribute.js')).Attribute
         const attribute = Attribute.create(
-          table.id,
+          savedTable.id,
           attrData.identifier,
           newAttributeTypeId as any,
           attrData.description || undefined,
@@ -988,7 +991,7 @@ export class TablePackageService implements ITablePackageService {
       }
     }
 
-    return { id: table.id as string }
+    return { id: savedTable.id as string }
   }
 
   private async importTableData(

@@ -161,10 +161,10 @@ export class TableResolver extends BaseResolver {
       }
 
       // Save updated table
-      await this.tableRepository.save(table)
+      const savedTable = await this.tableRepository.save(table)
 
       return {
-        table: TableDto.fromEntity(table),
+        table: TableDto.fromEntity(savedTable),
         errors: [],
       }
     } catch (error) {

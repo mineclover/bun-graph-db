@@ -210,7 +210,7 @@ describe('TablePackageValidator', () => {
     }
 
     const conflicts = await validator.validatePackage(packageData, {
-      conflictResolution: 'skip',
+      conflictResolution: 'SKIP',
     })
 
     expect(Array.isArray(conflicts)).toBe(true)
@@ -251,7 +251,7 @@ describe('TablePackageValidator', () => {
     }
 
     // Use the validatePackage method instead of validateStructure (which doesn't exist)
-    const conflicts = await validator.validatePackage(packageData, { conflictResolution: 'skip' })
+    const conflicts = await validator.validatePackage(packageData, { conflictResolution: 'SKIP' })
     expect(Array.isArray(conflicts)).toBe(true)
   })
 })

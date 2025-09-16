@@ -197,7 +197,7 @@ describe('TablePackageService Error Handling', () => {
       // Act
       const result = await batchImportUseCase.execute({
         packages,
-        options: { conflictResolution: 'skip' },
+        options: { conflictResolution: 'SKIP' },
         createSession: true,
       })
 
@@ -229,7 +229,7 @@ describe('TablePackageService Error Handling', () => {
       // Act with continue on error strategy
       const result = await batchImportUseCase.execute({
         packages,
-        options: { conflictResolution: 'merge' }, // Different strategy that allows continuation
+        options: { conflictResolution: 'MERGE' }, // Different strategy that allows continuation
         createSession: false,
       })
 
@@ -251,7 +251,7 @@ describe('TablePackageService Error Handling', () => {
       // Act
       const result = await batchImportUseCase.execute({
         packages,
-        options: { conflictResolution: 'skip' },
+        options: { conflictResolution: 'SKIP' },
       })
 
       // Assert
@@ -300,7 +300,7 @@ describe('TablePackageService Error Handling', () => {
       const result = await batchImportUseCase.execute({
         packages,
         createSession: true,
-        options: { conflictResolution: 'overwrite' }, // Critical operation
+        options: { conflictResolution: 'OVERWRITE' }, // Critical operation
       })
 
       // Get the session and trigger rollback
@@ -365,7 +365,7 @@ describe('TablePackageService Error Handling', () => {
       // Act
       const result = await batchImportUseCase.execute({
         packages,
-        options: { conflictResolution: 'skip' },
+        options: { conflictResolution: 'SKIP' },
       })
 
       // Assert that the system doesn't crash with dependency issues

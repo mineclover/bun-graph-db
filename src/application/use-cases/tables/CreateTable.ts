@@ -29,14 +29,8 @@ export class CreateTableUseCase {
       // Create domain entity
       const table = Table.create(input.identifier, input.description)
 
-      // Save to repository
-      await this.tableRepository.save(table)
-
-      // Retrieve the saved table with the generated ID
-      const savedTable = await this.tableRepository.findByIdentifier(input.identifier)
-      if (!savedTable) {
-        throw new Error('Failed to retrieve saved table')
-      }
+      // Save to repository and get the saved table with generated ID
+      const savedTable = await this.tableRepository.save(table)
 
       this.logger.info('Table created successfully', {
         id: savedTable.id,

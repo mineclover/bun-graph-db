@@ -123,7 +123,7 @@ describe('Table Package System Integration', () => {
         input: {
           packageData: mockPackage,
           options: {
-            conflictResolution: 'rename',
+            conflictResolution: 'RENAME',
             generateTemplates: true
           }
         }
@@ -188,7 +188,7 @@ describe('Table Package System Integration', () => {
       const variables = {
         packageData: mockPackage,
         options: {
-          conflictResolution: 'skip'
+          conflictResolution: 'SKIP'
         }
       }
 
@@ -312,7 +312,7 @@ describe('Table Package System Integration', () => {
         input: {
           packages: mockPackages,
           options: {
-            conflictResolution: 'skip',
+            conflictResolution: 'SKIP',
             generateTemplates: true
           },
           createSession: true
@@ -334,6 +334,30 @@ describe('Table Package System Integration', () => {
 
   describe('End-to-End Workflow', () => {
     test('should complete full export-import cycle', async () => {
+      // Step 0: Create a test table first
+      const createTableMutation = `
+        mutation CreateTable($input: CreateTableInput!) {
+          createTable(input: $input) {
+            success
+            table {
+              id
+              identifier
+            }
+          }
+        }
+      `
+
+      await graphql({
+        schema,
+        source: createTableMutation,
+        variableValues: {
+          input: {
+            identifier: 'source-table',
+            description: 'Test source table for export-import cycle'
+          }
+        }
+      })
+
       // Step 1: Export a table
       const exportMutation = `
         mutation ExportTable($input: ExportTablePackageInput!) {
@@ -396,7 +420,7 @@ describe('Table Package System Integration', () => {
             input: {
               packageData,
               options: {
-                conflictResolution: 'rename',
+                conflictResolution: 'RENAME',
                 generateTemplates: true
               }
             }
@@ -483,7 +507,7 @@ describe('Table Package System Integration', () => {
         input: {
           packages: [dependentPackage, basePackage], // Wrong order to test dependency resolution
           options: {
-            conflictResolution: 'skip'
+            conflictResolution: 'SKIP'
           },
           createSession: true
         }
@@ -542,7 +566,7 @@ describe('Table Package System Integration', () => {
         input: {
           packageData: malformedPackage,
           options: {
-            conflictResolution: 'skip'
+            conflictResolution: 'SKIP'
           }
         }
       }
