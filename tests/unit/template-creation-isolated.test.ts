@@ -134,7 +134,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
       // Second creation should fail
       await expect(
         templateService.createTemplate(identifier, queryText, 'query')
-      ).toReject()
+      ).rejects.toThrow()
     })
   })
 
@@ -169,13 +169,13 @@ describe('Template Creation - Isolated Unit Tests', () => {
     test('should reject empty query text', async () => {
       await expect(
         templateService.validateGraphQL('')
-      ).toReject()
+      ).rejects.toThrow()
     })
 
     test('should reject invalid GraphQL syntax', async () => {
       await expect(
         templateService.validateGraphQL('invalid graphql syntax')
-      ).toReject()
+      ).rejects.toThrow()
     })
   })
 
@@ -199,7 +199,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
     test('should return null for non-existent template', async () => {
       const retrieved = await templateService.getTemplate('non-existent')
 
-      expect(retrieved).toBeUndefined()
+      expect(retrieved).toBeNull()
     })
   })
 
