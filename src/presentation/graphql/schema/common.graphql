@@ -10,8 +10,8 @@ type Error {
 
 # Base types from SQLite schema
 type Query {
-  # Health check
-  health: HealthStatus!
+  # Placeholder - will be extended by other schema files
+  _empty: String
 }
 
 type Mutation {
@@ -20,23 +20,11 @@ type Mutation {
 }
 
 type Subscription {
-  # Real-time updates
-  tableCreated: Table!
-  tableUpdated: Table!
-  tableDeleted: TableDeletedEvent!
-
-  nodeCreated: Node!
-  nodeUpdated: Node!
-  nodeDeleted: NodeDeletedEvent!
+  # Real-time updates defined in subscriptions/realtime.graphql
+  _placeholder: String
 }
 
-# Health status
-type HealthStatus {
-  status: String!
-  timestamp: DateTime!
-  database: Boolean!
-  version: String!
-}
+# Common health types are now defined in system-queries.graphql
 
 # Event types for subscriptions
 type TableDeletedEvent {

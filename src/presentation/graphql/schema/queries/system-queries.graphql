@@ -53,6 +53,16 @@ type DatabaseStats {
   averageQueryTime: Float!
 }
 
+# Basic health status for simple health checks
+type HealthStatus {
+  status: String!
+  timestamp: DateTime!
+  database: Boolean!
+  version: String!
+  memory: MemoryHealthStatus!
+}
+
+# Detailed system health status for comprehensive monitoring
 type SystemHealthStatus {
   status: String!
   timestamp: DateTime!

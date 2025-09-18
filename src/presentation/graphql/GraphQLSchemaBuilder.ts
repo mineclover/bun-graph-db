@@ -153,13 +153,6 @@ export class GraphQLSchemaBuilder {
 
       // Root resolvers
       Query: {
-        // Health check
-        health: () => ({
-          status: 'OK',
-          timestamp: new Date(),
-          database: true,
-          version: '1.0.0',
-        }),
 
         // Table queries
         table: (_: GraphQLParent, args: Record<string, unknown>) =>
@@ -300,6 +293,10 @@ export class GraphQLSchemaBuilder {
         // Relation mutations
         createRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.relationMutations.createRelationType(_, args as any),
+        updateRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationMutations.updateRelationType(_, args as any),
+        deleteRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationMutations.deleteRelationType(_, args as any),
         createRelation: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.relationMutations.createRelation(_, args as any),
         deleteRelation: (_: GraphQLParent, args: Record<string, unknown>) =>

@@ -8,8 +8,8 @@ scalar JSON
 
 # Root types - Query, Mutation, Subscription will be extended by domain schemas
 type Query {
-  # Health check endpoint - use common HealthStatus from schemas/common.graphql
-  health: HealthStatus!
+  # Health check endpoint - defined in system-queries.graphql
+  _placeholder: String
 }
 
 type Mutation {
