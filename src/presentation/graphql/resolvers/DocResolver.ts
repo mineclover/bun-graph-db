@@ -1,9 +1,9 @@
 import { DocDto } from '@/application/dtos/DocDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { ActivateDocUseCase } from '@/application/use-cases/docs/ActivateDoc.js'
-import { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
-import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
-import { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
+import type { ActivateDocUseCase } from '@/application/use-cases/docs/ActivateDoc.js'
+import type { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
+import type { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
+import type { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
 import type { DocId, TableId } from '@/core/types/CommonTypes.js'
 import type {
   CreateDocInput,

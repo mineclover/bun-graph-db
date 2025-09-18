@@ -243,51 +243,12 @@ export class EdgeCaseSimulator {
     await Promise.all(simulations.map(name => this.stopSimulation(name)));
   }
 
-  // Helper method to mock system values based on configuration
-  private mockValue(originalValue: any, config: EdgeCaseConfig): any {
-    switch (config.type) {
-      case 'zero':
-        return 0;
-
-      case 'extreme':
-        if (typeof originalValue === 'number') {
-          return config.intensity === Infinity ? Infinity : (config.intensity || 999999999);
-        }
-        return originalValue;
-
-      case 'null':
-        return null;
-
-      case 'undefined':
-        return undefined;
-
-      case 'invalid':
-        if (typeof originalValue === 'number') {
-          return config.intensity === Infinity ? Infinity : NaN;
-        }
-        if (typeof originalValue === 'string') {
-          return 123; // Invalid type
-        }
-        if (Array.isArray(originalValue)) {
-          return 'not-an-array'; // Invalid type
-        }
-        return 'invalid';
-
-      case 'inconsistent':
-        // Return values that don't make sense together
-        return originalValue;
-
-      default:
-        return originalValue;
-    }
-  }
-
   // Method to apply edge case transformations to query results
   transformQueryResult(result: any, simulationName?: string): any {
     if (!simulationName) {
       // Apply all active simulations
       let transformedResult = result;
-      for (const [name, config] of this.activeSimulations) {
+      for (const [_name, config] of this.activeSimulations) {
         transformedResult = this.applyTransformation(transformedResult, config);
       }
       return transformedResult;
@@ -306,7 +267,7 @@ export class EdgeCaseSimulator {
       return result;
     }
 
-    const transformed = { ...result };
+    let transformed = { ...result };
 
     if (config.affectedComponents?.includes('memory') && transformed.memory) {
       transformed.memory = this.transformMemoryData(transformed.memory, config);

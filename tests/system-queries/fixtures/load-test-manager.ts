@@ -445,7 +445,7 @@ export class LoadTestManager {
     result: any,
     testName: string,
     config: LoadTestConfig,
-    queryType: string
+    _queryType: string
   ): any {
     const transformed = { ...result };
 
@@ -472,7 +472,7 @@ export class LoadTestManager {
     const transformed = { ...result };
 
     // Connection storms affect database pool
-    if (transformed.database && transformed.database.pool) {
+    if (transformed.database?.pool) {
       transformed.database.pool.leaked = config.connections! > 200;
       transformed.database.pool.available = Math.max(10 - Math.floor(config.connections! / 50), 0);
     } else if (transformed.database) {

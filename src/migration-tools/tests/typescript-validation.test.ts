@@ -14,7 +14,6 @@ import type {
   TestIsolationConfig,
   MigrationAnalysis,
   PerformanceImpact,
-  ValidationResult
 } from '../types/MigrationTypes'
 
 import {

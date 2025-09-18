@@ -552,8 +552,6 @@ async function main() {
       })
       break
     }
-
-    case 'help':
     default:
       console.log(`
 🔧 Template Registration CLI

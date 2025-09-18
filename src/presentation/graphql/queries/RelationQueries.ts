@@ -1,7 +1,6 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type {
-  GetDependencyChainArgs,
   GraphQLContext,
   GraphQLParent,
   NodeRelationArgs,

@@ -7,11 +7,9 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from 'bun:test'
-import Database from 'bun:sqlite'
+import type Database from 'bun:sqlite'
 import type {
-  HealthStatus,
   SystemQueryExecutionContract,
-  ValidationResult
 } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 import { SystemQueryBehaviorContract } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 
@@ -24,7 +22,7 @@ import { SystemQueryValidator } from './fixtures/system-query-validation'
 import { MockConditionManager } from './fixtures/mock-conditions'
 
 describe('HealthCheck Integration Test', () => {
-  let testDb: Database
+  let _testDb: Database
   let dbManager: TestDatabaseManager
   let systemQueries: SystemQueryExecutionContract
   let validator: SystemQueryValidator
@@ -38,7 +36,7 @@ describe('HealthCheck Integration Test', () => {
       prefix: 'health-check-integration',
       optimizeForTesting: true
     })
-    testDb = db
+    _testDb = db
 
     // Setup connection and use case
     connection = SqliteConnection.getInstance()

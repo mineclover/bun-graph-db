@@ -1,8 +1,8 @@
-import { describe, expect, it, beforeEach, afterEach, mock, spyOn } from 'bun:test';
+import { describe, expect, it, beforeEach, afterEach, } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import { SystemQueries } from '../../src/services/system-queries';
 
 describe('System API Failures Error Handling', () => {
@@ -371,7 +371,7 @@ describe('System API Failures Error Handling', () => {
       const originalMemoryUsage = process.memoryUsage;
 
       // Fail first 2 calls, then succeed
-      process.memoryUsage = function() {
+      process.memoryUsage = () => {
         callCount++;
         if (callCount <= 2) {
           throw new Error('Transient failure');
@@ -479,13 +479,13 @@ describe('System API Failures Error Handling', () => {
     });
 
     it('should degrade gracefully under high failure rate', async () => {
-      let failureCount = 0;
+      let _failureCount = 0;
       const originalMemoryUsage = process.memoryUsage;
 
       // Fail 80% of calls
-      process.memoryUsage = function() {
+      process.memoryUsage = () => {
         if (Math.random() < 0.8) {
-          failureCount++;
+          _failureCount++;
           throw new Error('Random failure');
         }
         return originalMemoryUsage.call(process);

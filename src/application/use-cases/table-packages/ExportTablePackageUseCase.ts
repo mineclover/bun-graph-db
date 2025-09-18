@@ -109,8 +109,8 @@ export class ExportTablePackageUseCase {
     outputPath: string,
     prettyPrint?: boolean
   ): Promise<string> {
-    const fs = await import('fs/promises')
-    const path = await import('path')
+    const fs = await import('node:fs/promises')
+    const path = await import('node:path')
 
     // Ensure directory exists
     const dir = path.dirname(outputPath)

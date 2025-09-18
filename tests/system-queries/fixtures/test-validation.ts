@@ -342,11 +342,11 @@ export class SystemQueryValidator {
       return errors;
     }
 
-    if (isNaN(value)) {
+    if (Number.isNaN(value)) {
       errors.push(`${fieldName} cannot be NaN`);
     }
 
-    if (!isFinite(value)) {
+    if (!Number.isFinite(value)) {
       errors.push(`${fieldName} must be finite`);
     }
 
@@ -380,7 +380,7 @@ export class SystemQueryValidator {
       return errors;
     }
 
-    if (isNaN(date.getTime())) {
+    if (Number.isNaN(date.getTime())) {
       errors.push('Invalid timestamp format');
     }
 

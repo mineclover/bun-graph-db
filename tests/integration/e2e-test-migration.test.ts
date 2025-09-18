@@ -121,7 +121,7 @@ describe('E2E Test Migration Integration', () => {
         estimatedEffort: 'maximum'
       }
 
-      const fullStackOptions: MigrationOptions = {
+      const _fullStackOptions: MigrationOptions = {
         dryRun: false,
         validateOnly: false,
         createBackup: true,

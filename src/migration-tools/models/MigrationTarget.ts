@@ -190,7 +190,7 @@ export class MigrationTargetValidator {
    * Suggests migration priority based on complexity and test type
    */
   static suggestPriority(target: Partial<MigrationTarget>): MigrationPriority {
-    const complexity = target.complexity || this.estimateComplexity(target)
+    const complexity = target.complexity || MigrationTargetValidator.estimateComplexity(target)
 
     if (target.testType === 'e2e') {
       return complexity > 0.7 ? 'critical' : 'high'
@@ -212,7 +212,7 @@ export class MigrationTargetValidator {
    * Suggests estimated effort based on complexity and dependencies
    */
   static suggestEffort(target: Partial<MigrationTarget>): EstimatedEffort {
-    const complexity = target.complexity || this.estimateComplexity(target)
+    const complexity = target.complexity || MigrationTargetValidator.estimateComplexity(target)
     const depCount = target.dependencies?.length || 0
 
     const totalScore = complexity + (depCount * 0.1)

@@ -134,7 +134,7 @@ export class PerformanceMetrics {
 
     // Calculate standard deviation
     const variance = times.reduce((acc, time) => {
-      return acc + Math.pow(time - averageTime, 2);
+      return acc + (time - averageTime) ** 2;
     }, 0) / iterations;
     const stdDeviation = Math.sqrt(variance);
 
@@ -200,7 +200,7 @@ export class PerformanceMetrics {
     const warnings: string[] = [];
 
     // Check all metrics against thresholds
-    for (const [name, metricList] of this.metrics) {
+    for (const [_name, metricList] of this.metrics) {
       for (const metric of metricList) {
         if (metric.threshold && metric.value > metric.threshold) {
           failures.push(

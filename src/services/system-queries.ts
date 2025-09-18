@@ -1,6 +1,6 @@
-import { Database } from 'bun:sqlite';
-import * as os from 'os';
-import * as fs from 'fs';
+import type { Database } from 'bun:sqlite';
+import * as os from 'node:os';
+import * as fs from 'node:fs';
 
 export interface Logger {
   log: (message: string) => void;
@@ -97,12 +97,12 @@ export class SystemQueries {
       } else if (isError && console.error) {
         console.error(message);
       }
-    } catch (error) {
+    } catch (_error) {
       // Silently fail if logger fails
     }
   }
 
-  async systemStats(options?: { timeout?: number }): Promise<SystemStats> {
+  async systemStats(_options?: { timeout?: number }): Promise<SystemStats> {
     try {
       const cpuUsage = this.getCpuUsage();
       const memoryUsage = process.memoryUsage();
@@ -133,7 +133,7 @@ export class SystemQueries {
     }
   }
 
-  async memoryStats(options?: any): Promise<MemoryStats> {
+  async memoryStats(_options?: any): Promise<MemoryStats> {
     try {
       const memUsage = this.getMemoryUsage();
       const totalMem = this.getTotalMemory();
@@ -163,7 +163,7 @@ export class SystemQueries {
     }
   }
 
-  async getDatabaseStats(options?: any): Promise<DatabaseStats> {
+  async getDatabaseStats(_options?: any): Promise<DatabaseStats> {
     try {
       if (!this.db) {
         throw new Error('Database connection closed');
@@ -191,7 +191,7 @@ export class SystemQueries {
     }
   }
 
-  async healthCheck(options?: any): Promise<HealthCheckResult> {
+  async healthCheck(_options?: any): Promise<HealthCheckResult> {
     try {
       const memStats = await this.memoryStats();
       const sysStats = await this.systemStats();
@@ -337,7 +337,7 @@ export class SystemQueries {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(k));
-    return `${(Math.abs(bytes) / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+    return `${(Math.abs(bytes) / k ** i).toFixed(2)} ${sizes[i]}`;
   }
 
   private calculateCpuPercentage(cpuUsage: { user: number; system: number }): number {
@@ -471,7 +471,7 @@ export class SystemQueries {
   calculateStandardDeviation(values: number[]): number {
     if (values.length <= 1) return 0;
     const mean = this.calculateMean(values);
-    const squaredDiffs = values.map(v => Math.pow(v - mean, 2));
+    const squaredDiffs = values.map(v => (v - mean) ** 2);
     const avgSquaredDiff = this.safeDivide(
       squaredDiffs.reduce((a, b) => a + b, 0),
       values.length

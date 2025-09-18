@@ -216,7 +216,7 @@ export class EnhancedTemplateGenerator {
     tableSchema: any,
     includeValidation: boolean
   ) {
-    const inputFields = this.generateInputFields(tableSchema, 'create')
+    const _inputFields = this.generateInputFields(tableSchema, 'create')
     const outputFields = this.generateOutputFields(tableSchema)
     const validationFields = includeValidation ? this.generateValidationFields() : ''
 
@@ -452,7 +452,7 @@ export class EnhancedTemplateGenerator {
    */
   private async generateSearchTemplate(
     tableIdentifier: string,
-    tableNameCamel: string,
+    _tableNameCamel: string,
     tableNamePascal: string,
     tableSchema: any
   ) {
@@ -770,7 +770,7 @@ export class EnhancedTemplateGenerator {
       suggestions`
   }
 
-  private generateVariableProperties(tableSchema: any, operation: 'create' | 'update'): Record<string, any> {
+  private generateVariableProperties(tableSchema: any, _operation: 'create' | 'update'): Record<string, any> {
     const properties: Record<string, any> = {}
 
     if (tableSchema.attributes) {
@@ -895,7 +895,7 @@ export class EnhancedTemplateGenerator {
     tableNameCamel: string,
     tableNamePascal: string,
     tableSchema: any,
-    includeValidation: boolean
+    _includeValidation: boolean
   ) {
     return {
       identifier: `update-${tableIdentifier}-enhanced`,
@@ -950,7 +950,7 @@ export class EnhancedTemplateGenerator {
 
   private async generateDeleteTemplate(
     tableIdentifier: string,
-    tableNameCamel: string,
+    _tableNameCamel: string,
     tableNamePascal: string
   ) {
     return {
@@ -991,7 +991,7 @@ export class EnhancedTemplateGenerator {
 
   private async generateDeleteCascadeTemplate(
     tableIdentifier: string,
-    tableNameCamel: string,
+    _tableNameCamel: string,
     tableNamePascal: string
   ) {
     return {
@@ -1117,7 +1117,7 @@ export class EnhancedTemplateGenerator {
 
   private async generateBatchUpdateTemplate(
     tableIdentifier: string,
-    tableNameCamel: string,
+    _tableNameCamel: string,
     tableNamePascal: string,
     tableSchema: any
   ) {
@@ -1187,7 +1187,7 @@ export class EnhancedTemplateGenerator {
 
   private async generateBatchDeleteTemplate(
     tableIdentifier: string,
-    tableNameCamel: string,
+    _tableNameCamel: string,
     tableNamePascal: string
   ) {
     return {

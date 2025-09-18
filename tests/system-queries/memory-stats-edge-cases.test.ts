@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { SystemQueries } from '../../src/services/system-queries';
-import { Database } from 'bun:sqlite';
 
 // Import test infrastructure that doesn't exist yet (will cause failures)
 import { TestDatabase } from './fixtures/test-database-setup';

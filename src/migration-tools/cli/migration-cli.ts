@@ -24,8 +24,6 @@ interface CLIOptions {
 
 class MigrationCLI {
   private migrationService: MigrationService
-  private contextManager: TestContextManager
-  private performanceMonitor: PerformanceMonitor
 
   constructor() {
     this.migrationService = MigrationService.getInstance()
@@ -201,7 +199,7 @@ class MigrationCLI {
   /**
    * Handle rollback operation
    */
-  private async handleRollback(options: CLIOptions): Promise<void> {
+  private async handleRollback(_options: CLIOptions): Promise<void> {
     console.log('Rollback functionality not yet implemented')
     console.log('For manual rollback, restore from .backup files created during migration')
   }

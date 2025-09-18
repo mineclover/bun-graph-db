@@ -89,7 +89,7 @@ export interface EnhancedTestIsolationHelpers {
 }
 
 // File-Based Database Factory Contract
-export interface FileBased DatabaseFactory {
+export interface FileBasedDatabaseFactory {
   /**
    * Create file-based SQLite environment (NEVER in-memory)
    */

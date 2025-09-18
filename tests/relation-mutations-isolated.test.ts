@@ -616,8 +616,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
   describe('📊 Performance & Data Integrity', () => {
     let testTableId: string
     let testRelationTypeId: string
-    let sourceNodeId: string
-    let targetNodeId: string
+    let _sourceNodeId: string
+    let _targetNodeId: string
 
     beforeAll(async () => {
       // Create test data for performance testing
@@ -679,8 +679,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
         }
       })
 
-      sourceNodeId = sourceNodeResult.data.createNode.node.id
-      targetNodeId = targetNodeResult.data.createNode.node.id
+      _sourceNodeId = sourceNodeResult.data.createNode.node.id
+      _targetNodeId = targetNodeResult.data.createNode.node.id
     })
 
     test('createRelation - Bulk relation creation performance', async () => {

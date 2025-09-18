@@ -8,7 +8,6 @@ import type {
   ImportSession,
   TablePackageConflict,
 } from '@/core/types/TablePackage.js'
-import type { TableId } from '@/core/types/CommonTypes.js'
 
 /**
  * Domain service interface for table package export/import operations

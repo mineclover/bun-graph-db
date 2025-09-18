@@ -1,23 +1,17 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
 import { TablePackageService } from '@/domain/services/TablePackageService.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { Table } from '@/domain/entities/Table.js'
-import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 
 // Mock implementations
 class MockLogger implements ILogger {
-  info(message: string, data?: any): void {}
-  warn(message: string, data?: any): void {}
-  error(message: string, data?: any): void {}
-  debug(message: string, data?: any): void {}
+  info(_message: string, _data?: any): void {}
+  warn(_message: string, _data?: any): void {}
+  error(_message: string, _data?: any): void {}
+  debug(_message: string, _data?: any): void {}
 }
 
 class MockTableRepository implements Partial<ITableRepository> {
@@ -66,7 +60,7 @@ class MockTableRepository implements Partial<ITableRepository> {
 class MockQueryTemplateRepository implements Partial<IQueryTemplateRepository> {
   private templates = new Map<string, QueryTemplate>()
 
-  async findByApplicableTable(tableName: string, includeUniversal?: boolean): Promise<QueryTemplate[]> {
+  async findByApplicableTable(tableName: string, _includeUniversal?: boolean): Promise<QueryTemplate[]> {
     const results = []
     for (const template of this.templates.values()) {
       if (template.isApplicableToTable(tableName)) {
@@ -162,10 +156,10 @@ describe('TablePackageService', () => {
     // Create enhanced mock repo for attributes
     const mockAttributeRepo = {
       ...createMockRepo(),
-      async findByTableId(tableId: string) {
+      async findByTableId(_tableId: string) {
         return { nodes: [], total: 0, hasNextPage: false, hasPreviousPage: false } // Return paginated result
       },
-      async findByTable(table: any) {
+      async findByTable(_table: any) {
         return { nodes: [], total: 0, hasNextPage: false, hasPreviousPage: false } // Return paginated result
       }
     }

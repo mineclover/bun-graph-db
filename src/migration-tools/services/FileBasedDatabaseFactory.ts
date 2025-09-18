@@ -148,10 +148,10 @@ export class FileBasedDatabaseFactory {
   }
 
   static getInstance(): FileBasedDatabaseFactory {
-    if (!this.instance) {
-      this.instance = new FileBasedDatabaseFactory()
+    if (!FileBasedDatabaseFactory.instance) {
+      FileBasedDatabaseFactory.instance = new FileBasedDatabaseFactory()
     }
-    return this.instance
+    return FileBasedDatabaseFactory.instance
   }
 
   /**
@@ -348,7 +348,7 @@ export class FileBasedDatabaseFactory {
       }
 
       // Create new file-based database
-      const newInstance = await this.createDatabase({ path: filePath })
+      const _newInstance = await this.createDatabase({ path: filePath })
 
       return {
         success: true,
@@ -415,7 +415,7 @@ export class FileBasedDatabaseFactory {
       violations.push('Database path is required')
     }
 
-    if (config.path && config.path.includes(':memory:')) {
+    if (config.path?.includes(':memory:')) {
       violations.push('In-memory databases are not allowed')
     }
 

@@ -9,9 +9,7 @@ import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-data
 // Import types (these will fail until implemented)
 import type {
   PerformanceMonitor,
-  PerformanceMetrics,
   MonitoringOptions,
-  PerformanceReport
 } from '../../src/migration-tools/services/PerformanceMonitor'
 
 describe('PerformanceMonitor.measureExecution Contract', () => {
@@ -125,8 +123,8 @@ describe('PerformanceMonitor.measureExecution Contract', () => {
       }
 
       // Run baseline measurements
-      const baseline1 = await performanceMonitor.measureExecution('baseline-op', normalOperation, options)
-      const baseline2 = await performanceMonitor.measureExecution('baseline-op', normalOperation, options)
+      const _baseline1 = await performanceMonitor.measureExecution('baseline-op', normalOperation, options)
+      const _baseline2 = await performanceMonitor.measureExecution('baseline-op', normalOperation, options)
 
       // Anomalous operation (much slower)
       const anomalousOperation = async () => {

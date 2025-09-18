@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { SystemQueries } from '../../src/services/system-queries';
-import { Database } from 'bun:sqlite';
 
 // Import test infrastructure that doesn't exist yet (will cause failures)
 import { TestDatabase } from './fixtures/test-database-setup';
@@ -324,7 +323,7 @@ describe('HealthCheckEdgeCases - Boundary and Extreme Health Condition Testing',
       expect(result.timestamp).toBeInstanceOf(Date);
 
       // Should be within reasonable bounds
-      const now = Date.now();
+      const _now = Date.now();
       const timestamp = result.timestamp.getTime();
       expect(timestamp).toBeGreaterThan(new Date('2020-01-01').getTime());
       expect(timestamp).toBeLessThan(new Date('2030-01-01').getTime());

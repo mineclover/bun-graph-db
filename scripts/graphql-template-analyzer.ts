@@ -442,7 +442,7 @@ class GraphQLTemplateAnalyzer {
   }
 
   private generateReport(): void {
-    console.log('\n' + '='.repeat(80))
+    console.log(`\n${'='.repeat(80)}`)
     console.log('📋 GRAPHQL TEMPLATE ANALYSIS REPORT')
     console.log('='.repeat(80))
 
@@ -537,7 +537,7 @@ class GraphQLTemplateAnalyzer {
       `   Slowest template: ${slowestTemplate.identifier} (${slowestTemplate.executionTime.toFixed(2)}ms)`
     )
 
-    console.log('\n' + '='.repeat(80))
+    console.log(`\n${'='.repeat(80)}`)
   }
 
   private groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {

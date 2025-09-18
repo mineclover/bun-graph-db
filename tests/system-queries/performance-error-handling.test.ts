@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { SystemQueries } from '../../src/services/system-queries';
-import { Database } from 'bun:sqlite';
 
 // Import test infrastructure that doesn't exist yet (will cause failures)
 import { TestDatabase } from './fixtures/test-database-setup';
@@ -147,7 +146,7 @@ describe('PerformanceErrorHandling - Performance-Related Error Testing', () => {
 
       // Some queries should indicate throttling
       const throttledCount = results.filter(r =>
-        r.result.throttled || (r.result.error && r.result.error.includes('throttle'))
+        r.result.throttled || (r.result.error?.includes('throttle'))
       ).length;
 
       expect(throttledCount).toBeGreaterThan(0);
@@ -336,7 +335,7 @@ describe('PerformanceErrorHandling - Performance-Related Error Testing', () => {
       if (laterAvg > earlyAvg * 2) {
         // If system got slower, timeouts should have adapted
         expect(laterResults.some(r =>
-          r.result.timeout && r.result.timeout.adapted
+          r.result.timeout?.adapted
         )).toBe(true);
       }
     });
@@ -351,7 +350,7 @@ describe('PerformanceErrorHandling - Performance-Related Error Testing', () => {
       for (let i = 0; i < 500; i++) {
         await systemQueries.systemStats();
         if (i % 100 === 0) {
-          global.gc && global.gc(); // Force GC if available
+          global.gc?.(); // Force GC if available
         }
       }
 
@@ -380,7 +379,7 @@ describe('PerformanceErrorHandling - Performance-Related Error Testing', () => {
         await stressSimulator.simulateRandomFailure();
         try {
           await systemQueries.systemStats();
-        } catch (error) {
+        } catch (_error) {
           // Expected to fail
         }
       }

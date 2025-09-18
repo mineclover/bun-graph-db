@@ -514,7 +514,7 @@ export function registerGraphQLModule(container: DIContainer): void {
 
   container.registerSingleton(
     GraphQLTokens.RELATION_TYPE_FIELD_RESOLVERS,
-    async (c) => {
+    async (_c) => {
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),

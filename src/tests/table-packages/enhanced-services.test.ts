@@ -7,10 +7,10 @@ import { SchemaIntrospectionService } from '@/domain/services/SchemaIntrospectio
 
 // Mock Logger
 class MockLogger {
-  info(message: string, data?: any): void {}
-  warn(message: string, data?: any): void {}
-  error(message: string, data?: any): void {}
-  debug(message: string, data?: any): void {}
+  info(_message: string, _data?: any): void {}
+  warn(_message: string, _data?: any): void {}
+  error(_message: string, _data?: any): void {}
+  debug(_message: string, _data?: any): void {}
 }
 
 // Mock Repository
@@ -382,7 +382,7 @@ describe('SchemaIntrospectionService', () => {
 describe('Enhanced Services Integration', () => {
   test('should work together for complex operations', async () => {
     const mockLogger = new MockLogger()
-    const mockContainer = new MockContainer()
+    const _mockContainer = new MockContainer()
 
     const analyzer = new EnhancedDependencyAnalyzer(
       createMockRepo() as any,

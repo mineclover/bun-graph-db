@@ -12,10 +12,7 @@
 
 import {
   introspectionFromSchema,
-  buildClientSchema,
   validateSchema,
-  getIntrospectionQuery,
-  execute,
   parse,
   validate
 } from 'graphql'
@@ -102,7 +99,6 @@ export interface SchemaChange {
 
 export class SchemaIntrospectionService {
   private cachedSchema?: GraphQLSchema
-  private cachedIntrospection?: IntrospectionQuery
   private cacheTimestamp = 0
   private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
@@ -177,7 +173,7 @@ export class SchemaIntrospectionService {
   /**
    * Validate template query against current schema
    */
-  async validateTemplateQuery(query: string, variables?: Record<string, any>): Promise<TemplateValidationResult> {
+  async validateTemplateQuery(query: string, _variables?: Record<string, any>): Promise<TemplateValidationResult> {
     try {
       const schema = await this.getCurrentSchema()
 
@@ -267,7 +263,7 @@ export class SchemaIntrospectionService {
     fragments: string[]
   }> {
     try {
-      const schema = await this.getCurrentSchema()
+      const _schema = await this.getCurrentSchema()
       const analysis = await this.analyzeSchema()
 
       // Find table-related types and operations
@@ -397,20 +393,20 @@ export class SchemaIntrospectionService {
     return type.kind === 'LIST'
   }
 
-  private extractUsedFields(document: any): string[] {
+  private extractUsedFields(_document: any): string[] {
     const fields: string[] = []
     // This would recursively extract all field names from the document
     // Implementation would traverse the AST and collect field names
     return fields
   }
 
-  private calculateQueryComplexity(document: any, schema: GraphQLSchema): number {
+  private calculateQueryComplexity(_document: any, _schema: GraphQLSchema): number {
     // Simplified complexity calculation
     // In practice, this would use a proper complexity analysis algorithm
     return 1
   }
 
-  private generateQuerySuggestions(document: any, schema: GraphQLSchema, errors: GraphQLError[]): string[] {
+  private generateQuerySuggestions(_document: any, _schema: GraphQLSchema, errors: GraphQLError[]): string[] {
     const suggestions: string[] = []
 
     for (const error of errors) {

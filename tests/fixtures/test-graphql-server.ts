@@ -3,7 +3,7 @@
  * Starts isolated GraphQL server with test database for each test suite
  */
 
-import { spawn, type Subprocess } from 'bun'
+import { spawn, } from 'bun'
 import { TestDatabaseFactory, type TestEnvironment } from './test-database-factory'
 
 export interface TestGraphQLServer {
@@ -22,15 +22,15 @@ export class GraphQLTestServerManager {
    */
   static async startServerForSuite(suiteName: string): Promise<TestGraphQLServer> {
     // Check if server already exists
-    if (this.servers.has(suiteName)) {
-      await this.stopServerForSuite(suiteName)
+    if (GraphQLTestServerManager.servers.has(suiteName)) {
+      await GraphQLTestServerManager.stopServerForSuite(suiteName)
     }
 
     // Create isolated database
     const database = await TestDatabaseFactory.createTestEnvironment(suiteName)
 
     // Assign unique port within test range (5000-5999)
-    const port = this.portCounter++
+    const port = GraphQLTestServerManager.portCounter++
     if (port > 5999) {
       throw new Error('Test port range exhausted (5500-5999). Too many concurrent test servers.')
     }
@@ -54,7 +54,7 @@ export class GraphQLTestServerManager {
 
     // Wait for server to be ready
     try {
-      await this.waitForServer(url, 10000) // 10 second timeout
+      await GraphQLTestServerManager.waitForServer(url, 10000) // 10 second timeout
     } catch (error) {
       // Capture server output for debugging
       const stdout = await new Response(serverProcess.stdout).text()
@@ -84,11 +84,11 @@ export class GraphQLTestServerManager {
         await database.cleanup()
 
         // Remove from registry
-        this.servers.delete(suiteName)
+        GraphQLTestServerManager.servers.delete(suiteName)
       }
     }
 
-    this.servers.set(suiteName, server)
+    GraphQLTestServerManager.servers.set(suiteName, server)
     return server
   }
 
@@ -122,7 +122,7 @@ export class GraphQLTestServerManager {
         if (response.ok) {
           return // Server is ready
         }
-      } catch (error) {
+      } catch (_error) {
         // Server not ready yet, continue waiting
       }
 
@@ -137,14 +137,14 @@ export class GraphQLTestServerManager {
    * Get existing server for suite
    */
   static getServerForSuite(suiteName: string): TestGraphQLServer | null {
-    return this.servers.get(suiteName) || null
+    return GraphQLTestServerManager.servers.get(suiteName) || null
   }
 
   /**
    * Stop server for specific suite
    */
   static async stopServerForSuite(suiteName: string): Promise<void> {
-    const server = this.servers.get(suiteName)
+    const server = GraphQLTestServerManager.servers.get(suiteName)
     if (server) {
       await server.cleanup()
     }
@@ -154,16 +154,16 @@ export class GraphQLTestServerManager {
    * Stop all test servers
    */
   static async stopAllServers(): Promise<void> {
-    const cleanupPromises = Array.from(this.servers.values()).map(server => server.cleanup())
+    const cleanupPromises = Array.from(GraphQLTestServerManager.servers.values()).map(server => server.cleanup())
     await Promise.all(cleanupPromises)
-    this.servers.clear()
+    GraphQLTestServerManager.servers.clear()
   }
 
   /**
    * Create GraphQL request helper for test suite
    */
   static createRequestHelper(suiteName: string) {
-    const server = this.servers.get(suiteName)
+    const server = GraphQLTestServerManager.servers.get(suiteName)
     if (!server) {
       throw new Error(`No server found for suite: ${suiteName}`)
     }

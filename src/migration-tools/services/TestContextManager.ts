@@ -27,7 +27,6 @@ export interface ContextOptions {
 export class TestContextManager {
   private activeContexts = new Map<string, TestContextImpl>()
   private contextCounter = 0
-  private database: any
 
   constructor(database?: any) {
     this.database = database
@@ -323,7 +322,7 @@ class TestContextImpl implements TestContext {
   async cleanup(): Promise<CleanupResult> {
     const startTime = Date.now()
     const errors: string[] = []
-    let resourcesFreed = {
+    const resourcesFreed = {
       files: 0,
       connections: 0,
       processes: 0,

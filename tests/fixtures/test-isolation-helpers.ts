@@ -32,12 +32,12 @@ export class TestIsolationHelpers {
       database,
       cleanup: async () => {
         await database.cleanup()
-        this.contexts.delete(suiteName)
+        TestIsolationHelpers.contexts.delete(suiteName)
         console.log(`✅ Unit test cleanup completed: ${suiteName}`)
       }
     }
 
-    this.contexts.set(suiteName, context)
+    TestIsolationHelpers.contexts.set(suiteName, context)
     console.log(`✅ Unit test environment ready: ${suiteName}`)
     return context
   }
@@ -68,12 +68,12 @@ export class TestIsolationHelpers {
       graphqlRequest,
       cleanup: async () => {
         await GraphQLTestServerManager.stopServerForSuite(suiteName)
-        this.contexts.delete(suiteName)
+        TestIsolationHelpers.contexts.delete(suiteName)
         console.log(`✅ Integration test cleanup completed: ${suiteName}`)
       }
     }
 
-    this.contexts.set(suiteName, context)
+    TestIsolationHelpers.contexts.set(suiteName, context)
     console.log(`✅ Integration test environment ready: ${suiteName} (${server.url})`)
     return context
   }
@@ -93,12 +93,12 @@ export class TestIsolationHelpers {
 
     // Apply E2E specific configuration
     if (options?.seedData) {
-      await this.seedTestData(server.database)
+      await TestIsolationHelpers.seedTestData(server.database)
       console.log(`📊 Seed data loaded for: ${suiteName}`)
     }
 
     if (options?.mockExternalServices) {
-      await this.setupMockServices(suiteName)
+      await TestIsolationHelpers.setupMockServices(suiteName)
       console.log(`🎭 Mock services configured for: ${suiteName}`)
     }
 
@@ -110,15 +110,15 @@ export class TestIsolationHelpers {
       graphqlRequest,
       cleanup: async () => {
         if (options?.mockExternalServices) {
-          await this.cleanupMockServices(suiteName)
+          await TestIsolationHelpers.cleanupMockServices(suiteName)
         }
         await GraphQLTestServerManager.stopServerForSuite(suiteName)
-        this.contexts.delete(suiteName)
+        TestIsolationHelpers.contexts.delete(suiteName)
         console.log(`✅ E2E test cleanup completed: ${suiteName}`)
       }
     }
 
-    this.contexts.set(suiteName, context)
+    TestIsolationHelpers.contexts.set(suiteName, context)
     console.log(`✅ E2E test environment ready: ${suiteName}`)
     return context
   }
@@ -127,14 +127,14 @@ export class TestIsolationHelpers {
    * Get existing test context
    */
   static getContext(suiteName: string): IsolatedTestContext | null {
-    return this.contexts.get(suiteName) || null
+    return TestIsolationHelpers.contexts.get(suiteName) || null
   }
 
   /**
    * Cleanup specific test context
    */
   static async cleanup(suiteName: string): Promise<void> {
-    const context = this.contexts.get(suiteName)
+    const context = TestIsolationHelpers.contexts.get(suiteName)
     if (context) {
       await context.cleanup()
     }
@@ -145,7 +145,7 @@ export class TestIsolationHelpers {
    */
   static async cleanupAll(): Promise<void> {
     console.log('🧹 Cleaning up all test environments...')
-    const cleanupPromises = Array.from(this.contexts.values()).map(context => context.cleanup())
+    const cleanupPromises = Array.from(TestIsolationHelpers.contexts.values()).map(context => context.cleanup())
     await Promise.all(cleanupPromises)
     console.log('✅ All test environments cleaned up')
   }
@@ -244,7 +244,7 @@ export class TestIsolationHelpers {
       },
 
       reportStats: () => {
-        const stats = this.getStats()
+        const stats = TestIsolationHelpers.getStats()
         console.log(`📊 Performance stats for ${suiteName}:`)
 
         for (const [operation, stat] of Object.entries(stats)) {

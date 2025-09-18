@@ -1,6 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { SystemQueries } from '../../src/services/system-queries';
-import { Database } from 'bun:sqlite';
 
 // Import test infrastructure that doesn't exist yet (will cause failures)
 import { TestDatabase } from './fixtures/test-database-setup';
@@ -347,7 +346,7 @@ describe('SystemQueryErrorHandling - Comprehensive Error Recovery Testing', () =
         await errorSimulator.simulateRandomError();
         try {
           await systemQueries.systemStats();
-        } catch (error) {
+        } catch (_error) {
           // Expected to fail
         }
       }
@@ -370,9 +369,9 @@ describe('SystemQueryErrorHandling - Comprehensive Error Recovery Testing', () =
       });
 
       // Should fail during error period
-      let errorResult;
+      let _errorResult;
       try {
-        errorResult = await systemQueries.systemStats();
+        _errorResult = await systemQueries.systemStats();
       } catch (error) {
         expect(error).toBeDefined();
       }

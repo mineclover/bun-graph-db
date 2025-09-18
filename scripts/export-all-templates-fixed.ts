@@ -65,7 +65,7 @@ async function main() {
 
     // 3. fixed 태그가 있는 템플릿만 필터링
     const fixedTemplates = allTemplates.filter(
-      (template) => template.tags && template.tags.includes('fixed')
+      (template) => template.tags?.includes('fixed')
     )
     console.log(`🎯 Fixed 카테고리 템플릿: ${fixedTemplates.length}개`)
 

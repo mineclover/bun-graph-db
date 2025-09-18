@@ -110,7 +110,6 @@ export class PerformanceMonitor {
   private snapshots: PerformanceSnapshot[] = []
   private config: MonitoringConfig
   private activeTimers = new Map<string, number>()
-  private database: any
 
   constructor(database?: any, config: MonitoringConfig = {
     enableDetailed: true,
@@ -122,10 +121,10 @@ export class PerformanceMonitor {
   }
 
   static getInstance(config?: MonitoringConfig): PerformanceMonitor {
-    if (!this.instance) {
-      this.instance = new PerformanceMonitor(undefined, config)
+    if (!PerformanceMonitor.instance) {
+      PerformanceMonitor.instance = new PerformanceMonitor(undefined, config)
     }
-    return this.instance
+    return PerformanceMonitor.instance
   }
 
   /**
@@ -137,16 +136,16 @@ export class PerformanceMonitor {
     options: MonitoringOptions
   ): Promise<PerformanceReport> {
     const startTime = performance.now()
-    const startMemory = options.trackMemory ? this.getCurrentMemoryUsage() : 0
+    const _startMemory = options.trackMemory ? this.getCurrentMemoryUsage() : 0
     const startCpu = options.trackCPU ? this.getCurrentCpuUsage() : 0
 
     let result: T
-    let executionError: Error | null = null
+    let _executionError: Error | null = null
 
     try {
       result = await operation()
     } catch (error) {
-      executionError = error as Error
+      _executionError = error as Error
       throw error
     } finally {
       const endTime = performance.now()

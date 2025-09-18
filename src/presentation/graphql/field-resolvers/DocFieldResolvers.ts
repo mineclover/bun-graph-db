@@ -6,7 +6,7 @@ import type { GraphQLResolveInfo } from 'graphql'
 export class DocFieldResolvers {
   constructor(private readonly tableRepository: ITableRepository) {}
 
-  async table(parent: any, args: any, context: any, info: GraphQLResolveInfo): Promise<TableDto | null> {
+  async table(parent: any, _args: any, _context: any, _info: GraphQLResolveInfo): Promise<TableDto | null> {
     try {
       const tableId = parent.tableId || parent.table?.id
       if (!tableId) {

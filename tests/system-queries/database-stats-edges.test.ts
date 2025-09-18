@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { SystemQueries } from '../../src/services/system-queries';
 
 describe('Database Statistics Edge Cases', () => {
@@ -283,11 +283,11 @@ describe('Database Statistics Edge Cases', () => {
       expect(stats.totalRows).toBe(100);
 
       // Check for WAL file
-      const walPath = tempDbPath + '-wal';
+      const walPath = `${tempDbPath}-wal`;
       const walExists = fs.existsSync(walPath);
 
       if (walExists) {
-        const walSize = fs.statSync(walPath).size;
+        const _walSize = fs.statSync(walPath).size;
         // Database size should account for WAL file
         expect(stats.databaseSize).toBeGreaterThan(0);
       }
@@ -309,7 +309,7 @@ describe('Database Statistics Edge Cases', () => {
       expect(stats.totalRows).toBe(1000);
 
       // After checkpoint, WAL should be minimal
-      const walPath = tempDbPath + '-wal';
+      const walPath = `${tempDbPath}-wal`;
       if (fs.existsSync(walPath)) {
         const walSize = fs.statSync(walPath).size;
         expect(walSize).toBeLessThan(1024 * 10); // Less than 10KB

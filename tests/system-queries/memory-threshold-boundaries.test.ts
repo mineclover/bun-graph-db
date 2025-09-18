@@ -9,7 +9,6 @@
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import type {
   SystemQueryExecutionContract,
-  HealthStatus
 } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 import { SystemQueryBehaviorContract } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 
@@ -23,7 +22,7 @@ import { SystemQueryValidator } from './fixtures/system-query-validation'
 describe('Memory Threshold Boundaries Edge Case Test', () => {
   let systemQueries: SystemQueryExecutionContract
   let mockManager: MockConditionManager
-  let validator: SystemQueryValidator
+  let _validator: SystemQueryValidator
   let dbManager: TestDatabaseManager
 
   beforeAll(async () => {
@@ -37,7 +36,7 @@ describe('Memory Threshold Boundaries Edge Case Test', () => {
     mockManager = new MockConditionManager()
     const useCase = new SystemMonitoringUseCase(mockManager.getConnection())
     systemQueries = new SystemQueries(useCase)
-    validator = new SystemQueryValidator()
+    _validator = new SystemQueryValidator()
   })
 
   afterAll(async () => {

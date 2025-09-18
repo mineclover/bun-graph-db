@@ -1,5 +1,4 @@
 import { describe, test, expect, beforeEach } from 'bun:test'
-import { TablePackageService } from '@/domain/services/TablePackageService.js'
 import { BatchImportTablePackagesUseCase } from '@/application/use-cases/table-packages/BatchImportTablePackagesUseCase.js'
 import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 import type { ILogger } from '@/application/ports/ILogger.js'

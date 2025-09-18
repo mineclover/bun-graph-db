@@ -7,11 +7,9 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import Database from 'bun:sqlite'
+import type Database from 'bun:sqlite'
 import type {
-  MemoryStats,
   SystemQueryExecutionContract,
-  ValidationResult
 } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 import { SystemQueryBehaviorContract } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 
@@ -23,7 +21,7 @@ import { SqliteConnection } from '@/infrastructure/database/sqlite/SqliteConnect
 import { SystemQueryValidator } from './fixtures/system-query-validation'
 
 describe('MemoryStats Integration Test', () => {
-  let testDb: Database
+  let _testDb: Database
   let dbManager: TestDatabaseManager
   let systemQueries: SystemQueryExecutionContract
   let validator: SystemQueryValidator
@@ -36,7 +34,7 @@ describe('MemoryStats Integration Test', () => {
       prefix: 'memory-stats-integration',
       optimizeForTesting: true
     })
-    testDb = db
+    _testDb = db
 
     // Setup connection and use case
     connection = SqliteConnection.getInstance()

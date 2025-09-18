@@ -11,8 +11,8 @@ import { TestIsolationHelpers } from '../tests/fixtures/test-isolation-helpers'
 import { GraphQLTestServerManager } from '../tests/fixtures/test-graphql-server'
 import { TestDatabaseFactory } from '../tests/fixtures/test-database-factory'
 import { spawn } from 'bun'
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 
 interface CleanupOptions {
   force: boolean
@@ -134,7 +134,7 @@ class TestCleanupManager {
                   fs.rmdirSync(dir)
                   this.log(`  📂 Removed empty directory: ${dir}`)
                 }
-              } catch (error) {
+              } catch (_error) {
                 // Directory not empty or other error
               }
             }
@@ -174,7 +174,7 @@ class TestCleanupManager {
           files.push(...subFiles)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Directory doesn't exist or permission error
     }
 
@@ -200,15 +200,15 @@ class TestCleanupManager {
           if (!this.options.dryRun) {
             for (const pid of pids) {
               try {
-                process.kill(parseInt(pid), 'SIGTERM')
+                process.kill(parseInt(pid, 10), 'SIGTERM')
                 this.log(`  💀 Terminated process ${pid}`)
 
                 // Wait a bit then force kill if still running
                 await new Promise(resolve => setTimeout(resolve, 1000))
 
                 try {
-                  process.kill(parseInt(pid), 0) // Check if still running
-                  process.kill(parseInt(pid), 'SIGKILL')
+                  process.kill(parseInt(pid, 10), 0) // Check if still running
+                  process.kill(parseInt(pid, 10), 'SIGKILL')
                   this.log(`  💀 Force killed process ${pid}`)
                 } catch {
                   // Process already terminated
@@ -223,7 +223,7 @@ class TestCleanupManager {
         } else {
           this.log(`🔍 No processes found matching "${pattern}"`)
         }
-      } catch (error) {
+      } catch (_error) {
         // pgrep failed or no processes found
       }
     }
@@ -258,7 +258,7 @@ class TestCleanupManager {
             const pids = await new Response(proc.stdout).text()
 
             for (const pid of pids.trim().split('\n').filter(Boolean)) {
-              process.kill(parseInt(pid), 'SIGTERM')
+              process.kill(parseInt(pid, 10), 'SIGTERM')
               this.log(`  💀 Killed process ${pid} using port ${port}`)
             }
           } catch (error) {

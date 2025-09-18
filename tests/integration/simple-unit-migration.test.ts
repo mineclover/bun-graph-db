@@ -13,7 +13,6 @@ import type {
   PerformanceMonitor,
   MigrationTarget,
   MigrationOptions,
-  MigrationResult
 } from '../../src/migration-tools/services/MigrationService'
 
 describe('Simple Unit Test Migration Integration', () => {
@@ -64,7 +63,7 @@ describe('Simple Unit Test Migration Integration', () => {
       const analysis = await migrationService.analyzeMigrationTarget(target)
       expect(analysis.feasibility).toBeGreaterThan(0.7) // Should be feasible
 
-      const validation = await migrationService.validateMigration(target, {
+      const _validation = await migrationService.validateMigration(target, {
         checkFileExists: false, // New file won't exist yet
         validateSyntax: false,
         checkDependencies: true,

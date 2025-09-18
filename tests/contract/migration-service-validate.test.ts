@@ -10,7 +10,6 @@ import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-data
 import type {
   MigrationService,
   MigrationTarget,
-  ValidationResult,
   ValidationOptions
 } from '../../src/migration-tools/services/MigrationService'
 

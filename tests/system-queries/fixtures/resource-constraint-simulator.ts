@@ -218,7 +218,7 @@ export class ResourceConstraintSimulator {
       fileDescriptors: { constrained: false }
     } as any;
 
-    for (const [name, constraint] of this.activeConstraints) {
+    for (const [_name, constraint] of this.activeConstraints) {
       switch (constraint.type) {
         case 'memory':
           summary.memory.constrained = true;
@@ -270,7 +270,7 @@ export class ResourceConstraintSimulator {
     result: any,
     constraintName: string,
     constraint: ResourceConstraint,
-    queryType: string
+    _queryType: string
   ): any {
     const transformed = { ...result };
 
@@ -438,7 +438,7 @@ export class ResourceConstraintSimulator {
     return transformed;
   }
 
-  private applyNetworkPartitionTransformation(result: any, constraint: ResourceConstraint): any {
+  private applyNetworkPartitionTransformation(result: any, _constraint: ResourceConstraint): any {
     const transformed = { ...result };
 
     // Database connection will fail

@@ -1,8 +1,6 @@
 import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { ExportTablePackageUseCase } from '@/application/use-cases/table-packages/ExportTablePackageUseCase.js'
-import { ImportTablePackageUseCase } from '@/application/use-cases/table-packages/ImportTablePackageUseCase.js'
-import { BatchImportTablePackagesUseCase } from '@/application/use-cases/table-packages/BatchImportTablePackagesUseCase.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class TablePackageResolver extends BaseResolver {
@@ -101,7 +99,7 @@ export class TablePackageResolver extends BaseResolver {
     }, "operation-name")
   }
 
-  async listImportSessions(_: any, args: any): Promise<any> {
+  async listImportSessions(_: any, _args: any): Promise<any> {
     return this.handleQuery(async () => {
       // This would require a method to list all sessions
       // For now, return empty array
@@ -359,7 +357,7 @@ export class TablePackageResolver extends BaseResolver {
 
   async importTablePackageFromFile(_: any, args: any): Promise<any> {
     return this.handleMutation(async () => {
-      const fs = await import('fs/promises')
+      const fs = await import('node:fs/promises')
 
       try {
         // Read the package file

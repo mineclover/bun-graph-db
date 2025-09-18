@@ -1,8 +1,8 @@
 import { Database } from 'bun:sqlite';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as crypto from 'crypto';
-import type { TestDatabaseContract, TestDatabaseOptions as ContractOptions } from '../../../specs/003-specs-002-sqlite/contracts/test-database-contract';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as crypto from 'node:crypto';
+import type { TestDatabaseContract, } from '../../../specs/003-specs-002-sqlite/contracts/test-database-contract';
 
 export interface TestDatabaseOptions {
   name?: string;
@@ -119,7 +119,7 @@ export class TestDatabase implements TestDatabaseContract {
     db.exec(sql);
   }
 
-  prepare<T = any>(sql: string): any {
+  prepare<_T = any>(sql: string): any {
     const db = this.getConnection();
     this._queries.push(sql);
     return db.prepare(sql);
@@ -194,7 +194,7 @@ export class TestDatabase implements TestDatabaseContract {
     return clone;
   }
 
-  enableQueryLogging(enabled: boolean = true): void {
+  enableQueryLogging(_enabled: boolean = true): void {
     // This would enable logging of all queries for debugging
     // Implementation depends on specific needs
   }

@@ -522,12 +522,12 @@ class MissingTemplateCreator {
 
     // 높은 우선순위 템플릿 먼저 생성
     await this.createHighPriorityTemplates()
-    console.log('\n' + '─'.repeat(60) + '\n')
+    console.log(`\n${'─'.repeat(60)}\n`)
 
     // 중간 우선순위 템플릿 생성
     await this.createMediumPriorityTemplates()
 
-    console.log('\n' + '='.repeat(80))
+    console.log(`\n${'='.repeat(80)}`)
     console.log('✅ All missing templates created successfully!')
     console.log('='.repeat(80))
   }
@@ -639,8 +639,6 @@ async function main() {
       })
       break
     }
-
-    case 'help':
     default:
       console.log(`
 🔧 Missing Template Creator CLI

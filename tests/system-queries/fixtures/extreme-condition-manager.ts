@@ -298,7 +298,7 @@ export class ExtremeConditionManager {
     result: any,
     conditionName: string,
     config: ExtremeConditionConfig,
-    queryType: string
+    _queryType: string
   ): any {
     const transformed = { ...result };
 

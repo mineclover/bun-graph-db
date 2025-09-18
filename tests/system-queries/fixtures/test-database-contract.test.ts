@@ -1,9 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
 import type {
-  TestDatabaseContract,
-  TestDatabaseManagerContract,
-  DatabaseValidationContract,
   TestDatabaseOptions
 } from '../../../specs/003-specs-002-sqlite/contracts/test-database-contract';
 

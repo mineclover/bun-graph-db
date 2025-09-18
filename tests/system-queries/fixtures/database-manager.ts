@@ -1,8 +1,8 @@
-import { TestDatabase, TestDatabaseOptions } from './test-database-setup';
+import { TestDatabase, type TestDatabaseOptions } from './test-database-setup';
 import type { TestDatabaseManagerContract, DatabaseMetrics, TestDatabaseOptions as ContractOptions } from '../../../specs/003-specs-002-sqlite/contracts/test-database-contract';
-import { Database } from 'bun:sqlite';
-import * as path from 'path';
-import * as fs from 'fs';
+import type { Database } from 'bun:sqlite';
+import * as path from 'node:path';
+import * as fs from 'node:fs';
 
 export interface DatabaseManagerOptions {
   maxDatabases?: number;
@@ -167,7 +167,7 @@ export class TestDatabaseManager implements TestDatabaseManagerContract {
           if (db.isConnected()) {
             db.getConnection().close();
           }
-        } catch (error) {
+        } catch (_error) {
           // Ignore errors during emergency cleanup
         }
       }

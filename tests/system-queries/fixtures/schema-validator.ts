@@ -1,4 +1,4 @@
-import { Database } from 'bun:sqlite';
+import type { Database } from 'bun:sqlite';
 import type { DatabaseValidationContract } from '../../../specs/003-specs-002-sqlite/contracts/test-database-contract';
 
 export class SchemaValidator implements DatabaseValidationContract {
@@ -140,13 +140,13 @@ export class SchemaValidator implements DatabaseValidationContract {
           if (count > 0) {
             nonEmptyTables.push(table.name);
           }
-        } catch (error) {
+        } catch (_error) {
           // If we can't count rows, consider it non-empty for safety
           tableRowCounts[table.name] = -1; // Indicate error
           nonEmptyTables.push(table.name);
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // If we can't list tables, consider database non-empty
       return {
         isEmpty: false,
@@ -191,7 +191,7 @@ export class SchemaValidator implements DatabaseValidationContract {
       for (const table of this.requiredTables) {
         try {
           db.prepare(`SELECT COUNT(*) FROM ${table}`).get();
-        } catch (error) {
+        } catch (_error) {
           // Table might not exist, skip
         }
       }
@@ -282,7 +282,7 @@ export class SchemaValidator implements DatabaseValidationContract {
           const startTime = performance.now();
           db.prepare(`EXPLAIN QUERY PLAN SELECT * FROM ${tableName} WHERE timestamp > datetime('now', '-1 hour')`).all();
           indexPerformance[index.name] = performance.now() - startTime;
-        } catch (error) {
+        } catch (_error) {
           indexPerformance[index.name] = 999; // Indicate error
         }
       }

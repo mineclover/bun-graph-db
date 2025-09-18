@@ -124,7 +124,7 @@ export class NodeAttributeAnalyticsService {
    * Get attribute value distribution
    * Demonstrates normalized storage benefits
    */
-  async getAttributeValueDistribution(attributeId: string, groupBy: string = 'VALUE') {
+  async getAttributeValueDistribution(attributeId: string, _groupBy: string = 'VALUE') {
     const baseQuery = `
       SELECT
         na.value,

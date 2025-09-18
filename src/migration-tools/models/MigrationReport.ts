@@ -544,8 +544,8 @@ export class MigrationReportAnalyzer {
     performanceImpact: 'positive' | 'neutral' | 'negative'
     complianceScore: number
   } {
-    const overallScore = this.calculateSuccessScore(report)
-    const criticalIssues = this.identifyCriticalIssues(report)
+    const overallScore = MigrationReportAnalyzer.calculateSuccessScore(report)
+    const criticalIssues = MigrationReportAnalyzer.identifyCriticalIssues(report)
 
     // Determine performance impact
     const perfComparison = report.performanceComparison

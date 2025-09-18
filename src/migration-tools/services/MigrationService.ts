@@ -3,10 +3,8 @@
  */
 
 import type { MigrationTarget } from '../models/MigrationTarget'
-import type { MigrationReport } from '../models/MigrationReport'
 import type { ValidationResult } from '../models/ValidationResult'
 import type { TestContext } from '../models/TestContext'
-import { MigrationReportBuilder } from '../models/MigrationReport'
 import { ValidationResultBuilder } from '../models/ValidationResult'
 
 export interface MigrationResult {
@@ -161,17 +159,16 @@ export interface MigrationExecutionOptions {
 
 export class MigrationService {
   private static instance: MigrationService
-  private database: any
 
   constructor(database?: any) {
     this.database = database
   }
 
   static getInstance(): MigrationService {
-    if (!this.instance) {
-      this.instance = new MigrationService()
+    if (!MigrationService.instance) {
+      MigrationService.instance = new MigrationService()
     }
-    return this.instance
+    return MigrationService.instance
   }
 
   /**
@@ -211,7 +208,7 @@ export class MigrationService {
     // Estimate effort
     const estimatedEffort = this.estimateEffort(target, complexityFactors, risks)
 
-    const validation = validationBuilder.build()
+    const _validation = validationBuilder.build()
 
     return {
       target,
@@ -243,7 +240,7 @@ export class MigrationService {
   /**
    * Validates a migration target before execution
    */
-  async validateMigration(target: MigrationTarget, options?: any): Promise<ValidationResult> {
+  async validateMigration(target: MigrationTarget, _options?: any): Promise<ValidationResult> {
     const builder = new ValidationResultBuilder()
 
     // Basic target validation
@@ -722,7 +719,7 @@ export class MigrationService {
     }
   }
 
-  private async performMigration(target: MigrationTarget, options: MigrationOptions): Promise<string> {
+  private async performMigration(target: MigrationTarget, _options: MigrationOptions): Promise<string> {
     // Simulate file migration by creating a file-based version
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
     const migratedPath = target.testFilePath.replace('.test.ts', `.file-based-${timestamp}.test.ts`)
@@ -1010,56 +1007,6 @@ describe('Migrated Test', () => {
     }
   }
 
-
-  private async validateMigratedFile(filePath: string): Promise<ValidationResult> {
-    const builder = new ValidationResultBuilder()
-
-    try {
-      const content = await this.readFileContent(filePath)
-
-      // Check that no :memory: references remain
-      if (content.includes(':memory:')) {
-        builder.addWarning({
-          id: 'memory-references-remain',
-          type: 'file-based',
-          severity: 'warning',
-          description: 'In-memory database references still present',
-          details: 'Migration may not have been complete',
-          suggestion: 'Review migration results',
-          autoFixable: true
-        })
-      }
-
-      return builder.build()
-    } catch (error) {
-      builder.addError({
-        id: 'validation-failed',
-        type: 'compatibility',
-        severity: 'error',
-        description: 'Failed to validate migrated file',
-        details: String(error),
-        suggestion: 'Check file permissions and content',
-        autoFixable: false
-      })
-      return builder.build()
-    }
-  }
-
-  private async cleanup(target: MigrationTarget, options: MigrationExecutionOptions): Promise<void> {
-    // Cleanup operations would go here
-    // For now, this is a placeholder
-  }
-
-  private calculateRiskProbability(level: 'low' | 'medium' | 'high' | 'critical'): number {
-    switch (level) {
-      case 'critical': return 0.9
-      case 'high': return 0.7
-      case 'medium': return 0.5
-      case 'low': return 0.2
-      default: return 0.5
-    }
-  }
-
   private calculateFeasibility(
     target: MigrationTarget,
     risks: any[],
@@ -1183,7 +1130,7 @@ describe('Migrated Test', () => {
         const lastImport = imports[imports.length - 1]
         transformedContent = transformedContent.replace(
           lastImport,
-          lastImport + '\nimport { TestDatabaseFactory } from \'../fixtures/test-database-factory\''
+          `${lastImport}\nimport { TestDatabaseFactory } from '../fixtures/test-database-factory'`
         )
       } else {
         // No imports found, add at the beginning after any comments
@@ -1220,7 +1167,7 @@ describe('Migrated Test', () => {
 
           return `beforeEach(async () => {
     testEnv = await TestDatabaseFactory.createTestEnvironment('${baseName}')
-    testDb = testEnv.database.getConnection()${setupCode ? '\n    ' + setupCode : ''}
+    testDb = testEnv.database.getConnection()${setupCode ? `\n    ${setupCode}` : ''}
   })`
         }
         return match // Return unchanged if no database creation found
@@ -1392,7 +1339,7 @@ describe('Migrated Test', () => {
       }
 
       return { success: false }
-    } catch (error) {
+    } catch (_error) {
       return { success: false }
     }
   }

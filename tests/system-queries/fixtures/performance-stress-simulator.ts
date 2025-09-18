@@ -314,7 +314,7 @@ export class PerformanceStressSimulator {
     result: any,
     stressorName: string,
     config: StressTestConfig,
-    queryType: string
+    _queryType: string
   ): any {
     const transformed = { ...result };
 
@@ -365,7 +365,7 @@ export class PerformanceStressSimulator {
     return transformed;
   }
 
-  private applyMemoryStress(result: any, config: StressTestConfig, stressorName: string): any {
+  private applyMemoryStress(result: any, config: StressTestConfig, _stressorName: string): any {
     const transformed = { ...result };
 
     if (transformed.memory) {
@@ -385,7 +385,7 @@ export class PerformanceStressSimulator {
     return transformed;
   }
 
-  private applyIOStress(result: any, config: StressTestConfig, stressorName: string): any {
+  private applyIOStress(result: any, config: StressTestConfig, _stressorName: string): any {
     const transformed = { ...result };
 
     // Add I/O performance indicators

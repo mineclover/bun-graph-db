@@ -331,7 +331,7 @@ class CoreTemplateManager {
   }
 
   async generateReport(): Promise<void> {
-    console.log('\n' + '='.repeat(80))
+    console.log(`\n${'='.repeat(80)}`)
     console.log('📋 CORE TEMPLATE MANAGEMENT REPORT')
     console.log('='.repeat(80))
 
@@ -368,17 +368,17 @@ class CoreTemplateManager {
 
     // Templates by category
     console.log(`\n📋 TEMPLATES BY CATEGORY:`)
-    for (const [category, info] of sortedCategories) {
+    for (const [category, _info] of sortedCategories) {
       console.log(`\n   ${category}:`)
       const categoryTemplates = this.coreTemplates.filter((t) => t.category === category)
-      categoryTemplates.forEach((template, index) => {
+      categoryTemplates.forEach((template, _index) => {
         const statusIcon =
           template.status === 'active' ? '✅' : template.status === 'deprecated' ? '⚠️' : '🔧'
         console.log(`     ${statusIcon} ${template.identifier} (${template.reuseScore})`)
       })
     }
 
-    console.log('\n' + '='.repeat(80))
+    console.log(`\n${'='.repeat(80)}`)
   }
 
   // Public API methods for template management

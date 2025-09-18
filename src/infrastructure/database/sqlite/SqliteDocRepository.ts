@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import type { DocId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
-import { Doc, DocCategory } from '@/domain/entities/Doc.js'
+import { Doc, type DocCategory } from '@/domain/entities/Doc.js'
 import type { DocSearchOptions, IDocRepository, DocContentSearchOptions, DocContentSearchPagination } from '@/domain/repositories/IDocRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 

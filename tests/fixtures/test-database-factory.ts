@@ -10,7 +10,6 @@ import type {
   DatabasePath,
   TestIsolationConfig,
   TestType,
-  FileSystemError
 } from '../../src/migration-tools/types/MigrationTypes'
 
 export interface TestEnvironment {
@@ -39,7 +38,7 @@ export class TestDatabaseFactory {
   static async createTestEnvironment(
     suiteName: string,
     testType?: TestType,
-    isolationLevel: 'basic' | 'enhanced' | 'complete' = 'enhanced'
+    _isolationLevel: 'basic' | 'enhanced' | 'complete' = 'enhanced'
   ): Promise<TestEnvironment> {
     // TypeScript validation
     if (typeof suiteName !== 'string' || suiteName.trim().length === 0) {
@@ -47,8 +46,8 @@ export class TestDatabaseFactory {
     }
 
     // Check if already exists
-    if (this.instances.has(suiteName)) {
-      await this.cleanupTestEnvironment(suiteName)
+    if (TestDatabaseFactory.instances.has(suiteName)) {
+      await TestDatabaseFactory.cleanupTestEnvironment(suiteName)
     }
 
     // ENFORCE file-based databases - NO in-memory allowed
@@ -56,7 +55,7 @@ export class TestDatabaseFactory {
     const tempDir = '/tmp/bun-graph-db-tests'
 
     // Validate path security
-    this.validateSecurePath(tempDir)
+    TestDatabaseFactory.validateSecurePath(tempDir)
 
     const testDb = new TestDatabase({
       name: uniqueName,
@@ -72,7 +71,7 @@ export class TestDatabaseFactory {
     }
 
     // Initialize with app schema
-    await this.initializeAppSchema(testDb.getConnection())
+    await TestDatabaseFactory.initializeAppSchema(testDb.getConnection())
 
     // Create enhanced database info
     const databaseInfo: DatabasePath = {
@@ -97,11 +96,11 @@ export class TestDatabaseFactory {
       testType,
       cleanup: async () => {
         await testDb.teardown()
-        this.instances.delete(suiteName)
+        TestDatabaseFactory.instances.delete(suiteName)
       }
     }
 
-    this.instances.set(suiteName, environment)
+    TestDatabaseFactory.instances.set(suiteName, environment)
     return environment
   }
 
@@ -363,14 +362,14 @@ export class TestDatabaseFactory {
    * Get existing test environment
    */
   static getTestEnvironment(suiteName: string): TestEnvironment | null {
-    return this.instances.get(suiteName) || null
+    return TestDatabaseFactory.instances.get(suiteName) || null
   }
 
   /**
    * Cleanup specific test environment
    */
   static async cleanupTestEnvironment(suiteName: string): Promise<void> {
-    const env = this.instances.get(suiteName)
+    const env = TestDatabaseFactory.instances.get(suiteName)
     if (env) {
       await env.cleanup()
     }
@@ -380,9 +379,9 @@ export class TestDatabaseFactory {
    * Cleanup all test environments
    */
   static async cleanupAll(): Promise<void> {
-    const cleanupPromises = Array.from(this.instances.values()).map(env => env.cleanup())
+    const cleanupPromises = Array.from(TestDatabaseFactory.instances.values()).map(env => env.cleanup())
     await Promise.all(cleanupPromises)
-    this.instances.clear()
+    TestDatabaseFactory.instances.clear()
   }
 
   /**
@@ -393,7 +392,7 @@ export class TestDatabaseFactory {
     console.warn(`WARNING: createInMemoryEnvironment is deprecated for ${suiteName}. Use createTestEnvironment for file-based isolation.`)
 
     // Force file-based even for "in-memory" requests
-    return this.createTestEnvironment(`legacy-${suiteName}`)
+    return TestDatabaseFactory.createTestEnvironment(`legacy-${suiteName}`)
   }
 
   /**
@@ -403,7 +402,7 @@ export class TestDatabaseFactory {
     const violations: string[] = []
     const validatedPaths: string[] = []
 
-    for (const [suiteName, env] of this.instances.entries()) {
+    for (const [suiteName, env] of TestDatabaseFactory.instances.entries()) {
       validatedPaths.push(env.databasePath)
 
       // Check for in-memory database patterns
@@ -469,10 +468,10 @@ export class TestDatabaseFactory {
 
     // Use custom temp directory if provided (with validation)
     if (customTempDir) {
-      this.validateSecurePath(customTempDir)
+      TestDatabaseFactory.validateSecurePath(customTempDir)
     }
 
-    const env = await this.createTestEnvironment(suiteName, testType, isolationLevel)
+    const env = await TestDatabaseFactory.createTestEnvironment(suiteName, testType, isolationLevel)
 
     // Add metadata if provided
     if (metadata) {

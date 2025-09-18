@@ -9,7 +9,6 @@ import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-data
 // Import types (these will fail until implemented)
 import type {
   TestContextManager,
-  TestContext,
   ContextOptions
 } from '../../src/migration-tools/services/TestContextManager'
 

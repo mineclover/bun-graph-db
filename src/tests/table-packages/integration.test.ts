@@ -1,5 +1,5 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test'
-import { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
+import type { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
 import { ContainerBootstrap } from '@/infrastructure/container/ContainerBootstrap.js'
 import { graphql } from 'graphql'
 import type { TablePackageFormat } from '@/core/types/TablePackage.js'

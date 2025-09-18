@@ -9,7 +9,6 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { DocId } from '@/core/types/CommonTypes.js'
 import type { DocCategory } from '@/domain/entities/Doc.js'
-import { DocDto } from '@/application/dtos/DocDto.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 interface CreateDocArgs {

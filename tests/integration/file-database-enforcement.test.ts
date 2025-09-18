@@ -546,7 +546,7 @@ describe('File-Based SQLite Enforcement Integration', () => {
       // Assert: File-based enforcement under stress
       expect(stressResults).toHaveLength(20)
 
-      stressResults.forEach((result, i) => {
+      stressResults.forEach((result, _i) => {
         expect(result.count).toEqual({ count: 10 })
         expect(result.context.databasePath).not.toBe(':memory:')
         expect(result.context.databasePath).toContain('/tmp/bun-graph-db-tests/')

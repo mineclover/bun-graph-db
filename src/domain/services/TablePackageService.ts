@@ -30,14 +30,11 @@ import type {
 } from '@/core/types/TablePackage.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 import { QueryTemplate } from '../entities/QueryTemplate.js'
-import { GraphQLParser } from '@/core/utils/GraphQLParser.js'
 
 export class TablePackageService implements ITablePackageService {
   private readonly importSessions = new Map<string, ImportSession>()
   private readonly enhancedDependencyAnalyzer: EnhancedDependencyAnalyzer
   private readonly enhancedTemplateGenerator: EnhancedTemplateGenerator
-  private readonly tablePackageValidator: TablePackageValidator
-  private readonly tablePackageRecoveryManager: TablePackageRecoveryManager
   private readonly schemaIntrospectionService: SchemaIntrospectionService
 
   constructor(
@@ -901,7 +898,7 @@ export class TablePackageService implements ITablePackageService {
       case 'overwrite':
         await this.tableRepository.delete(existingTable.id)
         return originalName
-      case 'rename':
+      case 'rename': {
         const prefix = options.newTablePrefix || 'imported_'
         let newName = `${prefix}${originalName}`
         let counter = 1
@@ -910,10 +907,10 @@ export class TablePackageService implements ITablePackageService {
           counter++
         }
         return newName
+      }
       case 'merge':
         // For now, treat merge as overwrite
         return originalName
-      case 'skip':
       default:
         throw new DomainException(`Table '${originalName}' already exists`)
     }
@@ -922,14 +919,14 @@ export class TablePackageService implements ITablePackageService {
   private async importTableSchema(
     schema: TableSchemaExport,
     resolvedIdentifier: string,
-    options: TablePackageImportOptions
+    _options: TablePackageImportOptions
   ): Promise<{ id: string }> {
     // Create or update attribute types first
     const attributeTypeMap = new Map<string, string>()
     for (const attrTypeData of schema.attributeTypes) {
       try {
         // Check if attribute type already exists
-        let existingAttrType = await this.attributeTypeRepository.findByIdentifier(attrTypeData.identifier)
+        const existingAttrType = await this.attributeTypeRepository.findByIdentifier(attrTypeData.identifier)
 
         if (existingAttrType) {
           attributeTypeMap.set(attrTypeData.id, existingAttrType.getId() as string)
@@ -997,7 +994,7 @@ export class TablePackageService implements ITablePackageService {
   private async importTableData(
     dataset: TableDataExport,
     tableId: string,
-    options: TablePackageImportOptions
+    _options: TablePackageImportOptions
   ): Promise<void> {
     // Create nodes first
     const nodeIdMap = new Map<string, string>()
@@ -1064,7 +1061,7 @@ export class TablePackageService implements ITablePackageService {
   private async importTableRelations(
     relations: TableRelationsExport,
     tableId: string,
-    options: TablePackageImportOptions
+    _options: TablePackageImportOptions
   ): Promise<void> {
     // Create or find relation types first
     const relationTypeMap = new Map<string, string>()
@@ -1072,7 +1069,7 @@ export class TablePackageService implements ITablePackageService {
     for (const relTypeData of relations.relationTypes) {
       try {
         // Check if relation type already exists
-        let existingRelType = await this.relationTypeRepository.findByIdentifier(relTypeData.identifier)
+        const existingRelType = await this.relationTypeRepository.findByIdentifier(relTypeData.identifier)
 
         if (existingRelType) {
           relationTypeMap.set(relTypeData.id, existingRelType.getId() as string)
@@ -1145,8 +1142,8 @@ export class TablePackageService implements ITablePackageService {
 
   private async importTableTemplates(
     templates: TableTemplatesExport,
-    tableIdentifier: string,
-    options: TablePackageImportOptions
+    _tableIdentifier: string,
+    _options: TablePackageImportOptions
   ): Promise<Array<{ id: string; identifier: string; name: string; operationType: string }>> {
     const imported = []
 
@@ -1231,7 +1228,7 @@ export class TablePackageService implements ITablePackageService {
       const schemaAnalysis = await this.schemaIntrospectionService.analyzeSchema()
 
       // Generate template suggestions based on schema
-      const templateSuggestions = await this.schemaIntrospectionService.generateTemplateForTable(tableIdentifier)
+      const _templateSuggestions = await this.schemaIntrospectionService.generateTemplateForTable(tableIdentifier)
 
       // Generate templates using enhanced generator
       const templates = await this.enhancedTemplateGenerator.generateTableTemplates(

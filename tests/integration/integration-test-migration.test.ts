@@ -13,7 +13,6 @@ import type {
   PerformanceMonitor,
   MigrationTarget,
   MigrationOptions,
-  MigrationResult
 } from '../../src/migration-tools/services/MigrationService'
 
 describe('Integration Test Migration Integration', () => {
@@ -113,7 +112,7 @@ describe('Integration Test Migration Integration', () => {
         estimatedEffort: 'very-high'
       }
 
-      const systemOptions: MigrationOptions = {
+      const _systemOptions: MigrationOptions = {
         dryRun: false,
         validateOnly: false,
         createBackup: true,
@@ -280,7 +279,7 @@ describe('Integration Test Migration Integration', () => {
         estimatedEffort: 'very-high'
       }
 
-      const graphqlOptions: MigrationOptions = {
+      const _graphqlOptions: MigrationOptions = {
         dryRun: false,
         validateOnly: false,
         createBackup: true,
@@ -365,7 +364,7 @@ describe('Integration Test Migration Integration', () => {
       expect(results.every(r => r.success)).toBe(true)
 
       // Should detect potential concurrency issues
-      const hasConcurrencyWarnings = results.some(result =>
+      const _hasConcurrencyWarnings = results.some(result =>
         result.warnings.some(warning =>
           warning.includes('concurrent') || warning.includes('race') || warning.includes('consistency')
         )

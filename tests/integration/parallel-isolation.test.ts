@@ -185,7 +185,7 @@ describe('Parallel Execution Isolation Integration', () => {
               SELECT name FROM sqlite_master
               WHERE type='table' AND name='test_table_${j}'
             `).get()
-            expect(otherTableExists).toBeUndefined()
+            expect(otherTableExists).toBeNull()
           }
         }
       })

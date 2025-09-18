@@ -123,7 +123,7 @@ export class ImportTablePackageUseCase {
 
   private async loadPackageFromFile(packagePath: string): Promise<TablePackageFormat | undefined> {
     try {
-      const fs = await import('fs/promises')
+      const fs = await import('node:fs/promises')
       const content = await fs.readFile(packagePath, 'utf8')
       return JSON.parse(content) as TablePackageFormat
     } catch (error) {

@@ -248,7 +248,7 @@ class TemplateSystemSummary {
 
     scenarioMatching.forEach((match) => {
       const coverageIcon =
-        parseInt(match.coverage) >= 80 ? '✅' : parseInt(match.coverage) >= 60 ? '⚠️' : '❌'
+        parseInt(match.coverage, 10) >= 80 ? '✅' : parseInt(match.coverage, 10) >= 60 ? '⚠️' : '❌'
       console.log(`   ${coverageIcon} ${match.scenario} (${match.coverage} coverage)`)
       console.log(`      Templates: ${match.templates.join(', ')}`)
     })

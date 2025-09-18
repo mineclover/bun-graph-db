@@ -4,7 +4,7 @@ import { mergeTypeDefs } from '@graphql-tools/merge'
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import type { GraphQLSchema } from 'graphql'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
-import type { GraphQLContext, GraphQLParent, JsonValue } from '@/core/types/GraphQLTypes.js'
+import type { GraphQLContext, GraphQLParent, } from '@/core/types/GraphQLTypes.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { DIContainer } from '../../infrastructure/container/DIContainer.js'
 import {

@@ -23,7 +23,6 @@ export interface DatabaseMockOptions {
 
 export class MockConditionManager {
   private activeMocks: Map<string, MockCondition> = new Map();
-  private originalValues: Map<string, any> = new Map();
   private mockValues: Map<string, any> = new Map();
 
   async applyMockCondition(condition: MockCondition): Promise<void> {
@@ -184,7 +183,7 @@ export class SystemMockConditions {
     };
   }
 
-  static createSystemOverload(options: SystemMockOptions = {}): MockCondition {
+  static createSystemOverload(_options: SystemMockOptions = {}): MockCondition {
     let isActive = false;
 
     return {

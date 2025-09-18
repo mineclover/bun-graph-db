@@ -1,9 +1,8 @@
-import { describe, expect, it, beforeEach, afterEach, mock, spyOn } from 'bun:test';
+import { describe, expect, it, beforeEach, afterEach, } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { SystemQueries } from '../../src/services/system-queries';
-import { Logger } from '../../src/utils/logger';
 
 describe('Logger Failure Error Handling', () => {
   let db: Database;
@@ -97,15 +96,15 @@ describe('Logger Failure Error Handling', () => {
       systemQueries.setLogger({
         log: (message: string) => {
           try {
-            fs.appendFileSync(logPath, message + '\n');
-          } catch (error) {
+            fs.appendFileSync(logPath, `${message}\n`);
+          } catch (_error) {
             // Silently fail or fallback
           }
         },
         error: (message: string) => {
           try {
-            fs.appendFileSync(logPath, 'ERROR: ' + message + '\n');
-          } catch (error) {
+            fs.appendFileSync(logPath, `ERROR: ${message}\n`);
+          } catch (_error) {
             // Silently fail
           }
         },
@@ -171,7 +170,7 @@ describe('Logger Failure Error Handling', () => {
       // Create table with malicious name
       try {
         db.exec(`CREATE TABLE "${maliciousData}" (id INTEGER)`);
-      } catch (error) {
+      } catch (_error) {
         // Expected to fail, that's OK
       }
 
@@ -187,14 +186,14 @@ describe('Logger Failure Error Handling', () => {
     });
 
     it('should handle extremely long log messages', async () => {
-      let loggedSuccessfully = false;
+      let _loggedSuccessfully = false;
 
       systemQueries.setLogger({
         log: (message: string) => {
           if (message.length > 1000000) {
             throw new Error('Log message too long');
           }
-          loggedSuccessfully = true;
+          _loggedSuccessfully = true;
         },
         error: () => {},
       });
@@ -219,7 +218,7 @@ describe('Logger Failure Error Handling', () => {
       const originalProcessExit = process.exit;
 
       systemQueries.setLogger({
-        log: (message: string) => {
+        log: (_message: string) => {
           // Malicious logger trying to exit process
           (process as any).exit = () => {
             throw new Error('Exit attempt blocked');
@@ -240,7 +239,7 @@ describe('Logger Failure Error Handling', () => {
 
     it('should handle logger that throws async errors', async () => {
       systemQueries.setLogger({
-        log: async (message: string) => {
+        log: async (_message: string) => {
           // Async logger that rejects
           await Promise.reject(new Error('Async logger error'));
         },
@@ -256,7 +255,7 @@ describe('Logger Failure Error Handling', () => {
 
     it('should handle logger with circular references', async () => {
       const circularLogger: any = {
-        log: (message: string) => {
+        log: (_message: string) => {
           // Try to log the logger itself (circular)
           console.log(circularLogger);
         },
@@ -277,7 +276,7 @@ describe('Logger Failure Error Handling', () => {
   describe('Logger Performance Issues', () => {
     it('should timeout slow logger operations', async () => {
       systemQueries.setLogger({
-        log: (message: string) => {
+        log: (_message: string) => {
           // Simulate very slow logger
           const start = Date.now();
           while (Date.now() - start < 5000) {
@@ -371,7 +370,7 @@ describe('Logger Failure Error Handling', () => {
     it('should handle concurrent logging from multiple operations', async () => {
       let logCount = 0;
       const threadSafeLogger = {
-        log: (message: string) => {
+        log: (_message: string) => {
           // Simulate race condition
           const current = logCount;
           setTimeout(() => {
@@ -402,7 +401,7 @@ describe('Logger Failure Error Handling', () => {
 
     it('should handle logger that modifies its own methods during execution', async () => {
       const mutatingLogger = {
-        log: function(this: any, message: string) {
+        log: function(this: any, _message: string) {
           // Self-modifying logger
           this.log = () => {
             throw new Error('Logger modified itself');
@@ -425,7 +424,7 @@ describe('Logger Failure Error Handling', () => {
 
   describe('Logger Output Validation', () => {
     it('should validate logger receives correct data types', async () => {
-      let receivedTypes: string[] = [];
+      const receivedTypes: string[] = [];
 
       systemQueries.setLogger({
         log: (message: any) => {
@@ -452,7 +451,7 @@ describe('Logger Failure Error Handling', () => {
           // Logger that returns values (shouldn't affect operation)
           return { logged: true, message };
         },
-        error: (message: string) => {
+        error: (_message: string) => {
           return Promise.resolve('logged');
         },
       });
@@ -464,7 +463,7 @@ describe('Logger Failure Error Handling', () => {
     });
 
     it('should ensure logger doesn\'t receive sensitive data', async () => {
-      let capturedMessages: string[] = [];
+      const capturedMessages: string[] = [];
 
       systemQueries.setLogger({
         log: (message: string) => {
@@ -501,10 +500,10 @@ describe('Logger Failure Error Handling', () => {
   describe('Logger Recovery Strategies', () => {
     it('should implement exponential backoff for failing logger', async () => {
       let attemptCount = 0;
-      let attemptTimes: number[] = [];
+      const attemptTimes: number[] = [];
 
       systemQueries.setLogger({
-        log: (message: string) => {
+        log: (_message: string) => {
           attemptCount++;
           attemptTimes.push(Date.now());
           if (attemptCount < 3) {

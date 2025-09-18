@@ -10,7 +10,7 @@ export class TemplatePerformanceService {
    * Get comprehensive template performance analytics
    * Utilizes: usage_count, last_used_at, avg_execution_time_ms fields
    */
-  async getTemplatePerformanceAnalytics(filter?: any, timeRange?: any) {
+  async getTemplatePerformanceAnalytics(_filter?: any, _timeRange?: any) {
     // Main analytics query
     const analyticsQuery = `
       SELECT
@@ -165,7 +165,7 @@ export class TemplatePerformanceService {
    * Utilizes: template_executions table for detailed tracking
    */
   async getTemplateExecutionHistory(templateId: string, pagination?: any, filter?: any) {
-    let whereConditions = ['te.template_id = ?'];
+    const whereConditions = ['te.template_id = ?'];
     const bindings = [templateId];
 
     if (filter?.successOnly) {

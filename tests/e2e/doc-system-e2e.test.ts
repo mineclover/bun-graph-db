@@ -360,7 +360,7 @@ describe('Doc System - End-to-End Tests', () => {
       const results = await Promise.all(operations)
 
       // All operations should succeed
-      results.forEach((result, index) => {
+      results.forEach((result, _index) => {
         expect(result.data.createDoc).toBeDefined()
         expect(result.data.createDoc.id).toBeGreaterThan(0)
       })

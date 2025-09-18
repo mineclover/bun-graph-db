@@ -1,8 +1,8 @@
 import { describe, expect, it, beforeEach, afterEach } from 'bun:test';
 import { Database } from 'bun:sqlite';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import { SystemQueries } from '../../src/services/system-queries';
 
 describe('Division by Zero Protection', () => {
@@ -38,7 +38,7 @@ describe('Division by Zero Protection', () => {
     it('should handle zero elapsed time in CPU percentage calculation', async () => {
       // Mock process.hrtime to return zero elapsed time
       const originalHrtime = process.hrtime;
-      let callCount = 0;
+      const _callCount = 0;
 
       (process as any).hrtime = (start?: [number, number]) => {
         if (start) {
@@ -444,7 +444,7 @@ describe('Division by Zero Protection', () => {
     it('should handle division in reduce operations', async () => {
       const values = [0, 0, 0, 0];
 
-      const average = values.reduce((sum, v) => sum + v, 0) / values.length;
+      const _average = values.reduce((sum, v) => sum + v, 0) / values.length;
       const safeAverage = systemQueries.safeDivide(
         values.reduce((sum, v) => sum + v, 0),
         values.length

@@ -305,7 +305,7 @@ export class EnhancedDependencyAnalyzer {
           references.push(potentialTableName)
         }
       }
-    } catch (error) {
+    } catch (_error) {
       // Fallback to regex-based extraction
       const regexReferences = this.extractTableReferencesWithRegex(queryText)
       references.push(...regexReferences)
@@ -379,7 +379,7 @@ export class EnhancedDependencyAnalyzer {
    */
   private async detectCircularDependencies(
     tableIdentifier: string,
-    dependencies: string[]
+    _dependencies: string[]
   ): Promise<string[]> {
     const circularPaths: string[] = []
     const visited = new Set<string>()
@@ -420,7 +420,7 @@ export class EnhancedDependencyAnalyzer {
    * Calculate maximum dependency depth
    */
   private async calculateDependencyDepth(
-    tableIdentifier: string,
+    _tableIdentifier: string,
     dependencies: string[]
   ): Promise<number> {
     if (dependencies.length === 0) return 0

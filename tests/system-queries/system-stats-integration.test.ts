@@ -7,11 +7,9 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import Database from 'bun:sqlite'
+import type Database from 'bun:sqlite'
 import type {
-  SystemStats,
   SystemQueryExecutionContract,
-  ValidationResult
 } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 import { SystemQueryBehaviorContract } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 

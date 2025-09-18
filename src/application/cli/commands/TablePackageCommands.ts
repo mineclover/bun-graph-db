@@ -271,7 +271,7 @@ export class TablePackageCommands {
       })
 
       // Load all package files
-      const fs = await import('fs/promises')
+      const fs = await import('node:fs/promises')
       const packages: TablePackageFormat[] = []
 
       for (const packagePath of args.packagePaths) {
@@ -474,7 +474,7 @@ export class TablePackageCommands {
       console.log(`🔍 Validating package: ${args.packagePath}`)
 
       // Load package file
-      const fs = await import('fs/promises')
+      const fs = await import('node:fs/promises')
       const fileContent = await fs.readFile(args.packagePath, 'utf8')
       const packageData = JSON.parse(fileContent)
 

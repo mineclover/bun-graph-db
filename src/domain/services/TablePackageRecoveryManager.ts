@@ -3,7 +3,6 @@ import type { INodeRepository } from '../repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
-  ImportSession,
   TablePackageImportResult,
   TablePackageFormat,
 } from '@/core/types/TablePackage.js'
@@ -116,7 +115,6 @@ export class TablePackageRecoveryManager {
             if (!shouldContinue && attempt < defaults.maxRetries) {
               // Rollback and retry
               await this.rollbackPartialImport(recoverySession)
-              continue
             } else if (shouldContinue) {
               // Accept partial success
               recoverySession.status = 'partial'
@@ -146,7 +144,6 @@ export class TablePackageRecoveryManager {
           if (recoveryAction.shouldRetry && attempt < defaults.maxRetries) {
             // Apply recovery action
             await this.applyRecoveryAction(recoveryAction, recoverySession)
-            continue
           } else {
             // Final failure
             recoverySession.status = 'failed'
@@ -644,7 +641,7 @@ export class TablePackageRecoveryManager {
   }
 
   private async verifyTableIntegrity(
-    packageData: TablePackageFormat,
+    _packageData: TablePackageFormat,
     importResult: TablePackageImportResult
   ): Promise<IntegrityCheck> {
     const check: IntegrityCheck = {
@@ -721,7 +718,7 @@ export class TablePackageRecoveryManager {
 
   private async verifyRelationshipIntegrity(
     packageData: TablePackageFormat,
-    importResult: TablePackageImportResult
+    _importResult: TablePackageImportResult
   ): Promise<IntegrityCheck> {
     const check: IntegrityCheck = {
       name: 'relationship_integrity',

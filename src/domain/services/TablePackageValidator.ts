@@ -24,8 +24,7 @@ import { GraphQLParser } from '@/core/utils/GraphQLParser.js'
  */
 export class TablePackageValidator {
   constructor(
-    private readonly tableRepository: ITableRepository,
-    private readonly attributeTypeRepository: IAttributeTypeRepository,
+    private readonly tableRepository: ITableRepository,readonly _attributeTypeRepository: IAttributeTypeRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     private readonly logger: ILogger
   ) {}
@@ -334,7 +333,7 @@ export class TablePackageValidator {
 
     try {
       const { templates } = packageData.package
-      const parser = new GraphQLParser()
+      const _parser = new GraphQLParser()
 
       for (const template of templates.templates) {
         // Validate GraphQL syntax
@@ -478,7 +477,7 @@ export class TablePackageValidator {
       // Check data volume impact
       const nodeCount = dataset.nodes.length
       const relationCount = relations.nodeRelations.length
-      const templateCount = templates.templates.length
+      const _templateCount = templates.templates.length
 
       if (nodeCount > 10000) {
         conflicts.push({
@@ -556,7 +555,7 @@ export class TablePackageValidator {
 
   // Helper methods for specific validations
 
-  private async validateSchemaUpgrade(packageData: TablePackageFormat, existingTable: any): Promise<TablePackageConflict[]> {
+  private async validateSchemaUpgrade(_packageData: TablePackageFormat, _existingTable: any): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Implementation would compare schemas and detect breaking changes
@@ -617,7 +616,7 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateNodeData(dataset: any, schema: any): Promise<TablePackageConflict[]> {
+  private async validateNodeData(dataset: any, _schema: any): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     for (const node of dataset.nodes || []) {
@@ -676,7 +675,7 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateDataTypes(dataset: any, schema: any): Promise<TablePackageConflict[]> {
+  private async validateDataTypes(_dataset: any, _schema: any): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Implementation would validate data against attribute type constraints
@@ -752,7 +751,7 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateOrphanedRelationships(relations: any, dataset: any): Promise<TablePackageConflict[]> {
+  private async validateOrphanedRelationships(relations: any, _dataset: any): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Check for relation types not used by any relations

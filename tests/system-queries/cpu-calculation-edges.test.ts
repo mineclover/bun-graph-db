@@ -8,7 +8,6 @@
 
 import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
 import type {
-  SystemStats,
   SystemQueryExecutionContract
 } from '../../specs/002-sqlite-graphql-sql/contracts/system-query-contract'
 
@@ -22,7 +21,7 @@ import { SystemQueryValidator } from './fixtures/system-query-validation'
 describe('CPU Calculation Edge Cases Test', () => {
   let systemQueries: SystemQueryExecutionContract
   let mockManager: MockConditionManager
-  let validator: SystemQueryValidator
+  let _validator: SystemQueryValidator
   let dbManager: TestDatabaseManager
 
   beforeAll(async () => {
@@ -36,7 +35,7 @@ describe('CPU Calculation Edge Cases Test', () => {
     mockManager = new MockConditionManager()
     const useCase = new SystemMonitoringUseCase(mockManager.getConnection())
     systemQueries = new SystemQueries(useCase)
-    validator = new SystemQueryValidator()
+    _validator = new SystemQueryValidator()
   })
 
   afterAll(async () => {

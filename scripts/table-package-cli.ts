@@ -33,7 +33,7 @@ async function main() {
           process.exit(1)
         }
 
-        const outputPath = args.find((arg, i) => args[i - 1] === '--output')
+        const outputPath = args.find((_arg, i) => args[i - 1] === '--output')
         const includeData = !args.includes('--no-data')
         const includeRelations = !args.includes('--no-relations')
         const includeTemplates = !args.includes('--no-templates')
@@ -62,14 +62,14 @@ async function main() {
           process.exit(1)
         }
 
-        const conflictResolution = (args.find((arg, i) => args[i - 1] === '--conflict') || 'skip') as any
+        const conflictResolution = (args.find((_arg, i) => args[i - 1] === '--conflict') || 'skip') as any
         const importData = !args.includes('--no-data')
         const importRelations = !args.includes('--no-relations')
         const importTemplates = !args.includes('--no-templates')
         const preserveStatistics = !args.includes('--no-preserve-stats')
         const validateIntegrity = !args.includes('--no-validate')
         const generateTemplates = !args.includes('--no-generate')
-        const newTablePrefix = args.find((arg, i) => args[i - 1] === '--prefix')
+        const newTablePrefix = args.find((_arg, i) => args[i - 1] === '--prefix')
 
         await commands.importTable({
           packagePath,
@@ -93,7 +93,7 @@ async function main() {
           process.exit(1)
         }
 
-        const outputDirectory = args.find((arg, i) => args[i - 1] === '--output-dir')
+        const outputDirectory = args.find((_arg, i) => args[i - 1] === '--output-dir')
         const includeData = !args.includes('--no-data')
         const includeRelations = !args.includes('--no-relations')
         const includeTemplates = !args.includes('--no-templates')
@@ -122,14 +122,14 @@ async function main() {
           process.exit(1)
         }
 
-        const conflictResolution = (args.find((arg, i) => args[i - 1] === '--conflict') || 'skip') as any
+        const conflictResolution = (args.find((_arg, i) => args[i - 1] === '--conflict') || 'skip') as any
         const importData = !args.includes('--no-data')
         const importRelations = !args.includes('--no-relations')
         const importTemplates = !args.includes('--no-templates')
         const preserveStatistics = !args.includes('--no-preserve-stats')
         const validateIntegrity = !args.includes('--no-validate')
         const generateTemplates = !args.includes('--no-generate')
-        const newTablePrefix = args.find((arg, i) => args[i - 1] === '--prefix')
+        const newTablePrefix = args.find((_arg, i) => args[i - 1] === '--prefix')
         const createSession = !args.includes('--no-session')
 
         await commands.batchImport({
@@ -209,8 +209,6 @@ async function main() {
         await commands.validatePackage({ packagePath })
         break
       }
-
-      case 'help':
       default: {
         console.log('📦 Table Package CLI - Export/Import System')
         console.log('')
