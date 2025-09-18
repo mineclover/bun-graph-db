@@ -110,13 +110,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        nodes: nodeRelations,
-        totalCount: total,
+        items: nodeRelations,
+        total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
-        data: nodeRelations,
-        total,
-        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by table id: ${error}`)
@@ -151,13 +148,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        nodes: nodeRelations,
-        totalCount: total,
+        items: nodeRelations,
+        total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
-        data: nodeRelations,
-        total,
-        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by source node id: ${error}`)
@@ -192,13 +186,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        nodes: nodeRelations,
-        totalCount: total,
+        items: nodeRelations,
+        total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
-        data: nodeRelations,
-        total,
-        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by target node id: ${error}`)
@@ -259,13 +250,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        nodes: nodeRelations,
-        totalCount: total,
+        items: nodeRelations,
+        total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
-        data: nodeRelations,
-        total,
-        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by source external id: ${error}`)
@@ -303,13 +291,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        nodes: nodeRelations,
-        totalCount: total,
+        items: nodeRelations,
+        total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
-        data: nodeRelations,
-        total,
-        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by target external id: ${error}`)
@@ -344,13 +329,10 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        nodes: nodeRelations,
-        totalCount: total,
+        items: nodeRelations,
+        total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
-        data: nodeRelations,
-        total,
-        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by relation type: ${error}`)
@@ -662,11 +644,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        data: nodeRelations,
-        nodes: nodeRelations,
+        items: nodeRelations,
         total,
-        hasMore: offset + limit < total,
-        totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
       }

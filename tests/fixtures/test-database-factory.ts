@@ -111,17 +111,112 @@ export class TestDatabaseFactory {
   private static async initializeAppSchema(db: Database): void {
     // Create main application tables
     db.exec(`
-      -- Tables table for metadata
+      -- Tables table for metadata (matches production schema)
       CREATE TABLE IF NOT EXISTS tables (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        schema_version INTEGER DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        identifier TEXT NOT NULL UNIQUE,
+        description TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
 
       -- Insert todos table metadata
-      INSERT OR IGNORE INTO tables (id, name) VALUES (58, 'todos');
+      INSERT OR IGNORE INTO tables (id, identifier, description)
+      VALUES (58, 'test-todos', 'Test todos table for doc system tests');
+
+      -- Nodes table
+      CREATE TABLE IF NOT EXISTS nodes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        title TEXT,
+        description TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
+        UNIQUE(table_id, content)
+      );
+
+      -- Attribute types table
+      CREATE TABLE IF NOT EXISTS attribute_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        identifier TEXT NOT NULL UNIQUE,
+        json_type TEXT NOT NULL,
+        format TEXT,
+        description TEXT,
+        validation_schema TEXT,
+        reference_config TEXT,
+        default_value TEXT,
+        examples TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Attributes table
+      CREATE TABLE IF NOT EXISTS attributes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER NOT NULL,
+        identifier TEXT NOT NULL,
+        attribute_type_id INTEGER NOT NULL,
+        description TEXT,
+        is_required BOOLEAN NOT NULL DEFAULT FALSE,
+        metadata TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
+        FOREIGN KEY (attribute_type_id) REFERENCES attribute_types(id) ON DELETE RESTRICT,
+        UNIQUE(table_id, identifier)
+      );
+
+      -- Node attributes table
+      CREATE TABLE IF NOT EXISTS node_attributes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        node_id INTEGER NOT NULL,
+        attribute_id INTEGER NOT NULL,
+        value TEXT NOT NULL,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+        FOREIGN KEY (attribute_id) REFERENCES attributes(id) ON DELETE CASCADE,
+        UNIQUE(node_id, attribute_id)
+      );
+
+      -- Relation types table
+      CREATE TABLE IF NOT EXISTS relation_types (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        identifier TEXT NOT NULL UNIQUE,
+        description TEXT,
+        category TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      -- Node relations table
+      CREATE TABLE IF NOT EXISTS node_relations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        table_id INTEGER NOT NULL,
+        source_node_id INTEGER,
+        source_external_id TEXT DEFAULT 'internal',
+        target_node_id INTEGER,
+        target_external_id TEXT DEFAULT 'internal',
+        relation_type_id INTEGER NOT NULL,
+        properties TEXT,
+        strength INTEGER DEFAULT 1,
+        confidence INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
+        FOREIGN KEY (source_node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+        FOREIGN KEY (target_node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+        FOREIGN KEY (relation_type_id) REFERENCES relation_types(id) ON DELETE CASCADE,
+        CHECK ((source_node_id IS NOT NULL AND source_external_id = 'internal') OR
+               (source_node_id IS NULL AND source_external_id != 'internal')),
+        CHECK ((target_node_id IS NOT NULL AND target_external_id = 'internal') OR
+               (target_node_id IS NULL AND target_external_id != 'internal')),
+        CHECK (strength >= 0 AND strength <= 4),
+        CHECK (confidence >= 0 AND confidence <= 4),
+        UNIQUE(table_id, source_node_id, source_external_id, target_node_id, target_external_id, relation_type_id)
+      );
 
       -- Todos table
       CREATE TABLE IF NOT EXISTS todos (
@@ -146,14 +241,48 @@ export class TestDatabaseFactory {
         UNIQUE(table_id, category, version)
       );
 
-      -- Template tables for GraphQL templates
+      -- Template tables for GraphQL templates (Enhanced Schema)
       CREATE TABLE IF NOT EXISTS templates (
+        -- Basic identifiers
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         identifier TEXT NOT NULL UNIQUE,
+
+        -- Metadata
+        name TEXT NOT NULL DEFAULT '',
+        description TEXT,
+        version TEXT DEFAULT '1.0.0',
+        is_active BOOLEAN DEFAULT TRUE,
+        tags TEXT, -- JSON array of tags
+
+        -- GraphQL specific
         query_text TEXT NOT NULL,
+        query_name TEXT, -- Extracted GraphQL operation name
         operation_type TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        variables_schema TEXT, -- JSON schema for variables
+        default_variables TEXT, -- JSON default variable values
+        applicable_tables TEXT, -- JSON array of applicable table names
+        complexity_score INTEGER DEFAULT 1,
+
+        -- Performance tracking
+        usage_count INTEGER DEFAULT 0,
+        last_used_at TEXT,
+        avg_execution_time_ms INTEGER DEFAULT 0,
+
+        -- Timestamps
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+
+      -- Performance and search indexes for templates
+      CREATE INDEX IF NOT EXISTS idx_templates_query_name ON templates(query_name);
+      CREATE INDEX IF NOT EXISTS idx_templates_operation_type ON templates(operation_type);
+      CREATE INDEX IF NOT EXISTS idx_templates_complexity ON templates(complexity_score);
+      CREATE INDEX IF NOT EXISTS idx_templates_performance ON templates(avg_execution_time_ms, usage_count);
+      CREATE INDEX IF NOT EXISTS idx_templates_last_used ON templates(last_used_at);
+      CREATE INDEX IF NOT EXISTS idx_templates_query_op ON templates(query_name, operation_type);
+      CREATE INDEX IF NOT EXISTS idx_templates_op_complexity ON templates(operation_type, complexity_score);
+      CREATE INDEX IF NOT EXISTS idx_templates_active ON templates(is_active);
+      CREATE INDEX IF NOT EXISTS idx_templates_version ON templates(version);
 
       -- System stats tables (for system queries tests)
       CREATE TABLE IF NOT EXISTS system_stats (
@@ -183,7 +312,45 @@ export class TestDatabaseFactory {
         error_message TEXT
       );
 
+      -- Insert default attribute types
+      INSERT OR IGNORE INTO attribute_types (identifier, json_type, format, description, validation_schema, reference_config, default_value, examples) VALUES
+        ('string', 'string', NULL, 'Basic string type', NULL, NULL, '""', '["hello", "world"]'),
+        ('boolean', 'boolean', NULL, 'Boolean true/false', NULL, NULL, 'false', '[true, false]'),
+        ('integer', 'integer', NULL, 'Integer number', '{"minimum": 0}', NULL, '0', '[1, 42, 100]'),
+        ('number', 'number', NULL, 'Decimal number', NULL, NULL, '0.0', '[1.5, 3.14, 100.0]'),
+        ('date', 'string', 'date', 'Date in YYYY-MM-DD format', '{"pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$"}', NULL, '"2024-01-01"', '["2024-01-01", "2023-12-31"]'),
+        ('datetime', 'string', 'date-time', 'ISO 8601 datetime', NULL, NULL, '"2024-01-01T00:00:00Z"', '["2024-01-01T12:00:00Z", "2023-12-31T23:59:59Z"]'),
+        ('email', 'string', 'email', 'Email address', NULL, NULL, '"user@example.com"', '["user@domain.com", "test@example.org"]'),
+        ('uri', 'string', 'uri', 'URI/URL', NULL, NULL, '"https://example.com"', '["https://example.com", "http://localhost:3000"]'),
+        ('uuid', 'string', 'uuid', 'UUID identifier', '{"pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"}', NULL, '"00000000-0000-0000-0000-000000000000"', '["123e4567-e89b-12d3-a456-426614174000"]'),
+        ('text', 'string', NULL, 'Long text content', '{"minLength": 0}', NULL, '""', '["Short text", "Lorem ipsum dolor sit amet..."]'),
+        ('json', 'object', NULL, 'JSON object', NULL, NULL, '{}', '[{"key": "value"}, {"name": "John", "age": 30}]'),
+        ('array', 'array', NULL, 'JSON array', NULL, NULL, '[]', '[["item1", "item2"], [1, 2, 3]]');
+
+      -- Insert default relation types
+      INSERT OR IGNORE INTO relation_types (identifier, description, category) VALUES
+        ('depends_on', 'Direct dependency', 'structural'),
+        ('related_to', 'Related entity', 'semantic'),
+        ('extends', 'Extension relationship', 'hierarchy'),
+        ('implements', 'Implementation relationship', 'structural'),
+        ('references', 'Reference relationship', 'reference'),
+        ('parent_of', 'Parent-child relationship', 'hierarchy'),
+        ('linked_to', 'Bidirectional link', 'semantic');
+
       -- Indexes for performance
+      CREATE INDEX IF NOT EXISTS idx_nodes_table_content ON nodes(table_id, content);
+      CREATE INDEX IF NOT EXISTS idx_attribute_types_identifier ON attribute_types(identifier);
+      CREATE INDEX IF NOT EXISTS idx_attribute_types_json_type ON attribute_types(json_type);
+      CREATE INDEX IF NOT EXISTS idx_attributes_table_identifier ON attributes(table_id, identifier);
+      CREATE INDEX IF NOT EXISTS idx_attributes_type ON attributes(attribute_type_id);
+      CREATE INDEX IF NOT EXISTS idx_node_attributes_node ON node_attributes(node_id);
+      CREATE INDEX IF NOT EXISTS idx_node_attributes_attr ON node_attributes(attribute_id);
+      CREATE INDEX IF NOT EXISTS idx_node_relations_source ON node_relations(source_node_id);
+      CREATE INDEX IF NOT EXISTS idx_node_relations_target ON node_relations(target_node_id);
+      CREATE INDEX IF NOT EXISTS idx_node_relations_source_ext ON node_relations(source_external_id);
+      CREATE INDEX IF NOT EXISTS idx_node_relations_target_ext ON node_relations(target_external_id);
+      CREATE INDEX IF NOT EXISTS idx_node_relations_type ON node_relations(relation_type_id);
+      CREATE INDEX IF NOT EXISTS idx_node_relations_table ON node_relations(table_id);
       CREATE INDEX IF NOT EXISTS idx_docs_table_category ON docs(table_id, category);
       CREATE INDEX IF NOT EXISTS idx_docs_active ON docs(is_active);
       CREATE INDEX IF NOT EXISTS idx_system_stats_timestamp ON system_stats(timestamp);

@@ -68,6 +68,16 @@
     "test:api:staging": "bun test/api/api-test-runner.ts --env staging",
     "test:api:prod": "bun test/api/api-test-runner.ts --env production",
     "test:templates": "bun tests/test-runner.ts",
+    "test:isolated": "bun tests/test-runner.ts",
+    "test:unit": "bun tests/test-runner.ts unit",
+    "test:unit:parallel": "bun tests/test-runner.ts unit --parallel",
+    "test:integration": "bun tests/test-runner.ts integration",
+    "test:e2e": "bun tests/test-runner.ts e2e",
+    "test:legacy": "bun tests/test-runner.ts template-indexing",
+    "test:all:isolated": "bun tests/test-runner.ts --parallel",
+    "test:cleanup": "bun scripts/test-cleanup.ts",
+    "test:cleanup:force": "bun scripts/test-cleanup.ts --force --verbose",
+    "test:cleanup:dry": "bun scripts/test-cleanup.ts --dry-run --verbose",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write .",
@@ -97,7 +107,12 @@
     "table:resolve-order": "bun scripts/table-package-cli.ts resolve-order",
     "table:generate-templates": "bun scripts/table-package-cli.ts generate-templates",
     "table:validate": "bun scripts/table-package-cli.ts validate",
-    "table:help": "bun scripts/table-package-cli.ts help"
+    "table:help": "bun scripts/table-package-cli.ts help",
+    "migrate:analyze": "bun src/migration-tools/cli/migration-cli.ts analyze",
+    "migrate:execute": "bun src/migration-tools/cli/migration-cli.ts execute",
+    "migrate:validate": "bun src/migration-tools/cli/migration-cli.ts validate",
+    "migrate:rollback": "bun src/migration-tools/cli/migration-cli.ts rollback",
+    "migrate:report": "bun src/migration-tools/cli/migration-cli.ts report"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",
@@ -108,7 +123,10 @@
     "@types/bun": "latest",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.3.0",
-    "jest": "^30.1.3"
+    "jest": "^30.1.3",
+    "rimraf": "^6.0.1",
+    "uuid": "^10.0.0",
+    "@types/uuid": "^10.0.0"
   },
   "peerDependencies": {
     "typescript": "^5"

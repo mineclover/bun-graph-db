@@ -1,0 +1,369 @@
+name: Test Isolation Strategy
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  BUN_VERSION: '1.2.19'
+  NODE_ENV: test
+
+jobs:
+  # Fast unit tests with parallel execution
+  unit-tests:
+    name: Unit Tests (Parallel)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        test-group: [
+          'template-creation-isolated',
+          'system-queries-isolated',
+          'graphql-parsing'
+        ]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Create temp directories
+        run: |
+          mkdir -p /tmp/bun-graph-db-tests
+          chmod 755 /tmp/bun-graph-db-tests
+
+      - name: Run unit tests
+        run: bun run tests/test-runner.ts unit --parallel
+        timeout-minutes: 5
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results-${{ matrix.test-group }}
+          path: |
+            /tmp/bun-graph-db-tests/*.log
+            test-results.json
+          retention-days: 7
+
+  # Integration tests with server isolation
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        test-suite: [
+          'doc-system-isolated',
+          'system-queries-integration'
+        ]
+      fail-fast: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Create test environment
+        run: |
+          mkdir -p /tmp/bun-graph-db-tests
+          chmod 755 /tmp/bun-graph-db-tests
+
+      - name: Check port availability
+        run: |
+          # Check that test ports are available
+          for port in {14000..14010}; do
+            if lsof -i :$port; then
+              echo "Port $port is busy"
+              exit 1
+            fi
+          done
+
+      - name: Run integration tests
+        run: bun test tests/integration/${{ matrix.test-suite }}.test.ts
+        timeout-minutes: 15
+        env:
+          TEST_ISOLATION_MODE: server
+          TEST_TIMEOUT: 30000
+
+      - name: Cleanup test environment
+        if: always()
+        run: |
+          # Kill any remaining test processes
+          pkill -f "bun.*test" || true
+          pkill -f "node.*graphql" || true
+
+          # Clean up test databases
+          rm -rf /tmp/bun-graph-db-tests/*
+
+          # Check for port cleanup
+          for port in {14000..14010}; do
+            if lsof -i :$port; then
+              echo "Warning: Port $port still in use after cleanup"
+            fi
+          done
+
+      - name: Upload test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results-${{ matrix.test-suite }}
+          path: |
+            /tmp/bun-graph-db-tests/
+            logs/
+          retention-days: 7
+
+  # E2E tests with full isolation
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [unit-tests] # Run after unit tests pass
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Setup E2E environment
+        run: |
+          mkdir -p /tmp/bun-graph-db-tests
+          mkdir -p logs
+          chmod -R 755 /tmp/bun-graph-db-tests logs
+
+      - name: Run E2E tests
+        run: bun test tests/e2e/doc-system-e2e.test.ts
+        timeout-minutes: 25
+        env:
+          TEST_ISOLATION_MODE: full
+          TEST_TIMEOUT: 45000
+          DEBUG: test:*
+
+      - name: Generate E2E report
+        if: always()
+        run: |
+          echo "E2E Test Summary" > e2e-summary.md
+          echo "================" >> e2e-summary.md
+          echo "Test Duration: $(date)" >> e2e-summary.md
+          echo "Environment: GitHub Actions" >> e2e-summary.md
+          echo "Node Version: $(node --version)" >> e2e-summary.md
+          echo "Bun Version: $(bun --version)" >> e2e-summary.md
+
+          if [ -f /tmp/bun-graph-db-tests/*.log ]; then
+            echo "Test Logs:" >> e2e-summary.md
+            cat /tmp/bun-graph-db-tests/*.log >> e2e-summary.md
+          fi
+
+      - name: Upload E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results
+          path: |
+            e2e-summary.md
+            /tmp/bun-graph-db-tests/
+            logs/
+          retention-days: 14
+
+  # Legacy tests (non-isolated)
+  legacy-tests:
+    name: Legacy Tests (Non-Isolated)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request' # Only run on PRs
+
+    services:
+      # Would need actual service if testing legacy tests
+      # postgres:
+      #   image: postgres:13
+      #   env:
+      #     POSTGRES_PASSWORD: test
+      #   options: >-
+      #     --health-cmd pg_isready
+      #     --health-interval 10s
+      #     --health-timeout 5s
+      #     --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Start GraphQL server
+        run: |
+          bun run dev &
+          echo $! > server.pid
+
+          # Wait for server to be ready
+          timeout 30s bash -c 'until curl -f http://localhost:4000/graphql; do sleep 1; done'
+
+      - name: Run legacy tests
+        run: bun test tests/doc-system-comprehensive.test.ts
+        timeout-minutes: 10
+
+      - name: Stop GraphQL server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi
+
+  # Performance benchmarks
+  performance-tests:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [unit-tests, integration-tests]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run performance benchmarks
+        run: |
+          echo "Starting performance benchmarks..."
+
+          # Unit test performance
+          time bun run tests/test-runner.ts unit --parallel > unit-perf.log 2>&1
+
+          # Integration test performance
+          time bun test tests/integration/system-queries-integration.test.ts > integration-perf.log 2>&1
+
+      - name: Analyze performance
+        run: |
+          echo "Performance Analysis" > performance-report.md
+          echo "===================" >> performance-report.md
+          echo "" >> performance-report.md
+
+          echo "Unit Tests:" >> performance-report.md
+          grep -E "(Total Duration|Success Rate)" unit-perf.log >> performance-report.md
+          echo "" >> performance-report.md
+
+          echo "Integration Tests:" >> performance-report.md
+          grep -E "pass|fail" integration-perf.log | tail -5 >> performance-report.md
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-benchmarks
+          path: |
+            performance-report.md
+            unit-perf.log
+            integration-perf.log
+          retention-days: 30
+
+  # Final summary job
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, e2e-tests]
+    if: always()
+
+    steps:
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: test-artifacts
+
+      - name: Generate test summary
+        run: |
+          echo "# Test Isolation Strategy - Results Summary" > test-summary.md
+          echo "" >> test-summary.md
+          echo "## Test Categories" >> test-summary.md
+          echo "" >> test-summary.md
+
+          echo "### Unit Tests" >> test-summary.md
+          echo "- **Strategy**: In-memory SQLite databases" >> test-summary.md
+          echo "- **Execution**: Parallel" >> test-summary.md
+          echo "- **Status**: ${{ needs.unit-tests.result }}" >> test-summary.md
+          echo "" >> test-summary.md
+
+          echo "### Integration Tests" >> test-summary.md
+          echo "- **Strategy**: Isolated GraphQL servers" >> test-summary.md
+          echo "- **Execution**: Matrix parallel" >> test-summary.md
+          echo "- **Status**: ${{ needs.integration-tests.result }}" >> test-summary.md
+          echo "" >> test-summary.md
+
+          echo "### E2E Tests" >> test-summary.md
+          echo "- **Strategy**: Full isolation with seed data" >> test-summary.md
+          echo "- **Execution**: Sequential" >> test-summary.md
+          echo "- **Status**: ${{ needs.e2e-tests.result }}" >> test-summary.md
+          echo "" >> test-summary.md
+
+          echo "## Isolation Benefits Demonstrated" >> test-summary.md
+          echo "- ✅ Parallel execution without conflicts" >> test-summary.md
+          echo "- ✅ Independent database per test suite" >> test-summary.md
+          echo "- ✅ Automatic cleanup and resource management" >> test-summary.md
+          echo "- ✅ Consistent results across multiple runs" >> test-summary.md
+          echo "" >> test-summary.md
+
+          if [[ "${{ needs.unit-tests.result }}" == "success" && "${{ needs.integration-tests.result }}" == "success" && "${{ needs.e2e-tests.result }}" == "success" ]]; then
+            echo "## ✅ All Test Categories Passed" >> test-summary.md
+            echo "The test isolation strategy is working effectively!" >> test-summary.md
+          else
+            echo "## ⚠️ Some Tests Failed" >> test-summary.md
+            echo "Check individual test results for details." >> test-summary.md
+          fi
+
+      - name: Upload test summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-isolation-summary
+          path: test-summary.md
+          retention-days: 30
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('test-summary.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

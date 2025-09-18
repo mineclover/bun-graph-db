@@ -141,11 +141,11 @@ export class RelationQueries extends BaseResolver {
 
   async getDependencyChain(
     _: GraphQLParent,
-    args: GetDependencyChainArgs,
+    args: { input: { nodeId: string; direction?: string; maxDepth?: number } },
     _context?: GraphQLContext
   ) {
     this.validateArgs(
-      args as any,
+      args.input as any,
       [
         BaseResolver.validationRules.required('nodeId', 'Node ID'),
         BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),
@@ -155,18 +155,15 @@ export class RelationQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        // This would need to be implemented in a use case or repository method
-        // For now, return empty result
+        // This is a stub implementation as mentioned in the test
+        // The dependency chain functionality is not yet fully implemented
         return {
           nodes: [],
-          relations: [],
           totalCount: 0,
-          hasNextPage: false,
-          hasPreviousPage: false,
         }
       },
       'getDependencyChain',
-      { args }
+      { input: args.input }
     )
   }
 }

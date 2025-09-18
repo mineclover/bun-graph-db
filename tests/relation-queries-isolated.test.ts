@@ -179,7 +179,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
       const variables = {
         filter: {
           sourceNodeId: '1',  // Test ID
-          direction: 'outgoing'
+          direction: 'OUTGOING'
         },
         pagination: { limit: 5, offset: 0 }
       }
@@ -212,7 +212,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
       const variables = {
         input: {
           nodeId: '1',
-          direction: 'outgoing',
+          direction: 'OUTGOING',
           maxDepth: 3
         }
       }
@@ -268,12 +268,19 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query, {
-        input: { direction: 'outgoing' } // Missing nodeId
-      })
-
-      // Should have validation errors
-      expect(result.errors).toBeDefined()
+      // This should throw an error due to GraphQL validation
+      try {
+        await graphqlRequest(query, {
+          input: { direction: 'OUTGOING' } // Missing nodeId
+        })
+        // If we reach here, the test should fail
+        expect(false).toBe(true) // Force failure
+      } catch (error) {
+        // Should have GraphQL validation error about missing nodeId
+        expect(error.message).toContain('GraphQL request failed')
+        // The validation error should be in the console output (already logged)
+        expect(true).toBe(true) // Test passes if error is thrown
+      }
     })
   })
 

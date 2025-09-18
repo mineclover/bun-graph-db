@@ -98,13 +98,10 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
       const relationTypes = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        nodes: relationTypes,
-        totalCount: total,
+        items: relationTypes,
+        total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
-        data: relationTypes,
-        total,
-        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find all relation types: ${error}`)

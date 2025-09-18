@@ -68,8 +68,9 @@ input NodesFilter {
 }
 
 input SearchNodesFilter {
+  search: String
   content: String
-  tableId: ID
+  tableId: ID!
   attributeFilters: [AttributeFilter!]
   relationFilters: [RelationFilter!]
 }
