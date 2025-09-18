@@ -4,17 +4,11 @@
 scalar DateTime
 scalar JSON
 
-# Health status type
-type HealthStatus {
-  status: String!
-  timestamp: DateTime!
-  database: Boolean!
-  version: String!
-}
+# Health status type is defined in schemas/common.graphql
 
 # Root types - Query, Mutation, Subscription will be extended by domain schemas
 type Query {
-  # Health check endpoint
+  # Health check endpoint - use common HealthStatus from schemas/common.graphql
   health: HealthStatus!
 }
 

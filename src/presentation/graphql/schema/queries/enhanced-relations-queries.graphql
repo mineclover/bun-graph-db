@@ -124,13 +124,13 @@ type AlternativePath {
 # Node connectivity analysis
 type NodeConnectivityResult {
   centralNode: TableNode!
-  connectedNodes: [ConnectedNode!]!
+  connectedNodes: [EnhancedConnectedNode!]!
   relationshipSummary: RelationshipSummary!
   networkPosition: NetworkPosition!
   influenceScore: Float!
 }
 
-type ConnectedNode {
+type EnhancedConnectedNode {
   node: TableNode!
   relation: NodeRelation!
   distance: Int!

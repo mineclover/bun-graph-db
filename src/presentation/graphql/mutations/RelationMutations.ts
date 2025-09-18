@@ -5,10 +5,13 @@ import type {
   CreateRelationArgs,
   CreateRelationTypeArgs,
   DeleteRelationArgs,
+  UpdateRelationTypeArgs,
+  DeleteRelationTypeArgs,
   GraphQLContext,
   GraphQLParent,
 } from '@/core/types/GraphQLTypes.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { ConflictException, ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
 
@@ -19,6 +22,7 @@ export class RelationMutations extends BaseResolver {
     private readonly createRelationUseCase: CreateRelationUseCase,
     private readonly createRelationTypeUseCase: CreateRelationTypeUseCase,
     private readonly nodeRelationRepository: INodeRelationRepository,
+    private readonly relationTypeRepository: IRelationTypeRepository,
     logger: ILogger
   ) {
     super()
@@ -151,6 +155,136 @@ export class RelationMutations extends BaseResolver {
       return {
         success: false,
         relation: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          }
+        ]
+      }
+    }
+  }
+
+  async updateRelationType(
+    _: GraphQLParent,
+    args: UpdateRelationTypeArgs,
+    _context?: GraphQLContext
+  ) {
+    try {
+      this.validateArgs(
+        args as any,
+        [
+          BaseResolver.validationRules.required('id', 'Relation type ID'),
+          BaseResolver.validationRules.required('input', 'Update relation type input'),
+          BaseResolver.validationRules.nonEmpty('id', 'Relation type ID'),
+        ],
+        'updateRelationType'
+      )
+
+      this.logger.info('Executing mutation: updateRelationType', { id: args.id, input: args.input })
+
+      const existingRelationType = await this.relationTypeRepository.findById(args.id)
+      if (!existingRelationType) {
+        throw new NotFoundException('Relation type not found')
+      }
+
+      const updatedRelationType = await this.relationTypeRepository.update(args.id, {
+        identifier: args.input.identifier || existingRelationType.getIdentifier(),
+        description: args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
+        category: args.input.name || existingRelationType.getCategory(),
+      })
+
+      return {
+        success: true,
+        relationType: {
+          ...updatedRelationType,
+          name: args.input.name || existingRelationType.getCategory(),
+        },
+        errors: []
+      }
+    } catch (error) {
+      this.logger.error('Mutation failed: updateRelationType', { error, id: args.id, input: args.input })
+
+      if (error instanceof NotFoundException) {
+        return {
+          success: false,
+          relationType: null,
+          errors: [
+            {
+              message: error.message,
+              code: 'NOT_FOUND',
+            }
+          ]
+        }
+      }
+
+      if (error instanceof ValidationException) {
+        return {
+          success: false,
+          relationType: null,
+          errors: [
+            {
+              message: error.message,
+              code: 'VALIDATION_ERROR',
+            }
+          ]
+        }
+      }
+
+      return {
+        success: false,
+        relationType: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          }
+        ]
+      }
+    }
+  }
+
+  async deleteRelationType(_: GraphQLParent, args: DeleteRelationTypeArgs, _context?: GraphQLContext) {
+    try {
+      this.validateArgs(
+        args as any,
+        [
+          BaseResolver.validationRules.required('id', 'Relation type ID'),
+          BaseResolver.validationRules.nonEmpty('id', 'Relation type ID'),
+        ],
+        'deleteRelationType'
+      )
+
+      this.logger.info('Executing mutation: deleteRelationType', { id: args.id })
+
+      const existingRelationType = await this.relationTypeRepository.findById(args.id)
+      if (!existingRelationType) {
+        throw new NotFoundException('Relation type not found')
+      }
+
+      await this.relationTypeRepository.delete(args.id)
+
+      return {
+        success: true,
+        errors: []
+      }
+    } catch (error) {
+      this.logger.error('Mutation failed: deleteRelationType', { error, id: args.id })
+
+      if (error instanceof NotFoundException) {
+        return {
+          success: false,
+          errors: [
+            {
+              message: error.message,
+              code: 'NOT_FOUND',
+            }
+          ]
+        }
+      }
+
+      return {
+        success: false,
         errors: [
           {
             message: error instanceof Error ? error.message : 'Unknown error',

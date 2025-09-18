@@ -94,10 +94,10 @@ input SearchRelatedNodesInput {
 
 extend type Query {
   # Search related nodes with advanced graph queries
-  searchRelatedNodes(input: SearchRelatedNodesInput!): SearchRelatedNodesResult!
+  searchRelatedNodesAdvanced(input: SearchRelatedNodesInput!): SearchRelatedNodesResult!
 
-  # Get dependency chain
-  getDependencyChain(
+  # Get dependency chain (legacy schema)
+  getDependencyChainLegacy(
     tableId: ID!
     nodeId: ID!
     direction: RelationDirection

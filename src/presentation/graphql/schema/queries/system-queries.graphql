@@ -3,6 +3,7 @@ extend type Query {
   systemStats: SystemStats!
   memoryStats: MemoryStats!
   healthCheck: HealthStatus!
+  systemHealthCheck: SystemHealthStatus!
 }
 
 type SystemStats {
@@ -52,7 +53,7 @@ type DatabaseStats {
   averageQueryTime: Float!
 }
 
-type HealthStatus {
+type SystemHealthStatus {
   status: String!
   timestamp: DateTime!
   database: Boolean!

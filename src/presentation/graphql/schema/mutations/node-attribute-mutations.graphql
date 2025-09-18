@@ -2,14 +2,16 @@
 
 extend type Mutation {
   # Node Attribute management
-  setNodeAttribute(input: SetNodeAttributeInput!): SetNodeAttributePayload!
+  # Note: setNodeAttribute is already defined in node-mutations.graphql
 
-  updateNodeAttribute(id: ID!, input: UpdateNodeAttributeInput!): UpdateNodeAttributePayload!
+  # Additional node attribute operations for comprehensive coverage
+  updateNodeAttributeValue(nodeId: ID!, attributeId: ID!, value: String!): SetNodeAttributePayload!
 
-  deleteNodeAttribute(id: ID!): DeleteNodeAttributePayload!
+  removeNodeAttribute(nodeId: ID!, attributeId: ID!): SetNodeAttributePayload!
 
-  # Bulk operations
-  setMultipleNodeAttributes(input: SetMultipleNodeAttributesInput!): SetMultipleNodeAttributesPayload!
-
-  deleteNodeAttributes(nodeId: ID!, attributeIds: [ID!]!): DeleteNodeAttributesPayload!
+  # Bulk operations for better SQL coverage
+  bulkSetNodeAttributes(
+    nodeId: ID!
+    attributes: [NodeAttributeInput!]!
+  ): SetNodeAttributePayload!
 }

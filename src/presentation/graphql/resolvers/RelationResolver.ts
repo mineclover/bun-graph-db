@@ -211,14 +211,146 @@ export class RelationResolver extends BaseResolver {
     totalCount: number
   }> {
     try {
-      // This is a stub implementation as mentioned in the test
-      // The dependency chain functionality is not yet fully implemented
+      const maxDepth = args.input.maxDepth || 5
+      const direction = args.input.direction || 'OUTGOING'
+
+      // Implementation for dependency chain analysis
+      const visitedNodes = new Set<string>()
+      const dependencyNodes: Array<{ id: string }> = []
+
+      const exploreDependencies = async (currentNodeId: string, currentDepth: number) => {
+        if (currentDepth >= maxDepth || visitedNodes.has(currentNodeId)) {
+          return
+        }
+
+        visitedNodes.add(currentNodeId)
+
+        // Find relations based on direction
+        const relations = direction === 'OUTGOING'
+          ? await this.nodeRelationRepository.findBySourceNodeId(currentNodeId as NodeId)
+          : await this.nodeRelationRepository.findByTargetNodeId(currentNodeId as NodeId)
+
+        for (const relation of relations) {
+          // Filter by relation types if specified
+          if (args.input.relationTypeIds?.length &&
+              !args.input.relationTypeIds.includes(relation.getRelationTypeId())) {
+            continue
+          }
+
+          const nextNodeId = direction === 'OUTGOING'
+            ? relation.getTargetNodeId()
+            : relation.getSourceNodeId()
+
+          if (!visitedNodes.has(nextNodeId)) {
+            dependencyNodes.push({ id: nextNodeId })
+            await exploreDependencies(nextNodeId, currentDepth + 1)
+          }
+        }
+      }
+
+      await exploreDependencies(args.input.nodeId, 0)
+
       return {
-        nodes: [],
-        totalCount: 0
+        nodes: dependencyNodes,
+        totalCount: dependencyNodes.length
       }
     } catch (error) {
       this.logger.error('Failed to get dependency chain', { input: args.input, error })
+      throw error
+    }
+  }
+
+  async findPathsBetweenNodes(args: {
+    input: {
+      sourceNodeId: string
+      targetNodeId: string
+      maxDepth?: number
+      relationTypeIds?: string[]
+    }
+  }): Promise<Array<{
+    nodes: Array<{ id: string }>
+    relations: Array<{ id: string }>
+    length: number
+    totalWeight?: number
+  }>> {
+    try {
+      const maxDepth = args.input.maxDepth || 3
+      const sourceNodeId = args.input.sourceNodeId
+      const targetNodeId = args.input.targetNodeId
+
+      // BFS algorithm to find all paths between two nodes
+      const paths: Array<{
+        nodes: Array<{ id: string }>
+        relations: Array<{ id: string }>
+        length: number
+        totalWeight?: number
+      }> = []
+
+      interface PathState {
+        currentNodeId: string
+        visitedNodes: string[]
+        usedRelations: string[]
+        totalWeight: number
+      }
+
+      const queue: PathState[] = [{
+        currentNodeId: sourceNodeId,
+        visitedNodes: [sourceNodeId],
+        usedRelations: [],
+        totalWeight: 0
+      }]
+
+      while (queue.length > 0) {
+        const state = queue.shift()!
+
+        if (state.visitedNodes.length > maxDepth + 1) {
+          continue
+        }
+
+        if (state.currentNodeId === targetNodeId && state.visitedNodes.length > 1) {
+          // Found a path
+          paths.push({
+            nodes: state.visitedNodes.map(id => ({ id })),
+            relations: state.usedRelations.map(id => ({ id })),
+            length: state.visitedNodes.length - 1,
+            totalWeight: state.totalWeight
+          })
+          continue
+        }
+
+        // Find outgoing relations from current node
+        const relations = await this.nodeRelationRepository.findBySourceNodeId(
+          state.currentNodeId as NodeId
+        )
+
+        for (const relation of relations) {
+          const nextNodeId = relation.getTargetNodeId()
+
+          // Avoid cycles
+          if (state.visitedNodes.includes(nextNodeId)) {
+            continue
+          }
+
+          // Filter by relation types if specified
+          if (args.input.relationTypeIds?.length &&
+              !args.input.relationTypeIds.includes(relation.getRelationTypeId())) {
+            continue
+          }
+
+          queue.push({
+            currentNodeId: nextNodeId,
+            visitedNodes: [...state.visitedNodes, nextNodeId],
+            usedRelations: [...state.usedRelations, relation.getId()],
+            totalWeight: state.totalWeight + 1 // Simple weight calculation
+          })
+        }
+      }
+
+      // Sort paths by length (shortest first)
+      return paths.sort((a, b) => a.length - b.length)
+
+    } catch (error) {
+      this.logger.error('Failed to find paths between nodes', { input: args.input, error })
       throw error
     }
   }
@@ -369,6 +501,121 @@ export class RelationResolver extends BaseResolver {
 
       return {
         relationType: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
+      }
+    }
+  }
+
+  async updateRelationType(args: {
+    id: string
+    input: { identifier?: string; description?: string; name?: string }
+  }): Promise<{
+    relationType: RelationTypeDto | null
+    errors: Array<{ message: string; code: string }>
+  }> {
+    try {
+      const existingRelationType = await this.relationTypeRepository.findById(args.id as RelationTypeId)
+      if (!existingRelationType) {
+        throw new NotFoundException(`Relation type with id ${args.id} not found`)
+      }
+
+      const updatedRelationType = await this.relationTypeRepository.update(args.id as RelationTypeId, {
+        identifier: args.input.identifier || existingRelationType.getIdentifier(),
+        description: args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
+        category: args.input.name || existingRelationType.getCategory(),
+      })
+
+      const relationTypeDto: RelationTypeDto = {
+        id: updatedRelationType.getId(),
+        identifier: updatedRelationType.getIdentifier(),
+        description: updatedRelationType.getDescription(),
+        category: updatedRelationType.getCategory(),
+        name: args.input.name || existingRelationType.getCategory(),
+        createdAt: updatedRelationType.getCreatedAt(),
+        updatedAt: updatedRelationType.getUpdatedAt(),
+      }
+
+      return {
+        relationType: relationTypeDto,
+        errors: [],
+      }
+    } catch (error) {
+      this.logger.error('Failed to update relation type', { id: args.id, input: args.input, error })
+
+      if (error instanceof NotFoundException) {
+        return {
+          relationType: null,
+          errors: [
+            {
+              message: error.message,
+              code: 'NOT_FOUND',
+            },
+          ],
+        }
+      }
+
+      if (error instanceof ValidationException) {
+        return {
+          relationType: null,
+          errors: [
+            {
+              message: error.message,
+              code: 'VALIDATION_ERROR',
+            },
+          ],
+        }
+      }
+
+      return {
+        relationType: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
+      }
+    }
+  }
+
+  async deleteRelationType(args: { id: string }): Promise<{
+    success: boolean
+    errors: Array<{ message: string; code: string }>
+  }> {
+    try {
+      const existingRelationType = await this.relationTypeRepository.findById(args.id as RelationTypeId)
+      if (!existingRelationType) {
+        throw new NotFoundException(`Relation type with id ${args.id} not found`)
+      }
+
+      await this.relationTypeRepository.delete(args.id as RelationTypeId)
+
+      return {
+        success: true,
+        errors: [],
+      }
+    } catch (error) {
+      this.logger.error('Failed to delete relation type', { id: args.id, error })
+
+      if (error instanceof NotFoundException) {
+        return {
+          success: false,
+          errors: [
+            {
+              message: error.message,
+              code: 'NOT_FOUND',
+            },
+          ],
+        }
+      }
+
+      return {
+        success: false,
         errors: [
           {
             message: error instanceof Error ? error.message : 'Unknown error',

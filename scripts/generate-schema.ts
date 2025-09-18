@@ -25,21 +25,27 @@ async function combineSchemaFiles(): Promise<string> {
   // Define the order of schema files for proper dependency resolution
   const schemaOrder = [
     'base-types.graphql',
+    'types/common.graphql',
     'types/node.graphql',
     'types/table.graphql',
     'types/attribute.graphql',
     'types/relation.graphql',
     'types/query-template.graphql',
+    'types/analytics.graphql',
     'queries/node-queries.graphql',
     'queries/table-queries.graphql',
     'queries/attribute-queries.graphql',
     'queries/relation-queries.graphql',
     'queries/template-queries.graphql',
+    'queries/system-queries.graphql',
+    'queries/template-performance-queries.graphql',
+    'queries/enhanced-relations-queries.graphql',
     'mutations/node-mutations.graphql',
     'mutations/table-mutations.graphql',
     'mutations/attribute-mutations.graphql',
     'mutations/relation-mutations.graphql',
     'mutations/template-mutations.graphql',
+    'mutations/node-attribute-mutations.graphql',
     'subscriptions/realtime.graphql',
     'schema-export-import.graphql',
   ]
@@ -73,6 +79,14 @@ async function combineSchemaFiles(): Promise<string> {
   }
 
   await readDir(schemaDir)
+
+  // Also read files from the schemas directory (legacy)
+  const schemasDir = join(rootDir, 'src/presentation/graphql/schemas')
+  try {
+    await readDir(schemasDir, 'schemas')
+  } catch {
+    // Schemas directory may not exist
+  }
 
   return schemaFiles.join('\n\n')
 }

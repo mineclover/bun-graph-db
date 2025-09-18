@@ -58,11 +58,4 @@ enum ExecutionStatus {
   ERROR
 }
 
-type TemplateExecutionMetadata {
-  templateId: ID!
-  templateName: String!
-  complexityScore: Int!
-  estimatedTokens: Int
-  version: String!
-  executionTime: Int!
-}
+# TemplateExecutionMetadata is defined in query-template.graphql

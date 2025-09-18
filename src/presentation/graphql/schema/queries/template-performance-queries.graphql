@@ -104,12 +104,12 @@ type HourlyUsageStats {
 }
 
 type RecentPerformanceMetrics {
-  last24Hours: PerformanceMetrics!
-  last7Days: PerformanceMetrics!
-  last30Days: PerformanceMetrics!
+  last24Hours: TemplatePerformanceMetrics!
+  last7Days: TemplatePerformanceMetrics!
+  last30Days: TemplatePerformanceMetrics!
 }
 
-type PerformanceMetrics {
+type TemplatePerformanceMetrics {
   totalExecutions: Int!
   avgExecutionTime: Float!
   successRate: Float!
