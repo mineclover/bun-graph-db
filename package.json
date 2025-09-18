@@ -108,11 +108,6 @@
     "table:generate-templates": "bun scripts/table-package-cli.ts generate-templates",
     "table:validate": "bun scripts/table-package-cli.ts validate",
     "table:help": "bun scripts/table-package-cli.ts help",
-    "migrate:analyze": "bun src/migration-tools/cli/migration-cli.ts analyze",
-    "migrate:execute": "bun src/migration-tools/cli/migration-cli.ts execute",
-    "migrate:validate": "bun src/migration-tools/cli/migration-cli.ts validate",
-    "migrate:rollback": "bun src/migration-tools/cli/migration-cli.ts rollback",
-    "migrate:report": "bun src/migration-tools/cli/migration-cli.ts report"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",

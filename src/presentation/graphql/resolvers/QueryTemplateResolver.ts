@@ -8,7 +8,9 @@ import {
   type ExecuteTemplateInput,
   type FindTemplatesByTableInput,
   type QueryTemplateDto,
-  QueryTemplateDtoMapper,
+  queryTemplateToDto,
+  queryTemplatesToDtoList,
+  createInputToEntity,
   type QueryTemplatesConnection,
   type SearchTemplatesInput,
   type TableDependencyTemplateResult,
@@ -137,7 +139,7 @@ export class QueryTemplateResolver extends BaseResolver {
 
     const result = await this.queryTemplateRepository.search(searchCriteria)
     return {
-      templates: QueryTemplateDtoMapper.toDtoList(result.items),
+      templates: queryTemplatesToDtoList(result.items),
       totalCount: result.total,
       hasNextPage: result.hasNextPage,
       hasPreviousPage: result.hasPreviousPage,
@@ -160,7 +162,7 @@ export class QueryTemplateResolver extends BaseResolver {
     return this.handleQuery(
       async () => {
         const template = await this.queryTemplateRepository.findById(id)
-        return template ? QueryTemplateDtoMapper.toDto(template) : null
+        return template ? queryTemplateToDto(template) : null
       },
       'findTemplateById',
       { id }
@@ -172,7 +174,7 @@ export class QueryTemplateResolver extends BaseResolver {
    */
   async getTemplateByIdentifier(identifier: string): Promise<QueryTemplateDto | null> {
     const template = await this.queryTemplateRepository.findByIdentifier(identifier)
-    return template ? QueryTemplateDtoMapper.toDto(template) : null
+    return template ? queryTemplateToDto(template) : null
   }
 
   /**
@@ -180,7 +182,7 @@ export class QueryTemplateResolver extends BaseResolver {
    */
   async getPopularTemplates(limit: number = 10): Promise<QueryTemplateDto[]> {
     const templates = await this.queryTemplateRepository.findPopular(limit)
-    return QueryTemplateDtoMapper.toDtoList(templates)
+    return queryTemplatesToDtoList(templates)
   }
 
   // Private helper methods
@@ -253,10 +255,10 @@ export class QueryTemplateResolver extends BaseResolver {
     this.logger.info('Creating template', { identifier: input.identifier })
 
     try {
-      const template = QueryTemplateDtoMapper.createInputToEntity(input)
+      const template = createInputToEntity(input)
       const savedTemplate = await this.queryTemplateRepository.create(template)
 
-      return QueryTemplateDtoMapper.toDto(savedTemplate)
+      return queryTemplateToDto(savedTemplate)
     } catch (error) {
       this.logger.error('Failed to create template', {
         identifier: input.identifier,
@@ -300,7 +302,7 @@ export class QueryTemplateResolver extends BaseResolver {
       }
 
       const savedTemplate = await this.queryTemplateRepository.update(id, updateData)
-      return QueryTemplateDtoMapper.toDto(savedTemplate)
+      return queryTemplateToDto(savedTemplate)
     } catch (error) {
       this.logger.error('Failed to update template', { id, error })
       throw new GraphQLError('Failed to update template', {
@@ -321,7 +323,7 @@ export class QueryTemplateResolver extends BaseResolver {
         input.includeUniversal ?? true
       )
 
-      return templates.map(QueryTemplateDtoMapper.toDto)
+      return templates.map(queryTemplateToDto)
     } catch (error) {
       this.logger.error('Failed to find templates by table', { input, error })
       throw new GraphQLError('Failed to find templates by table', {
@@ -338,7 +340,7 @@ export class QueryTemplateResolver extends BaseResolver {
 
     try {
       const templates = await this.queryTemplateRepository.findTemplatesWithTableDependencies()
-      return templates.map(QueryTemplateDtoMapper.toDto)
+      return templates.map(queryTemplateToDto)
     } catch (error) {
       this.logger.error('Failed to find templates with table dependencies', { error })
       throw new GraphQLError('Failed to find templates with table dependencies', {
@@ -372,7 +374,7 @@ export class QueryTemplateResolver extends BaseResolver {
       // 결과 변환
       return Array.from(groupedByTable.entries()).map(([tableName, tableTemplates]) => ({
         tableName,
-        templates: tableTemplates.map(QueryTemplateDtoMapper.toDto),
+        templates: tableTemplates.map(queryTemplateToDto),
         totalCount: tableTemplates.length,
       }))
     } catch (error) {
@@ -439,7 +441,7 @@ export class QueryTemplateResolver extends BaseResolver {
 
       return {
         success: true,
-        template: QueryTemplateDtoMapper.toDto(updatedTemplate),
+        template: queryTemplateToDto(updatedTemplate),
         errors: [],
         previousQuery,
       }
@@ -484,7 +486,7 @@ export class QueryTemplateResolver extends BaseResolver {
 
     try {
       const savedTemplate = await this.queryTemplateRepository.updateStatus(id, true)
-      return QueryTemplateDtoMapper.toDto(savedTemplate)
+      return queryTemplateToDto(savedTemplate)
     } catch (error) {
       this.logger.error('Failed to activate template', { id, error })
       throw new GraphQLError('Failed to activate template', {
@@ -501,7 +503,7 @@ export class QueryTemplateResolver extends BaseResolver {
 
     try {
       const savedTemplate = await this.queryTemplateRepository.updateStatus(id, false)
-      return QueryTemplateDtoMapper.toDto(savedTemplate)
+      return queryTemplateToDto(savedTemplate)
     } catch (error) {
       this.logger.error('Failed to deactivate template', { id, error })
       throw new GraphQLError('Failed to deactivate template', {

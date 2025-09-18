@@ -17,27 +17,25 @@ export interface NodeRelationDto {
   updatedAt: string
 }
 
-export class NodeRelationDto {
-  static fromEntity(nodeRelation: NodeRelation): NodeRelationDto {
-    return {
-      id: nodeRelation.getId(),
-      tableId: nodeRelation.getTableId(),
-      sourceNodeId: nodeRelation.getSourceNodeId(),
-      sourceExternalId: nodeRelation.getSourceExternalId(),
-      targetNodeId: nodeRelation.getTargetNodeId(),
-      targetExternalId: nodeRelation.getTargetExternalId(),
-      relationTypeId: nodeRelation.getRelationTypeId(),
-      properties: nodeRelation.getProperties(),
-      strength: nodeRelation.getStrength(),
-      confidence: (nodeRelation as any).getConfidence ? (nodeRelation as any).getConfidence() : 1,
-      createdAt: nodeRelation.getCreatedAt().toISOString(),
-      updatedAt: nodeRelation.getUpdatedAt().toISOString(),
-    }
+export function nodeRelationFromEntity(nodeRelation: NodeRelation): NodeRelationDto {
+  return {
+    id: nodeRelation.getId(),
+    tableId: nodeRelation.getTableId(),
+    sourceNodeId: nodeRelation.getSourceNodeId(),
+    sourceExternalId: nodeRelation.getSourceExternalId(),
+    targetNodeId: nodeRelation.getTargetNodeId(),
+    targetExternalId: nodeRelation.getTargetExternalId(),
+    relationTypeId: nodeRelation.getRelationTypeId(),
+    properties: nodeRelation.getProperties(),
+    strength: nodeRelation.getStrength(),
+    confidence: (nodeRelation as any).getConfidence ? (nodeRelation as any).getConfidence() : 1,
+    createdAt: nodeRelation.getCreatedAt().toISOString(),
+    updatedAt: nodeRelation.getUpdatedAt().toISOString(),
   }
+}
 
-  static fromEntities(nodeRelations: NodeRelation[]): NodeRelationDto[] {
-    return nodeRelations.map((nodeRelation) => NodeRelationDto.fromEntity(nodeRelation))
-  }
+export function nodeRelationFromEntities(nodeRelations: NodeRelation[]): NodeRelationDto[] {
+  return nodeRelations.map((nodeRelation) => nodeRelationFromEntity(nodeRelation))
 }
 
 // Data Transfer Object for RelationType entity
@@ -50,21 +48,19 @@ export interface RelationTypeDto {
   updatedAt: string
 }
 
-export class RelationTypeDto {
-  static fromEntity(relationType: RelationType): RelationTypeDto {
-    return {
-      id: relationType.getId(),
-      identifier: relationType.getIdentifier(),
-      description: relationType.getDescription(),
-      category: relationType.getCategory(),
-      createdAt: relationType.getCreatedAt().toISOString(),
-      updatedAt: relationType.getUpdatedAt().toISOString(),
-    }
+export function relationTypeFromEntity(relationType: RelationType): RelationTypeDto {
+  return {
+    id: relationType.getId(),
+    identifier: relationType.getIdentifier(),
+    description: relationType.getDescription(),
+    category: relationType.getCategory(),
+    createdAt: relationType.getCreatedAt().toISOString(),
+    updatedAt: relationType.getUpdatedAt().toISOString(),
   }
+}
 
-  static fromEntities(relationTypes: RelationType[]): RelationTypeDto[] {
-    return relationTypes.map((relationType) => RelationTypeDto.fromEntity(relationType))
-  }
+export function relationTypeFromEntities(relationTypes: RelationType[]): RelationTypeDto[] {
+  return relationTypes.map((relationType) => relationTypeFromEntity(relationType))
 }
 
 // Input DTOs for operations

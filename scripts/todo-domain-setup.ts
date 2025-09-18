@@ -61,7 +61,9 @@ class TodoDomainSetup {
     } else {
       const errors = result.data?.createTable?.errors || result.errors || []
       console.log(`   ❌ Failed to create table:`)
-      errors.forEach((error: any) => console.log(`      - ${error.message}`))
+      for (const error of errors) {
+        console.log(`      - ${error.message}`)
+      }
     }
   }
 
@@ -127,7 +129,9 @@ class TodoDomainSetup {
       } else {
         const errors = result.data?.createAttributeType?.errors || result.errors || []
         console.log(`   ⚠️ ${type.name} may already exist or failed:`)
-        errors.forEach((error: any) => console.log(`      - ${error.message}`))
+        for (const error of errors) {
+          console.log(`      - ${error.message}`)
+        }
       }
     }
   }
@@ -239,7 +243,9 @@ class TodoDomainSetup {
       } else {
         const errors = result.data?.createAttribute?.errors || result.errors || []
         console.log(`   ⚠️ ${attr.name} attribute creation issue:`)
-        errors.forEach((error: any) => console.log(`      - ${error.message}`))
+        for (const error of errors) {
+          console.log(`      - ${error.message}`)
+        }
       }
     }
   }
@@ -281,10 +287,10 @@ class TodoDomainSetup {
     const attributeTypes = result.data?.attributeTypes?.attributeTypes || []
 
     const typeIds: Record<string, string> = {}
-    attributeTypes.forEach((type: any) => {
+    for (const type of attributeTypes) {
       typeIds[type.name] = type.id
       typeIds[type.identifier] = type.id
-    })
+    }
 
     return typeIds
   }
@@ -307,7 +313,7 @@ class TodoDomainSetup {
     const attributeTypes = result.data?.attributeTypes?.attributeTypes || []
 
     const basicTypes: Record<string, string> = {}
-    attributeTypes.forEach((type: any) => {
+    for (const type of attributeTypes) {
       if (
         ['string', 'boolean', 'integer', 'number', 'date', 'datetime', 'text'].includes(
           type.dataType
@@ -319,7 +325,7 @@ class TodoDomainSetup {
           basicTypes[type.name] = type.id
         }
       }
-    })
+    }
 
     return basicTypes
   }
@@ -366,9 +372,9 @@ class TodoDomainSetup {
       const attributes = result.data?.table?.attributes || []
 
       console.log(`📝 Attributes (${attributes.length}):`)
-      attributes.forEach((attr: any) => {
+      for (const attr of attributes) {
         console.log(`   - ${attr.name}: ${attr.description}`)
-      })
+      }
     } else {
       console.log('❌ Todo table not found')
     }
@@ -376,9 +382,9 @@ class TodoDomainSetup {
     // 속성 타입들 확인
     const attributeTypeIds = await this.getAttributeTypeIds()
     console.log(`\n🏷️ Custom Attribute Types (${Object.keys(attributeTypeIds).length}):`)
-    Object.entries(attributeTypeIds).forEach(([name, id]) => {
+    for (const [name, id] of Object.entries(attributeTypeIds)) {
       console.log(`   - ${name} (ID: ${id})`)
-    })
+    }
   }
 }
 

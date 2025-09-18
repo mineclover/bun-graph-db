@@ -13,13 +13,6 @@
 import Database from 'bun:sqlite'
 import path from 'node:path'
 
-interface DomainStats {
-  domain: string
-  count: number
-  percentage: number
-  avgComplexity: number
-  topTags: string[]
-}
 
 interface TemplateInfo {
   id: string

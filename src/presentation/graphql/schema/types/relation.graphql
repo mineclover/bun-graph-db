@@ -28,12 +28,23 @@ input CreateRelationTypeInput {
   description: String
 }
 
+input UpdateRelationTypeInput {
+  name: String
+  description: String
+}
+
 # Input types for relation operations
 input CreateRelationInput {
   tableId: ID!
   sourceNodeId: ID!
   targetNodeId: ID!
   relationTypeId: ID!
+}
+
+input UpdateRelationInput {
+  relationTypeId: ID
+  properties: JSON
+  strength: Float
 }
 
 # Filters for relations
@@ -97,8 +108,25 @@ type CreateRelationTypePayload implements OperationResult {
   errors: [Error!]!
 }
 
+type UpdateRelationTypePayload implements OperationResult {
+  success: Boolean!
+  relationType: RelationType
+  errors: [Error!]!
+}
+
+type DeleteRelationTypePayload implements OperationResult {
+  success: Boolean!
+  errors: [Error!]!
+}
+
 # Operation result types for relations
 type CreateRelationPayload implements OperationResult {
+  success: Boolean!
+  relation: NodeRelation
+  errors: [Error!]!
+}
+
+type UpdateRelationPayload implements OperationResult {
   success: Boolean!
   relation: NodeRelation
   errors: [Error!]!

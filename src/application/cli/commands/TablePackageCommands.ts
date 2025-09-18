@@ -84,7 +84,9 @@ export class TablePackageCommands {
 
       if (result.result?.warnings && result.result.warnings.length > 0) {
         console.log('⚠️  Warnings:')
-        result.result.warnings.forEach(warning => console.log(`   - ${warning}`))
+        for (const warning of result.result.warnings) {
+          console.log(`   - ${warning}`)
+        }
       }
     } catch (error) {
       this.logger.error('Table export command failed', { error })
@@ -152,21 +154,23 @@ export class TablePackageCommands {
 
       if (result.result?.generatedTemplates && result.result.generatedTemplates.length > 0) {
         console.log(`🔧 Generated templates:`)
-        result.result.generatedTemplates.forEach(template => {
+        for (const template of result.result.generatedTemplates) {
           console.log(`   - ${template.name} (${template.operationType})`)
-        })
+        }
       }
 
       if (result.result?.resolvedConflicts && result.result.resolvedConflicts.length > 0) {
         console.log(`⚡ Resolved conflicts:`)
-        result.result.resolvedConflicts.forEach(conflict => {
+        for (const conflict of result.result.resolvedConflicts) {
           console.log(`   - ${conflict.type}: ${conflict.originalName} → ${conflict.resolvedName} (${conflict.action})`)
-        })
+        }
       }
 
       if (result.result?.warnings && result.result.warnings.length > 0) {
         console.log('⚠️  Warnings:')
-        result.result.warnings.forEach(warning => console.log(`   - ${warning}`))
+        for (const warning of result.result.warnings) {
+          console.log(`   - ${warning}`)
+        }
       }
     } catch (error) {
       this.logger.error('Table import command failed', { error })
@@ -214,7 +218,7 @@ export class TablePackageCommands {
       let failureCount = 0
 
       console.log('📊 Batch export results:')
-      results.forEach((result, index) => {
+      for (const [index, result] of results.entries()) {
         const identifier = args.tableIdentifiers[index]
 
         if (result.success) {
@@ -228,7 +232,7 @@ export class TablePackageCommands {
           console.log(`❌ ${identifier}: export failed`)
           console.log(`   Error: ${result.errors?.[0] || 'Unknown error'}`)
         }
-      })
+      }
 
       console.log(`\n📈 Summary: ${successCount} successful, ${failureCount} failed`)
 
@@ -321,7 +325,7 @@ export class TablePackageCommands {
 
       if (result.results && result.results.length > 0) {
         console.log('\n📈 Individual results:')
-        result.results.forEach((res, index) => {
+        for (const [index, res] of result.results.entries()) {
           const packageId = packages[index]?.sourceTable.identifier || `Package ${index + 1}`
 
           if (res.success) {
@@ -336,7 +340,7 @@ export class TablePackageCommands {
             console.log(`❌ ${packageId}: import failed`)
             console.log(`   Errors: ${res.errors?.join(', ') || 'Unknown error'}`)
           }
-        })
+        }
       }
     } catch (error) {
       this.logger.error('Batch import command failed', { error })
@@ -362,21 +366,27 @@ export class TablePackageCommands {
 
       if (dependencies.dependencies.length > 0) {
         console.log('\n⬇️  Dependencies (tables this table depends on):')
-        dependencies.dependencies.forEach(dep => console.log(`   - ${dep}`))
+        for (const dep of dependencies.dependencies) {
+          console.log(`   - ${dep}`)
+        }
       } else {
         console.log('\n✅ No dependencies found')
       }
 
       if (dependencies.dependents.length > 0) {
         console.log('\n⬆️  Dependents (tables that depend on this table):')
-        dependencies.dependents.forEach(dep => console.log(`   - ${dep}`))
+        for (const dep of dependencies.dependents) {
+          console.log(`   - ${dep}`)
+        }
       } else {
         console.log('\n✅ No dependents found')
       }
 
       if (dependencies.circularReferences.length > 0) {
         console.log('\n🔄 Circular Dependencies:')
-        dependencies.circularReferences.forEach(ref => console.log(`   - ${ref}`))
+        for (const ref of dependencies.circularReferences) {
+          console.log(`   - ${ref}`)
+        }
         console.log('\n⚠️  Warning: Circular dependencies may cause import issues')
       }
     } catch (error) {
@@ -398,9 +408,9 @@ export class TablePackageCommands {
       const importOrder = await this.tablePackageService.resolveImportOrder(args.tableIdentifiers)
 
       console.log('\n📋 Recommended Import Order:')
-      importOrder.forEach((identifier, index) => {
+      for (const [index, identifier] of importOrder.entries()) {
         console.log(`${index + 1}. ${identifier}`)
-      })
+      }
 
       console.log('\n💡 Import in this order to resolve dependencies correctly')
     } catch (error) {
@@ -448,14 +458,16 @@ export class TablePackageCommands {
       console.log('✅ Templates generated successfully!')
       console.log(`📝 Generated ${result.templates.length} templates:`)
 
-      result.templates.forEach(template => {
+      for (const template of result.templates) {
         console.log(`   - ${template.name} (${template.operationType})`)
         console.log(`     Identifier: ${template.identifier}`)
-      })
+      }
 
       if (result.errors.length > 0) {
         console.log('\n⚠️  Errors during generation:')
-        result.errors.forEach(error => console.log(`   - ${error}`))
+        for (const error of result.errors) {
+          console.log(`   - ${error}`)
+        }
       }
     } catch (error) {
       this.logger.error('Template generation command failed', { error })
@@ -496,17 +508,19 @@ export class TablePackageCommands {
       } else {
         if (errors.length > 0) {
           console.log('\n❌ Errors found:')
-          errors.forEach(error => {
+          for (const error of errors) {
             console.log(`   - ${error.message}`)
             if (error.suggestedResolution) {
               console.log(`     💡 Suggestion: ${error.suggestedResolution}`)
             }
-          })
+          }
         }
 
         if (warnings.length > 0) {
           console.log('\n⚠️  Warnings:')
-          warnings.forEach(warning => console.log(`   - ${warning.message}`))
+          for (const warning of warnings) {
+            console.log(`   - ${warning.message}`)
+          }
         }
 
         if (errors.length > 0) {

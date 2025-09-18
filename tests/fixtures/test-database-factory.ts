@@ -6,11 +6,20 @@
 
 import { TestDatabase } from '../system-queries/fixtures/test-database-setup'
 import type { Database } from 'bun:sqlite'
-import type {
-  DatabasePath,
-  TestIsolationConfig,
-  TestType,
-} from '../../src/migration-tools/types/MigrationTypes'
+// Local type definitions (previously from migration-tools)
+type DatabasePath = {
+  readonly path: string
+  readonly type: 'file' | 'memory'
+  readonly isTemporary: boolean
+}
+
+type TestIsolationConfig = {
+  readonly enableIsolation: boolean
+  readonly cleanupStrategy: 'immediate' | 'deferred' | 'manual'
+  readonly maxDatabaseAge: number
+}
+
+type TestType = 'unit' | 'integration' | 'e2e' | 'performance'
 
 export interface TestEnvironment {
   readonly database: TestDatabase

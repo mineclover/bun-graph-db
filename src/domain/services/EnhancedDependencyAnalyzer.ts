@@ -5,7 +5,10 @@ import type { INodeRelationRepository } from '../repositories/INodeRelationRepos
 import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableDependencyInfo } from '@/core/types/TablePackage.js'
-import { GraphQLParser } from '@/core/utils/GraphQLParser.js'
+import {
+  validateQuerySyntax,
+  extractFieldNames,
+} from '@/core/utils/GraphQLParser.js'
 
 /**
  * Enhanced dependency analyzer for table packages
@@ -288,11 +291,11 @@ export class EnhancedDependencyAnalyzer {
 
     try {
       // Use GraphQLParser to parse the query
-      const parseResult = GraphQLParser.validateQuerySyntax(queryText)
+      const parseResult = validateQuerySyntax(queryText)
 
       if (parseResult.isValid) {
         // Extract field names from the query
-        const fieldNames = GraphQLParser.extractFieldNames(queryText)
+        const fieldNames = extractFieldNames(queryText)
 
         // Convert field names to potential table names
         for (const fieldName of fieldNames) {
@@ -329,7 +332,7 @@ export class EnhancedDependencyAnalyzer {
     ]
 
     for (const pattern of patterns) {
-      let match
+      let match: RegExpExecArray | null
       while ((match = pattern.exec(queryText)) !== null) {
         if (match[1]) {
           // Convert to kebab-case

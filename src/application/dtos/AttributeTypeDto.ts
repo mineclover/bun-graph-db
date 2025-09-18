@@ -15,26 +15,24 @@ export interface AttributeTypeDto {
   updatedAt: string
 }
 
-export class AttributeTypeDto {
-  static fromEntity(attributeType: AttributeType): AttributeTypeDto {
-    return {
-      id: attributeType.getId(),
-      identifier: attributeType.getIdentifier(),
-      jsonType: attributeType.getJsonType(),
-      format: attributeType.getFormat(),
-      description: attributeType.getDescription(),
-      validationSchema: attributeType.getParsedValidationSchema(),
-      referenceConfig: attributeType.getParsedReferenceConfig(),
-      defaultValue: attributeType.getParsedDefaultValue(),
-      examples: attributeType.getParsedExamples(),
-      createdAt: attributeType.getCreatedAt().toISOString(),
-      updatedAt: attributeType.getUpdatedAt().toISOString(),
-    }
+export function fromEntity(attributeType: AttributeType): AttributeTypeDto {
+  return {
+    id: attributeType.getId(),
+    identifier: attributeType.getIdentifier(),
+    jsonType: attributeType.getJsonType(),
+    format: attributeType.getFormat(),
+    description: attributeType.getDescription(),
+    validationSchema: attributeType.getParsedValidationSchema(),
+    referenceConfig: attributeType.getParsedReferenceConfig(),
+    defaultValue: attributeType.getParsedDefaultValue(),
+    examples: attributeType.getParsedExamples(),
+    createdAt: attributeType.getCreatedAt().toISOString(),
+    updatedAt: attributeType.getUpdatedAt().toISOString(),
   }
+}
 
-  static fromEntities(attributeTypes: AttributeType[]): AttributeTypeDto[] {
-    return attributeTypes.map((attributeType) => AttributeTypeDto.fromEntity(attributeType))
-  }
+export function fromEntities(attributeTypes: AttributeType[]): AttributeTypeDto[] {
+  return attributeTypes.map((attributeType) => fromEntity(attributeType))
 }
 
 // Input DTOs for operations

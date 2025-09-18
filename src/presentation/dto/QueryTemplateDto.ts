@@ -96,43 +96,41 @@ export interface QueryTemplatesConnection {
   hasPreviousPage: boolean
 }
 
-export class QueryTemplateDtoMapper {
-  static toDto(entity: QueryTemplate): QueryTemplateDto {
-    return {
-      id: entity.getId(),
-      identifier: entity.getIdentifier(),
-      name: entity.getName(),
-      description: entity.getDescription(),
-      queryText: entity.getQueryText(),
-      queryName: entity.getQueryName(),
-      operationType: entity.getOperationType(),
-      variablesSchema: entity.getVariablesSchema(),
-      defaultVariables: entity.getDefaultVariables(),
-      applicableTables: entity.getApplicableTables(),
-      templateType: entity.getTemplateType(),
-      complexityScore: entity.getComplexityScore(),
-      usageCount: entity.getUsageCount(),
-      version: entity.getVersion(),
-      isActive: entity.getIsActive(),
-      tags: entity.getTags(),
-      createdAt: entity.getCreatedAt().toISOString(),
-      updatedAt: entity.getUpdatedAt().toISOString(),
-    }
+export function queryTemplateToDto(entity: QueryTemplate): QueryTemplateDto {
+  return {
+    id: entity.getId(),
+    identifier: entity.getIdentifier(),
+    name: entity.getName(),
+    description: entity.getDescription(),
+    queryText: entity.getQueryText(),
+    queryName: entity.getQueryName(),
+    operationType: entity.getOperationType(),
+    variablesSchema: entity.getVariablesSchema(),
+    defaultVariables: entity.getDefaultVariables(),
+    applicableTables: entity.getApplicableTables(),
+    templateType: entity.getTemplateType(),
+    complexityScore: entity.getComplexityScore(),
+    usageCount: entity.getUsageCount(),
+    version: entity.getVersion(),
+    isActive: entity.getIsActive(),
+    tags: entity.getTags(),
+    createdAt: entity.getCreatedAt().toISOString(),
+    updatedAt: entity.getUpdatedAt().toISOString(),
   }
+}
 
-  static toDtoList(entities: QueryTemplate[]): QueryTemplateDto[] {
-    return entities.map((entity) => QueryTemplateDtoMapper.toDto(entity))
-  }
+export function queryTemplatesToDtoList(entities: QueryTemplate[]): QueryTemplateDto[] {
+  return entities.map((entity) => queryTemplateToDto(entity))
+}
 
-  static createInputToEntity(input: CreateQueryTemplateInput): QueryTemplate {
-    return QueryTemplate.create(input.identifier, input.name, input.queryText, input.tags, {
-      description: input.description,
-      variablesSchema: input.variablesSchema,
-      defaultVariables: input.defaultVariables,
-      applicableTables: input.applicableTables,
-      templateType: input.templateType,
-      complexityScore: input.complexityScore,
-      version: input.version,
-    })
-  }
+export function createInputToEntity(input: CreateQueryTemplateInput): QueryTemplate {
+  return QueryTemplate.create(input.identifier, input.name, input.queryText, input.tags, {
+    description: input.description,
+    variablesSchema: input.variablesSchema,
+    defaultVariables: input.defaultVariables,
+    applicableTables: input.applicableTables,
+    templateType: input.templateType,
+    complexityScore: input.complexityScore,
+    version: input.version,
+  })
 }

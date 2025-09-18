@@ -332,18 +332,21 @@ class TemplateHealthMonitor {
 
     if (report.summary.broken > 0 || report.summary.critical > 0) {
       console.log('\n🔥 즉시 조치 필요:')
-      report.templates
+      const criticalTemplates = report.templates
         .filter((t) => t.status === 'broken' || t.status === 'critical')
         .slice(0, 5)
-        .forEach((t) => {
-          const statusIcon = t.status === 'broken' ? '❌' : '🚨'
-          console.log(`${statusIcon} ${t.identifier}: ${t.issues.join(', ')}`)
-        })
+
+      for (const t of criticalTemplates) {
+        const statusIcon = t.status === 'broken' ? '❌' : '🚨'
+        console.log(`${statusIcon} ${t.identifier}: ${t.issues.join(', ')}`)
+      }
     }
 
     if (report.recommendations.length > 0) {
       console.log('\n💡 권장사항:')
-      report.recommendations.forEach((rec) => console.log(`  ${rec}`))
+      for (const rec of report.recommendations) {
+        console.log(`  ${rec}`)
+      }
     }
   }
 

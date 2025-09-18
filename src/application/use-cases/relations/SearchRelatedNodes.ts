@@ -1,4 +1,4 @@
-import { NodeDto } from '@/application/dtos/NodeDto.js'
+import { fromEntity as nodeFromEntity, type NodeDto } from '@/application/dtos/NodeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
@@ -138,7 +138,7 @@ export class SearchRelatedNodesUseCase {
 
       // Convert to DTOs
       const nodeDtos = (result.data || []).map((item: any) =>
-        NodeDto.fromEntity(item.node, item.attributes || {})
+        nodeFromEntity(item.node, item.attributes || {})
       )
 
       this.logger.info('Related nodes search completed', {

@@ -16,6 +16,7 @@ import {
   TableFieldResolvers,
 } from '@/presentation/graphql/field-resolvers/index.js'
 import { buildGraphQLSchema } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
+import type { GraphQLSchema } from 'graphql'
 import {
   AttributeMutations,
   DocMutations,
@@ -566,7 +567,7 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.GRAPHQL_EXECUTOR,
     async (c) => {
       const { execute } = await import('graphql')
-      const schema = await c.resolve(GraphQLTokens.GRAPHQL_SCHEMA)
+      const schema = await c.resolve(GraphQLTokens.GRAPHQL_SCHEMA) as GraphQLSchema
 
       return {
         executeSchema: async (query: string, variables?: any, context?: any) => {

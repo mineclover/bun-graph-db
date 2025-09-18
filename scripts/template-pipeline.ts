@@ -406,12 +406,16 @@ function displayResults(result: PipelineResult, totalDuration: number) {
 
   if (result.details.warnings.length > 0) {
     console.log(`\n⚠️ 경고 (${result.details.warnings.length}개):`)
-    result.details.warnings.forEach((warning) => console.log(`  - ${warning}`))
+    for (const warning of result.details.warnings) {
+      console.log(`  - ${warning}`)
+    }
   }
 
   if (result.details.errors.length > 0) {
     console.log(`\n❌ 오류 (${result.details.errors.length}개):`)
-    result.details.errors.forEach((error) => console.log(`  - ${error}`))
+    for (const error of result.details.errors) {
+      console.log(`  - ${error}`)
+    }
   }
 
   const status = result.success ? '✅ 성공' : '❌ 실패'

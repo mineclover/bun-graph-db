@@ -8,7 +8,7 @@ import type {
   TablePackageConflict,
   TablePackageConflictType,
 } from '@/core/types/TablePackage.js'
-import { GraphQLParser } from '@/core/utils/GraphQLParser.js'
+import { validateQuerySyntax } from '@/core/utils/GraphQLParser.js'
 
 /**
  * Enhanced table package validator
@@ -333,11 +333,11 @@ export class TablePackageValidator {
 
     try {
       const { templates } = packageData.package
-      const _parser = new GraphQLParser()
+      // GraphQLParser is now a function, not a class
 
       for (const template of templates.templates) {
         // Validate GraphQL syntax
-        const parseResult = GraphQLParser.validateQuerySyntax(template.query)
+        const parseResult = validateQuerySyntax(template.query)
         if (!parseResult.isValid) {
           conflicts.push({
             type: 'template_exists',
@@ -777,7 +777,7 @@ export class TablePackageValidator {
     // Parse template query to extract variable definitions
     const variableRegex = /\$(\w+):\s*(\w+)(!?)/g
     const definedVariables = new Set<string>()
-    let match
+    let match: RegExpExecArray | null
 
     while ((match = variableRegex.exec(template.query)) !== null) {
       if (match[1]) {

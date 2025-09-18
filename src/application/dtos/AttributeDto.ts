@@ -13,24 +13,22 @@ export interface AttributeDto {
   updatedAt: string
 }
 
-export class AttributeDto {
-  static fromEntity(attribute: Attribute): AttributeDto {
-    return {
-      id: attribute.getId(),
-      tableId: attribute.getTableId(),
-      identifier: attribute.getIdentifier(),
-      attributeTypeId: attribute.getAttributeTypeId(),
-      description: attribute.getDescription(),
-      isRequired: attribute.getIsRequired(),
-      metadata: attribute.getParsedMetadata(),
-      createdAt: attribute.getCreatedAt().toISOString(),
-      updatedAt: attribute.getUpdatedAt().toISOString(),
-    }
+export function fromEntity(attribute: Attribute): AttributeDto {
+  return {
+    id: attribute.getId(),
+    tableId: attribute.getTableId(),
+    identifier: attribute.getIdentifier(),
+    attributeTypeId: attribute.getAttributeTypeId(),
+    description: attribute.getDescription(),
+    isRequired: attribute.getIsRequired(),
+    metadata: attribute.getParsedMetadata(),
+    createdAt: attribute.getCreatedAt().toISOString(),
+    updatedAt: attribute.getUpdatedAt().toISOString(),
   }
+}
 
-  static fromEntities(attributes: Attribute[]): AttributeDto[] {
-    return attributes.map((attribute) => AttributeDto.fromEntity(attribute))
-  }
+export function fromEntities(attributes: Attribute[]): AttributeDto[] {
+  return attributes.map((attribute) => fromEntity(attribute))
 }
 
 // Input DTOs for operations

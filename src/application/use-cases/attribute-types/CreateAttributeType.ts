@@ -2,7 +2,7 @@ import type {
   CreateAttributeTypeInput,
   CreateAttributeTypeOutput,
 } from '@/application/dtos/AttributeTypeDto.js'
-import { AttributeTypeDto } from '@/application/dtos/AttributeTypeDto.js'
+import { fromEntity as attributeTypeFromEntity } from '@/application/dtos/AttributeTypeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
@@ -78,7 +78,7 @@ export class CreateAttributeTypeUseCase {
 
       // Return DTO
       return {
-        attributeType: AttributeTypeDto.fromEntity(savedAttributeType),
+        attributeType: attributeTypeFromEntity(savedAttributeType),
       }
     } catch (error) {
       this.logger.error('Failed to create attribute type', {

@@ -413,7 +413,7 @@ export class TemplatePerformanceService {
   private percentile(arr: number[], p: number): number {
     if (arr.length === 0) return 0;
     const index = Math.ceil(arr.length * p) - 1;
-    return arr[Math.max(0, Math.min(index, arr.length - 1))];
+    return arr[Math.max(0, Math.min(index, arr.length - 1))] || 0;
   }
 
   private generateOptimizationSuggestions(template: any): string[] {

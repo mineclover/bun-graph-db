@@ -110,8 +110,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        items: nodeRelations,
-        total,
+        nodes: nodeRelations,
+        totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
       }
@@ -148,8 +148,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        items: nodeRelations,
-        total,
+        nodes: nodeRelations,
+        totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
       }
@@ -186,8 +186,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        items: nodeRelations,
-        total,
+        nodes: nodeRelations,
+        totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
       }
@@ -250,8 +250,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        items: nodeRelations,
-        total,
+        nodes: nodeRelations,
+        totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
       }
@@ -291,8 +291,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        items: nodeRelations,
-        total,
+        nodes: nodeRelations,
+        totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
       }
@@ -329,8 +329,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        items: nodeRelations,
-        total,
+        nodes: nodeRelations,
+        totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
       }
@@ -644,8 +644,8 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
       const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
 
       return {
-        items: nodeRelations,
-        total,
+        nodes: nodeRelations,
+        totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
       }

@@ -1,4 +1,8 @@
-import { GraphQLParser } from '@/core/utils/GraphQLParser.js'
+import {
+  extractOperationInfo,
+  extractSystemQueries,
+  calculateComplexityScore,
+} from '@/core/utils/GraphQLParser.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export interface ValidationResult {
@@ -70,10 +74,10 @@ export class QueryTemplate {
     const now = new Date()
 
     // Extract operation info from GraphQL query text
-    const operationInfo = GraphQLParser.extractOperationInfo(queryText)
-    const systemQueries = GraphQLParser.extractSystemQueries(queryText)
+    const operationInfo = extractOperationInfo(queryText)
+    const systemQueries = extractSystemQueries(queryText)
     const autoComplexity =
-      options?.complexityScore || GraphQLParser.calculateComplexityScore(queryText)
+      options?.complexityScore || calculateComplexityScore(queryText)
 
     return new QueryTemplate(
       null,
@@ -142,7 +146,7 @@ export class QueryTemplate {
       } catch {
         // Legacy format - single string, extract system queries from queryText
         try {
-          parsedQueryName = GraphQLParser.extractSystemQueries(queryText)
+          parsedQueryName = extractSystemQueries(queryText)
         } catch {
           parsedQueryName = []
         }
@@ -150,7 +154,7 @@ export class QueryTemplate {
     } else {
       // No queryName stored, extract from queryText
       try {
-        parsedQueryName = GraphQLParser.extractSystemQueries(queryText)
+        parsedQueryName = extractSystemQueries(queryText)
       } catch {
         parsedQueryName = []
       }
@@ -165,7 +169,7 @@ export class QueryTemplate {
     } else {
       // Parse from queryText as fallback
       try {
-        const operationInfo = GraphQLParser.extractOperationInfo(queryText)
+        const operationInfo = extractOperationInfo(queryText)
         finalOperationType = operationInfo.operationType
       } catch {
         finalOperationType = 'query' // Default fallback

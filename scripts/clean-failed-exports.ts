@@ -112,7 +112,7 @@ async function cleanFailedFiles(): Promise<CleanupResult> {
 
       // 파일 내용 읽기
       const fileContent = await fs.readFile(filePath, 'utf8')
-      let fileData
+      let fileData: any
 
       try {
         fileData = JSON.parse(fileContent)

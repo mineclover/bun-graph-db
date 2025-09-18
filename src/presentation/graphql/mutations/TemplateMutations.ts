@@ -285,7 +285,7 @@ export class TemplateMutations extends BaseResolver {
         }
 
         // 3. GraphQL 쿼리 파싱
-        let document
+        let document: any
         try {
           document = parse(templateResult.queryText)
         } catch (parseError) {

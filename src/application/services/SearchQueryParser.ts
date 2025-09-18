@@ -54,7 +54,7 @@ export class SearchQueryParser {
     // Split by AND/OR while preserving quoted strings
     const regex = /\s+(AND|OR)\s+|([^\s]+(?:\s+[^\s]*)*?)(?=\s+(?:AND|OR)\s+|$)/g
     const parts: string[] = []
-    let match
+    let match: RegExpExecArray | null
 
     while ((match = regex.exec(query)) !== null) {
       if (match[1]) {

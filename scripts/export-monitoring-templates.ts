@@ -10,24 +10,6 @@ import { join } from 'node:path'
 const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
 const EXPORT_DIR = join(process.cwd(), 'exported-templates')
 
-interface ExportedTemplate {
-  identifier: string
-  name: string
-  description?: string
-  query: string
-  operationType: string
-  variables: any
-  defaultVariables: any
-  tags: string[]
-  complexity: number
-  version: string
-  isActive: boolean
-  createdBy?: string
-  usageCount: number
-  lastUsedAt?: string
-  avgExecutionTime: number
-}
-
 async function exportTemplate(identifier: string) {
   const mutation = `
     mutation ExportMonitoringTemplate($templateIdentifier: String!) {

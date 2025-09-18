@@ -318,12 +318,16 @@ class QueryManager {
       console.log(
         `🔥 HIGH PRIORITY - Implement immediately (${highPriorityMissing.length} queries):`
       )
-      highPriorityMissing.forEach((q) => console.log(`   - ${q.name}: ${q.description}`))
+      for (const q of highPriorityMissing) {
+        console.log(`   - ${q.name}: ${q.description}`)
+      }
     }
 
     if (mediumPriorityMissing.length > 0) {
       console.log(`🎯 MEDIUM PRIORITY - Implement next (${mediumPriorityMissing.length} queries):`)
-      mediumPriorityMissing.forEach((q) => console.log(`   - ${q.name}: ${q.description}`))
+      for (const q of mediumPriorityMissing) {
+        console.log(`   - ${q.name}: ${q.description}`)
+      }
     }
     console.log()
   }

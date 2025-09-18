@@ -1,6 +1,6 @@
-import { NodeDto } from '@/application/dtos/NodeDto.js'
-import { NodeRelationDto, RelationTypeDto } from '@/application/dtos/RelationDto.js'
-import { TableDto } from '@/application/dtos/TableDto.js'
+import { fromEntity as nodeFromEntity, type NodeDto } from '@/application/dtos/NodeDto.js'
+import { nodeRelationFromEntity, nodeRelationFromEntities, relationTypeFromEntity, relationTypeFromEntities, type NodeRelationDto, type RelationTypeDto } from '@/application/dtos/RelationDto.js'
+import { fromEntity as tableFromEntity, type TableDto } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
@@ -93,7 +93,7 @@ export class RelationResolver extends BaseResolver {
     return this.handleQuery(
       async () => {
         const relation = await this.nodeRelationRepository.findById(args.id as NodeRelationId)
-        return relation ? NodeRelationDto.fromEntity(relation) : null
+        return relation ? nodeRelationFromEntity(relation) : null
       },
       'findNodeRelationById',
       { id: args.id }
@@ -118,8 +118,8 @@ export class RelationResolver extends BaseResolver {
         : await this.nodeRelationRepository.findAll({ limit, offset })
 
       return {
-        nodes: NodeRelationDto.fromEntities(result.items || []),
-        totalCount: result.total,
+        nodes: nodeRelationFromEntities(result.nodes || []),
+        totalCount: result.totalCount,
         hasNextPage: result.hasNextPage,
         hasPreviousPage: result.hasPreviousPage
       }
@@ -141,7 +141,7 @@ export class RelationResolver extends BaseResolver {
   async relationTypes(): Promise<RelationTypeDto[]> {
     try {
       const result = await this.relationTypeRepository.findAll({ limit: 100, offset: 0 })
-      return RelationTypeDto.fromEntities(result.items || [])
+      return relationTypeFromEntities(result.items || [])
     } catch (error) {
       this.logger.error('Failed to find all relation types', { error })
       throw error
@@ -151,7 +151,7 @@ export class RelationResolver extends BaseResolver {
   async relationType(args: { id: string }): Promise<RelationTypeDto | null> {
     try {
       const relationType = await this.relationTypeRepository.findById(args.id as RelationTypeId)
-      return relationType ? RelationTypeDto.fromEntity(relationType) : null
+      return relationType ? relationTypeFromEntity(relationType) : null
     } catch (error) {
       this.logger.error('Failed to find relation type by id', { id: args.id, error })
       throw error
@@ -414,7 +414,7 @@ export class RelationResolver extends BaseResolver {
   async table_field(relation: NodeRelationDto): Promise<TableDto | null> {
     try {
       const table = await this.tableRepository.findById(relation.tableId as TableId)
-      return table ? TableDto.fromEntity(table) : null
+      return table ? tableFromEntity(table) : null
     } catch (error) {
       this.logger.error('Failed to resolve table field for relation', {
         relationId: relation.id,
@@ -429,7 +429,7 @@ export class RelationResolver extends BaseResolver {
       if (!relation.sourceNodeId) return null
 
       const node = await this.nodeRepository.findById(relation.sourceNodeId as NodeId)
-      return node ? NodeDto.fromEntity(node) : null
+      return node ? nodeFromEntity(node) : null
     } catch (error) {
       this.logger.error('Failed to resolve source node field', { relationId: relation.id, error })
       return null
@@ -441,7 +441,7 @@ export class RelationResolver extends BaseResolver {
       if (!relation.targetNodeId) return null
 
       const node = await this.nodeRepository.findById(relation.targetNodeId as NodeId)
-      return node ? NodeDto.fromEntity(node) : null
+      return node ? nodeFromEntity(node) : null
     } catch (error) {
       this.logger.error('Failed to resolve target node field', { relationId: relation.id, error })
       return null
@@ -453,7 +453,7 @@ export class RelationResolver extends BaseResolver {
       const relationType = await this.relationTypeRepository.findById(
         relation.relationTypeId as RelationTypeId
       )
-      return relationType ? RelationTypeDto.fromEntity(relationType) : null
+      return relationType ? relationTypeFromEntity(relationType) : null
     } catch (error) {
       this.logger.error('Failed to resolve relation type field', { relationId: relation.id, error })
       return null
@@ -472,7 +472,7 @@ export class RelationResolver extends BaseResolver {
           offset: 0,
         }
       )
-      return NodeRelationDto.fromEntities(result.items || [])
+      return nodeRelationFromEntities(result.items || [])
     } catch (error) {
       this.logger.error('Failed to resolve outgoing relations', { nodeId: node.id, error })
       return []
@@ -490,7 +490,7 @@ export class RelationResolver extends BaseResolver {
           offset: 0,
         }
       )
-      return NodeRelationDto.fromEntities(result.items || [])
+      return nodeRelationFromEntities(result.items || [])
     } catch (error) {
       this.logger.error('Failed to resolve incoming relations', { nodeId: node.id, error })
       return []

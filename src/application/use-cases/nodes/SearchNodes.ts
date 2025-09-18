@@ -1,4 +1,4 @@
-import { NodeDto } from '@/application/dtos/NodeDto.js'
+import { fromEntity as nodeFromEntity, type NodeDto } from '@/application/dtos/NodeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   type AttributeTypeInfo,
@@ -111,7 +111,7 @@ export class SearchNodesUseCase {
 
       // Convert to DTOs
       const nodeDtos = (result.data || []).map((nodeData) =>
-        NodeDto.fromEntity(nodeData.node, nodeData.attributes || {})
+        nodeFromEntity(nodeData.node, nodeData.attributes || {})
       )
 
       this.logger.info('Node search completed', {

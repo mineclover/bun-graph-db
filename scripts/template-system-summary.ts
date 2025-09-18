@@ -54,7 +54,9 @@ class TemplateSystemSummary {
       '✅ 종합적인 템플릿 시스템 가이드 문서화',
     ]
 
-    completedTasks.forEach((task) => console.log(`   ${task}`))
+    for (const task of completedTasks) {
+      console.log(`   ${task}`)
+    }
 
     console.log('\n📊 Work Statistics:')
     console.log('   • 분석된 기존 템플릿: 65개')
@@ -91,9 +93,9 @@ class TemplateSystemSummary {
       },
     ]
 
-    gaps.forEach((gap) => {
+    for (const gap of gaps) {
       console.log(`   ${gap.status} ${gap.scenario} → ${gap.template}`)
-    })
+    }
   }
 
   private async printNewTemplates(): Promise<void> {
@@ -159,7 +161,7 @@ class TemplateSystemSummary {
       },
     ]
 
-    newTemplates.forEach((template, index) => {
+    for (const [index, template] of newTemplates.entries()) {
       const priorityIcon = template.priority === 'HIGH' ? '⭐' : '👍'
       console.log(`\n   ${priorityIcon} ${index + 1}. ${template.name}`)
       console.log(`      ID: ${template.id}`)
@@ -167,7 +169,7 @@ class TemplateSystemSummary {
       console.log(`      Category: ${template.category}`)
       console.log(`      Description: ${template.description}`)
       console.log(`      Features: ${template.features.join(', ')}`)
-    })
+    }
   }
 
   private async printCoreTemplateStatus(): Promise<void> {
@@ -189,9 +191,9 @@ class TemplateSystemSummary {
       .sort(([, a], [, b]) => b.priority - a.priority)
       .slice(0, 5)
 
-    sortedCategories.forEach(([category, info]) => {
+    for (const [category, info] of sortedCategories) {
       console.log(`   ${info.priority}. ${category}: ${info.templates.length} templates`)
-    })
+    }
 
     console.log('\n⭐ High Priority Core Templates:')
     const highPriorityTemplates = config.coreTemplates
@@ -199,9 +201,9 @@ class TemplateSystemSummary {
       .sort((a, b) => b.reuseScore - a.reuseScore)
       .slice(0, 5)
 
-    highPriorityTemplates.forEach((template, index) => {
+    for (const [index, template] of highPriorityTemplates.entries()) {
       console.log(`   ${index + 1}. ${template.identifier} (Score: ${template.reuseScore})`)
-    })
+    }
   }
 
   private async printUserScenarioMatching(): Promise<void> {
@@ -246,12 +248,12 @@ class TemplateSystemSummary {
       },
     ]
 
-    scenarioMatching.forEach((match) => {
+    for (const match of scenarioMatching) {
       const coverageIcon =
         parseInt(match.coverage, 10) >= 80 ? '✅' : parseInt(match.coverage, 10) >= 60 ? '⚠️' : '❌'
       console.log(`   ${coverageIcon} ${match.scenario} (${match.coverage} coverage)`)
       console.log(`      Templates: ${match.templates.join(', ')}`)
-    })
+    }
   }
 
   private async printPerformanceMetrics(): Promise<void> {

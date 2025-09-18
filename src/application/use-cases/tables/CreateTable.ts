@@ -1,5 +1,5 @@
 import type { CreateTableInput, CreateTableOutput } from '@/application/dtos/TableDto.js'
-import { TableDto } from '@/application/dtos/TableDto.js'
+import { fromEntity as tableFromEntity } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { Table } from '@/domain/entities/Table.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
@@ -39,7 +39,7 @@ export class CreateTableUseCase {
 
       // Return DTO
       return {
-        table: TableDto.fromEntity(savedTable),
+        table: tableFromEntity(savedTable),
       }
     } catch (error) {
       this.logger.error('Failed to create table', {

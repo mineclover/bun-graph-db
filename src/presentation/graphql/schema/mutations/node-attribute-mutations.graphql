@@ -1,0 +1,15 @@
+# Node Attribute Mutation extensions
+
+extend type Mutation {
+  # Node Attribute management
+  setNodeAttribute(input: SetNodeAttributeInput!): SetNodeAttributePayload!
+
+  updateNodeAttribute(id: ID!, input: UpdateNodeAttributeInput!): UpdateNodeAttributePayload!
+
+  deleteNodeAttribute(id: ID!): DeleteNodeAttributePayload!
+
+  # Bulk operations
+  setMultipleNodeAttributes(input: SetMultipleNodeAttributesInput!): SetMultipleNodeAttributesPayload!
+
+  deleteNodeAttributes(nodeId: ID!, attributeIds: [ID!]!): DeleteNodeAttributesPayload!
+}

@@ -1,4 +1,4 @@
-import { TableDto } from '@/application/dtos/TableDto.js'
+import { fromEntity as tableFromEntity, type TableDto } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
@@ -39,7 +39,7 @@ export class TableResolver extends BaseResolver {
     return this.handleQuery(
       async () => {
         const table = await this.tableRepository.findById(args.id as TableId)
-        return table ? TableDto.fromEntity(table) : null
+        return table ? tableFromEntity(table) : null
       },
       'findTableById',
       { id: args.id }
@@ -62,7 +62,7 @@ export class TableResolver extends BaseResolver {
     return this.handleQuery(
       async () => {
         const table = await this.tableRepository.findByIdentifier(args.identifier)
-        return table ? TableDto.fromEntity(table) : null
+        return table ? tableFromEntity(table) : null
       },
       'findTableByIdentifier',
       { identifier: args.identifier }
@@ -96,7 +96,7 @@ export class TableResolver extends BaseResolver {
       const result = await this.tableRepository.findAll(searchOptions)
 
       return {
-        nodes: (result.data || []).map((table) => TableDto.fromEntity(table)),
+        nodes: (result.data || []).map((table) => tableFromEntity(table)),
         totalCount: result.total || 0,
         hasNextPage: result.hasMore || false,
         hasPreviousPage: (pagination.offset || 0) > 0,
@@ -164,7 +164,7 @@ export class TableResolver extends BaseResolver {
       const savedTable = await this.tableRepository.save(table)
 
       return {
-        table: TableDto.fromEntity(savedTable),
+        table: tableFromEntity(savedTable),
         errors: [],
       }
     } catch (error) {

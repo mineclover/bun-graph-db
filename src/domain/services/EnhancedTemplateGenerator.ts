@@ -867,7 +867,7 @@ export class EnhancedTemplateGenerator {
     // Extract required variables from GraphQL query
     const requiredVars: string[] = []
     const regex = /\$(\w+):\s*(\w+)!/g
-    let match
+    let match: RegExpExecArray | null
 
     while ((match = regex.exec(query)) !== null) {
       if (match[1]) {

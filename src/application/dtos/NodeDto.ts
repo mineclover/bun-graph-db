@@ -13,23 +13,21 @@ export interface NodeDto {
   attributes?: Record<string, any> // Will be populated with node attribute values
 }
 
-export class NodeDto {
-  static fromEntity(node: Node, attributes?: Record<string, any>): NodeDto {
-    return {
-      id: node.getId(),
-      tableId: node.getTableId(),
-      content: node.getContent(),
-      title: node.getTitle(),
-      description: node.getDescription(),
-      createdAt: node.getCreatedAt().toISOString(),
-      updatedAt: node.getUpdatedAt().toISOString(),
-      attributes,
-    }
+export function fromEntity(node: Node, attributes?: Record<string, any>): NodeDto {
+  return {
+    id: node.getId(),
+    tableId: node.getTableId(),
+    content: node.getContent(),
+    title: node.getTitle(),
+    description: node.getDescription(),
+    createdAt: node.getCreatedAt().toISOString(),
+    updatedAt: node.getUpdatedAt().toISOString(),
+    attributes,
   }
+}
 
-  static fromEntities(nodes: Node[]): NodeDto[] {
-    return nodes.map((node) => NodeDto.fromEntity(node))
-  }
+export function fromEntities(nodes: Node[]): NodeDto[] {
+  return nodes.map((node) => fromEntity(node))
 }
 
 // Input DTOs for operations
@@ -88,19 +86,17 @@ export interface NodeAttributeDto {
   updatedAt: string
 }
 
-export class NodeAttributeDto {
-  static fromEntity(nodeAttribute: NodeAttribute): NodeAttributeDto {
-    return {
-      id: nodeAttribute.getId(),
-      nodeId: nodeAttribute.getNodeId(),
-      attributeId: nodeAttribute.getAttributeId(),
-      value: nodeAttribute.getParsedValue(),
-      createdAt: nodeAttribute.getCreatedAt().toISOString(),
-      updatedAt: nodeAttribute.getUpdatedAt().toISOString(),
-    }
+export function nodeAttributeFromEntity(nodeAttribute: NodeAttribute): NodeAttributeDto {
+  return {
+    id: nodeAttribute.getId(),
+    nodeId: nodeAttribute.getNodeId(),
+    attributeId: nodeAttribute.getAttributeId(),
+    value: nodeAttribute.getParsedValue(),
+    createdAt: nodeAttribute.getCreatedAt().toISOString(),
+    updatedAt: nodeAttribute.getUpdatedAt().toISOString(),
   }
+}
 
-  static fromEntities(nodeAttributes: NodeAttribute[]): NodeAttributeDto[] {
-    return nodeAttributes.map((nodeAttribute) => NodeAttributeDto.fromEntity(nodeAttribute))
-  }
+export function nodeAttributeFromEntities(nodeAttributes: NodeAttribute[]): NodeAttributeDto[] {
+  return nodeAttributes.map((nodeAttribute) => nodeAttributeFromEntity(nodeAttribute))
 }

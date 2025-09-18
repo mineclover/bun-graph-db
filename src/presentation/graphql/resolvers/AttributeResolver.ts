@@ -1,7 +1,7 @@
-import { AttributeDto } from '@/application/dtos/AttributeDto.js'
-import { AttributeTypeDto } from '@/application/dtos/AttributeTypeDto.js'
+import { fromEntity as attributeFromEntity, type AttributeDto } from '@/application/dtos/AttributeDto.js'
+import { fromEntity as attributeTypeFromEntity, type AttributeTypeDto } from '@/application/dtos/AttributeTypeDto.js'
 import type { NodeAttributeDto } from '@/application/dtos/NodeDto.js'
-import { TableDto } from '@/application/dtos/TableDto.js'
+import { fromEntity as tableFromEntity, type TableDto } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
@@ -78,7 +78,7 @@ export class AttributeResolver extends BaseResolver {
         const attributeType = await this.attributeTypeRepository.findById(
           args.id as AttributeTypeId
         )
-        return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
+        return attributeType ? attributeTypeFromEntity(attributeType) : null
       },
       'findAttributeTypeById',
       { id: args.id }
@@ -88,7 +88,7 @@ export class AttributeResolver extends BaseResolver {
   async attributeTypeByIdentifier(args: { identifier: string }): Promise<AttributeTypeDto | null> {
     try {
       const attributeType = await this.attributeTypeRepository.findByIdentifier(args.identifier)
-      return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
+      return attributeType ? attributeTypeFromEntity(attributeType) : null
     } catch (error) {
       this.logger.error('Failed to find attribute type by identifier', {
         identifier: args.identifier,
@@ -105,7 +105,7 @@ export class AttributeResolver extends BaseResolver {
         this.logger.warn('No data returned from attributeTypeRepository.findAll')
         return []
       }
-      return result.data.map((attributeType) => AttributeTypeDto.fromEntity(attributeType))
+      return result.data.map((attributeType) => attributeTypeFromEntity(attributeType))
     } catch (error) {
       this.logger.error('Failed to find attribute types', { error })
       throw error
@@ -116,7 +116,7 @@ export class AttributeResolver extends BaseResolver {
   async attribute(args: { id: string }): Promise<AttributeDto | null> {
     try {
       const attribute = await this.attributeRepository.findById(args.id as AttributeId)
-      return attribute ? AttributeDto.fromEntity(attribute) : null
+      return attribute ? attributeFromEntity(attribute) : null
     } catch (error) {
       this.logger.error('Failed to find attribute by id', { id: args.id, error })
       throw error
@@ -135,7 +135,7 @@ export class AttributeResolver extends BaseResolver {
         })
         return []
       }
-      return result.data.map((attribute) => AttributeDto.fromEntity(attribute))
+      return result.data.map((attribute) => attributeFromEntity(attribute))
     } catch (error) {
       this.logger.error('Failed to find attributes by table id', { tableId: args.tableId, error })
       throw error
@@ -207,7 +207,7 @@ export class AttributeResolver extends BaseResolver {
       // TODO: Implement update logic for AttributeType entity
       // For now, return existing entity
       return {
-        attributeType: AttributeTypeDto.fromEntity(attributeType),
+        attributeType: attributeTypeFromEntity(attributeType),
         errors: [],
       }
     } catch (error) {
@@ -337,7 +337,7 @@ export class AttributeResolver extends BaseResolver {
       // TODO: Implement update methods in Attribute entity
       // For now, return existing entity
       return {
-        attribute: AttributeDto.fromEntity(attribute),
+        attribute: attributeFromEntity(attribute),
         errors: [],
       }
     } catch (error) {
@@ -396,7 +396,7 @@ export class AttributeResolver extends BaseResolver {
         const attributeType = await this.attributeTypeRepository.findById(
           attribute.attributeTypeId as AttributeTypeId
         )
-        return attributeType ? AttributeTypeDto.fromEntity(attributeType) : null
+        return attributeType ? attributeTypeFromEntity(attributeType) : null
       },
       'attributeType',
       'Attribute',
@@ -408,7 +408,7 @@ export class AttributeResolver extends BaseResolver {
     return this.handleFieldResolution(
       async () => {
         const table = await this.tableRepository.findById(attribute.tableId as TableId)
-        return table ? TableDto.fromEntity(table) : null
+        return table ? tableFromEntity(table) : null
       },
       'table',
       'Attribute',
@@ -424,7 +424,7 @@ export class AttributeResolver extends BaseResolver {
       const attribute = await this.attributeRepository.findById(
         nodeAttribute.attributeId as AttributeId
       )
-      return attribute ? AttributeDto.fromEntity(attribute) : null
+      return attribute ? attributeFromEntity(attribute) : null
     } catch (error) {
       this.logger.error('Failed to resolve attribute field for NodeAttribute', {
         nodeAttributeId: nodeAttribute.attributeId,

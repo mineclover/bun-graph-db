@@ -276,9 +276,9 @@ class TemplateRegistrationManager {
         console.log(`   ✅ Success`)
       } else {
         console.log(`   ❌ Failed: ${result.message}`)
-        result.errors.forEach((error) => {
+        for (const error of result.errors) {
           console.log(`      - ${error}`)
-        })
+        }
       }
     }
 
@@ -506,7 +506,9 @@ async function main() {
         console.log(`   Template ID: ${result.templateId}`)
       } else {
         console.log(`\\n❌ Registration failed: ${result.message}`)
-        result.errors.forEach((error) => console.log(`   - ${error}`))
+        for (const error of result.errors) {
+          console.log(`   - ${error}`)
+        }
         process.exit(1)
       }
       break
@@ -543,13 +545,13 @@ async function main() {
     case 'examples': {
       console.log('📋 Available template examples:')
       const exampleTemplates = manager.getTemplateExamples()
-      exampleTemplates.forEach((template, index) => {
+      for (const [index, template] of exampleTemplates.entries()) {
         console.log(`\\n${index + 1}. ${template.identifier}`)
         console.log(`   Name: ${template.name}`)
         console.log(`   Description: ${template.description}`)
         console.log(`   Priority: ${template.priority}`)
         console.log(`   Tags: ${template.tags?.join(', ')}`)
-      })
+      }
       break
     }
     default:

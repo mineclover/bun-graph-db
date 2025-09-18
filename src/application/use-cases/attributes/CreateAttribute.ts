@@ -2,7 +2,7 @@ import type {
   CreateAttributeInput,
   CreateAttributeOutput,
 } from '@/application/dtos/AttributeDto.js'
-import { AttributeDto } from '@/application/dtos/AttributeDto.js'
+import { fromEntity as attributeFromEntity } from '@/application/dtos/AttributeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { AttributeTypeId, TableId } from '@/core/types/CommonTypes.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
@@ -101,7 +101,7 @@ export class CreateAttributeUseCase {
 
       // Return DTO
       return {
-        attribute: AttributeDto.fromEntity(savedAttribute),
+        attribute: attributeFromEntity(savedAttribute),
       }
     } catch (error) {
       this.logger.error('Failed to create attribute', {

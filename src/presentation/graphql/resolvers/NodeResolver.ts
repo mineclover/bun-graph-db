@@ -1,5 +1,5 @@
-import { NodeAttributeDto, NodeDto } from '@/application/dtos/NodeDto.js'
-import { TableDto } from '@/application/dtos/TableDto.js'
+import { type NodeAttributeDto, type NodeDto, fromEntity as nodeFromEntity, nodeAttributeFromEntities } from '@/application/dtos/NodeDto.js'
+import { fromEntity as tableFromEntity, type TableDto } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
@@ -82,7 +82,7 @@ export class NodeResolver extends BaseResolver {
           }
         }
 
-        return NodeDto.fromEntity(node, attributeValues)
+        return nodeFromEntity(node, attributeValues)
       },
       'findNodeById',
       { id: args.id }
@@ -122,7 +122,7 @@ export class NodeResolver extends BaseResolver {
           }
         }
 
-        return NodeDto.fromEntity(node, attributeValues)
+        return nodeFromEntity(node, attributeValues)
       },
       'findNodeByContent',
       { tableId: args.tableId, content: args.content }
@@ -172,7 +172,7 @@ export class NodeResolver extends BaseResolver {
             }
           }
 
-          return NodeDto.fromEntity(node, attributeValues)
+          return nodeFromEntity(node, attributeValues)
         })
       )
 
@@ -316,7 +316,7 @@ export class NodeResolver extends BaseResolver {
       }
 
       return {
-        node: NodeDto.fromEntity(updatedNode, attributeValues),
+        node: nodeFromEntity(updatedNode, attributeValues),
         errors: [],
       }
     } catch (error) {
@@ -428,7 +428,7 @@ export class NodeResolver extends BaseResolver {
       }
 
       return {
-        node: NodeDto.fromEntity(node, attributeValues),
+        node: nodeFromEntity(node, attributeValues),
         errors: [],
       }
     } catch (error) {
@@ -455,7 +455,7 @@ export class NodeResolver extends BaseResolver {
     return this.handleFieldResolution(
       async () => {
         const table = await this.tableRepository.findById(node.tableId as TableId)
-        return table ? TableDto.fromEntity(table) : null
+        return table ? tableFromEntity(table) : null
       },
       'table',
       'Node',
@@ -480,7 +480,7 @@ export class NodeResolver extends BaseResolver {
     const result = await this.handleFieldResolution(
       async () => {
         const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(node.id as NodeId)
-        return NodeAttributeDto.fromEntities(nodeAttributes)
+        return nodeAttributeFromEntities(nodeAttributes)
       },
       'attributes',
       'Node',

@@ -105,46 +105,44 @@ export interface RelationSearchPattern {
   relationTypes?: string[]
 }
 
-export class RelationSearchPatternParser {
-  static parse(pattern: string): RelationSearchPattern[] {
-    const patterns: RelationSearchPattern[] = []
+export function parseRelationSearchPattern(pattern: string): RelationSearchPattern[] {
+  const patterns: RelationSearchPattern[] = []
 
-    // Pattern: node1 -[DEPENDS_ON]-> node2
-    const directionalPattern = /(\w+)\s*-\[([^\]]+)\]->\s*(\w+)/g
-    let match = directionalPattern.exec(pattern)
+  // Pattern: node1 -[DEPENDS_ON]-> node2
+  const directionalPattern = /(\w+)\s*-\[([^\]]+)\]->\s*(\w+)/g
+  let match = directionalPattern.exec(pattern)
 
-    if (match?.[2]) {
-      patterns.push({
-        pattern: match[0],
-        direction: RelationDirection.OUTGOING,
-        relationTypes: [match[2]],
-      })
-    }
-
-    // Pattern: node1 <-[DEPENDS_ON]- node2
-    const incomingPattern = /(\w+)\s*<-\[([^\]]+)\]-\s*(\w+)/g
-    match = incomingPattern.exec(pattern)
-
-    if (match?.[2]) {
-      patterns.push({
-        pattern: match[0],
-        direction: RelationDirection.INCOMING,
-        relationTypes: [match[2]],
-      })
-    }
-
-    // Pattern: node1 -[*2]-> (depth 2)
-    const depthPattern = /(\w+)\s*-\[\*(\d+)\]->\s*(\w+)/g
-    match = depthPattern.exec(pattern)
-
-    if (match?.[2]) {
-      patterns.push({
-        pattern: match[0],
-        direction: RelationDirection.OUTGOING,
-        depth: parseInt(match[2], 10),
-      })
-    }
-
-    return patterns
+  if (match?.[2]) {
+    patterns.push({
+      pattern: match[0],
+      direction: RelationDirection.OUTGOING,
+      relationTypes: [match[2]],
+    })
   }
+
+  // Pattern: node1 <-[DEPENDS_ON]- node2
+  const incomingPattern = /(\w+)\s*<-\[([^\]]+)\]-\s*(\w+)/g
+  match = incomingPattern.exec(pattern)
+
+  if (match?.[2]) {
+    patterns.push({
+      pattern: match[0],
+      direction: RelationDirection.INCOMING,
+      relationTypes: [match[2]],
+    })
+  }
+
+  // Pattern: node1 -[*2]-> (depth 2)
+  const depthPattern = /(\w+)\s*-\[\*(\d+)\]->\s*(\w+)/g
+  match = depthPattern.exec(pattern)
+
+  if (match?.[2]) {
+    patterns.push({
+      pattern: match[0],
+      direction: RelationDirection.OUTGOING,
+      depth: parseInt(match[2], 10),
+    })
+  }
+
+  return patterns
 }

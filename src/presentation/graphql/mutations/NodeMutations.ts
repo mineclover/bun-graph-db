@@ -76,12 +76,12 @@ export class NodeMutations extends BaseResolver {
         }
 
         // Import the NodeDto for proper formatting
-        const { NodeDto } = await import('@/application/dtos/NodeDto.js')
+        const { fromEntity: nodeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
         // Return the expected GraphQL structure
         return {
           success: true,
-          node: NodeDto.fromEntity(savedNode),
+          node: nodeFromEntity(savedNode),
           errors: []
         }
       }
@@ -143,11 +143,11 @@ export class NodeMutations extends BaseResolver {
       }
 
       // Import the NodeDto for proper formatting
-      const { NodeDto } = await import('@/application/dtos/NodeDto.js')
+      const { fromEntity: nodeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
       return {
         success: true,
-        node: NodeDto.fromEntity(updatedNode),
+        node: nodeFromEntity(updatedNode),
         errors: []
       }
     } catch (error) {

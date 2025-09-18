@@ -3,9 +3,11 @@
 extend type Mutation {
   # Relation Type management
   createRelationType(input: CreateRelationTypeInput!): CreateRelationTypePayload!
+  updateRelationType(id: ID!, input: UpdateRelationTypeInput!): UpdateRelationTypePayload!
+  deleteRelationType(id: ID!): DeleteRelationTypePayload!
 
   # Node Relation management
   createRelation(input: CreateRelationInput!): CreateRelationPayload!
-
+  updateRelation(id: ID!, input: UpdateRelationInput!): UpdateRelationPayload!
   deleteRelation(id: ID!): DeleteRelationPayload!
 }

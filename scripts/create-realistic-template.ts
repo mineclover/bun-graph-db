@@ -91,7 +91,9 @@ class RealisticTemplateCreator {
       console.log(`   Template ID: ${result.templateId}`)
     } else {
       console.log(`❌ Failed to create template: ${result.message}`)
-      result.errors.forEach((error) => console.log(`   - ${error}`))
+      for (const error of result.errors) {
+        console.log(`   - ${error}`)
+      }
     }
 
     return
@@ -183,7 +185,9 @@ class RealisticTemplateCreator {
       console.log(`   Template ID: ${result.templateId}`)
     } else {
       console.log(`❌ Failed to create template: ${result.message}`)
-      result.errors.forEach((error) => console.log(`   - ${error}`))
+      for (const error of result.errors) {
+        console.log(`   - ${error}`)
+      }
     }
   }
 
@@ -282,7 +286,9 @@ class RealisticTemplateCreator {
       console.log(`   Template ID: ${result.templateId}`)
     } else {
       console.log(`❌ Failed to create template: ${result.message}`)
-      result.errors.forEach((error) => console.log(`   - ${error}`))
+      for (const error of result.errors) {
+        console.log(`   - ${error}`)
+      }
     }
   }
 

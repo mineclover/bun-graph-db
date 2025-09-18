@@ -146,7 +146,9 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
             .map(() => `json_extract(tags, '$') LIKE ?`)
             .join(' OR ')
           query += ` AND (${tagConditions})`
-          criteria.tags.forEach((tag) => params.push(`%"${tag}"%`))
+          for (const tag of criteria.tags) {
+            params.push(`%"${tag}"%`)
+          }
         }
       }
 

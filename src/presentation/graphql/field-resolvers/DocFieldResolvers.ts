@@ -1,4 +1,4 @@
-import { TableDto } from '@/application/dtos/TableDto.js'
+import { fromEntity as tableFromEntity, type TableDto } from '@/application/dtos/TableDto.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
 import type { GraphQLResolveInfo } from 'graphql'
@@ -14,7 +14,7 @@ export class DocFieldResolvers {
       }
 
       const table = await this.tableRepository.findById(tableId as TableId)
-      return table ? TableDto.fromEntity(table) : null
+      return table ? tableFromEntity(table) : null
     } catch (error) {
       console.error('Error resolving Doc.table:', error)
       throw error

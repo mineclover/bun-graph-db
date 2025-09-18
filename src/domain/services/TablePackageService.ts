@@ -36,6 +36,8 @@ export class TablePackageService implements ITablePackageService {
   private readonly enhancedDependencyAnalyzer: EnhancedDependencyAnalyzer
   private readonly enhancedTemplateGenerator: EnhancedTemplateGenerator
   private readonly schemaIntrospectionService: SchemaIntrospectionService
+  private readonly tablePackageValidator: TablePackageValidator
+  private readonly tablePackageRecoveryManager: TablePackageRecoveryManager
 
   constructor(
     private readonly tableRepository: ITableRepository,
@@ -289,7 +291,7 @@ export class TablePackageService implements ITablePackageService {
       })
       return {
         success: false,
-        importedTable: null,
+        importedTable: undefined,
         generatedTemplates: [],
         resolvedConflicts: [],
         errors: [error instanceof Error ? error.message : 'Unknown import error'],
@@ -1193,7 +1195,7 @@ export class TablePackageService implements ITablePackageService {
     ]
 
     for (const pattern of patterns) {
-      let match
+      let match: RegExpExecArray | null
       while ((match = pattern.exec(queryText)) !== null) {
         if (match[1]) {
           tableReferences.push(match[1])

@@ -21,15 +21,15 @@ async function listTemplates() {
       .join(', ')}\n`
   )
 
-  Object.entries(available).forEach(([type, files]) => {
+  for (const [type, files] of Object.entries(available)) {
     if (files.length > 0) {
       console.log(`🔸 ${type.toUpperCase()}:`)
-      files.forEach((file) => {
+      for (const file of files) {
         console.log(`   • ${file}`)
-      })
+      }
       console.log()
     }
-  })
+  }
 }
 
 async function searchTemplates(query: string) {
@@ -52,13 +52,13 @@ async function searchTemplates(query: string) {
 
   console.log(`✅ Found ${results.length} matching templates:\n`)
 
-  results.forEach((template, index) => {
+  for (const [index, template] of results.entries()) {
     console.log(`${index + 1}. ${template.name} (${template.identifier})`)
     console.log(`   Type: ${template.templateType} | Complexity: ${template.complexityScore}`)
     console.log(`   Tags: ${template.tags.join(', ')}`)
     console.log(`   Description: ${template.description || 'No description'}`)
     console.log()
-  })
+  }
 }
 
 async function showComplexityStats() {
@@ -79,12 +79,16 @@ async function showComplexityStats() {
 
   if (simple.length > 0) {
     console.log('\\n🟢 Simple Templates:')
-    simple.forEach((t) => console.log(`   • ${t.name} (complexity: ${t.complexityScore})`))
+    for (const t of simple) {
+      console.log(`   • ${t.name} (complexity: ${t.complexityScore})`)
+    }
   }
 
   if (advanced.length > 0) {
     console.log('\\n🔴 Advanced Templates:')
-    advanced.forEach((t) => console.log(`   • ${t.name} (complexity: ${t.complexityScore})`))
+    for (const t of advanced) {
+      console.log(`   • ${t.name} (complexity: ${t.complexityScore})`)
+    }
   }
 }
 
@@ -129,7 +133,9 @@ async function validateTemplates() {
 
   if (errors.length > 0) {
     console.log('\\n❌ Validation Errors:')
-    errors.forEach((error) => console.log(`   ${error}`))
+    for (const error of errors) {
+      console.log(`   ${error}`)
+    }
   }
 }
 

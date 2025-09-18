@@ -9,20 +9,18 @@ export interface TableDto {
   updatedAt: string
 }
 
-export class TableDto {
-  static fromEntity(table: Table): TableDto {
-    return {
-      id: table.id,
-      identifier: table.identifier,
-      description: table.description,
-      createdAt: table.createdAt.toISOString(),
-      updatedAt: table.updatedAt.toISOString(),
-    }
+export function fromEntity(table: Table): TableDto {
+  return {
+    id: table.id,
+    identifier: table.identifier,
+    description: table.description,
+    createdAt: table.createdAt.toISOString(),
+    updatedAt: table.updatedAt.toISOString(),
   }
+}
 
-  static fromEntities(tables: Table[]): TableDto[] {
-    return tables.map((table) => TableDto.fromEntity(table))
-  }
+export function fromEntities(tables: Table[]): TableDto[] {
+  return tables.map((table) => fromEntity(table))
 }
 
 // Input DTOs for operations

@@ -342,7 +342,7 @@ if (import.meta.main) {
 
   analyzer
     .runAnalysis()
-    .then(({ templates, stats }) => {
+    .then(({ templates: _templates, stats: _stats }) => {
       console.log('\n🎯 다음 단계 권장사항:')
       console.log('   1. 태그 표준화로 도메인 분류 일관성 확보')
       console.log('   2. GraphQL 스키마에 도메인 필터링 추가')

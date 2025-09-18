@@ -159,7 +159,7 @@ export class TemplateQueries extends BaseResolver {
     )
   }
 
-  async templatesWithTableDependencies(_: GraphQLParent, _args: {}, _context?: GraphQLContext) {
+  async templatesWithTableDependencies(_: GraphQLParent, _args: Record<string, never>, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         return await this.queryTemplateRepository.findTemplatesWithTableDependencies()
@@ -169,7 +169,7 @@ export class TemplateQueries extends BaseResolver {
     )
   }
 
-  async tableDependencyTemplates(_: GraphQLParent, _args: {}, _context?: GraphQLContext) {
+  async tableDependencyTemplates(_: GraphQLParent, _args: Record<string, never>, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         const templates = await this.queryTemplateRepository.findTemplatesWithTableDependencies()

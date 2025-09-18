@@ -1,5 +1,5 @@
 import type { CreateNodeInput, CreateNodeOutput } from '@/application/dtos/NodeDto.js'
-import { NodeDto } from '@/application/dtos/NodeDto.js'
+import { fromEntity as nodeFromEntity } from '@/application/dtos/NodeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
@@ -115,7 +115,7 @@ export class CreateNodeUseCase {
 
       // Return DTO with attributes
       return {
-        node: NodeDto.fromEntity(savedNode, attributeValues),
+        node: nodeFromEntity(savedNode, attributeValues),
       }
     } catch (error) {
       this.logger.error('Failed to create node', {
