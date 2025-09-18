@@ -236,6 +236,14 @@ BEGIN
     UPDATE relation_types SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
+-- Template executions table update trigger
+CREATE TRIGGER IF NOT EXISTS update_template_executions_updated_at
+    AFTER UPDATE ON template_executions
+    FOR EACH ROW
+BEGIN
+    UPDATE template_executions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
+
 -- =================================================================================
 -- RELATION STRENGTH AND CONFIDENCE CONVENTIONS
 -- =================================================================================
@@ -293,6 +301,127 @@ INSERT OR IGNORE INTO relation_types (identifier, description, category) VALUES
   ('parent_of', 'Parent-child relationship', 'hierarchy'),
   ('linked_to', 'Bidirectional link', 'semantic');
 
+-- Template execution log table (for performance tracking)
+CREATE TABLE IF NOT EXISTS template_executions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  template_id INTEGER NOT NULL,
+  executed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  execution_time_ms INTEGER NOT NULL,
+  variables_used TEXT, -- JSON of variables passed
+  result_count INTEGER DEFAULT 0,
+  success BOOLEAN NOT NULL DEFAULT TRUE,
+  error_message TEXT,
+  user_context TEXT, -- User/session info
+
+  FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
+);
+
+-- Update template usage tracking trigger
+CREATE TRIGGER IF NOT EXISTS update_template_usage
+  AFTER INSERT ON template_executions
+  FOR EACH ROW
+BEGIN
+  UPDATE templates
+  SET
+    usage_count = usage_count + 1,
+    last_used_at = NEW.executed_at,
+    avg_execution_time_ms = (
+      SELECT AVG(execution_time_ms)
+      FROM template_executions
+      WHERE template_id = NEW.template_id
+    )
+  WHERE id = NEW.template_id;
+END;
+
+-- =================================================================================
+-- ANALYTICS VIEWS (for 100% schema utilization)
+-- =================================================================================
+
+-- Template performance summary view
+CREATE VIEW IF NOT EXISTS template_performance_summary AS
+SELECT
+  t.id,
+  t.identifier,
+  t.query_name,
+  t.operation_type,
+  t.usage_count,
+  t.avg_execution_time_ms,
+  t.last_used_at,
+  t.complexity_score,
+  COUNT(te.id) as total_executions,
+  AVG(te.execution_time_ms) as real_avg_execution_time,
+  MIN(te.execution_time_ms) as min_execution_time,
+  MAX(te.execution_time_ms) as max_execution_time,
+  COUNT(CASE WHEN te.success = 1 THEN 1 END) * 100.0 / NULLIF(COUNT(te.id), 0) as success_rate,
+  COUNT(CASE WHEN te.executed_at > datetime('now', '-24 hours') THEN 1 END) as executions_last_24h,
+  CASE
+    WHEN t.avg_execution_time_ms < 50 THEN 'fast'
+    WHEN t.avg_execution_time_ms < 200 THEN 'medium'
+    ELSE 'slow'
+  END as performance_category
+FROM templates t
+LEFT JOIN template_executions te ON t.id = te.template_id
+WHERE t.is_active = 1
+GROUP BY t.id, t.identifier, t.query_name, t.operation_type,
+         t.usage_count, t.avg_execution_time_ms, t.last_used_at, t.complexity_score;
+
+-- Hot queries view (frequently used, good performance)
+CREATE VIEW IF NOT EXISTS hot_queries AS
+SELECT
+  t.*,
+  tps.total_executions,
+  tps.success_rate,
+  tps.executions_last_24h
+FROM templates t
+JOIN template_performance_summary tps ON t.id = tps.id
+WHERE t.usage_count > 100
+  AND tps.success_rate > 95
+  AND t.avg_execution_time_ms < 150
+ORDER BY t.usage_count DESC, t.avg_execution_time_ms ASC;
+
+-- Relation analytics view
+CREATE VIEW IF NOT EXISTS relation_analytics AS
+SELECT
+  t.identifier as table_name,
+  rt.identifier as relation_type,
+  rt.category,
+  COUNT(*) as relation_count,
+  AVG(nr.strength) as avg_strength,
+  AVG(nr.confidence) as avg_confidence,
+  COUNT(CASE WHEN nr.source_external_id != 'internal' THEN 1 END) as external_sources,
+  COUNT(CASE WHEN nr.target_external_id != 'internal' THEN 1 END) as external_targets
+FROM node_relations nr
+JOIN relation_types rt ON nr.relation_type_id = rt.id
+JOIN tables t ON nr.table_id = t.id
+GROUP BY t.identifier, rt.identifier, rt.category
+ORDER BY relation_count DESC;
+
+-- Node connectivity view
+CREATE VIEW IF NOT EXISTS node_connectivity AS
+SELECT
+  n.id as node_id,
+  n.content,
+  t.identifier as table_name,
+  COUNT(CASE WHEN nr.source_node_id = n.id THEN 1 END) as outgoing_relations,
+  COUNT(CASE WHEN nr.target_node_id = n.id THEN 1 END) as incoming_relations,
+  COUNT(CASE WHEN nr.source_node_id = n.id OR nr.target_node_id = n.id THEN 1 END) as total_relations,
+  AVG(CASE WHEN nr.source_node_id = n.id OR nr.target_node_id = n.id THEN nr.strength END) as avg_relation_strength
+FROM nodes n
+JOIN tables t ON n.table_id = t.id
+LEFT JOIN node_relations nr ON (nr.source_node_id = n.id OR nr.target_node_id = n.id)
+  AND nr.source_external_id = 'internal' AND nr.target_external_id = 'internal'
+GROUP BY n.id, n.content, t.identifier
+HAVING total_relations > 0
+ORDER BY total_relations DESC, avg_relation_strength DESC;
+
+-- Internal relations view (for easier querying)
+CREATE VIEW IF NOT EXISTS internal_relations AS
+SELECT
+  id, table_id, source_node_id, target_node_id, relation_type_id,
+  properties, strength, confidence, created_at, updated_at
+FROM node_relations
+WHERE source_external_id = 'internal' AND target_external_id = 'internal';
+
 -- =================================================================================
 -- PERFORMANCE INDEXES
 -- =================================================================================
@@ -333,4 +462,10 @@ CREATE INDEX IF NOT EXISTS idx_node_relations_source_ext ON node_relations(sourc
 CREATE INDEX IF NOT EXISTS idx_node_relations_target_ext ON node_relations(target_external_id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_type ON node_relations(relation_type_id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_table ON node_relations(table_id);
+-- Template executions indexes (for performance tracking)
+CREATE INDEX IF NOT EXISTS idx_template_executions_template_id ON template_executions(template_id);
+CREATE INDEX IF NOT EXISTS idx_template_executions_executed_at ON template_executions(executed_at);
+CREATE INDEX IF NOT EXISTS idx_template_executions_success ON template_executions(success);
+CREATE INDEX IF NOT EXISTS idx_template_executions_execution_time ON template_executions(execution_time_ms);
+CREATE INDEX IF NOT EXISTS idx_template_executions_composite ON template_executions(template_id, executed_at, success);
 

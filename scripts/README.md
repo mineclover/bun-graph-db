@@ -6,6 +6,26 @@ bun-graph-db 프로젝트의 모든 스크립트 파일들의 목적과 사용�
 
 ### 🚀 환경 구축 스크립트 (Environment Setup)
 
+#### `unified-schema-enhancement.sql` ⭐ **NEW**
+**목적**: 스키마 활용도를 60-70%에서 **100%로** 향상시키는 통합 마이그레이션 스크립트
+```bash
+# 사용법
+sqlite3 data/bun-graph-db.sqlite < scripts/unified-schema-enhancement.sql
+```
+**주요 기능**:
+- **Section 1**: Node Attributes - JSON 저장소 → 정규화된 테이블 마이그레이션
+- **Section 2**: Template Performance - 사용량 추적 및 실행 로그 시스템 활성화
+- **Section 3**: Relations Enhancement - 강도/신뢰도 점수 및 그래프 분석 기능
+- **Section 4**: Documentation System - 다중 카테고리 문서화 시스템 구축
+
+**결과**:
+- 📊 Node Attributes: 0 → 30+ 정규화된 속성
+- 🚀 Template Performance: 0 → 384개 추적 템플릿
+- 🔗 Relations: 2 → 22+ 향상된 관계
+- 📚 Documentation: 2 → 30+ 포괄적 문서
+
+**안전 기능**: `INSERT OR IGNORE` 사용, 중복 방지, 트랜잭션 래핑, 자동 검증
+
 #### `setup-test-environment.ts`
 **목적**: 완전한 테스트 환경 구축 및 데이터베이스 마이그레이션
 ```bash
@@ -180,10 +200,13 @@ bun run query:plan
 
 ### 1. 초기 환경 구축
 ```bash
-# 1단계: 테스트 DB 환경 구축
+# 1단계: 스키마 100% 활용 (권장 - 통합 스크립트)
+sqlite3 data/bun-graph-db.sqlite < scripts/unified-schema-enhancement.sql
+
+# 2단계: 테스트 DB 환경 구축
 bun run scripts/setup-test-environment.ts
 
-# 2단계: DI 기반 데이터 마이그레이션 (선택적)
+# 3단계: DI 기반 데이터 마이그레이션 (선택적)
 bun run scripts/setup-test-dataset.ts
 ```
 
