@@ -18,6 +18,7 @@ import type {
   NodeFieldResolvers,
   QueryTemplateFieldResolvers,
   RelationFieldResolvers,
+  RelationTypeFieldResolvers,
   TableFieldResolvers,
 } from './field-resolvers/index.js'
 import type {
@@ -66,6 +67,7 @@ export interface GraphQLDependencies {
   nodeFieldResolvers: NodeFieldResolvers
   attributeFieldResolvers: AttributeFieldResolvers
   relationFieldResolvers: RelationFieldResolvers
+  relationTypeFieldResolvers: RelationTypeFieldResolvers
   queryTemplateFieldResolvers: QueryTemplateFieldResolvers
   docFieldResolvers: DocFieldResolvers
 
@@ -108,6 +110,9 @@ export class GraphQLSchemaBuilder {
         GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS
       ),
       relationFieldResolvers: await this.container.resolve(GraphQLTokens.RELATION_FIELD_RESOLVERS),
+      relationTypeFieldResolvers: await this.container.resolve(
+        GraphQLTokens.RELATION_TYPE_FIELD_RESOLVERS
+      ),
       queryTemplateFieldResolvers: await this.container.resolve(
         GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS
       ),
@@ -401,6 +406,10 @@ export class GraphQLSchemaBuilder {
           deps.relationFieldResolvers.targetNode(parent as any),
         relationType: (parent: GraphQLParent) =>
           deps.relationFieldResolvers.relationType(parent as any),
+      },
+
+      RelationType: {
+        name: (parent: GraphQLParent) => deps.relationTypeFieldResolvers.name(parent as any),
       },
 
       QueryTemplate: {

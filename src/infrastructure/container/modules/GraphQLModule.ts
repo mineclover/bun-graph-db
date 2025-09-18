@@ -12,6 +12,7 @@ import {
   NodeFieldResolvers,
   QueryTemplateFieldResolvers,
   RelationFieldResolvers,
+  RelationTypeFieldResolvers,
   TableFieldResolvers,
 } from '@/presentation/graphql/field-resolvers/index.js'
 import { buildGraphQLSchema } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
@@ -210,6 +211,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const nodeAttributeRepository = (await c.resolve(
         RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY
       )) as any
+      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -221,10 +223,11 @@ export function registerGraphQLModule(container: DIContainer): void {
         createNodeUseCase,
         nodeRepository,
         nodeAttributeRepository,
+        tableRepository,
         simpleLogger
       )
     },
-    [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY]
+    [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY, RepositoryTokens.TABLE_REPOSITORY]
   )
 
   container.registerSingleton(
@@ -510,6 +513,21 @@ export function registerGraphQLModule(container: DIContainer): void {
   )
 
   container.registerSingleton(
+    GraphQLTokens.RELATION_TYPE_FIELD_RESOLVERS,
+    async (c) => {
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new RelationTypeFieldResolvers(simpleLogger)
+    },
+    []
+  )
+
+  container.registerSingleton(
     GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS,
     async (_c) => {
       // Use simple console logger to avoid circular dependency
@@ -594,6 +612,9 @@ export function registerGraphQLModule(container: DIContainer): void {
       const relationFieldResolvers = (await c.resolve(
         GraphQLTokens.RELATION_FIELD_RESOLVERS
       )) as any
+      const relationTypeFieldResolvers = (await c.resolve(
+        GraphQLTokens.RELATION_TYPE_FIELD_RESOLVERS
+      )) as any
       const queryTemplateFieldResolvers = (await c.resolve(
         GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS
       )) as any
@@ -621,6 +642,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         nodeFieldResolvers,
         attributeFieldResolvers,
         relationFieldResolvers,
+        relationTypeFieldResolvers,
         queryTemplateFieldResolvers,
         docFieldResolvers,
         // Schema resolvers (placeholder)
@@ -647,6 +669,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.NODE_FIELD_RESOLVERS,
       GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS,
       GraphQLTokens.RELATION_FIELD_RESOLVERS,
+      GraphQLTokens.RELATION_TYPE_FIELD_RESOLVERS,
       GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS,
       GraphQLTokens.DOC_FIELD_RESOLVERS,
       GraphQLTokens.GRAPHQL_SCHEMA_BUILDER,

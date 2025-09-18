@@ -1,0 +1,289 @@
+# ===================================================================
+# 🚀 Template Performance Tracking - Schema Utilization
+# ===================================================================
+# 목적: 이전에 사용되지 않던 성능 추적 필드들의 완전한 활용을 보여줍니다.
+# 난이도: ⭐⭐⭐⭐ (전문가)
+# 스키마 활용도: 100% (usage_count, last_used_at, avg_execution_time_ms 완전 활용)
+# ===================================================================
+
+# 1. 전체 템플릿 성능 분석 - 활성화된 성능 추적 시스템
+query TemplatePerformanceOverview {
+  templatePerformanceAnalytics {
+    # 기본 통계 - 이제 활성화된 필드들
+    totalTemplates
+    activeTemplates
+    totalExecutions      # SUM(usage_count)
+    averageExecutionTime # AVG(avg_execution_time_ms)
+    successRate
+
+    # 성능 분포 - avg_execution_time_ms 기반 분류
+    performanceDistribution {
+      fast    # < 50ms
+      medium  # 50-200ms
+      slow    # > 200ms
+      percentiles {
+        p50
+        p75
+        p90
+        p95
+        p99
+      }
+    }
+
+    # 사용 패턴 - usage_count, last_used_at 활용
+    usagePatterns {
+      mostUsedTemplates {
+        template {
+          identifier
+          queryName
+          operationType
+          usageCount     # 이제 활성화됨
+          avgExecutionTimeMs # 이제 활성화됨
+          lastUsedAt     # 이제 활성화됨
+        }
+        usageCount
+        avgExecutionTime
+        lastUsed
+        trend           # last_used_at 기반 트렌드 분석
+      }
+
+      operationTypeDistribution {
+        operationType
+        count
+        avgExecutionTime
+        successRate
+      }
+
+      hourlyUsagePattern {
+        hour
+        executionCount
+        avgExecutionTime
+      }
+    }
+
+    # 최근 성능 지표 - template_executions 테이블 활용
+    recentMetrics {
+      last24Hours {
+        totalExecutions
+        avgExecutionTime
+        successRate
+        uniqueTemplates
+      }
+      last7Days {
+        totalExecutions
+        avgExecutionTime
+        successRate
+        uniqueTemplates
+      }
+    }
+  }
+}
+
+# ===================================================================
+# 📋 Variables for Performance Queries (성능 쿼리용 변수)
+# ===================================================================
+{
+  "performanceFilter": {
+    "operationTypes": ["query", "mutation"],
+    "performanceCategories": ["fast", "medium"],
+    "usageRange": { "min": 100, "max": 2000 },
+    "onlyActive": true
+  },
+  "timeRange": {
+    "start": "2025-09-17T00:00:00Z",
+    "end": "2025-09-18T23:59:59Z"
+  },
+  "templateId": "1",
+  "threshold": 200
+}
+
+# 2. 핫 쿼리 분석 - 고성능, 고사용량 템플릿
+query HotQueriesAnalysis {
+  getHotQueries(
+    limit: 10
+    performanceThreshold: 150  # avg_execution_time_ms < 150
+    usageThreshold: 500        # usage_count > 500
+  ) {
+    template {
+      identifier
+      queryName
+      operationType
+      usageCount
+      avgExecutionTimeMs
+      lastUsedAt
+      complexityScore
+    }
+    performanceScore    # usage_count / avg_execution_time_ms
+    usageRank
+    efficiencyRatio
+    recentExecutions    # 최근 24시간 실행 횟수
+    successRate
+  }
+}
+
+# 3. 템플릿 실행 히스토리 - 상세 성능 로그
+query TemplateExecutionHistory($templateId: ID!) {
+  getTemplateExecutionHistory(
+    templateId: $templateId
+    pagination: { limit: 20, offset: 0 }
+    filter: {
+      successOnly: false
+      minExecutionTime: 50
+      maxExecutionTime: 1000
+    }
+  ) {
+    edges {
+      node {
+        id
+        executedAt
+        executionTimeMs
+        variablesUsed
+        resultCount
+        success
+        errorMessage
+        userContext
+      }
+    }
+    totalCount
+    averageExecutionTime  # 필터된 실행들의 평균
+    successRate          # 필터된 실행들의 성공률
+  }
+}
+
+# 4. 느린 쿼리 분석 - 성능 병목 식별
+query SlowQueryAnalysis($threshold: Int!, $timeRange: TimeRangeInput) {
+  getSlowQueries(
+    threshold: $threshold
+    limit: 15
+    timeRange: $timeRange
+  ) {
+    template {
+      identifier
+      queryName
+      operationType
+      complexityScore
+    }
+    averageExecutionTime
+    maxExecutionTime
+    slowExecutionCount      # threshold 초과 실행 횟수
+    totalExecutions
+    slowExecutionPercentage # 느린 실행 비율
+    optimizationSuggestions # AI 기반 최적화 제안
+  }
+}
+
+# 5. 성능 트렌드 분석 - 시간별 성능 변화
+query PerformanceTrends($timeRange: TimeRangeInput!) {
+  getTemplatePerformanceTrends(
+    templateIds: ["1", "2", "3", "4", "5"]
+    timeRange: $timeRange
+    granularity: HOUR
+  ) {
+    templateId
+    timestamp
+    executionCount
+    averageExecutionTime
+    successRate
+    movingAverage  # 이동 평균
+  }
+}
+
+# 6. 템플릿 추천 시스템 - 사용 패턴 기반 추천
+query TemplateRecommendations {
+  getTemplateRecommendations(
+    context: {
+      operationType: QUERY
+      performanceRequirement: INTERACTIVE  # < 200ms
+      userRole: "developer"
+    }
+    limit: 5
+  ) {
+    template {
+      identifier
+      queryName
+      usageCount
+      avgExecutionTimeMs
+      complexityScore
+    }
+    score              # 추천 점수
+    reason             # 추천 이유
+    similarityScore    # 유사도 점수
+    performanceAdvantage # 성능 이점
+  }
+}
+
+# ===================================================================
+# 📊 Expected Response (예상 응답)
+# ===================================================================
+# 성능 분석 성공 응답:
+# {
+#   "data": {
+#     "templatePerformanceAnalytics": {
+#       "totalTemplates": 384,
+#       "activeTemplates": 384,
+#       "totalExecutions": 335824,  # 모든 usage_count의 합
+#       "averageExecutionTime": 176.4,  # 평균 avg_execution_time_ms
+#       "successRate": 98.5,
+#       "performanceDistribution": {
+#         "fast": 89,     # < 50ms
+#         "medium": 205,  # 50-200ms
+#         "slow": 90,     # > 200ms
+#         "percentiles": {
+#           "p50": 125.0,
+#           "p75": 185.0,
+#           "p90": 245.0,
+#           "p95": 312.0,
+#           "p99": 489.0
+#         }
+#       }
+#     }
+#   }
+# }
+
+# ===================================================================
+# 🎯 Performance Tracking Activation Benefits (성능 추적 활성화 이점)
+# ===================================================================
+
+# ✅ 이전 상태 (비활성화):
+# - usage_count: 모든 템플릿이 0
+# - last_used_at: 모든 템플릿이 NULL
+# - avg_execution_time_ms: 기본값만 존재
+
+# ✅ 현재 상태 (활성화):
+# - usage_count: 실제 사용 통계 (10~2000회)
+# - last_used_at: 실제 사용 시점 추적
+# - avg_execution_time_ms: 실제 성능 측정값
+# - template_executions: 상세 실행 로그
+
+# ✅ 새로운 기능들:
+# - 핫 쿼리 식별 (고성능 + 고사용량)
+# - 느린 쿼리 탐지 및 최적화 제안
+# - 실시간 성능 모니터링
+# - 사용 패턴 기반 추천 시스템
+# - 성능 트렌드 분석
+
+# ===================================================================
+# 🔍 Performance Optimization Use Cases (성능 최적화 활용 사례)
+# ===================================================================
+
+# 📝 사례 1: 성능 병목 식별
+# 1. SlowQueryAnalysis 실행 → 200ms 초과 쿼리 식별
+# 2. 최적화 제안 검토 → 인덱스 추가, 쿼리 분할 등
+# 3. 개선 후 성능 재측정
+
+# 📝 사례 2: 리소스 할당 최적화
+# 1. HotQueriesAnalysis → 자주 사용되는 쿼리 식별
+# 2. 캐싱 전략 수립 → 핫 쿼리 우선 캐싱
+# 3. 인프라 리소스 집중 할당
+
+# 📝 사례 3: 개발자 생산성 향상
+# 1. TemplateRecommendations → 유사 작업에 최적화된 템플릿 추천
+# 2. 성능 요구사항별 템플릿 필터링
+# 3. 복잡도와 성능의 균형점 제시
+
+# ===================================================================
+# 🚀 Next Steps (다음 단계)
+# ===================================================================
+# 1. Relations 시스템 활용: queries/08-enhanced-relations.graphql
+# 2. 문서화 시스템 활성화: queries/09-documentation-system.graphql
+# 3. 전체 스키마 통합 분석: queries/10-complete-schema-utilization.graphql

@@ -38,7 +38,7 @@ export class NodeRelation {
       targetExternalId,
       relationTypeId,
       properties || null,
-      strength ?? 50, // Default strength is 50
+      strength ?? 1, // Default strength: 1=auto_generated (valid range: 0-4)
       new Date(),
       new Date()
     )

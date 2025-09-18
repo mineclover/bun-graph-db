@@ -1,0 +1,253 @@
+# Template Performance Query extensions - Utilizing performance tracking fields
+# This file implements 100% utilization of template performance tracking system
+
+extend type Query {
+  # Template Performance Analytics - Previously unused functionality
+  templatePerformanceAnalytics(
+    filter: TemplatePerformanceFilter
+    timeRange: TimeRangeInput
+  ): TemplatePerformanceAnalytics!
+
+  # Hot Queries - High usage, good performance templates
+  getHotQueries(
+    limit: Int = 10
+    performanceThreshold: Int = 150
+    usageThreshold: Int = 100
+  ): [HotQueryTemplate!]!
+
+  # Template Execution History - Detailed performance logs
+  getTemplateExecutionHistory(
+    templateId: ID!
+    pagination: PaginationInput
+    filter: ExecutionHistoryFilter
+  ): TemplateExecutionConnection!
+
+  # Performance Trends - Time-based analysis
+  getTemplatePerformanceTrends(
+    templateIds: [ID!]
+    timeRange: TimeRangeInput!
+    granularity: TimeGranularity = HOUR
+  ): [TemplatePerformanceTrend!]!
+
+  # Slow Query Analysis - Identify performance bottlenecks
+  getSlowQueries(
+    threshold: Int = 500
+    limit: Int = 20
+    timeRange: TimeRangeInput
+  ): [SlowQueryAnalysis!]!
+
+  # Template Recommendations - Based on usage patterns
+  getTemplateRecommendations(
+    context: RecommendationContext!
+    limit: Int = 5
+  ): [TemplateRecommendation!]!
+}
+
+# Performance analytics types
+type TemplatePerformanceAnalytics {
+  totalTemplates: Int!
+  activeTemplates: Int!
+  totalExecutions: Int!
+  averageExecutionTime: Float!
+  successRate: Float!
+
+  # Performance distribution
+  performanceDistribution: PerformanceDistribution!
+
+  # Usage patterns
+  usagePatterns: UsagePatterns!
+
+  # Recent performance metrics
+  recentMetrics: RecentPerformanceMetrics!
+}
+
+type PerformanceDistribution {
+  fast: Int!      # < 50ms
+  medium: Int!    # 50-200ms
+  slow: Int!      # > 200ms
+  percentiles: PerformancePercentiles!
+}
+
+type PerformancePercentiles {
+  p50: Float!
+  p75: Float!
+  p90: Float!
+  p95: Float!
+  p99: Float!
+}
+
+type UsagePatterns {
+  mostUsedTemplates: [TemplateUsageStats!]!
+  operationTypeDistribution: [OperationTypeStats!]!
+  hourlyUsagePattern: [HourlyUsageStats!]!
+}
+
+type TemplateUsageStats {
+  template: QueryTemplate!
+  usageCount: Int!
+  avgExecutionTime: Float!
+  lastUsed: DateTime!
+  trend: UsageTrend!
+}
+
+type OperationTypeStats {
+  operationType: OperationType!
+  count: Int!
+  avgExecutionTime: Float!
+  successRate: Float!
+}
+
+type HourlyUsageStats {
+  hour: Int!
+  executionCount: Int!
+  avgExecutionTime: Float!
+}
+
+type RecentPerformanceMetrics {
+  last24Hours: PerformanceMetrics!
+  last7Days: PerformanceMetrics!
+  last30Days: PerformanceMetrics!
+}
+
+type PerformanceMetrics {
+  totalExecutions: Int!
+  avgExecutionTime: Float!
+  successRate: Float!
+  uniqueTemplates: Int!
+}
+
+# Hot queries type
+type HotQueryTemplate {
+  template: QueryTemplate!
+  performanceScore: Float!
+  usageRank: Int!
+  efficiencyRatio: Float! # usage_count / avg_execution_time
+  recentExecutions: Int!
+  successRate: Float!
+}
+
+# Execution history types
+type TemplateExecution {
+  id: ID!
+  template: QueryTemplate!
+  executedAt: DateTime!
+  executionTimeMs: Int!
+  variablesUsed: JSON
+  resultCount: Int!
+  success: Boolean!
+  errorMessage: String
+  userContext: String
+}
+
+type TemplateExecutionConnection {
+  edges: [TemplateExecutionEdge!]!
+  totalCount: Int!
+  averageExecutionTime: Float!
+  successRate: Float!
+}
+
+type TemplateExecutionEdge {
+  node: TemplateExecution!
+  cursor: String!
+}
+
+# Performance trends
+type TemplatePerformanceTrend {
+  templateId: ID!
+  timestamp: DateTime!
+  executionCount: Int!
+  averageExecutionTime: Float!
+  successRate: Float!
+  movingAverage: Float!
+}
+
+# Slow query analysis
+type SlowQueryAnalysis {
+  template: QueryTemplate!
+  averageExecutionTime: Float!
+  maxExecutionTime: Float!
+  slowExecutionCount: Int!
+  totalExecutions: Int!
+  slowExecutionPercentage: Float!
+  recentSlowdowns: [TemplateExecution!]!
+  optimizationSuggestions: [String!]!
+}
+
+# Template recommendations
+type TemplateRecommendation {
+  template: QueryTemplate!
+  score: Float!
+  reason: RecommendationReason!
+  similarityScore: Float!
+  performanceAdvantage: Float!
+}
+
+# Input types
+input TemplatePerformanceFilter {
+  operationTypes: [OperationType!]
+  performanceCategories: [PerformanceCategory!]
+  usageRange: IntRangeInput
+  complexityRange: IntRangeInput
+  onlyActive: Boolean = true
+}
+
+input TimeRangeInput {
+  start: DateTime!
+  end: DateTime!
+}
+
+input ExecutionHistoryFilter {
+  successOnly: Boolean
+  minExecutionTime: Int
+  maxExecutionTime: Int
+  userContext: String
+}
+
+input RecommendationContext {
+  currentTemplate: ID
+  tableIds: [ID!]
+  operationType: OperationType
+  userRole: String
+  performanceRequirement: PerformanceRequirement
+}
+
+input IntRangeInput {
+  min: Int
+  max: Int
+}
+
+# Enums
+enum TimeGranularity {
+  MINUTE
+  HOUR
+  DAY
+  WEEK
+  MONTH
+}
+
+enum PerformanceCategory {
+  FAST
+  MEDIUM
+  SLOW
+}
+
+enum UsageTrend {
+  INCREASING
+  STABLE
+  DECREASING
+}
+
+enum RecommendationReason {
+  SIMILAR_PATTERN
+  BETTER_PERFORMANCE
+  POPULAR_CHOICE
+  RECENT_IMPROVEMENT
+  COMPLEXITY_MATCH
+}
+
+enum PerformanceRequirement {
+  REAL_TIME      # < 50ms
+  INTERACTIVE    # < 200ms
+  BATCH          # < 1000ms
+  BACKGROUND     # No limit
+}

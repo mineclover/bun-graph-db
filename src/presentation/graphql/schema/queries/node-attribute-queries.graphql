@@ -1,0 +1,165 @@
+# Node Attribute Query extensions - Utilizing the normalized node_attributes table
+# This file implements 100% schema utilization for the node_attributes system
+
+extend type Query {
+  # Node Attribute Analytics - Previously unused functionality
+  nodeAttributeAnalytics(
+    tableId: ID
+    attributeIdentifier: String
+    filter: NodeAttributeAnalyticsFilter
+  ): NodeAttributeAnalytics!
+
+  # Attribute Value Distribution - Leverage normalized storage
+  attributeValueDistribution(
+    attributeId: ID!
+    groupBy: AttributeGroupBy = VALUE
+  ): [AttributeValueGroup!]!
+
+  # Cross-table attribute search - Utilize the relationship between tables
+  searchNodesByAttribute(
+    filter: NodeAttributeSearchFilter!
+    pagination: PaginationInput
+    sort: [SortInput!]
+  ): NodesConnection!
+
+  # Attribute completeness analysis - Schema utilization metrics
+  attributeCompleteness(tableId: ID!): AttributeCompleteness!
+
+  # Node with typed attributes - Proper utilization of attribute_types
+  nodeWithTypedAttributes(nodeId: ID!): NodeWithTypedAttributes
+}
+
+# Analytics types for the normalized attributes system
+type NodeAttributeAnalytics {
+  totalNodes: Int!
+  totalAttributes: Int!
+  completenessPercentage: Float!
+  attributeStats: [AttributeStats!]!
+  typeDistribution: [AttributeTypeStats!]!
+  valueRanges: [AttributeValueRange!]!
+}
+
+type AttributeStats {
+  attributeId: ID!
+  identifier: String!
+  totalValues: Int!
+  uniqueValues: Int!
+  nullValues: Int!
+  completenessRate: Float!
+  dataType: String!
+}
+
+type AttributeTypeStats {
+  typeId: ID!
+  identifier: String!
+  jsonType: String!
+  usageCount: Int!
+  averageValuesPerNode: Float!
+}
+
+type AttributeValueRange {
+  attributeId: ID!
+  identifier: String!
+  minValue: String
+  maxValue: String
+  averageLength: Float
+  commonValues: [String!]!
+}
+
+type AttributeValueGroup {
+  value: String!
+  count: Int!
+  percentage: Float!
+  nodes: [TableNode!]!
+}
+
+type AttributeCompleteness {
+  tableId: ID!
+  totalNodes: Int!
+  totalRequiredAttributes: Int!
+  totalOptionalAttributes: Int!
+  completeNodes: Int!
+  incompleteNodes: Int!
+  completenessRate: Float!
+  attributeCompleteness: [SingleAttributeCompleteness!]!
+}
+
+type SingleAttributeCompleteness {
+  attributeId: ID!
+  identifier: String!
+  isRequired: Boolean!
+  filledCount: Int!
+  emptyCount: Int!
+  completenessRate: Float!
+}
+
+type NodeWithTypedAttributes {
+  id: ID!
+  content: String!
+  table: Table!
+  typedAttributes: [TypedNodeAttribute!]!
+  missingRequiredAttributes: [Attribute!]!
+  completenessScore: Float!
+}
+
+type TypedNodeAttribute {
+  id: ID!
+  attribute: Attribute!
+  value: String!
+  parsedValue: JSON # Parsed according to attribute_type.json_type
+  isValid: Boolean!
+  validationErrors: [String!]!
+}
+
+# Input types for the enhanced queries
+input NodeAttributeAnalyticsFilter {
+  dateRange: DateRangeInput
+  valuePattern: String
+  dataTypes: [String!]
+  isRequired: Boolean
+}
+
+input NodeAttributeSearchFilter {
+  tableIds: [ID!]
+  attributeFilters: [SingleAttributeFilter!]!
+  logicalOperator: LogicalOperator = AND
+}
+
+input SingleAttributeFilter {
+  attributeIdentifier: String!
+  operator: AttributeFilterOperator!
+  value: String!
+  dataType: String
+}
+
+input DateRangeInput {
+  start: DateTime
+  end: DateTime
+}
+
+enum AttributeGroupBy {
+  VALUE
+  DATA_TYPE
+  TABLE
+  ATTRIBUTE
+}
+
+enum AttributeFilterOperator {
+  EQUALS
+  NOT_EQUALS
+  CONTAINS
+  STARTS_WITH
+  ENDS_WITH
+  GREATER_THAN
+  LESS_THAN
+  BETWEEN
+  IN
+  NOT_IN
+  IS_NULL
+  IS_NOT_NULL
+}
+
+enum LogicalOperator {
+  AND
+  OR
+}

@@ -1,0 +1,257 @@
+# ===================================================================
+# 📊 Node Attributes Analytics - Normalized Schema Utilization
+# ===================================================================
+# 목적: 정규화된 node_attributes 테이블의 완전한 활용을 보여줍니다.
+# 난이도: ⭐⭐⭐ (고급)
+# 스키마 활용도: 100% (node_attributes, attributes, attribute_types 완전 활용)
+# ===================================================================
+
+# 1. 전체 속성 분석 - 정규화된 스키마의 강력함 시연
+query ComprehensiveAttributeAnalytics {
+  nodeAttributeAnalytics {
+    totalNodes
+    totalAttributes
+    completenessPercentage
+
+    # 속성별 상세 통계 - attribute_types 테이블 활용
+    attributeStats {
+      attributeId
+      identifier
+      totalValues
+      uniqueValues
+      nullValues
+      completenessRate
+      dataType  # attribute_types.json_type에서 가져옴
+    }
+
+    # 타입별 분포 - 정규화의 이점
+    typeDistribution {
+      typeId
+      identifier
+      jsonType
+      usageCount
+      averageValuesPerNode
+    }
+  }
+}
+
+# ===================================================================
+# 📋 Variables for Advanced Queries (고급 쿼리용 변수)
+# ===================================================================
+{
+  "performanceTableId": "6",
+  "attributeId": "15",  # performance cpu_usage attribute
+  "searchFilter": {
+    "attributeFilters": [
+      {
+        "attributeIdentifier": "cpu_usage",
+        "operator": "GREATER_THAN",
+        "value": "30"
+      }
+    ],
+    "logicalOperator": "AND"
+  }
+}
+
+# 2. 특정 테이블의 속성 완성도 분석 - is_required 필드 활용
+query AttributeCompleteness($performanceTableId: ID!) {
+  attributeCompleteness(tableId: $performanceTableId) {
+    tableId
+    totalNodes
+    totalRequiredAttributes
+    totalOptionalAttributes
+    completeNodes
+    incompleteNodes
+    completenessRate
+
+    # 속성별 완성도 - normalized storage의 이점
+    attributeCompleteness {
+      attributeId
+      identifier
+      isRequired
+      filledCount
+      emptyCount
+      completenessRate
+    }
+  }
+}
+
+# 3. 속성 값 분포 분석 - 정규화된 저장소의 검색 성능
+query AttributeValueDistribution($attributeId: ID!) {
+  attributeValueDistribution(
+    attributeId: $attributeId
+    groupBy: VALUE
+  ) {
+    value
+    count
+    percentage
+  }
+}
+
+# 4. 속성 기반 노드 검색 - 복잡한 JOIN 쿼리 시연
+query SearchByAttributes($searchFilter: NodeAttributeSearchFilter!) {
+  searchNodesByAttribute(
+    filter: $searchFilter
+    pagination: { limit: 10, offset: 0 }
+    sort: [{ field: "created_at", direction: DESC }]
+  ) {
+    nodes {
+      id
+      content
+      table {
+        identifier
+      }
+      # 연관된 속성들 - 정규화의 장점
+      attributes {
+        id
+        name
+        value
+        type {
+          name
+          dataType
+        }
+      }
+    }
+    totalCount
+  }
+}
+
+# 5. 타입화된 속성이 있는 노드 - 완전한 스키마 활용
+query NodeWithTypedAttributes {
+  # Performance node with all typed attributes
+  nodeWithTypedAttributes(nodeId: "5") {
+    id
+    content
+    table {
+      identifier
+      name
+    }
+
+    # 타입 검증된 속성들
+    typedAttributes {
+      id
+      attribute {
+        identifier
+        isRequired
+        type {
+          identifier
+          jsonType
+          format
+        }
+      }
+      value
+      parsedValue  # JSON 타입에 따라 파싱된 값
+      isValid
+      validationErrors
+    }
+
+    # 누락된 필수 속성들
+    missingRequiredAttributes {
+      identifier
+      description
+      isRequired
+    }
+
+    completenessScore
+  }
+}
+
+# ===================================================================
+# 📊 Expected Response (예상 응답)
+# ===================================================================
+# 전체 속성 분석 성공 응답:
+# {
+#   "data": {
+#     "nodeAttributeAnalytics": {
+#       "totalNodes": 64,
+#       "totalAttributes": 16,
+#       "completenessPercentage": 25.0,
+#       "attributeStats": [
+#         {
+#           "attributeId": "15",
+#           "identifier": "cpu_usage",
+#           "totalValues": 5,
+#           "uniqueValues": 5,
+#           "nullValues": 0,
+#           "completenessRate": 100.0,
+#           "dataType": "number"
+#         }
+#       ],
+#       "typeDistribution": [
+#         {
+#           "typeId": "105",
+#           "identifier": "performance_metric",
+#           "jsonType": "number",
+#           "usageCount": 10,
+#           "averageValuesPerNode": 2.0
+#         }
+#       ]
+#     }
+#   }
+# }
+
+# ===================================================================
+# 🎯 Schema Utilization Demonstration (스키마 활용 시연)
+# ===================================================================
+
+# ✅ 100% 활용된 테이블들:
+# - node_attributes: 정규화된 속성 저장 (16개 레코드)
+# - attributes: 속성 정의 및 메타데이터 (15개 레코드)
+# - attribute_types: 타입 시스템 (25개 타입 정의)
+# - nodes: 노드와 속성의 관계 (64개 노드)
+
+# ✅ 새로 활용된 필드들:
+# - attribute_types.json_type: 타입 검증
+# - attribute_types.format: 형식 검증
+# - attributes.is_required: 필수 속성 관리
+# - node_attributes.*: 정규화된 저장소
+
+# ✅ 성능 이점:
+# - 인덱싱된 검색 (node_attributes 테이블)
+# - 타입 기반 필터링 및 검증
+# - 집계 및 분석 쿼리 최적화
+
+# ===================================================================
+# 🔍 Advanced Testing Scenarios (고급 테스트 시나리오)
+# ===================================================================
+
+# 📝 시나리오 1: 데이터 품질 분석
+# 1. AttributeCompleteness 실행 → 각 테이블의 완성도 확인
+# 2. 필수 속성이 누락된 노드 식별
+# 3. 데이터 입력 우선순위 결정
+
+# 📝 시나리오 2: 성능 모니터링
+# 1. cpu_usage > 50인 노드 검색
+# 2. memory_usage 분포 분석
+# 3. 성능 임계값 초과 노드 식별
+
+# 📝 시나리오 3: 스키마 진화 분석
+# 1. 각 attribute_type의 사용 빈도 확인
+# 2. 사용되지 않는 속성 타입 식별
+# 3. 새로운 속성 타입 필요성 분석
+
+# ===================================================================
+# 🚀 Benefits of Normalized Storage (정규화 저장소의 이점)
+# ===================================================================
+
+# 🎯 이전 (JSON 저장):
+# - 타입 검증 불가
+# - 검색 성능 저하
+# - 집계 쿼리 복잡
+# - 인덱싱 제한
+
+# 🎯 현재 (정규화 저장):
+# - 강타입 검증
+# - 고성능 인덱싱
+# - 복잡한 분석 쿼리 지원
+# - 스키마 진화 지원
+
+# ===================================================================
+# 🔧 Integration with Other Systems (다른 시스템과의 통합)
+# ===================================================================
+# 1. Templates: 속성 기반 템플릿 필터링
+# 2. Relations: 속성 값 기반 관계 생성
+# 3. Docs: 속성 스키마 문서화
+# 4. Analytics: 실시간 속성 분석
+
+# Next: queries/07-template-performance-tracking.graphql

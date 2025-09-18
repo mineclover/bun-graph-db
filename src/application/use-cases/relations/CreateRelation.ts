@@ -79,16 +79,33 @@ export class CreateRelationUseCase {
       await this.resolveNodesAndExternalIds(input)
 
     // Check for existing relation (prevent duplicates)
-    const existingRelation = await this.nodeRelationRepository.exists(
-      sourceExternalId,
-      targetExternalId,
-      input.tableId as TableId,
-      input.relationTypeId as RelationTypeId
-    )
+    let existingRelation = false
+
+    if (sourceExternalId === 'internal' && targetExternalId === 'internal' && sourceNodeId && targetNodeId) {
+      // For internal-to-internal relations, check by node IDs and relation type
+      const existingRelations = await this.nodeRelationRepository.findBySourceNodeIdAndRelationType(
+        sourceNodeId,
+        input.relationTypeId as RelationTypeId
+      )
+      existingRelation = existingRelations.some(relation =>
+        relation.getTargetNodeId() === targetNodeId &&
+        relation.getTableId() === input.tableId
+      )
+    } else {
+      // For external relations, use the original exists method
+      existingRelation = await this.nodeRelationRepository.exists(
+        sourceExternalId,
+        targetExternalId,
+        input.tableId as TableId,
+        input.relationTypeId as RelationTypeId
+      )
+    }
 
     if (existingRelation) {
+      const sourceIdentifier = sourceNodeId ? `node:${sourceNodeId}` : sourceExternalId
+      const targetIdentifier = targetNodeId ? `node:${targetNodeId}` : targetExternalId
       throw new ConflictException(
-        `Relation of type '${relationType.getIdentifier()}' already exists between '${sourceExternalId}' and '${targetExternalId}'`
+        `Relation of type '${relationType.getIdentifier()}' already exists between '${sourceIdentifier}' and '${targetIdentifier}'`
       )
     }
 
