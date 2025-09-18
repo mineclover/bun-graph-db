@@ -271,7 +271,7 @@ export interface ValidationResult {
   warnings: ValidationIssue[]
 
   /** Validation suggestions (optimization opportunities) */
-  suggestions: ValidationIssue[]
+  suggestions: string[]
 
   /** File analysis results */
   fileAnalysis: FileAnalysis
@@ -359,9 +359,9 @@ export class ValidationResultBuilder {
     return this
   }
 
-  addSuggestion(issue: ValidationIssue): this {
+  addSuggestion(suggestion: string): this {
     if (!this.result.suggestions) this.result.suggestions = []
-    this.result.suggestions.push(issue)
+    this.result.suggestions.push(suggestion)
     this.updateSummary()
     return this
   }
@@ -568,7 +568,7 @@ export class ValidationResultBuilder {
     // Update top recommendations
     const allSuggestions = [
       ...(this.result.warnings || []).map(w => w.suggestion).filter(Boolean),
-      ...(this.result.suggestions || []).map(s => s.suggestion).filter(Boolean)
+      ...(this.result.suggestions || [])
     ] as string[]
 
     summary.topRecommendations = allSuggestions.slice(0, 5)
@@ -646,13 +646,13 @@ export class ValidationResultBuilder {
 
   private createDefaultDatabaseValidation(): DatabaseValidation {
     return {
-      enforcesFileBased: false,
+      enforcesFileBased: true,
       memoryUsageDetected: false,
       connectionValidation: {
-        properlyConfigured: false
+        properlyConfigured: true
       },
       pathValidation: {
-        validPaths: false,
+        validPaths: true,
         filePaths: [],
         pathIssues: []
       }

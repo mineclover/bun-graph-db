@@ -163,7 +163,7 @@ export class FileBasedDatabaseFactory {
   ): Promise<FileBasedEnvironment> {
     // Validate that file-based is enforced
     if (!config.enforceFileBased) {
-      throw new Error('File-based enforcement is required')
+      throw new Error('In-memory databases not supported by FileBasedDatabaseFactory')
     }
 
     // Generate unique environment ID
@@ -204,6 +204,13 @@ export class FileBasedDatabaseFactory {
           await Bun.$`rm -f ${databasePath}`
         } catch (error) {
           console.warn(`Cleanup failed for environment ${envId}: ${error}`)
+        }
+      },
+
+      async validateState(): Promise<{isValid: boolean, databaseType: string}> {
+        return {
+          isValid: database.isConnected,
+          databaseType: 'file-based'
         }
       }
     }
@@ -440,46 +447,53 @@ export class FileBasedDatabaseFactory {
   }
 
   private async createDatabaseInstance(config: DatabaseConfig): Promise<DatabaseInstance> {
-    // This is a simplified implementation
-    // In a real scenario, this would use a proper SQLite driver
+    // Create actual SQLite database connection using Bun
+    const { Database } = require('bun:sqlite')
+    const connection = new Database(config.path)
+
+    // Configure SQLite options
+    if (config.enableForeignKeys) {
+      connection.exec('PRAGMA foreign_keys = ON')
+    }
+    if (config.journalMode) {
+      connection.exec(`PRAGMA journal_mode = ${config.journalMode}`)
+    }
+    if (config.synchronous) {
+      connection.exec(`PRAGMA synchronous = ${config.synchronous}`)
+    }
+
     const instance: DatabaseInstance = {
       path: config.path,
-      connection: null, // Would be actual database connection
-      isConnected: false,
+      connection,
+      isConnected: true,
       config,
 
       async query(sql: string, params?: any[]): Promise<any[]> {
-        // Placeholder implementation
-        return []
+        return connection.prepare(sql).all(params || [])
       },
 
       async exec(sql: string): Promise<void> {
-        // Placeholder implementation
+        connection.exec(sql)
       },
 
       prepare(sql: string): any {
-        // Placeholder implementation for prepared statements
-        return {
-          run: (...params: any[]) => ({ changes: 0, lastInsertRowid: 0 }),
-          get: (...params: any[]) => null,
-          all: (...params: any[]) => [],
-          finalize: () => {}
-        }
+        return connection.prepare(sql)
       },
 
       async beginTransaction(): Promise<void> {
-        // Placeholder implementation
+        connection.exec('BEGIN TRANSACTION')
       },
 
       async commit(): Promise<void> {
-        // Placeholder implementation
+        connection.exec('COMMIT')
       },
 
       async rollback(): Promise<void> {
-        // Placeholder implementation
+        connection.exec('ROLLBACK')
       },
 
       async close(): Promise<void> {
+        connection.close()
         this.isConnected = false
       },
 
