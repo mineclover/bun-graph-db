@@ -1,37 +1,22 @@
 {
+  "id": 885,
+  "identifier": "get-system-health-status",
+  "name": "GetSystemHealthStatus",
+  "description": "시스템 상태를 확인합니다",
+  "query": "query GetSystemHealthStatus {\n  health {\n    status\n    timestamp\n    version\n    uptime\n    database {\n      status\n      connectionCount\n      queryCount\n    }\n    memory {\n      used\n      total\n      percentage\n    }\n  }\n}",
+  "variables": {},
+  "operationType": "QUERY",
+  "tags": [
+    "system",
+    "health",
+    "monitoring",
+    "basic",
+    "fixed"
+  ],
+  "isActive": 1,
   "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:49.723Z",
-  "template": {
-    "id": "835",
-    "identifier": "get-system-health-status",
-    "name": "GetSystemHealthStatus",
-    "description": "시스템 상태를 확인합니다",
-    "query": "query GetSystemHealthStatus {\n  health {\n    status\n    timestamp\n    version\n    uptime\n    database {\n      status\n      connectionCount\n      queryCount\n    }\n    memory {\n      used\n      total\n      percentage\n    }\n  }\n}",
-    "queryName": [
-      "health"
-    ],
-    "operationType": "query",
-    "variables": {},
-    "variablesSchema": {},
-    "defaultVariables": {},
-    "applicableTables": null,
-    "complexityScore": 2,
-    "version": "1.0.0",
-    "tags": [
-      "system",
-      "health",
-      "monitoring",
-      "basic",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 1,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": "2025-09-15T05:28:29.000Z",
-    "statistics": {
-      "usageCount": 1,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": "2025-09-15T05:28:29.000Z"
-    }
-  }
+  "usageCount": 1905,
+  "createdAt": "2025-09-15 16:01:37",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.480Z"
 }

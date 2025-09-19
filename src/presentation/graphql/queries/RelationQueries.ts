@@ -47,7 +47,7 @@ export class RelationQueries extends BaseResolver {
   async relationTypes(_: GraphQLParent, _args?: any, _context?: GraphQLContext) {
     return this.handleQuery(async () => {
       const result = await this.relationTypeRepository.findAll({ limit: 100, offset: 0 })
-      return result.items
+      return result.nodes || []
     }, 'findAllRelationTypes')
   }
 
@@ -80,8 +80,8 @@ export class RelationQueries extends BaseResolver {
         )
 
         return {
-          nodes: result.items,
-          totalCount: result.total,
+          nodes: result.nodes,
+          totalCount: result.totalCount,
           hasNextPage: result.hasNextPage,
           hasPreviousPage: result.hasPreviousPage,
         }
@@ -108,8 +108,8 @@ export class RelationQueries extends BaseResolver {
 
           return {
             nodes: [],
-            relations: result.items,
-            totalCount: result.total,
+            relations: result.nodes,
+            totalCount: result.totalCount,
             hasNextPage: result.hasNextPage,
             hasPreviousPage: result.hasPreviousPage,
           }
@@ -128,7 +128,7 @@ export class RelationQueries extends BaseResolver {
         return {
           nodes: result.nodes,
           relations: result.relations,
-          totalCount: result.total,
+          totalCount: result.totalCount,
           hasNextPage: result.hasNextPage,
           hasPreviousPage: result.hasPreviousPage,
         }

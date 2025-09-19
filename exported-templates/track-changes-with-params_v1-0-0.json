@@ -1,87 +1,36 @@
 {
+  "id": 902,
+  "identifier": "track-changes-with-params",
+  "name": "TrackChangesWithParams",
+  "description": "파라미터를 사용하여 변경 사항을 추적합니다",
+  "query": "query TrackChangesWithParams($scope: ChangeTrackingScope!, $timeRange: String, $changeTypes: [ChangeType!]) {\n  trackChanges(scope: $scope, timeRange: $timeRange, changeTypes: $changeTypes) {\n    summary {\n      totalChanges\n      changesByType {\n        type\n        count\n        percentage\n      }\n      mostActiveUsers\n      mostChangedTables\n    }\n    changes {\n      id\n      timestamp\n      user {\n        id\n        name\n      }\n      type\n      entity {\n        type\n        id\n        name\n      }\n      changes {\n        field\n        oldValue\n        newValue\n        operation\n      }\n      metadata {\n        source\n        version\n        comments\n      }\n    }\n    analytics {\n      patterns {\n        timeOfDay\n        dayOfWeek\n        frequency\n      }\n      trends {\n        changeVelocity\n        userActivity\n        dataGrowth\n      }\n    }\n    conflicts {\n      potentialConflicts\n      resolved\n      pending\n    }\n  }\n}",
+  "variables": {
+    "scope": {
+      "tables": [
+        "example-table-id"
+      ],
+      "includeSystemChanges": false
+    },
+    "timeRange": "7d",
+    "changeTypes": [
+      "CREATE",
+      "UPDATE",
+      "DELETE"
+    ]
+  },
+  "operationType": "QUERY",
+  "tags": [
+    "tracking",
+    "changes",
+    "collaboration",
+    "versioning",
+    "parameterized",
+    "fixed"
+  ],
+  "isActive": 1,
   "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:50.445Z",
-  "template": {
-    "id": "854",
-    "identifier": "track-changes-with-params",
-    "name": "TrackChangesWithParams",
-    "description": "파라미터를 사용하여 변경 사항을 추적합니다",
-    "query": "query TrackChangesWithParams($scope: ChangeTrackingScope!, $timeRange: String, $changeTypes: [ChangeType!]) {\n  trackChanges(scope: $scope, timeRange: $timeRange, changeTypes: $changeTypes) {\n    summary {\n      totalChanges\n      changesByType {\n        type\n        count\n        percentage\n      }\n      mostActiveUsers\n      mostChangedTables\n    }\n    changes {\n      id\n      timestamp\n      user {\n        id\n        name\n      }\n      type\n      entity {\n        type\n        id\n        name\n      }\n      changes {\n        field\n        oldValue\n        newValue\n        operation\n      }\n      metadata {\n        source\n        version\n        comments\n      }\n    }\n    analytics {\n      patterns {\n        timeOfDay\n        dayOfWeek\n        frequency\n      }\n      trends {\n        changeVelocity\n        userActivity\n        dataGrowth\n      }\n    }\n    conflicts {\n      potentialConflicts\n      resolved\n      pending\n    }\n  }\n}",
-    "queryName": [
-      "trackChanges"
-    ],
-    "operationType": "query",
-    "variables": {
-      "scope": {
-        "tables": [
-          "example-table-id"
-        ],
-        "includeSystemChanges": false
-      },
-      "timeRange": "7d",
-      "changeTypes": [
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "variablesSchema": {
-      "scope": {
-        "type": "object",
-        "required": true,
-        "properties": {
-          "tables": {
-            "type": "array",
-            "description": "추적할 테이블 목록"
-          },
-          "includeSystemChanges": {
-            "type": "boolean",
-            "description": "시스템 변경 포함 여부"
-          }
-        }
-      },
-      "timeRange": {
-        "type": "string",
-        "description": "추적 기간"
-      },
-      "changeTypes": {
-        "type": "array",
-        "description": "추적할 변경 타입들"
-      }
-    },
-    "defaultVariables": {
-      "scope": {
-        "tables": [
-          "example-table-id"
-        ],
-        "includeSystemChanges": false
-      },
-      "timeRange": "7d",
-      "changeTypes": [
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "applicableTables": null,
-    "complexityScore": 6,
-    "version": "1.0.0",
-    "tags": [
-      "tracking",
-      "changes",
-      "collaboration",
-      "versioning",
-      "parameterized",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
-    }
-  }
+  "usageCount": 29,
+  "createdAt": "2025-09-15 16:01:40",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.484Z"
 }

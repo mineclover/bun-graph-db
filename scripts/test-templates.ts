@@ -4,23 +4,63 @@
  * Template Testing Script
  *
  * This script tests the template system by:
- * 1. Running predefined template scenarios
- * 2. Verifying expected outputs
- * 3. Testing variable substitution
- * 4. Validating usage tracking
+ * 1. Running templates by CREATE/UPDATE/DELETE tags in sequence
+ * 2. Using default_variables from database
+ * 3. Testing full CRUD workflows
+ * 4. Validating execution results
  *
- * Usage: bun run scripts/test-templates.ts [template-identifier]
+ * Usage:
+ *   bun run scripts/test-templates.ts [category]
+ *   Categories: table, node, todo, template, all
  */
 
 const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
+const DB_PATH = 'data/bun-graph-db.sqlite'
+
+interface TemplateInfo {
+  identifier: string
+  name: string
+  query: string
+  variables: any
+  operationType: string
+  tags: string[]
+}
+
+interface TestResult {
+  identifier: string
+  success: boolean
+  executionTime: number
+  result?: any
+  error?: string
+}
+
+// Database helper to get templates by tag
+async function getTemplatesByTag(tag: string): Promise<TemplateInfo[]> {
+  const { Database } = require('bun:sqlite')
+  const db = new Database(DB_PATH)
+
+  const query = `
+    SELECT identifier, name, query_text, default_variables, operation_type, tags
+    FROM templates
+    WHERE is_active = 1 AND tags LIKE '%"${tag}"%'
+    ORDER BY identifier
+  `
+
+  const rows = db.query(query).all()
+  db.close()
+
+  return rows.map((row: any) => ({
+    identifier: row.identifier,
+    name: row.name,
+    query: row.query_text,
+    variables: row.default_variables ? JSON.parse(row.default_variables) : {},
+    operationType: row.operation_type,
+    tags: row.tags ? JSON.parse(row.tags) : []
+  }))
+}
 
 // GraphQL client helper
 async function graphqlRequest(query: string, variables?: any): Promise<any> {
-  console.log(`🔍 Executing: ${query.split('{')[0]?.trim() || 'Query'}`)
-  if (variables) {
-    console.log(`📋 Variables:`, JSON.stringify(variables, null, 2))
-  }
-
   const response = await fetch(GRAPHQL_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -32,57 +72,123 @@ async function graphqlRequest(query: string, variables?: any): Promise<any> {
   const result = await response.json()
 
   if (result.errors) {
-    console.error('❌ GraphQL Error:', JSON.stringify(result.errors, null, 2))
     return { error: result.errors[0].message, data: null }
   }
 
-  console.log('✅ Result:', JSON.stringify(result.data, null, 2))
   return { error: null, data: result.data }
 }
 
-// Test scenarios for different templates
-const testScenarios = [
-  {
-    name: 'Health Check Template',
-    templateId: 'health-check',
-    variables: null,
-    expectedFields: ['health'],
-    description: 'Basic system health check',
-  },
-  {
-    name: 'List Tables Template',
-    templateId: 'list-all-tables',
-    variables: { limit: 5, offset: 0 },
-    expectedFields: ['tables'],
-    description: 'List tables with pagination',
-  },
-  {
-    name: 'Create Table Template',
-    templateId: 'create-table',
-    variables: {
-      input: {
-        identifier: `test-table-${Date.now()}`,
-        name: 'Test Table',
-        description: 'A table created via template testing',
-      },
-    },
-    expectedFields: ['createTable'],
-    description: 'Create a new table dynamically',
-  },
-  {
-    name: 'Search Nodes Template',
-    templateId: 'search-nodes',
-    variables: {
-      input: {
-        tableId: '1', // Will be updated dynamically
-        limit: 10,
-        offset: 0,
-      },
-    },
-    expectedFields: ['searchNodes'],
-    description: 'Search nodes in a table',
-  },
-]
+// Execute a single template
+async function executeTemplate(template: TemplateInfo): Promise<TestResult> {
+  const startTime = Date.now()
+
+  try {
+    console.log(`🧪 Testing: ${template.identifier}`)
+
+    const result = await graphqlRequest(template.query, template.variables)
+    const executionTime = Date.now() - startTime
+
+    if (result.error) {
+      console.log(`❌ Failed: ${template.identifier} (${executionTime}ms)`)
+      console.log(`   Error: ${result.error}`)
+      return {
+        identifier: template.identifier,
+        success: false,
+        executionTime,
+        error: result.error
+      }
+    }
+
+    console.log(`✅ Success: ${template.identifier} (${executionTime}ms)`)
+    return {
+      identifier: template.identifier,
+      success: true,
+      executionTime,
+      result: result.data
+    }
+  } catch (error) {
+    const executionTime = Date.now() - startTime
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    console.log(`❌ Failed: ${template.identifier} (${executionTime}ms)`)
+    console.log(`   Error: ${errorMessage}`)
+
+    return {
+      identifier: template.identifier,
+      success: false,
+      executionTime,
+      error: errorMessage
+    }
+  }
+}
+
+// Run CRUD test suite for a specific category
+async function runCRUDTestSuite(category: string): Promise<void> {
+  console.log(`\n📋 Running ${category.toUpperCase()} CRUD Test Suite`)
+  console.log('='.repeat(50))
+
+  const createTemplates = await getTemplatesByTag('create')
+  const updateTemplates = await getTemplatesByTag('update')
+  const deleteTemplates = await getTemplatesByTag('delete')
+
+  // Filter by category
+  const categoryCreateTemplates = createTemplates.filter(t =>
+    t.identifier.includes(category) || t.tags.includes(category)
+  )
+  const categoryUpdateTemplates = updateTemplates.filter(t =>
+    t.identifier.includes(category) || t.tags.includes(category)
+  )
+  const categoryDeleteTemplates = deleteTemplates.filter(t =>
+    t.identifier.includes(category) || t.tags.includes(category)
+  )
+
+  console.log(`📊 Found templates:`)
+  console.log(`   Create: ${categoryCreateTemplates.length}`)
+  console.log(`   Update: ${categoryUpdateTemplates.length}`)
+  console.log(`   Delete: ${categoryDeleteTemplates.length}`)
+
+  const results: TestResult[] = []
+
+  // Execute in order: CREATE → UPDATE → DELETE
+  const executionOrder = [
+    ...categoryCreateTemplates,
+    ...categoryUpdateTemplates,
+    ...categoryDeleteTemplates
+  ]
+
+  if (executionOrder.length === 0) {
+    console.log(`⚠️ No templates found for category: ${category}`)
+    return
+  }
+
+  for (const template of executionOrder) {
+    const result = await executeTemplate(template)
+    results.push(result)
+
+    // Small delay between tests
+    await new Promise(resolve => setTimeout(resolve, 100))
+  }
+
+  // Print summary
+  const passed = results.filter(r => r.success).length
+  const failed = results.length - passed
+  const totalTime = results.reduce((sum, r) => sum + r.executionTime, 0)
+  const successRate = results.length > 0 ? (passed / results.length * 100).toFixed(1) : 0
+
+  console.log(`\n📊 ${category.toUpperCase()} CRUD Test Results:`)
+  console.log(`   Total: ${results.length}`)
+  console.log(`   Passed: ${passed}`)
+  console.log(`   Failed: ${failed}`)
+  console.log(`   Success Rate: ${successRate}%`)
+  console.log(`   Total Time: ${totalTime}ms`)
+
+  if (failed > 0) {
+    console.log(`\n❌ Failed Tests:`)
+    results.filter(r => !r.success).forEach(r => {
+      console.log(`   • ${r.identifier}: ${r.error}`)
+    })
+  }
+}
 
 // Advanced test for complex template execution
 async function testComplexTemplate() {
@@ -287,82 +393,38 @@ async function testVariableValidation() {
 
 // Main test function
 async function main() {
-  console.log('🚀 Starting Template System Tests...')
+  console.log('🚀 Starting Template CRUD Testing...')
   console.log(`📍 GraphQL Endpoint: ${GRAPHQL_ENDPOINT}`)
+  console.log(`📁 Database: ${DB_PATH}`)
 
   const args = process.argv.slice(2)
-  const specificTemplate = args[0]
+  const category = args[0] || 'all'
 
   try {
     // Test server connectivity
-    console.log('🔍 Testing server connectivity...')
-    const healthResult = await graphqlRequest('query { health { status } }')
+    console.log('\n🔍 Testing server connectivity...')
+    const healthResult = await graphqlRequest('query { tables { totalCount } }')
     if (healthResult.error) {
-      throw new Error('Server not responding')
+      throw new Error('Server not responding. Make sure the GraphQL server is running.')
     }
     console.log('✅ Server is running')
 
-    // List available templates
-    const templates = await listAvailableTemplates()
-    console.log(`📊 Found ${templates.length} templates`)
+    if (category === 'all') {
+      // Run all category tests
+      const categories = ['table', 'node', 'todo', 'template']
 
-    if (specificTemplate) {
-      // Test specific template
-      console.log(`\n🎯 Testing specific template: ${specificTemplate}`)
+      console.log('\n🎯 Running All CRUD Test Suites...')
 
-      const template = templates.find((t: any) => t.identifier === specificTemplate)
-      if (!template) {
-        console.error(`❌ Template '${specificTemplate}' not found`)
-        return
+      for (const cat of categories) {
+        await runCRUDTestSuite(cat)
       }
 
-      // Test the specific template with minimal variables
-      const result = await testTemplateExecution(specificTemplate, {})
-      console.log(result.error ? '❌ Test failed' : '✅ Test passed')
+      console.log('\n🎉 All CRUD test suites completed!')
     } else {
-      // Run comprehensive tests
-      console.log('\n🧪 Running Comprehensive Tests...')
-
-      let passedTests = 0
-      let totalTests = 0
-
-      // Test variable validation
-      totalTests++
-      if (await testVariableValidation()) {
-        passedTests++
-      }
-
-      // Test complex workflow
-      totalTests++
-      if (await testComplexTemplate()) {
-        passedTests++
-      }
-
-      // Test basic scenarios
-      for (const scenario of testScenarios) {
-        totalTests++
-        console.log(`\n🧪 Running: ${scenario.name}`)
-        console.log(`   ${scenario.description}`)
-
-        const result = await testTemplateExecution(scenario.templateId, scenario.variables)
-
-        if (!result.error && result.data) {
-          console.log('✅ Test passed')
-          passedTests++
-        } else {
-          console.log('❌ Test failed')
-        }
-      }
-
-      // Summary
-      console.log(`\n📊 Test Results: ${passedTests}/${totalTests} tests passed`)
-
-      if (passedTests === totalTests) {
-        console.log('🎉 All tests passed! Template system is working correctly.')
-      } else {
-        console.log('⚠️ Some tests failed. Please check the output above.')
-      }
+      // Run specific category test
+      await runCRUDTestSuite(category)
     }
+
   } catch (error) {
     console.error('❌ Test execution failed:', error)
     process.exit(1)

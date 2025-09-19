@@ -1,69 +1,28 @@
 {
-  "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:50.134Z",
-  "template": {
-    "id": "839",
-    "identifier": "update-node-with-params",
-    "name": "UpdateNodeWithParams",
-    "description": "파라미터를 사용하여 노드를 업데이트합니다",
-    "query": "mutation UpdateNodeWithParams($id: ID!, $input: UpdateNodeInput!) {\n  updateNode(id: $id, input: $input) {\n    success\n    node {\n      id\n      title\n      content\n      updatedAt\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
-    "queryName": [
-      "updateNode"
-    ],
-    "operationType": "mutation",
-    "variables": {
-      "id": "example-node-id",
-      "input": {
-        "title": "업데이트된 제목",
-        "content": "업데이트된 내용"
-      }
-    },
-    "variablesSchema": {
-      "id": {
-        "type": "string",
-        "required": true,
-        "description": "업데이트할 노드 ID"
-      },
-      "input": {
-        "type": "object",
-        "required": true,
-        "properties": {
-          "title": {
-            "type": "string",
-            "description": "새로운 제목"
-          },
-          "content": {
-            "type": "string",
-            "description": "새로운 내용"
-          }
-        }
-      }
-    },
-    "defaultVariables": {
-      "id": "example-node-id",
-      "input": {
-        "title": "업데이트된 제목",
-        "content": "업데이트된 내용"
-      }
-    },
-    "applicableTables": null,
-    "complexityScore": 3,
-    "version": "1.0.0",
-    "tags": [
-      "node",
-      "mutation",
-      "update",
-      "parameterized",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
+  "id": 903,
+  "identifier": "update-node-with-params",
+  "name": "UpdateNodeWithParams",
+  "description": "파라미터를 사용하여 노드를 업데이트합니다",
+  "query": "mutation UpdateNodeWithParams($id: ID!, $input: UpdateNodeInput!) {\n  updateNode(id: $id, input: $input) {\n    success\n    node {\n      id\n      title\n      content\n      updatedAt\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
+  "variables": {
+    "id": "example-node-id",
+    "input": {
+      "title": "업데이트된 제목",
+      "content": "업데이트된 내용"
     }
-  }
+  },
+  "operationType": "MUTATION",
+  "tags": [
+    "node",
+    "mutation",
+    "update",
+    "parameterized",
+    "fixed"
+  ],
+  "isActive": 1,
+  "version": "1.0.0",
+  "usageCount": 899,
+  "createdAt": "2025-09-15 16:01:40",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.481Z"
 }

@@ -1,37 +1,22 @@
 {
+  "id": 875,
+  "identifier": "data-export",
+  "name": "ExportData",
+  "description": "다양한 형식(JSON, CSV, GraphML)으로 데이터를 내보내는 고급 내보내기 템플릿",
+  "query": "mutation ExportData($format: ExportFormat!, $options: ExportOptions!) {\n  exportData(format: $format, options: $options) {\n    success\n    exportId\n    format\n    downloadUrl\n    fileSize\n    recordCount\n    progress {\n      percentage\n      stage\n      estimatedCompletion\n    }\n    metadata {\n      exportedAt\n      schema {\n        tables\n        relations\n        attributes\n      }\n      statistics {\n        nodeCount\n        relationCount\n        tableCount\n      }\n    }\n    errors {\n      message\n      severity\n      affectedRecords\n    }\n  }\n}",
+  "variables": null,
+  "operationType": "MUTATION",
+  "tags": [
+    "export",
+    "data-transfer",
+    "formats",
+    "streaming",
+    "fixed"
+  ],
+  "isActive": 1,
   "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:49.927Z",
-  "template": {
-    "id": "811",
-    "identifier": "data-export",
-    "name": "ExportData",
-    "description": "다양한 형식(JSON, CSV, GraphML)으로 데이터를 내보내는 고급 내보내기 템플릿",
-    "query": "mutation ExportData($format: ExportFormat!, $options: ExportOptions!) {\n  exportData(format: $format, options: $options) {\n    success\n    exportId\n    format\n    downloadUrl\n    fileSize\n    recordCount\n    progress {\n      percentage\n      stage\n      estimatedCompletion\n    }\n    metadata {\n      exportedAt\n      schema {\n        tables\n        relations\n        attributes\n      }\n      statistics {\n        nodeCount\n        relationCount\n        tableCount\n      }\n    }\n    errors {\n      message\n      severity\n      affectedRecords\n    }\n  }\n}",
-    "queryName": [
-      "exportData"
-    ],
-    "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": null,
-    "defaultVariables": null,
-    "applicableTables": [],
-    "complexityScore": 8,
-    "version": "1.0.0",
-    "tags": [
-      "export",
-      "data-transfer",
-      "formats",
-      "streaming",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
-    }
-  }
+  "usageCount": 23,
+  "createdAt": "2025-09-15 16:01:36",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.484Z"
 }

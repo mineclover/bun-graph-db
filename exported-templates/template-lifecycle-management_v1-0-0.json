@@ -1,37 +1,22 @@
 {
+  "id": 900,
+  "identifier": "template-lifecycle-management",
+  "name": "TemplateLifecycleManagement",
+  "description": "템플릿의 생성부터 삭제까지 전체 생명주기 관리 및 버전 관리",
+  "query": "query TemplateLifecycleManagement($templateId: ID, $operation: LifecycleOperation!) {\n  templateLifecycle(templateId: $templateId, operation: $operation) {\n    template {\n      id\n      identifier\n      name\n      version\n      status\n      createdAt\n      updatedAt\n      lastUsedAt\n      usageCount\n    }\n    lifecycle {\n      currentStage\n      possibleTransitions\n      history {\n        stage\n        timestamp\n        performedBy\n        reason\n      }\n    }\n    dependencies {\n      dependsOn {\n        id\n        identifier\n        name\n        relationship\n      }\n      dependentTemplates {\n        id\n        identifier\n        name\n        relationship\n      }\n    }\n    analytics {\n      usageStats {\n        totalExecutions\n        successRate\n        avgExecutionTime\n        lastWeekUsage\n        popularVariables\n      }\n      performance {\n        complexity\n        executionTrend\n        errorPatterns\n      }\n    }\n    recommendations {\n      optimization\n      archiving\n      deprecation\n      migration\n    }\n  }\n}",
+  "variables": null,
+  "operationType": "QUERY",
+  "tags": [
+    "lifecycle",
+    "management",
+    "versioning",
+    "analytics",
+    "fixed"
+  ],
+  "isActive": 1,
   "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:49.927Z",
-  "template": {
-    "id": "814",
-    "identifier": "template-lifecycle-management",
-    "name": "TemplateLifecycleManagement",
-    "description": "템플릿의 생성부터 삭제까지 전체 생명주기 관리 및 버전 관리",
-    "query": "query TemplateLifecycleManagement($templateId: ID, $operation: LifecycleOperation!) {\n  templateLifecycle(templateId: $templateId, operation: $operation) {\n    template {\n      id\n      identifier\n      name\n      version\n      status\n      createdAt\n      updatedAt\n      lastUsedAt\n      usageCount\n    }\n    lifecycle {\n      currentStage\n      possibleTransitions\n      history {\n        stage\n        timestamp\n        performedBy\n        reason\n      }\n    }\n    dependencies {\n      dependsOn {\n        id\n        identifier\n        name\n        relationship\n      }\n      dependentTemplates {\n        id\n        identifier\n        name\n        relationship\n      }\n    }\n    analytics {\n      usageStats {\n        totalExecutions\n        successRate\n        avgExecutionTime\n        lastWeekUsage\n        popularVariables\n      }\n      performance {\n        complexity\n        executionTrend\n        errorPatterns\n      }\n    }\n    recommendations {\n      optimization\n      archiving\n      deprecation\n      migration\n    }\n  }\n}",
-    "queryName": [
-      "templateLifecycle"
-    ],
-    "operationType": "query",
-    "variables": null,
-    "variablesSchema": null,
-    "defaultVariables": null,
-    "applicableTables": [],
-    "complexityScore": 10,
-    "version": "1.0.0",
-    "tags": [
-      "lifecycle",
-      "management",
-      "versioning",
-      "analytics",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
-    }
-  }
+  "usageCount": 22,
+  "createdAt": "2025-09-15 16:01:40",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.484Z"
 }

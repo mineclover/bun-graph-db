@@ -1,66 +1,30 @@
 {
+  "id": 863,
+  "identifier": "analyze-query-performance-with-params",
+  "name": "AnalyzeQueryPerformanceWithParams",
+  "description": "파라미터를 사용하여 쿼리 성능을 분석합니다",
+  "query": "query AnalyzeQueryPerformanceWithParams($timeRange: String!, $queryTypes: [String!], $threshold: Float) {\n  analyzeQueryPerformance(timeRange: $timeRange, queryTypes: $queryTypes, slowQueryThreshold: $threshold) {\n    summary {\n      totalQueries\n      avgExecutionTime\n      slowQueries\n      fastQueries\n      errorRate\n    }\n    slowQueries {\n      query\n      avgExecutionTime\n      executionCount\n      lastExecuted\n      optimization {\n        suggestions\n        expectedImprovement\n        complexity\n      }\n    }\n    patterns {\n      peakHours\n      commonPatterns\n      bottlenecks\n    }\n    recommendations {\n      indexSuggestions {\n        table\n        columns\n        estimatedImprovement\n        creationCost\n      }\n      queryOptimizations {\n        original\n        optimized\n        improvement\n      }\n      cacheStrategies {\n        queries\n        ttl\n        hitRate\n      }\n    }\n  }\n}",
+  "variables": {
+    "timeRange": "24h",
+    "queryTypes": [
+      "QUERY",
+      "MUTATION"
+    ],
+    "threshold": 100
+  },
+  "operationType": "QUERY",
+  "tags": [
+    "performance",
+    "query",
+    "optimization",
+    "monitoring",
+    "parameterized",
+    "fixed"
+  ],
+  "isActive": 1,
   "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:50.444Z",
-  "template": {
-    "id": "851",
-    "identifier": "analyze-query-performance-with-params",
-    "name": "AnalyzeQueryPerformanceWithParams",
-    "description": "파라미터를 사용하여 쿼리 성능을 분석합니다",
-    "query": "query AnalyzeQueryPerformanceWithParams($timeRange: String!, $queryTypes: [String!], $threshold: Float) {\n  analyzeQueryPerformance(timeRange: $timeRange, queryTypes: $queryTypes, slowQueryThreshold: $threshold) {\n    summary {\n      totalQueries\n      avgExecutionTime\n      slowQueries\n      fastQueries\n      errorRate\n    }\n    slowQueries {\n      query\n      avgExecutionTime\n      executionCount\n      lastExecuted\n      optimization {\n        suggestions\n        expectedImprovement\n        complexity\n      }\n    }\n    patterns {\n      peakHours\n      commonPatterns\n      bottlenecks\n    }\n    recommendations {\n      indexSuggestions {\n        table\n        columns\n        estimatedImprovement\n        creationCost\n      }\n      queryOptimizations {\n        original\n        optimized\n        improvement\n      }\n      cacheStrategies {\n        queries\n        ttl\n        hitRate\n      }\n    }\n  }\n}",
-    "queryName": [
-      "analyzeQueryPerformance"
-    ],
-    "operationType": "query",
-    "variables": {
-      "timeRange": "24h",
-      "queryTypes": [
-        "QUERY",
-        "MUTATION"
-      ],
-      "threshold": 100
-    },
-    "variablesSchema": {
-      "timeRange": {
-        "type": "string",
-        "required": true,
-        "description": "분석 기간 (1h, 24h, 7d)"
-      },
-      "queryTypes": {
-        "type": "array",
-        "description": "분석할 쿼리 타입들"
-      },
-      "threshold": {
-        "type": "number",
-        "description": "느린 쿼리 임계값 (ms)"
-      }
-    },
-    "defaultVariables": {
-      "timeRange": "24h",
-      "queryTypes": [
-        "QUERY",
-        "MUTATION"
-      ],
-      "threshold": 100
-    },
-    "applicableTables": null,
-    "complexityScore": 7,
-    "version": "1.0.0",
-    "tags": [
-      "performance",
-      "query",
-      "optimization",
-      "monitoring",
-      "parameterized",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
-    }
-  }
+  "usageCount": 31,
+  "createdAt": "2025-09-15 16:01:34",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.483Z"
 }

@@ -5,6 +5,19 @@ import {
 } from '@/core/utils/GraphQLParser.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
+/**
+ * Safely parse JSON string with fallback value
+ */
+function parseJsonSafely<T>(jsonString: string, fallback: T): T {
+  try {
+    const parsed = JSON.parse(jsonString)
+    return parsed as T
+  } catch (error) {
+    console.warn(`Invalid JSON detected: ${jsonString}. Using fallback value.`, error)
+    return fallback
+  }
+}
+
 export interface ValidationResult {
   isValid: boolean
   errors: string[]
@@ -134,7 +147,7 @@ export class QueryTemplate {
     const parsedApplicableTables = applicableTables
       ? (JSON.parse(applicableTables) as string[])
       : null
-    const parsedTags = tags ? (JSON.parse(tags) as string[]) : []
+    const parsedTags = tags ? parseJsonSafely<string[]>(tags, []) : []
 
     // Parse queryName field - support both legacy single string and new array format
     let parsedQueryName: string[]

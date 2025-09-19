@@ -1,47 +1,24 @@
 {
+  "id": 882,
+  "identifier": "get-node-by-id",
+  "name": "GetNodeById",
+  "description": "특정 ID로 노드 정보를 조회합니다",
+  "query": "query GetNodeById($nodeId: ID!) {\n  getNode(id: $nodeId) {\n    id\n    title\n    content\n    tableId\n    createdAt\n    updatedAt\n    isActive\n    metadata\n  }\n}",
+  "variables": {
+    "nodeId": "example-node-id"
+  },
+  "operationType": "QUERY",
+  "tags": [
+    "node",
+    "query",
+    "basic",
+    "parameterized",
+    "fixed"
+  ],
+  "isActive": 1,
   "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:50.029Z",
-  "template": {
-    "id": "829",
-    "identifier": "get-node-by-id",
-    "name": "GetNodeById",
-    "description": "특정 ID로 노드 정보를 조회합니다",
-    "query": "query GetNodeById($nodeId: ID!) {\n  getNode(id: $nodeId) {\n    id\n    title\n    content\n    tableId\n    createdAt\n    updatedAt\n    isActive\n    metadata\n  }\n}",
-    "queryName": [
-      "getNode"
-    ],
-    "operationType": "query",
-    "variables": {
-      "nodeId": "example-node-id"
-    },
-    "variablesSchema": {
-      "nodeId": {
-        "type": "string",
-        "required": true,
-        "description": "조회할 노드의 ID"
-      }
-    },
-    "defaultVariables": {
-      "nodeId": "example-node-id"
-    },
-    "applicableTables": null,
-    "complexityScore": 2,
-    "version": "1.0.0",
-    "tags": [
-      "node",
-      "query",
-      "basic",
-      "parameterized",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
-    }
-  }
+  "usageCount": 839,
+  "createdAt": "2025-09-15 16:01:37",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.481Z"
 }

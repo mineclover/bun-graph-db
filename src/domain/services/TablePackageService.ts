@@ -36,6 +36,8 @@ export class TablePackageService implements ITablePackageService {
   private readonly enhancedDependencyAnalyzer: EnhancedDependencyAnalyzer
   private readonly enhancedTemplateGenerator: EnhancedTemplateGenerator
   private readonly schemaIntrospectionService: SchemaIntrospectionService
+  private readonly tablePackageValidator: any
+  private readonly tablePackageRecoveryManager: any
 
   constructor(
     private readonly tableRepository: ITableRepository,

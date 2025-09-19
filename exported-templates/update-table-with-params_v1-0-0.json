@@ -1,63 +1,27 @@
 {
-  "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:50.134Z",
-  "template": {
-    "id": "837",
-    "identifier": "update-table-with-params",
-    "name": "UpdateTableWithParams",
-    "description": "파라미터를 사용하여 테이블을 업데이트합니다",
-    "query": "mutation UpdateTableWithParams($id: ID!, $input: UpdateTableInput!) {\n  updateTable(id: $id, input: $input) {\n    success\n    table {\n      id\n      identifier\n      description\n      updatedAt\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
-    "queryName": [
-      "updateTable"
-    ],
-    "operationType": "mutation",
-    "variables": {
-      "id": "example-table-id",
-      "input": {
-        "description": "업데이트된 테이블 설명"
-      }
-    },
-    "variablesSchema": {
-      "id": {
-        "type": "string",
-        "required": true,
-        "description": "업데이트할 테이블 ID"
-      },
-      "input": {
-        "type": "object",
-        "required": true,
-        "properties": {
-          "description": {
-            "type": "string",
-            "description": "새로운 설명"
-          }
-        }
-      }
-    },
-    "defaultVariables": {
-      "id": "example-table-id",
-      "input": {
-        "description": "업데이트된 테이블 설명"
-      }
-    },
-    "applicableTables": null,
-    "complexityScore": 3,
-    "version": "1.0.0",
-    "tags": [
-      "table",
-      "mutation",
-      "update",
-      "parameterized",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
+  "id": 905,
+  "identifier": "update-table-with-params",
+  "name": "UpdateTableWithParams",
+  "description": "파라미터를 사용하여 테이블을 업데이트합니다",
+  "query": "mutation UpdateTableWithParams($id: ID!, $input: UpdateTableInput!) {\n  updateTable(id: $id, input: $input) {\n    success\n    table {\n      id\n      identifier\n      description\n      updatedAt\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
+  "variables": {
+    "id": "example-table-id",
+    "input": {
+      "description": "업데이트된 테이블 설명"
     }
-  }
+  },
+  "operationType": "MUTATION",
+  "tags": [
+    "table",
+    "mutation",
+    "update",
+    "parameterized",
+    "fixed"
+  ],
+  "isActive": 1,
+  "version": "1.0.0",
+  "usageCount": 1075,
+  "createdAt": "2025-09-15 16:01:41",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.481Z"
 }

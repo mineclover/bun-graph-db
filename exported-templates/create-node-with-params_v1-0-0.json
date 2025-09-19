@@ -1,71 +1,28 @@
 {
-  "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:50.134Z",
-  "template": {
-    "id": "838",
-    "identifier": "create-node-with-params",
-    "name": "CreateNodeWithParams",
-    "description": "파라미터를 사용하여 새 노드를 생성합니다",
-    "query": "mutation CreateNodeWithParams($input: CreateNodeInput!) {\n  createNode(input: $input) {\n    success\n    node {\n      id\n      title\n      content\n      tableId\n      createdAt\n      isActive\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
-    "queryName": [
-      "createNode"
-    ],
-    "operationType": "mutation",
-    "variables": {
-      "input": {
-        "title": "새 노드",
-        "content": "노드 내용입니다",
-        "tableId": "example-table-id"
-      }
-    },
-    "variablesSchema": {
-      "input": {
-        "type": "object",
-        "required": true,
-        "properties": {
-          "title": {
-            "type": "string",
-            "required": true,
-            "description": "노드 제목"
-          },
-          "content": {
-            "type": "string",
-            "required": true,
-            "description": "노드 내용"
-          },
-          "tableId": {
-            "type": "string",
-            "required": true,
-            "description": "소속 테이블 ID"
-          }
-        }
-      }
-    },
-    "defaultVariables": {
-      "input": {
-        "title": "새 노드",
-        "content": "노드 내용입니다",
-        "tableId": "example-table-id"
-      }
-    },
-    "applicableTables": null,
-    "complexityScore": 3,
-    "version": "1.0.0",
-    "tags": [
-      "node",
-      "mutation",
-      "create",
-      "parameterized",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
+  "id": 868,
+  "identifier": "create-node-with-params",
+  "name": "CreateNodeWithParams",
+  "description": "파라미터를 사용하여 새 노드를 생성합니다",
+  "query": "mutation CreateNodeWithParams($input: CreateNodeInput!) {\n  createNode(input: $input) {\n    success\n    node {\n      id\n      title\n      content\n      tableId\n      createdAt\n      isActive\n    }\n    errors {\n      message\n      code\n    }\n  }\n}",
+  "variables": {
+    "input": {
+      "title": "새 노드",
+      "content": "노드 내용입니다",
+      "tableId": "example-table-id"
     }
-  }
+  },
+  "operationType": "MUTATION",
+  "tags": [
+    "node",
+    "mutation",
+    "create",
+    "parameterized",
+    "fixed"
+  ],
+  "isActive": 1,
+  "version": "1.0.0",
+  "usageCount": 736,
+  "createdAt": "2025-09-15 16:01:35",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.482Z"
 }

@@ -1,47 +1,24 @@
 {
+  "id": 877,
+  "identifier": "delete-node-with-params",
+  "name": "DeleteNodeWithParams",
+  "description": "파라미터를 사용하여 노드를 삭제합니다",
+  "query": "mutation DeleteNodeWithParams($id: ID!) {\n  deleteNode(id: $id) {\n    success\n    errors {\n      message\n      code\n    }\n  }\n}",
+  "variables": {
+    "id": "example-node-id"
+  },
+  "operationType": "MUTATION",
+  "tags": [
+    "node",
+    "mutation",
+    "delete",
+    "parameterized",
+    "fixed"
+  ],
+  "isActive": 1,
   "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:50.237Z",
-  "template": {
-    "id": "840",
-    "identifier": "delete-node-with-params",
-    "name": "DeleteNodeWithParams",
-    "description": "파라미터를 사용하여 노드를 삭제합니다",
-    "query": "mutation DeleteNodeWithParams($id: ID!) {\n  deleteNode(id: $id) {\n    success\n    errors {\n      message\n      code\n    }\n  }\n}",
-    "queryName": [
-      "deleteNode"
-    ],
-    "operationType": "mutation",
-    "variables": {
-      "id": "example-node-id"
-    },
-    "variablesSchema": {
-      "id": {
-        "type": "string",
-        "required": true,
-        "description": "삭제할 노드 ID"
-      }
-    },
-    "defaultVariables": {
-      "id": "example-node-id"
-    },
-    "applicableTables": null,
-    "complexityScore": 2,
-    "version": "1.0.0",
-    "tags": [
-      "node",
-      "mutation",
-      "delete",
-      "parameterized",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
-    }
-  }
+  "usageCount": 713,
+  "createdAt": "2025-09-15 16:01:36",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.482Z"
 }

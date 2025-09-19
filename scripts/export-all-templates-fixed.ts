@@ -112,25 +112,28 @@ async function cleanAndEnsureOutputDirectory() {
 async function getAllTemplatesDetailed(): Promise<FullTemplate[]> {
   const query = `
     query GetAllTemplatesDetailed {
-      getPopularTemplates(limit: 200) {
-        id
-        identifier
-        name
-        description
-        query
-        queryName
-        operationType
-        variables
-        variablesSchema
-        defaultVariables
-        applicableTables
-        complexityScore
-        version
-        tags
-        isActive
-        usageCount
-        avgExecutionTimeMs
-        lastUsedAt
+      searchTemplates(pagination: { limit: 200, offset: 0 }) {
+        templates {
+          id
+          identifier
+          name
+          description
+          query
+          queryName
+          operationType
+          variables
+          variablesSchema
+          defaultVariables
+          applicableTables
+          complexityScore
+          version
+          tags
+          isActive
+          usageCount
+          avgExecutionTimeMs
+          lastUsedAt
+        }
+        totalCount
       }
     }
   `
@@ -153,7 +156,7 @@ async function getAllTemplatesDetailed(): Promise<FullTemplate[]> {
     throw new Error(`GraphQL 오류: ${JSON.stringify(data.errors)}`)
   }
 
-  return data.data.getPopularTemplates || []
+  return data.data.searchTemplates?.templates || []
 }
 
 async function exportAllTemplatesFixed(templates: FullTemplate[]): Promise<ExportResult[]> {
@@ -304,13 +307,15 @@ async function generateIndexFile(results: ExportResult[]) {
 
 ## Fixed 템플릿 목록 (사용량 순)
 
-| 파일명 | 템플릿명 | 사용횟수 | 카테고리 | 운영타입 |
-|--------|----------|----------|----------|----------|
+| 파일명 | 템플릿명 | 설명 | 사용횟수 | 카테고리 | 운영타입 |
+|--------|----------|------|----------|----------|----------|
 ${successful
   .map((result) => {
     const template = result.template!
     const category = getCategory(template)
-    return `| \`${result.filename}\` | ${template.name} | ${template.usageCount}회 | ${category} | ${template.operationType} |`
+    const description = template.description || '설명 없음'
+    const truncatedDesc = description.length > 50 ? description.substring(0, 50) + '...' : description
+    return `| \`${result.filename}\` | ${template.name} | ${truncatedDesc} | ${template.usageCount}회 | ${category} | ${template.operationType} |`
   })
   .join('\n')}
 

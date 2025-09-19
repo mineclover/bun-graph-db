@@ -1,37 +1,22 @@
 {
+  "id": 864,
+  "identifier": "bulk-data-import",
+  "name": "BulkImport",
+  "description": "CSV, JSON 등의 파일에서 대량의 노드를 한번에 생성하는 템플릿",
+  "query": "mutation BulkImport($input: BulkImportInput!) {\n  bulkImport(input: $input) {\n    success\n    processedCount\n    totalCount\n    errors {\n      line\n      message\n      severity\n    }\n    progress {\n      percentage\n      estimatedTimeRemaining\n    }\n    summary {\n      created\n      updated\n      skipped\n      failed\n    }\n  }\n}",
+  "variables": null,
+  "operationType": "MUTATION",
+  "tags": [
+    "bulk",
+    "import",
+    "data-migration",
+    "batch-processing",
+    "fixed"
+  ],
+  "isActive": 1,
   "version": "1.0.0",
-  "exportedAt": "2025-09-15T15:20:49.825Z",
-  "template": {
-    "id": "807",
-    "identifier": "bulk-data-import",
-    "name": "BulkImport",
-    "description": "CSV, JSON 등의 파일에서 대량의 노드를 한번에 생성하는 템플릿",
-    "query": "mutation BulkImport($input: BulkImportInput!) {\n  bulkImport(input: $input) {\n    success\n    processedCount\n    totalCount\n    errors {\n      line\n      message\n      severity\n    }\n    progress {\n      percentage\n      estimatedTimeRemaining\n    }\n    summary {\n      created\n      updated\n      skipped\n      failed\n    }\n  }\n}",
-    "queryName": [
-      "bulkImport"
-    ],
-    "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": null,
-    "defaultVariables": null,
-    "applicableTables": [],
-    "complexityScore": 5,
-    "version": "1.0.0",
-    "tags": [
-      "bulk",
-      "import",
-      "data-migration",
-      "batch-processing",
-      "fixed"
-    ],
-    "isActive": true,
-    "usageCount": 0,
-    "avgExecutionTimeMs": 0,
-    "lastUsedAt": null,
-    "statistics": {
-      "usageCount": 0,
-      "avgExecutionTimeMs": 0,
-      "lastUsedAt": null
-    }
-  }
+  "usageCount": 49,
+  "createdAt": "2025-09-15 16:01:34",
+  "updatedAt": "2025-09-18 03:03:36",
+  "exportedAt": "2025-09-19T02:57:31.483Z"
 }

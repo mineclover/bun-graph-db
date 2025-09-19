@@ -316,3 +316,23 @@ bun run scripts/setup-test-environment.ts --cleanup
 - 성능 메트릭 모니터링 스크립트
 
 이 문서는 scripts 폴더의 모든 스크립트에 대한 완전한 가이드입니다. 각 스크립트의 목적을 명확히 이해하고 적절한 워크플로우에 따라 사용하시기 바랍니다.
+# Template Testing
+
+Test templates with tag-based CRUD workflows:
+
+```bash
+# Test all categories (table, node, todo, template)
+bun run scripts/test-templates.ts all
+
+# Test specific category
+bun run scripts/test-templates.ts table
+bun run scripts/test-templates.ts node
+bun run scripts/test-templates.ts todo
+bun run scripts/test-templates.ts template
+```
+
+The script will:
+1. Read templates from database by create/update/delete tags
+2. Execute them in sequence using default_variables
+3. Report success/failure rates and execution times
+
