@@ -1,43 +1,74 @@
 {
-  "id": 865,
-  "identifier": "bulk-create-nodes-with-params",
-  "name": "BulkCreateNodesWithParams",
-  "description": "파라미터를 사용하여 여러 노드를 일괄 생성합니다",
-  "query": "mutation BulkCreateNodesWithParams($input: BulkCreateNodesInput!) {\n  bulkCreateNodes(input: $input) {\n    success\n    totalCreated\n    totalFailed\n    createdNodes {\n      id\n      title\n      tableId\n    }\n    errors {\n      index\n      message\n      code\n    }\n  }\n}",
-  "variables": {
-    "input": {
-      "nodes": [
-        {
-          "title": "배치 노드 1",
-          "content": "첫 번째 노드 내용",
-          "tableId": "example-table-id"
-        },
-        {
-          "title": "배치 노드 2",
-          "content": "두 번째 노드 내용",
-          "tableId": "example-table-id"
-        }
-      ],
-      "options": {
-        "skipErrors": true,
-        "validateBeforeCreate": true
-      }
-    }
-  },
-  "operationType": "MUTATION",
-  "tags": [
-    "node",
-    "mutation",
-    "bulk",
-    "batch",
-    "parameterized",
-    "fixed",
-    "create"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 806,
-  "createdAt": "2025-09-15 16:01:34",
-  "updatedAt": "2025-09-19 02:54:38",
-  "exportedAt": "2025-09-19T02:57:31.481Z"
+  "exportedAt": "2025-09-19T11:07:21.523Z",
+  "template": {
+    "identifier": "bulk-create-nodes-with-params",
+    "name": "BulkCreateNodesWithParams",
+    "description": "파라미터를 사용하여 여러 노드를 일괄 생성합니다",
+    "query": "mutation BulkCreateNodesWithParams($input: BulkCreateNodesInput!) {\n  bulkCreateNodes(input: $input) {\n    success\n    totalCreated\n    totalFailed\n    createdNodes {\n      id\n      title\n      tableId\n    }\n    errors {\n      index\n      message\n      code\n    }\n  }\n}",
+    "queryName": [
+      "bulkCreateNodes"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": {
+      "input": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "nodes": {
+            "type": "array",
+            "required": true,
+            "description": "생성할 노드 목록"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "skipErrors": {
+                "type": "boolean",
+                "description": "오류 무시 여부"
+              },
+              "validateBeforeCreate": {
+                "type": "boolean",
+                "description": "생성 전 검증 여부"
+              }
+            }
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "input": {
+        "nodes": [
+          {
+            "title": "배치 노드 1",
+            "content": "첫 번째 노드 내용",
+            "tableId": "example-table-id"
+          },
+          {
+            "title": "배치 노드 2",
+            "content": "두 번째 노드 내용",
+            "tableId": "example-table-id"
+          }
+        ],
+        "options": {
+          "skipErrors": true,
+          "validateBeforeCreate": true
+        }
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 6,
+    "version": "1.0.0",
+    "tags": [
+      "node",
+      "mutation",
+      "bulk",
+      "batch",
+      "parameterized",
+      "fixed",
+      "create"
+    ],
+    "isActive": false
+  }
 }

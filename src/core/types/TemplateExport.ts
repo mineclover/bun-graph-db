@@ -84,3 +84,27 @@ export interface TemplateExportOptions {
   includeMetadata?: boolean // 메타데이터 포함 여부 (기본: true)
   prettyPrint?: boolean // JSON 포맷팅 여부 (기본: true)
 }
+
+/**
+ * Batch export types for multiple templates
+ */
+export interface ExportedTemplateInfo {
+  templateId: string
+  templateIdentifier: string
+  templateName: string
+  filename: string
+  exportSuccess: boolean
+  exportError?: string
+}
+
+export interface BatchTemplateExportResult {
+  success: boolean
+  exportedTemplates: ExportedTemplateInfo[]
+  totalCount: number
+  outputDirectory?: string
+  errors: string[]
+}
+
+export interface BatchTemplateExportOptions extends TemplateExportOptions {
+  outputDirectory?: string // 출력 디렉토리 (기본: exported-templates)
+}

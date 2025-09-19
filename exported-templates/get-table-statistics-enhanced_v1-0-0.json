@@ -1,0 +1,29 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "template": {
+    "identifier": "get-table-statistics-enhanced",
+    "name": "테이블 통계 조회 (향상됨)",
+    "description": "테이블의 상세 통계 정보를 조회합니다",
+    "query": "query EnhancedTableStats($tableId: ID!) {\n        table(id: $tableId) {\n          id\n          identifier\n          description\n          nodeCount\n          attributeCount\n          createdAt\n          updatedAt\n        }\n        nodes: nodes(\n          filter: { tableId: $tableId }\n          pagination: { limit: 100, offset: 0 }\n        ) {\n          totalCount\n          hasNextPage\n          nodes {\n            id\n            content\n            createdAt\n            attributes {\n              id\n              value\n              attribute {\n                identifier\n                dataType\n              }\n            }\n          }\n        }\n      }",
+    "queryName": [
+      "get-table-statistics-enhanced"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "tableId": "101"
+    },
+    "applicableTables": null,
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "table",
+      "statistics",
+      "enhanced",
+      "fixed"
+    ],
+    "isActive": true
+  }
+}

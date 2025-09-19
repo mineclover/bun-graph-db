@@ -38,6 +38,13 @@ extend type Mutation {
     includeStatistics: Boolean
   ): ExportTemplatePayload!
 
+  # Batch export templates with filters
+  exportTemplates(
+    filter: QueryTemplatesFilter
+    includeStatistics: Boolean
+    outputDirectory: String
+  ): ExportTemplatesPayload!
+
   importTemplate(
     jsonData: String!
     overwriteExisting: Boolean

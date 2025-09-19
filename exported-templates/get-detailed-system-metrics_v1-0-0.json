@@ -1,26 +1,41 @@
 {
-  "id": 883,
-  "identifier": "get-detailed-system-metrics",
-  "name": "GetDetailedSystemMetrics",
-  "description": "파라미터를 사용하여 상세한 시스템 메트릭을 조회합니다",
-  "query": "query GetDetailedSystemMetrics($timeRange: String, $includeHistory: Boolean) {\n  systemMetrics(timeRange: $timeRange, includeHistory: $includeHistory) {\n    timestamp\n    cpu {\n      usage\n      loadAverage\n      cores\n    }\n    memory {\n      used\n      total\n      percentage\n      available\n    }\n    database {\n      connections {\n        active\n        idle\n        total\n      }\n      performance {\n        queriesPerSecond\n        avgQueryTime\n        slowQueries\n      }\n    }\n    history {\n      timestamp\n      cpuUsage\n      memoryUsage\n    }\n  }\n}",
-  "variables": {
-    "timeRange": "1h",
-    "includeHistory": true
-  },
-  "operationType": "QUERY",
-  "tags": [
-    "system",
-    "monitoring",
-    "metrics",
-    "query",
-    "parameterized",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 45,
-  "createdAt": "2025-09-15 16:01:37",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.483Z"
+  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "template": {
+    "identifier": "get-detailed-system-metrics",
+    "name": "GetDetailedSystemMetrics",
+    "description": "파라미터를 사용하여 상세한 시스템 메트릭을 조회합니다",
+    "query": "query GetDetailedSystemMetrics($timeRange: String, $includeHistory: Boolean) {\n  systemMetrics(timeRange: $timeRange, includeHistory: $includeHistory) {\n    timestamp\n    cpu {\n      usage\n      loadAverage\n      cores\n    }\n    memory {\n      used\n      total\n      percentage\n      available\n    }\n    database {\n      connections {\n        active\n        idle\n        total\n      }\n      performance {\n        queriesPerSecond\n        avgQueryTime\n        slowQueries\n      }\n    }\n    history {\n      timestamp\n      cpuUsage\n      memoryUsage\n    }\n  }\n}",
+    "queryName": [
+      "systemMetrics"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": {
+      "timeRange": {
+        "type": "string",
+        "description": "시간 범위 (1h, 24h, 7d)"
+      },
+      "includeHistory": {
+        "type": "boolean",
+        "description": "이력 데이터 포함 여부"
+      }
+    },
+    "defaultVariables": {
+      "timeRange": "1h",
+      "includeHistory": true
+    },
+    "applicableTables": null,
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "system",
+      "monitoring",
+      "metrics",
+      "query",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

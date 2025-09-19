@@ -1,0 +1,30 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-19T11:07:21.519Z",
+  "template": {
+    "identifier": "search-todos-fixed",
+    "name": "Todo 검색 (수정됨)",
+    "description": "Todo 항목을 검색합니다",
+    "query": "query SearchTodos($tableId: ID, $searchTerm: String) {\n        nodes: nodes(\n          filter: {\n            tableId: $tableId\n            search: $searchTerm\n          }\n          pagination: { limit: 20, offset: 0 }\n        ) {\n          nodes {\n            id\n            content\n            createdAt\n            updatedAt\n            attributes {\n              id\n              value\n              attribute {\n                id\n                identifier\n                dataType\n              }\n            }\n          }\n          totalCount\n          hasNextPage\n        }\n      }",
+    "queryName": [
+      "search-todos-fixed"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "tableId": "101",
+      "searchTerm": "검색어"
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "crud",
+      "search",
+      "fixed"
+    ],
+    "isActive": true
+  }
+}

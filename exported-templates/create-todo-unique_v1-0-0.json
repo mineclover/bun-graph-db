@@ -1,0 +1,33 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-19T11:07:21.519Z",
+  "template": {
+    "identifier": "create-todo-unique",
+    "name": "Todo 생성 (고유)",
+    "description": "Todo 항목을 고유한 내용으로 생성합니다",
+    "query": "mutation CreateUniqueNode($input: CreateNodeInput!) {\n        createNode(input: $input) {\n          success\n          node {\n            id\n            content\n            createdAt\n            updatedAt\n            attributes {\n              id\n              value\n              attribute {\n                id\n                identifier\n                dataType\n              }\n            }\n          }\n          errors {\n            message\n            field\n          }\n        }\n      }",
+    "queryName": [
+      "create-todo-unique"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "input": {
+        "content": "고유한 할일 1758264989235",
+        "tableId": "101",
+        "attributes": []
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "create",
+      "unique",
+      "fixed"
+    ],
+    "isActive": true
+  }
+}

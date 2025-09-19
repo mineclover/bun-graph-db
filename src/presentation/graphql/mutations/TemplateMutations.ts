@@ -3,6 +3,7 @@ import { execute, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
 import { ExportTemplateUseCase } from '@/application/use-cases/templates/ExportTemplateUseCase.js'
+import { ExportTemplatesUseCase } from '@/application/use-cases/templates/ExportTemplatesUseCase.js'
 import { ImportTemplateUseCase } from '@/application/use-cases/templates/ImportTemplateUseCase.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
@@ -12,6 +13,7 @@ import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 export class TemplateMutations extends BaseResolver {
   protected logger: ILogger
   private exportTemplateUseCase: ExportTemplateUseCase
+  private exportTemplatesUseCase: ExportTemplatesUseCase
   private importTemplateUseCase: ImportTemplateUseCase
 
   constructor(
@@ -23,6 +25,7 @@ export class TemplateMutations extends BaseResolver {
     super()
     this.logger = logger
     this.exportTemplateUseCase = new ExportTemplateUseCase(queryTemplateRepository, logger)
+    this.exportTemplatesUseCase = new ExportTemplatesUseCase(queryTemplateRepository, logger)
     this.importTemplateUseCase = new ImportTemplateUseCase(queryTemplateRepository, logger)
   }
 
@@ -181,15 +184,23 @@ export class TemplateMutations extends BaseResolver {
 
     return this.handleMutation(
       async () => {
-        const existingTemplate = await this.queryTemplateRepository.findById(args.id)
+        // Try to find by database ID first, then by identifier
+        let existingTemplate = await this.queryTemplateRepository.findById(args.id)
         if (!existingTemplate) {
-          return {
-            success: false,
-            errors: [{ message: 'Template not found', code: 'TEMPLATE_NOT_FOUND' }],
-          }
+          existingTemplate = await this.queryTemplateRepository.findByIdentifier(args.id)
         }
 
-        await this.queryTemplateRepository.delete(args.id)
+        if (!existingTemplate) {
+          throw new Error('Template not found')
+        }
+
+        // Use the actual database ID for deletion
+        const templateId = existingTemplate.getId()
+        if (!templateId) {
+          throw new Error('Template ID is null')
+        }
+
+        await this.queryTemplateRepository.delete(templateId)
 
         return true
       },
@@ -247,7 +258,7 @@ export class TemplateMutations extends BaseResolver {
         variables?: Record<string, unknown>
       }
     },
-    _context?: GraphQLContext
+    context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
@@ -271,118 +282,34 @@ export class TemplateMutations extends BaseResolver {
     }
 
     try {
-      this.logger.info('Executing mutation: executeTemplate', {
+      this.logger.info('Executing mutation: executeTemplate (wrapper)', {
         templateId: args.input.templateId,
         templateIdentifier: args.input.templateIdentifier,
       })
 
-      const startTime = Date.now()
+      // Use templateIdentifier if provided, otherwise use templateId
+      const templateIdentifier = args.input.templateIdentifier || args.input.templateId || ''
 
-      // 1. 템플릿 준비 및 변수 처리
-      const templateResult = await this.executeQueryTemplateUseCase.execute({
-        templateIdentifier: args.input.templateIdentifier || args.input.templateId || '',
-        variables: args.input.variables,
-        trackUsage: true,
-      })
-
-      // 2. GraphQL 스키마 확인
-      if (!this.schema) {
-        return {
-          success: false,
-          data: null,
-          execution: null,
-          errors: [
-            {
-              message: 'GraphQL schema not available',
-              code: 'SCHEMA_NOT_AVAILABLE',
-            },
-          ],
-        }
-      }
-
-      // 3. GraphQL 쿼리 파싱
-      let document: any
-      try {
-        document = parse(templateResult.queryText)
-      } catch (parseError) {
-        this.logger.error('GraphQL query parse error', {
-          error: parseError,
-          queryText: templateResult.queryText,
-        })
-
-        return {
-          success: false,
-          data: null,
-          execution: null,
-          errors: [
-            {
-              message: `Invalid GraphQL query: ${parseError instanceof Error ? parseError.message : 'Parse error'}`,
-              code: 'GRAPHQL_PARSE_ERROR',
-            },
-          ],
-        }
-      }
-
-      // 4. GraphQL 실행
-      const executionResult: ExecutionResult = await execute({
-        schema: this.schema,
-        document,
-        variableValues: templateResult.processedVariables,
-        contextValue: {},
-      })
-
-      const executionTime = Date.now() - startTime
-
-      // 5. 실행 결과 처리
-      if (executionResult.errors && executionResult.errors.length > 0) {
-        this.logger.warn('GraphQL execution errors', {
-          templateId: args.input.templateId,
-          templateIdentifier: args.input.templateIdentifier,
-          errors: executionResult.errors.map((err) => err.message),
-        })
-
-        return {
-          success: false,
-          data: executionResult.data,
-          execution: {
-            id: `exec_${Date.now()}`,
-            templateId: templateResult.metadata.templateId,
-            executedAt: new Date().toISOString(),
-            duration: executionTime,
-            resultCount: 0,
-            success: false,
-            errorMessage: executionResult.errors[0]?.message || 'GraphQL execution failed',
-          },
-          errors: executionResult.errors.map((error) => ({
-            message: error.message,
-            code: 'GRAPHQL_EXECUTION_ERROR',
-          })),
-        }
-      }
-
-      this.logger.info('Template executed successfully', {
-        templateId: args.input.templateId,
-        templateIdentifier: args.input.templateIdentifier,
-        executionTime,
-        hasData: !!executionResult.data,
-      })
-
-      return {
-        success: true,
-        data: executionResult.data,
-        execution: {
-          id: `exec_${Date.now()}`,
-          templateId: templateResult.metadata.templateId,
-          executedAt: new Date().toISOString(),
-          duration: executionTime,
-          resultCount: Array.isArray(executionResult.data) ? executionResult.data.length : 1,
-          success: true,
-          errorMessage: null,
+      // Call executeTemplateWithGraphQL internally
+      const result = await this.executeTemplateWithGraphQL(
+        _,
+        {
+          templateIdentifier,
+          variables: args.input.variables,
+          trackUsage: true,
         },
-        errors: [],
+        context
+      )
+
+      // Transform the result to match executeTemplate's expected return format
+      return {
+        success: result.success,
+        data: result.data || null,
+        execution: result.execution || null,
+        errors: result.errors || [],
       }
     } catch (error) {
-      this.logger.error('Failed to execute template', {
+      this.logger.error('Failed to execute template (wrapper)', {
         templateId: args.input.templateId,
         templateIdentifier: args.input.templateIdentifier,
         error,
@@ -587,6 +514,62 @@ export class TemplateMutations extends BaseResolver {
         success: false,
         exportData: null,
         filename: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown export error',
+            code: 'EXPORT_ERROR',
+          },
+        ],
+      }
+    }
+  }
+
+  async exportTemplates(_: GraphQLParent, args: any, _context?: GraphQLContext) {
+    this.logger.info('Executing mutation: exportTemplates', {
+      filter: args.filter,
+      includeStatistics: args.includeStatistics,
+      outputDirectory: args.outputDirectory,
+    })
+
+    try {
+      const exportResult = await this.exportTemplatesUseCase.execute({
+        filter: args.filter || {},
+        options: {
+          includeStatistics: args.includeStatistics,
+          includeMetadata: true,
+          prettyPrint: true,
+          outputDirectory: args.outputDirectory,
+        },
+      })
+
+      this.logger.info('Batch export result from use case', {
+        success: exportResult.success,
+        totalCount: exportResult.totalCount,
+        successCount: exportResult.exportedTemplates.filter(t => t.exportSuccess).length,
+        outputDirectory: exportResult.outputDirectory,
+        errors: exportResult.errors,
+      })
+
+      const result = {
+        success: exportResult.success,
+        exportedTemplates: exportResult.exportedTemplates,
+        totalCount: exportResult.totalCount,
+        outputDirectory: exportResult.outputDirectory,
+        errors: exportResult.errors.map((error) => ({ message: error })),
+      }
+
+      this.logger.info('Mutation completed: exportTemplates', {
+        totalCount: exportResult.totalCount,
+        outputDirectory: exportResult.outputDirectory
+      })
+      return result
+    } catch (error) {
+      this.logger.error('Mutation failed: exportTemplates', { error })
+      return {
+        success: false,
+        exportedTemplates: [],
+        totalCount: 0,
+        outputDirectory: args.outputDirectory || 'exported-templates',
         errors: [
           {
             message: error instanceof Error ? error.message : 'Unknown export error',

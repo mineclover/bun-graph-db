@@ -181,6 +181,23 @@ type ExportTemplatePayload implements OperationResult {
   errors: [Error!]!
 }
 
+type ExportTemplatesPayload implements OperationResult {
+  success: Boolean!
+  exportedTemplates: [ExportedTemplateInfo!]!
+  totalCount: Int!
+  outputDirectory: String
+  errors: [Error!]!
+}
+
+type ExportedTemplateInfo {
+  templateId: ID!
+  templateIdentifier: String!
+  templateName: String!
+  filename: String!
+  exportSuccess: Boolean!
+  exportError: String
+}
+
 type ImportTemplatePayload implements OperationResult {
   success: Boolean!
   template: QueryTemplate

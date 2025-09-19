@@ -132,18 +132,18 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         params.push(criteria.templateType)
       }
 
-      // Tag filtering
+      // Tag filtering - only search valid JSON tags to prevent malformed JSON errors
       if (criteria.tags && criteria.tags.length > 0) {
         if (criteria.tagMatchMode === 'ALL') {
           // Must have all tags
           for (const tag of criteria.tags) {
-            query += ` AND json_extract(tags, '$') LIKE ?`
+            query += ` AND json_valid(tags) = 1 AND json_extract(tags, '$') LIKE ?`
             params.push(`%"${tag}"%`)
           }
         } else {
           // Must have at least one tag (ANY mode)
           const tagConditions = criteria.tags
-            .map(() => `json_extract(tags, '$') LIKE ?`)
+            .map(() => `json_valid(tags) = 1 AND json_extract(tags, '$') LIKE ?`)
             .join(' OR ')
           query += ` AND (${tagConditions})`
           for (const tag of criteria.tags) {

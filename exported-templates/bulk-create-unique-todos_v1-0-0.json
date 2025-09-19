@@ -1,0 +1,39 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "template": {
+    "identifier": "bulk-create-unique-todos",
+    "name": "Todo 일괄 생성 (고유)",
+    "description": "Todo 항목들을 고유한 내용으로 일괄 생성합니다",
+    "query": "mutation BulkCreateUnique($input1: CreateNodeInput!, $input2: CreateNodeInput!) {\n        todo1: createNode(input: $input1) {\n          success\n          node {\n            id\n            content\n            createdAt\n          }\n          errors {\n            message\n            field\n          }\n        }\n        todo2: createNode(input: $input2) {\n          success\n          node {\n            id\n            content\n            createdAt\n          }\n          errors {\n            message\n            field\n          }\n        }\n      }",
+    "queryName": [
+      "bulk-create-unique-todos"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "input1": {
+        "content": "일괄 할일 1 - 1758264989235",
+        "tableId": "101",
+        "attributes": []
+      },
+      "input2": {
+        "content": "일괄 할일 2 - 1758264989235",
+        "tableId": "101",
+        "attributes": []
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 6,
+    "version": "1.0.0",
+    "tags": [
+      "todo",
+      "bulk",
+      "create",
+      "unique",
+      "fixed"
+    ],
+    "isActive": true
+  }
+}

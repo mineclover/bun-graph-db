@@ -1,78 +1,84 @@
 {
-  "id": 889,
-  "identifier": "list-tables-with-pagination",
-  "name": "ListTablesWithPagination",
-  "description": "Enhanced table listing with comprehensive pagination, search filtering, and sorting capabilities. Supports dynamic filtering by table metadata.",
-  "query": "query ListTablesWithPagination($pagination: TablesPagination, $filter: TablesFilter) { tables(pagination: $pagination, filter: $filter) { nodes { id identifier description attributeCount createdAt updatedAt } totalCount hasNextPage hasPreviousPage } }",
-  "variables": {
-    "type": "object",
-    "properties": {
-      "pagination": {
-        "type": "object",
-        "properties": {
-          "limit": {
-            "type": "integer",
-            "default": 20,
-            "minimum": 1,
-            "maximum": 100,
-            "description": "페이지당 결과 개수"
-          },
-          "offset": {
-            "type": "integer",
-            "default": 0,
-            "minimum": 0,
-            "description": "건너뛸 결과 개수"
-          }
-        },
-        "description": "페이지네이션 옵션"
-      },
-      "filter": {
-        "type": "string",
-        "description": "테이블 이름/설명 검색 필터"
-      },
-      "sortBy": {
-        "type": "string",
-        "enum": [
-          "createdAt",
-          "updatedAt",
-          "name",
-          "nodeCount",
-          "attributeCount"
-        ],
-        "default": "createdAt",
-        "description": "정렬 기준 필드"
-      },
-      "sortOrder": {
-        "type": "string",
-        "enum": [
-          "ASC",
-          "DESC"
-        ],
-        "default": "DESC",
-        "description": "정렬 순서"
-      },
-      "minNodeCount": {
-        "type": "integer",
-        "minimum": 0,
-        "description": "최소 노드 개수 필터"
-      },
-      "maxNodeCount": {
-        "type": "integer",
-        "minimum": 0,
-        "description": "최대 노드 개수 필터"
-      }
-    },
-    "required": []
-  },
-  "operationType": "QUERY",
-  "tags": [
-    "general",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 842,
-  "createdAt": "2025-09-15 16:01:38",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.481Z"
+  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "template": {
+    "identifier": "list-tables-with-pagination",
+    "name": "ListTablesWithPagination",
+    "description": "Enhanced table listing with comprehensive pagination, search filtering, and sorting capabilities. Supports dynamic filtering by table metadata.",
+    "query": "query ListTablesWithPagination($pagination: TablesPagination, $filter: TablesFilter) { tables(pagination: $pagination, filter: $filter) { nodes { id identifier description attributeCount createdAt updatedAt } totalCount hasNextPage hasPreviousPage } }",
+    "queryName": [
+      "tables"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "type": "object",
+      "properties": {
+        "pagination": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100,
+              "description": "페이지당 결과 개수"
+            },
+            "offset": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0,
+              "description": "건너뛸 결과 개수"
+            }
+          },
+          "description": "페이지네이션 옵션"
+        },
+        "filter": {
+          "type": "string",
+          "description": "테이블 이름/설명 검색 필터"
+        },
+        "sortBy": {
+          "type": "string",
+          "enum": [
+            "createdAt",
+            "updatedAt",
+            "name",
+            "nodeCount",
+            "attributeCount"
+          ],
+          "default": "createdAt",
+          "description": "정렬 기준 필드"
+        },
+        "sortOrder": {
+          "type": "string",
+          "enum": [
+            "ASC",
+            "DESC"
+          ],
+          "default": "DESC",
+          "description": "정렬 순서"
+        },
+        "minNodeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "최소 노드 개수 필터"
+        },
+        "maxNodeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "최대 노드 개수 필터"
+        }
+      },
+      "required": []
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "general",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

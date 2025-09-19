@@ -1,28 +1,34 @@
 {
-  "id": 872,
-  "identifier": "create-template-basic",
-  "name": "CreateTemplate",
-  "description": "기본적인 새 템플릿 생성 (identifier, name, description, query 필수)",
-  "query": "mutation CreateTemplate($input: CreateQueryTemplateInput!) { createTemplate(input: $input) { success template { id identifier name description query operationType isActive createdAt } errors { message } } }",
-  "variables": {
-    "input": {
-      "identifier": "new-template",
-      "name": "New Template",
-      "description": "A new template for testing",
-      "query": "query { __typename }"
-    }
-  },
-  "operationType": "MUTATION",
-  "tags": [
-    "basic",
-    "create",
-    "management",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 31,
-  "createdAt": "2025-09-15 16:01:36",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.483Z"
+  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "template": {
+    "identifier": "create-template-basic",
+    "name": "CreateTemplate",
+    "description": "기본적인 새 템플릿 생성 (identifier, name, description, query 필수)",
+    "query": "mutation CreateTemplate($input: CreateQueryTemplateInput!) { createTemplate(input: $input) { success template { id identifier name description query operationType isActive createdAt } errors { message } } }",
+    "queryName": [
+      "createTemplate"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": {
+      "input": {
+        "identifier": "new-template",
+        "name": "New Template",
+        "description": "A new template for testing",
+        "query": "query { __typename }"
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 4,
+    "version": "1.0.0",
+    "tags": [
+      "basic",
+      "create",
+      "management",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

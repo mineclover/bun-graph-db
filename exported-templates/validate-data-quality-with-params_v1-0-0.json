@@ -1,41 +1,83 @@
 {
-  "id": 906,
-  "identifier": "validate-data-quality-with-params",
-  "name": "ValidateDataQualityWithParams",
-  "description": "파라미터를 사용하여 데이터 품질을 검증합니다",
-  "query": "query ValidateDataQualityWithParams($scope: DataValidationScope!, $checks: [ValidationCheckType!], $options: ValidationOptions) {\n  validateDataQuality(scope: $scope, checks: $checks, options: $options) {\n    overallScore\n    summary {\n      totalChecks\n      passedChecks\n      failedChecks\n      warningCount\n    }\n    results {\n      checkType\n      status\n      score\n      message\n      affectedRecords\n      recommendations\n    }\n    details {\n      completeness {\n        totalFields\n        completeFields\n        missingFields\n        completenessRate\n      }\n      consistency {\n        duplicates\n        conflicts\n        inconsistencies\n      }\n      accuracy {\n        validRecords\n        invalidRecords\n        accuracyRate\n      }\n    }\n    fixes {\n      autoFixable\n      manualRequired\n      estimatedEffort\n    }\n  }\n}",
-  "variables": {
-    "scope": {
-      "tableIds": [
-        "example-table-id"
-      ],
-      "includeRelationships": true
-    },
-    "checks": [
-      "COMPLETENESS",
-      "CONSISTENCY",
-      "ACCURACY",
-      "DUPLICATES"
-    ],
-    "options": {
-      "sampleSize": 1000,
-      "strictMode": false,
-      "generateReport": true
-    }
-  },
-  "operationType": "QUERY",
-  "tags": [
-    "data",
-    "quality",
-    "validation",
-    "analytics",
-    "parameterized",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 29,
-  "createdAt": "2025-09-15 16:01:41",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.484Z"
+  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "template": {
+    "identifier": "validate-data-quality-with-params",
+    "name": "ValidateDataQualityWithParams",
+    "description": "파라미터를 사용하여 데이터 품질을 검증합니다",
+    "query": "query ValidateDataQualityWithParams($scope: DataValidationScope!, $checks: [ValidationCheckType!], $options: ValidationOptions) {\n  validateDataQuality(scope: $scope, checks: $checks, options: $options) {\n    overallScore\n    summary {\n      totalChecks\n      passedChecks\n      failedChecks\n      warningCount\n    }\n    results {\n      checkType\n      status\n      score\n      message\n      affectedRecords\n      recommendations\n    }\n    details {\n      completeness {\n        totalFields\n        completeFields\n        missingFields\n        completenessRate\n      }\n      consistency {\n        duplicates\n        conflicts\n        inconsistencies\n      }\n      accuracy {\n        validRecords\n        invalidRecords\n        accuracyRate\n      }\n    }\n    fixes {\n      autoFixable\n      manualRequired\n      estimatedEffort\n    }\n  }\n}",
+    "queryName": [
+      "validateDataQuality"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": {
+      "scope": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "tableIds": {
+            "type": "array",
+            "description": "검증할 테이블 ID 목록"
+          },
+          "includeRelationships": {
+            "type": "boolean",
+            "description": "관계 데이터 포함 여부"
+          }
+        }
+      },
+      "checks": {
+        "type": "array",
+        "description": "수행할 검증 항목들"
+      },
+      "options": {
+        "type": "object",
+        "properties": {
+          "sampleSize": {
+            "type": "number",
+            "description": "샘플 크기"
+          },
+          "strictMode": {
+            "type": "boolean",
+            "description": "엄격 모드"
+          },
+          "generateReport": {
+            "type": "boolean",
+            "description": "리포트 생성 여부"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "scope": {
+        "tableIds": [
+          "example-table-id"
+        ],
+        "includeRelationships": true
+      },
+      "checks": [
+        "COMPLETENESS",
+        "CONSISTENCY",
+        "ACCURACY",
+        "DUPLICATES"
+      ],
+      "options": {
+        "sampleSize": 1000,
+        "strictMode": false,
+        "generateReport": true
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 8,
+    "version": "1.0.0",
+    "tags": [
+      "data",
+      "quality",
+      "validation",
+      "analytics",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

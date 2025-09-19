@@ -1,33 +1,72 @@
 {
-  "id": 895,
-  "identifier": "search-related-nodes-with-params",
-  "name": "SearchRelatedNodesWithParams",
-  "description": "파라미터를 사용하여 관련 노드들을 검색합니다",
-  "query": "query SearchRelatedNodesWithParams($filter: SearchRelatedNodesFilter!, $pagination: PaginationInput) {\n  searchRelatedNodes(filter: $filter, pagination: $pagination) {\n    id\n    title\n    content\n    tableId\n    relationshipType\n    relationshipStrength\n    distance\n    createdAt\n  }\n}",
-  "variables": {
-    "filter": {
-      "sourceNodeId": "example-source-node-id",
-      "maxDistance": 3,
-      "minStrength": 0.5
-    },
-    "pagination": {
-      "limit": 15,
-      "offset": 0
-    }
-  },
-  "operationType": "QUERY",
-  "tags": [
-    "node",
-    "query",
-    "relationship",
-    "search",
-    "parameterized",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 697,
-  "createdAt": "2025-09-15 16:01:39",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.482Z"
+  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "template": {
+    "identifier": "search-related-nodes-with-params",
+    "name": "SearchRelatedNodesWithParams",
+    "description": "파라미터를 사용하여 관련 노드들을 검색합니다",
+    "query": "query SearchRelatedNodesWithParams($filter: SearchRelatedNodesFilter!, $pagination: PaginationInput) {\n  searchRelatedNodes(filter: $filter, pagination: $pagination) {\n    id\n    title\n    content\n    tableId\n    relationshipType\n    relationshipStrength\n    distance\n    createdAt\n  }\n}",
+    "queryName": [
+      "searchRelatedNodes"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": {
+      "filter": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "sourceNodeId": {
+            "type": "string",
+            "required": true,
+            "description": "기준 노드 ID"
+          },
+          "maxDistance": {
+            "type": "number",
+            "description": "최대 거리"
+          },
+          "minStrength": {
+            "type": "number",
+            "description": "최소 관계 강도"
+          }
+        }
+      },
+      "pagination": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "조회할 개수"
+          },
+          "offset": {
+            "type": "number",
+            "description": "시작 위치"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "filter": {
+        "sourceNodeId": "example-source-node-id",
+        "maxDistance": 3,
+        "minStrength": 0.5
+      },
+      "pagination": {
+        "limit": 15,
+        "offset": 0
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 5,
+    "version": "1.0.0",
+    "tags": [
+      "node",
+      "query",
+      "relationship",
+      "search",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

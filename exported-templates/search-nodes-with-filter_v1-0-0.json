@@ -1,38 +1,72 @@
 {
-  "id": 894,
-  "identifier": "search-nodes-with-filter",
-  "name": "SearchNodesWithFilter",
-  "description": "필터와 페이지네이션을 사용하여 노드를 검색합니다",
-  "query": "query SearchNodesWithFilter($filter: SearchNodesFilter!, $pagination: NodesPagination, $sort: [NodeSortInput!]) {\n  searchNodes(filter: $filter, pagination: $pagination, sort: $sort) {\n    id\n    title\n    content\n    tableId\n    createdAt\n    updatedAt\n    isActive\n    relevanceScore\n  }\n}",
-  "variables": {
-    "filter": {
-      "searchTerm": "example",
-      "tableId": null
-    },
-    "pagination": {
-      "limit": 20,
-      "offset": 0
-    },
-    "sort": [
-      {
-        "field": "relevanceScore",
-        "direction": "DESC"
-      }
-    ]
-  },
-  "operationType": "QUERY",
-  "tags": [
-    "node",
-    "query",
-    "search",
-    "filter",
-    "pagination",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 689,
-  "createdAt": "2025-09-15 16:01:39",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.482Z"
+  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "template": {
+    "identifier": "search-nodes-with-filter",
+    "name": "SearchNodesWithFilter",
+    "description": "필터와 페이지네이션을 사용하여 노드를 검색합니다",
+    "query": "query SearchNodesWithFilter($filter: SearchNodesFilter!, $pagination: NodesPagination, $sort: [NodeSortInput!]) {\n  searchNodes(filter: $filter, pagination: $pagination, sort: $sort) {\n    id\n    title\n    content\n    tableId\n    createdAt\n    updatedAt\n    isActive\n    relevanceScore\n  }\n}",
+    "queryName": [
+      "searchNodes"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": {
+      "filter": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "검색할 키워드"
+          },
+          "tableId": {
+            "type": "string",
+            "description": "특정 테이블로 제한"
+          }
+        }
+      },
+      "pagination": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "number",
+            "description": "조회할 개수"
+          },
+          "offset": {
+            "type": "number",
+            "description": "시작 위치"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "filter": {
+        "searchTerm": "example",
+        "tableId": null
+      },
+      "pagination": {
+        "limit": 20,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "relevanceScore",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "node",
+      "query",
+      "search",
+      "filter",
+      "pagination",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

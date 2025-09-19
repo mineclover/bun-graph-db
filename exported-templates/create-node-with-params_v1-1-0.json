@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "template": {
+    "identifier": "create-node-with-params",
+    "name": "CreateNodeWithParams",
+    "description": "파라미터를 사용하여 새 노드를 생성합니다",
+    "query": "mutation CreateNodeWithParams($input: CreateNodeInput!) {\n  createNode(input: $input) {\n    success\n    node {\n      id\n      content\n      createdAt\n      updatedAt\n      table {\n        id\n        identifier\n        description\n      }\n      attributes {\n        id\n        value\n        attribute {\n          name\n        }\n      }\n    }\n    errors {\n      message\n    }\n  }\n}",
+    "queryName": [
+      "createNode"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "노드 내용"
+            },
+            "tableId": {
+              "type": "string",
+              "description": "테이블 ID"
+            }
+          },
+          "required": [
+            "content",
+            "tableId"
+          ]
+        }
+      },
+      "required": [
+        "input"
+      ]
+    },
+    "defaultVariables": {
+      "input": {
+        "content": "새로운 노드",
+        "tableId": "1"
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 3,
+    "version": "1.1.0",
+    "tags": [
+      "node",
+      "mutation",
+      "create",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true
+  }
+}

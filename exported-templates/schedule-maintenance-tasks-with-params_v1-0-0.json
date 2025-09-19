@@ -1,47 +1,81 @@
 {
-  "id": 893,
-  "identifier": "schedule-maintenance-tasks-with-params",
-  "name": "ScheduleMaintenanceTasksWithParams",
-  "description": "파라미터를 사용하여 유지보수 작업을 예약합니다",
-  "query": "mutation ScheduleMaintenanceTasksWithParams($tasks: [MaintenanceTaskInput!]!, $schedule: ScheduleInput!) {\n  scheduleMaintenanceTasks(tasks: $tasks, schedule: $schedule) {\n    success\n    scheduledTasks {\n      id\n      type\n      description\n      estimatedDuration\n      priority\n      dependencies\n      resources\n    }\n    schedule {\n      startTime\n      endTime\n      frequency\n      nextExecution\n    }\n    impact {\n      affectedTables\n      estimatedDowntime\n      userImpact\n      rollbackPlan\n    }\n    monitoring {\n      checkpoints\n      alertThresholds\n      notificationChannels\n    }\n  }\n}",
-  "variables": {
-    "tasks": [
-      {
-        "type": "CLEANUP_ORPHANED_NODES",
-        "priority": "MEDIUM",
-        "options": {
-          "dryRun": false,
-          "batchSize": 100
-        }
-      },
-      {
-        "type": "REBUILD_INDEXES",
-        "priority": "LOW",
-        "tables": [
-          "example-table-id"
-        ]
-      }
-    ],
-    "schedule": {
-      "frequency": "WEEKLY",
-      "startTime": "02:00",
-      "timezone": "UTC",
-      "maintainWindow": 120
-    }
-  },
-  "operationType": "MUTATION",
-  "tags": [
-    "maintenance",
-    "automation",
-    "schedule",
-    "batch",
-    "parameterized",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 24,
-  "createdAt": "2025-09-15 16:01:39",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.484Z"
+  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "template": {
+    "identifier": "schedule-maintenance-tasks-with-params",
+    "name": "ScheduleMaintenanceTasksWithParams",
+    "description": "파라미터를 사용하여 유지보수 작업을 예약합니다",
+    "query": "mutation ScheduleMaintenanceTasksWithParams($tasks: [MaintenanceTaskInput!]!, $schedule: ScheduleInput!) {\n  scheduleMaintenanceTasks(tasks: $tasks, schedule: $schedule) {\n    success\n    scheduledTasks {\n      id\n      type\n      description\n      estimatedDuration\n      priority\n      dependencies\n      resources\n    }\n    schedule {\n      startTime\n      endTime\n      frequency\n      nextExecution\n    }\n    impact {\n      affectedTables\n      estimatedDowntime\n      userImpact\n      rollbackPlan\n    }\n    monitoring {\n      checkpoints\n      alertThresholds\n      notificationChannels\n    }\n  }\n}",
+    "queryName": [
+      "scheduleMaintenanceTasks"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": {
+      "tasks": {
+        "type": "array",
+        "required": true,
+        "description": "수행할 유지보수 작업 목록"
+      },
+      "schedule": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "frequency": {
+            "type": "string",
+            "description": "실행 빈도 (DAILY, WEEKLY, MONTHLY)"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "시작 시간 (HH:MM)"
+          },
+          "timezone": {
+            "type": "string",
+            "description": "시간대"
+          },
+          "maintainWindow": {
+            "type": "number",
+            "description": "유지보수 시간 (분)"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "tasks": [
+        {
+          "type": "CLEANUP_ORPHANED_NODES",
+          "priority": "MEDIUM",
+          "options": {
+            "dryRun": false,
+            "batchSize": 100
+          }
+        },
+        {
+          "type": "REBUILD_INDEXES",
+          "priority": "LOW",
+          "tables": [
+            "example-table-id"
+          ]
+        }
+      ],
+      "schedule": {
+        "frequency": "WEEKLY",
+        "startTime": "02:00",
+        "timezone": "UTC",
+        "maintainWindow": 120
+      }
+    },
+    "applicableTables": null,
+    "complexityScore": 9,
+    "version": "1.0.0",
+    "tags": [
+      "maintenance",
+      "automation",
+      "schedule",
+      "batch",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

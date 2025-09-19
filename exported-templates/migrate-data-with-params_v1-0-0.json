@@ -1,43 +1,108 @@
 {
-  "id": 891,
-  "identifier": "migrate-data-with-params",
-  "name": "MigrateDataWithParams",
-  "description": "파라미터를 사용하여 데이터를 마이그레이션합니다",
-  "query": "mutation MigrateDataWithParams($source: DataSourceInput!, $target: DataTargetInput!, $options: MigrationOptions!) {\n  migrateData(source: $source, target: $target, options: $options) {\n    success\n    migrationId\n    status\n    progress {\n      totalRecords\n      processedRecords\n      successfulRecords\n      failedRecords\n      percentage\n      estimatedTimeRemaining\n    }\n    mapping {\n      fieldMappings {\n        sourceField\n        targetField\n        transformation\n        validated\n      }\n      relationships {\n        sourceTable\n        targetTable\n        preserveReferences\n      }\n    }\n    validation {\n      preChecks\n      postChecks\n      dataIntegrity\n      schemaCompatibility\n    }\n    rollback {\n      available\n      estimatedTime\n      dependencies\n    }\n  }\n}",
-  "variables": {
-    "source": {
-      "type": "TABLE",
-      "identifier": "source-table-id",
-      "filters": {
-        "dateRange": "2024-01-01,2024-12-31"
+  "version": "1.0.0",
+  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "template": {
+    "identifier": "migrate-data-with-params",
+    "name": "MigrateDataWithParams",
+    "description": "파라미터를 사용하여 데이터를 마이그레이션합니다",
+    "query": "mutation MigrateDataWithParams($source: DataSourceInput!, $target: DataTargetInput!, $options: MigrationOptions!) {\n  migrateData(source: $source, target: $target, options: $options) {\n    success\n    migrationId\n    status\n    progress {\n      totalRecords\n      processedRecords\n      successfulRecords\n      failedRecords\n      percentage\n      estimatedTimeRemaining\n    }\n    mapping {\n      fieldMappings {\n        sourceField\n        targetField\n        transformation\n        validated\n      }\n      relationships {\n        sourceTable\n        targetTable\n        preserveReferences\n      }\n    }\n    validation {\n      preChecks\n      postChecks\n      dataIntegrity\n      schemaCompatibility\n    }\n    rollback {\n      available\n      estimatedTime\n      dependencies\n    }\n  }\n}",
+    "queryName": [
+      "migrateData"
+    ],
+    "operationType": "mutation",
+    "variables": null,
+    "variablesSchema": {
+      "source": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "소스 타입 (TABLE, FILE, API)"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "소스 식별자"
+          },
+          "filters": {
+            "type": "object",
+            "description": "필터 조건"
+          }
+        }
+      },
+      "target": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "대상 타입"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "대상 식별자"
+          },
+          "createIfNotExists": {
+            "type": "boolean",
+            "description": "없으면 생성 여부"
+          }
+        }
+      },
+      "options": {
+        "type": "object",
+        "required": true,
+        "properties": {
+          "batchSize": {
+            "type": "number",
+            "description": "배치 크기"
+          },
+          "validateBeforeMigration": {
+            "type": "boolean",
+            "description": "마이그레이션 전 검증"
+          },
+          "preserveRelationships": {
+            "type": "boolean",
+            "description": "관계 보존 여부"
+          },
+          "handleConflicts": {
+            "type": "string",
+            "description": "충돌 처리 방식"
+          }
+        }
       }
     },
-    "target": {
-      "type": "TABLE",
-      "identifier": "target-table-id",
-      "createIfNotExists": true
+    "defaultVariables": {
+      "source": {
+        "type": "TABLE",
+        "identifier": "source-table-id",
+        "filters": {
+          "dateRange": "2024-01-01,2024-12-31"
+        }
+      },
+      "target": {
+        "type": "TABLE",
+        "identifier": "target-table-id",
+        "createIfNotExists": true
+      },
+      "options": {
+        "batchSize": 500,
+        "validateBeforeMigration": true,
+        "preserveRelationships": true,
+        "handleConflicts": "SKIP",
+        "generateReport": true
+      }
     },
-    "options": {
-      "batchSize": 500,
-      "validateBeforeMigration": true,
-      "preserveRelationships": true,
-      "handleConflicts": "SKIP",
-      "generateReport": true
-    }
-  },
-  "operationType": "MUTATION",
-  "tags": [
-    "migration",
-    "data",
-    "sync",
-    "batch",
-    "parameterized",
-    "fixed"
-  ],
-  "isActive": 1,
-  "version": "1.0.0",
-  "usageCount": 45,
-  "createdAt": "2025-09-15 16:01:38",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.483Z"
+    "applicableTables": null,
+    "complexityScore": 9,
+    "version": "1.0.0",
+    "tags": [
+      "migration",
+      "data",
+      "sync",
+      "batch",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

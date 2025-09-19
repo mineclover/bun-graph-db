@@ -1,22 +1,28 @@
 {
-  "id": 890,
-  "identifier": "query-optimization",
-  "name": "OptimizeQueries",
-  "description": "느린 쿼리 식별, 인덱스 제안, 성능 튜닝을 위한 쿼리 최적화 템플릿",
-  "query": "query OptimizeQueries($options: OptimizationOptions) {\n  queryOptimization(options: $options) {\n    analysis {\n      slowQueries {\n        query\n        avgExecutionTime\n        executionCount\n        lastExecuted\n        optimization {\n          currentPlan\n          suggestedPlan\n          expectedImprovement\n        }\n      }\n      indexRecommendations {\n        table\n        columns\n        type\n        estimatedImprovement\n        creationCost\n        maintenanceCost\n      }\n      performanceBottlenecks {\n        type\n        description\n        severity\n        impact\n        solution\n      }\n    }\n    recommendations {\n      immediate {\n        action\n        description\n        expectedGain\n        effort\n      }\n      longTerm {\n        action\n        description\n        expectedGain\n        effort\n      }\n    }\n    metrics {\n      currentPerformance {\n        avgQueryTime\n        queriesPerSecond\n        cacheHitRate\n      }\n      projectedPerformance {\n        avgQueryTime\n        queriesPerSecond\n        cacheHitRate\n      }\n    }\n  }\n}",
-  "variables": null,
-  "operationType": "QUERY",
-  "tags": [
-    "optimization",
-    "performance",
-    "indexing",
-    "tuning",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 55,
-  "createdAt": "2025-09-15 16:01:38",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.482Z"
+  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "template": {
+    "identifier": "query-optimization",
+    "name": "OptimizeQueries",
+    "description": "느린 쿼리 식별, 인덱스 제안, 성능 튜닝을 위한 쿼리 최적화 템플릿",
+    "query": "query OptimizeQueries($options: OptimizationOptions) {\n  queryOptimization(options: $options) {\n    analysis {\n      slowQueries {\n        query\n        avgExecutionTime\n        executionCount\n        lastExecuted\n        optimization {\n          currentPlan\n          suggestedPlan\n          expectedImprovement\n        }\n      }\n      indexRecommendations {\n        table\n        columns\n        type\n        estimatedImprovement\n        creationCost\n        maintenanceCost\n      }\n      performanceBottlenecks {\n        type\n        description\n        severity\n        impact\n        solution\n      }\n    }\n    recommendations {\n      immediate {\n        action\n        description\n        expectedGain\n        effort\n      }\n      longTerm {\n        action\n        description\n        expectedGain\n        effort\n      }\n    }\n    metrics {\n      currentPerformance {\n        avgQueryTime\n        queriesPerSecond\n        cacheHitRate\n      }\n      projectedPerformance {\n        avgQueryTime\n        queriesPerSecond\n        cacheHitRate\n      }\n    }\n  }\n}",
+    "queryName": [
+      "queryOptimization"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": null,
+    "defaultVariables": null,
+    "applicableTables": [],
+    "complexityScore": 10,
+    "version": "1.0.0",
+    "tags": [
+      "optimization",
+      "performance",
+      "indexing",
+      "tuning",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

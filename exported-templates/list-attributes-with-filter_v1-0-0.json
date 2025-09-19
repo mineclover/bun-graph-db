@@ -1,37 +1,57 @@
 {
-  "id": 887,
-  "identifier": "list-attributes-with-filter",
-  "name": "ListAttributesWithFilter",
-  "description": "필터와 페이지네이션을 사용하여 속성 목록을 조회합니다",
-  "query": "query ListAttributesWithFilter($filter: AttributesFilter, $pagination: PaginationInput, $sort: [AttributeSortInput!]) {\n  attributes(filter: $filter, pagination: $pagination, sort: $sort) {\n    id\n    name\n    type\n    description\n    tableId\n    isRequired\n    defaultValue\n    createdAt\n    updatedAt\n  }\n}",
-  "variables": {
-    "filter": {
-      "tableId": null
-    },
-    "pagination": {
-      "limit": 50,
-      "offset": 0
-    },
-    "sort": [
-      {
-        "field": "name",
-        "direction": "ASC"
-      }
-    ]
-  },
-  "operationType": "QUERY",
-  "tags": [
-    "attribute",
-    "query",
-    "list",
-    "filter",
-    "pagination",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 48,
-  "createdAt": "2025-09-15 16:01:38",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.483Z"
+  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "template": {
+    "identifier": "list-attributes-with-filter",
+    "name": "ListAttributesWithFilter",
+    "description": "필터와 페이지네이션을 사용하여 속성 목록을 조회합니다",
+    "query": "query ListAttributesWithFilter($filter: AttributesFilter, $pagination: PaginationInput, $sort: [AttributeSortInput!]) {\n  attributes(filter: $filter, pagination: $pagination, sort: $sort) {\n    id\n    name\n    type\n    description\n    tableId\n    isRequired\n    defaultValue\n    createdAt\n    updatedAt\n  }\n}",
+    "queryName": [
+      "attributes"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": {
+      "filter": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "특정 테이블의 속성만 조회"
+          },
+          "type": {
+            "type": "string",
+            "description": "속성 타입 필터"
+          }
+        }
+      }
+    },
+    "defaultVariables": {
+      "filter": {
+        "tableId": null
+      },
+      "pagination": {
+        "limit": 50,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "name",
+          "direction": "ASC"
+        }
+      ]
+    },
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "attribute",
+      "query",
+      "list",
+      "filter",
+      "pagination",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

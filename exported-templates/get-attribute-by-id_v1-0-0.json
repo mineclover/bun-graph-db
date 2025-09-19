@@ -1,24 +1,36 @@
 {
-  "id": 880,
-  "identifier": "get-attribute-by-id",
-  "name": "GetAttributeById",
-  "description": "특정 ID로 속성 정보를 조회합니다",
-  "query": "query GetAttributeById($attributeId: ID!) {\n  getAttribute(id: $attributeId) {\n    id\n    name\n    type\n    description\n    tableId\n    isRequired\n    defaultValue\n    validationRules\n    createdAt\n    updatedAt\n  }\n}",
-  "variables": {
-    "attributeId": "example-attribute-id"
-  },
-  "operationType": "QUERY",
-  "tags": [
-    "attribute",
-    "query",
-    "basic",
-    "parameterized",
-    "fixed"
-  ],
-  "isActive": 1,
   "version": "1.0.0",
-  "usageCount": 26,
-  "createdAt": "2025-09-15 16:01:37",
-  "updatedAt": "2025-09-18 03:03:36",
-  "exportedAt": "2025-09-19T02:57:31.484Z"
+  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "template": {
+    "identifier": "get-attribute-by-id",
+    "name": "GetAttributeById",
+    "description": "특정 ID로 속성 정보를 조회합니다",
+    "query": "query GetAttributeById($attributeId: ID!) {\n  getAttribute(id: $attributeId) {\n    id\n    name\n    type\n    description\n    tableId\n    isRequired\n    defaultValue\n    validationRules\n    createdAt\n    updatedAt\n  }\n}",
+    "queryName": [
+      "getAttribute"
+    ],
+    "operationType": "query",
+    "variables": null,
+    "variablesSchema": {
+      "attributeId": {
+        "type": "string",
+        "required": true,
+        "description": "조회할 속성의 ID"
+      }
+    },
+    "defaultVariables": {
+      "attributeId": "example-attribute-id"
+    },
+    "applicableTables": null,
+    "complexityScore": 2,
+    "version": "1.0.0",
+    "tags": [
+      "attribute",
+      "query",
+      "basic",
+      "parameterized",
+      "fixed"
+    ],
+    "isActive": true
+  }
 }

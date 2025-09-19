@@ -326,6 +326,11 @@ export class GraphQLSchemaBuilder {
           args: Record<string, unknown>,
           context: GraphQLContext
         ) => deps.templateMutations.exportTemplate(_, args, context),
+        exportTemplates: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          context: GraphQLContext
+        ) => deps.templateMutations.exportTemplates(_, args, context),
         importTemplate: (
           _: GraphQLParent,
           args: Record<string, unknown>,
