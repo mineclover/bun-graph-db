@@ -384,7 +384,11 @@ export class TemplateMutations extends BaseResolver {
               },
             ],
             metadata: {
-              ...templateResult.metadata,
+              templateId: templateResult.metadata?.templateId || 'unknown',
+              templateName: templateResult.metadata?.templateName || 'Unknown Template',
+              complexityScore: templateResult.metadata?.complexityScore || 1,
+              estimatedTokens: templateResult.metadata?.estimatedTokens || 0,
+              version: templateResult.metadata?.version || '1.0.0',
               executionTime: Date.now() - startTime,
             },
           }
@@ -409,7 +413,11 @@ export class TemplateMutations extends BaseResolver {
               },
             ],
             metadata: {
-              ...templateResult.metadata,
+              templateId: templateResult.metadata?.templateId || 'unknown',
+              templateName: templateResult.metadata?.templateName || 'Unknown Template',
+              complexityScore: templateResult.metadata?.complexityScore || 1,
+              estimatedTokens: templateResult.metadata?.estimatedTokens || 0,
+              version: templateResult.metadata?.version || '1.0.0',
               executionTime: Date.now() - startTime,
             },
           }
@@ -442,7 +450,11 @@ export class TemplateMutations extends BaseResolver {
               code: 'GRAPHQL_EXECUTION_ERROR',
             })),
             metadata: {
-              ...templateResult.metadata,
+              templateId: templateResult.metadata?.templateId || 'unknown',
+              templateName: templateResult.metadata?.templateName || 'Unknown Template',
+              complexityScore: templateResult.metadata?.complexityScore || 1,
+              estimatedTokens: templateResult.metadata?.estimatedTokens || 0,
+              version: templateResult.metadata?.version || '1.0.0',
               executionTime,
             },
           }
@@ -458,7 +470,11 @@ export class TemplateMutations extends BaseResolver {
           success: true,
           data: executionResult.data,
           metadata: {
-            ...templateResult.metadata,
+            templateId: templateResult.metadata?.templateId || 'unknown',
+            templateName: templateResult.metadata?.templateName || 'Unknown Template',
+            complexityScore: templateResult.metadata?.complexityScore || 1,
+            estimatedTokens: templateResult.metadata?.estimatedTokens || 0,
+            version: templateResult.metadata?.version || '1.0.0',
             executionTime,
           },
         }

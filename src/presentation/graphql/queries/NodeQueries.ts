@@ -113,11 +113,12 @@ export class NodeQueries extends BaseResolver {
             args.pagination || { limit: 10, offset: 0 }
           )
 
+          // Ensure all fields are non-null to satisfy GraphQL schema
           return {
-            nodes: result.items,
-            totalCount: result.total,
-            hasNextPage: result.hasNextPage,
-            hasPreviousPage: result.hasPreviousPage,
+            nodes: result.items || [],
+            totalCount: result.total || 0,
+            hasNextPage: result.hasNextPage || false,
+            hasPreviousPage: result.hasPreviousPage || false,
           }
         }
 
@@ -150,10 +151,10 @@ export class NodeQueries extends BaseResolver {
         const result = await this.searchNodesUseCase.execute(searchInput)
 
         return {
-          nodes: result.nodes,
-          totalCount: result.total,
-          hasNextPage: result.hasNextPage,
-          hasPreviousPage: result.hasPreviousPage,
+          nodes: result.nodes || [],
+          totalCount: result.total || 0,
+          hasNextPage: result.hasNextPage || false,
+          hasPreviousPage: result.hasPreviousPage || false,
         }
       },
       'searchNodes',

@@ -216,6 +216,9 @@ export class GraphQLSchemaBuilder {
           deps.templateQueries.templatesWithTableDependencies(_, args as any),
         tableDependencyTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateQueries.tableDependencyTemplates(_, args as any),
+        // Template execution (delegated to mutations)
+        executeTemplate: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
+          deps.templateMutations.executeTemplate(_, args as any, context),
 
         // Doc queries
         getDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
