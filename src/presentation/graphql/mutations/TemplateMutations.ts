@@ -302,10 +302,25 @@ export class TemplateMutations extends BaseResolver {
       )
 
       // Transform the result to match executeTemplate's expected return format
+      // Create execution object from metadata if available
+      let execution = null
+      if (result.success && result.data && typeof result.data === 'object' && 'metadata' in result.data) {
+        const metadata = (result.data as any).metadata
+        execution = {
+          id: `exec_${Date.now()}`,
+          templateId: metadata.templateId,
+          executedAt: new Date().toISOString(),
+          duration: metadata.executionTime,
+          resultCount: Array.isArray((result.data as any).data) ? (result.data as any).data.length : (result.data ? 1 : 0),
+          success: result.success,
+          errorMessage: null,
+        }
+      }
+
       return {
         success: result.success,
         data: result.data || null,
-        execution: result.execution || null,
+        execution,
         errors: result.errors || [],
       }
     } catch (error) {
