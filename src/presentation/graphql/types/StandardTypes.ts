@@ -112,7 +112,7 @@ export type RequiredKeys<T, K extends keyof T> = T & Required<Pick<T, K>>
 export type OptionalKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
 // Field resolver wrapper type
-export type FieldResolver<TSource, TResult, TContext = any, TArgs = {}> = (
+export type FieldResolver<TSource, TResult, TContext = any, TArgs = Record<string, unknown>> = (
   source: TSource,
   args: TArgs,
   context: TContext,
@@ -120,7 +120,7 @@ export type FieldResolver<TSource, TResult, TContext = any, TArgs = {}> = (
 ) => Promise<TResult> | TResult
 
 // Query resolver wrapper type
-export type QueryResolver<TResult, TContext = any, TArgs = {}> = (
+export type QueryResolver<TResult, TContext = any, TArgs = Record<string, unknown>> = (
   parent: any,
   args: TArgs,
   context: TContext,
@@ -128,7 +128,7 @@ export type QueryResolver<TResult, TContext = any, TArgs = {}> = (
 ) => Promise<TResult> | TResult
 
 // Mutation resolver wrapper type
-export type MutationResolver<TResult, TContext = any, TArgs = {}> = (
+export type MutationResolver<TResult, TContext = any, TArgs = Record<string, unknown>> = (
   parent: any,
   args: TArgs,
   context: TContext,

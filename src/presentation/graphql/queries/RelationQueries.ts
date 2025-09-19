@@ -184,7 +184,7 @@ export class RelationQueries extends BaseResolver {
               ? relation.getTargetNodeId()
               : relation.getSourceNodeId()
 
-            if (!visitedNodes.has(nextNodeId)) {
+            if (nextNodeId && !visitedNodes.has(nextNodeId)) {
               dependencyNodes.push({ id: nextNodeId })
               await exploreDependencies(nextNodeId, currentDepth + 1)
             }
@@ -272,6 +272,11 @@ export class RelationQueries extends BaseResolver {
 
           for (const relation of relations) {
             const nextNodeId = relation.getTargetNodeId()
+
+            // Skip if nextNodeId is null
+            if (!nextNodeId) {
+              continue
+            }
 
             // Avoid cycles
             if (state.visitedNodes.includes(nextNodeId)) {

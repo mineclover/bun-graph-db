@@ -107,7 +107,7 @@
     "table:resolve-order": "bun scripts/table-package-cli.ts resolve-order",
     "table:generate-templates": "bun scripts/table-package-cli.ts generate-templates",
     "table:validate": "bun scripts/table-package-cli.ts validate",
-    "table:help": "bun scripts/table-package-cli.ts help",
+    "table:help": "bun scripts/table-package-cli.ts help"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.2",

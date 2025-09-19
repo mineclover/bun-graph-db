@@ -17,7 +17,7 @@ interface SchemaResolverDependencies {
 }
 
 export function createSchemaResolvers(dependencies: SchemaResolverDependencies) {
-  const { tableRepository, schemaExportUseCase, schemaImportUseCase, logger } = dependencies
+  const { schemaExportUseCase, schemaImportUseCase, logger } = dependencies
 
   return {
     Query: {

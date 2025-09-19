@@ -869,10 +869,12 @@ export class EnhancedTemplateGenerator {
     const regex = /\$(\w+):\s*(\w+)!/g
     let match: RegExpExecArray | null
 
-    while ((match = regex.exec(query)) !== null) {
+    match = regex.exec(query)
+    while (match !== null) {
       if (match[1]) {
         requiredVars.push(match[1])
       }
+      match = regex.exec(query)
     }
 
     return requiredVars

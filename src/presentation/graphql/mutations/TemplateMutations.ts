@@ -238,6 +238,172 @@ export class TemplateMutations extends BaseResolver {
     )
   }
 
+  async executeTemplate(
+    _: GraphQLParent,
+    args: {
+      input: {
+        templateId?: string
+        templateIdentifier?: string
+        variables?: Record<string, unknown>
+      }
+    },
+    _context?: GraphQLContext
+  ) {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('input', 'Execute template input'),
+      ],
+      'executeTemplate'
+    )
+
+    // Validate that either templateId or templateIdentifier is provided
+    if (!args.input.templateId && !args.input.templateIdentifier) {
+      return {
+        success: false,
+        data: null,
+        execution: null,
+        errors: [
+          {
+            message: 'Either templateId or templateIdentifier must be provided',
+            code: 'TEMPLATE_IDENTIFIER_REQUIRED',
+          },
+        ],
+      }
+    }
+
+    try {
+      this.logger.info('Executing mutation: executeTemplate', {
+        templateId: args.input.templateId,
+        templateIdentifier: args.input.templateIdentifier
+      })
+
+      const startTime = Date.now()
+
+      // 1. 템플릿 준비 및 변수 처리
+      const templateResult = await this.executeQueryTemplateUseCase.execute({
+        templateIdentifier: args.input.templateIdentifier || args.input.templateId || '',
+        variables: args.input.variables,
+        trackUsage: true,
+      })
+
+      // 2. GraphQL 스키마 확인
+      if (!this.schema) {
+        return {
+          success: false,
+          data: null,
+          execution: null,
+          errors: [
+            {
+              message: 'GraphQL schema not available',
+              code: 'SCHEMA_NOT_AVAILABLE',
+            },
+          ],
+        }
+      }
+
+      // 3. GraphQL 쿼리 파싱
+      let document: any
+      try {
+        document = parse(templateResult.queryText)
+      } catch (parseError) {
+        this.logger.error('GraphQL query parse error', {
+          error: parseError,
+          queryText: templateResult.queryText,
+        })
+
+        return {
+          success: false,
+          data: null,
+          execution: null,
+          errors: [
+            {
+              message: `Invalid GraphQL query: ${parseError instanceof Error ? parseError.message : 'Parse error'}`,
+              code: 'GRAPHQL_PARSE_ERROR',
+            },
+          ],
+        }
+      }
+
+      // 4. GraphQL 실행
+      const executionResult: ExecutionResult = await execute({
+        schema: this.schema,
+        document,
+        variableValues: templateResult.processedVariables,
+        contextValue: {},
+      })
+
+      const executionTime = Date.now() - startTime
+
+      // 5. 실행 결과 처리
+      if (executionResult.errors && executionResult.errors.length > 0) {
+        this.logger.warn('GraphQL execution errors', {
+          templateId: args.input.templateId,
+          templateIdentifier: args.input.templateIdentifier,
+          errors: executionResult.errors.map((err) => err.message),
+        })
+
+        return {
+          success: false,
+          data: executionResult.data,
+          execution: {
+            id: `exec_${Date.now()}`,
+            templateId: templateResult.metadata.templateId,
+            executedAt: new Date().toISOString(),
+            duration: executionTime,
+            resultCount: 0,
+            success: false,
+            errorMessage: executionResult.errors[0]?.message || 'GraphQL execution failed',
+          },
+          errors: executionResult.errors.map((error) => ({
+            message: error.message,
+            code: 'GRAPHQL_EXECUTION_ERROR',
+          })),
+        }
+      }
+
+      this.logger.info('Template executed successfully', {
+        templateId: args.input.templateId,
+        templateIdentifier: args.input.templateIdentifier,
+        executionTime,
+        hasData: !!executionResult.data,
+      })
+
+      return {
+        success: true,
+        data: executionResult.data,
+        execution: {
+          id: `exec_${Date.now()}`,
+          templateId: templateResult.metadata.templateId,
+          executedAt: new Date().toISOString(),
+          duration: executionTime,
+          resultCount: Array.isArray(executionResult.data) ? executionResult.data.length : 1,
+          success: true,
+          errorMessage: null,
+        },
+        errors: [],
+      }
+    } catch (error) {
+      this.logger.error('Failed to execute template', {
+        templateId: args.input.templateId,
+        templateIdentifier: args.input.templateIdentifier,
+        error
+      })
+
+      return {
+        success: false,
+        data: null,
+        execution: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Failed to execute template',
+            code: 'TEMPLATE_EXECUTION_ERROR',
+          },
+        ],
+      }
+    }
+  }
+
   async executeTemplateWithGraphQL(
     _: GraphQLParent,
     args: {

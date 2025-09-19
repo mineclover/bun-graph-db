@@ -346,8 +346,8 @@ describe('SystemQueries', () => {
 
   describe('logger functionality', () => {
     it('should log safely when logger is available', () => {
-      systemQueries['safeLog']('Test message')
-      systemQueries['safeLog']('Error message', true)
+      systemQueries.safeLog('Test message')
+      systemQueries.safeLog('Error message', true)
 
       expect(mockLogger.log).toHaveBeenCalledWith('Test message')
       expect(mockLogger.error).toHaveBeenCalledWith('Error message')
@@ -357,8 +357,8 @@ describe('SystemQueries', () => {
       systemQueries.setLogger(null)
 
       // Should not throw when logger is null
-      expect(() => systemQueries['safeLog']('Test message')).not.toThrow()
-      expect(() => systemQueries['safeLog']('Error message', true)).not.toThrow()
+      expect(() => systemQueries.safeLog('Test message')).not.toThrow()
+      expect(() => systemQueries.safeLog('Error message', true)).not.toThrow()
     })
 
     it('should handle logger errors silently', () => {
@@ -368,8 +368,8 @@ describe('SystemQueries', () => {
       }
       systemQueries.setLogger(failingLogger)
 
-      expect(() => systemQueries['safeLog']('Test')).not.toThrow()
-      expect(() => systemQueries['safeLog']('Error', true)).not.toThrow()
+      expect(() => systemQueries.safeLog('Test')).not.toThrow()
+      expect(() => systemQueries.safeLog('Error', true)).not.toThrow()
     })
   })
 

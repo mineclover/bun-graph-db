@@ -17,6 +17,8 @@ export type {
   CreateDocInput,
   UpdateDocInput,
   DocsFilter,
+  MutationUpdateRelationTypeArgs,
+  MutationDeleteRelationTypeArgs,
 } from '../../../generated/graphql.types.js'
 
 export interface GraphQLContext {

@@ -15,7 +15,7 @@ export class NodeAttributeAnalyticsService {
     attributeIdentifier?: string;
     filter?: any;
   }) {
-    const { tableId, attributeIdentifier, filter } = params;
+    const { tableId, attributeIdentifier } = params;
 
     // Build dynamic WHERE clause
     const conditions = [];

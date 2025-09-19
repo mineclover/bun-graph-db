@@ -1,12 +1,13 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
+import { RelationType } from '@/domain/entities/RelationType.js'
 import type {
   CreateRelationArgs,
   CreateRelationTypeArgs,
   DeleteRelationArgs,
-  UpdateRelationTypeArgs,
-  DeleteRelationTypeArgs,
+  MutationUpdateRelationTypeArgs,
+  MutationDeleteRelationTypeArgs,
   GraphQLContext,
   GraphQLParent,
 } from '@/core/types/GraphQLTypes.js'
@@ -167,7 +168,7 @@ export class RelationMutations extends BaseResolver {
 
   async updateRelationType(
     _: GraphQLParent,
-    args: UpdateRelationTypeArgs,
+    args: MutationUpdateRelationTypeArgs,
     _context?: GraphQLContext
   ) {
     try {
@@ -188,17 +189,28 @@ export class RelationMutations extends BaseResolver {
         throw new NotFoundException('Relation type not found')
       }
 
-      const updatedRelationType = await this.relationTypeRepository.update(args.id, {
-        identifier: args.input.identifier || existingRelationType.getIdentifier(),
-        description: args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
-        category: args.input.name || existingRelationType.getCategory(),
-      })
+      // Create updated RelationType entity
+      const updatedRelationType = RelationType.fromDatabase(
+        existingRelationType.getId()!,
+        existingRelationType.getIdentifier(),
+        args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
+        args.input.name || existingRelationType.getCategory(),
+        existingRelationType.getCreatedAt(),
+        new Date() // Update timestamp
+      )
+
+      await this.relationTypeRepository.update(updatedRelationType)
 
       return {
         success: true,
         relationType: {
-          ...updatedRelationType,
-          name: args.input.name || existingRelationType.getCategory(),
+          id: updatedRelationType.getId(),
+          identifier: updatedRelationType.getIdentifier(),
+          description: updatedRelationType.getDescription(),
+          category: updatedRelationType.getCategory(),
+          name: updatedRelationType.getCategory(),
+          createdAt: updatedRelationType.getCreatedAt(),
+          updatedAt: updatedRelationType.getUpdatedAt(),
         },
         errors: []
       }
@@ -244,7 +256,7 @@ export class RelationMutations extends BaseResolver {
     }
   }
 
-  async deleteRelationType(_: GraphQLParent, args: DeleteRelationTypeArgs, _context?: GraphQLContext) {
+  async deleteRelationType(_: GraphQLParent, args: MutationDeleteRelationTypeArgs, _context?: GraphQLContext) {
     try {
       this.validateArgs(
         args as any,

@@ -36,8 +36,6 @@ export class TablePackageService implements ITablePackageService {
   private readonly enhancedDependencyAnalyzer: EnhancedDependencyAnalyzer
   private readonly enhancedTemplateGenerator: EnhancedTemplateGenerator
   private readonly schemaIntrospectionService: SchemaIntrospectionService
-  private readonly tablePackageValidator: TablePackageValidator
-  private readonly tablePackageRecoveryManager: TablePackageRecoveryManager
 
   constructor(
     private readonly tableRepository: ITableRepository,
@@ -1196,10 +1194,12 @@ export class TablePackageService implements ITablePackageService {
 
     for (const pattern of patterns) {
       let match: RegExpExecArray | null
-      while ((match = pattern.exec(queryText)) !== null) {
+      match = pattern.exec(queryText)
+      while (match !== null) {
         if (match[1]) {
           tableReferences.push(match[1])
         }
+        match = pattern.exec(queryText)
       }
     }
 

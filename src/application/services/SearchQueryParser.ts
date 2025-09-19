@@ -56,7 +56,8 @@ export class SearchQueryParser {
     const parts: string[] = []
     let match: RegExpExecArray | null
 
-    while ((match = regex.exec(query)) !== null) {
+    match = regex.exec(query)
+    while (match !== null) {
       if (match[1]) {
         // Logical operator
         parts.push(match[1])
@@ -64,6 +65,7 @@ export class SearchQueryParser {
         // Filter part
         parts.push(match[2])
       }
+      match = regex.exec(query)
     }
 
     // Fallback: if no matches, return the original query as single part

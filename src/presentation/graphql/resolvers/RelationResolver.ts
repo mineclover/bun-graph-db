@@ -1,5 +1,6 @@
 import { fromEntity as nodeFromEntity, type NodeDto } from '@/application/dtos/NodeDto.js'
 import { nodeRelationFromEntity, nodeRelationFromEntities, relationTypeFromEntity, relationTypeFromEntities, type NodeRelationDto, type RelationTypeDto } from '@/application/dtos/RelationDto.js'
+import { RelationType } from '@/domain/entities/RelationType.js'
 import { fromEntity as tableFromEntity, type TableDto } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
@@ -241,7 +242,7 @@ export class RelationResolver extends BaseResolver {
             ? relation.getTargetNodeId()
             : relation.getSourceNodeId()
 
-          if (!visitedNodes.has(nextNodeId)) {
+          if (nextNodeId && !visitedNodes.has(nextNodeId)) {
             dependencyNodes.push({ id: nextNodeId })
             await exploreDependencies(nextNodeId, currentDepth + 1)
           }
@@ -325,6 +326,11 @@ export class RelationResolver extends BaseResolver {
 
         for (const relation of relations) {
           const nextNodeId = relation.getTargetNodeId()
+
+          // Skip if nextNodeId is null
+          if (!nextNodeId) {
+            continue
+          }
 
           // Avoid cycles
           if (state.visitedNodes.includes(nextNodeId)) {
@@ -524,20 +530,25 @@ export class RelationResolver extends BaseResolver {
         throw new NotFoundException(`Relation type with id ${args.id} not found`)
       }
 
-      const updatedRelationType = await this.relationTypeRepository.update(args.id as RelationTypeId, {
-        identifier: args.input.identifier || existingRelationType.getIdentifier(),
-        description: args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
-        category: args.input.name || existingRelationType.getCategory(),
-      })
+      // Create updated RelationType entity
+      const updatedRelationType = RelationType.fromDatabase(
+        existingRelationType.getId()!,
+        existingRelationType.getIdentifier(),
+        args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
+        args.input.name || existingRelationType.getCategory(),
+        existingRelationType.getCreatedAt(),
+        new Date() // Update timestamp
+      )
+
+      await this.relationTypeRepository.update(updatedRelationType)
 
       const relationTypeDto: RelationTypeDto = {
         id: updatedRelationType.getId(),
         identifier: updatedRelationType.getIdentifier(),
         description: updatedRelationType.getDescription(),
         category: updatedRelationType.getCategory(),
-        name: args.input.name || existingRelationType.getCategory(),
-        createdAt: updatedRelationType.getCreatedAt(),
-        updatedAt: updatedRelationType.getUpdatedAt(),
+        createdAt: updatedRelationType.getCreatedAt().toISOString(),
+        updatedAt: updatedRelationType.getUpdatedAt().toISOString(),
       }
 
       return {

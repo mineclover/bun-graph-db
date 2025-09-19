@@ -99,7 +99,6 @@ export interface SchemaChange {
 
 export class SchemaIntrospectionService {
   private cachedSchema?: GraphQLSchema
-  private cachedIntrospection?: IntrospectionQuery
   private cacheTimestamp = 0
   private readonly CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 

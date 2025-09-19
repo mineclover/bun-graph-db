@@ -315,6 +315,8 @@ export class GraphQLSchemaBuilder {
           deps.templateMutations.activateTemplate(_, args as any),
         deactivateTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateMutations.deactivateTemplate(_, args as any),
+        executeTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateMutations.executeTemplate(_, args as any),
         executeTemplateWithGraphQL: (
           _: GraphQLParent,
           args: Record<string, unknown>,

@@ -779,10 +779,12 @@ export class TablePackageValidator {
     const definedVariables = new Set<string>()
     let match: RegExpExecArray | null
 
-    while ((match = variableRegex.exec(template.query)) !== null) {
+    match = variableRegex.exec(template.query)
+    while (match !== null) {
       if (match[1]) {
         definedVariables.add(match[1])
       }
+      match = variableRegex.exec(template.query)
     }
 
     // Check if variables schema matches defined variables

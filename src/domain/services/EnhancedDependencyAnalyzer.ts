@@ -333,7 +333,8 @@ export class EnhancedDependencyAnalyzer {
 
     for (const pattern of patterns) {
       let match: RegExpExecArray | null
-      while ((match = pattern.exec(queryText)) !== null) {
+      match = pattern.exec(queryText)
+      while (match !== null) {
         if (match[1]) {
           // Convert to kebab-case
           const tableName = match[1]
@@ -342,6 +343,7 @@ export class EnhancedDependencyAnalyzer {
             .replace(/^-/, '')
           references.push(tableName)
         }
+        match = pattern.exec(queryText)
       }
     }
 

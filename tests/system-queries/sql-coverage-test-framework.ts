@@ -870,7 +870,9 @@ export class SQLCoverageTestFramework {
 
     if (report.recommendations.length > 0) {
       console.log(`\n💡 Recommendations:`)
-      report.recommendations.forEach(rec => console.log(`   - ${rec}`))
+      report.recommendations.forEach(rec => {
+        console.log(`   - ${rec}`)
+      })
     }
 
     console.log('\n' + '='.repeat(60))
