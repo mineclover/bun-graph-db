@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-09-19T03:11:53.841Z",
+  "operation": "template-recreation",
+  "targetTemplates": [
+    815,
+    816
+  ],
+  "backupCount": 2,
+  "success": true,
+  "changes": [
+    {
+      "id": 815,
+      "identifier": "create-todo",
+      "name": "CreateTodo",
+      "oldVersion": "1.0.0",
+      "newVersion": "1.1.0",
+      "schemaChanges": [
+        "Updated to use CreateNodeInput/UpdateNodeInput structure",
+        "Modernized variable schema",
+        "Enhanced error handling structure"
+      ]
+    },
+    {
+      "id": 816,
+      "identifier": "update-todo",
+      "name": "UpdateTodo",
+      "oldVersion": "1.0.0",
+      "newVersion": "1.1.0",
+      "schemaChanges": [
+        "Updated to use CreateNodeInput/UpdateNodeInput structure",
+        "Modernized variable schema",
+        "Enhanced error handling structure"
+      ]
+    }
+  ]
+}

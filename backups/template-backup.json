@@ -1,0 +1,49 @@
+{
+  "timestamp": "2025-09-19T03:11:53.827Z",
+  "templates": [
+    {
+      "id": 815,
+      "identifier": "create-todo",
+      "name": "CreateTodo",
+      "description": "새로운 할일을 생성하는 템플릿",
+      "query_text": "mutation CreateTodo($title: String!, $description: String, $status: String = \"TODO\", $priority: String = \"MEDIUM\", $category: String = \"PERSONAL\", $dueDate: String) {\n  createNode(\n    tableId: \"58\"\n    content: $title\n    attributes: [\n      { name: \"title\", value: $title }\n      { name: \"description\", value: $description }\n      { name: \"status\", value: $status }\n      { name: \"priority\", value: $priority }\n      { name: \"category\", value: $category }\n      { name: \"due_date\", value: $dueDate }\n      { name: \"created_at\", value: \"{{ now }}\" }\n    ]\n  ) {\n    success\n    node {\n      id\n      content\n      attributes {\n        name\n        value\n      }\n    }\n    errors {\n      message\n    }\n  }\n}",
+      "variables_schema": null,
+      "default_variables": null,
+      "applicable_tables": null,
+      "template_type": "query",
+      "complexity_score": 6,
+      "usage_count": 775,
+      "version": "1.0.0",
+      "is_active": 1,
+      "tags": "[\"todo\",\"create\",\"crud\"]",
+      "created_at": "2025-09-15 09:27:38",
+      "updated_at": "2025-09-18 03:03:36",
+      "query_name": "[\"createNode\"]",
+      "operation_type": "mutation",
+      "last_used_at": "2025-09-14 20:03:36",
+      "avg_execution_time_ms": 112
+    },
+    {
+      "id": 816,
+      "identifier": "update-todo",
+      "name": "UpdateTodo",
+      "description": "할일을 업데이트하는 템플릿",
+      "query_text": "mutation UpdateTodo($todoId: ID!, $title: String, $description: String, $status: String, $priority: String, $category: String, $dueDate: String, $completedAt: String) {\n  updateNode(\n    id: $todoId\n    content: $title\n    attributes: [\n      { name: \"title\", value: $title }\n      { name: \"description\", value: $description }\n      { name: \"status\", value: $status }\n      { name: \"priority\", value: $priority }\n      { name: \"category\", value: $category }\n      { name: \"due_date\", value: $dueDate }\n      { name: \"completed_at\", value: $completedAt }\n    ]\n  ) {\n    success\n    node {\n      id\n      content\n      attributes {\n        name\n        value\n      }\n    }\n    errors {\n      message\n    }\n  }\n}",
+      "variables_schema": null,
+      "default_variables": null,
+      "applicable_tables": null,
+      "template_type": "query",
+      "complexity_score": 6,
+      "usage_count": 769,
+      "version": "1.0.0",
+      "is_active": 1,
+      "tags": "[\"todo\",\"update\",\"crud\"]",
+      "created_at": "2025-09-15 09:27:38",
+      "updated_at": "2025-09-18 03:03:36",
+      "query_name": "[\"updateNode\"]",
+      "operation_type": "mutation",
+      "last_used_at": "2025-08-20 10:03:36",
+      "avg_execution_time_ms": 170
+    }
+  ]
+}
