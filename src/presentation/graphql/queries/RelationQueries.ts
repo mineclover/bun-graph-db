@@ -140,7 +140,9 @@ export class RelationQueries extends BaseResolver {
 
   async getDependencyChain(
     _: GraphQLParent,
-    args: { input: { nodeId: string; direction?: string; maxDepth?: number; relationTypeIds?: string[] } },
+    args: {
+      input: { nodeId: string; direction?: string; maxDepth?: number; relationTypeIds?: string[] }
+    },
     _context?: GraphQLContext
   ) {
     this.validateArgs(
@@ -169,20 +171,22 @@ export class RelationQueries extends BaseResolver {
           visitedNodes.add(currentNodeId)
 
           // Find relations based on direction
-          const relations = direction === 'OUTGOING'
-            ? await this.nodeRelationRepository.findBySourceNodeId(currentNodeId as any)
-            : await this.nodeRelationRepository.findByTargetNodeId(currentNodeId as any)
+          const relations =
+            direction === 'OUTGOING'
+              ? await this.nodeRelationRepository.findBySourceNodeId(currentNodeId as any)
+              : await this.nodeRelationRepository.findByTargetNodeId(currentNodeId as any)
 
           for (const relation of relations) {
             // Filter by relation types if specified
-            if (args.input.relationTypeIds?.length &&
-                !args.input.relationTypeIds.includes(relation.getRelationTypeId())) {
+            if (
+              args.input.relationTypeIds?.length &&
+              !args.input.relationTypeIds.includes(relation.getRelationTypeId())
+            ) {
               continue
             }
 
-            const nextNodeId = direction === 'OUTGOING'
-              ? relation.getTargetNodeId()
-              : relation.getSourceNodeId()
+            const nextNodeId =
+              direction === 'OUTGOING' ? relation.getTargetNodeId() : relation.getSourceNodeId()
 
             if (nextNodeId && !visitedNodes.has(nextNodeId)) {
               dependencyNodes.push({ id: nextNodeId })
@@ -195,7 +199,7 @@ export class RelationQueries extends BaseResolver {
 
         return {
           nodes: dependencyNodes,
-          totalCount: dependencyNodes.length
+          totalCount: dependencyNodes.length,
         }
       },
       'getDependencyChain',
@@ -205,7 +209,14 @@ export class RelationQueries extends BaseResolver {
 
   async findPathsBetweenNodes(
     _: GraphQLParent,
-    args: { input: { sourceNodeId: string; targetNodeId: string; maxDepth?: number; relationTypeIds?: string[] } },
+    args: {
+      input: {
+        sourceNodeId: string
+        targetNodeId: string
+        maxDepth?: number
+        relationTypeIds?: string[]
+      }
+    },
     _context?: GraphQLContext
   ) {
     this.validateArgs(
@@ -240,12 +251,14 @@ export class RelationQueries extends BaseResolver {
           totalWeight: number
         }
 
-        const queue: PathState[] = [{
-          currentNodeId: sourceNodeId,
-          visitedNodes: [sourceNodeId],
-          usedRelations: [],
-          totalWeight: 0
-        }]
+        const queue: PathState[] = [
+          {
+            currentNodeId: sourceNodeId,
+            visitedNodes: [sourceNodeId],
+            usedRelations: [],
+            totalWeight: 0,
+          },
+        ]
 
         while (queue.length > 0) {
           const state = queue.shift()!
@@ -257,10 +270,10 @@ export class RelationQueries extends BaseResolver {
           if (state.currentNodeId === targetNodeId && state.visitedNodes.length > 1) {
             // Found a path
             paths.push({
-              nodes: state.visitedNodes.map(id => ({ id })),
-              relations: state.usedRelations.map(id => ({ id })),
+              nodes: state.visitedNodes.map((id) => ({ id })),
+              relations: state.usedRelations.map((id) => ({ id })),
               length: state.visitedNodes.length - 1,
-              totalWeight: state.totalWeight
+              totalWeight: state.totalWeight,
             })
             continue
           }
@@ -284,8 +297,10 @@ export class RelationQueries extends BaseResolver {
             }
 
             // Filter by relation types if specified
-            if (args.input.relationTypeIds?.length &&
-                !args.input.relationTypeIds.includes(relation.getRelationTypeId())) {
+            if (
+              args.input.relationTypeIds?.length &&
+              !args.input.relationTypeIds.includes(relation.getRelationTypeId())
+            ) {
               continue
             }
 
@@ -293,7 +308,7 @@ export class RelationQueries extends BaseResolver {
               currentNodeId: nextNodeId,
               visitedNodes: [...state.visitedNodes, nextNodeId],
               usedRelations: [...state.usedRelations, relation.getId()],
-              totalWeight: state.totalWeight + 1 // Simple weight calculation
+              totalWeight: state.totalWeight + 1, // Simple weight calculation
             })
           }
         }

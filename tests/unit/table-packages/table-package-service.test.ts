@@ -1,10 +1,10 @@
-import { describe, test, expect, beforeEach } from 'bun:test'
-import { TablePackageService } from '@/domain/services/TablePackageService.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { beforeEach, describe, expect, test } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { Table } from '@/domain/entities/Table.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import { Table } from '@/domain/entities/Table.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { TablePackageService } from '@/domain/services/TablePackageService.js'
 
 // Mock implementations
 class MockLogger implements ILogger {
@@ -60,7 +60,10 @@ class MockTableRepository implements Partial<ITableRepository> {
 class MockQueryTemplateRepository implements Partial<IQueryTemplateRepository> {
   private templates = new Map<string, QueryTemplate>()
 
-  async findByApplicableTable(tableName: string, _includeUniversal?: boolean): Promise<QueryTemplate[]> {
+  async findByApplicableTable(
+    tableName: string,
+    _includeUniversal?: boolean
+  ): Promise<QueryTemplate[]> {
     const results = []
     for (const template of this.templates.values()) {
       if (template.isApplicableToTable(tableName)) {
@@ -88,29 +91,71 @@ class MockQueryTemplateRepository implements Partial<IQueryTemplateRepository> {
 
 // Create mock implementations for other repositories
 const createMockRepo = () => ({
-  async findById() { return null },
+  async findById() {
+    return null
+  },
   async save() {},
   async delete() {},
-  async findAll() { return { items: [], total: 0, hasNextPage: false, hasPreviousPage: false } },
-  async count() { return 0 },
-  async search() { return { items: [], total: 0, hasNextPage: false, hasPreviousPage: false } },
-  async create() { return {} },
-  async update() { return {} },
-  async exists() { return false },
-  async findByTableId() { return { nodes: [], total: 0, hasNextPage: false, hasPreviousPage: false } },
-  async findByTable() { return [] },
-  async findBySourceNodeId() { return [] },
-  async findByTargetNodeId() { return [] },
-  async findByNodeId() { return [] },
-  async findByType() { return [] },
-  async getTypeMap() { return new Map() },
-  async findByIdentifier() { return null },
-  async findByApplicableTable() { return [] },
-  validateStructure() { return true },
-  async createBackupPoint() { return 'backup-123' },
-  async restoreFromBackup() { return { success: true } },
-  async listBackups() { return [] },
-  async deleteBackup() { return true },
+  async findAll() {
+    return { items: [], total: 0, hasNextPage: false, hasPreviousPage: false }
+  },
+  async count() {
+    return 0
+  },
+  async search() {
+    return { items: [], total: 0, hasNextPage: false, hasPreviousPage: false }
+  },
+  async create() {
+    return {}
+  },
+  async update() {
+    return {}
+  },
+  async exists() {
+    return false
+  },
+  async findByTableId() {
+    return { nodes: [], total: 0, hasNextPage: false, hasPreviousPage: false }
+  },
+  async findByTable() {
+    return []
+  },
+  async findBySourceNodeId() {
+    return []
+  },
+  async findByTargetNodeId() {
+    return []
+  },
+  async findByNodeId() {
+    return []
+  },
+  async findByType() {
+    return []
+  },
+  async getTypeMap() {
+    return new Map()
+  },
+  async findByIdentifier() {
+    return null
+  },
+  async findByApplicableTable() {
+    return []
+  },
+  validateStructure() {
+    return true
+  },
+  async createBackupPoint() {
+    return 'backup-123'
+  },
+  async restoreFromBackup() {
+    return { success: true }
+  },
+  async listBackups() {
+    return []
+  },
+  async deleteBackup() {
+    return true
+  },
 })
 
 // Enhanced mock container for DI
@@ -123,7 +168,7 @@ class MockContainer {
       if (key.includes('GRAPHQL_EXECUTOR')) {
         return {
           executeSchema: async () => ({ data: {} }),
-          getSchema: () => ({ getTypeMap: () => ({}) })
+          getSchema: () => ({ getTypeMap: () => ({}) }),
         }
       }
     }
@@ -161,7 +206,7 @@ describe('TablePackageService', () => {
       },
       async findByTable(_table: any) {
         return { nodes: [], total: 0, hasNextPage: false, hasPreviousPage: false } // Return paginated result
-      }
+      },
     }
 
     service = new TablePackageService(
@@ -235,13 +280,13 @@ describe('TablePackageService', () => {
       expect(result.success).toBe(true)
       expect(result.templates.length).toBeGreaterThan(0) // Should have at least create and read
 
-      const templateTypes = result.templates.map(t => t.operationType)
+      const templateTypes = result.templates.map((t) => t.operationType)
       expect(templateTypes).toContain('mutation') // create
       expect(templateTypes).toContain('query') // read
 
-      const templateNames = result.templates.map(t => t.name)
-      expect(templateNames.some(name => name.includes('Create'))).toBe(true)
-      expect(templateNames.some(name => name.includes('Get') || name.includes('Read'))).toBe(true)
+      const templateNames = result.templates.map((t) => t.name)
+      expect(templateNames.some((name) => name.includes('Create'))).toBe(true)
+      expect(templateNames.some((name) => name.includes('Get') || name.includes('Read'))).toBe(true)
     })
 
     test('should return error for non-existent table in template generation', async () => {
@@ -313,7 +358,7 @@ describe('TablePackageService', () => {
       // Assert
       expect(conflicts).toBeDefined()
       // Should not have errors for a new table
-      const errors = conflicts.filter(c => c.severity === 'error')
+      const errors = conflicts.filter((c) => c.severity === 'error')
       expect(errors).toHaveLength(0)
     })
 

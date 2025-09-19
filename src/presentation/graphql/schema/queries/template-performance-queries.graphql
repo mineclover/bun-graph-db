@@ -62,9 +62,9 @@ type TemplatePerformanceAnalytics {
 }
 
 type PerformanceDistribution {
-  fast: Int!      # < 50ms
-  medium: Int!    # 50-200ms
-  slow: Int!      # > 200ms
+  fast: Int! # < 50ms
+  medium: Int! # 50-200ms
+  slow: Int! # > 200ms
   percentiles: PerformancePercentiles!
 }
 
@@ -246,8 +246,8 @@ enum RecommendationReason {
 }
 
 enum PerformanceRequirement {
-  REAL_TIME      # < 50ms
-  INTERACTIVE    # < 200ms
-  BATCH          # < 1000ms
-  BACKGROUND     # No limit
+  REAL_TIME # < 50ms
+  INTERACTIVE # < 200ms
+  BATCH # < 1000ms
+  BACKGROUND # No limit
 }

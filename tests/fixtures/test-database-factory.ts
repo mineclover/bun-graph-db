@@ -4,8 +4,9 @@
  * ENFORCES file-based SQLite for enhanced test isolation and migration compatibility
  */
 
-import { TestDatabase } from '../system-queries/fixtures/test-database-setup'
 import type { Database } from 'bun:sqlite'
+import { TestDatabase } from '../system-queries/fixtures/test-database-setup'
+
 // Local type definitions (previously from migration-tools)
 type DatabasePath = {
   readonly path: string
@@ -69,14 +70,16 @@ export class TestDatabaseFactory {
     const testDb = new TestDatabase({
       name: uniqueName,
       inMemory: false, // MANDATORY: file-based for proper isolation
-      tempDir
+      tempDir,
     })
 
     await testDb.setup()
 
     // Verify file-based enforcement
     if (testDb.path === ':memory:' || testDb.path.includes(':memory:')) {
-      throw new Error(`CRITICAL: In-memory database detected for ${suiteName}. File-based enforcement failed.`)
+      throw new Error(
+        `CRITICAL: In-memory database detected for ${suiteName}. File-based enforcement failed.`
+      )
     }
 
     // Initialize with app schema
@@ -86,7 +89,7 @@ export class TestDatabaseFactory {
     const databaseInfo: DatabasePath = {
       path: testDb.path,
       isFileBase: true,
-      isTemporary: true
+      isTemporary: true,
     }
 
     // Create isolation config
@@ -94,7 +97,7 @@ export class TestDatabaseFactory {
       enforceFileBased: true,
       tempDirectory: tempDir,
       uniqueNaming: true,
-      cleanupOnExit: true
+      cleanupOnExit: true,
     }
 
     const environment: TestEnvironment = {
@@ -106,7 +109,7 @@ export class TestDatabaseFactory {
       cleanup: async () => {
         await testDb.teardown()
         TestDatabaseFactory.instances.delete(suiteName)
-      }
+      },
     }
 
     TestDatabaseFactory.instances.set(suiteName, environment)
@@ -388,7 +391,9 @@ export class TestDatabaseFactory {
    * Cleanup all test environments
    */
   static async cleanupAll(): Promise<void> {
-    const cleanupPromises = Array.from(TestDatabaseFactory.instances.values()).map(env => env.cleanup())
+    const cleanupPromises = Array.from(TestDatabaseFactory.instances.values()).map((env) =>
+      env.cleanup()
+    )
     await Promise.all(cleanupPromises)
     TestDatabaseFactory.instances.clear()
   }
@@ -398,7 +403,9 @@ export class TestDatabaseFactory {
    * This method is deprecated in favor of file-based databases for better isolation
    */
   static async createInMemoryEnvironment(suiteName: string): Promise<TestEnvironment> {
-    console.warn(`WARNING: createInMemoryEnvironment is deprecated for ${suiteName}. Use createTestEnvironment for file-based isolation.`)
+    console.warn(
+      `WARNING: createInMemoryEnvironment is deprecated for ${suiteName}. Use createTestEnvironment for file-based isolation.`
+    )
 
     // Force file-based even for "in-memory" requests
     return TestDatabaseFactory.createTestEnvironment(`legacy-${suiteName}`)
@@ -421,7 +428,9 @@ export class TestDatabaseFactory {
 
       // Validate file-based requirements
       if (!env.databaseInfo.isFileBase) {
-        violations.push(`Suite "${suiteName}" database info indicates non-file-based: ${env.databasePath}`)
+        violations.push(
+          `Suite "${suiteName}" database info indicates non-file-based: ${env.databasePath}`
+        )
       }
 
       // Validate isolation config
@@ -431,7 +440,9 @@ export class TestDatabaseFactory {
 
       // Validate path structure for temporary files
       if (env.databaseInfo.isTemporary && !env.databasePath.includes('/tmp/bun-graph-db-tests/')) {
-        violations.push(`Suite "${suiteName}" temporary database not in expected directory: ${env.databasePath}`)
+        violations.push(
+          `Suite "${suiteName}" temporary database not in expected directory: ${env.databasePath}`
+        )
       }
     }
 
@@ -439,7 +450,7 @@ export class TestDatabaseFactory {
       isValid: violations.length === 0,
       violations: Object.freeze(violations),
       enforcementLevel: 'strict',
-      validatedPaths: Object.freeze(validatedPaths)
+      validatedPaths: Object.freeze(validatedPaths),
     }
   }
 
@@ -484,7 +495,7 @@ export class TestDatabaseFactory {
 
     // Add metadata if provided
     if (metadata) {
-      (env as any).metadata = metadata
+      ;(env as any).metadata = metadata
     }
 
     return env

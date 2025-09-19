@@ -3,7 +3,7 @@
  * Tests table GraphQL queries with isolated server setup
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { GraphQLTestServerManager } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'table-queries-isolated'
@@ -63,7 +63,7 @@ describe('Table Queries - Isolated Database Test Suite', () => {
       `
 
       const variables = {
-        pagination: { limit: 10, offset: 0 }
+        pagination: { limit: 10, offset: 0 },
       }
 
       const result = await graphqlRequest(query, variables)
@@ -203,7 +203,7 @@ describe('Table Queries - Isolated Database Test Suite', () => {
 
       // Test with limit 5
       const result = await graphqlRequest(query, {
-        pagination: { limit: 5, offset: 0 }
+        pagination: { limit: 5, offset: 0 },
       })
 
       expect(result.errors).toBeUndefined()

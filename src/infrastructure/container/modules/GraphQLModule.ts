@@ -1,3 +1,4 @@
+import type { GraphQLSchema } from 'graphql'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
@@ -16,7 +17,6 @@ import {
   TableFieldResolvers,
 } from '@/presentation/graphql/field-resolvers/index.js'
 import { buildGraphQLSchema } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
-import type { GraphQLSchema } from 'graphql'
 import {
   AttributeMutations,
   DocMutations,
@@ -228,7 +228,11 @@ export function registerGraphQLModule(container: DIContainer): void {
         simpleLogger
       )
     },
-    [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY, RepositoryTokens.TABLE_REPOSITORY]
+    [
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.TABLE_REPOSITORY,
+    ]
   )
 
   container.registerSingleton(
@@ -361,30 +365,29 @@ export function registerGraphQLModule(container: DIContainer): void {
   )
 
   // Table Package Resolver
-  container.registerSingleton(
-    GraphQLTokens.TABLE_PACKAGE_RESOLVER,
-    async (c) => {
-      // Import the resolver class at runtime to avoid circular dependencies
-      const { TablePackageResolver } = await import('@/presentation/graphql/resolvers/TablePackageResolver.js')
-      const { TablePackageTokens } = await import('./TablePackageModule.js')
+  container.registerSingleton(GraphQLTokens.TABLE_PACKAGE_RESOLVER, async (c) => {
+    // Import the resolver class at runtime to avoid circular dependencies
+    const { TablePackageResolver } = await import(
+      '@/presentation/graphql/resolvers/TablePackageResolver.js'
+    )
+    const { TablePackageTokens } = await import('./TablePackageModule.js')
 
-      const tablePackageService = await c.resolve(TablePackageTokens.TABLE_PACKAGE_SERVICE)
+    const tablePackageService = await c.resolve(TablePackageTokens.TABLE_PACKAGE_SERVICE)
 
-      // Import TablePackageService type for casting
-      const { TablePackageService } = await import('@/domain/services/TablePackageService.js')
-      const typedTablePackageService = tablePackageService as InstanceType<typeof TablePackageService>
+    // Import TablePackageService type for casting
+    const { TablePackageService } = await import('@/domain/services/TablePackageService.js')
+    const typedTablePackageService = tablePackageService as InstanceType<typeof TablePackageService>
 
-      // Use simple console logger to avoid circular dependency
-      const simpleLogger = {
-        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
-        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
-        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
-        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
-      }
-
-      return new TablePackageResolver(typedTablePackageService, simpleLogger)
+    // Use simple console logger to avoid circular dependency
+    const simpleLogger = {
+      info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+      warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+      error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+      debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
     }
-  )
+
+    return new TablePackageResolver(typedTablePackageService, simpleLogger)
+  })
 
   // Field resolvers
   container.registerSingleton(
@@ -551,7 +554,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.DOC_FIELD_RESOLVERS,
     async (c) => {
-      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
+      const tableRepository = (await c.resolve(
+        RepositoryTokens.TABLE_REPOSITORY
+      )) as ITableRepository
       return new DocFieldResolvers(tableRepository)
     },
     [RepositoryTokens.TABLE_REPOSITORY]
@@ -561,7 +566,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.GRAPHQL_SCHEMA_BUILDER,
     async (c) => {
-      const { GraphQLSchemaBuilder } = await import('@/presentation/graphql/GraphQLSchemaBuilder.js')
+      const { GraphQLSchemaBuilder } = await import(
+        '@/presentation/graphql/GraphQLSchemaBuilder.js'
+      )
       return new GraphQLSchemaBuilder(c)
     },
     []
@@ -572,13 +579,14 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.GRAPHQL_EXECUTOR,
     async (c) => {
       const { execute } = await import('graphql')
-      const schema = await c.resolve(GraphQLTokens.GRAPHQL_SCHEMA) as GraphQLSchema
+      const schema = (await c.resolve(GraphQLTokens.GRAPHQL_SCHEMA)) as GraphQLSchema
 
       return {
         executeSchema: async (query: string, variables?: any, context?: any) => {
           return execute({
             schema,
-            document: typeof query === 'string' ? await (await import('graphql')).parse(query) : query,
+            document:
+              typeof query === 'string' ? await (await import('graphql')).parse(query) : query,
             variableValues: variables,
             contextValue: context,
           })

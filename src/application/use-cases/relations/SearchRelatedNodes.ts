@@ -1,4 +1,4 @@
-import { fromEntity as nodeFromEntity, type NodeDto } from '@/application/dtos/NodeDto.js'
+import { type NodeDto, fromEntity as nodeFromEntity } from '@/application/dtos/NodeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'

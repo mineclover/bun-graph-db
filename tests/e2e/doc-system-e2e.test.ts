@@ -3,8 +3,8 @@
  * End-to-end tests with complete isolation and realistic data
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { TestIsolationHelpers, type IsolatedTestContext } from '../fixtures/test-isolation-helpers'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'doc-system-e2e'
 let testContext: IsolatedTestContext
@@ -14,16 +14,17 @@ const TEST_SCENARIOS = {
   tables: [
     { id: 58, name: 'todos' },
     { id: 59, name: 'users' },
-    { id: 60, name: 'projects' }
+    { id: 60, name: 'projects' },
   ],
   documentCategories: ['USAGE', 'GUIDE', 'EXAMPLE', 'SPEC', 'FAQ'],
   sampleContent: {
     USAGE: 'This table is used for managing todo items with CRUD operations.',
-    GUIDE: 'Step-by-step guide for working with this table:\n1. Create records\n2. Update status\n3. Delete completed items',
+    GUIDE:
+      'Step-by-step guide for working with this table:\n1. Create records\n2. Update status\n3. Delete completed items',
     EXAMPLE: '```sql\nSELECT * FROM todos WHERE completed = false;\n```',
     SPEC: 'Table Schema:\n- id: INTEGER PRIMARY KEY\n- title: TEXT NOT NULL\n- completed: BOOLEAN DEFAULT FALSE',
-    FAQ: 'Q: How to mark todos as complete?\nA: Update the completed column to true.'
-  }
+    FAQ: 'Q: How to mark todos as complete?\nA: Update the completed column to true.',
+  },
 }
 
 describe('Doc System - End-to-End Tests', () => {
@@ -32,7 +33,7 @@ describe('Doc System - End-to-End Tests', () => {
     testContext = await TestIsolationHelpers.setupE2ETest(SUITE_NAME, {
       seedData: true,
       mockExternalServices: false,
-      enableLogging: true
+      enableLogging: true,
     })
     console.log('✅ E2E test environment ready')
     console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
@@ -68,7 +69,7 @@ describe('Doc System - End-to-End Tests', () => {
       `
 
       const createResult = await testContext.graphqlRequest!(createMutation, {
-        input: { tableId, category, content: originalContent }
+        input: { tableId, category, content: originalContent },
       })
 
       expect(createResult.data.createDoc).toBeDefined()
@@ -112,7 +113,7 @@ describe('Doc System - End-to-End Tests', () => {
 
       const updateResult = await testContext.graphqlRequest!(updateMutation, {
         id: docId,
-        input: { content: updatedContent }
+        input: { content: updatedContent },
       })
 
       expect(updateResult.data.updateDoc).toBeDefined()
@@ -120,7 +121,7 @@ describe('Doc System - End-to-End Tests', () => {
 
       // 4. Create new version
       const versionResult = await testContext.graphqlRequest!(createMutation, {
-        input: { tableId, category, content: 'Version 2 content' }
+        input: { tableId, category, content: 'Version 2 content' },
       })
 
       expect(versionResult.data.createDoc.version).toBe(2)
@@ -142,7 +143,7 @@ describe('Doc System - End-to-End Tests', () => {
 
       const versionsResult = await testContext.graphqlRequest!(versionsQuery, {
         tableId,
-        category
+        category,
       })
 
       expect(versionsResult.data.getDocVersions.docs).toHaveLength(2)
@@ -174,8 +175,9 @@ describe('Doc System - End-to-End Tests', () => {
       // Create documentation for multiple tables and categories
       for (const table of TEST_SCENARIOS.tables) {
         for (const category of TEST_SCENARIOS.documentCategories) {
-          const content = TEST_SCENARIOS.sampleContent[category as keyof typeof TEST_SCENARIOS.sampleContent] ||
-                          `${category} documentation for ${table.name} table`
+          const content =
+            TEST_SCENARIOS.sampleContent[category as keyof typeof TEST_SCENARIOS.sampleContent] ||
+            `${category} documentation for ${table.name} table`
 
           const mutation = `
             mutation CreateDoc($input: CreateDocInput!) {
@@ -187,13 +189,15 @@ describe('Doc System - End-to-End Tests', () => {
             }
           `
 
-          operations.push(testContext.graphqlRequest!(mutation, {
-            input: {
-              tableId: table.id.toString(),
-              category,
-              content
-            }
-          }))
+          operations.push(
+            testContext.graphqlRequest!(mutation, {
+              input: {
+                tableId: table.id.toString(),
+                category,
+                content,
+              },
+            })
+          )
         }
       }
 
@@ -201,7 +205,7 @@ describe('Doc System - End-to-End Tests', () => {
       const results = await Promise.all(operations)
 
       // Verify all operations succeeded
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.data.createDoc).toBeDefined()
         expect(result.data.createDoc.id).toBeGreaterThan(0)
       })
@@ -238,8 +242,8 @@ describe('Doc System - End-to-End Tests', () => {
           input: {
             tableId: '58',
             category: `SEARCH_TEST_${index}`,
-            content: `This documentation covers ${term} functionality and best practices for ${term} implementation.`
-          }
+            content: `This documentation covers ${term} functionality and best practices for ${term} implementation.`,
+          },
         })
       }
 
@@ -259,7 +263,7 @@ describe('Doc System - End-to-End Tests', () => {
       `
 
       const searchResult = await testContext.graphqlRequest!(searchQuery, {
-        query: 'database'
+        query: 'database',
       })
 
       expect(searchResult.data.searchDocs.docs).toBeDefined()
@@ -294,7 +298,7 @@ describe('Doc System - End-to-End Tests', () => {
       const result = await testContext.graphqlRequest!(query, {
         tableId: '58',
         limit: 5,
-        offset: 0
+        offset: 0,
       })
 
       expect(result.data.getDocs).toBeDefined()
@@ -321,8 +325,8 @@ describe('Doc System - End-to-End Tests', () => {
           input: {
             tableId: '99999', // Non-existent table
             category: 'TEST',
-            content: 'Test content'
-          }
+            content: 'Test content',
+          },
         })
 
         // Should not reach here
@@ -352,8 +356,8 @@ describe('Doc System - End-to-End Tests', () => {
           input: {
             tableId,
             category: `${category}_${i}`,
-            content: `Concurrent test content ${i}`
-          }
+            content: `Concurrent test content ${i}`,
+          },
         })
       })
 
@@ -405,8 +409,8 @@ describe('Doc System - End-to-End Tests', () => {
           input: {
             tableId: '58',
             category: `BATCH_${Math.floor(i / 10)}`,
-            content: `Batch documentation content ${i}. This is a longer piece of content that simulates real documentation with multiple paragraphs and detailed explanations of functionality.`
-          }
+            content: `Batch documentation content ${i}. This is a longer piece of content that simulates real documentation with multiple paragraphs and detailed explanations of functionality.`,
+          },
         })
       })
 
@@ -447,17 +451,19 @@ describe('Doc System - End-to-End Tests', () => {
       db.exec('PRAGMA query_only = ON')
 
       // Test query plan for common operations
-      const queryPlan = db.prepare(`
+      const queryPlan = db
+        .prepare(`
         EXPLAIN QUERY PLAN
         SELECT d.*, t.name as table_name
         FROM docs d
         JOIN tables t ON d.table_id = t.id
         WHERE d.table_id = ? AND d.is_active = true
         ORDER BY d.created_at DESC
-      `).all(58)
+      `)
+        .all(58)
 
       // Verify the query plan uses indexes
-      const planText = queryPlan.map(row => row.detail).join(' ')
+      const planText = queryPlan.map((row) => row.detail).join(' ')
       expect(planText).toContain('INDEX') // Should use indexes for performance
 
       db.exec('PRAGMA query_only = OFF')
@@ -488,8 +494,8 @@ describe('Doc System - End-to-End Tests', () => {
             input: {
               tableId: '58',
               category: 'EDGE_CASE',
-              content: testCase.content
-            }
+              content: testCase.content,
+            },
           })
 
           if (testCase.content === '') {

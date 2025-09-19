@@ -3,7 +3,7 @@
  * Tests relation GraphQL queries with isolated server setup
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { GraphQLTestServerManager } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'relation-queries-isolated'
@@ -115,7 +115,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
       `
 
       const variables = {
-        pagination: { limit: 10, offset: 0 }
+        pagination: { limit: 10, offset: 0 },
       }
 
       const result = await graphqlRequest(query, variables)
@@ -178,10 +178,10 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
 
       const variables = {
         filter: {
-          sourceNodeId: '1',  // Test ID
-          direction: 'OUTGOING'
+          sourceNodeId: '1', // Test ID
+          direction: 'OUTGOING',
         },
-        pagination: { limit: 5, offset: 0 }
+        pagination: { limit: 5, offset: 0 },
       }
 
       const result = await graphqlRequest(query, variables)
@@ -189,7 +189,10 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
       // SearchRelatedNodesUseCase might not be available (dependency issue mentioned in code)
       // So we accept either successful search or fallback behavior
       if (result.errors) {
-        console.log('ℹ️ SearchRelatedNodes has implementation issues, this is expected:', result.errors[0]?.message)
+        console.log(
+          'ℹ️ SearchRelatedNodes has implementation issues, this is expected:',
+          result.errors[0]?.message
+        )
       } else {
         expect(result.data.searchRelatedNodes).toBeDefined()
         expect(result.data.searchRelatedNodes.nodes).toBeDefined()
@@ -213,8 +216,8 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         input: {
           nodeId: '1',
           direction: 'OUTGOING',
-          maxDepth: 3
-        }
+          maxDepth: 3,
+        },
       }
 
       const result = await graphqlRequest(query, variables)
@@ -271,7 +274,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
       // This should throw an error due to GraphQL validation
       try {
         await graphqlRequest(query, {
-          input: { direction: 'OUTGOING' } // Missing nodeId
+          input: { direction: 'OUTGOING' }, // Missing nodeId
         })
         // If we reach here, the test should fail
         expect(false).toBe(true) // Force failure
@@ -300,7 +303,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
 
       // Test with limit 3
       const result = await graphqlRequest(query, {
-        pagination: { limit: 3, offset: 0 }
+        pagination: { limit: 3, offset: 0 },
       })
 
       expect(result.errors).toBeUndefined()

@@ -1,9 +1,9 @@
-import type { ITableRepository } from '../repositories/ITableRepository.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import { QueryTemplate } from '../entities/QueryTemplate.js'
 import type { IAttributeRepository } from '../repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '../repositories/IAttributeTypeRepository.js'
 import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { QueryTemplate } from '../entities/QueryTemplate.js'
+import type { ITableRepository } from '../repositories/ITableRepository.js'
 
 /**
  * Enhanced template generator for table packages
@@ -88,32 +88,46 @@ export class EnhancedTemplateGenerator {
 
       // 1. Create operation with validation
       if (defaults.includeCreate) {
-        templates.push(await this.generateCreateTemplate(
-          tableIdentifier,
-          tableNameCamel,
-          tableNamePascal,
-          tableSchema,
-          defaults.includeValidation
-        ))
+        templates.push(
+          await this.generateCreateTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema,
+            defaults.includeValidation
+          )
+        )
       }
 
       // 2. Read operations (single and list)
       if (defaults.includeRead) {
         templates.push(
-          await this.generateGetByIdTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
-          await this.generateListTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema)
+          await this.generateGetByIdTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema
+          ),
+          await this.generateListTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema
+          )
         )
       }
 
       // 3. Update operation with partial updates
       if (defaults.includeUpdate) {
-        templates.push(await this.generateUpdateTemplate(
-          tableIdentifier,
-          tableNameCamel,
-          tableNamePascal,
-          tableSchema,
-          defaults.includeValidation
-        ))
+        templates.push(
+          await this.generateUpdateTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema,
+            defaults.includeValidation
+          )
+        )
       }
 
       // 4. Delete operations (single and cascade)
@@ -127,16 +141,36 @@ export class EnhancedTemplateGenerator {
       // 5. Advanced search with filtering and sorting
       if (defaults.includeSearch) {
         templates.push(
-          await this.generateSearchTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
-          await this.generateFilterTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema)
+          await this.generateSearchTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema
+          ),
+          await this.generateFilterTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema
+          )
         )
       }
 
       // 6. Batch operations
       if (defaults.includeBatch) {
         templates.push(
-          await this.generateBatchCreateTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
-          await this.generateBatchUpdateTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
+          await this.generateBatchCreateTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema
+          ),
+          await this.generateBatchUpdateTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema
+          ),
           await this.generateBatchDeleteTemplate(tableIdentifier, tableNameCamel, tableNamePascal)
         )
       }
@@ -145,7 +179,12 @@ export class EnhancedTemplateGenerator {
       if (defaults.includeRelations) {
         templates.push(
           await this.generateRelationshipTemplate(tableIdentifier, tableNameCamel, tableNamePascal),
-          await this.generateNestedQueryTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema)
+          await this.generateNestedQueryTemplate(
+            tableIdentifier,
+            tableNameCamel,
+            tableNamePascal,
+            tableSchema
+          )
         )
       }
 
@@ -168,20 +207,26 @@ export class EnhancedTemplateGenerator {
             template.query,
             [tableIdentifier, template.operationType, 'export-import', 'table-package', 'enhanced'],
             {
-              description: template.description || `Enhanced ${template.operationType} template for ${tableIdentifier} table`,
+              description:
+                template.description ||
+                `Enhanced ${template.operationType} template for ${tableIdentifier} table`,
               complexityScore: this.calculateComplexityScore(template.query),
               applicableTables: [tableIdentifier],
-              variablesSchema: template.variables ? {
-                type: 'object',
-                properties: template.variables,
-                required: this.extractRequiredVariables(template.query)
-              } : undefined,
+              variablesSchema: template.variables
+                ? {
+                    type: 'object',
+                    properties: template.variables,
+                    required: this.extractRequiredVariables(template.query),
+                  }
+                : undefined,
             }
           )
 
           await this.queryTemplateRepository.create(queryTemplate)
         } catch (error) {
-          errors.push(`Failed to create template '${template.identifier}': ${error instanceof Error ? error.message : 'Unknown error'}`)
+          errors.push(
+            `Failed to create template '${template.identifier}': ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
         }
       }
 
@@ -253,8 +298,8 @@ export class EnhancedTemplateGenerator {
           type: 'object',
           description: `Input data for creating a new ${tableIdentifier}`,
           properties: this.generateVariableProperties(tableSchema, 'create'),
-          required: this.getRequiredFields(tableSchema, 'create')
-        }
+          required: this.getRequiredFields(tableSchema, 'create'),
+        },
       },
     }
   }
@@ -328,13 +373,13 @@ export class EnhancedTemplateGenerator {
         id: {
           type: 'string',
           description: 'Unique identifier of the record to retrieve',
-          format: 'uuid'
+          format: 'uuid',
         },
         includeRelations: {
           type: 'boolean',
           description: 'Whether to include relationship data',
-          default: false
-        }
+          default: false,
+        },
       },
     }
   }
@@ -417,32 +462,32 @@ export class EnhancedTemplateGenerator {
         filter: {
           type: 'object',
           description: 'Filtering criteria',
-          properties: this.generateFilterProperties(tableSchema)
+          properties: this.generateFilterProperties(tableSchema),
         },
         sort: {
           type: 'object',
           description: 'Sorting configuration',
           properties: {
             field: { type: 'string', enum: this.getFieldNames(tableSchema) },
-            direction: { type: 'string', enum: ['ASC', 'DESC'], default: 'ASC' }
-          }
+            direction: { type: 'string', enum: ['ASC', 'DESC'], default: 'ASC' },
+          },
         },
         pagination: {
           type: 'object',
           description: 'Pagination parameters',
           properties: {
             page: { type: 'integer', minimum: 1, default: 1 },
-            pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 20 }
-          }
+            pageSize: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          },
         },
         include: {
           type: 'object',
           description: 'Optional data to include',
           properties: {
             relations: { type: 'boolean', default: false },
-            attributes: { type: 'boolean', default: false }
-          }
-        }
+            attributes: { type: 'boolean', default: false },
+          },
+        },
       },
     }
   }
@@ -526,13 +571,13 @@ export class EnhancedTemplateGenerator {
         query: {
           type: 'string',
           description: 'Search query string',
-          minLength: 1
+          minLength: 1,
         },
         filters: {
           type: 'object',
           description: 'Additional search filters',
-          properties: this.generateSearchFilterProperties(tableSchema)
-        }
+          properties: this.generateSearchFilterProperties(tableSchema),
+        },
       },
     }
   }
@@ -599,10 +644,10 @@ export class EnhancedTemplateGenerator {
           description: 'Array of items to create',
           items: {
             type: 'object',
-            properties: this.generateVariableProperties(tableSchema, 'create')
+            properties: this.generateVariableProperties(tableSchema, 'create'),
           },
           minItems: 1,
-          maxItems: 100
+          maxItems: 100,
         },
         options: {
           type: 'object',
@@ -610,9 +655,9 @@ export class EnhancedTemplateGenerator {
           properties: {
             continueOnError: { type: 'boolean', default: false },
             validateAll: { type: 'boolean', default: true },
-            transactional: { type: 'boolean', default: true }
-          }
-        }
+            transactional: { type: 'boolean', default: true },
+          },
+        },
       },
     }
   }
@@ -668,15 +713,15 @@ export class EnhancedTemplateGenerator {
           description: 'Filter for which changes to receive',
           properties: {
             ids: { type: 'array', items: { type: 'string' } },
-            userId: { type: 'string' }
-          }
+            userId: { type: 'string' },
+          },
         },
         events: {
           type: 'array',
           description: 'Event types to subscribe to',
           items: { type: 'string', enum: ['CREATED', 'UPDATED', 'DELETED'] },
-          default: ['CREATED', 'UPDATED', 'DELETED']
-        }
+          default: ['CREATED', 'UPDATED', 'DELETED'],
+        },
       },
     }
   }
@@ -698,7 +743,7 @@ export class EnhancedTemplateGenerator {
         types: Map<string, any>
       } = {
         attributes: [],
-        types: new Map()
+        types: new Map(),
       }
 
       for (const attr of attributes) {
@@ -707,7 +752,7 @@ export class EnhancedTemplateGenerator {
           identifier: attr.getIdentifier(),
           type: attrType?.getJsonType() || 'string',
           description: attr.getDescription(),
-          required: attr.getIsRequired()
+          required: attr.getIsRequired(),
         } as {
           identifier: string
           type: string
@@ -726,10 +771,12 @@ export class EnhancedTemplateGenerator {
   private generateInputFields(tableSchema: any, operation: 'create' | 'update'): string {
     if (!tableSchema.attributes) return 'content\n  metadata'
 
-    return tableSchema.attributes
-      .filter((attr: any) => operation === 'update' || attr.required)
-      .map((attr: any) => `${this.sanitizeFieldName(attr.identifier)}`)
-      .join('\n  ') || 'content\n  metadata'
+    return (
+      tableSchema.attributes
+        .filter((attr: any) => operation === 'update' || attr.required)
+        .map((attr: any) => `${this.sanitizeFieldName(attr.identifier)}`)
+        .join('\n  ') || 'content\n  metadata'
+    )
   }
 
   private generateOutputFields(tableSchema: any, simplified = false): string {
@@ -743,11 +790,12 @@ export class EnhancedTemplateGenerator {
 
     if (simplified) return baseFields
 
-    const attributeFields = tableSchema.attributes?.length > 0
-      ? `\n      attributes {\n        ${tableSchema.attributes
-          .map((attr: any) => this.sanitizeFieldName(attr.identifier))
-          .join('\n        ')}\n      }`
-      : ''
+    const attributeFields =
+      tableSchema.attributes?.length > 0
+        ? `\n      attributes {\n        ${tableSchema.attributes
+            .map((attr: any) => this.sanitizeFieldName(attr.identifier))
+            .join('\n        ')}\n      }`
+        : ''
 
     return baseFields + attributeFields
   }
@@ -770,7 +818,10 @@ export class EnhancedTemplateGenerator {
       suggestions`
   }
 
-  private generateVariableProperties(tableSchema: any, _operation: 'create' | 'update'): Record<string, any> {
+  private generateVariableProperties(
+    tableSchema: any,
+    _operation: 'create' | 'update'
+  ): Record<string, any> {
     const properties: Record<string, any> = {}
 
     if (tableSchema.attributes) {
@@ -778,7 +829,7 @@ export class EnhancedTemplateGenerator {
         const sanitizedField = this.sanitizeFieldName(attr.identifier)
         properties[sanitizedField] = {
           type: this.mapTypeToJsonSchema(attr.type),
-          description: attr.description
+          description: attr.description,
         }
       }
     }
@@ -792,7 +843,7 @@ export class EnhancedTemplateGenerator {
       createdAfter: { type: 'string', format: 'date-time' },
       createdBefore: { type: 'string', format: 'date-time' },
       updatedAfter: { type: 'string', format: 'date-time' },
-      updatedBefore: { type: 'string', format: 'date-time' }
+      updatedBefore: { type: 'string', format: 'date-time' },
     }
 
     if (tableSchema.attributes) {
@@ -800,7 +851,7 @@ export class EnhancedTemplateGenerator {
         const sanitizedField = this.sanitizeFieldName(attr.identifier)
         properties[sanitizedField] = {
           type: this.mapTypeToJsonSchema(attr.type),
-          description: `Filter by ${attr.identifier}`
+          description: `Filter by ${attr.identifier}`,
         }
       }
     }
@@ -813,7 +864,7 @@ export class EnhancedTemplateGenerator {
       ...this.generateFilterProperties(tableSchema),
       tags: { type: 'array', items: { type: 'string' } },
       hasRelations: { type: 'boolean' },
-      relationTypes: { type: 'array', items: { type: 'string' } }
+      relationTypes: { type: 'array', items: { type: 'string' } },
     }
   }
 
@@ -829,7 +880,10 @@ export class EnhancedTemplateGenerator {
     const baseFields = ['id', 'createdAt', 'updatedAt']
 
     if (tableSchema.attributes) {
-      return [...baseFields, ...tableSchema.attributes.map((attr: any) => this.sanitizeFieldName(attr.identifier))]
+      return [
+        ...baseFields,
+        ...tableSchema.attributes.map((attr: any) => this.sanitizeFieldName(attr.identifier)),
+      ]
     }
 
     return baseFields
@@ -837,12 +891,12 @@ export class EnhancedTemplateGenerator {
 
   private mapTypeToJsonSchema(type: string): string {
     const typeMap: Record<string, string> = {
-      'string': 'string',
-      'integer': 'integer',
-      'number': 'number',
-      'boolean': 'boolean',
-      'array': 'array',
-      'object': 'object'
+      string: 'string',
+      integer: 'integer',
+      number: 'number',
+      boolean: 'boolean',
+      array: 'array',
+      object: 'object',
     }
 
     return typeMap[type?.toLowerCase()] || 'string'
@@ -942,11 +996,11 @@ export class EnhancedTemplateGenerator {
         input: {
           type: 'object',
           description: 'Fields to update',
-          properties: this.generateVariableProperties(tableSchema, 'update')
+          properties: this.generateVariableProperties(tableSchema, 'update'),
         },
         version: { type: 'string', description: 'Expected version for optimistic locking' },
-        ifMatch: { type: 'string', description: 'ETag for conditional updates' }
-      }
+        ifMatch: { type: 'string', description: 'ETag for conditional updates' },
+      },
     }
   }
 
@@ -986,8 +1040,8 @@ export class EnhancedTemplateGenerator {
       variables: {
         id: { type: 'string', description: 'Record ID to delete' },
         confirm: { type: 'boolean', description: 'Confirmation flag', default: false },
-        reason: { type: 'string', description: 'Reason for deletion' }
-      }
+        reason: { type: 'string', description: 'Reason for deletion' },
+      },
     }
   }
 
@@ -1040,8 +1094,8 @@ export class EnhancedTemplateGenerator {
       variables: {
         id: { type: 'string', description: 'Record ID to delete' },
         dryRun: { type: 'boolean', description: 'Preview mode', default: false },
-        maxDepth: { type: 'integer', description: 'Maximum cascade depth', default: 3 }
-      }
+        maxDepth: { type: 'integer', description: 'Maximum cascade depth', default: 3 },
+      },
     }
   }
 
@@ -1100,7 +1154,7 @@ export class EnhancedTemplateGenerator {
         where: {
           type: 'object',
           description: 'Complex filtering conditions',
-          properties: this.generateWhereProperties(tableSchema)
+          properties: this.generateWhereProperties(tableSchema),
         },
         orderBy: {
           type: 'array',
@@ -1109,11 +1163,11 @@ export class EnhancedTemplateGenerator {
             type: 'object',
             properties: {
               field: { type: 'string' },
-              direction: { type: 'string', enum: ['ASC', 'DESC'] }
-            }
-          }
-        }
-      }
+              direction: { type: 'string', enum: ['ASC', 'DESC'] },
+            },
+          },
+        },
+      },
     }
   }
 
@@ -1177,13 +1231,13 @@ export class EnhancedTemplateGenerator {
               id: { type: 'string' },
               data: {
                 type: 'object',
-                properties: this.generateVariableProperties(tableSchema, 'update')
+                properties: this.generateVariableProperties(tableSchema, 'update'),
               },
-              version: { type: 'string' }
-            }
-          }
-        }
-      }
+              version: { type: 'string' },
+            },
+          },
+        },
+      },
     }
   }
 
@@ -1237,13 +1291,13 @@ export class EnhancedTemplateGenerator {
         ids: {
           type: 'array',
           description: 'Array of IDs to delete',
-          items: { type: 'string' }
+          items: { type: 'string' },
         },
         where: {
           type: 'object',
-          description: 'Alternative: delete by criteria'
-        }
-      }
+          description: 'Alternative: delete by criteria',
+        },
+      },
     }
   }
 
@@ -1320,15 +1374,15 @@ export class EnhancedTemplateGenerator {
         relationTypes: {
           type: 'array',
           description: 'Filter by relation types',
-          items: { type: 'string' }
+          items: { type: 'string' },
         },
         direction: {
           type: 'string',
           enum: ['IN', 'OUT', 'BOTH'],
-          default: 'BOTH'
+          default: 'BOTH',
         },
-        depth: { type: 'integer', minimum: 1, maximum: 5, default: 1 }
-      }
+        depth: { type: 'integer', minimum: 1, maximum: 5, default: 1 },
+      },
     }
   }
 
@@ -1412,7 +1466,7 @@ export class EnhancedTemplateGenerator {
       variables: {
         filter: {
           type: 'object',
-          description: 'Main query filter'
+          description: 'Main query filter',
         },
         includeRelated: {
           type: 'object',
@@ -1421,10 +1475,10 @@ export class EnhancedTemplateGenerator {
             nodes: { type: 'boolean', default: false },
             attributes: { type: 'boolean', default: false },
             history: { type: 'boolean', default: false },
-            analytics: { type: 'boolean', default: false }
-          }
-        }
-      }
+            analytics: { type: 'boolean', default: false },
+          },
+        },
+      },
     }
   }
 
@@ -1481,18 +1535,18 @@ export class EnhancedTemplateGenerator {
       variables: {
         filter: {
           type: 'object',
-          description: 'Filter for change events'
+          description: 'Filter for change events',
         },
         aggregateBy: {
           type: 'string',
-          description: 'Field to aggregate changes by'
+          description: 'Field to aggregate changes by',
         },
         bufferTime: {
           type: 'integer',
           description: 'Buffer time in milliseconds',
-          default: 1000
-        }
-      }
+          default: 1000,
+        },
+      },
     }
   }
 
@@ -1506,9 +1560,9 @@ export class EnhancedTemplateGenerator {
         properties: {
           equals: { type: 'string' },
           in: { type: 'array', items: { type: 'string' } },
-          notIn: { type: 'array', items: { type: 'string' } }
-        }
-      }
+          notIn: { type: 'array', items: { type: 'string' } },
+        },
+      },
     }
 
     if (tableSchema.attributes) {
@@ -1526,7 +1580,7 @@ export class EnhancedTemplateGenerator {
       equals: { type: this.mapTypeToJsonSchema(type) },
       not: { type: this.mapTypeToJsonSchema(type) },
       in: { type: 'array', items: { type: this.mapTypeToJsonSchema(type) } },
-      notIn: { type: 'array', items: { type: this.mapTypeToJsonSchema(type) } }
+      notIn: { type: 'array', items: { type: this.mapTypeToJsonSchema(type) } },
     }
 
     if (type === 'string') {
@@ -1535,7 +1589,7 @@ export class EnhancedTemplateGenerator {
         contains: { type: 'string' },
         startsWith: { type: 'string' },
         endsWith: { type: 'string' },
-        mode: { type: 'string', enum: ['default', 'insensitive'] }
+        mode: { type: 'string', enum: ['default', 'insensitive'] },
       }
     }
 
@@ -1545,7 +1599,7 @@ export class EnhancedTemplateGenerator {
         lt: { type: this.mapTypeToJsonSchema(type) },
         lte: { type: this.mapTypeToJsonSchema(type) },
         gt: { type: this.mapTypeToJsonSchema(type) },
-        gte: { type: this.mapTypeToJsonSchema(type) }
+        gte: { type: this.mapTypeToJsonSchema(type) },
       }
     }
 

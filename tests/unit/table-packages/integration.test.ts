@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from 'bun:test'
-import type { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
-import { ContainerBootstrap } from '@/infrastructure/container/ContainerBootstrap.js'
+import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { graphql } from 'graphql'
 import type { TablePackageFormat } from '@/core/types/TablePackage.js'
+import { ContainerBootstrap } from '@/infrastructure/container/ContainerBootstrap.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
+import type { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
 
 describe('Table Package System Integration', () => {
   let schema: any
@@ -13,7 +13,9 @@ describe('Table Package System Integration', () => {
     // Initialize the DI container and schema for testing
     container = await ContainerBootstrap.createTestContainer()
 
-    const schemaBuilder = await container.resolve(Symbol.for('GraphQLSchemaBuilder')) as GraphQLSchemaBuilder
+    const schemaBuilder = (await container.resolve(
+      Symbol.for('GraphQLSchemaBuilder')
+    )) as GraphQLSchemaBuilder
     schema = await schemaBuilder.build()
   })
 
@@ -49,9 +51,9 @@ describe('Table Package System Integration', () => {
             includeData: true,
             includeTemplates: true,
             includeRelations: true,
-            outputPath: './exports/'
-          }
-        }
+            outputPath: './exports/',
+          },
+        },
       }
 
       const result = await graphql({
@@ -91,7 +93,7 @@ describe('Table Package System Integration', () => {
         exportedAt: new Date().toISOString(),
         sourceTable: {
           identifier: 'imported-table',
-          description: 'Test imported table'
+          description: 'Test imported table',
         },
         dependencies: [],
         package: {
@@ -103,20 +105,20 @@ describe('Table Package System Integration', () => {
               updatedAt: new Date().toISOString(),
             },
             attributes: [],
-            attributeTypes: []
+            attributeTypes: [],
           },
           dataset: {
             nodes: [],
-            nodeAttributes: []
+            nodeAttributes: [],
           },
           relations: {
             relationTypes: [],
-            nodeRelations: []
+            nodeRelations: [],
           },
           templates: {
-            templates: []
-          }
-        }
+            templates: [],
+          },
+        },
       }
 
       const variables = {
@@ -124,9 +126,9 @@ describe('Table Package System Integration', () => {
           packageData: mockPackage,
           options: {
             conflictResolution: 'RENAME',
-            generateTemplates: true
-          }
-        }
+            generateTemplates: true,
+          },
+        },
       }
 
       const result = await graphql({
@@ -157,7 +159,7 @@ describe('Table Package System Integration', () => {
         exportedAt: new Date().toISOString(),
         sourceTable: {
           identifier: 'validation-test',
-          description: 'Test validation'
+          description: 'Test validation',
         },
         dependencies: [],
         package: {
@@ -169,27 +171,27 @@ describe('Table Package System Integration', () => {
               updatedAt: new Date().toISOString(),
             },
             attributes: [],
-            attributeTypes: []
+            attributeTypes: [],
           },
           dataset: {
             nodes: [],
-            nodeAttributes: []
+            nodeAttributes: [],
           },
           relations: {
             relationTypes: [],
-            nodeRelations: []
+            nodeRelations: [],
           },
           templates: {
-            templates: []
-          }
-        }
+            templates: [],
+          },
+        },
       }
 
       const variables = {
         packageData: mockPackage,
         options: {
-          conflictResolution: 'SKIP'
-        }
+          conflictResolution: 'SKIP',
+        },
       }
 
       const result = await graphql({
@@ -217,7 +219,7 @@ describe('Table Package System Integration', () => {
       `
 
       const variables = {
-        tableIdentifiers: ['table1', 'table2', 'table3']
+        tableIdentifiers: ['table1', 'table2', 'table3'],
       }
 
       const result = await graphql({
@@ -263,7 +265,7 @@ describe('Table Package System Integration', () => {
           exportedAt: new Date().toISOString(),
           sourceTable: {
             identifier: 'batch-table-1',
-            description: 'First batch table'
+            description: 'First batch table',
           },
           dependencies: [],
           package: {
@@ -275,19 +277,19 @@ describe('Table Package System Integration', () => {
                 updatedAt: new Date().toISOString(),
               },
               attributes: [],
-              attributeTypes: []
+              attributeTypes: [],
             },
             dataset: { nodes: [], nodeAttributes: [] },
             relations: { relationTypes: [], nodeRelations: [] },
-            templates: { templates: [] }
-          }
+            templates: { templates: [] },
+          },
         },
         {
           version: '1.0.0',
           exportedAt: new Date().toISOString(),
           sourceTable: {
             identifier: 'batch-table-2',
-            description: 'Second batch table'
+            description: 'Second batch table',
           },
           dependencies: [],
           package: {
@@ -299,13 +301,13 @@ describe('Table Package System Integration', () => {
                 updatedAt: new Date().toISOString(),
               },
               attributes: [],
-              attributeTypes: []
+              attributeTypes: [],
             },
             dataset: { nodes: [], nodeAttributes: [] },
             relations: { relationTypes: [], nodeRelations: [] },
-            templates: { templates: [] }
-          }
-        }
+            templates: { templates: [] },
+          },
+        },
       ]
 
       const variables = {
@@ -313,10 +315,10 @@ describe('Table Package System Integration', () => {
           packages: mockPackages,
           options: {
             conflictResolution: 'SKIP',
-            generateTemplates: true
+            generateTemplates: true,
           },
-          createSession: true
-        }
+          createSession: true,
+        },
       }
 
       const result = await graphql({
@@ -353,9 +355,9 @@ describe('Table Package System Integration', () => {
         variableValues: {
           input: {
             identifier: 'source-table',
-            description: 'Test source table for export-import cycle'
-          }
-        }
+            description: 'Test source table for export-import cycle',
+          },
+        },
       })
 
       // Step 1: Export a table
@@ -382,10 +384,10 @@ describe('Table Package System Integration', () => {
             options: {
               includeData: true,
               includeTemplates: true,
-              includeRelations: true
-            }
-          }
-        }
+              includeRelations: true,
+            },
+          },
+        },
       })
 
       expect(exportResult.errors).toBeUndefined()
@@ -421,17 +423,21 @@ describe('Table Package System Integration', () => {
               packageData,
               options: {
                 conflictResolution: 'RENAME',
-                generateTemplates: true
-              }
-            }
-          }
+                generateTemplates: true,
+              },
+            },
+          },
         })
 
         expect(importResult.errors).toBeUndefined()
         expect((importResult.data?.importTablePackage as any)?.success).toBe(true)
-        expect((importResult.data?.importTablePackage as any)?.importedTable.identifier).toBe('imported-source-table')
+        expect((importResult.data?.importTablePackage as any)?.importedTable.identifier).toBe(
+          'imported-source-table'
+        )
         expect((importResult.data?.importTablePackage as any)?.generatedTemplates).toBeDefined()
-        expect((importResult.data?.importTablePackage as any)?.generatedTemplates.length).toBeGreaterThan(0)
+        expect(
+          (importResult.data?.importTablePackage as any)?.generatedTemplates.length
+        ).toBeGreaterThan(0)
       }
     })
 
@@ -458,7 +464,7 @@ describe('Table Package System Integration', () => {
         exportedAt: new Date().toISOString(),
         sourceTable: {
           identifier: 'dependent-table',
-          description: 'Table that depends on others'
+          description: 'Table that depends on others',
         },
         dependencies: ['base-table'],
         package: {
@@ -470,12 +476,12 @@ describe('Table Package System Integration', () => {
               updatedAt: new Date().toISOString(),
             },
             attributes: [],
-            attributeTypes: []
+            attributeTypes: [],
           },
           dataset: { nodes: [], nodeAttributes: [] },
           relations: { relationTypes: [], nodeRelations: [] },
-          templates: { templates: [] }
-        }
+          templates: { templates: [] },
+        },
       }
 
       const basePackage: TablePackageFormat = {
@@ -483,7 +489,7 @@ describe('Table Package System Integration', () => {
         exportedAt: new Date().toISOString(),
         sourceTable: {
           identifier: 'base-table',
-          description: 'Base table'
+          description: 'Base table',
         },
         dependencies: [],
         package: {
@@ -495,22 +501,22 @@ describe('Table Package System Integration', () => {
               updatedAt: new Date().toISOString(),
             },
             attributes: [],
-            attributeTypes: []
+            attributeTypes: [],
           },
           dataset: { nodes: [], nodeAttributes: [] },
           relations: { relationTypes: [], nodeRelations: [] },
-          templates: { templates: [] }
-        }
+          templates: { templates: [] },
+        },
       }
 
       const variables = {
         input: {
           packages: [dependentPackage, basePackage], // Wrong order to test dependency resolution
           options: {
-            conflictResolution: 'SKIP'
+            conflictResolution: 'SKIP',
           },
-          createSession: true
-        }
+          createSession: true,
+        },
       }
 
       const result = await graphql({
@@ -542,7 +548,7 @@ describe('Table Package System Integration', () => {
         exportedAt: new Date().toISOString(),
         sourceTable: {
           identifier: '', // Invalid empty identifier
-          description: null
+          description: null,
         },
         dependencies: [],
         package: {
@@ -551,24 +557,24 @@ describe('Table Package System Integration', () => {
               identifier: '',
               description: null,
               createdAt: '',
-              updatedAt: ''
+              updatedAt: '',
             },
             attributes: [],
-            attributeTypes: []
+            attributeTypes: [],
           },
           dataset: { nodes: [], nodeAttributes: [] },
           relations: { relationTypes: [], nodeRelations: [] },
-          templates: { templates: [] }
-        }
+          templates: { templates: [] },
+        },
       }
 
       const variables = {
         input: {
           packageData: malformedPackage,
           options: {
-            conflictResolution: 'SKIP'
-          }
-        }
+            conflictResolution: 'SKIP',
+          },
+        },
       }
 
       const result = await graphql({
@@ -597,9 +603,9 @@ describe('Table Package System Integration', () => {
         input: {
           tableIdentifier: 'non-existent-table',
           options: {
-            includeData: true
-          }
-        }
+            includeData: true,
+          },
+        },
       }
 
       const result = await graphql({
@@ -650,33 +656,35 @@ describe('Table Package System Integration', () => {
         source: batchMutation,
         variableValues: {
           input: {
-            packages: [{
-              version: '1.0.0',
-              exportedAt: new Date().toISOString(),
-              sourceTable: {
-                identifier: 'session-test-table',
-                description: 'Session test table'
-              },
-              dependencies: [],
-              package: {
-                schema: {
-                  table: {
-                    identifier: 'session-test-table',
-                    description: 'Session test table',
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                  },
-                  attributes: [],
-                  attributeTypes: []
+            packages: [
+              {
+                version: '1.0.0',
+                exportedAt: new Date().toISOString(),
+                sourceTable: {
+                  identifier: 'session-test-table',
+                  description: 'Session test table',
                 },
-                dataset: { nodes: [], nodeAttributes: [] },
-                relations: { relationTypes: [], nodeRelations: [] },
-                templates: { templates: [] }
-              }
-            }],
-            createSession: true
-          }
-        }
+                dependencies: [],
+                package: {
+                  schema: {
+                    table: {
+                      identifier: 'session-test-table',
+                      description: 'Session test table',
+                      createdAt: new Date().toISOString(),
+                      updatedAt: new Date().toISOString(),
+                    },
+                    attributes: [],
+                    attributeTypes: [],
+                  },
+                  dataset: { nodes: [], nodeAttributes: [] },
+                  relations: { relationTypes: [], nodeRelations: [] },
+                  templates: { templates: [] },
+                },
+              },
+            ],
+            createSession: true,
+          },
+        },
       })
 
       expect(batchResult.errors).toBeUndefined()
@@ -688,7 +696,7 @@ describe('Table Package System Integration', () => {
         const sessionResult = await graphql({
           schema,
           source: sessionQuery,
-          variableValues: { sessionId }
+          variableValues: { sessionId },
         })
 
         expect(sessionResult.errors).toBeUndefined()

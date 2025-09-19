@@ -3,8 +3,8 @@
  * Fast unit tests with isolated in-memory database
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { TestIsolationHelpers, type IsolatedTestContext } from '../fixtures/test-isolation-helpers'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'template-creation-isolated'
 let testContext: IsolatedTestContext
@@ -42,7 +42,7 @@ class MockTemplateService {
       identifier,
       queryText,
       operationType,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     }
   }
 
@@ -62,8 +62,11 @@ class MockTemplateService {
     }
 
     // Check for operation type
-    const operationType = queryText.trim().startsWith('mutation') ? 'mutation' :
-                         queryText.trim().startsWith('subscription') ? 'subscription' : 'query'
+    const operationType = queryText.trim().startsWith('mutation')
+      ? 'mutation'
+      : queryText.trim().startsWith('subscription')
+        ? 'subscription'
+        : 'query'
 
     return { isValid: true, operationType }
   }
@@ -102,7 +105,8 @@ describe('Template Creation - Isolated Unit Tests', () => {
 
     test('should create mutation template', async () => {
       const identifier = 'create-todo'
-      const queryText = 'mutation CreateTodo($input: TodoInput!) { createTodo(input: $input) { id title } }'
+      const queryText =
+        'mutation CreateTodo($input: TodoInput!) { createTodo(input: $input) { id title } }'
       const operationType = 'mutation'
 
       const template = await templateService.createTemplate(identifier, queryText, operationType)
@@ -132,9 +136,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
       await templateService.createTemplate(identifier, queryText, 'query')
 
       // Second creation should fail
-      await expect(
-        templateService.createTemplate(identifier, queryText, 'query')
-      ).rejects.toThrow()
+      await expect(templateService.createTemplate(identifier, queryText, 'query')).rejects.toThrow()
     })
   })
 
@@ -149,7 +151,8 @@ describe('Template Creation - Isolated Unit Tests', () => {
     })
 
     test('should validate correct GraphQL mutation', async () => {
-      const queryText = 'mutation ValidMutation($input: TodoInput!) { createTodo(input: $input) { id } }'
+      const queryText =
+        'mutation ValidMutation($input: TodoInput!) { createTodo(input: $input) { id } }'
 
       const result = await templateService.validateGraphQL(queryText)
 
@@ -167,15 +170,11 @@ describe('Template Creation - Isolated Unit Tests', () => {
     })
 
     test('should reject empty query text', async () => {
-      await expect(
-        templateService.validateGraphQL('')
-      ).rejects.toThrow()
+      await expect(templateService.validateGraphQL('')).rejects.toThrow()
     })
 
     test('should reject invalid GraphQL syntax', async () => {
-      await expect(
-        templateService.validateGraphQL('invalid graphql syntax')
-      ).rejects.toThrow()
+      await expect(templateService.validateGraphQL('invalid graphql syntax')).rejects.toThrow()
     })
   })
 
@@ -208,14 +207,20 @@ describe('Template Creation - Isolated Unit Tests', () => {
       const db = testContext.database!.database.getConnection()
 
       // Create template via service
-      await templateService.createTemplate('persistence-test', 'query Test { todos { id } }', 'query')
+      await templateService.createTemplate(
+        'persistence-test',
+        'query Test { todos { id } }',
+        'query'
+      )
 
       // Verify direct database access
       const result = db.prepare('SELECT COUNT(*) as count FROM templates').get()
       expect(result.count).toBeGreaterThan(0)
 
       // Verify specific template
-      const template = db.prepare('SELECT * FROM templates WHERE identifier = ?').get('persistence-test')
+      const template = db
+        .prepare('SELECT * FROM templates WHERE identifier = ?')
+        .get('persistence-test')
       expect(template).toBeDefined()
       expect(template.identifier).toBe('persistence-test')
     })
@@ -228,7 +233,9 @@ describe('Template Creation - Isolated Unit Tests', () => {
         templateService.createTemplate('tx-test-1', 'query TxTest1 { todos { id } }', 'query')
         templateService.createTemplate('tx-test-2', 'query TxTest2 { todos { title } }', 'query')
 
-        return db.prepare('SELECT COUNT(*) as count FROM templates WHERE identifier LIKE ?').get('tx-test-%')
+        return db
+          .prepare('SELECT COUNT(*) as count FROM templates WHERE identifier LIKE ?')
+          .get('tx-test-%')
       })()
 
       expect(result.count).toBe(2)
@@ -241,7 +248,11 @@ describe('Template Creation - Isolated Unit Tests', () => {
 
       // Create multiple templates
       const promises = Array.from({ length: 10 }, (_, i) =>
-        templateService.createTemplate(`perf-test-${i}`, `query PerfTest${i} { todos { id } }`, 'query')
+        templateService.createTemplate(
+          `perf-test-${i}`,
+          `query PerfTest${i} { todos { id } }`,
+          'query'
+        )
       )
 
       await Promise.all(promises)

@@ -30,15 +30,15 @@ export interface EnhancedTestContext {
 // Enhanced Database Environment (file-based only)
 export interface EnhancedTestEnvironment {
   database: {
-    getConnection: () => any  // SQLite Database instance
-    getFilePath: () => string  // Absolute path to SQLite file
+    getConnection: () => any // SQLite Database instance
+    getFilePath: () => string // Absolute path to SQLite file
     close: () => void
   }
   cleanup: () => Promise<void>
 
   // Migration-specific enhancements
   migration: {
-    isFileBased: () => boolean  // Must always return true
+    isFileBased: () => boolean // Must always return true
     validateIsolation: () => Promise<boolean>
     measureCleanupTime: () => Promise<number>
   }
@@ -77,10 +77,7 @@ export interface EnhancedTestIsolationHelpers {
   /**
    * Measure test performance for migration comparison
    */
-  measureTestPerformance(
-    testName: string,
-    testFn: () => Promise<void>
-  ): Promise<PerformanceMetrics>
+  measureTestPerformance(testName: string, testFn: () => Promise<void>): Promise<PerformanceMetrics>
 
   /**
    * Cleanup all test resources and verify no file accumulation
@@ -134,10 +131,7 @@ export interface MigrationValidator {
   /**
    * Check resource cleanup effectiveness
    */
-  validateResourceCleanup(
-    beforeCleanup: ResourceSnapshot,
-    afterCleanup: ResourceSnapshot
-  ): boolean
+  validateResourceCleanup(beforeCleanup: ResourceSnapshot, afterCleanup: ResourceSnapshot): boolean
 
   /**
    * Detect performance anomalies

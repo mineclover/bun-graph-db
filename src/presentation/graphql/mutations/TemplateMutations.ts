@@ -251,9 +251,7 @@ export class TemplateMutations extends BaseResolver {
   ) {
     this.validateArgs(
       args,
-      [
-        BaseResolver.validationRules.required('input', 'Execute template input'),
-      ],
+      [BaseResolver.validationRules.required('input', 'Execute template input')],
       'executeTemplate'
     )
 
@@ -275,7 +273,7 @@ export class TemplateMutations extends BaseResolver {
     try {
       this.logger.info('Executing mutation: executeTemplate', {
         templateId: args.input.templateId,
-        templateIdentifier: args.input.templateIdentifier
+        templateIdentifier: args.input.templateIdentifier,
       })
 
       const startTime = Date.now()
@@ -387,7 +385,7 @@ export class TemplateMutations extends BaseResolver {
       this.logger.error('Failed to execute template', {
         templateId: args.input.templateId,
         templateIdentifier: args.input.templateIdentifier,
-        error
+        error,
       })
 
       return {

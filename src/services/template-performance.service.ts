@@ -21,7 +21,7 @@ export class TemplatePerformanceService {
         AVG(CASE WHEN usage_count > 0 THEN 100.0 ELSE 0 END) as success_rate
       FROM templates
       WHERE is_active = 1
-    `;
+    `
 
     // Performance distribution
     const distributionQuery = `
@@ -31,7 +31,7 @@ export class TemplatePerformanceService {
         COUNT(CASE WHEN avg_execution_time_ms >= 200 THEN 1 END) as slow
       FROM templates
       WHERE is_active = 1 AND avg_execution_time_ms > 0
-    `;
+    `
 
     // Most used templates
     const mostUsedQuery = `
@@ -46,7 +46,7 @@ export class TemplatePerformanceService {
       WHERE t.is_active = 1 AND t.usage_count > 0
       ORDER BY t.usage_count DESC
       LIMIT 10
-    `;
+    `
 
     // Operation type distribution
     const operationStatsQuery = `
@@ -58,15 +58,15 @@ export class TemplatePerformanceService {
       FROM templates
       WHERE is_active = 1
       GROUP BY operation_type
-    `;
+    `
 
     try {
       const [analytics, distribution, mostUsed, operationStats] = await Promise.all([
         this.db.get(analyticsQuery),
         this.db.get(distributionQuery),
         this.db.all(mostUsedQuery),
-        this.db.all(operationStatsQuery)
-      ]);
+        this.db.all(operationStatsQuery),
+      ])
 
       return {
         totalTemplates: analytics.total_templates,
@@ -78,7 +78,7 @@ export class TemplatePerformanceService {
           fast: distribution.fast,
           medium: distribution.medium,
           slow: distribution.slow,
-          percentiles: await this.calculatePercentiles()
+          percentiles: await this.calculatePercentiles(),
         },
         usagePatterns: {
           mostUsedTemplates: mostUsed.map((template: any) => ({
@@ -86,21 +86,21 @@ export class TemplatePerformanceService {
             usageCount: template.usage_count,
             avgExecutionTime: template.avg_execution_time_ms,
             lastUsed: template.last_used_at,
-            trend: template.trend
+            trend: template.trend,
           })),
           operationTypeDistribution: operationStats.map((op: any) => ({
             operationType: op.operation_type,
             count: op.count,
             avgExecutionTime: op.avg_execution_time,
-            successRate: op.success_rate
+            successRate: op.success_rate,
           })),
-          hourlyUsagePattern: await this.getHourlyUsagePattern()
+          hourlyUsagePattern: await this.getHourlyUsagePattern(),
         },
-        recentMetrics: await this.getRecentMetrics()
-      };
+        recentMetrics: await this.getRecentMetrics(),
+      }
     } catch (error) {
-      console.error('Error in getTemplatePerformanceAnalytics:', error);
-      throw error;
+      console.error('Error in getTemplatePerformanceAnalytics:', error)
+      throw error
     }
   }
 
@@ -109,11 +109,11 @@ export class TemplatePerformanceService {
    * Utilizes: usage_count, avg_execution_time_ms for ranking
    */
   async getHotQueries(params: {
-    limit?: number;
-    performanceThreshold?: number;
-    usageThreshold?: number;
+    limit?: number
+    performanceThreshold?: number
+    usageThreshold?: number
   }) {
-    const { limit = 10, performanceThreshold = 150, usageThreshold = 100 } = params;
+    const { limit = 10, performanceThreshold = 150, usageThreshold = 100 } = params
 
     const query = `
       SELECT
@@ -141,10 +141,10 @@ export class TemplatePerformanceService {
         AND t.avg_execution_time_ms > 0
       ORDER BY performance_score DESC
       LIMIT ?
-    `;
+    `
 
     try {
-      const results = await this.db.all(query, [usageThreshold, performanceThreshold, limit]);
+      const results = await this.db.all(query, [usageThreshold, performanceThreshold, limit])
 
       return results.map((row: any) => ({
         template: this.formatTemplate(row),
@@ -152,11 +152,11 @@ export class TemplatePerformanceService {
         usageRank: row.usage_rank,
         efficiencyRatio: row.efficiency_ratio,
         recentExecutions: row.recent_executions,
-        successRate: row.success_rate
-      }));
+        successRate: row.success_rate,
+      }))
     } catch (error) {
-      console.error('Error in getHotQueries:', error);
-      throw error;
+      console.error('Error in getHotQueries:', error)
+      throw error
     }
   }
 
@@ -165,24 +165,24 @@ export class TemplatePerformanceService {
    * Utilizes: template_executions table for detailed tracking
    */
   async getTemplateExecutionHistory(templateId: string, pagination?: any, filter?: any) {
-    const whereConditions = ['te.template_id = ?'];
-    const bindings = [templateId];
+    const whereConditions = ['te.template_id = ?']
+    const bindings = [templateId]
 
     if (filter?.successOnly) {
-      whereConditions.push('te.success = 1');
+      whereConditions.push('te.success = 1')
     }
 
     if (filter?.minExecutionTime) {
-      whereConditions.push('te.execution_time_ms >= ?');
-      bindings.push(filter.minExecutionTime);
+      whereConditions.push('te.execution_time_ms >= ?')
+      bindings.push(filter.minExecutionTime)
     }
 
     if (filter?.maxExecutionTime) {
-      whereConditions.push('te.execution_time_ms <= ?');
-      bindings.push(filter.maxExecutionTime);
+      whereConditions.push('te.execution_time_ms <= ?')
+      bindings.push(filter.maxExecutionTime)
     }
 
-    const whereClause = whereConditions.join(' AND ');
+    const whereClause = whereConditions.join(' AND ')
 
     const query = `
       SELECT
@@ -195,7 +195,7 @@ export class TemplatePerformanceService {
       WHERE ${whereClause}
       ORDER BY te.executed_at DESC
       LIMIT ? OFFSET ?
-    `;
+    `
 
     const countQuery = `
       SELECT
@@ -204,16 +204,16 @@ export class TemplatePerformanceService {
         COUNT(CASE WHEN te.success = 1 THEN 1 END) * 100.0 / COUNT(*) as success_rate
       FROM template_executions te
       WHERE ${whereClause}
-    `;
+    `
 
     try {
-      const limit = pagination?.limit || 20;
-      const offset = pagination?.offset || 0;
+      const limit = pagination?.limit || 20
+      const offset = pagination?.offset || 0
 
       const [executions, stats] = await Promise.all([
         this.db.all(query, [...bindings, limit, offset]),
-        this.db.get(countQuery, bindings)
-      ]);
+        this.db.get(countQuery, bindings),
+      ])
 
       return {
         edges: executions.map((execution: any) => ({
@@ -226,17 +226,17 @@ export class TemplatePerformanceService {
             resultCount: execution.result_count,
             success: Boolean(execution.success),
             errorMessage: execution.error_message,
-            userContext: execution.user_context
+            userContext: execution.user_context,
           },
-          cursor: execution.id.toString()
+          cursor: execution.id.toString(),
         })),
         totalCount: stats.total,
         averageExecutionTime: stats.avg_execution_time,
-        successRate: stats.success_rate
-      };
+        successRate: stats.success_rate,
+      }
     } catch (error) {
-      console.error('Error in getTemplateExecutionHistory:', error);
-      throw error;
+      console.error('Error in getTemplateExecutionHistory:', error)
+      throw error
     }
   }
 
@@ -244,19 +244,15 @@ export class TemplatePerformanceService {
    * Get slow query analysis
    * Identifies performance bottlenecks using execution data
    */
-  async getSlowQueries(params: {
-    threshold?: number;
-    limit?: number;
-    timeRange?: any;
-  }) {
-    const { threshold = 500, limit = 20, timeRange } = params;
+  async getSlowQueries(params: { threshold?: number; limit?: number; timeRange?: any }) {
+    const { threshold = 500, limit = 20, timeRange } = params
 
-    let timeCondition = '';
-    const bindings = [threshold];
+    let timeCondition = ''
+    const bindings = [threshold]
 
     if (timeRange) {
-      timeCondition = 'AND te.executed_at BETWEEN ? AND ?';
-      bindings.push(timeRange.start, timeRange.end);
+      timeCondition = 'AND te.executed_at BETWEEN ? AND ?'
+      bindings.push(timeRange.start, timeRange.end)
     }
 
     const query = `
@@ -275,10 +271,10 @@ export class TemplatePerformanceService {
       HAVING slow_execution_count > 0
       ORDER BY slow_execution_percentage DESC, avg_execution_time DESC
       LIMIT ?
-    `;
+    `
 
     try {
-      const results = await this.db.all(query, [...bindings, threshold, threshold, limit]);
+      const results = await this.db.all(query, [...bindings, threshold, threshold, limit])
 
       return results.map((row: any) => ({
         template: this.formatTemplate(row),
@@ -288,11 +284,11 @@ export class TemplatePerformanceService {
         totalExecutions: row.total_executions,
         slowExecutionPercentage: row.slow_execution_percentage,
         recentSlowdowns: [], // TODO: Implement if needed
-        optimizationSuggestions: this.generateOptimizationSuggestions(row)
-      }));
+        optimizationSuggestions: this.generateOptimizationSuggestions(row),
+      }))
     } catch (error) {
-      console.error('Error in getSlowQueries:', error);
-      throw error;
+      console.error('Error in getSlowQueries:', error)
+      throw error
     }
   }
 
@@ -304,14 +300,14 @@ export class TemplatePerformanceService {
       FROM templates
       WHERE is_active = 1 AND avg_execution_time_ms > 0
       ORDER BY avg_execution_time_ms
-    `;
+    `
 
     try {
-      const results = await this.db.all(query);
-      const times = results.map((r: any) => r.avg_execution_time_ms);
+      const results = await this.db.all(query)
+      const times = results.map((r: any) => r.avg_execution_time_ms)
 
       if (times.length === 0) {
-        return { p50: 0, p75: 0, p90: 0, p95: 0, p99: 0 };
+        return { p50: 0, p75: 0, p90: 0, p95: 0, p99: 0 }
       }
 
       return {
@@ -319,11 +315,11 @@ export class TemplatePerformanceService {
         p75: this.percentile(times, 0.75),
         p90: this.percentile(times, 0.9),
         p95: this.percentile(times, 0.95),
-        p99: this.percentile(times, 0.99)
-      };
+        p99: this.percentile(times, 0.99),
+      }
     } catch (error) {
-      console.error('Error calculating percentiles:', error);
-      return { p50: 0, p75: 0, p90: 0, p95: 0, p99: 0 };
+      console.error('Error calculating percentiles:', error)
+      return { p50: 0, p75: 0, p90: 0, p95: 0, p99: 0 }
     }
   }
 
@@ -338,13 +334,13 @@ export class TemplatePerformanceService {
       WHERE last_used_at IS NOT NULL
       GROUP BY hour
       ORDER BY hour
-    `;
+    `
 
     try {
-      return await this.db.all(query);
+      return await this.db.all(query)
     } catch (error) {
-      console.error('Error in getHourlyUsagePattern:', error);
-      return [];
+      console.error('Error in getHourlyUsagePattern:', error)
+      return []
     }
   }
 
@@ -377,24 +373,29 @@ export class TemplatePerformanceService {
           COUNT(DISTINCT template_id) as unique_templates
         FROM template_executions
         WHERE executed_at > datetime('now', '-30 days')
-      `
-    };
+      `,
+    }
 
     try {
       const [last24Hours, last7Days, last30Days] = await Promise.all([
         this.db.get(queries.last24Hours),
         this.db.get(queries.last7Days),
-        this.db.get(queries.last30Days)
-      ]);
+        this.db.get(queries.last30Days),
+      ])
 
-      return { last24Hours, last7Days, last30Days };
+      return { last24Hours, last7Days, last30Days }
     } catch (error) {
-      console.error('Error in getRecentMetrics:', error);
+      console.error('Error in getRecentMetrics:', error)
       return {
-        last24Hours: { totalExecutions: 0, avgExecutionTime: 0, successRate: 0, uniqueTemplates: 0 },
+        last24Hours: {
+          totalExecutions: 0,
+          avgExecutionTime: 0,
+          successRate: 0,
+          uniqueTemplates: 0,
+        },
         last7Days: { totalExecutions: 0, avgExecutionTime: 0, successRate: 0, uniqueTemplates: 0 },
-        last30Days: { totalExecutions: 0, avgExecutionTime: 0, successRate: 0, uniqueTemplates: 0 }
-      };
+        last30Days: { totalExecutions: 0, avgExecutionTime: 0, successRate: 0, uniqueTemplates: 0 },
+      }
     }
   }
 
@@ -406,35 +407,35 @@ export class TemplatePerformanceService {
       operationType: row.operation_type,
       usageCount: row.usage_count,
       avgExecutionTimeMs: row.avg_execution_time_ms,
-      lastUsedAt: row.last_used_at
-    };
+      lastUsedAt: row.last_used_at,
+    }
   }
 
   private percentile(arr: number[], p: number): number {
-    if (arr.length === 0) return 0;
-    const index = Math.ceil(arr.length * p) - 1;
-    return arr[Math.max(0, Math.min(index, arr.length - 1))] || 0;
+    if (arr.length === 0) return 0
+    const index = Math.ceil(arr.length * p) - 1
+    return arr[Math.max(0, Math.min(index, arr.length - 1))] || 0
   }
 
   private generateOptimizationSuggestions(template: any): string[] {
-    const suggestions = [];
+    const suggestions = []
 
     if (template.avg_execution_time > 1000) {
-      suggestions.push('Consider adding database indexes for frequently queried fields');
+      suggestions.push('Consider adding database indexes for frequently queried fields')
     }
 
     if (template.complexity_score > 7) {
-      suggestions.push('Break down complex query into smaller, composable queries');
+      suggestions.push('Break down complex query into smaller, composable queries')
     }
 
     if (template.operation_type === 'query' && template.avg_execution_time > 500) {
-      suggestions.push('Add pagination to limit result set size');
+      suggestions.push('Add pagination to limit result set size')
     }
 
     if (template.slow_execution_percentage > 20) {
-      suggestions.push('Review query structure for potential optimizations');
+      suggestions.push('Review query structure for potential optimizations')
     }
 
-    return suggestions;
+    return suggestions
   }
 }

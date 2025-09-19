@@ -1,14 +1,14 @@
-import type { ITableRepository } from '../repositories/ITableRepository.js'
-import type { IAttributeTypeRepository } from '../repositories/IAttributeTypeRepository.js'
-import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
-  TablePackageFormat,
-  TablePackageImportOptions,
   TablePackageConflict,
   TablePackageConflictType,
+  TablePackageFormat,
+  TablePackageImportOptions,
 } from '@/core/types/TablePackage.js'
 import { validateQuerySyntax } from '@/core/utils/GraphQLParser.js'
+import type { IAttributeTypeRepository } from '../repositories/IAttributeTypeRepository.js'
+import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
+import type { ITableRepository } from '../repositories/ITableRepository.js'
 
 /**
  * Enhanced table package validator
@@ -24,7 +24,8 @@ import { validateQuerySyntax } from '@/core/utils/GraphQLParser.js'
  */
 export class TablePackageValidator {
   constructor(
-    private readonly tableRepository: ITableRepository,readonly _attributeTypeRepository: IAttributeTypeRepository,
+    private readonly tableRepository: ITableRepository,
+    readonly _attributeTypeRepository: IAttributeTypeRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     private readonly logger: ILogger
   ) {}
@@ -83,8 +84,8 @@ export class TablePackageValidator {
       this.logger.info('Package validation completed', {
         tableIdentifier: packageData.sourceTable.identifier,
         totalIssues: conflicts.length,
-        errors: conflicts.filter(c => c.severity === 'error').length,
-        warnings: conflicts.filter(c => c.severity === 'warning').length,
+        errors: conflicts.filter((c) => c.severity === 'error').length,
+        warnings: conflicts.filter((c) => c.severity === 'warning').length,
       })
 
       return conflicts
@@ -94,19 +95,23 @@ export class TablePackageValidator {
         error,
       })
 
-      return [{
-        type: 'schema_incompatible',
-        severity: 'error',
-        message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        context: { tableName: packageData.sourceTable.identifier },
-      }]
+      return [
+        {
+          type: 'schema_incompatible',
+          severity: 'error',
+          message: `Validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          context: { tableName: packageData.sourceTable.identifier },
+        },
+      ]
     }
   }
 
   /**
    * Validate package structure and required fields
    */
-  private async validatePackageStructure(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async validatePackageStructure(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Check required top-level fields
@@ -223,9 +228,10 @@ export class TablePackageValidator {
           severity,
           message: `Table '${packageData.sourceTable.identifier}' already exists`,
           context: { tableName: packageData.sourceTable.identifier },
-          suggestedResolution: options.conflictResolution === 'skip'
-            ? 'Use conflictResolution: "rename", "overwrite", or "merge"'
-            : `Will ${options.conflictResolution} existing table`,
+          suggestedResolution:
+            options.conflictResolution === 'skip'
+              ? 'Use conflictResolution: "rename", "overwrite", or "merge"'
+              : `Will ${options.conflictResolution} existing table`,
         })
 
         // If merging or overwriting, validate schema compatibility
@@ -242,7 +248,6 @@ export class TablePackageValidator {
       // Validate attribute constraints
       const constraintIssues = await this.validateAttributeConstraints(packageData.package.schema)
       conflicts.push(...constraintIssues)
-
     } catch (error) {
       conflicts.push({
         type: 'schema_incompatible',
@@ -258,7 +263,9 @@ export class TablePackageValidator {
   /**
    * Validate data integrity and consistency
    */
-  private async validateDataIntegrity(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async validateDataIntegrity(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     try {
@@ -279,7 +286,6 @@ export class TablePackageValidator {
       // Check for duplicate data
       const duplicateIssues = await this.validateDuplicateData(dataset)
       conflicts.push(...duplicateIssues)
-
     } catch (error) {
       conflicts.push({
         type: 'schema_incompatible',
@@ -295,7 +301,9 @@ export class TablePackageValidator {
   /**
    * Validate relationship consistency
    */
-  private async validateRelationshipConsistency(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async validateRelationshipConsistency(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     try {
@@ -312,7 +320,6 @@ export class TablePackageValidator {
       // Check for orphaned relationships
       const orphanIssues = await this.validateOrphanedRelationships(relations, dataset)
       conflicts.push(...orphanIssues)
-
     } catch (error) {
       conflicts.push({
         type: 'schema_incompatible',
@@ -328,7 +335,9 @@ export class TablePackageValidator {
   /**
    * Validate GraphQL templates
    */
-  private async validateTemplates(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async validateTemplates(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     try {
@@ -350,7 +359,9 @@ export class TablePackageValidator {
         }
 
         // Check for template naming conflicts
-        const existingTemplate = await this.queryTemplateRepository.findByIdentifier(template.identifier)
+        const existingTemplate = await this.queryTemplateRepository.findByIdentifier(
+          template.identifier
+        )
         if (existingTemplate) {
           conflicts.push({
             type: 'template_exists',
@@ -369,7 +380,6 @@ export class TablePackageValidator {
         const operationIssues = await this.validateOperationType(template)
         conflicts.push(...operationIssues)
       }
-
     } catch (error) {
       conflicts.push({
         type: 'template_exists',
@@ -385,7 +395,9 @@ export class TablePackageValidator {
   /**
    * Validate version compatibility
    */
-  private async validateVersionCompatibility(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async validateVersionCompatibility(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     try {
@@ -410,7 +422,6 @@ export class TablePackageValidator {
       // Check for deprecated features
       const deprecationIssues = await this.checkDeprecatedFeatures(packageData)
       conflicts.push(...deprecationIssues)
-
     } catch (error) {
       conflicts.push({
         type: 'schema_incompatible',
@@ -426,7 +437,9 @@ export class TablePackageValidator {
   /**
    * Validate dependencies
    */
-  private async validateDependencies(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async validateDependencies(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     try {
@@ -452,7 +465,6 @@ export class TablePackageValidator {
       // Check for circular dependencies
       const circularDeps = await this.detectCircularDependencies(packageData)
       conflicts.push(...circularDeps)
-
     } catch (error) {
       conflicts.push({
         type: 'missing_dependency',
@@ -468,7 +480,9 @@ export class TablePackageValidator {
   /**
    * Assess performance impact of importing the package
    */
-  private async assessPerformanceImpact(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async assessPerformanceImpact(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     try {
@@ -500,8 +514,8 @@ export class TablePackageValidator {
       }
 
       // Check template complexity
-      const complexTemplates = templates.templates.filter(t =>
-        (t.complexityScore || 0) > 7 || t.query.length > 5000
+      const complexTemplates = templates.templates.filter(
+        (t) => (t.complexityScore || 0) > 7 || t.query.length > 5000
       )
 
       if (complexTemplates.length > 0) {
@@ -513,7 +527,6 @@ export class TablePackageValidator {
           suggestedResolution: 'Review and optimize complex templates',
         })
       }
-
     } catch (error) {
       this.logger.warn('Performance impact assessment failed', {
         tableIdentifier: packageData.sourceTable.identifier,
@@ -542,7 +555,6 @@ export class TablePackageValidator {
       // Check for injection vulnerabilities
       const injectionIssues = await this.detectInjectionVulnerabilities(packageData)
       conflicts.push(...injectionIssues)
-
     } catch (error) {
       this.logger.warn('Security validation failed', {
         tableIdentifier: packageData.sourceTable.identifier,
@@ -555,7 +567,10 @@ export class TablePackageValidator {
 
   // Helper methods for specific validations
 
-  private async validateSchemaUpgrade(_packageData: TablePackageFormat, _existingTable: any): Promise<TablePackageConflict[]> {
+  private async validateSchemaUpgrade(
+    _packageData: TablePackageFormat,
+    _existingTable: any
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Implementation would compare schemas and detect breaking changes
@@ -602,7 +617,9 @@ export class TablePackageValidator {
 
     for (const attr of schema.attributes || []) {
       // Check if required attribute type exists
-      const hasAttributeType = schema.attributeTypes?.some((at: any) => at.id === attr.attributeTypeId)
+      const hasAttributeType = schema.attributeTypes?.some(
+        (at: any) => at.id === attr.attributeTypeId
+      )
       if (!hasAttributeType) {
         conflicts.push({
           type: 'attribute_type_mismatch',
@@ -704,7 +721,10 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateRelationshipReferences(relations: any, dataset: any): Promise<TablePackageConflict[]> {
+  private async validateRelationshipReferences(
+    relations: any,
+    dataset: any
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     const nodeIds = new Set(dataset.nodes?.map((n: any) => n.externalId) || [])
@@ -751,11 +771,16 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateOrphanedRelationships(relations: any, _dataset: any): Promise<TablePackageConflict[]> {
+  private async validateOrphanedRelationships(
+    relations: any,
+    _dataset: any
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Check for relation types not used by any relations
-    const usedRelationTypes = new Set(relations.nodeRelations?.map((r: any) => r.relationTypeId) || [])
+    const usedRelationTypes = new Set(
+      relations.nodeRelations?.map((r: any) => r.relationTypeId) || []
+    )
 
     for (const relationType of relations.relationTypes || []) {
       if (!usedRelationTypes.has(relationType.id)) {
@@ -810,8 +835,11 @@ export class TablePackageValidator {
     const conflicts: TablePackageConflict[] = []
 
     const query = template.query.trim()
-    const actualType = query.startsWith('mutation') ? 'mutation' :
-                      query.startsWith('subscription') ? 'subscription' : 'query'
+    const actualType = query.startsWith('mutation')
+      ? 'mutation'
+      : query.startsWith('subscription')
+        ? 'subscription'
+        : 'query'
 
     if (actualType !== template.operationType) {
       conflicts.push({
@@ -826,7 +854,9 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async checkDeprecatedFeatures(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async checkDeprecatedFeatures(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Check for deprecated package version formats
@@ -842,7 +872,9 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async detectCircularDependencies(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async detectCircularDependencies(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     const dependencies = packageData.dependencies || []
@@ -861,7 +893,9 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async detectSensitiveData(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async detectSensitiveData(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Check for potential sensitive data patterns
@@ -906,13 +940,15 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateTemplateSecurity(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async validateTemplateSecurity(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     for (const template of packageData.package.templates.templates || []) {
       // Check for potential GraphQL injection patterns
       const suspiciousPatterns = [
-        /\$\{.*\}/,  // Template literal injection
+        /\$\{.*\}/, // Template literal injection
         /eval\s*\(/i, // Eval functions
         /function\s*\(/i, // Function definitions
       ]
@@ -934,7 +970,9 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async detectInjectionVulnerabilities(packageData: TablePackageFormat): Promise<TablePackageConflict[]> {
+  private async detectInjectionVulnerabilities(
+    packageData: TablePackageFormat
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Check for SQL injection patterns in string data

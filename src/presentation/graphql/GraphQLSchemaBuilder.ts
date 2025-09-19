@@ -4,7 +4,7 @@ import { mergeTypeDefs } from '@graphql-tools/merge'
 import { makeExecutableSchema } from '@graphql-tools/schema'
 import type { GraphQLSchema } from 'graphql'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
-import type { GraphQLContext, GraphQLParent, } from '@/core/types/GraphQLTypes.js'
+import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { DIContainer } from '../../infrastructure/container/DIContainer.js'
 import {
@@ -29,7 +29,6 @@ import type {
   TableMutations,
   TemplateMutations,
 } from './mutations/index.js'
-import type { TablePackageResolver } from './resolvers/TablePackageResolver.js'
 // Import resolver classes
 import type {
   AttributeQueries,
@@ -41,6 +40,7 @@ import type {
   TemplateQueries,
 } from './queries/index.js'
 import { createSchemaResolvers } from './resolvers/schema.js'
+import type { TablePackageResolver } from './resolvers/TablePackageResolver.js'
 import { templateSubscriptionResolvers } from './resolvers/TemplateSubscriptionResolver.js'
 
 export interface GraphQLDependencies {
@@ -153,7 +153,6 @@ export class GraphQLSchemaBuilder {
 
       // Root resolvers
       Query: {
-
         // Table queries
         table: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.tableQueries.table(_, args as any),

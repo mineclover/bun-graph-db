@@ -4,8 +4,8 @@ import {
   registerDatabaseModule,
   registerGraphQLModule,
   registerRepositoryModule,
-  registerUseCaseModule,
   registerTablePackageModule,
+  registerUseCaseModule,
 } from './modules/index.js'
 
 /**

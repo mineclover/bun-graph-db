@@ -3,7 +3,7 @@
  * Tests GraphQL node mutations with isolated server setup
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { GraphQLTestServerManager } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'node-mutations-isolated'
@@ -68,8 +68,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-nodes',
-          description: 'Test table for node mutations'
-        }
+          description: 'Test table for node mutations',
+        },
       })
 
       expect(tableResult.errors).toBeUndefined()
@@ -103,8 +103,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const variables = {
         input: {
           content: 'Test node content',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       }
 
       const result = await graphqlRequest(mutation, variables)
@@ -136,8 +136,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const variables = {
         input: {
           content: 'Another test node',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       }
 
       const result = await graphqlRequest(mutation, variables)
@@ -168,8 +168,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const result = await graphqlRequest(mutation, {
         input: {
           content: '',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -194,8 +194,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const result = await graphqlRequest(mutation, {
         input: {
           content: 'Test content',
-          tableId: '999999'
-        }
+          tableId: '999999',
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -221,8 +221,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-updates',
-          description: 'Test table for node updates'
-        }
+          description: 'Test table for node updates',
+        },
       })
 
       testTableId = tableResult.data.createTable.table.id
@@ -239,8 +239,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const nodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Original content',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       testNodeId = nodeResult.data.createNode.node.id
@@ -266,8 +266,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const result = await graphqlRequest(mutation, {
         id: testNodeId,
         input: {
-          content: 'Updated content'
-        }
+          content: 'Updated content',
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -293,8 +293,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const result = await graphqlRequest(mutation, {
         id: '999999',
         input: {
-          content: 'Updated content'
-        }
+          content: 'Updated content',
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -318,8 +318,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const result = await graphqlRequest(mutation, {
         id: testNodeId,
         input: {
-          content: ''
-        }
+          content: '',
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -345,8 +345,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-deletion',
-          description: 'Test table for node deletion'
-        }
+          description: 'Test table for node deletion',
+        },
       })
 
       testTableId = tableResult.data.createTable.table.id
@@ -363,8 +363,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const nodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Node to be deleted',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       testNodeId = nodeResult.data.createNode.node.id
@@ -383,7 +383,7 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       `
 
       const result = await graphqlRequest(mutation, {
-        id: testNodeId
+        id: testNodeId,
       })
 
       expect(result.errors).toBeUndefined()
@@ -417,7 +417,7 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       `
 
       const result = await graphqlRequest(mutation, {
-        id: '999999'
+        id: '999999',
       })
 
       expect(result.errors).toBeUndefined()
@@ -443,8 +443,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-querying',
-          description: 'Test table for node querying'
-        }
+          description: 'Test table for node querying',
+        },
       })
 
       testTableId = tableResult.data.createTable.table.id
@@ -461,8 +461,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const nodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Node for query testing',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       testNodeId = nodeResult.data.createNode.node.id
@@ -508,8 +508,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-performance',
-          description: 'Test table for performance testing'
-        }
+          description: 'Test table for performance testing',
+        },
       })
 
       testTableId = tableResult.data.createTable.table.id
@@ -537,8 +537,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
           graphqlRequest(mutation, {
             input: {
               content: `Performance test node ${i}`,
-              tableId: testTableId
-            }
+              tableId: testTableId,
+            },
           })
         )
       }
@@ -547,7 +547,7 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const endTime = Date.now()
 
       // Verify all nodes were created successfully
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.errors).toBeUndefined()
         expect(result.data.createNode.success).toBe(true)
       })
@@ -578,8 +578,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const result1 = await graphqlRequest(mutation, {
         input: {
           content: nodeContent,
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       expect(result1.data.createNode.success).toBe(true)
@@ -588,8 +588,8 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
       const result2 = await graphqlRequest(mutation, {
         input: {
           content: nodeContent,
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       // Should either succeed (if duplicates allowed) or fail gracefully

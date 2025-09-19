@@ -20,9 +20,5 @@ extend type Query {
   getDocVersions(tableId: ID!, category: DocCategory!): [Doc!]!
 
   # Search docs across tables
-  searchDocs(
-    filter: DocsFilter!
-    pagination: PaginationInput
-    sort: [SortInput!]
-  ): DocsConnection!
+  searchDocs(filter: DocsFilter!, pagination: PaginationInput, sort: [SortInput!]): DocsConnection!
 }

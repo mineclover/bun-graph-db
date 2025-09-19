@@ -59,7 +59,7 @@ export class NodeMutations extends BaseResolver {
         // Create the node directly using the repository
         const node = Node.create(
           args.input.tableId, // tableId first
-          args.input.content  // content second
+          args.input.content // content second
         )
 
         // Save the node
@@ -82,7 +82,7 @@ export class NodeMutations extends BaseResolver {
         return {
           success: true,
           node: nodeFromEntity(savedNode),
-          errors: []
+          errors: [],
         }
       }
 
@@ -95,7 +95,7 @@ export class NodeMutations extends BaseResolver {
       return {
         success: true,
         node: result.node,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Mutation failed: createNode', { error, input: args.input })
@@ -107,8 +107,8 @@ export class NodeMutations extends BaseResolver {
           {
             message: error instanceof Error ? error.message : 'Unknown error',
             code: 'INTERNAL_ERROR',
-          }
-        ]
+          },
+        ],
       }
     }
   }
@@ -148,7 +148,7 @@ export class NodeMutations extends BaseResolver {
       return {
         success: true,
         node: nodeFromEntity(updatedNode),
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Mutation failed: updateNode', { error, id: args.id, input: args.input })
@@ -160,8 +160,8 @@ export class NodeMutations extends BaseResolver {
           {
             message: error instanceof Error ? error.message : 'Unknown error',
             code: 'INTERNAL_ERROR',
-          }
-        ]
+          },
+        ],
       }
     }
   }
@@ -188,7 +188,7 @@ export class NodeMutations extends BaseResolver {
 
       return {
         success: true,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Mutation failed: deleteNode', { error, id: args.id })
@@ -199,8 +199,8 @@ export class NodeMutations extends BaseResolver {
           {
             message: error instanceof Error ? error.message : 'Unknown error',
             code: 'INTERNAL_ERROR',
-          }
-        ]
+          },
+        ],
       }
     }
   }

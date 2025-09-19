@@ -4,7 +4,11 @@ import type { TableId } from '@/core/types/CommonTypes.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
 
 export interface CreateDocInput {
   tableId: TableId
@@ -27,19 +31,20 @@ export class CreateDocUseCase {
   async execute(input: CreateDocInput): Promise<CreateDocOutput> {
     // Map GraphQL enum values to domain enum values
     const categoryMapping: Record<string, DocCategory> = {
-      'USAGE': DocCategory.USAGE,
-      'GUIDE': DocCategory.GUIDE,
-      'EXAMPLE': DocCategory.EXAMPLE,
-      'SPEC': DocCategory.SPEC,
-      'GENERAL': DocCategory.GENERAL,
+      USAGE: DocCategory.USAGE,
+      GUIDE: DocCategory.GUIDE,
+      EXAMPLE: DocCategory.EXAMPLE,
+      SPEC: DocCategory.SPEC,
+      GENERAL: DocCategory.GENERAL,
     }
 
-    const mappedCategory = categoryMapping[input.category as string] || input.category as DocCategory
+    const mappedCategory =
+      categoryMapping[input.category as string] || (input.category as DocCategory)
 
     this.logger.info('Creating new doc', {
       tableId: input.tableId,
       category: input.category,
-      mappedCategory: mappedCategory
+      mappedCategory: mappedCategory,
     })
 
     // Validate input
@@ -85,8 +90,11 @@ export class CreateDocUseCase {
       await this.docRepository.save(doc)
 
       // Retrieve the saved doc with the generated ID
-      const savedDocs = await this.docRepository.findByTableAndCategory(input.tableId, mappedCategory)
-      const savedDoc = savedDocs.find(d => d.version === version)
+      const savedDocs = await this.docRepository.findByTableAndCategory(
+        input.tableId,
+        mappedCategory
+      )
+      const savedDoc = savedDocs.find((d) => d.version === version)
 
       if (!savedDoc) {
         throw new Error('Failed to retrieve saved doc')

@@ -1,12 +1,9 @@
-import type { ITableRepository } from '../repositories/ITableRepository.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { TablePackageFormat, TablePackageImportResult } from '@/core/types/TablePackage.js'
+import { DomainException } from '@/shared/exceptions/DomainException.js'
 import type { INodeRepository } from '../repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import type {
-  TablePackageImportResult,
-  TablePackageFormat,
-} from '@/core/types/TablePackage.js'
-import { DomainException } from '@/shared/exceptions/DomainException.js'
+import type { ITableRepository } from '../repositories/ITableRepository.js'
 
 /**
  * Table package recovery manager
@@ -309,12 +306,14 @@ export class TablePackageRecoveryManager {
         tableIdentifier,
         createdAt: new Date(),
         hasExistingTable: !!existingTable,
-        existingTableData: existingTable ? {
-          id: existingTable.id as string,
-          identifier: existingTable.identifier,
-          description: existingTable.description,
-          // Would include full table data, attributes, nodes, etc.
-        } : undefined,
+        existingTableData: existingTable
+          ? {
+              id: existingTable.id as string,
+              identifier: existingTable.identifier,
+              description: existingTable.description,
+              // Would include full table data, attributes, nodes, etc.
+            }
+          : undefined,
       }
 
       this.backupStorage.set(backupId, backup)
@@ -328,7 +327,9 @@ export class TablePackageRecoveryManager {
       return backupId
     } catch (error) {
       this.logger.error('Failed to create system backup', { tableIdentifier, error })
-      throw new DomainException(`Failed to create backup: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new DomainException(
+        `Failed to create backup: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
@@ -430,16 +431,22 @@ export class TablePackageRecoveryManager {
 
       // Calculate summary
       integrityResult.summary.totalChecks = integrityResult.checks.length
-      integrityResult.summary.passedChecks = integrityResult.checks.filter(c => c.status === 'passed').length
-      integrityResult.summary.failedChecks = integrityResult.checks.filter(c => c.status === 'failed').length
-      integrityResult.summary.warningChecks = integrityResult.checks.filter(c => c.status === 'warning').length
+      integrityResult.summary.passedChecks = integrityResult.checks.filter(
+        (c) => c.status === 'passed'
+      ).length
+      integrityResult.summary.failedChecks = integrityResult.checks.filter(
+        (c) => c.status === 'failed'
+      ).length
+      integrityResult.summary.warningChecks = integrityResult.checks.filter(
+        (c) => c.status === 'warning'
+      ).length
 
       integrityResult.success = integrityResult.summary.failedChecks === 0
 
       // Collect issues from failed checks
       integrityResult.issues = integrityResult.checks
-        .filter(c => c.status === 'failed' || c.status === 'warning')
-        .map(c => ({
+        .filter((c) => c.status === 'failed' || c.status === 'warning')
+        .map((c) => ({
           check: c.name,
           severity: c.status === 'failed' ? 'error' : 'warning',
           message: c.details,
@@ -555,26 +562,22 @@ export class TablePackageRecoveryManager {
       errorAnalysis.shouldRetry = true
       errorAnalysis.retryDelay = 1000
       errorAnalysis.recoverySteps = ['clear_existing_data', 'retry_import']
-
     } else if (errorMessage.includes('timeout') || errorMessage.includes('connection')) {
       errorAnalysis.errorType = 'network'
       errorAnalysis.severity = 'low'
       errorAnalysis.shouldRetry = true
       errorAnalysis.retryDelay = 5000
       errorAnalysis.recoverySteps = ['wait_and_retry']
-
     } else if (errorMessage.includes('validation') || errorMessage.includes('schema')) {
       errorAnalysis.errorType = 'validation'
       errorAnalysis.severity = 'high'
       errorAnalysis.shouldRetry = false
       errorAnalysis.recoverySteps = ['fix_data_issues']
-
     } else if (errorMessage.includes('permission') || errorMessage.includes('access')) {
       errorAnalysis.errorType = 'permission'
       errorAnalysis.severity = 'high'
       errorAnalysis.shouldRetry = false
       errorAnalysis.recoverySteps = ['check_permissions']
-
     } else {
       errorAnalysis.shouldRetry = session.attempts.length < 2 // Retry once for unknown errors
       errorAnalysis.retryDelay = 2000
@@ -590,7 +593,10 @@ export class TablePackageRecoveryManager {
     return errorAnalysis
   }
 
-  private async applyRecoveryAction(action: RecoveryAction, session: RecoverySession): Promise<void> {
+  private async applyRecoveryAction(
+    action: RecoveryAction,
+    session: RecoverySession
+  ): Promise<void> {
     this.logger.info('Applying recovery action', {
       sessionId: session.sessionId,
       errorType: action.errorType,
@@ -607,7 +613,7 @@ export class TablePackageRecoveryManager {
         case 'wait_and_retry':
           // Wait before retry
           if (action.retryDelay > 0) {
-            await new Promise(resolve => setTimeout(resolve, action.retryDelay))
+            await new Promise((resolve) => setTimeout(resolve, action.retryDelay))
           }
           break
 
@@ -630,9 +636,9 @@ export class TablePackageRecoveryManager {
       tableIdentifier: session.tableIdentifier,
       status: session.status,
       totalAttempts: session.attempts.length,
-      successfulAttempts: session.attempts.filter(a => a.status === 'success').length,
-      partialAttempts: session.attempts.filter(a => a.status === 'partial').length,
-      failedAttempts: session.attempts.filter(a => a.status === 'failed').length,
+      successfulAttempts: session.attempts.filter((a) => a.status === 'success').length,
+      partialAttempts: session.attempts.filter((a) => a.status === 'partial').length,
+      failedAttempts: session.attempts.filter((a) => a.status === 'failed').length,
       finalError: session.finalError,
       backupAvailable: !!session.backupId,
       backupId: session.backupId,
@@ -697,7 +703,9 @@ export class TablePackageRecoveryManager {
         return check
       }
 
-      const nodesResult = await this.nodeRepository.findByTableId(importResult.importedTable.id as any)
+      const nodesResult = await this.nodeRepository.findByTableId(
+        importResult.importedTable.id as any
+      )
       const actualNodeCount = nodesResult.items?.length || 0
 
       if (actualNodeCount === expectedNodeCount) {

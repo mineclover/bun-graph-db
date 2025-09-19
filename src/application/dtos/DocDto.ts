@@ -33,11 +33,11 @@ export class DocDto {
   toGraphQL() {
     // Map domain enum values to GraphQL enum values
     const categoryMapping: Record<string, string> = {
-      'usage': 'USAGE',
-      'guide': 'GUIDE',
-      'example': 'EXAMPLE',
-      'spec': 'SPEC',
-      'general': 'GENERAL',
+      usage: 'USAGE',
+      guide: 'GUIDE',
+      example: 'EXAMPLE',
+      spec: 'SPEC',
+      general: 'GENERAL',
     }
 
     return {

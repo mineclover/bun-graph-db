@@ -3,7 +3,7 @@
  * Tests node GraphQL queries with isolated server setup
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { GraphQLTestServerManager } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'node-queries-isolated'
@@ -62,7 +62,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
       `
 
       const variables = {
-        pagination: { limit: 10, offset: 0 }
+        pagination: { limit: 10, offset: 0 },
       }
 
       const result = await graphqlRequest(query, variables)
@@ -123,7 +123,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
 
       const variables = {
         content: 'test-content',
-        tableId: '58'  // Using test table ID
+        tableId: '58', // Using test table ID
       }
 
       const result = await graphqlRequest(query, variables)
@@ -131,7 +131,9 @@ describe('Node Queries - Isolated Database Test Suite', () => {
       // This might return null if no node exists, which is expected
       expect(result.errors).toBeUndefined()
       // Either returns a node or null, both are valid
-      expect(result.data.nodeByContent === null || typeof result.data.nodeByContent === 'object').toBe(true)
+      expect(
+        result.data.nodeByContent === null || typeof result.data.nodeByContent === 'object'
+      ).toBe(true)
     })
 
     test('searchNodes - Search nodes with filters', async () => {
@@ -150,10 +152,10 @@ describe('Node Queries - Isolated Database Test Suite', () => {
 
       const variables = {
         filter: {
-          tableId: '58',  // Using test table ID
-          search: 'test'
+          tableId: '58', // Using test table ID
+          search: 'test',
         },
-        pagination: { limit: 5, offset: 0 }
+        pagination: { limit: 5, offset: 0 },
       }
 
       const result = await graphqlRequest(query, variables)
@@ -161,7 +163,10 @@ describe('Node Queries - Isolated Database Test Suite', () => {
       // SearchNodesUseCase might not be available (dependency issue mentioned in code)
       // So we accept either successful search or fallback behavior
       if (result.errors) {
-        console.log('ℹ️ SearchNodes not fully implemented, this is expected:', result.errors[0]?.message)
+        console.log(
+          'ℹ️ SearchNodes not fully implemented, this is expected:',
+          result.errors[0]?.message
+        )
       } else {
         expect(result.data.searchNodes).toBeDefined()
         expect(Array.isArray(result.data.searchNodes.nodes)).toBe(true)
@@ -213,7 +218,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
       // This should throw an error due to GraphQL validation
       try {
         await graphqlRequest(query, {
-          filter: { search: 'test' } // Missing tableId
+          filter: { search: 'test' }, // Missing tableId
         })
         // If we reach here, the test should fail
         expect(false).toBe(true) // Force failure
@@ -243,7 +248,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
 
       // Test with limit 3
       const result = await graphqlRequest(query, {
-        pagination: { limit: 3, offset: 0 }
+        pagination: { limit: 3, offset: 0 },
       })
 
       expect(result.errors).toBeUndefined()

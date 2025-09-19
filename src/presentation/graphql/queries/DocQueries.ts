@@ -1,11 +1,8 @@
-import type { ILogger } from '@/application/ports/ILogger.js'
-import type {
-  GraphQLContext,
-  GraphQLParent,
-} from '@/core/types/GraphQLTypes.js'
-import type { DocId } from '@/core/types/CommonTypes.js'
-import type { DocCategory } from '@/domain/entities/Doc.js'
 import { DocDto } from '@/application/dtos/DocDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { DocId } from '@/core/types/CommonTypes.js'
+import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
+import type { DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
@@ -93,7 +90,10 @@ export class DocQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        const doc = await this.docRepository.findActiveByTableAndCategory(args.tableId, args.category)
+        const doc = await this.docRepository.findActiveByTableAndCategory(
+          args.tableId,
+          args.category
+        )
         return doc ? DocDto.fromEntity(doc) : null
       },
       'findActiveDocByTableAndCategory',
@@ -125,7 +125,7 @@ export class DocQueries extends BaseResolver {
         tableId: args.tableId,
         category: args.category,
         isActive: args.isActive,
-        pagination: args.pagination
+        pagination: args.pagination,
       }
     )
   }
@@ -160,7 +160,7 @@ export class DocQueries extends BaseResolver {
       {
         tableId: args.tableId,
         category: args.category,
-        pagination: args.pagination
+        pagination: args.pagination,
       }
     )
   }
@@ -177,12 +177,15 @@ export class DocQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        const result = await this.docRepository.searchByContent({
-          query: args.query,
-          tableId: args.tableId,
-          category: args.category,
-          isActive: args.isActive,
-        }, args.pagination || { limit: 10, offset: 0 })
+        const result = await this.docRepository.searchByContent(
+          {
+            query: args.query,
+            tableId: args.tableId,
+            category: args.category,
+            isActive: args.isActive,
+          },
+          args.pagination || { limit: 10, offset: 0 }
+        )
 
         return {
           docs: DocDto.fromEntities(Array.isArray(result) ? result : result.nodes || []),
@@ -197,7 +200,7 @@ export class DocQueries extends BaseResolver {
         tableId: args.tableId,
         category: args.category,
         isActive: args.isActive,
-        pagination: args.pagination
+        pagination: args.pagination,
       }
     )
   }

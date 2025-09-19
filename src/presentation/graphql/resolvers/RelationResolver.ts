@@ -1,13 +1,20 @@
-import { fromEntity as nodeFromEntity, type NodeDto } from '@/application/dtos/NodeDto.js'
-import { nodeRelationFromEntity, nodeRelationFromEntities, relationTypeFromEntity, relationTypeFromEntities, type NodeRelationDto, type RelationTypeDto } from '@/application/dtos/RelationDto.js'
-import { RelationType } from '@/domain/entities/RelationType.js'
-import { fromEntity as tableFromEntity, type TableDto } from '@/application/dtos/TableDto.js'
+import { type NodeDto, fromEntity as nodeFromEntity } from '@/application/dtos/NodeDto.js'
+import {
+  type NodeRelationDto,
+  nodeRelationFromEntities,
+  nodeRelationFromEntity,
+  type RelationTypeDto,
+  relationTypeFromEntities,
+  relationTypeFromEntity,
+} from '@/application/dtos/RelationDto.js'
+import { type TableDto, fromEntity as tableFromEntity } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { NodeId, NodeRelationId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
 import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
+import { RelationType } from '@/domain/entities/RelationType.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
@@ -102,8 +109,8 @@ export class RelationResolver extends BaseResolver {
   }
 
   async nodeRelations(args: {
-    filter?: { tableId?: string },
-    pagination?: { limit?: number, offset?: number }
+    filter?: { tableId?: string }
+    pagination?: { limit?: number; offset?: number }
   }): Promise<{
     nodes: NodeRelationDto[]
     totalCount: number
@@ -115,14 +122,17 @@ export class RelationResolver extends BaseResolver {
 
       // If no filter provided, get all node relations
       const result = args.filter?.tableId
-        ? await this.nodeRelationRepository.findByTableId(args.filter.tableId as TableId, { limit, offset })
+        ? await this.nodeRelationRepository.findByTableId(args.filter.tableId as TableId, {
+            limit,
+            offset,
+          })
         : await this.nodeRelationRepository.findAll({ limit, offset })
 
       return {
         nodes: nodeRelationFromEntities(result.nodes || []),
         totalCount: result.totalCount,
         hasNextPage: result.hasNextPage,
-        hasPreviousPage: result.hasPreviousPage
+        hasPreviousPage: result.hasPreviousPage,
       }
     } catch (error) {
       this.logger.error('Failed to find node relations', {
@@ -134,7 +144,7 @@ export class RelationResolver extends BaseResolver {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       }
     }
   }
@@ -227,20 +237,22 @@ export class RelationResolver extends BaseResolver {
         visitedNodes.add(currentNodeId)
 
         // Find relations based on direction
-        const relations = direction === 'OUTGOING'
-          ? await this.nodeRelationRepository.findBySourceNodeId(currentNodeId as NodeId)
-          : await this.nodeRelationRepository.findByTargetNodeId(currentNodeId as NodeId)
+        const relations =
+          direction === 'OUTGOING'
+            ? await this.nodeRelationRepository.findBySourceNodeId(currentNodeId as NodeId)
+            : await this.nodeRelationRepository.findByTargetNodeId(currentNodeId as NodeId)
 
         for (const relation of relations) {
           // Filter by relation types if specified
-          if (args.input.relationTypeIds?.length &&
-              !args.input.relationTypeIds.includes(relation.getRelationTypeId())) {
+          if (
+            args.input.relationTypeIds?.length &&
+            !args.input.relationTypeIds.includes(relation.getRelationTypeId())
+          ) {
             continue
           }
 
-          const nextNodeId = direction === 'OUTGOING'
-            ? relation.getTargetNodeId()
-            : relation.getSourceNodeId()
+          const nextNodeId =
+            direction === 'OUTGOING' ? relation.getTargetNodeId() : relation.getSourceNodeId()
 
           if (nextNodeId && !visitedNodes.has(nextNodeId)) {
             dependencyNodes.push({ id: nextNodeId })
@@ -253,7 +265,7 @@ export class RelationResolver extends BaseResolver {
 
       return {
         nodes: dependencyNodes,
-        totalCount: dependencyNodes.length
+        totalCount: dependencyNodes.length,
       }
     } catch (error) {
       this.logger.error('Failed to get dependency chain', { input: args.input, error })
@@ -268,12 +280,14 @@ export class RelationResolver extends BaseResolver {
       maxDepth?: number
       relationTypeIds?: string[]
     }
-  }): Promise<Array<{
-    nodes: Array<{ id: string }>
-    relations: Array<{ id: string }>
-    length: number
-    totalWeight?: number
-  }>> {
+  }): Promise<
+    Array<{
+      nodes: Array<{ id: string }>
+      relations: Array<{ id: string }>
+      length: number
+      totalWeight?: number
+    }>
+  > {
     try {
       const maxDepth = args.input.maxDepth || 3
       const sourceNodeId = args.input.sourceNodeId
@@ -294,12 +308,14 @@ export class RelationResolver extends BaseResolver {
         totalWeight: number
       }
 
-      const queue: PathState[] = [{
-        currentNodeId: sourceNodeId,
-        visitedNodes: [sourceNodeId],
-        usedRelations: [],
-        totalWeight: 0
-      }]
+      const queue: PathState[] = [
+        {
+          currentNodeId: sourceNodeId,
+          visitedNodes: [sourceNodeId],
+          usedRelations: [],
+          totalWeight: 0,
+        },
+      ]
 
       while (queue.length > 0) {
         const state = queue.shift()!
@@ -311,10 +327,10 @@ export class RelationResolver extends BaseResolver {
         if (state.currentNodeId === targetNodeId && state.visitedNodes.length > 1) {
           // Found a path
           paths.push({
-            nodes: state.visitedNodes.map(id => ({ id })),
-            relations: state.usedRelations.map(id => ({ id })),
+            nodes: state.visitedNodes.map((id) => ({ id })),
+            relations: state.usedRelations.map((id) => ({ id })),
             length: state.visitedNodes.length - 1,
-            totalWeight: state.totalWeight
+            totalWeight: state.totalWeight,
           })
           continue
         }
@@ -338,8 +354,10 @@ export class RelationResolver extends BaseResolver {
           }
 
           // Filter by relation types if specified
-          if (args.input.relationTypeIds?.length &&
-              !args.input.relationTypeIds.includes(relation.getRelationTypeId())) {
+          if (
+            args.input.relationTypeIds?.length &&
+            !args.input.relationTypeIds.includes(relation.getRelationTypeId())
+          ) {
             continue
           }
 
@@ -347,14 +365,13 @@ export class RelationResolver extends BaseResolver {
             currentNodeId: nextNodeId,
             visitedNodes: [...state.visitedNodes, nextNodeId],
             usedRelations: [...state.usedRelations, relation.getId()],
-            totalWeight: state.totalWeight + 1 // Simple weight calculation
+            totalWeight: state.totalWeight + 1, // Simple weight calculation
           })
         }
       }
 
       // Sort paths by length (shortest first)
       return paths.sort((a, b) => a.length - b.length)
-
     } catch (error) {
       this.logger.error('Failed to find paths between nodes', { input: args.input, error })
       throw error
@@ -525,7 +542,9 @@ export class RelationResolver extends BaseResolver {
     errors: Array<{ message: string; code: string }>
   }> {
     try {
-      const existingRelationType = await this.relationTypeRepository.findById(args.id as RelationTypeId)
+      const existingRelationType = await this.relationTypeRepository.findById(
+        args.id as RelationTypeId
+      )
       if (!existingRelationType) {
         throw new NotFoundException(`Relation type with id ${args.id} not found`)
       }
@@ -534,7 +553,9 @@ export class RelationResolver extends BaseResolver {
       const updatedRelationType = RelationType.fromDatabase(
         existingRelationType.getId()!,
         existingRelationType.getIdentifier(),
-        args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
+        args.input.description !== undefined
+          ? args.input.description
+          : existingRelationType.getDescription(),
         args.input.name || existingRelationType.getCategory(),
         existingRelationType.getCreatedAt(),
         new Date() // Update timestamp
@@ -599,7 +620,9 @@ export class RelationResolver extends BaseResolver {
     errors: Array<{ message: string; code: string }>
   }> {
     try {
-      const existingRelationType = await this.relationTypeRepository.findById(args.id as RelationTypeId)
+      const existingRelationType = await this.relationTypeRepository.findById(
+        args.id as RelationTypeId
+      )
       if (!existingRelationType) {
         throw new NotFoundException(`Relation type with id ${args.id} not found`)
       }

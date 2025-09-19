@@ -390,9 +390,7 @@ extend type Query {
   ): [ValidationConflict!]!
 
   # Dependency analysis
-  analyzeTableDependencies(
-    tableIdentifiers: [String!]!
-  ): [TableDependencyAnalysis!]!
+  analyzeTableDependencies(tableIdentifiers: [String!]!): [TableDependencyAnalysis!]!
 
   # Session management
   getImportSession(sessionId: String!): ImportSession

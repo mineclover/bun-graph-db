@@ -5,12 +5,11 @@
  * through GraphQL API operations
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'bun:test'
-import { introspectionFromSchema, buildSchema, parse, execute, type GraphQLSchema } from 'graphql'
-import { readFileSync } from 'fs'
-import { join } from 'path'
 import Database from 'bun:sqlite'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { glob } from 'glob'
+import { buildSchema, execute, type GraphQLSchema, parse } from 'graphql'
 
 export interface SQLCoverageConfig {
   testDatabase: string
@@ -121,7 +120,7 @@ export class SQLCoverageTestFramework {
       }
     }
 
-    const uncoveredOperations = this.sqlOperations.filter(op => !op.isCovered)
+    const uncoveredOperations = this.sqlOperations.filter((op) => !op.isCovered)
     const coveragePercentage = (coveredOperations / this.sqlOperations.length) * 100
 
     const report: CoverageReport = {
@@ -131,7 +130,7 @@ export class SQLCoverageTestFramework {
       coveragePercentage,
       missingAPIs: this.identifyMissingAPIs(uncoveredOperations),
       testResults,
-      recommendations: this.generateRecommendations(uncoveredOperations, coveragePercentage)
+      recommendations: this.generateRecommendations(uncoveredOperations, coveragePercentage),
     }
 
     console.log(`✅ Coverage test completed in ${Date.now() - startTime}ms`)
@@ -156,7 +155,9 @@ export class SQLCoverageTestFramework {
     }
 
     this.sqlOperations = operations
-    console.log(`📊 Extracted ${operations.length} SQL operations from ${this.config.repositoryPaths.length} repository files`)
+    console.log(
+      `📊 Extracted ${operations.length} SQL operations from ${this.config.repositoryPaths.length} repository files`
+    )
   }
 
   private parseSQLFromFile(filePath: string, content: string): SQLOperation[] {
@@ -171,7 +172,7 @@ export class SQLCoverageTestFramework {
       const sqlPatterns = [
         /(?:^|[\s=`'"(])(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP)\s+/i,
         /db\.(get|all|run|exec)\s*\(\s*[`'"]([^`'"]+)[`'"]/i,
-        /query\s*=\s*[`'"]([^`'"]*(?:SELECT|INSERT|UPDATE|DELETE)[^`'"]*)[`'"]/i
+        /query\s*=\s*[`'"]([^`'"]*(?:SELECT|INSERT|UPDATE|DELETE)[^`'"]*)[`'"]/i,
       ]
 
       for (const pattern of sqlPatterns) {
@@ -182,14 +183,14 @@ export class SQLCoverageTestFramework {
           const method = this.extractMethodName(content, i)
 
           operations.push({
-            file: filePath.replace(process.cwd() + '/', ''),
+            file: filePath.replace(`${process.cwd()}/`, ''),
             operation,
             table,
             method: `${className}.${method}`,
             sqlQuery: match[0],
             line: i + 1,
             isCovered: false,
-            testCases: []
+            testCases: [],
           })
         }
       }
@@ -219,7 +220,9 @@ export class SQLCoverageTestFramework {
     }
 
     this.testCases = testCases
-    console.log(`🧪 Generated ${testCases.length} test cases covering ${Object.keys(operationsByTable).length} entities`)
+    console.log(
+      `🧪 Generated ${testCases.length} test cases covering ${Object.keys(operationsByTable).length} entities`
+    )
   }
 
   private generateCRUDTestCases(table: string, operations: SQLOperation[]): SQLTestCase[] {
@@ -227,7 +230,7 @@ export class SQLCoverageTestFramework {
     const entityName = this.tableToEntityName(table)
 
     // CREATE test case
-    if (operations.some(op => op.operation === 'INSERT')) {
+    if (operations.some((op) => op.operation === 'INSERT')) {
       testCases.push({
         name: `Create ${entityName} - covers INSERT operations`,
         graphqlQuery: this.generateCreateMutation(entityName),
@@ -239,20 +242,20 @@ export class SQLCoverageTestFramework {
             type: 'database',
             target: table,
             condition: 'exists',
-            value: true
+            value: true,
           },
           {
             type: 'response',
             target: 'success',
             condition: 'equals',
-            value: true
-          }
-        ]
+            value: true,
+          },
+        ],
       })
     }
 
     // READ test case
-    if (operations.some(op => op.operation === 'SELECT')) {
+    if (operations.some((op) => op.operation === 'SELECT')) {
       testCases.push({
         name: `Read ${entityName} - covers SELECT operations`,
         graphqlQuery: this.generateReadQuery(entityName),
@@ -265,14 +268,14 @@ export class SQLCoverageTestFramework {
             type: 'response',
             target: 'data',
             condition: 'exists',
-            value: true
-          }
-        ]
+            value: true,
+          },
+        ],
       })
     }
 
     // UPDATE test case
-    if (operations.some(op => op.operation === 'UPDATE')) {
+    if (operations.some((op) => op.operation === 'UPDATE')) {
       testCases.push({
         name: `Update ${entityName} - covers UPDATE operations`,
         graphqlQuery: this.generateUpdateMutation(entityName),
@@ -285,14 +288,14 @@ export class SQLCoverageTestFramework {
             type: 'response',
             target: 'success',
             condition: 'equals',
-            value: true
-          }
-        ]
+            value: true,
+          },
+        ],
       })
     }
 
     // DELETE test case
-    if (operations.some(op => op.operation === 'DELETE')) {
+    if (operations.some((op) => op.operation === 'DELETE')) {
       testCases.push({
         name: `Delete ${entityName} - covers DELETE operations`,
         graphqlQuery: this.generateDeleteMutation(entityName),
@@ -305,9 +308,9 @@ export class SQLCoverageTestFramework {
             type: 'response',
             target: 'success',
             condition: 'equals',
-            value: true
-          }
-        ]
+            value: true,
+          },
+        ],
       })
     }
 
@@ -324,51 +327,55 @@ export class SQLCoverageTestFramework {
       graphqlQuery: this.generateSearchQuery(entityName),
       variables: {
         filter: { search: 'test' },
-        pagination: { limit: 10, offset: 0 }
+        pagination: { limit: 10, offset: 0 },
       },
       expectedTables: [table],
       expectedOperations: ['SELECT'],
-      setupData: Array(5).fill(null).map(() => this.generateSampleData(entityName)),
+      setupData: Array(5)
+        .fill(null)
+        .map(() => this.generateSampleData(entityName)),
       assertions: [
         {
           type: 'response',
           target: 'nodes',
           condition: 'exists',
-          value: true
+          value: true,
         },
         {
           type: 'performance',
           target: 'executionTime',
           condition: 'less_than',
-          value: 1000
-        }
-      ]
+          value: 1000,
+        },
+      ],
     })
 
     // Aggregation test case
-    if (operations.some(op => op.sqlQuery.includes('COUNT') || op.sqlQuery.includes('SUM'))) {
+    if (operations.some((op) => op.sqlQuery.includes('COUNT') || op.sqlQuery.includes('SUM'))) {
       testCases.push({
         name: `${entityName} aggregation - covers aggregate SELECT`,
         graphqlQuery: this.generateAggregationQuery(entityName),
         variables: {},
         expectedTables: [table],
         expectedOperations: ['SELECT'],
-        setupData: Array(10).fill(null).map(() => this.generateSampleData(entityName)),
+        setupData: Array(10)
+          .fill(null)
+          .map(() => this.generateSampleData(entityName)),
         assertions: [
           {
             type: 'response',
             target: 'totalCount',
             condition: 'greater_than',
-            value: 0
-          }
-        ]
+            value: 0,
+          },
+        ],
       })
     }
 
     return testCases
   }
 
-  private generateEdgeCaseTestCases(table: string, operations: SQLOperation[]): SQLTestCase[] {
+  private generateEdgeCaseTestCases(table: string, _operations: SQLOperation[]): SQLTestCase[] {
     const testCases: SQLTestCase[] = []
     const entityName = this.tableToEntityName(table)
 
@@ -379,15 +386,17 @@ export class SQLCoverageTestFramework {
       variables: { pagination: { limit: 100 } },
       expectedTables: [table],
       expectedOperations: ['SELECT'],
-      setupData: Array(150).fill(null).map(() => this.generateSampleData(entityName)),
+      setupData: Array(150)
+        .fill(null)
+        .map(() => this.generateSampleData(entityName)),
       assertions: [
         {
           type: 'performance',
           target: 'executionTime',
           condition: 'less_than',
-          value: 2000
-        }
-      ]
+          value: 2000,
+        },
+      ],
     })
 
     // Empty result test
@@ -402,9 +411,9 @@ export class SQLCoverageTestFramework {
           type: 'response',
           target: 'nodes',
           condition: 'equals',
-          value: []
-        }
-      ]
+          value: [],
+        },
+      ],
     })
 
     return testCases
@@ -427,28 +436,27 @@ export class SQLCoverageTestFramework {
       const result = await execute({
         schema: this.schema,
         document,
-        variableValues: testCase.variables
+        variableValues: testCase.variables,
       })
 
       // Check for GraphQL errors
       if (result.errors && result.errors.length > 0) {
-        errors.push(...result.errors.map(err => err.message))
+        errors.push(...result.errors.map((err) => err.message))
       } else {
         // Run assertions
         const assertionResults = await this.runAssertions(testCase.assertions, result.data)
 
-        if (assertionResults.every(r => r.success)) {
+        if (assertionResults.every((r) => r.success)) {
           success = true
           // Track which SQL operations were covered
           sqlOperationsCovered.push(...this.identifyCoveredOperations(testCase))
         } else {
-          errors.push(...assertionResults.filter(r => !r.success).map(r => r.error))
+          errors.push(...assertionResults.filter((r) => !r.success).map((r) => r.error))
         }
       }
 
       // Cleanup test data
       await this.cleanupTestData()
-
     } catch (error) {
       errors.push(error instanceof Error ? error.message : 'Unknown error')
     }
@@ -458,7 +466,7 @@ export class SQLCoverageTestFramework {
       success,
       sqlOperationsCovered,
       executionTime: Date.now() - startTime,
-      errors
+      errors,
     }
   }
 
@@ -467,7 +475,7 @@ export class SQLCoverageTestFramework {
     // Convert table name to entity name (e.g., 'node_attributes' -> 'NodeAttribute')
     return table
       .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join('')
   }
 
@@ -542,7 +550,7 @@ export class SQLCoverageTestFramework {
   }
 
   private generateSearchQuery(entityName: string): string {
-    const pluralName = `${entityName.toLowerCase()}s`
+    const _pluralName = `${entityName.toLowerCase()}s`
     return `
       query Search${entityName}s($filter: Search${entityName}sFilter!, $pagination: PaginationInput) {
         search${entityName}s(filter: $filter, pagination: $pagination) {
@@ -572,7 +580,7 @@ export class SQLCoverageTestFramework {
     const baseData = {
       id: `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     }
 
     switch (entityName.toLowerCase()) {
@@ -581,11 +589,26 @@ export class SQLCoverageTestFramework {
       case 'node':
         return { ...baseData, content: 'Test node content', tableId: 'test-table-id' }
       case 'attribute':
-        return { ...baseData, identifier: 'test-attr', tableId: 'test-table-id', attributeTypeId: 'test-type-id' }
+        return {
+          ...baseData,
+          identifier: 'test-attr',
+          tableId: 'test-table-id',
+          attributeTypeId: 'test-type-id',
+        }
       case 'nodeattribute':
-        return { ...baseData, nodeId: 'test-node-id', attributeId: 'test-attr-id', value: 'test-value' }
+        return {
+          ...baseData,
+          nodeId: 'test-node-id',
+          attributeId: 'test-attr-id',
+          value: 'test-value',
+        }
       case 'relation':
-        return { ...baseData, sourceNodeId: 'test-source', targetNodeId: 'test-target', relationTypeId: 'test-rel-type' }
+        return {
+          ...baseData,
+          sourceNodeId: 'test-source',
+          targetNodeId: 'test-target',
+          relationTypeId: 'test-rel-type',
+        }
       default:
         return baseData
     }
@@ -593,7 +616,7 @@ export class SQLCoverageTestFramework {
 
   // Utility methods
   private shouldExcludeFile(file: string): boolean {
-    return this.config.excludePatterns.some(pattern => file.includes(pattern))
+    return this.config.excludePatterns.some((pattern) => file.includes(pattern))
   }
 
   private extractClassName(content: string): string {
@@ -615,7 +638,7 @@ export class SQLCoverageTestFramework {
   private extractTableName(sqlText: string): string {
     const patterns = [
       /(?:FROM|INTO|UPDATE|TABLE|JOIN)\s+`?(\w+)`?/i,
-      /(?:INTO|UPDATE)\s+`?(\w+)`?/i
+      /(?:INTO|UPDATE)\s+`?(\w+)`?/i,
     ]
 
     for (const pattern of patterns) {
@@ -640,17 +663,20 @@ export class SQLCoverageTestFramework {
   }
 
   private groupOperationsByTable(): Record<string, SQLOperation[]> {
-    return this.sqlOperations.reduce((groups, op) => {
-      const table = op.table || 'unknown'
-      if (!groups[table]) groups[table] = []
-      groups[table].push(op)
-      return groups
-    }, {} as Record<string, SQLOperation[]>)
+    return this.sqlOperations.reduce(
+      (groups, op) => {
+        const table = op.table || 'unknown'
+        if (!groups[table]) groups[table] = []
+        groups[table].push(op)
+        return groups
+      },
+      {} as Record<string, SQLOperation[]>
+    )
   }
 
   private markOperationsAsCovered(operationKeys: string[]): void {
     for (const key of operationKeys) {
-      const operation = this.sqlOperations.find(op => `${op.file}:${op.line}` === key)
+      const operation = this.sqlOperations.find((op) => `${op.file}:${op.line}` === key)
       if (operation) operation.isCovered = true
     }
   }
@@ -658,27 +684,28 @@ export class SQLCoverageTestFramework {
   private identifyCoveredOperations(testCase: SQLTestCase): string[] {
     // Match test case to SQL operations based on expected tables and operations
     return this.sqlOperations
-      .filter(op =>
-        testCase.expectedTables.includes(op.table) &&
-        testCase.expectedOperations.includes(op.operation)
+      .filter(
+        (op) =>
+          testCase.expectedTables.includes(op.table) &&
+          testCase.expectedOperations.includes(op.operation)
       )
-      .map(op => `${op.file}:${op.line}`)
+      .map((op) => `${op.file}:${op.line}`)
   }
 
   private identifyMissingAPIs(uncoveredOperations: SQLOperation[]): MissingAPI[] {
     const missingAPIs: MissingAPI[] = []
-    const operationsByTable = this.groupBy(uncoveredOperations, op => op.table)
+    const operationsByTable = this.groupBy(uncoveredOperations, (op) => op.table)
 
     for (const [table, operations] of Object.entries(operationsByTable)) {
       const entityName = this.tableToEntityName(table)
-      const operationTypes = new Set(operations.map(op => op.operation))
+      const operationTypes = new Set(operations.map((op) => op.operation))
 
       for (const operationType of operationTypes) {
         const crudMap = {
           INSERT: 'CREATE',
           SELECT: 'READ',
           UPDATE: 'UPDATE',
-          DELETE: 'DELETE'
+          DELETE: 'DELETE',
         } as const
 
         const crudOperation = crudMap[operationType as keyof typeof crudMap]
@@ -688,7 +715,7 @@ export class SQLCoverageTestFramework {
             operation: crudOperation,
             priority: this.determinePriority(table, operationType, operations.length),
             suggestedAPI: this.suggestAPIName(entityName, crudOperation),
-            rationale: `${operations.filter(op => op.operation === operationType).length} uncovered ${operationType} operations found`
+            rationale: `${operations.filter((op) => op.operation === operationType).length} uncovered ${operationType} operations found`,
           })
         }
       }
@@ -697,7 +724,11 @@ export class SQLCoverageTestFramework {
     return missingAPIs
   }
 
-  private determinePriority(table: string, operation: string, count: number): 'HIGH' | 'MEDIUM' | 'LOW' {
+  private determinePriority(
+    table: string,
+    operation: string,
+    count: number
+  ): 'HIGH' | 'MEDIUM' | 'LOW' {
     const criticalTables = ['nodes', 'tables', 'attributes', 'relations']
     const criticalOperations = ['SELECT', 'INSERT']
 
@@ -712,40 +743,52 @@ export class SQLCoverageTestFramework {
       CREATE: `create${entityName}`,
       READ: `get${entityName} / search${entityName}s`,
       UPDATE: `update${entityName}`,
-      DELETE: `delete${entityName}`
+      DELETE: `delete${entityName}`,
     }
-    return operationMap[operation as keyof typeof operationMap] || `${operation.toLowerCase()}${entityName}`
+    return (
+      operationMap[operation as keyof typeof operationMap] ||
+      `${operation.toLowerCase()}${entityName}`
+    )
   }
 
-  private generateRecommendations(uncoveredOperations: SQLOperation[], coveragePercentage: number): string[] {
+  private generateRecommendations(
+    uncoveredOperations: SQLOperation[],
+    coveragePercentage: number
+  ): string[] {
     const recommendations: string[] = []
 
     if (coveragePercentage < this.config.coverageThreshold) {
-      recommendations.push(`Coverage is ${coveragePercentage.toFixed(1)}% (target: ${this.config.coverageThreshold}%) - add missing API operations`)
+      recommendations.push(
+        `Coverage is ${coveragePercentage.toFixed(1)}% (target: ${this.config.coverageThreshold}%) - add missing API operations`
+      )
     }
 
-    const operationsByTable = this.groupBy(uncoveredOperations, op => op.table)
+    const operationsByTable = this.groupBy(uncoveredOperations, (op) => op.table)
     const problematicTables = Object.entries(operationsByTable)
       .filter(([_, ops]) => ops.length > 3)
       .sort(([, a], [, b]) => b.length - a.length)
       .slice(0, 3)
 
     for (const [table, operations] of problematicTables) {
-      recommendations.push(`Table '${table}' has ${operations.length} uncovered operations - prioritize API completion`)
+      recommendations.push(
+        `Table '${table}' has ${operations.length} uncovered operations - prioritize API completion`
+      )
     }
 
-    if (uncoveredOperations.some(op => op.operation === 'UPDATE')) {
-      recommendations.push('Missing UPDATE operations detected - add comprehensive update mutations')
+    if (uncoveredOperations.some((op) => op.operation === 'UPDATE')) {
+      recommendations.push(
+        'Missing UPDATE operations detected - add comprehensive update mutations'
+      )
     }
 
-    if (uncoveredOperations.some(op => op.operation === 'DELETE')) {
+    if (uncoveredOperations.some((op) => op.operation === 'DELETE')) {
       recommendations.push('Missing DELETE operations detected - implement cascade deletion APIs')
     }
 
     return recommendations
   }
 
-  private async setupTestData(data: any[]): Promise<void> {
+  private async setupTestData(_data: any[]): Promise<void> {
     // Setup test data in database
     // This would implement actual data insertion logic
   }
@@ -755,8 +798,11 @@ export class SQLCoverageTestFramework {
     // This would implement cleanup logic
   }
 
-  private async runAssertions(assertions: TestAssertion[], data: any): Promise<Array<{success: boolean, error?: string}>> {
-    const results: Array<{success: boolean, error?: string}> = []
+  private async runAssertions(
+    assertions: TestAssertion[],
+    data: any
+  ): Promise<Array<{ success: boolean; error?: string }>> {
+    const results: Array<{ success: boolean; error?: string }> = []
 
     for (const assertion of assertions) {
       try {
@@ -765,7 +811,7 @@ export class SQLCoverageTestFramework {
       } catch (error) {
         results.push({
           success: false,
-          error: error instanceof Error ? error.message : 'Assertion failed'
+          error: error instanceof Error ? error.message : 'Assertion failed',
         })
       }
     }
@@ -805,12 +851,12 @@ export class SQLCoverageTestFramework {
     }
   }
 
-  private checkDatabaseAssertion(assertion: TestAssertion): boolean {
+  private checkDatabaseAssertion(_assertion: TestAssertion): boolean {
     // Implement database assertion logic
     return true // Placeholder
   }
 
-  private checkPerformanceAssertion(assertion: TestAssertion): boolean {
+  private checkPerformanceAssertion(_assertion: TestAssertion): boolean {
     // Implement performance assertion logic
     return true // Placeholder
   }
@@ -823,16 +869,19 @@ export class SQLCoverageTestFramework {
     array: T[],
     keyFn: (item: T) => K
   ): Record<K, T[]> {
-    return array.reduce((groups, item) => {
-      const key = keyFn(item)
-      if (!groups[key]) groups[key] = []
-      groups[key].push(item)
-      return groups
-    }, {} as Record<K, T[]>)
+    return array.reduce(
+      (groups, item) => {
+        const key = keyFn(item)
+        if (!groups[key]) groups[key] = []
+        groups[key].push(item)
+        return groups
+      },
+      {} as Record<K, T[]>
+    )
   }
 
   private printCoverageReport(report: CoverageReport): void {
-    console.log('\n' + '='.repeat(60))
+    console.log(`\n${'='.repeat(60)}`)
     console.log('📊 SQL COVERAGE ANALYSIS REPORT')
     console.log('='.repeat(60))
 
@@ -842,7 +891,8 @@ export class SQLCoverageTestFramework {
     console.log(`   Coverage Percentage: ${report.coveragePercentage.toFixed(1)}%`)
     console.log(`   Target Threshold: ${this.config.coverageThreshold}%`)
 
-    const status = report.coveragePercentage >= this.config.coverageThreshold ? '✅ PASSED' : '❌ FAILED'
+    const status =
+      report.coveragePercentage >= this.config.coverageThreshold ? '✅ PASSED' : '❌ FAILED'
     console.log(`   Status: ${status}`)
 
     if (report.missingAPIs.length > 0) {
@@ -852,8 +902,9 @@ export class SQLCoverageTestFramework {
           const priorityOrder = { HIGH: 3, MEDIUM: 2, LOW: 1 }
           return priorityOrder[b.priority] - priorityOrder[a.priority]
         })
-        .forEach(api => {
-          const priorityIcon = api.priority === 'HIGH' ? '🔥' : api.priority === 'MEDIUM' ? '⚠️' : 'ℹ️'
+        .forEach((api) => {
+          const priorityIcon =
+            api.priority === 'HIGH' ? '🔥' : api.priority === 'MEDIUM' ? '⚠️' : 'ℹ️'
           console.log(`   ${priorityIcon} ${api.entity}.${api.operation}: ${api.suggestedAPI}`)
           console.log(`      Rationale: ${api.rationale}`)
         })
@@ -861,21 +912,19 @@ export class SQLCoverageTestFramework {
 
     if (report.uncoveredOperations.length > 0) {
       console.log(`\n🔍 Uncovered Operations (showing top 10):`)
-      report.uncoveredOperations
-        .slice(0, 10)
-        .forEach(op => {
-          console.log(`   ${op.operation} ${op.table} in ${op.method} (${op.file}:${op.line})`)
-        })
+      report.uncoveredOperations.slice(0, 10).forEach((op) => {
+        console.log(`   ${op.operation} ${op.table} in ${op.method} (${op.file}:${op.line})`)
+      })
     }
 
     if (report.recommendations.length > 0) {
       console.log(`\n💡 Recommendations:`)
-      report.recommendations.forEach(rec => {
+      report.recommendations.forEach((rec) => {
         console.log(`   - ${rec}`)
       })
     }
 
-    console.log('\n' + '='.repeat(60))
+    console.log(`\n${'='.repeat(60)}`)
   }
 
   async cleanup(): Promise<void> {
@@ -884,16 +933,16 @@ export class SQLCoverageTestFramework {
 }
 
 // Export configuration and factory function
-export function createSQLCoverageFramework(config: Partial<SQLCoverageConfig> = {}): SQLCoverageTestFramework {
+export function createSQLCoverageFramework(
+  config: Partial<SQLCoverageConfig> = {}
+): SQLCoverageTestFramework {
   const defaultConfig: SQLCoverageConfig = {
     testDatabase: ':memory:',
     schemaPath: join(process.cwd(), 'generated/schema.graphql'),
-    repositoryPaths: [
-      'src/infrastructure/database/sqlite/**/*.ts'
-    ],
+    repositoryPaths: ['src/infrastructure/database/sqlite/**/*.ts'],
     excludePatterns: ['.test.', '.spec.', 'node_modules'],
     coverageThreshold: 85,
-    maxComplexity: 10
+    maxComplexity: 10,
   }
 
   return new SQLCoverageTestFramework({ ...defaultConfig, ...config })

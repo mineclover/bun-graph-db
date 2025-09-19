@@ -13,7 +13,6 @@
 import Database from 'bun:sqlite'
 import path from 'node:path'
 
-
 interface TemplateInfo {
   id: string
   identifier: string

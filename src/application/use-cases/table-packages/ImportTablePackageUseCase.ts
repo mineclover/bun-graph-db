@@ -1,10 +1,10 @@
-import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
   TablePackageFormat,
   TablePackageImportOptions,
   TablePackageImportResult,
 } from '@/core/types/TablePackage.js'
+import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 
 export interface ImportTablePackageRequest {
   packageData?: TablePackageFormat
@@ -67,12 +67,12 @@ export class ImportTablePackageUseCase {
 
       // Validate package before import
       const conflicts = await this.tablePackageService.validatePackage(packageData, options)
-      const errors = conflicts.filter(c => c.severity === 'error')
+      const errors = conflicts.filter((c) => c.severity === 'error')
 
       if (errors.length > 0 && options.conflictResolution === 'skip') {
         this.logger.warn('Table package import validation failed', {
           tableIdentifier: packageData.sourceTable.identifier,
-          errors: errors.map(e => e.message),
+          errors: errors.map((e) => e.message),
         })
 
         return {

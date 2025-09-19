@@ -33,11 +33,11 @@ export class DocResolver extends BaseResolver {
 
   private mapGraphQLCategoryToDomain(category: any): DocCategory {
     const categoryMapping: Record<string, DocCategory> = {
-      'USAGE': DocCategory.USAGE,
-      'GUIDE': DocCategory.GUIDE,
-      'EXAMPLE': DocCategory.EXAMPLE,
-      'SPEC': DocCategory.SPEC,
-      'GENERAL': DocCategory.GENERAL,
+      USAGE: DocCategory.USAGE,
+      GUIDE: DocCategory.GUIDE,
+      EXAMPLE: DocCategory.EXAMPLE,
+      SPEC: DocCategory.SPEC,
+      GENERAL: DocCategory.GENERAL,
     }
     return categoryMapping[category] || category
   }
@@ -118,7 +118,11 @@ export class DocResolver extends BaseResolver {
         limit: pagination.limit || 10,
         offset: pagination.offset || 0,
         tableId: args.tableId as TableId,
-        category: args.category ? this.mapGraphQLCategoryToDomain(args.category) : (filter?.category ? this.mapGraphQLCategoryToDomain(filter.category) : undefined),
+        category: args.category
+          ? this.mapGraphQLCategoryToDomain(args.category)
+          : filter?.category
+            ? this.mapGraphQLCategoryToDomain(filter.category)
+            : undefined,
         isActive: filter?.isActive || undefined,
         version: filter?.version || undefined,
         createdAfter: filter?.createdAfter ? new Date(filter.createdAfter) : undefined,

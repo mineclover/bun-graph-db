@@ -1,20 +1,24 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
-import { RelationType } from '@/domain/entities/RelationType.js'
 import type {
   CreateRelationArgs,
   CreateRelationTypeArgs,
   DeleteRelationArgs,
-  MutationUpdateRelationTypeArgs,
-  MutationDeleteRelationTypeArgs,
   GraphQLContext,
   GraphQLParent,
+  MutationDeleteRelationTypeArgs,
+  MutationUpdateRelationTypeArgs,
 } from '@/core/types/GraphQLTypes.js'
+import { RelationType } from '@/domain/entities/RelationType.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
-import { ConflictException, ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
 
 export class RelationMutations extends BaseResolver {
   protected logger: ILogger
@@ -62,7 +66,7 @@ export class RelationMutations extends BaseResolver {
           ...result.relationType,
           name: args.input.name, // Add the name field from input
         },
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Mutation failed: createRelationType', { error, input: args.input })
@@ -74,8 +78,8 @@ export class RelationMutations extends BaseResolver {
           {
             message: error instanceof Error ? error.message : 'Unknown error',
             code: 'INTERNAL_ERROR',
-          }
-        ]
+          },
+        ],
       }
     }
   }
@@ -108,7 +112,7 @@ export class RelationMutations extends BaseResolver {
       return {
         success: true,
         relation: result.relation,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Mutation failed: createRelation', { error, input: args.input })
@@ -122,8 +126,8 @@ export class RelationMutations extends BaseResolver {
             {
               message: error.message,
               code: 'CONFLICT',
-            }
-          ]
+            },
+          ],
         }
       }
 
@@ -135,8 +139,8 @@ export class RelationMutations extends BaseResolver {
             {
               message: error.message,
               code: 'VALIDATION_ERROR',
-            }
-          ]
+            },
+          ],
         }
       }
 
@@ -148,8 +152,8 @@ export class RelationMutations extends BaseResolver {
             {
               message: error.message,
               code: 'NOT_FOUND',
-            }
-          ]
+            },
+          ],
         }
       }
 
@@ -160,8 +164,8 @@ export class RelationMutations extends BaseResolver {
           {
             message: error instanceof Error ? error.message : 'Unknown error',
             code: 'INTERNAL_ERROR',
-          }
-        ]
+          },
+        ],
       }
     }
   }
@@ -193,7 +197,9 @@ export class RelationMutations extends BaseResolver {
       const updatedRelationType = RelationType.fromDatabase(
         existingRelationType.getId()!,
         existingRelationType.getIdentifier(),
-        args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
+        args.input.description !== undefined
+          ? args.input.description
+          : existingRelationType.getDescription(),
         args.input.name || existingRelationType.getCategory(),
         existingRelationType.getCreatedAt(),
         new Date() // Update timestamp
@@ -212,10 +218,14 @@ export class RelationMutations extends BaseResolver {
           createdAt: updatedRelationType.getCreatedAt(),
           updatedAt: updatedRelationType.getUpdatedAt(),
         },
-        errors: []
+        errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateRelationType', { error, id: args.id, input: args.input })
+      this.logger.error('Mutation failed: updateRelationType', {
+        error,
+        id: args.id,
+        input: args.input,
+      })
 
       if (error instanceof NotFoundException) {
         return {
@@ -225,8 +235,8 @@ export class RelationMutations extends BaseResolver {
             {
               message: error.message,
               code: 'NOT_FOUND',
-            }
-          ]
+            },
+          ],
         }
       }
 
@@ -238,8 +248,8 @@ export class RelationMutations extends BaseResolver {
             {
               message: error.message,
               code: 'VALIDATION_ERROR',
-            }
-          ]
+            },
+          ],
         }
       }
 
@@ -250,13 +260,17 @@ export class RelationMutations extends BaseResolver {
           {
             message: error instanceof Error ? error.message : 'Unknown error',
             code: 'INTERNAL_ERROR',
-          }
-        ]
+          },
+        ],
       }
     }
   }
 
-  async deleteRelationType(_: GraphQLParent, args: MutationDeleteRelationTypeArgs, _context?: GraphQLContext) {
+  async deleteRelationType(
+    _: GraphQLParent,
+    args: MutationDeleteRelationTypeArgs,
+    _context?: GraphQLContext
+  ) {
     try {
       this.validateArgs(
         args as any,
@@ -278,7 +292,7 @@ export class RelationMutations extends BaseResolver {
 
       return {
         success: true,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       this.logger.error('Mutation failed: deleteRelationType', { error, id: args.id })
@@ -290,8 +304,8 @@ export class RelationMutations extends BaseResolver {
             {
               message: error.message,
               code: 'NOT_FOUND',
-            }
-          ]
+            },
+          ],
         }
       }
 
@@ -301,8 +315,8 @@ export class RelationMutations extends BaseResolver {
           {
             message: error instanceof Error ? error.message : 'Unknown error',
             code: 'INTERNAL_ERROR',
-          }
-        ]
+          },
+        ],
       }
     }
   }

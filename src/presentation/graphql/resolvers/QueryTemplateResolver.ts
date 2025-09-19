@@ -5,13 +5,13 @@ import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import {
   type CreateQueryTemplateInput,
+  createInputToEntity,
   type ExecuteTemplateInput,
   type FindTemplatesByTableInput,
   type QueryTemplateDto,
-  queryTemplateToDto,
-  queryTemplatesToDtoList,
-  createInputToEntity,
   type QueryTemplatesConnection,
+  queryTemplatesToDtoList,
+  queryTemplateToDto,
   type SearchTemplatesInput,
   type TableDependencyTemplateResult,
   type UpdateQueryTemplateInput,

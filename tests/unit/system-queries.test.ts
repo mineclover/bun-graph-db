@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, mock, spyOn } from 'bun:test'
-import { SystemQueries } from '../../src/services/system-queries'
+import { beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
 import type { Logger } from '../../src/services/system-queries'
+import { SystemQueries } from '../../src/services/system-queries'
 
 describe('SystemQueries', () => {
   let systemQueries: SystemQueries
@@ -13,14 +13,14 @@ describe('SystemQueries', () => {
       filename: './test.db',
       prepare: mock(() => ({
         all: mock(() => []),
-        get: mock(() => ({ count: 0 }))
-      }))
+        get: mock(() => ({ count: 0 })),
+      })),
     }
 
     // Mock logger
     mockLogger = {
       log: mock(() => {}),
-      error: mock(() => {})
+      error: mock(() => {}),
     }
 
     systemQueries = new SystemQueries(mockDb)
@@ -288,7 +288,10 @@ describe('SystemQueries', () => {
     describe('calculateStandardDeviation', () => {
       it('should calculate standard deviation', () => {
         expect(systemQueries.calculateStandardDeviation([1, 2, 3, 4, 5])).toBeCloseTo(1.41, 1)
-        expect(systemQueries.calculateStandardDeviation([2, 4, 4, 4, 5, 5, 7, 9])).toBeCloseTo(2.0, 1)
+        expect(systemQueries.calculateStandardDeviation([2, 4, 4, 4, 5, 5, 7, 9])).toBeCloseTo(
+          2.0,
+          1
+        )
       })
 
       it('should handle edge cases', () => {
@@ -329,10 +332,14 @@ describe('SystemQueries', () => {
 
     describe('categorizeError', () => {
       it('should categorize errors correctly', () => {
-        expect(systemQueries.categorizeError(new Error('EACCES: permission denied'))).toBe('permission')
+        expect(systemQueries.categorizeError(new Error('EACCES: permission denied'))).toBe(
+          'permission'
+        )
         expect(systemQueries.categorizeError(new Error('ENOENT: file not found'))).toBe('not_found')
         expect(systemQueries.categorizeError(new Error('ENOMEM: out of memory'))).toBe('resource')
-        expect(systemQueries.categorizeError(new Error('SQLITE_ERROR: syntax error'))).toBe('database')
+        expect(systemQueries.categorizeError(new Error('SQLITE_ERROR: syntax error'))).toBe(
+          'database'
+        )
         expect(systemQueries.categorizeError(new Error('Unknown error'))).toBe('unknown')
       })
 
@@ -363,8 +370,12 @@ describe('SystemQueries', () => {
 
     it('should handle logger errors silently', () => {
       const failingLogger = {
-        log: mock(() => { throw new Error('Logger failed') }),
-        error: mock(() => { throw new Error('Logger failed') })
+        log: mock(() => {
+          throw new Error('Logger failed')
+        }),
+        error: mock(() => {
+          throw new Error('Logger failed')
+        }),
       }
       systemQueries.setLogger(failingLogger)
 
@@ -376,9 +387,15 @@ describe('SystemQueries', () => {
   describe('error fallback methods', () => {
     it('should use default stats when systemStats fails completely', async () => {
       // Mock process methods to throw errors
-      spyOn(process, 'cpuUsage').mockImplementation(() => { throw new Error('CPU error') })
-      spyOn(process, 'memoryUsage').mockImplementation(() => { throw new Error('Memory error') })
-      spyOn(process, 'uptime').mockImplementation(() => { throw new Error('Uptime error') })
+      spyOn(process, 'cpuUsage').mockImplementation(() => {
+        throw new Error('CPU error')
+      })
+      spyOn(process, 'memoryUsage').mockImplementation(() => {
+        throw new Error('Memory error')
+      })
+      spyOn(process, 'uptime').mockImplementation(() => {
+        throw new Error('Uptime error')
+      })
 
       const sysResult = await systemQueries.systemStats()
 
@@ -435,7 +452,9 @@ describe('SystemQueries', () => {
     })
 
     it('should handle database preparation errors gracefully', async () => {
-      mockDb.prepare = mock(() => { throw new Error('SQL syntax error') })
+      mockDb.prepare = mock(() => {
+        throw new Error('SQL syntax error')
+      })
 
       const result = await systemQueries.getDatabaseStats()
       // Private helper methods catch and return empty arrays, so no error is propagated

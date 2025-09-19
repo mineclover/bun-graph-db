@@ -4,21 +4,21 @@
 
 // Import generated GraphQL types
 export type {
+  CreateDocInput,
+  CreateNodeInput,
   CreateRelationInput,
   CreateTableInput,
-  CreateNodeInput,
-  UpdateNodeInput,
+  DocsFilter,
+  MutationDeleteRelationTypeArgs,
+  MutationUpdateRelationTypeArgs,
   SearchNodesFilter,
   SearchRelatedNodesFilter,
   TablesFilter,
   TablesPagination,
+  UpdateDocInput,
+  UpdateNodeInput,
   UpdateQueryTemplateInput,
   UpdateTableInput,
-  CreateDocInput,
-  UpdateDocInput,
-  DocsFilter,
-  MutationUpdateRelationTypeArgs,
-  MutationDeleteRelationTypeArgs,
 } from '../../../generated/graphql.types.js'
 
 export interface GraphQLContext {

@@ -51,7 +51,6 @@ async function main() {
     console.log(`  ✅ 성공: ${exported}개`)
     console.log(`  ❌ 실패: ${failed}개`)
     console.log(`\n🎉 Fixed 템플릿 Export 완료!`)
-
   } catch (error) {
     console.error('💥 Export 실행 중 오류:', error)
     process.exit(1)
@@ -101,7 +100,7 @@ async function getFixedTemplatesFromDB() {
     usageCount: row.usage_count,
     isActive: row.is_active,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }))
 }
 
@@ -120,7 +119,7 @@ async function exportSingleTemplate(template: any) {
     usageCount: template.usageCount,
     createdAt: template.createdAt,
     updatedAt: template.updatedAt,
-    exportedAt: new Date().toISOString()
+    exportedAt: new Date().toISOString(),
   }
 
   const cleanIdentifier = template.identifier.replace(/[^a-zA-Z0-9-]/g, '-')
@@ -148,7 +147,8 @@ ${templates
   .map((template) => {
     const fileName = `${template.identifier.replace(/[^a-zA-Z0-9-]/g, '-')}_v${template.version.replace(/\./g, '-')}.json`
     const description = template.description || '설명 없음'
-    const truncatedDesc = description.length > 30 ? description.substring(0, 30) + '...' : description
+    const truncatedDesc =
+      description.length > 30 ? `${description.substring(0, 30)}...` : description
     const tags = template.tags.join(', ')
     return `| \`${fileName}\` | ${template.name} | ${truncatedDesc} | ${template.usageCount}회 | ${template.operationType} | ${tags} |`
   })
@@ -158,7 +158,7 @@ ${templates
 
 ${(() => {
   const categories: Record<string, number> = {}
-  templates.forEach(template => {
+  templates.forEach((template) => {
     template.tags.forEach((tag: string) => {
       categories[tag] = (categories[tag] || 0) + 1
     })

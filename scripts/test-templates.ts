@@ -55,7 +55,7 @@ async function getTemplatesByTag(tag: string): Promise<TemplateInfo[]> {
     query: row.query_text,
     variables: row.default_variables ? JSON.parse(row.default_variables) : {},
     operationType: row.operation_type,
-    tags: row.tags ? JSON.parse(row.tags) : []
+    tags: row.tags ? JSON.parse(row.tags) : [],
   }))
 }
 
@@ -95,7 +95,7 @@ async function executeTemplate(template: TemplateInfo): Promise<TestResult> {
         identifier: template.identifier,
         success: false,
         executionTime,
-        error: result.error
+        error: result.error,
       }
     }
 
@@ -104,7 +104,7 @@ async function executeTemplate(template: TemplateInfo): Promise<TestResult> {
       identifier: template.identifier,
       success: true,
       executionTime,
-      result: result.data
+      result: result.data,
     }
   } catch (error) {
     const executionTime = Date.now() - startTime
@@ -117,7 +117,7 @@ async function executeTemplate(template: TemplateInfo): Promise<TestResult> {
       identifier: template.identifier,
       success: false,
       executionTime,
-      error: errorMessage
+      error: errorMessage,
     }
   }
 }
@@ -132,14 +132,14 @@ async function runCRUDTestSuite(category: string): Promise<void> {
   const deleteTemplates = await getTemplatesByTag('delete')
 
   // Filter by category
-  const categoryCreateTemplates = createTemplates.filter(t =>
-    t.identifier.includes(category) || t.tags.includes(category)
+  const categoryCreateTemplates = createTemplates.filter(
+    (t) => t.identifier.includes(category) || t.tags.includes(category)
   )
-  const categoryUpdateTemplates = updateTemplates.filter(t =>
-    t.identifier.includes(category) || t.tags.includes(category)
+  const categoryUpdateTemplates = updateTemplates.filter(
+    (t) => t.identifier.includes(category) || t.tags.includes(category)
   )
-  const categoryDeleteTemplates = deleteTemplates.filter(t =>
-    t.identifier.includes(category) || t.tags.includes(category)
+  const categoryDeleteTemplates = deleteTemplates.filter(
+    (t) => t.identifier.includes(category) || t.tags.includes(category)
   )
 
   console.log(`📊 Found templates:`)
@@ -153,7 +153,7 @@ async function runCRUDTestSuite(category: string): Promise<void> {
   const executionOrder = [
     ...categoryCreateTemplates,
     ...categoryUpdateTemplates,
-    ...categoryDeleteTemplates
+    ...categoryDeleteTemplates,
   ]
 
   if (executionOrder.length === 0) {
@@ -166,14 +166,14 @@ async function runCRUDTestSuite(category: string): Promise<void> {
     results.push(result)
 
     // Small delay between tests
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
   }
 
   // Print summary
-  const passed = results.filter(r => r.success).length
+  const passed = results.filter((r) => r.success).length
   const failed = results.length - passed
   const totalTime = results.reduce((sum, r) => sum + r.executionTime, 0)
-  const successRate = results.length > 0 ? (passed / results.length * 100).toFixed(1) : 0
+  const successRate = results.length > 0 ? ((passed / results.length) * 100).toFixed(1) : 0
 
   console.log(`\n📊 ${category.toUpperCase()} CRUD Test Results:`)
   console.log(`   Total: ${results.length}`)
@@ -184,14 +184,16 @@ async function runCRUDTestSuite(category: string): Promise<void> {
 
   if (failed > 0) {
     console.log(`\n❌ Failed Tests:`)
-    results.filter(r => !r.success).forEach(r => {
-      console.log(`   • ${r.identifier}: ${r.error}`)
-    })
+    results
+      .filter((r) => !r.success)
+      .forEach((r) => {
+        console.log(`   • ${r.identifier}: ${r.error}`)
+      })
   }
 }
 
 // Advanced test for complex template execution
-async function testComplexTemplate() {
+async function _testComplexTemplate() {
   console.log('🧪 Testing Complex Template Workflow...')
 
   try {
@@ -292,7 +294,7 @@ async function testComplexTemplate() {
 }
 
 // Run template execution test
-async function testTemplateExecution(templateId: string, variables: any) {
+async function _testTemplateExecution(templateId: string, variables: any) {
   console.log(`🎯 Testing template execution: ${templateId}`)
 
   return await graphqlRequest(
@@ -316,7 +318,7 @@ async function testTemplateExecution(templateId: string, variables: any) {
 }
 
 // List all available templates
-async function listAvailableTemplates() {
+async function _listAvailableTemplates() {
   console.log('📑 Available Templates:')
 
   const result = await graphqlRequest(
@@ -351,7 +353,7 @@ async function listAvailableTemplates() {
 }
 
 // Test template variable validation
-async function testVariableValidation() {
+async function _testVariableValidation() {
   console.log('🔍 Testing Variable Validation...')
 
   // Test with missing required variable
@@ -424,7 +426,6 @@ async function main() {
       // Run specific category test
       await runCRUDTestSuite(category)
     }
-
   } catch (error) {
     console.error('❌ Test execution failed:', error)
     process.exit(1)

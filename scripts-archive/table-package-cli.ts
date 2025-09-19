@@ -6,8 +6,8 @@
  * Command-line interface for table package export/import operations
  */
 
-import { Container } from '@/infrastructure/di/Container.js'
 import { TablePackageCommands } from '@/application/cli/commands/TablePackageCommands.js'
+import { Container } from '@/infrastructure/di/Container.js'
 
 const container = Container.getInstance()
 
@@ -62,7 +62,8 @@ async function main() {
           process.exit(1)
         }
 
-        const conflictResolution = (args.find((_arg, i) => args[i - 1] === '--conflict') || 'skip') as any
+        const conflictResolution = (args.find((_arg, i) => args[i - 1] === '--conflict') ||
+          'skip') as any
         const importData = !args.includes('--no-data')
         const importRelations = !args.includes('--no-relations')
         const importTemplates = !args.includes('--no-templates')
@@ -86,10 +87,12 @@ async function main() {
       }
 
       case 'batch-export': {
-        const tableIdentifiers = args.slice(1).filter(arg => !arg.startsWith('--'))
+        const tableIdentifiers = args.slice(1).filter((arg) => !arg.startsWith('--'))
         if (tableIdentifiers.length === 0) {
           console.error('❌ Error: At least one table identifier is required')
-          console.log('Usage: bun run table:batch-export <tableIdentifier1> [tableIdentifier2...] [options]')
+          console.log(
+            'Usage: bun run table:batch-export <tableIdentifier1> [tableIdentifier2...] [options]'
+          )
           process.exit(1)
         }
 
@@ -115,14 +118,17 @@ async function main() {
       }
 
       case 'batch-import': {
-        const packagePaths = args.slice(1).filter(arg => !arg.startsWith('--'))
+        const packagePaths = args.slice(1).filter((arg) => !arg.startsWith('--'))
         if (packagePaths.length === 0) {
           console.error('❌ Error: At least one package path is required')
-          console.log('Usage: bun run table:batch-import <packagePath1> [packagePath2...] [options]')
+          console.log(
+            'Usage: bun run table:batch-import <packagePath1> [packagePath2...] [options]'
+          )
           process.exit(1)
         }
 
-        const conflictResolution = (args.find((_arg, i) => args[i - 1] === '--conflict') || 'skip') as any
+        const conflictResolution = (args.find((_arg, i) => args[i - 1] === '--conflict') ||
+          'skip') as any
         const importData = !args.includes('--no-data')
         const importRelations = !args.includes('--no-relations')
         const importTemplates = !args.includes('--no-templates')
@@ -235,15 +241,17 @@ async function main() {
         console.log('  --compact                           Compact JSON output')
         console.log('')
         console.log('Import Options:')
-        console.log('  --conflict <strategy>               Conflict resolution: overwrite|merge|rename|skip')
+        console.log(
+          '  --conflict <strategy>               Conflict resolution: overwrite|merge|rename|skip'
+        )
         console.log('  --no-data                           Skip node data import')
         console.log('  --no-relations                      Skip relationships import')
         console.log('  --no-templates                      Skip templates import')
-        console.log('  --no-preserve-stats                 Don\'t preserve statistics')
+        console.log("  --no-preserve-stats                 Don't preserve statistics")
         console.log('  --no-validate                       Skip integrity validation')
         console.log('  --no-generate                       Skip template generation')
         console.log('  --prefix <string>                   Prefix for renamed tables')
-        console.log('  --no-session                        Don\'t create import session')
+        console.log("  --no-session                        Don't create import session")
         console.log('')
         console.log('Template Generation Options:')
         console.log('  --no-create                         Skip CREATE templates')

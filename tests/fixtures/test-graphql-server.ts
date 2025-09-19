@@ -3,7 +3,7 @@
  * Starts isolated GraphQL server with test database for each test suite
  */
 
-import { spawn, } from 'bun'
+import { spawn } from 'bun'
 import { TestDatabaseFactory, type TestEnvironment } from './test-database-factory'
 
 export interface TestGraphQLServer {
@@ -37,19 +37,15 @@ export class GraphQLTestServerManager {
     const url = `http://localhost:${port}/graphql`
 
     // Start server with custom database path
-    const serverProcess = spawn([
-      'bun',
-      'run',
-      'index.ts'
-    ], {
+    const serverProcess = spawn(['bun', 'run', 'index.ts'], {
       env: {
         ...process.env,
         GRAPHQL_PORT: port.toString(),
         DATABASE_PATH: database.databasePath,
-        NODE_ENV: 'test'
+        NODE_ENV: 'test',
       },
       stdout: 'pipe',
-      stderr: 'pipe'
+      stderr: 'pipe',
     })
 
     // Wait for server to be ready
@@ -85,7 +81,7 @@ export class GraphQLTestServerManager {
 
         // Remove from registry
         GraphQLTestServerManager.servers.delete(suiteName)
-      }
+      },
     }
 
     GraphQLTestServerManager.servers.set(suiteName, server)
@@ -115,8 +111,8 @@ export class GraphQLTestServerManager {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            query: testQuery
-          })
+            query: testQuery,
+          }),
         })
 
         if (response.ok) {
@@ -127,7 +123,7 @@ export class GraphQLTestServerManager {
       }
 
       // Wait 100ms before next attempt
-      await new Promise(resolve => setTimeout(resolve, 100))
+      await new Promise((resolve) => setTimeout(resolve, 100))
     }
 
     throw new Error(`GraphQL server did not become ready within ${timeoutMs}ms`)
@@ -154,7 +150,9 @@ export class GraphQLTestServerManager {
    * Stop all test servers
    */
   static async stopAllServers(): Promise<void> {
-    const cleanupPromises = Array.from(GraphQLTestServerManager.servers.values()).map(server => server.cleanup())
+    const cleanupPromises = Array.from(GraphQLTestServerManager.servers.values()).map((server) =>
+      server.cleanup()
+    )
     await Promise.all(cleanupPromises)
     GraphQLTestServerManager.servers.clear()
   }

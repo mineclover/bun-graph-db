@@ -6,7 +6,7 @@
   "scripts": {
     "start": "bun index.ts",
     "dev": "bun --watch index.ts",
-    "build": "bun build index.ts --outdir ./dist",
+    "build": "bun build index.ts --outdir ./dist --target bun",
     "test": "bun test",
     "test:bun": "bun test --coverage",
     "query:report": "bun scripts/query-manager.ts report",

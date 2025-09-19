@@ -42,11 +42,7 @@ export class UpdateDocUseCase {
       if (input.isActive !== undefined) {
         if (input.isActive) {
           // If activating this doc, deactivate others in same category
-          await this.docRepository.deactivateOthersInCategory(
-            doc.tableId,
-            doc.category,
-            doc.id
-          )
+          await this.docRepository.deactivateOthersInCategory(doc.tableId, doc.category, doc.id)
           doc.activate()
         } else {
           doc.deactivate()

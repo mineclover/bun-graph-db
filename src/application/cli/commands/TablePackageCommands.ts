@@ -1,13 +1,13 @@
-import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type {
-  TablePackageExportOptions,
-  TablePackageImportOptions,
-  TablePackageFormat,
-} from '@/core/types/TablePackage.js'
+import { BatchImportTablePackagesUseCase } from '@/application/use-cases/table-packages/BatchImportTablePackagesUseCase.js'
 import { ExportTablePackageUseCase } from '@/application/use-cases/table-packages/ExportTablePackageUseCase.js'
 import { ImportTablePackageUseCase } from '@/application/use-cases/table-packages/ImportTablePackageUseCase.js'
-import { BatchImportTablePackagesUseCase } from '@/application/use-cases/table-packages/BatchImportTablePackagesUseCase.js'
+import type {
+  TablePackageExportOptions,
+  TablePackageFormat,
+  TablePackageImportOptions,
+} from '@/core/types/TablePackage.js'
+import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 
 /**
  * CLI Commands for Table Package Export/Import System
@@ -162,7 +162,9 @@ export class TablePackageCommands {
       if (result.result?.resolvedConflicts && result.result.resolvedConflicts.length > 0) {
         console.log(`⚡ Resolved conflicts:`)
         for (const conflict of result.result.resolvedConflicts) {
-          console.log(`   - ${conflict.type}: ${conflict.originalName} → ${conflict.resolvedName} (${conflict.action})`)
+          console.log(
+            `   - ${conflict.type}: ${conflict.originalName} → ${conflict.resolvedName} (${conflict.action})`
+          )
         }
       }
 
@@ -245,7 +247,10 @@ export class TablePackageCommands {
       }
     } catch (error) {
       this.logger.error('Batch export command failed', { error })
-      console.error('❌ Batch export failed:', error instanceof Error ? error.message : 'Unknown error')
+      console.error(
+        '❌ Batch export failed:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
       process.exit(1)
     }
   }
@@ -344,7 +349,10 @@ export class TablePackageCommands {
       }
     } catch (error) {
       this.logger.error('Batch import command failed', { error })
-      console.error('❌ Batch import failed:', error instanceof Error ? error.message : 'Unknown error')
+      console.error(
+        '❌ Batch import failed:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
       process.exit(1)
     }
   }
@@ -415,7 +423,10 @@ export class TablePackageCommands {
       console.log('\n💡 Import in this order to resolve dependencies correctly')
     } catch (error) {
       this.logger.error('Import order resolution command failed', { error })
-      console.error('❌ Resolution failed:', error instanceof Error ? error.message : 'Unknown error')
+      console.error(
+        '❌ Resolution failed:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
       process.exit(1)
     }
   }
@@ -437,17 +448,14 @@ export class TablePackageCommands {
     try {
       console.log(`🔧 Generating templates for table: ${args.tableIdentifier}`)
 
-      const result = await this.tablePackageService.generateTableTemplates(
-        args.tableIdentifier,
-        {
-          includeCreate: args.includeCreate ?? true,
-          includeRead: args.includeRead ?? true,
-          includeUpdate: args.includeUpdate ?? true,
-          includeDelete: args.includeDelete ?? true,
-          includeSearch: args.includeSearch ?? true,
-          includeBatch: args.includeBatch ?? false,
-        }
-      )
+      const result = await this.tablePackageService.generateTableTemplates(args.tableIdentifier, {
+        includeCreate: args.includeCreate ?? true,
+        includeRead: args.includeRead ?? true,
+        includeUpdate: args.includeUpdate ?? true,
+        includeDelete: args.includeDelete ?? true,
+        includeSearch: args.includeSearch ?? true,
+        includeBatch: args.includeBatch ?? false,
+      })
 
       if (!result.success) {
         console.error('❌ Template generation failed')
@@ -471,7 +479,10 @@ export class TablePackageCommands {
       }
     } catch (error) {
       this.logger.error('Template generation command failed', { error })
-      console.error('❌ Generation failed:', error instanceof Error ? error.message : 'Unknown error')
+      console.error(
+        '❌ Generation failed:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
       process.exit(1)
     }
   }
@@ -490,18 +501,17 @@ export class TablePackageCommands {
       const fileContent = await fs.readFile(args.packagePath, 'utf8')
       const packageData = JSON.parse(fileContent)
 
-      const conflicts = await this.tablePackageService.validatePackage(
-        packageData,
-        { conflictResolution: 'skip' }
-      )
+      const conflicts = await this.tablePackageService.validatePackage(packageData, {
+        conflictResolution: 'skip',
+      })
 
       console.log('\n📊 Validation Results:')
       console.log(`Package: ${packageData.sourceTable.identifier}`)
       console.log(`Version: ${packageData.version}`)
       console.log(`Exported: ${packageData.exportedAt}`)
 
-      const errors = conflicts.filter(c => c.severity === 'error')
-      const warnings = conflicts.filter(c => c.severity === 'warning')
+      const errors = conflicts.filter((c) => c.severity === 'error')
+      const warnings = conflicts.filter((c) => c.severity === 'warning')
 
       if (errors.length === 0 && warnings.length === 0) {
         console.log('✅ Package is valid and ready for import!')
@@ -530,7 +540,10 @@ export class TablePackageCommands {
       }
     } catch (error) {
       this.logger.error('Package validation command failed', { error })
-      console.error('❌ Validation failed:', error instanceof Error ? error.message : 'Unknown error')
+      console.error(
+        '❌ Validation failed:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
       process.exit(1)
     }
   }

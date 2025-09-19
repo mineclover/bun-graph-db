@@ -81,15 +81,20 @@ export class CreateRelationUseCase {
     // Check for existing relation (prevent duplicates)
     let existingRelation = false
 
-    if (sourceExternalId === 'internal' && targetExternalId === 'internal' && sourceNodeId && targetNodeId) {
+    if (
+      sourceExternalId === 'internal' &&
+      targetExternalId === 'internal' &&
+      sourceNodeId &&
+      targetNodeId
+    ) {
       // For internal-to-internal relations, check by node IDs and relation type
       const existingRelations = await this.nodeRelationRepository.findBySourceNodeIdAndRelationType(
         sourceNodeId,
         input.relationTypeId as RelationTypeId
       )
-      existingRelation = existingRelations.some(relation =>
-        relation.getTargetNodeId() === targetNodeId &&
-        relation.getTableId() === input.tableId
+      existingRelation = existingRelations.some(
+        (relation) =>
+          relation.getTargetNodeId() === targetNodeId && relation.getTableId() === input.tableId
       )
     } else {
       // For external relations, use the original exists method

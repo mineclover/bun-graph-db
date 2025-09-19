@@ -72,7 +72,6 @@ class ComplexTemplateRecreator {
       await this.verifyUpdates()
 
       console.log('✅ Complex template recreation completed successfully!')
-
     } catch (error) {
       console.error('❌ Template recreation failed:', error)
       await this.restoreFromBackups()
@@ -96,7 +95,7 @@ class ComplexTemplateRecreator {
     // Store backup in JSON file for safety
     const backupData = {
       timestamp: new Date().toISOString(),
-      templates: this.backups
+      templates: this.backups,
     }
 
     await Bun.write('./backups/template-backup.json', JSON.stringify(backupData, null, 2))
@@ -135,53 +134,62 @@ class ComplexTemplateRecreator {
     }
   }
 }`,
-      newVariablesSchema: JSON.stringify({
-        type: "object",
-        properties: {
-          input: {
-            type: "object",
-            properties: {
-              content: {
-                type: "string",
-                description: "Todo title/content"
-              },
-              tableId: {
-                type: "string",
-                description: "Table ID for todos (default: 58)",
-                default: "58"
-              },
-              attributes: {
-                type: "array",
-                description: "Todo attributes",
-                items: {
-                  type: "object",
-                  properties: {
-                    attributeId: { type: "string" },
-                    value: { type: "string" }
+      newVariablesSchema: JSON.stringify(
+        {
+          type: 'object',
+          properties: {
+            input: {
+              type: 'object',
+              properties: {
+                content: {
+                  type: 'string',
+                  description: 'Todo title/content',
+                },
+                tableId: {
+                  type: 'string',
+                  description: 'Table ID for todos (default: 58)',
+                  default: '58',
+                },
+                attributes: {
+                  type: 'array',
+                  description: 'Todo attributes',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      attributeId: { type: 'string' },
+                      value: { type: 'string' },
+                    },
+                    required: ['attributeId', 'value'],
                   },
-                  required: ["attributeId", "value"]
-                }
-              }
+                },
+              },
+              required: ['content', 'tableId'],
             },
-            required: ["content", "tableId"]
-          }
+          },
+          required: ['input'],
         },
-        required: ["input"]
-      }, null, 2),
-      newDefaultVariables: JSON.stringify({
-        input: {
-          content: "New Todo Item",
-          tableId: "58",
-          attributes: [
-            { attributeId: "title_attr_id", value: "New Todo Item" },
-            { attributeId: "description_attr_id", value: "Todo description" },
-            { attributeId: "status_attr_id", value: "TODO" },
-            { attributeId: "priority_attr_id", value: "MEDIUM" },
-            { attributeId: "category_attr_id", value: "PERSONAL" }
-          ]
-        }
-      }, null, 2),
-      newDescription: "Create a new todo item using the updated GraphQL schema with CreateNodeInput structure"
+        null,
+        2
+      ),
+      newDefaultVariables: JSON.stringify(
+        {
+          input: {
+            content: 'New Todo Item',
+            tableId: '58',
+            attributes: [
+              { attributeId: 'title_attr_id', value: 'New Todo Item' },
+              { attributeId: 'description_attr_id', value: 'Todo description' },
+              { attributeId: 'status_attr_id', value: 'TODO' },
+              { attributeId: 'priority_attr_id', value: 'MEDIUM' },
+              { attributeId: 'category_attr_id', value: 'PERSONAL' },
+            ],
+          },
+        },
+        null,
+        2
+      ),
+      newDescription:
+        'Create a new todo item using the updated GraphQL schema with CreateNodeInput structure',
     }
 
     // Template 816: update-todo
@@ -211,32 +219,41 @@ class ComplexTemplateRecreator {
     }
   }
 }`,
-      newVariablesSchema: JSON.stringify({
-        type: "object",
-        properties: {
-          id: {
-            type: "string",
-            description: "Todo node ID to update"
+      newVariablesSchema: JSON.stringify(
+        {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Todo node ID to update',
+            },
+            input: {
+              type: 'object',
+              properties: {
+                content: {
+                  type: 'string',
+                  description: 'Updated todo title/content',
+                },
+              },
+            },
           },
-          input: {
-            type: "object",
-            properties: {
-              content: {
-                type: "string",
-                description: "Updated todo title/content"
-              }
-            }
-          }
+          required: ['id', 'input'],
         },
-        required: ["id", "input"]
-      }, null, 2),
-      newDefaultVariables: JSON.stringify({
-        id: "todo_node_id",
-        input: {
-          content: "Updated Todo Item"
-        }
-      }, null, 2),
-      newDescription: "Update an existing todo item using the updated GraphQL schema with UpdateNodeInput structure"
+        null,
+        2
+      ),
+      newDefaultVariables: JSON.stringify(
+        {
+          id: 'todo_node_id',
+          input: {
+            content: 'Updated Todo Item',
+          },
+        },
+        null,
+        2
+      ),
+      newDescription:
+        'Update an existing todo item using the updated GraphQL schema with UpdateNodeInput structure',
     }
 
     updates.push(createTodoUpdate, updateTodoUpdate)
@@ -262,14 +279,18 @@ class ComplexTemplateRecreator {
         }
 
         // Test against GraphQL endpoint
-        const result = await this.testQueryExecution(update.newQuery, JSON.parse(update.newDefaultVariables))
+        const result = await this.testQueryExecution(
+          update.newQuery,
+          JSON.parse(update.newDefaultVariables)
+        )
 
         if (result.errors && result.errors.length > 0) {
-          console.warn(`     Warning: Query validation returned errors: ${result.errors.map(e => e.message).join(', ')}`)
+          console.warn(
+            `     Warning: Query validation returned errors: ${result.errors.map((e) => e.message).join(', ')}`
+          )
         } else {
           console.log(`     ✅ Query validated successfully`)
         }
-
       } catch (error) {
         console.error(`     ❌ Validation failed: ${error}`)
         throw error
@@ -288,8 +309,8 @@ class ComplexTemplateRecreator {
         },
         body: JSON.stringify({
           query,
-          variables
-        })
+          variables,
+        }),
       })
 
       if (!response.ok) {
@@ -321,7 +342,7 @@ class ComplexTemplateRecreator {
     const stmt = this.db.prepare(updateQuery)
 
     for (const update of updates) {
-      const backup = this.backups.find(b => b.id === update.id)
+      const backup = this.backups.find((b) => b.id === update.id)
       if (!backup) {
         throw new Error(`No backup found for template ${update.id}`)
       }
@@ -411,33 +432,6 @@ class ComplexTemplateRecreator {
     console.log('   Restore completed\n')
   }
 
-  private async generateReport(): Promise<void> {
-    console.log('📊 Generating recreation report...')
-
-    const report = {
-      timestamp: new Date().toISOString(),
-      operation: 'template-recreation',
-      targetTemplates: this.TARGET_TEMPLATES,
-      backupCount: this.backups.length,
-      success: true,
-      changes: this.backups.map(backup => ({
-        id: backup.id,
-        identifier: backup.identifier,
-        name: backup.name,
-        oldVersion: backup.version,
-        newVersion: `${backup.version.split('.').map((v, i) => i === 1 ? parseInt(v) + 1 : v).join('.')}`,
-        schemaChanges: [
-          'Updated to use CreateNodeInput/UpdateNodeInput structure',
-          'Modernized variable schema',
-          'Enhanced error handling structure'
-        ]
-      }))
-    }
-
-    await Bun.write('./reports/template-recreation-report.json', JSON.stringify(report, null, 2))
-    console.log('   Report saved to ./reports/template-recreation-report.json\n')
-  }
-
   async close(): Promise<void> {
     this.db.close()
   }
@@ -456,7 +450,6 @@ async function main() {
     const duration = Math.round(endTime - startTime)
 
     console.log(`🎉 Template recreation completed in ${duration}ms`)
-
   } catch (error) {
     console.error('❌ Template recreation failed:', error)
     process.exit(1)

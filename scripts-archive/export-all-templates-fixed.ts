@@ -64,9 +64,7 @@ async function main() {
     console.log(`✅ 총 ${allTemplates.length}개 템플릿 발견`)
 
     // 3. fixed 태그가 있는 템플릿만 필터링
-    const fixedTemplates = allTemplates.filter(
-      (template) => template.tags?.includes('fixed')
-    )
+    const fixedTemplates = allTemplates.filter((template) => template.tags?.includes('fixed'))
     console.log(`🎯 Fixed 카테고리 템플릿: ${fixedTemplates.length}개`)
 
     if (fixedTemplates.length === 0) {
@@ -314,7 +312,8 @@ ${successful
     const template = result.template!
     const category = getCategory(template)
     const description = template.description || '설명 없음'
-    const truncatedDesc = description.length > 50 ? description.substring(0, 50) + '...' : description
+    const truncatedDesc =
+      description.length > 50 ? `${description.substring(0, 50)}...` : description
     return `| \`${result.filename}\` | ${template.name} | ${truncatedDesc} | ${template.usageCount}회 | ${category} | ${template.operationType} |`
   })
   .join('\n')}

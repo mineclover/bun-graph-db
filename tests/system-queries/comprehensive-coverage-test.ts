@@ -1,19 +1,18 @@
 #!/usr/bin/env bun
+
 /**
  * Comprehensive Coverage Test Runner
  * API Queries가 SQL을 100% 활용할 수 있는지 검증하는 종합 테스트
  */
 
-import IntegratedTestFramework, { runIntegratedTests } from './integrated-test-framework'
-import { existsSync } from 'fs'
-import { join } from 'path'
+import IntegratedTestFramework from './integrated-test-framework'
 
 /**
  * 전체 시스템 API 커버리지 검증
  */
 async function validateSystemCoverage(): Promise<void> {
   console.log('🔍 Starting Comprehensive API Coverage Validation...')
-  console.log('=' .repeat(60))
+  console.log('='.repeat(60))
 
   const framework = new IntegratedTestFramework()
 
@@ -34,7 +33,7 @@ async function validateSystemCoverage(): Promise<void> {
     console.log('🧪 Step 2: Running integrated test suite...')
     const testResults = await framework.runCoverageTests()
 
-    const passedTests = testResults.filter(r => r.passed).length
+    const passedTests = testResults.filter((r) => r.passed).length
     const failedTests = testResults.length - passedTests
 
     console.log(`
@@ -47,7 +46,7 @@ async function validateSystemCoverage(): Promise<void> {
 
     // 3. 상세 테스트 결과 출력
     console.log('📋 Step 3: Detailed test results...')
-    testResults.forEach(result => {
+    testResults.forEach((result) => {
       const status = result.passed ? '✅ PASS' : '❌ FAIL'
       console.log(`${status} ${result.name} (${result.executionTime}ms)`)
       console.log(`    ${result.details}`)
@@ -64,9 +63,10 @@ async function validateSystemCoverage(): Promise<void> {
     console.log(roadmapReport)
 
     // 6. 성공/실패 평가
-    const overallSuccess = passedTests === testResults.length && coverageReport.coveragePercentage >= 80
+    const overallSuccess =
+      passedTests === testResults.length && coverageReport.coveragePercentage >= 80
 
-    console.log('\n' + '='.repeat(60))
+    console.log(`\n${'='.repeat(60)}`)
     console.log(`🎯 Overall Assessment: ${overallSuccess ? '✅ SUCCESS' : '⚠️  NEEDS IMPROVEMENT'}`)
 
     if (!overallSuccess) {
@@ -85,7 +85,6 @@ async function validateSystemCoverage(): Promise<void> {
 - Ready for production use
 `)
     }
-
   } catch (error) {
     console.error('❌ Coverage validation failed:', error)
     process.exit(1)
@@ -99,7 +98,7 @@ async function validateSystemCoverage(): Promise<void> {
  */
 async function validateEntityCoverage(): Promise<void> {
   console.log('\n🏗️  Entity-specific Coverage Analysis')
-  console.log('=' .repeat(40))
+  console.log('='.repeat(40))
 
   const entities = ['node', 'table', 'attribute', 'relation']
   const operations = ['create', 'read', 'update', 'delete']
@@ -108,16 +107,21 @@ async function validateEntityCoverage(): Promise<void> {
   const entityOperations = {
     node: ['createNode', 'nodes', 'updateNode', 'deleteNode'],
     table: ['createTable', 'tables', 'updateTable', 'deleteTable'],
-    attribute: ['setNodeAttribute', 'nodeAttributes', 'updateNodeAttributeValue', 'removeNodeAttribute'],
-    relation: ['createRelation', 'nodeRelations', 'updateRelation', 'deleteRelation']
+    attribute: [
+      'setNodeAttribute',
+      'nodeAttributes',
+      'updateNodeAttributeValue',
+      'removeNodeAttribute',
+    ],
+    relation: ['createRelation', 'nodeRelations', 'updateRelation', 'deleteRelation'],
   }
 
   for (const entity of entities) {
     console.log(`\n📦 ${entity.toUpperCase()} Entity Coverage:`)
     const entityOps = entityOperations[entity as keyof typeof entityOperations]
 
-    operations.forEach(operation => {
-      const hasOperation = entityOps.some(op => op.toLowerCase().includes(operation))
+    operations.forEach((operation) => {
+      const hasOperation = entityOps.some((op) => op.toLowerCase().includes(operation))
       const status = hasOperation ? '✅' : '❌'
       console.log(`  ${status} ${operation.toUpperCase()} operation`)
     })
@@ -132,13 +136,13 @@ async function validateEntityCoverage(): Promise<void> {
  */
 async function validatePerformanceRequirements(): Promise<void> {
   console.log('\n⚡ Performance Requirements Validation')
-  console.log('=' .repeat(40))
+  console.log('='.repeat(40))
 
   const performanceTargets = {
     'Simple CRUD Operations': { target: 50, unit: 'ms' },
     'Complex Search Queries': { target: 200, unit: 'ms' },
     'Graph Analysis Operations': { target: 500, unit: 'ms' },
-    'Bulk Operations': { target: 1000, unit: 'ms' }
+    'Bulk Operations': { target: 1000, unit: 'ms' },
   }
 
   for (const [operation, target] of Object.entries(performanceTargets)) {
@@ -147,7 +151,9 @@ async function validatePerformanceRequirements(): Promise<void> {
     const withinTarget = mockExecutionTime <= target.target
     const status = withinTarget ? '✅' : '⚠️ '
 
-    console.log(`${status} ${operation}: ${mockExecutionTime.toFixed(1)}${target.unit} (target: <${target.target}${target.unit})`)
+    console.log(
+      `${status} ${operation}: ${mockExecutionTime.toFixed(1)}${target.unit} (target: <${target.target}${target.unit})`
+    )
   }
 }
 
@@ -156,14 +162,14 @@ async function validatePerformanceRequirements(): Promise<void> {
  */
 async function validateDataConsistency(): Promise<void> {
   console.log('\n🔄 Data Consistency Validation')
-  console.log('=' .repeat(40))
+  console.log('='.repeat(40))
 
   const consistencyChecks = [
     'Node-Table relationships',
     'Attribute-Node associations',
     'Relation bidirectionality',
     'Foreign key constraints',
-    'Data type consistency'
+    'Data type consistency',
   ]
 
   for (const check of consistencyChecks) {
@@ -179,14 +185,14 @@ async function validateDataConsistency(): Promise<void> {
  */
 async function validateErrorHandling(): Promise<void> {
   console.log('\n🛡️  Error Handling Validation')
-  console.log('=' .repeat(40))
+  console.log('='.repeat(40))
 
   const errorScenarios = [
     'Invalid input validation',
     'Database connection errors',
     'Constraint violation handling',
     'Resource not found responses',
-    'Permission denied scenarios'
+    'Permission denied scenarios',
   ]
 
   for (const scenario of errorScenarios) {
@@ -226,8 +232,6 @@ async function main(): Promise<void> {
       case 'errors':
         await validateErrorHandling()
         break
-
-      case 'all':
       default:
         await validateSystemCoverage()
         await validateEntityCoverage()
@@ -238,7 +242,6 @@ async function main(): Promise<void> {
     }
 
     console.log('\n🎉 Comprehensive coverage validation completed!')
-
   } catch (error) {
     console.error('💥 Validation failed:', error)
     process.exit(1)

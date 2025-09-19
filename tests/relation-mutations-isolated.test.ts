@@ -3,7 +3,7 @@
  * Tests GraphQL relation mutations with isolated server setup
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { GraphQLTestServerManager } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'relation-mutations-isolated'
@@ -74,8 +74,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
         input: {
           identifier: uniqueId(),
           name: 'Depends On',
-          description: 'A dependency relationship between nodes'
-        }
+          description: 'A dependency relationship between nodes',
+        },
       }
 
       const result = await graphqlRequest(mutation, variables)
@@ -85,9 +85,13 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       expect(result.errors).toBeUndefined()
       expect(result.data.createRelationType.success).toBe(true)
       expect(result.data.createRelationType.relationType).toBeDefined()
-      expect(result.data.createRelationType.relationType.identifier).toBe(variables.input.identifier)
+      expect(result.data.createRelationType.relationType.identifier).toBe(
+        variables.input.identifier
+      )
       expect(result.data.createRelationType.relationType.name).toBe('Depends On')
-      expect(result.data.createRelationType.relationType.description).toBe('A dependency relationship between nodes')
+      expect(result.data.createRelationType.relationType.description).toBe(
+        'A dependency relationship between nodes'
+      )
       expect(result.data.createRelationType.relationType.id).toBeDefined()
       expect(result.data.createRelationType.errors).toEqual([])
     })
@@ -109,15 +113,17 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const variables = {
         input: {
           identifier: uniqueId(),
-          name: 'Related To'
-        }
+          name: 'Related To',
+        },
       }
 
       const result = await graphqlRequest(mutation, variables)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.createRelationType.success).toBe(true)
-      expect(result.data.createRelationType.relationType.identifier).toBe(variables.input.identifier)
+      expect(result.data.createRelationType.relationType.identifier).toBe(
+        variables.input.identifier
+      )
       expect(result.data.createRelationType.relationType.name).toBe('Related To')
     })
 
@@ -142,8 +148,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const result = await graphqlRequest(mutation, {
         input: {
           identifier: '',
-          name: 'Empty Identifier'
-        }
+          name: 'Empty Identifier',
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -175,8 +181,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-relations',
-          description: 'Test table for relation mutations'
-        }
+          description: 'Test table for relation mutations',
+        },
       })
 
       expect(tableResult.data.createTable.success).toBe(true)
@@ -194,8 +200,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const relationTypeResult = await graphqlRequest(createRelationTypeMutation, {
         input: {
           identifier: uniqueId(),
-          name: 'Test Relation'
-        }
+          name: 'Test Relation',
+        },
       })
 
       testRelationTypeId = relationTypeResult.data.createRelationType.relationType.id
@@ -212,8 +218,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const sourceNodeResult = await graphqlRequest(createSourceNodeMutation, {
         input: {
           content: 'Source node for relations',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       sourceNodeId = sourceNodeResult.data.createNode.node.id
@@ -222,13 +228,15 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const targetNodeResult = await graphqlRequest(createSourceNodeMutation, {
         input: {
           content: 'Target node for relations',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       targetNodeId = targetNodeResult.data.createNode.node.id
 
-      console.log(`✅ Created test data: table(${testTableId}), relationType(${testRelationTypeId}), sourceNode(${sourceNodeId}), targetNode(${targetNodeId})`)
+      console.log(
+        `✅ Created test data: table(${testTableId}), relationType(${testRelationTypeId}), sourceNode(${sourceNodeId}), targetNode(${targetNodeId})`
+      )
     })
 
     test('createRelation - Create basic node relation', async () => {
@@ -270,8 +278,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
           tableId: testTableId,
           sourceNodeId: sourceNodeId,
           targetNodeId: targetNodeId,
-          relationTypeId: testRelationTypeId
-        }
+          relationTypeId: testRelationTypeId,
+        },
       }
 
       const result = await graphqlRequest(mutation, variables)
@@ -307,8 +315,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
           tableId: testTableId,
           sourceNodeId: '999999',
           targetNodeId: targetNodeId,
-          relationTypeId: testRelationTypeId
-        }
+          relationTypeId: testRelationTypeId,
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -334,8 +342,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
           tableId: testTableId,
           sourceNodeId: sourceNodeId,
           targetNodeId: targetNodeId,
-          relationTypeId: '999999'
-        }
+          relationTypeId: '999999',
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -364,8 +372,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-deletion',
-          description: 'Test table for relation deletion'
-        }
+          description: 'Test table for relation deletion',
+        },
       })
 
       testTableId = tableResult.data.createTable.table.id
@@ -382,8 +390,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const relationTypeResult = await graphqlRequest(createRelationTypeMutation, {
         input: {
           identifier: uniqueId(),
-          name: 'Delete Test Relation'
-        }
+          name: 'Delete Test Relation',
+        },
       })
 
       testRelationTypeId = relationTypeResult.data.createRelationType.relationType.id
@@ -400,8 +408,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const sourceNodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Source node for deletion',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       sourceNodeId = sourceNodeResult.data.createNode.node.id
@@ -409,8 +417,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const targetNodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Target node for deletion',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       targetNodeId = targetNodeResult.data.createNode.node.id
@@ -429,8 +437,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
           tableId: testTableId,
           sourceNodeId: sourceNodeId,
           targetNodeId: targetNodeId,
-          relationTypeId: testRelationTypeId
-        }
+          relationTypeId: testRelationTypeId,
+        },
       })
 
       testRelationId = relationResult.data.createRelation.relation.id
@@ -449,7 +457,7 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       `
 
       const result = await graphqlRequest(mutation, {
-        id: testRelationId
+        id: testRelationId,
       })
 
       expect(result.errors).toBeUndefined()
@@ -483,7 +491,7 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       `
 
       const result = await graphqlRequest(mutation, {
-        id: '999999'
+        id: '999999',
       })
 
       expect(result.errors).toBeUndefined()
@@ -510,8 +518,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-querying',
-          description: 'Test table for relation querying'
-        }
+          description: 'Test table for relation querying',
+        },
       })
 
       testTableId = tableResult.data.createTable.table.id
@@ -528,8 +536,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const relationTypeResult = await graphqlRequest(createRelationTypeMutation, {
         input: {
           identifier: uniqueId(),
-          name: 'Query Test Relation'
-        }
+          name: 'Query Test Relation',
+        },
       })
 
       testRelationTypeId = relationTypeResult.data.createRelationType.relationType.id
@@ -546,15 +554,15 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const sourceNodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Source node for querying',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       const targetNodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Target node for querying',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       const createRelationMutation = `
@@ -570,8 +578,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
           tableId: testTableId,
           sourceNodeId: sourceNodeResult.data.createNode.node.id,
           targetNodeId: targetNodeResult.data.createNode.node.id,
-          relationTypeId: testRelationTypeId
-        }
+          relationTypeId: testRelationTypeId,
+        },
       })
 
       testRelationId = relationResult.data.createRelation.relation.id
@@ -632,8 +640,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const tableResult = await graphqlRequest(createTableMutation, {
         input: {
           identifier: 'test-table-for-performance',
-          description: 'Test table for performance testing'
-        }
+          description: 'Test table for performance testing',
+        },
       })
 
       testTableId = tableResult.data.createTable.table.id
@@ -650,8 +658,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const relationTypeResult = await graphqlRequest(createRelationTypeMutation, {
         input: {
           identifier: uniqueId(),
-          name: 'Performance Test Relation'
-        }
+          name: 'Performance Test Relation',
+        },
       })
 
       testRelationTypeId = relationTypeResult.data.createRelationType.relationType.id
@@ -668,15 +676,15 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       const sourceNodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Performance source node',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       const targetNodeResult = await graphqlRequest(createNodeMutation, {
         input: {
           content: 'Performance target node',
-          tableId: testTableId
-        }
+          tableId: testTableId,
+        },
       })
 
       _sourceNodeId = sourceNodeResult.data.createNode.node.id
@@ -700,16 +708,16 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
         const sourceResult = await graphqlRequest(createNodeMutation, {
           input: {
             content: `Performance source node ${i}`,
-            tableId: testTableId
-          }
+            tableId: testTableId,
+          },
         })
         sourceNodes.push(sourceResult.data.createNode.node.id)
 
         const targetResult = await graphqlRequest(createNodeMutation, {
           input: {
             content: `Performance target node ${i}`,
-            tableId: testTableId
-          }
+            tableId: testTableId,
+          },
         })
         targetNodes.push(targetResult.data.createNode.node.id)
       }
@@ -740,8 +748,8 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
               tableId: testTableId,
               sourceNodeId: sourceNodes[i], // Different source for each relation
               targetNodeId: targetNodes[i], // Different target for each relation
-              relationTypeId: testRelationTypeId
-            }
+              relationTypeId: testRelationTypeId,
+            },
           })
         )
       }
@@ -753,7 +761,10 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       results.forEach((result, index) => {
         console.log(`🔍 Bulk relation ${index} result:`, JSON.stringify(result, null, 2))
         if (result.data.createRelation.success === false) {
-          console.log(`❌ Bulk relation ${index} failed with errors:`, result.data.createRelation.errors)
+          console.log(
+            `❌ Bulk relation ${index} failed with errors:`,
+            result.data.createRelation.errors
+          )
         }
         expect(result.errors).toBeUndefined()
         expect(result.data.createRelation.success).toBe(true)

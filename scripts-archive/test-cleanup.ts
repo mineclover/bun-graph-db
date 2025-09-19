@@ -7,12 +7,12 @@
  * Used for manual cleanup and CI/CD pipeline maintenance
  */
 
-import { TestIsolationHelpers } from '../tests/fixtures/test-isolation-helpers'
-import { GraphQLTestServerManager } from '../tests/fixtures/test-graphql-server'
-import { TestDatabaseFactory } from '../tests/fixtures/test-database-factory'
-import { spawn } from 'bun'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import { spawn } from 'bun'
+import { TestDatabaseFactory } from '../tests/fixtures/test-database-factory'
+import { GraphQLTestServerManager } from '../tests/fixtures/test-graphql-server'
+import { TestIsolationHelpers } from '../tests/fixtures/test-isolation-helpers'
 
 interface CleanupOptions {
   force: boolean
@@ -34,7 +34,7 @@ class TestCleanupManager {
       includeTemp: true,
       includePorts: true,
       includeProcesses: true,
-      ...options
+      ...options,
     }
   }
 
@@ -106,7 +106,7 @@ class TestCleanupManager {
       '/tmp/bun-graph-db-tests',
       path.join(process.cwd(), 'temp-dbs'),
       path.join(process.cwd(), 'logs'),
-      '/var/tmp/bun-graph-db'
+      '/var/tmp/bun-graph-db',
     ]
 
     for (const dir of tempDirs) {
@@ -164,8 +164,7 @@ class TestCleanupManager {
             files.push(fullPath)
           }
           // Clean up old test files (older than 1 hour)
-          else if (entry.startsWith('test-') &&
-                   Date.now() - stat.mtime.getTime() > 3600000) {
+          else if (entry.startsWith('test-') && Date.now() - stat.mtime.getTime() > 3600000) {
             files.push(fullPath)
           }
         } else if (stat.isDirectory() && entry.startsWith('test-')) {
@@ -182,11 +181,7 @@ class TestCleanupManager {
   }
 
   private async cleanupProcesses(): Promise<void> {
-    const processPatterns = [
-      'bun.*test',
-      'node.*graphql',
-      'bun.*src/main.ts'
-    ]
+    const processPatterns = ['bun.*test', 'node.*graphql', 'bun.*src/main.ts']
 
     for (const pattern of processPatterns) {
       try {
@@ -204,7 +199,7 @@ class TestCleanupManager {
                 this.log(`  💀 Terminated process ${pid}`)
 
                 // Wait a bit then force kill if still running
-                await new Promise(resolve => setTimeout(resolve, 1000))
+                await new Promise((resolve) => setTimeout(resolve, 1000))
 
                 try {
                   process.kill(parseInt(pid, 10), 0) // Check if still running
@@ -290,7 +285,7 @@ async function main() {
     dryRun: args.includes('--dry-run') || args.includes('-n'),
     includeTemp: !args.includes('--no-temp'),
     includePorts: !args.includes('--no-ports'),
-    includeProcesses: !args.includes('--no-processes')
+    includeProcesses: !args.includes('--no-processes'),
   }
 
   if (args.includes('--help') || args.includes('-h')) {

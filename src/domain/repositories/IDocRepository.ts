@@ -1,4 +1,4 @@
-import type { DocId, TableId, PaginatedResult } from '@/core/types/CommonTypes.js'
+import type { DocId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { Doc, DocCategory } from '@/domain/entities/Doc.js'
 
 export interface DocSearchOptions {
@@ -42,7 +42,11 @@ export interface IDocRepository {
 
   // Versioning operations
   getLatestVersion(tableId: TableId, category: DocCategory): Promise<number>
-  deactivateOthersInCategory(tableId: TableId, category: DocCategory, exceptId?: DocId): Promise<void>
+  deactivateOthersInCategory(
+    tableId: TableId,
+    category: DocCategory,
+    exceptId?: DocId
+  ): Promise<void>
 
   // Business-specific queries
   exists(tableId: TableId, category: DocCategory, version: number): Promise<boolean>
@@ -50,7 +54,10 @@ export interface IDocRepository {
   countByCategory(category: DocCategory): Promise<number>
 
   // Content search operations
-  searchByContent(options: DocContentSearchOptions, pagination?: DocContentSearchPagination): Promise<PaginatedResult<Doc>>
+  searchByContent(
+    options: DocContentSearchOptions,
+    pagination?: DocContentSearchPagination
+  ): Promise<PaginatedResult<Doc>>
 
   // Batch operations for performance
   saveMany(docs: Doc[]): Promise<void>

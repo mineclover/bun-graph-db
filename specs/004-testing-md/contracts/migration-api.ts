@@ -16,7 +16,7 @@ export interface MigrationTarget {
 export interface TestContext {
   suiteName: string
   type: 'unit' | 'integration' | 'e2e'
-  databasePath: string  // File-based SQLite, NOT :memory:
+  databasePath: string // File-based SQLite, NOT :memory:
   serverPort: number | null
   seedDataEnabled: boolean
   mockingEnabled: boolean
@@ -110,7 +110,10 @@ export interface PerformanceMonitor {
   /**
    * Compare legacy vs migrated performance
    */
-  comparePerformance(legacy: PerformanceMetrics, migrated: PerformanceMetrics): PerformanceComparison
+  comparePerformance(
+    legacy: PerformanceMetrics,
+    migrated: PerformanceMetrics
+  ): PerformanceComparison
 
   /**
    * Detect performance anomalies

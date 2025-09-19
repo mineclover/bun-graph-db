@@ -34,7 +34,7 @@ export class TestIsolationHelpers {
         await database.cleanup()
         TestIsolationHelpers.contexts.delete(suiteName)
         console.log(`✅ Unit test cleanup completed: ${suiteName}`)
-      }
+      },
     }
 
     TestIsolationHelpers.contexts.set(suiteName, context)
@@ -70,7 +70,7 @@ export class TestIsolationHelpers {
         await GraphQLTestServerManager.stopServerForSuite(suiteName)
         TestIsolationHelpers.contexts.delete(suiteName)
         console.log(`✅ Integration test cleanup completed: ${suiteName}`)
-      }
+      },
     }
 
     TestIsolationHelpers.contexts.set(suiteName, context)
@@ -81,11 +81,14 @@ export class TestIsolationHelpers {
   /**
    * Setup E2E test environment with additional configuration
    */
-  static async setupE2ETest(suiteName: string, options?: {
-    seedData?: boolean
-    mockExternalServices?: boolean
-    enableLogging?: boolean
-  }): Promise<IsolatedTestContext> {
+  static async setupE2ETest(
+    suiteName: string,
+    options?: {
+      seedData?: boolean
+      mockExternalServices?: boolean
+      enableLogging?: boolean
+    }
+  ): Promise<IsolatedTestContext> {
     console.log(`🌐 Setting up E2E test environment: ${suiteName}`)
 
     const server = await GraphQLTestServerManager.startServerForSuite(suiteName)
@@ -115,7 +118,7 @@ export class TestIsolationHelpers {
         await GraphQLTestServerManager.stopServerForSuite(suiteName)
         TestIsolationHelpers.contexts.delete(suiteName)
         console.log(`✅ E2E test cleanup completed: ${suiteName}`)
-      }
+      },
     }
 
     TestIsolationHelpers.contexts.set(suiteName, context)
@@ -145,7 +148,9 @@ export class TestIsolationHelpers {
    */
   static async cleanupAll(): Promise<void> {
     console.log('🧹 Cleaning up all test environments...')
-    const cleanupPromises = Array.from(TestIsolationHelpers.contexts.values()).map(context => context.cleanup())
+    const cleanupPromises = Array.from(TestIsolationHelpers.contexts.values()).map((context) =>
+      context.cleanup()
+    )
     await Promise.all(cleanupPromises)
     console.log('✅ All test environments cleaned up')
   }
@@ -236,7 +241,7 @@ export class TestIsolationHelpers {
             avg: times.reduce((a, b) => a + b, 0) / times.length,
             min: Math.min(...times),
             max: Math.max(...times),
-            count: times.length
+            count: times.length,
           }
         }
 
@@ -248,9 +253,11 @@ export class TestIsolationHelpers {
         console.log(`📊 Performance stats for ${suiteName}:`)
 
         for (const [operation, stat] of Object.entries(stats)) {
-          console.log(`  ${operation}: avg=${stat.avg.toFixed(2)}ms, min=${stat.min.toFixed(2)}ms, max=${stat.max.toFixed(2)}ms (${stat.count} calls)`)
+          console.log(
+            `  ${operation}: avg=${stat.avg.toFixed(2)}ms, min=${stat.min.toFixed(2)}ms, max=${stat.max.toFixed(2)}ms (${stat.count} calls)`
+          )
         }
-      }
+      },
     }
   }
 
@@ -274,14 +281,16 @@ export class TestIsolationHelpers {
 
       assertDatabaseRecord: (db: any, table: string, conditions: Record<string, any>) => {
         const whereClause = Object.keys(conditions)
-          .map(key => `${key} = ?`)
+          .map((key) => `${key} = ?`)
           .join(' AND ')
 
         const values = Object.values(conditions)
         const record = db.prepare(`SELECT * FROM ${table} WHERE ${whereClause}`).get(...values)
 
         if (!record) {
-          throw new Error(`No record found in ${table} with conditions: ${JSON.stringify(conditions)}`)
+          throw new Error(
+            `No record found in ${table} with conditions: ${JSON.stringify(conditions)}`
+          )
         }
 
         return record
@@ -289,9 +298,11 @@ export class TestIsolationHelpers {
 
       assertPerformance: (actualMs: number, maxMs: number, operation: string) => {
         if (actualMs > maxMs) {
-          throw new Error(`Performance assertion failed: ${operation} took ${actualMs}ms, expected < ${maxMs}ms`)
+          throw new Error(
+            `Performance assertion failed: ${operation} took ${actualMs}ms, expected < ${maxMs}ms`
+          )
         }
-      }
+      },
     }
   }
 }

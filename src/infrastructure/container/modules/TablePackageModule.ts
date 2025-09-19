@@ -1,6 +1,6 @@
+import { TablePackageService } from '@/domain/services/TablePackageService.js'
 import type { DIContainer } from '../DIContainer.js'
 import { CommonTokens, RepositoryTokens } from '../tokens/index.js'
-import { TablePackageService } from '@/domain/services/TablePackageService.js'
 
 // Define tokens for table package services
 export const TablePackageTokens = {
@@ -15,15 +15,15 @@ export function registerTablePackageModule(container: DIContainer): void {
   container.registerSingleton(
     TablePackageTokens.TABLE_PACKAGE_SERVICE,
     async (c) => {
-      const tableRepo = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
-      const attributeRepo = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
-      const attributeTypeRepo = await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY) as any
-      const nodeRepo = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as any
-      const nodeAttributeRepo = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
-      const nodeRelationRepo = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as any
-      const relationTypeRepo = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as any
-      const queryTemplateRepo = await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY) as any
-      const logger = await c.resolve(CommonTokens.LOGGER) as any
+      const tableRepo = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
+      const attributeRepo = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
+      const attributeTypeRepo = (await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)) as any
+      const nodeRepo = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as any
+      const nodeAttributeRepo = (await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)) as any
+      const nodeRelationRepo = (await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)) as any
+      const relationTypeRepo = (await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)) as any
+      const queryTemplateRepo = (await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)) as any
+      const logger = (await c.resolve(CommonTokens.LOGGER)) as any
 
       return new TablePackageService(
         tableRepo,

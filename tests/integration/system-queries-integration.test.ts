@@ -3,8 +3,8 @@
  * Integration tests with isolated GraphQL server for system queries
  */
 
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
-import { TestIsolationHelpers, type IsolatedTestContext } from '../fixtures/test-isolation-helpers'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'system-queries-integration'
 let testContext: IsolatedTestContext
@@ -53,7 +53,9 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
       // Check for expected system query fields (these would be defined in your schema)
       const expectedFields = ['systemStats', 'memoryStats', 'healthCheck']
       const availableSystemFields = fieldNames.filter((name: string) =>
-        expectedFields.some(expected => name.includes(expected.toLowerCase()) || expected.includes(name))
+        expectedFields.some(
+          (expected) => name.includes(expected.toLowerCase()) || expected.includes(name)
+        )
       )
 
       // At least some system-related fields should exist
@@ -177,15 +179,13 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
       const startTime = performance.now()
 
       // Send 10 concurrent requests
-      const promises = Array.from({ length: 10 }, () =>
-        testContext.graphqlRequest!(query)
-      )
+      const promises = Array.from({ length: 10 }, () => testContext.graphqlRequest!(query))
 
       const results = await Promise.all(promises)
       const duration = performance.now() - startTime
 
       // All requests should succeed
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.data).toBeDefined()
         expect(result.data.__schema).toBeDefined()
       })
@@ -278,10 +278,12 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
     test('should have required system tables', async () => {
       const db = testContext.database!.database.getConnection()
 
-      const tables = db.prepare(`
+      const tables = db
+        .prepare(`
         SELECT name FROM sqlite_master
         WHERE type='table' AND name NOT LIKE 'sqlite_%'
-      `).all()
+      `)
+        .all()
 
       const tableNames = tables.map((table: any) => table.name)
 
@@ -294,10 +296,12 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
     test('should have required indexes', async () => {
       const db = testContext.database!.database.getConnection()
 
-      const indexes = db.prepare(`
+      const indexes = db
+        .prepare(`
         SELECT name FROM sqlite_master
         WHERE type='index' AND name NOT LIKE 'sqlite_%'
-      `).all()
+      `)
+        .all()
 
       const indexNames = indexes.map((index: any) => index.name)
 

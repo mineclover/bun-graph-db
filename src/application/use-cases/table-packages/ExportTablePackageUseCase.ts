@@ -1,9 +1,9 @@
-import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
   TablePackageExportOptions,
   TablePackageExportResult,
 } from '@/core/types/TablePackage.js'
+import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 
 export interface ExportTablePackageRequest {
   tableIdentifier: string
@@ -51,10 +51,7 @@ export class ExportTablePackageUseCase {
       }
 
       // Execute export
-      const result = await this.tablePackageService.exportTable(
-        request.tableIdentifier,
-        options
-      )
+      const result = await this.tablePackageService.exportTable(request.tableIdentifier, options)
 
       if (!result.success) {
         this.logger.warn('Table package export failed', {
@@ -117,9 +114,7 @@ export class ExportTablePackageUseCase {
     await fs.mkdir(dir, { recursive: true })
 
     // Write package to file
-    const content = prettyPrint
-      ? JSON.stringify(packageData, null, 2)
-      : JSON.stringify(packageData)
+    const content = prettyPrint ? JSON.stringify(packageData, null, 2) : JSON.stringify(packageData)
 
     await fs.writeFile(outputPath, content, 'utf8')
 

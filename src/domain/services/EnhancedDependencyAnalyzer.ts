@@ -1,14 +1,11 @@
-import type { ITableRepository } from '../repositories/ITableRepository.js'
-import type { IAttributeRepository } from '../repositories/IAttributeRepository.js'
-import type { INodeRepository } from '../repositories/INodeRepository.js'
-import type { INodeRelationRepository } from '../repositories/INodeRelationRepository.js'
-import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableDependencyInfo } from '@/core/types/TablePackage.js'
-import {
-  validateQuerySyntax,
-  extractFieldNames,
-} from '@/core/utils/GraphQLParser.js'
+import { extractFieldNames, validateQuerySyntax } from '@/core/utils/GraphQLParser.js'
+import type { IAttributeRepository } from '../repositories/IAttributeRepository.js'
+import type { INodeRelationRepository } from '../repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '../repositories/INodeRepository.js'
+import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
+import type { ITableRepository } from '../repositories/ITableRepository.js'
 
 /**
  * Enhanced dependency analyzer for table packages
@@ -81,7 +78,10 @@ export class EnhancedDependencyAnalyzer {
       const uniqueDependents = [...new Set(dependents)]
 
       // 5. Detect circular dependencies
-      const circularPaths = await this.detectCircularDependencies(tableIdentifier, uniqueDependencies)
+      const circularPaths = await this.detectCircularDependencies(
+        tableIdentifier,
+        uniqueDependencies
+      )
       circularReferences.push(...circularPaths)
 
       // 6. Calculate dependency depth
@@ -129,7 +129,7 @@ export class EnhancedDependencyAnalyzer {
     // Populate dependencies
     for (const identifier of tableIdentifiers) {
       const deps = await this.getDirectDependencies(identifier)
-      const filteredDeps = deps.filter(d => tableIdentifiers.includes(d))
+      const filteredDeps = deps.filter((d) => tableIdentifiers.includes(d))
       dependencies.set(identifier, filteredDeps)
 
       // Update in-degree
@@ -167,7 +167,7 @@ export class EnhancedDependencyAnalyzer {
 
     // Handle circular dependencies
     if (result.length < tableIdentifiers.length) {
-      const remaining = tableIdentifiers.filter(id => !result.includes(id))
+      const remaining = tableIdentifiers.filter((id) => !result.includes(id))
       this.logger.warn('Circular dependencies detected, adding remaining tables at end', {
         remaining,
       })
@@ -269,12 +269,15 @@ export class EnhancedDependencyAnalyzer {
 
     try {
       // Find templates that reference this table
-      const templates = await this.queryTemplateRepository.findByApplicableTable(tableIdentifier, true)
+      const templates = await this.queryTemplateRepository.findByApplicableTable(
+        tableIdentifier,
+        true
+      )
 
       for (const template of templates) {
         const queryText = template.getQueryText()
         const referencedTables = await this.extractTableReferencesFromGraphQL(queryText)
-        dependencies.push(...referencedTables.filter(t => t !== tableIdentifier))
+        dependencies.push(...referencedTables.filter((t) => t !== tableIdentifier))
       }
     } catch (error) {
       this.logger.warn('Failed to analyze template dependencies', { tableIdentifier, error })
@@ -453,5 +456,4 @@ export class EnhancedDependencyAnalyzer {
 
     return maxDepth
   }
-
 }

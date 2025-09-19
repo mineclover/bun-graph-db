@@ -1,8 +1,8 @@
-import { describe, test, expect, beforeEach } from 'bun:test'
-import { BatchImportTablePackagesUseCase } from '@/application/use-cases/table-packages/BatchImportTablePackagesUseCase.js'
-import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
+import { beforeEach, describe, expect, test } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { TablePackageFormat, ImportSession } from '@/core/types/TablePackage.js'
+import { BatchImportTablePackagesUseCase } from '@/application/use-cases/table-packages/BatchImportTablePackagesUseCase.js'
+import type { ImportSession, TablePackageFormat } from '@/core/types/TablePackage.js'
+import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 
 // Mock implementations for error handling tests
 class MockLogger implements ILogger {
@@ -22,7 +22,7 @@ class MockLogger implements ILogger {
   }
 
   getLogs(level?: string): Array<{ level: string; message: string; data?: any }> {
-    return level ? this.logs.filter(log => log.level === level) : this.logs
+    return level ? this.logs.filter((log) => log.level === level) : this.logs
   }
 
   clearLogs(): void {
@@ -103,7 +103,7 @@ class MockTablePackageService implements ITablePackageService {
       status: 'pending',
       startedAt: new Date(),
       packagesImported: [],
-      packagesRemaining: packages.map(p => p.sourceTable.identifier),
+      packagesRemaining: packages.map((p) => p.sourceTable.identifier),
       rollbackInfo: {
         tablesCreated: [],
         templatesCreated: [],
@@ -380,7 +380,7 @@ describe('TablePackageService Error Handling', () => {
         version: '1.0.0',
         exportedAt: new Date().toISOString(),
         sourceTable: {
-          identifier: '',  // Invalid empty identifier
+          identifier: '', // Invalid empty identifier
           description: null,
         },
         dependencies: [],
@@ -427,7 +427,7 @@ describe('TablePackageService Error Handling', () => {
       expect(infoLogs.length).toBeGreaterThan(0)
 
       // Check that we have logs for key operations
-      const hasExecutionLog = infoLogs.some(log =>
+      const hasExecutionLog = infoLogs.some((log) =>
         log.message.includes('Executing batch table package import')
       )
       expect(hasExecutionLog).toBe(true)

@@ -4,7 +4,7 @@
  */
 
 import { Database } from 'bun:sqlite'
-import { join } from 'path'
+import { join } from 'node:path'
 
 // =============================================================================
 // Core Framework Classes
@@ -70,7 +70,7 @@ export class IntegratedTestFramework {
 
   private extractSQLOperations(): void {
     // Extract SQL operations from repository files
-    const repositoryPatterns = [
+    const _repositoryPatterns = [
       'src/infrastructure/persistence/sqlite/**/*.ts',
       'src/services/**/*.ts',
     ]
@@ -78,10 +78,34 @@ export class IntegratedTestFramework {
     // This will be implemented to scan SQL operations
     this.sqlOperations = [
       // Example entries - actual implementation will extract from files
-      { query: 'INSERT INTO nodes', operation: 'INSERT', table: 'nodes', file: 'node-repository.ts', line: 45 },
-      { query: 'SELECT * FROM tables', operation: 'SELECT', table: 'tables', file: 'table-repository.ts', line: 23 },
-      { query: 'UPDATE attributes', operation: 'UPDATE', table: 'attributes', file: 'attribute-repository.ts', line: 67 },
-      { query: 'DELETE FROM relations', operation: 'DELETE', table: 'relations', file: 'relation-repository.ts', line: 89 },
+      {
+        query: 'INSERT INTO nodes',
+        operation: 'INSERT',
+        table: 'nodes',
+        file: 'node-repository.ts',
+        line: 45,
+      },
+      {
+        query: 'SELECT * FROM tables',
+        operation: 'SELECT',
+        table: 'tables',
+        file: 'table-repository.ts',
+        line: 23,
+      },
+      {
+        query: 'UPDATE attributes',
+        operation: 'UPDATE',
+        table: 'attributes',
+        file: 'attribute-repository.ts',
+        line: 67,
+      },
+      {
+        query: 'DELETE FROM relations',
+        operation: 'DELETE',
+        table: 'relations',
+        file: 'relation-repository.ts',
+        line: 89,
+      },
     ]
   }
 
@@ -99,35 +123,149 @@ export class IntegratedTestFramework {
       { name: 'deleteNode', type: 'mutation', entity: 'node', operation: 'delete', covered: true },
 
       // Table operations
-      { name: 'createTable', type: 'mutation', entity: 'table', operation: 'create', covered: true },
+      {
+        name: 'createTable',
+        type: 'mutation',
+        entity: 'table',
+        operation: 'create',
+        covered: true,
+      },
       { name: 'tables', type: 'query', entity: 'table', operation: 'read', covered: true },
-      { name: 'updateTable', type: 'mutation', entity: 'table', operation: 'update', covered: true },
-      { name: 'deleteTable', type: 'mutation', entity: 'table', operation: 'delete', covered: true },
+      {
+        name: 'updateTable',
+        type: 'mutation',
+        entity: 'table',
+        operation: 'update',
+        covered: true,
+      },
+      {
+        name: 'deleteTable',
+        type: 'mutation',
+        entity: 'table',
+        operation: 'delete',
+        covered: true,
+      },
 
       // Attribute operations
-      { name: 'setNodeAttribute', type: 'mutation', entity: 'attribute', operation: 'create', covered: true },
-      { name: 'nodeAttributes', type: 'query', entity: 'attribute', operation: 'read', covered: true },
-      { name: 'updateNodeAttributeValue', type: 'mutation', entity: 'attribute', operation: 'update', covered: true },
-      { name: 'removeNodeAttribute', type: 'mutation', entity: 'attribute', operation: 'delete', covered: true },
+      {
+        name: 'setNodeAttribute',
+        type: 'mutation',
+        entity: 'attribute',
+        operation: 'create',
+        covered: true,
+      },
+      {
+        name: 'nodeAttributes',
+        type: 'query',
+        entity: 'attribute',
+        operation: 'read',
+        covered: true,
+      },
+      {
+        name: 'updateNodeAttributeValue',
+        type: 'mutation',
+        entity: 'attribute',
+        operation: 'update',
+        covered: true,
+      },
+      {
+        name: 'removeNodeAttribute',
+        type: 'mutation',
+        entity: 'attribute',
+        operation: 'delete',
+        covered: true,
+      },
 
       // Relation operations
-      { name: 'createRelation', type: 'mutation', entity: 'relation', operation: 'create', covered: true },
-      { name: 'nodeRelations', type: 'query', entity: 'relation', operation: 'read', covered: true },
-      { name: 'updateRelation', type: 'mutation', entity: 'relation', operation: 'update', covered: true },
-      { name: 'deleteRelation', type: 'mutation', entity: 'relation', operation: 'delete', covered: true },
+      {
+        name: 'createRelation',
+        type: 'mutation',
+        entity: 'relation',
+        operation: 'create',
+        covered: true,
+      },
+      {
+        name: 'nodeRelations',
+        type: 'query',
+        entity: 'relation',
+        operation: 'read',
+        covered: true,
+      },
+      {
+        name: 'updateRelation',
+        type: 'mutation',
+        entity: 'relation',
+        operation: 'update',
+        covered: true,
+      },
+      {
+        name: 'deleteRelation',
+        type: 'mutation',
+        entity: 'relation',
+        operation: 'delete',
+        covered: true,
+      },
 
       // RelationType operations (관계 유형 관리)
-      { name: 'createRelationType', type: 'mutation', entity: 'relationType', operation: 'create', covered: true },
-      { name: 'relationTypes', type: 'query', entity: 'relationType', operation: 'read', covered: true },
-      { name: 'relationType', type: 'query', entity: 'relationType', operation: 'read', covered: true },
-      { name: 'updateRelationType', type: 'mutation', entity: 'relationType', operation: 'update', covered: true },
-      { name: 'deleteRelationType', type: 'mutation', entity: 'relationType', operation: 'delete', covered: true },
+      {
+        name: 'createRelationType',
+        type: 'mutation',
+        entity: 'relationType',
+        operation: 'create',
+        covered: true,
+      },
+      {
+        name: 'relationTypes',
+        type: 'query',
+        entity: 'relationType',
+        operation: 'read',
+        covered: true,
+      },
+      {
+        name: 'relationType',
+        type: 'query',
+        entity: 'relationType',
+        operation: 'read',
+        covered: true,
+      },
+      {
+        name: 'updateRelationType',
+        type: 'mutation',
+        entity: 'relationType',
+        operation: 'update',
+        covered: true,
+      },
+      {
+        name: 'deleteRelationType',
+        type: 'mutation',
+        entity: 'relationType',
+        operation: 'delete',
+        covered: true,
+      },
 
       // Search and analysis operations
       { name: 'searchNodes', type: 'query', entity: 'node', operation: 'search', covered: true },
-      { name: 'searchRelatedNodes', type: 'query', entity: 'relation', operation: 'search', covered: true },
-      { name: 'findPathsBetweenNodes', type: 'query', entity: 'relation', operation: 'analyze', covered: true },
-      { name: 'getDependencyChain', type: 'query', entity: 'relation', operation: 'analyze', covered: true },
+      {
+        name: 'searchRelatedNodes',
+        type: 'query',
+        entity: 'relation',
+        operation: 'search',
+        covered: true,
+      },
+      {
+        name: 'findPathsBetweenNodes',
+        type: 'query',
+        entity: 'relation',
+        operation: 'analyze',
+        covered: true,
+      },
+      {
+        name: 'getDependencyChain',
+        type: 'query',
+        entity: 'relation',
+        operation: 'analyze',
+        covered: true,
+      },
     ]
   }
 
@@ -140,10 +278,10 @@ export class IntegratedTestFramework {
    */
   public analyzeCoverage(): CoverageReport {
     const totalOperations = this.apiOperations.length
-    const coveredOperations = this.apiOperations.filter(op => op.covered).length
+    const coveredOperations = this.apiOperations.filter((op) => op.covered).length
     const uncoveredOperations = this.apiOperations
-      .filter(op => !op.covered)
-      .map(op => `${op.type}.${op.name} (${op.entity}.${op.operation})`)
+      .filter((op) => !op.covered)
+      .map((op) => `${op.type}.${op.name} (${op.entity}.${op.operation})`)
 
     const coveragePercentage = (coveredOperations / totalOperations) * 100
 
@@ -154,7 +292,7 @@ export class IntegratedTestFramework {
       coveredOperations,
       uncoveredOperations,
       coveragePercentage,
-      recommendations
+      recommendations,
     }
   }
 
@@ -166,9 +304,9 @@ export class IntegratedTestFramework {
     const operations = ['create', 'read', 'update', 'delete']
 
     for (const entity of entities) {
-      const entityOps = this.apiOperations.filter(op => op.entity === entity)
+      const entityOps = this.apiOperations.filter((op) => op.entity === entity)
       for (const operation of operations) {
-        const hasOperation = entityOps.some(op => op.operation === operation && op.covered)
+        const hasOperation = entityOps.some((op) => op.operation === operation && op.covered)
         if (!hasOperation) {
           recommendations.push(`Add ${operation} operation for ${entity} entity`)
         }
@@ -176,11 +314,12 @@ export class IntegratedTestFramework {
     }
 
     // Analyze SQL-API gaps
-    const sqlTables = [...new Set(this.sqlOperations.map(op => op.table))]
-    const apiEntities = [...new Set(this.apiOperations.map(op => op.entity))]
+    const sqlTables = [...new Set(this.sqlOperations.map((op) => op.table))]
+    const apiEntities = [...new Set(this.apiOperations.map((op) => op.entity))]
 
     for (const table of sqlTables) {
-      if (!apiEntities.includes(table.replace(/s$/, ''))) { // Remove plural 's'
+      if (!apiEntities.includes(table.replace(/s$/, ''))) {
+        // Remove plural 's'
         recommendations.push(`Add GraphQL operations for ${table} table`)
       }
     }
@@ -215,7 +354,7 @@ export class IntegratedTestFramework {
           name: test.name || 'Unknown Test',
           passed: false,
           details: `Test failed: ${error}`,
-          executionTime: 0
+          executionTime: 0,
         })
       }
     }
@@ -234,7 +373,7 @@ export class IntegratedTestFramework {
     for (const entity of entities) {
       for (const operation of operations) {
         const hasOperation = this.apiOperations.some(
-          op => op.entity === entity && op.operation === operation && op.covered
+          (op) => op.entity === entity && op.operation === operation && op.covered
         )
         if (!hasOperation) {
           missingOperations.push(`${entity}.${operation}`)
@@ -252,7 +391,7 @@ export class IntegratedTestFramework {
         ? 'All entities have complete CRUD operations'
         : `Missing operations: ${missingOperations.join(', ')}`,
       executionTime,
-      coverage: this.analyzeCoverage()
+      coverage: this.analyzeCoverage(),
     }
   }
 
@@ -263,16 +402,18 @@ export class IntegratedTestFramework {
     const unmappedSQL: string[] = []
 
     for (const sqlOp of this.sqlOperations) {
-      const hasAPIMapping = this.apiOperations.some(apiOp => {
+      const hasAPIMapping = this.apiOperations.some((apiOp) => {
         const operationMap = {
-          'INSERT': 'create',
-          'SELECT': 'read',
-          'UPDATE': 'update',
-          'DELETE': 'delete'
+          INSERT: 'create',
+          SELECT: 'read',
+          UPDATE: 'update',
+          DELETE: 'delete',
         }
-        return apiOp.operation === operationMap[sqlOp.operation] &&
-               apiOp.entity === sqlOp.table.replace(/s$/, '') &&
-               apiOp.covered
+        return (
+          apiOp.operation === operationMap[sqlOp.operation] &&
+          apiOp.entity === sqlOp.table.replace(/s$/, '') &&
+          apiOp.covered
+        )
       })
 
       if (!hasAPIMapping) {
@@ -289,7 +430,7 @@ export class IntegratedTestFramework {
       details: passed
         ? 'All SQL operations have corresponding API operations'
         : `Unmapped SQL operations: ${unmappedSQL.join(', ')}`,
-      executionTime
+      executionTime,
     }
   }
 
@@ -301,7 +442,7 @@ export class IntegratedTestFramework {
 
     // Example: Test that complex queries have appropriate performance
     const complexOperations = this.apiOperations.filter(
-      op => op.operation === 'search' || op.operation === 'analyze'
+      (op) => op.operation === 'search' || op.operation === 'analyze'
     )
 
     // Simulate performance testing
@@ -320,7 +461,7 @@ export class IntegratedTestFramework {
       details: passed
         ? 'All operations meet performance requirements'
         : `Performance issues: ${performanceIssues.join(', ')}`,
-      executionTime
+      executionTime,
     }
   }
 
@@ -331,7 +472,7 @@ export class IntegratedTestFramework {
     const errorHandlingIssues: string[] = []
 
     // Check that all operations return proper error structures
-    const uncoveredOperations = this.apiOperations.filter(op => !op.covered)
+    const uncoveredOperations = this.apiOperations.filter((op) => !op.covered)
 
     for (const op of uncoveredOperations) {
       errorHandlingIssues.push(`${op.name} needs error handling implementation`)
@@ -346,7 +487,7 @@ export class IntegratedTestFramework {
       details: passed
         ? 'All operations have proper error handling'
         : `Error handling issues: ${errorHandlingIssues.join(', ')}`,
-      executionTime
+      executionTime,
     }
   }
 
@@ -359,7 +500,9 @@ export class IntegratedTestFramework {
 
     try {
       // Example: Test that creating and reading maintains consistency
-      const nodeCount = this.db.query('SELECT COUNT(*) as count FROM nodes').get() as { count: number }
+      const nodeCount = this.db.query('SELECT COUNT(*) as count FROM nodes').get() as {
+        count: number
+      }
 
       if (nodeCount.count < 0) {
         passed = false
@@ -376,7 +519,7 @@ export class IntegratedTestFramework {
       name: 'Data Consistency Test',
       passed,
       details,
-      executionTime
+      executionTime,
     }
   }
 
@@ -389,7 +532,7 @@ export class IntegratedTestFramework {
    */
   public generateComprehensiveReport(): string {
     const coverage = this.analyzeCoverage()
-    const passedTests = this.testResults.filter(r => r.passed).length
+    const passedTests = this.testResults.filter((r) => r.passed).length
     const totalTests = this.testResults.length
     const testSuccessRate = totalTests > 0 ? (passedTests / totalTests) * 100 : 0
 
@@ -407,17 +550,21 @@ export class IntegratedTestFramework {
 - Success Rate: ${testSuccessRate.toFixed(1)}%
 
 ❌ Uncovered Operations:
-${coverage.uncoveredOperations.map(op => `  - ${op}`).join('\n')}
+${coverage.uncoveredOperations.map((op) => `  - ${op}`).join('\n')}
 
 💡 Recommendations:
-${coverage.recommendations.map(rec => `  - ${rec}`).join('\n')}
+${coverage.recommendations.map((rec) => `  - ${rec}`).join('\n')}
 
 🧪 Detailed Test Results:
-${this.testResults.map(result => `
+${this.testResults
+  .map(
+    (result) => `
   ✅ ${result.name}: ${result.passed ? 'PASSED' : 'FAILED'}
      Details: ${result.details}
      Execution Time: ${result.executionTime}ms
-`).join('')}
+`
+  )
+  .join('')}
 
 🎯 Next Steps for 100% Coverage:
 1. Implement missing API operations
@@ -443,28 +590,32 @@ ${this.testResults.map(result => `
       {
         name: 'Phase 1: Critical CRUD Operations',
         priority: 'HIGH',
-        operations: coverage.uncoveredOperations.filter(op =>
-          op.includes('create') || op.includes('update') || op.includes('delete')
+        operations: coverage.uncoveredOperations.filter(
+          (op) => op.includes('create') || op.includes('update') || op.includes('delete')
         ),
-        targetCoverage: 85
+        targetCoverage: 85,
       },
       {
         name: 'Phase 2: Search and Analysis Features',
         priority: 'MEDIUM',
-        operations: coverage.uncoveredOperations.filter(op =>
-          op.includes('search') || op.includes('analyze')
+        operations: coverage.uncoveredOperations.filter(
+          (op) => op.includes('search') || op.includes('analyze')
         ),
-        targetCoverage: 95
+        targetCoverage: 95,
       },
       {
         name: 'Phase 3: Performance and Edge Cases',
         priority: 'LOW',
-        operations: coverage.uncoveredOperations.filter(op =>
-          !op.includes('create') && !op.includes('update') && !op.includes('delete') &&
-          !op.includes('search') && !op.includes('analyze')
+        operations: coverage.uncoveredOperations.filter(
+          (op) =>
+            !op.includes('create') &&
+            !op.includes('update') &&
+            !op.includes('delete') &&
+            !op.includes('search') &&
+            !op.includes('analyze')
         ),
-        targetCoverage: 100
-      }
+        targetCoverage: 100,
+      },
     ]
 
     return `
@@ -474,16 +625,25 @@ ${this.testResults.map(result => `
 Current Coverage: ${coverage.coveragePercentage.toFixed(1)}%
 Target: 100% API-SQL Coverage
 
-${phases.map((phase, index) => `
+${phases
+  .map(
+    (phase, _index) => `
 📋 ${phase.name}
    Priority: ${phase.priority}
    Target Coverage: ${phase.targetCoverage}%
    Operations to Implement:
-   ${phase.operations.map(op => `     - ${op}`).join('\n')}
+   ${phase.operations.map((op) => `     - ${op}`).join('\n')}
 
-   Estimated Timeline: ${phase.priority === 'HIGH' ? '1-2 weeks' :
-                        phase.priority === 'MEDIUM' ? '2-3 weeks' : '1-2 weeks'}
-`).join('')}
+   Estimated Timeline: ${
+     phase.priority === 'HIGH'
+       ? '1-2 weeks'
+       : phase.priority === 'MEDIUM'
+         ? '2-3 weeks'
+         : '1-2 weeks'
+   }
+`
+  )
+  .join('')}
 
 🎯 Implementation Strategy:
 1. Focus on high-priority CRUD operations first
@@ -531,7 +691,6 @@ export async function runIntegratedTests(): Promise<void> {
 
     console.log(comprehensiveReport)
     console.log(roadmapReport)
-
   } finally {
     framework.cleanup()
   }

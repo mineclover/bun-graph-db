@@ -10,16 +10,11 @@
  * - Automatic field mapping discovery
  */
 
-import {
-  introspectionFromSchema,
-  validateSchema,
-  parse,
-  validate
-} from 'graphql'
-import type { GraphQLSchema, IntrospectionQuery, GraphQLError } from 'graphql'
+import type { GraphQLError, GraphQLSchema, IntrospectionQuery } from 'graphql'
+import { introspectionFromSchema, parse, validate, validateSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
+import { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
 
 export interface SchemaAnalysisResult {
   isValid: boolean
@@ -114,7 +109,7 @@ export class SchemaIntrospectionService {
   async getCurrentSchema(): Promise<GraphQLSchema> {
     const now = Date.now()
 
-    if (this.cachedSchema && (now - this.cacheTimestamp) < this.CACHE_TTL) {
+    if (this.cachedSchema && now - this.cacheTimestamp < this.CACHE_TTL) {
       return this.cachedSchema
     }
 
@@ -125,13 +120,15 @@ export class SchemaIntrospectionService {
 
       this.logger.info('Schema loaded and cached', {
         timestamp: new Date(now).toISOString(),
-        cacheValid: true
+        cacheValid: true,
       })
 
       return this.cachedSchema
     } catch (error) {
       this.logger.error('Failed to load current schema', { error })
-      throw new Error(`Schema loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      throw new Error(
+        `Schema loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
     }
   }
 
@@ -141,18 +138,23 @@ export class SchemaIntrospectionService {
   async analyzeSchema(): Promise<SchemaAnalysisResult> {
     try {
       const schema = await this.getCurrentSchema()
-      const introspection = introspectionFromSchema(schema)
+
+      let introspection = this.cachedIntrospection
+      if (!introspection) {
+        introspection = introspectionFromSchema(schema)
+        this.cachedIntrospection = introspection
+      }
       const validationErrors = validateSchema(schema)
 
       const result: SchemaAnalysisResult = {
         isValid: validationErrors.length === 0,
         schema,
         introspection,
-        errors: validationErrors.map(error => error.message),
+        errors: validationErrors.map((error) => error.message),
         types: this.extractTypeInfo(introspection),
         queries: this.extractOperationInfo(introspection, 'Query'),
         mutations: this.extractOperationInfo(introspection, 'Mutation'),
-        subscriptions: this.extractOperationInfo(introspection, 'Subscription')
+        subscriptions: this.extractOperationInfo(introspection, 'Subscription'),
       }
 
       this.logger.info('Schema analysis completed', {
@@ -161,7 +163,7 @@ export class SchemaIntrospectionService {
         queriesCount: result.queries.length,
         mutationsCount: result.mutations.length,
         subscriptionsCount: result.subscriptions.length,
-        errorsCount: result.errors.length
+        errorsCount: result.errors.length,
       })
 
       return result
@@ -174,7 +176,10 @@ export class SchemaIntrospectionService {
   /**
    * Validate template query against current schema
    */
-  async validateTemplateQuery(query: string, _variables?: Record<string, any>): Promise<TemplateValidationResult> {
+  async validateTemplateQuery(
+    query: string,
+    _variables?: Record<string, any>
+  ): Promise<TemplateValidationResult> {
     try {
       const schema = await this.getCurrentSchema()
 
@@ -202,7 +207,7 @@ export class SchemaIntrospectionService {
         usedFields,
         missingFields: [], // Would be populated from schema comparison
         complexity,
-        suggestions: this.generateQuerySuggestions(document, schema, [...validationErrors])
+        suggestions: this.generateQuerySuggestions(document, schema, [...validationErrors]),
       }
 
       this.logger.info('Template query validated', {
@@ -210,7 +215,7 @@ export class SchemaIntrospectionService {
         operationType: result.operationType,
         usedFieldsCount: result.usedFields.length,
         complexity: result.complexity,
-        errorsCount: result.errors.length
+        errorsCount: result.errors.length,
       })
 
       return result
@@ -231,20 +236,20 @@ export class SchemaIntrospectionService {
       const currentIntrospection = introspectionFromSchema(currentSchema)
 
       const changes = this.compareSchemas(previousIntrospection, currentIntrospection)
-      const breakingChanges = changes.filter(change => change.isBreaking)
+      const breakingChanges = changes.filter((change) => change.isBreaking)
 
       const result: SchemaCompatibilityResult = {
         isCompatible: breakingChanges.length === 0,
         version: '1.0.0', // This would come from schema versioning
         changes,
         breakingChanges,
-        recommendations: this.generateCompatibilityRecommendations(changes)
+        recommendations: this.generateCompatibilityRecommendations(changes),
       }
 
       this.logger.info('Schema compatibility checked', {
         isCompatible: result.isCompatible,
         changesCount: result.changes.length,
-        breakingChangesCount: result.breakingChanges.length
+        breakingChangesCount: result.breakingChanges.length,
       })
 
       return result
@@ -268,41 +273,44 @@ export class SchemaIntrospectionService {
       const analysis = await this.analyzeSchema()
 
       // Find table-related types and operations
-      const tableTypes = analysis.types.filter(type =>
-        type.name.toLowerCase().includes(tableIdentifier.toLowerCase()) ||
-        tableIdentifier.toLowerCase().includes(type.name.toLowerCase())
+      const tableTypes = analysis.types.filter(
+        (type) =>
+          type.name.toLowerCase().includes(tableIdentifier.toLowerCase()) ||
+          tableIdentifier.toLowerCase().includes(type.name.toLowerCase())
       )
 
-      const tableQueries = analysis.queries.filter(query =>
+      const tableQueries = analysis.queries.filter((query) =>
         query.name.toLowerCase().includes(tableIdentifier.toLowerCase())
       )
 
-      const tableMutations = analysis.mutations.filter(mutation =>
+      const tableMutations = analysis.mutations.filter((mutation) =>
         mutation.name.toLowerCase().includes(tableIdentifier.toLowerCase())
       )
 
-      const tableSubscriptions = analysis.subscriptions.filter(subscription =>
+      const tableSubscriptions = analysis.subscriptions.filter((subscription) =>
         subscription.name.toLowerCase().includes(tableIdentifier.toLowerCase())
       )
 
-      const basicQueries = tableQueries.map(query => this.generateQueryTemplate(query))
-      const mutations = tableMutations.map(mutation => this.generateMutationTemplate(mutation))
-      const subscriptions = tableSubscriptions.map(subscription => this.generateSubscriptionTemplate(subscription))
-      const fragments = tableTypes.map(type => this.generateFragmentTemplate(type))
+      const basicQueries = tableQueries.map((query) => this.generateQueryTemplate(query))
+      const mutations = tableMutations.map((mutation) => this.generateMutationTemplate(mutation))
+      const subscriptions = tableSubscriptions.map((subscription) =>
+        this.generateSubscriptionTemplate(subscription)
+      )
+      const fragments = tableTypes.map((type) => this.generateFragmentTemplate(type))
 
       this.logger.info('Template suggestions generated', {
         tableIdentifier,
         basicQueriesCount: basicQueries.length,
         mutationsCount: mutations.length,
         subscriptionsCount: subscriptions.length,
-        fragmentsCount: fragments.length
+        fragmentsCount: fragments.length,
       })
 
       return {
         basicQueries,
         mutations,
         subscriptions,
-        fragments
+        fragments,
       }
     } catch (error) {
       this.logger.error('Template generation failed', { tableIdentifier, error })
@@ -326,8 +334,8 @@ export class SchemaIntrospectionService {
     const types = introspection.__schema.types || []
 
     return types
-      .filter(type => !type.name.startsWith('__')) // Exclude introspection types
-      .map(type => ({
+      .filter((type) => !type.name.startsWith('__')) // Exclude introspection types
+      .map((type) => ({
         name: type.name,
         kind: type.kind,
         description: type.description || undefined,
@@ -342,38 +350,45 @@ export class SchemaIntrospectionService {
             type: this.getTypeString(arg.type),
             description: arg.description || undefined,
             defaultValue: arg.defaultValue,
-            isRequired: arg.type.kind === 'NON_NULL'
-          }))
+            isRequired: arg.type.kind === 'NON_NULL',
+          })),
         })),
         interfaces: (type as any).interfaces?.map((iface: any) => iface.name),
-        possibleTypes: (type as any).possibleTypes?.map((pt: any) => pt.name)
+        possibleTypes: (type as any).possibleTypes?.map((pt: any) => pt.name),
       }))
   }
 
-  private extractOperationInfo(introspection: IntrospectionQuery, operationType: string): SchemaOperationInfo[] {
-    const operationTypeObj = operationType === 'Query' ? introspection.__schema.queryType :
-                            operationType === 'Mutation' ? introspection.__schema.mutationType :
-                            introspection.__schema.subscriptionType
+  private extractOperationInfo(
+    introspection: IntrospectionQuery,
+    operationType: string
+  ): SchemaOperationInfo[] {
+    const operationTypeObj =
+      operationType === 'Query'
+        ? introspection.__schema.queryType
+        : operationType === 'Mutation'
+          ? introspection.__schema.mutationType
+          : introspection.__schema.subscriptionType
 
     if (!operationTypeObj) return []
 
-    const type = introspection.__schema.types.find(t => t.name === operationTypeObj.name)
+    const type = introspection.__schema.types.find((t) => t.name === operationTypeObj.name)
     if (!type || !(type as any).fields) return []
 
     return (type as any).fields.map((field: any) => ({
       name: field.name,
       type: this.getTypeString(field.type),
       description: field.description || undefined,
-      args: field.args?.map((arg: any) => ({
-        name: arg.name,
-        type: this.getTypeString(arg.type),
-        description: arg.description || undefined,
-        defaultValue: arg.defaultValue,
-        isRequired: arg.type.kind === 'NON_NULL'
-      })) || [],
+      args:
+        field.args?.map((arg: any) => ({
+          name: arg.name,
+          type: this.getTypeString(arg.type),
+          description: arg.description || undefined,
+          defaultValue: arg.defaultValue,
+          isRequired: arg.type.kind === 'NON_NULL',
+        })) || [],
       returnType: this.getTypeString(field.type),
       isArray: this.isArrayType(field.type),
-      complexity: this.estimateFieldComplexity(field)
+      complexity: this.estimateFieldComplexity(field),
     }))
   }
 
@@ -407,7 +422,11 @@ export class SchemaIntrospectionService {
     return 1
   }
 
-  private generateQuerySuggestions(_document: any, _schema: GraphQLSchema, errors: GraphQLError[]): string[] {
+  private generateQuerySuggestions(
+    _document: any,
+    _schema: GraphQLSchema,
+    errors: GraphQLError[]
+  ): string[] {
     const suggestions: string[] = []
 
     for (const error of errors) {
@@ -422,12 +441,15 @@ export class SchemaIntrospectionService {
     return suggestions
   }
 
-  private compareSchemas(previous: IntrospectionQuery, current: IntrospectionQuery): SchemaChange[] {
+  private compareSchemas(
+    previous: IntrospectionQuery,
+    current: IntrospectionQuery
+  ): SchemaChange[] {
     const changes: SchemaChange[] = []
 
     // Compare types
-    const prevTypes = new Map((previous.__schema.types || []).map(t => [t.name, t]))
-    const currTypes = new Map((current.__schema.types || []).map(t => [t.name, t]))
+    const prevTypes = new Map((previous.__schema.types || []).map((t) => [t.name, t]))
+    const currTypes = new Map((current.__schema.types || []).map((t) => [t.name, t]))
 
     // Find added types
     for (const [name, type] of currTypes) {
@@ -438,7 +460,7 @@ export class SchemaIntrospectionService {
           path: `types.${name}`,
           newValue: type,
           isBreaking: false,
-          description: `Added type: ${name}`
+          description: `Added type: ${name}`,
         })
       }
     }
@@ -452,7 +474,7 @@ export class SchemaIntrospectionService {
           path: `types.${name}`,
           oldValue: type,
           isBreaking: true,
-          description: `Removed type: ${name}`
+          description: `Removed type: ${name}`,
         })
       }
     }
@@ -463,15 +485,17 @@ export class SchemaIntrospectionService {
   private generateCompatibilityRecommendations(changes: SchemaChange[]): string[] {
     const recommendations: string[] = []
 
-    const breakingChanges = changes.filter(c => c.isBreaking)
+    const breakingChanges = changes.filter((c) => c.isBreaking)
     if (breakingChanges.length > 0) {
       recommendations.push('Breaking changes detected. Consider versioning your API.')
       recommendations.push('Review all templates that might use removed or modified fields.')
     }
 
-    const addedTypes = changes.filter(c => c.type === 'ADD' && c.category === 'TYPE')
+    const addedTypes = changes.filter((c) => c.type === 'ADD' && c.category === 'TYPE')
     if (addedTypes.length > 0) {
-      recommendations.push('New types available. Consider creating templates for new functionality.')
+      recommendations.push(
+        'New types available. Consider creating templates for new functionality.'
+      )
     }
 
     return recommendations
@@ -494,9 +518,10 @@ export class SchemaIntrospectionService {
   }
 
   private generateQueryTemplate(operation: SchemaOperationInfo): string {
-    const args = operation.args.length > 0
-      ? `(${operation.args.map(arg => `${arg.name}: $${arg.name}`).join(', ')})`
-      : ''
+    const args =
+      operation.args.length > 0
+        ? `(${operation.args.map((arg) => `${arg.name}: $${arg.name}`).join(', ')})`
+        : ''
 
     return `query ${operation.name}${args} {
   ${operation.name}${args} {
@@ -507,9 +532,10 @@ export class SchemaIntrospectionService {
   }
 
   private generateMutationTemplate(operation: SchemaOperationInfo): string {
-    const args = operation.args.length > 0
-      ? `(${operation.args.map(arg => `${arg.name}: $${arg.name}`).join(', ')})`
-      : ''
+    const args =
+      operation.args.length > 0
+        ? `(${operation.args.map((arg) => `${arg.name}: $${arg.name}`).join(', ')})`
+        : ''
 
     return `mutation ${operation.name}${args} {
   ${operation.name}${args} {
@@ -520,9 +546,10 @@ export class SchemaIntrospectionService {
   }
 
   private generateSubscriptionTemplate(operation: SchemaOperationInfo): string {
-    const args = operation.args.length > 0
-      ? `(${operation.args.map(arg => `${arg.name}: $${arg.name}`).join(', ')})`
-      : ''
+    const args =
+      operation.args.length > 0
+        ? `(${operation.args.map((arg) => `${arg.name}: $${arg.name}`).join(', ')})`
+        : ''
 
     return `subscription ${operation.name}${args} {
   ${operation.name}${args} {
@@ -533,7 +560,11 @@ export class SchemaIntrospectionService {
   }
 
   private generateFragmentTemplate(type: SchemaTypeInfo): string {
-    const fields = type.fields?.slice(0, 5).map(field => `  ${field.name}`).join('\n') || '  id'
+    const fields =
+      type.fields
+        ?.slice(0, 5)
+        .map((field) => `  ${field.name}`)
+        .join('\n') || '  id'
 
     return `fragment ${type.name}Fragment on ${type.name} {
 ${fields}

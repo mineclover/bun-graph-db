@@ -11,27 +11,27 @@ export class NodeAttributeAnalyticsService {
    * Utilizes: node_attributes, attributes, attribute_types, nodes tables
    */
   async getNodeAttributeAnalytics(params: {
-    tableId?: string;
-    attributeIdentifier?: string;
-    filter?: any;
+    tableId?: string
+    attributeIdentifier?: string
+    filter?: any
   }) {
-    const { tableId, attributeIdentifier } = params;
+    const { tableId, attributeIdentifier } = params
 
     // Build dynamic WHERE clause
-    const conditions = [];
-    const bindings: any[] = [];
+    const conditions = []
+    const bindings: any[] = []
 
     if (tableId) {
-      conditions.push('n.table_id = ?');
-      bindings.push(tableId);
+      conditions.push('n.table_id = ?')
+      bindings.push(tableId)
     }
 
     if (attributeIdentifier) {
-      conditions.push('a.identifier = ?');
-      bindings.push(attributeIdentifier);
+      conditions.push('a.identifier = ?')
+      bindings.push(attributeIdentifier)
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
     // Main analytics query - utilizing all normalized tables
     const analyticsQuery = `
@@ -44,7 +44,7 @@ export class NodeAttributeAnalyticsService {
       LEFT JOIN attributes a ON na.attribute_id = a.id
       LEFT JOIN attribute_types at ON a.attribute_type_id = at.id
       ${whereClause}
-    `;
+    `
 
     // Attribute statistics - leveraging attribute_types for validation
     const attributeStatsQuery = `
@@ -63,7 +63,7 @@ export class NodeAttributeAnalyticsService {
       ${whereClause.replace('n.table_id', 'a.table_id')}
       GROUP BY a.id, a.identifier, at.json_type
       ORDER BY completeness_rate DESC
-    `;
+    `
 
     // Type distribution - utilizing attribute_types table
     const typeDistributionQuery = `
@@ -84,14 +84,14 @@ export class NodeAttributeAnalyticsService {
       GROUP BY at.id, at.identifier, at.json_type
       HAVING usage_count > 0
       ORDER BY usage_count DESC
-    `;
+    `
 
     try {
       const [analytics, attributeStats, typeDistribution] = await Promise.all([
         this.db.get(analyticsQuery, bindings),
         this.db.all(attributeStatsQuery, bindings),
-        this.db.all(typeDistributionQuery)
-      ]);
+        this.db.all(typeDistributionQuery),
+      ])
 
       return {
         totalNodes: analytics?.total_nodes || 0,
@@ -104,19 +104,19 @@ export class NodeAttributeAnalyticsService {
           uniqueValues: stat.unique_values,
           nullValues: stat.null_values,
           completenessRate: stat.completeness_rate,
-          dataType: stat.data_type
+          dataType: stat.data_type,
         })),
         typeDistribution: typeDistribution.map((type: any) => ({
           typeId: type.type_id,
           identifier: type.identifier,
           jsonType: type.json_type,
           usageCount: type.usage_count,
-          averageValuesPerNode: type.average_values_per_node || 0
-        }))
-      };
+          averageValuesPerNode: type.average_values_per_node || 0,
+        })),
+      }
     } catch (error) {
-      console.error('Error in getNodeAttributeAnalytics:', error);
-      throw error;
+      console.error('Error in getNodeAttributeAnalytics:', error)
+      throw error
     }
   }
 
@@ -139,20 +139,20 @@ export class NodeAttributeAnalyticsService {
       GROUP BY na.value
       ORDER BY count DESC
       LIMIT 20
-    `;
+    `
 
     try {
-      const results = await this.db.all(baseQuery, [attributeId, attributeId]);
+      const results = await this.db.all(baseQuery, [attributeId, attributeId])
 
       return results.map((row: any) => ({
         value: row.value,
         count: row.count,
         percentage: row.percentage,
-        nodes: [] // TODO: Implement node loading if needed
-      }));
+        nodes: [], // TODO: Implement node loading if needed
+      }))
     } catch (error) {
-      console.error('Error in getAttributeValueDistribution:', error);
-      throw error;
+      console.error('Error in getAttributeValueDistribution:', error)
+      throw error
     }
   }
 
@@ -162,74 +162,74 @@ export class NodeAttributeAnalyticsService {
    */
   async searchNodesByAttribute(filter: any, pagination?: any) {
     // Build dynamic query based on attribute filters
-    const { attributeFilters, logicalOperator = 'AND', tableIds } = filter;
+    const { attributeFilters, logicalOperator = 'AND', tableIds } = filter
 
     let query = `
       SELECT DISTINCT n.id, n.content, n.table_id, n.created_at
       FROM nodes n
-    `;
+    `
 
-    const joins: string[] = [];
-    const conditions: string[] = [];
-    const bindings: any[] = [];
+    const joins: string[] = []
+    const conditions: string[] = []
+    const bindings: any[] = []
 
     // Add joins and conditions for each attribute filter
     attributeFilters.forEach((attrFilter: any, index: number) => {
-      const alias = `na${index}`;
-      const attrAlias = `a${index}`;
+      const alias = `na${index}`
+      const attrAlias = `a${index}`
 
       joins.push(`
         JOIN node_attributes ${alias} ON n.id = ${alias}.node_id
         JOIN attributes ${attrAlias} ON ${alias}.attribute_id = ${attrAlias}.id
-      `);
+      `)
 
-      conditions.push(`${attrAlias}.identifier = ?`);
-      bindings.push(attrFilter.attributeIdentifier);
+      conditions.push(`${attrAlias}.identifier = ?`)
+      bindings.push(attrFilter.attributeIdentifier)
 
       // Add value condition based on operator
       switch (attrFilter.operator) {
         case 'EQUALS':
-          conditions.push(`${alias}.value = ?`);
-          bindings.push(attrFilter.value);
-          break;
+          conditions.push(`${alias}.value = ?`)
+          bindings.push(attrFilter.value)
+          break
         case 'CONTAINS':
-          conditions.push(`${alias}.value LIKE ?`);
-          bindings.push(`%${attrFilter.value}%`);
-          break;
+          conditions.push(`${alias}.value LIKE ?`)
+          bindings.push(`%${attrFilter.value}%`)
+          break
         case 'GREATER_THAN':
-          conditions.push(`CAST(${alias}.value AS REAL) > ?`);
-          bindings.push(parseFloat(attrFilter.value));
-          break;
+          conditions.push(`CAST(${alias}.value AS REAL) > ?`)
+          bindings.push(parseFloat(attrFilter.value))
+          break
         // Add more operators as needed
       }
-    });
+    })
 
     if (tableIds?.length) {
-      conditions.push(`n.table_id IN (${tableIds.map(() => '?').join(', ')})`);
-      bindings.push(...tableIds);
+      conditions.push(`n.table_id IN (${tableIds.map(() => '?').join(', ')})`)
+      bindings.push(...tableIds)
     }
 
-    query += joins.join(' ');
+    query += joins.join(' ')
 
     if (conditions.length > 0) {
-      query += ` WHERE ${conditions.join(` ${logicalOperator} `)}`;
+      query += ` WHERE ${conditions.join(` ${logicalOperator} `)}`
     }
 
     // Add pagination
     if (pagination) {
-      query += ` LIMIT ? OFFSET ?`;
-      bindings.push(pagination.limit || 10, pagination.offset || 0);
+      query += ` LIMIT ? OFFSET ?`
+      bindings.push(pagination.limit || 10, pagination.offset || 0)
     }
 
     try {
-      const results = await this.db.all(query, bindings);
+      const results = await this.db.all(query, bindings)
       return {
         nodes: results,
-        totalCount: results.length // TODO: Implement proper count query
-      };
+        totalCount: results.length, // TODO: Implement proper count query
+      }
     } catch (error) {
-      console.error('Error in searchNodesByAttribute:', error);
-      throw error;
+      console.error('Error in searchNodesByAttribute:', error)
+      throw error
     }
   }
 
@@ -243,7 +243,7 @@ export class NodeAttributeAnalyticsService {
       SELECT COUNT(*) as total_nodes
       FROM nodes
       WHERE table_id = ?
-    `;
+    `
 
     // Get attributes completeness
     const completenessQuery = `
@@ -268,17 +268,17 @@ export class NodeAttributeAnalyticsService {
       WHERE a.table_id = ?
       GROUP BY a.id, a.identifier, a.is_required
       ORDER BY a.is_required DESC, completeness_rate DESC
-    `;
+    `
 
     try {
       const [nodesResult, completenessResults] = await Promise.all([
         this.db.get(nodesQuery, [tableId]),
-        this.db.all(completenessQuery, [tableId])
-      ]);
+        this.db.all(completenessQuery, [tableId]),
+      ])
 
-      const totalNodes = nodesResult?.total_nodes || 0;
-      const requiredAttributes = completenessResults.filter((attr: any) => attr.is_required);
-      const optionalAttributes = completenessResults.filter((attr: any) => !attr.is_required);
+      const totalNodes = nodesResult?.total_nodes || 0
+      const requiredAttributes = completenessResults.filter((attr: any) => attr.is_required)
+      const optionalAttributes = completenessResults.filter((attr: any) => !attr.is_required)
 
       // Calculate complete nodes (nodes with all required attributes)
       const completeNodesQuery = `
@@ -297,10 +297,10 @@ export class NodeAttributeAnalyticsService {
             AND na.attribute_id = a.id
           )
         )
-      `;
+      `
 
-      const completeNodesResult = await this.db.get(completeNodesQuery, [tableId]);
-      const completeNodes = completeNodesResult?.complete_nodes || 0;
+      const completeNodesResult = await this.db.get(completeNodesQuery, [tableId])
+      const completeNodes = completeNodesResult?.complete_nodes || 0
 
       return {
         tableId,
@@ -316,12 +316,12 @@ export class NodeAttributeAnalyticsService {
           isRequired: Boolean(attr.is_required),
           filledCount: attr.filled_count,
           emptyCount: attr.empty_count,
-          completenessRate: attr.completeness_rate
-        }))
-      };
+          completenessRate: attr.completeness_rate,
+        })),
+      }
     } catch (error) {
-      console.error('Error in getAttributeCompleteness:', error);
-      throw error;
+      console.error('Error in getAttributeCompleteness:', error)
+      throw error
     }
   }
 }

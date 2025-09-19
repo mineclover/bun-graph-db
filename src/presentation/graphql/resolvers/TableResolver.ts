@@ -1,4 +1,4 @@
-import { fromEntity as tableFromEntity, type TableDto } from '@/application/dtos/TableDto.js'
+import { type TableDto, fromEntity as tableFromEntity } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import type { TableId } from '@/core/types/CommonTypes.js'

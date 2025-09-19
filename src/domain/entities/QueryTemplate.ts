@@ -1,7 +1,7 @@
 import {
+  calculateComplexityScore,
   extractOperationInfo,
   extractSystemQueries,
-  calculateComplexityScore,
 } from '@/core/utils/GraphQLParser.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
@@ -89,8 +89,7 @@ export class QueryTemplate {
     // Extract operation info from GraphQL query text
     const operationInfo = extractOperationInfo(queryText)
     const systemQueries = extractSystemQueries(queryText)
-    const autoComplexity =
-      options?.complexityScore || calculateComplexityScore(queryText)
+    const autoComplexity = options?.complexityScore || calculateComplexityScore(queryText)
 
     return new QueryTemplate(
       null,

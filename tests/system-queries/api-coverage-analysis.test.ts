@@ -5,12 +5,12 @@
  * for all SQL operations in the system
  */
 
-import { describe, it, expect, beforeAll } from 'bun:test'
-import { introspectionFromSchema, buildSchema, parse } from 'graphql'
-import type { IntrospectionQuery, IntrospectionObjectType, IntrospectionField } from 'graphql'
-import { readFileSync, readdirSync } from 'fs'
-import { join } from 'path'
+import { beforeAll, describe, expect, it } from 'bun:test'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { glob } from 'glob'
+import type { IntrospectionField, IntrospectionObjectType, IntrospectionQuery } from 'graphql'
+import { buildSchema, introspectionFromSchema } from 'graphql'
 
 interface SQLOperation {
   file: string
@@ -62,10 +62,13 @@ describe('API Coverage Analysis', () => {
   it('should identify all SQL operations in repository files', async () => {
     console.log('\n=== SQL Operations Found ===')
 
-    const operationsByType = sqlOperations.reduce((acc, op) => {
-      acc[op.operation] = (acc[op.operation] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const operationsByType = sqlOperations.reduce(
+      (acc, op) => {
+        acc[op.operation] = (acc[op.operation] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>
+    )
 
     console.log('Operations by type:', operationsByType)
     console.log('Total SQL operations:', sqlOperations.length)
@@ -78,10 +81,13 @@ describe('API Coverage Analysis', () => {
   it('should identify all API operations in GraphQL schema', () => {
     console.log('\n=== API Operations Found ===')
 
-    const operationsByType = apiOperations.reduce((acc, op) => {
-      acc[op.type] = (acc[op.type] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
+    const operationsByType = apiOperations.reduce(
+      (acc, op) => {
+        acc[op.type] = (acc[op.type] || 0) + 1
+        return acc
+      },
+      {} as Record<string, number>
+    )
 
     console.log('Operations by type:', operationsByType)
     console.log('Total API operations:', apiOperations.length)
@@ -103,14 +109,16 @@ describe('API Coverage Analysis', () => {
 
     if (analysis.uncoveredOperations.length > 0) {
       console.log('\n--- Uncovered SQL Operations ---')
-      analysis.uncoveredOperations.forEach(op => {
+      analysis.uncoveredOperations.forEach((op) => {
         console.log(`${op.operation} in ${op.file}${op.table ? ` (table: ${op.table})` : ''}`)
       })
     }
 
     if (analysis.recommendations.length > 0) {
       console.log('\n--- Recommendations ---')
-      analysis.recommendations.forEach(rec => console.log(`- ${rec}`))
+      for (const rec of analysis.recommendations) {
+        console.log(`- ${rec}`)
+      }
     }
 
     // Coverage should be reasonable (>= 70%)
@@ -121,25 +129,28 @@ describe('API Coverage Analysis', () => {
     const entities = ['Table', 'Node', 'Attribute', 'Relation', 'Template']
     const missingOperations: Record<string, string[]> = {}
 
-    entities.forEach(entity => {
+    entities.forEach((entity) => {
       const missing: string[] = []
 
       // Check for basic CRUD operations
-      const hasCreate = apiOperations.some(op =>
-        op.type === 'Mutation' && op.name.toLowerCase().includes(`create${entity.toLowerCase()}`)
+      const hasCreate = apiOperations.some(
+        (op) =>
+          op.type === 'Mutation' && op.name.toLowerCase().includes(`create${entity.toLowerCase()}`)
       )
-      const hasRead = apiOperations.some(op =>
-        op.type === 'Query' && (
-          op.name.toLowerCase().includes(entity.toLowerCase()) ||
-          op.name.toLowerCase().includes(`get${entity.toLowerCase()}`) ||
-          op.name.toLowerCase().includes(`search${entity.toLowerCase()}`)
-        )
+      const hasRead = apiOperations.some(
+        (op) =>
+          op.type === 'Query' &&
+          (op.name.toLowerCase().includes(entity.toLowerCase()) ||
+            op.name.toLowerCase().includes(`get${entity.toLowerCase()}`) ||
+            op.name.toLowerCase().includes(`search${entity.toLowerCase()}`))
       )
-      const hasUpdate = apiOperations.some(op =>
-        op.type === 'Mutation' && op.name.toLowerCase().includes(`update${entity.toLowerCase()}`)
+      const hasUpdate = apiOperations.some(
+        (op) =>
+          op.type === 'Mutation' && op.name.toLowerCase().includes(`update${entity.toLowerCase()}`)
       )
-      const hasDelete = apiOperations.some(op =>
-        op.type === 'Mutation' && op.name.toLowerCase().includes(`delete${entity.toLowerCase()}`)
+      const hasDelete = apiOperations.some(
+        (op) =>
+          op.type === 'Mutation' && op.name.toLowerCase().includes(`delete${entity.toLowerCase()}`)
       )
 
       if (!hasCreate) missing.push('CREATE')
@@ -162,25 +173,21 @@ describe('API Coverage Analysis', () => {
   })
 
   it('should validate template execution coverage', () => {
-    const templateOperations = apiOperations.filter(op =>
-      op.name.toLowerCase().includes('template') ||
-      op.name.toLowerCase().includes('execute')
+    const templateOperations = apiOperations.filter(
+      (op) =>
+        op.name.toLowerCase().includes('template') || op.name.toLowerCase().includes('execute')
     )
 
     console.log('\n=== Template Execution Operations ===')
-    templateOperations.forEach(op => {
+    templateOperations.forEach((op) => {
       console.log(`${op.type}: ${op.name} -> ${op.returnType}`)
     })
 
     // Should have template execution capabilities
-    const hasExecuteTemplate = templateOperations.some(op =>
-      op.name.includes('executeTemplate')
-    )
-    const hasCreateTemplate = templateOperations.some(op =>
-      op.name.includes('createTemplate')
-    )
-    const hasSearchTemplates = templateOperations.some(op =>
-      op.name.includes('searchTemplate') || op.name.includes('getTemplate')
+    const hasExecuteTemplate = templateOperations.some((op) => op.name.includes('executeTemplate'))
+    const hasCreateTemplate = templateOperations.some((op) => op.name.includes('createTemplate'))
+    const hasSearchTemplates = templateOperations.some(
+      (op) => op.name.includes('searchTemplate') || op.name.includes('getTemplate')
     )
 
     expect(hasExecuteTemplate).toBe(true)
@@ -210,10 +217,7 @@ async function extractSQLOperations(): Promise<SQLOperation[]> {
 
         // Try to extract table name
         let table: string | undefined
-        const tablePatterns = [
-          /(?:FROM|INTO|UPDATE|TABLE)\s+`?(\w+)`?/i,
-          /(?:JOIN)\s+`?(\w+)`?/i
-        ]
+        const tablePatterns = [/(?:FROM|INTO|UPDATE|TABLE)\s+`?(\w+)`?/i, /(?:JOIN)\s+`?(\w+)`?/i]
 
         for (const pattern of tablePatterns) {
           const tableMatch = pattern.exec(trimmed)
@@ -224,11 +228,11 @@ async function extractSQLOperations(): Promise<SQLOperation[]> {
         }
 
         operations.push({
-          file: file.replace(process.cwd() + '/', ''),
+          file: file.replace(`${process.cwd()}/`, ''),
           operation,
           table,
           line: index + 1,
-          description: trimmed.substring(0, 100)
+          description: trimmed.substring(0, 100),
         })
       }
     })
@@ -242,16 +246,18 @@ function extractAPIOperations(introspection: IntrospectionQuery): APIOperation[]
 
   const types = ['Query', 'Mutation', 'Subscription']
 
-  types.forEach(typeName => {
-    const type = introspection.__schema.types.find(t => t.name === typeName) as IntrospectionObjectType
-    if (type && type.fields) {
+  types.forEach((typeName) => {
+    const type = introspection.__schema.types.find(
+      (t) => t.name === typeName
+    ) as IntrospectionObjectType
+    if (type?.fields) {
       type.fields.forEach((field: IntrospectionField) => {
         operations.push({
           name: field.name,
           type: typeName as 'Query' | 'Mutation' | 'Subscription',
           description: field.description || undefined,
           returnType: getTypeString(field.type),
-          args: field.args?.map(arg => `${arg.name}: ${getTypeString(arg.type)}`) || []
+          args: field.args?.map((arg) => `${arg.name}: ${getTypeString(arg.type)}`) || [],
         })
       })
     }
@@ -276,7 +282,7 @@ function analyzeCoverage(sqlOps: SQLOperation[], apiOps: APIOperation[]): Covera
   const recommendations: string[] = []
 
   // Analyze SQL to API mapping
-  sqlOps.forEach(sqlOp => {
+  sqlOps.forEach((sqlOp) => {
     const isCovered = checkOperationCoverage(sqlOp, apiOps)
     if (isCovered) {
       covered.push(sqlOp)
@@ -292,10 +298,12 @@ function analyzeCoverage(sqlOps: SQLOperation[], apiOps: APIOperation[]): Covera
     recommendations.push('Coverage is below 80% - consider adding more API operations')
   }
 
-  const uncoveredByTable = groupBy(uncovered, op => op.table || 'unknown')
+  const uncoveredByTable = groupBy(uncovered, (op) => op.table || 'unknown')
   Object.entries(uncoveredByTable).forEach(([table, ops]) => {
     if (ops.length > 2) {
-      recommendations.push(`Table '${table}' has ${ops.length} uncovered operations - consider adding comprehensive API for this entity`)
+      recommendations.push(
+        `Table '${table}' has ${ops.length} uncovered operations - consider adding comprehensive API for this entity`
+      )
     }
   })
 
@@ -306,7 +314,7 @@ function analyzeCoverage(sqlOps: SQLOperation[], apiOps: APIOperation[]): Covera
     uncoveredOperations: uncovered,
     redundantOperations: [], // TODO: implement redundancy detection
     coveragePercentage,
-    recommendations
+    recommendations,
   }
 }
 
@@ -320,26 +328,31 @@ function checkOperationCoverage(sqlOp: SQLOperation, apiOps: APIOperation[]): bo
     UPDATE: ['Mutation'],
     DELETE: ['Mutation'],
     CREATE: ['Mutation'],
-    DROP: ['Mutation']
+    DROP: ['Mutation'],
   }
 
   const expectedTypes = operationMapping[operation] || []
 
   // Check if there's a corresponding API operation
-  return apiOps.some(apiOp => {
+  return apiOps.some((apiOp) => {
     if (!expectedTypes.includes(apiOp.type)) return false
 
     // Check for table/entity name match
     if (table) {
       const entityNames = [
         table.toLowerCase(),
-        table.replace(/s$/, '').toLowerCase(), // remove plural
-        table.replace(/_/g, '').toLowerCase()  // remove underscores
+        table
+          .replace(/s$/, '')
+          .toLowerCase(), // remove plural
+        table
+          .replace(/_/g, '')
+          .toLowerCase(), // remove underscores
       ]
 
-      return entityNames.some(entityName =>
-        apiOp.name.toLowerCase().includes(entityName) ||
-        apiOp.returnType.toLowerCase().includes(entityName)
+      return entityNames.some(
+        (entityName) =>
+          apiOp.name.toLowerCase().includes(entityName) ||
+          apiOp.returnType.toLowerCase().includes(entityName)
       )
     }
 
@@ -351,12 +364,15 @@ function groupBy<T, K extends string | number | symbol>(
   array: T[],
   keyFn: (item: T) => K
 ): Record<K, T[]> {
-  return array.reduce((groups, item) => {
-    const key = keyFn(item)
-    if (!groups[key]) {
-      groups[key] = []
-    }
-    groups[key].push(item)
-    return groups
-  }, {} as Record<K, T[]>)
+  return array.reduce(
+    (groups, item) => {
+      const key = keyFn(item)
+      if (!groups[key]) {
+        groups[key] = []
+      }
+      groups[key].push(item)
+      return groups
+    },
+    {} as Record<K, T[]>
+  )
 }

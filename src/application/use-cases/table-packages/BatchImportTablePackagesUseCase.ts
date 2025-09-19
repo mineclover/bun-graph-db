@@ -1,11 +1,11 @@
-import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
+  ImportSession,
   TablePackageFormat,
   TablePackageImportOptions,
   TablePackageImportResult,
-  ImportSession,
 } from '@/core/types/TablePackage.js'
+import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 
 export interface BatchImportRequest {
   packages: TablePackageFormat[]
@@ -71,7 +71,7 @@ export class BatchImportTablePackagesUseCase {
 
       try {
         // Resolve import order based on dependencies
-        const tableIdentifiers = request.packages.map(p => p.sourceTable.identifier)
+        const tableIdentifiers = request.packages.map((p) => p.sourceTable.identifier)
         const importOrder = await this.tablePackageService.resolveImportOrder(tableIdentifiers)
 
         this.logger.info('Resolved import order', {
@@ -86,7 +86,7 @@ export class BatchImportTablePackagesUseCase {
         let skipped = 0
 
         for (const identifier of importOrder) {
-          const packageData = request.packages.find(p => p.sourceTable.identifier === identifier)
+          const packageData = request.packages.find((p) => p.sourceTable.identifier === identifier)
           if (!packageData) {
             this.logger.warn('Package not found for identifier', { identifier })
             continue
@@ -109,14 +109,16 @@ export class BatchImportTablePackagesUseCase {
               // Update session if exists
               if (session) {
                 session.packagesImported.push(identifier)
-                session.packagesRemaining = session.packagesRemaining.filter(id => id !== identifier)
+                session.packagesRemaining = session.packagesRemaining.filter(
+                  (id) => id !== identifier
+                )
 
                 if (result.importedTable?.id) {
                   session.rollbackInfo.tablesCreated.push(result.importedTable.id)
                 }
                 if (result.generatedTemplates) {
                   session.rollbackInfo.templatesCreated.push(
-                    ...result.generatedTemplates.map(t => t.id).filter(Boolean)
+                    ...result.generatedTemplates.map((t) => t.id).filter(Boolean)
                   )
                 }
               }
@@ -133,7 +135,10 @@ export class BatchImportTablePackagesUseCase {
               }
 
               // Decide whether to continue or stop based on conflict resolution strategy
-              if (options.conflictResolution === 'skip' && result.errors.some(e => e.includes('already exists'))) {
+              if (
+                options.conflictResolution === 'skip' &&
+                result.errors.some((e) => e.includes('already exists'))
+              ) {
                 skipped++
                 this.logger.info('Skipping remaining packages due to conflicts')
                 break
@@ -210,7 +215,12 @@ export class BatchImportTablePackagesUseCase {
       return {
         success: false,
         results: [],
-        summary: { total: request.packages.length, succeeded: 0, failed: request.packages.length, skipped: 0 },
+        summary: {
+          total: request.packages.length,
+          succeeded: 0,
+          failed: request.packages.length,
+          skipped: 0,
+        },
         error: error instanceof Error ? error.message : 'Unknown error occurred',
       }
     }

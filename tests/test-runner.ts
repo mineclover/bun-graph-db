@@ -29,7 +29,7 @@ const testSuites: TestSuite[] = [
     category: 'unit',
     isolation: 'none',
     parallel: true,
-    timeout: 5000
+    timeout: 5000,
   },
   {
     name: 'Template Creation',
@@ -38,7 +38,7 @@ const testSuites: TestSuite[] = [
     category: 'unit',
     isolation: 'database',
     parallel: true,
-    timeout: 5000
+    timeout: 5000,
   },
   {
     name: 'System Queries Isolated',
@@ -47,7 +47,7 @@ const testSuites: TestSuite[] = [
     category: 'unit',
     isolation: 'database',
     parallel: true,
-    timeout: 10000
+    timeout: 10000,
   },
 
   // Integration Tests (Database + Server)
@@ -58,7 +58,7 @@ const testSuites: TestSuite[] = [
     category: 'integration',
     isolation: 'server',
     parallel: true,
-    timeout: 30000
+    timeout: 30000,
   },
 
   // Legacy Tests (Require migration)
@@ -69,7 +69,7 @@ const testSuites: TestSuite[] = [
     category: 'integration',
     isolation: 'none',
     parallel: false,
-    timeout: 30000
+    timeout: 30000,
   },
 
   // Migrated tests (now re-enabled)
@@ -80,7 +80,7 @@ const testSuites: TestSuite[] = [
     category: 'integration',
     isolation: 'database',
     parallel: true,
-    timeout: 15000
+    timeout: 15000,
   },
   {
     name: 'Performance Tracking',
@@ -89,8 +89,8 @@ const testSuites: TestSuite[] = [
     category: 'integration',
     isolation: 'database',
     parallel: true,
-    timeout: 15000
-  }
+    timeout: 15000,
+  },
 ]
 
 interface TestResult {
@@ -177,12 +177,10 @@ class TestRunner {
 
     const startTime = Date.now()
 
-    if (parallel && suitesToRun.every(suite => suite.parallel)) {
+    if (parallel && suitesToRun.every((suite) => suite.parallel)) {
       // Run parallel suites concurrently
       console.log('🔀 Running tests in parallel...')
-      const parallelResults = await Promise.all(
-        suitesToRun.map(suite => this.runSuite(suite))
-      )
+      const parallelResults = await Promise.all(suitesToRun.map((suite) => this.runSuite(suite)))
       this.results.push(...parallelResults)
     } else {
       // Run sequentially (default or mixed parallel/sequential)
@@ -213,16 +211,19 @@ class TestRunner {
     console.log(`📈 Success Rate: ${Math.round((passed.length / this.results.length) * 100)}%`)
 
     // Isolation strategy breakdown
-    const isolationStats = this.results.reduce((acc, result) => {
-      const isolation = result.suite.isolation
-      if (!acc[isolation]) acc[isolation] = { passed: 0, failed: 0 }
-      if (result.success) {
-        acc[isolation].passed++
-      } else {
-        acc[isolation].failed++
-      }
-      return acc
-    }, {} as Record<string, { passed: number; failed: number }>)
+    const isolationStats = this.results.reduce(
+      (acc, result) => {
+        const isolation = result.suite.isolation
+        if (!acc[isolation]) acc[isolation] = { passed: 0, failed: 0 }
+        if (result.success) {
+          acc[isolation].passed++
+        } else {
+          acc[isolation].failed++
+        }
+        return acc
+      },
+      {} as Record<string, { passed: number; failed: number }>
+    )
 
     if (Object.keys(isolationStats).length > 1) {
       console.log('\n🔒 ISOLATION STRATEGY BREAKDOWN:')
@@ -343,7 +344,7 @@ Current Test Suites:
   }
 
   const parallel = args.includes('--parallel') || args.includes('-p')
-  const category = args.find(arg => !arg.startsWith('--')) as TestSuite['category'] | undefined
+  const category = args.find((arg) => !arg.startsWith('--')) as TestSuite['category'] | undefined
 
   if (category && !['unit', 'integration', 'e2e', 'template-indexing'].includes(category)) {
     console.error(`❌ Invalid category: ${category}`)

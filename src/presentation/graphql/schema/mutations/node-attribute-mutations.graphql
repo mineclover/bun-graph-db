@@ -10,8 +10,5 @@ extend type Mutation {
   removeNodeAttribute(nodeId: ID!, attributeId: ID!): SetNodeAttributePayload!
 
   # Bulk operations for better SQL coverage
-  bulkSetNodeAttributes(
-    nodeId: ID!
-    attributes: [NodeAttributeInput!]!
-  ): SetNodeAttributePayload!
+  bulkSetNodeAttributes(nodeId: ID!, attributes: [NodeAttributeInput!]!): SetNodeAttributePayload!
 }

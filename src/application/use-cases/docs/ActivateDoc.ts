@@ -30,11 +30,7 @@ export class ActivateDocUseCase {
 
     try {
       // Deactivate other docs in the same category for this table
-      await this.docRepository.deactivateOthersInCategory(
-        doc.tableId,
-        doc.category,
-        doc.id
-      )
+      await this.docRepository.deactivateOthersInCategory(doc.tableId, doc.category, doc.id)
 
       // Activate this doc
       doc.activate()

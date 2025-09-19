@@ -52,29 +52,31 @@ const NODE_TEMPLATE_FIXES: NodeTemplateFixConfig[] = [
   }
 }`,
     newVariablesSchema: {
-      type: "object",
+      type: 'object',
       properties: {
         input: {
-          type: "object",
+          type: 'object',
           properties: {
-            content: { type: "string", description: "노드 내용" },
-            tableId: { type: "string", description: "테이블 ID" }
+            content: { type: 'string', description: '노드 내용' },
+            tableId: { type: 'string', description: '테이블 ID' },
           },
-          required: ["content", "tableId"]
-        }
+          required: ['content', 'tableId'],
+        },
       },
-      required: ["input"]
+      required: ['input'],
     },
     newDefaultVariables: {
       input: {
-        content: "새로운 노드",
-        tableId: "1"
-      }
-    }
+        content: '새로운 노드',
+        tableId: '1',
+      },
+    },
   },
   {
     identifier: 'update-node-with-params',
-    issues: ['Variable "$input" got invalid value { title: "...", content: "..." }; Field "title" is not defined by type "UpdateNodeInput"'],
+    issues: [
+      'Variable "$input" got invalid value { title: "...", content: "..." }; Field "title" is not defined by type "UpdateNodeInput"',
+    ],
     newQuery: `mutation UpdateNodeWithParams($id: ID!, $input: UpdateNodeInput!) {
   updateNode(id: $id, input: $input) {
     success
@@ -102,26 +104,26 @@ const NODE_TEMPLATE_FIXES: NodeTemplateFixConfig[] = [
   }
 }`,
     newVariablesSchema: {
-      type: "object",
+      type: 'object',
       properties: {
-        id: { type: "string", description: "노드 ID" },
+        id: { type: 'string', description: '노드 ID' },
         input: {
-          type: "object",
+          type: 'object',
           properties: {
-            content: { type: "string", description: "노드 내용" }
+            content: { type: 'string', description: '노드 내용' },
           },
-          required: ["content"]
-        }
+          required: ['content'],
+        },
       },
-      required: ["id", "input"]
+      required: ['id', 'input'],
     },
     newDefaultVariables: {
-      id: "1",
+      id: '1',
       input: {
-        content: "업데이트된 내용"
-      }
-    }
-  }
+        content: '업데이트된 내용',
+      },
+    },
+  },
 ]
 
 async function main() {
@@ -143,7 +145,6 @@ async function main() {
     await generateImprovementReport(templatesBackup, improvedCount)
 
     console.log('✅ NODE 템플릿 개선 완료!')
-
   } catch (error) {
     console.error('❌ 개선 중 오류 발생:', error)
     process.exit(1)
@@ -162,7 +163,7 @@ async function ensureBackupDirectory() {
 async function backupNodeTemplates() {
   const db = new Database(DB_PATH)
 
-  const identifiers = NODE_TEMPLATE_FIXES.map(fix => fix.identifier)
+  const identifiers = NODE_TEMPLATE_FIXES.map((fix) => fix.identifier)
   const query = `
     SELECT * FROM templates
     WHERE identifier IN (${identifiers.map(() => '?').join(',')})
@@ -178,7 +179,7 @@ async function backupNodeTemplates() {
   const backupData = {
     timestamp: new Date().toISOString(),
     templates: templates,
-    improvementReason: 'GraphQL schema alignment - updating queries to match current schema'
+    improvementReason: 'GraphQL schema alignment - updating queries to match current schema',
   }
 
   await fs.writeFile(backupFile, JSON.stringify(backupData, null, 2))
@@ -209,14 +210,13 @@ async function improveNodeTemplates() {
       `
 
       const variablesSchema = fix.newVariablesSchema ? JSON.stringify(fix.newVariablesSchema) : null
-      const defaultVariables = fix.newDefaultVariables ? JSON.stringify(fix.newDefaultVariables) : null
+      const defaultVariables = fix.newDefaultVariables
+        ? JSON.stringify(fix.newDefaultVariables)
+        : null
 
-      const result = db.query(updateQuery).run(
-        fix.newQuery,
-        variablesSchema,
-        defaultVariables,
-        fix.identifier
-      )
+      const result = db
+        .query(updateQuery)
+        .run(fix.newQuery, variablesSchema, defaultVariables, fix.identifier)
 
       if (result.changes > 0) {
         improvedCount++
@@ -229,7 +229,6 @@ async function improveNodeTemplates() {
 
     db.exec('COMMIT')
     return improvedCount
-
   } catch (error) {
     db.exec('ROLLBACK')
     throw error
@@ -250,8 +249,8 @@ async function generateImprovementReport(templates: any[], improvedCount: number
 
 | 템플릿명 | 사용횟수 | 개선 내용 |
 |---------|---------|----------|
-${NODE_TEMPLATE_FIXES.map(fix => {
-  const template = templates.find(t => t.identifier === fix.identifier)
+${NODE_TEMPLATE_FIXES.map((fix) => {
+  const template = templates.find((t) => t.identifier === fix.identifier)
   const usageCount = template ? template.usage_count : 0
   return `| ${fix.identifier} | ${usageCount}회 | ${fix.issues.join(', ')} |`
 }).join('\n')}
@@ -298,7 +297,10 @@ curl -X POST http://localhost:4000/graphql \\
 *자동 생성됨 by improve-node-templates.ts*
 `
 
-  const reportFile = join(BACKUP_DIR, `improvement-report-${new Date().toISOString().replace(/[:.]/g, '-')}.md`)
+  const reportFile = join(
+    BACKUP_DIR,
+    `improvement-report-${new Date().toISOString().replace(/[:.]/g, '-')}.md`
+  )
   await fs.writeFile(reportFile, report)
 
   console.log(`📋 리포트 생성: ${reportFile}`)

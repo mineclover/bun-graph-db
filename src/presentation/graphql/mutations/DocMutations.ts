@@ -1,13 +1,10 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
-import type { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
-import type { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
 import type { ActivateDocUseCase } from '@/application/use-cases/docs/ActivateDoc.js'
-import type {
-  GraphQLContext,
-  GraphQLParent,
-} from '@/core/types/GraphQLTypes.js'
+import type { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
+import type { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
+import type { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
 import type { DocId } from '@/core/types/CommonTypes.js'
+import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import type { DocCategory } from '@/domain/entities/Doc.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 

@@ -1,7 +1,12 @@
 import type { Database } from 'bun:sqlite'
 import type { DocId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import { Doc, type DocCategory } from '@/domain/entities/Doc.js'
-import type { DocSearchOptions, IDocRepository, DocContentSearchOptions, DocContentSearchPagination } from '@/domain/repositories/IDocRepository.js'
+import type {
+  DocContentSearchOptions,
+  DocContentSearchPagination,
+  DocSearchOptions,
+  IDocRepository,
+} from '@/domain/repositories/IDocRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface DocRow {
@@ -207,18 +212,13 @@ export class SqliteDocRepository implements IDocRepository {
     return this.findAll(options)
   }
 
-  async searchByContent(options: DocContentSearchOptions, pagination?: DocContentSearchPagination): Promise<PaginatedResult<Doc>> {
-    const {
-      query,
-      tableId,
-      category,
-      isActive,
-    } = options
+  async searchByContent(
+    options: DocContentSearchOptions,
+    pagination?: DocContentSearchPagination
+  ): Promise<PaginatedResult<Doc>> {
+    const { query, tableId, category, isActive } = options
 
-    const {
-      limit = 10,
-      offset = 0,
-    } = pagination || {}
+    const { limit = 10, offset = 0 } = pagination || {}
 
     const whereClauses: string[] = ['content LIKE ?']
     const params: any[] = [`%${query}%`]
@@ -276,14 +276,20 @@ export class SqliteDocRepository implements IDocRepository {
     `
 
     try {
-      const result = this.db.query<{ max_version: number | null }, [string, string]>(query).get(tableId, category)
+      const result = this.db
+        .query<{ max_version: number | null }, [string, string]>(query)
+        .get(tableId, category)
       return result?.max_version || 0
     } catch (error) {
       throw new DatabaseException(`Failed to get latest version: ${error}`)
     }
   }
 
-  async deactivateOthersInCategory(tableId: TableId, category: DocCategory, exceptId?: DocId): Promise<void> {
+  async deactivateOthersInCategory(
+    tableId: TableId,
+    category: DocCategory,
+    exceptId?: DocId
+  ): Promise<void> {
     let query = `
       UPDATE docs
       SET is_active = 0, updated_at = CURRENT_TIMESTAMP
@@ -311,7 +317,9 @@ export class SqliteDocRepository implements IDocRepository {
     `
 
     try {
-      const result = this.db.query<{ count: number }, [string, string, number]>(query).get(tableId, category, version)
+      const result = this.db
+        .query<{ count: number }, [string, string, number]>(query)
+        .get(tableId, category, version)
       return (result?.count || 0) > 0
     } catch (error) {
       throw new DatabaseException(`Failed to check doc existence: ${error}`)

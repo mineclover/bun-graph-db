@@ -1,9 +1,9 @@
-import { describe, test, expect, beforeEach } from 'bun:test'
+import { beforeEach, describe, expect, test } from 'bun:test'
 import { EnhancedDependencyAnalyzer } from '@/domain/services/EnhancedDependencyAnalyzer.js'
 import { EnhancedTemplateGenerator } from '@/domain/services/EnhancedTemplateGenerator.js'
-import { TablePackageValidator } from '@/domain/services/TablePackageValidator.js'
-import { TablePackageRecoveryManager } from '@/domain/services/TablePackageRecoveryManager.js'
 import { SchemaIntrospectionService } from '@/domain/services/SchemaIntrospectionService.js'
+import { TablePackageRecoveryManager } from '@/domain/services/TablePackageRecoveryManager.js'
+import { TablePackageValidator } from '@/domain/services/TablePackageValidator.js'
 
 // Mock Logger
 class MockLogger {
@@ -15,29 +15,71 @@ class MockLogger {
 
 // Mock Repository
 const createMockRepo = () => ({
-  async findById() { return null },
+  async findById() {
+    return null
+  },
   async save() {},
   async delete() {},
-  async findAll() { return { items: [], total: 0, hasNextPage: false, hasPreviousPage: false } },
-  async count() { return 0 },
-  async search() { return { items: [], total: 0, hasNextPage: false, hasPreviousPage: false } },
-  async create() { return {} },
-  async update() { return {} },
-  async exists() { return false },
-  async findByTableId() { return [] },
-  async findByTable() { return [] },
-  async findBySourceNodeId() { return [] },
-  async findByTargetNodeId() { return [] },
-  async findByNodeId() { return [] },
-  async findByType() { return [] },
-  async getTypeMap() { return new Map() },
-  async findByIdentifier() { return null },
-  async findByApplicableTable() { return [] },
-  validateStructure() { return true },
-  async createBackupPoint() { return 'backup-123' },
-  async restoreFromBackup() { return { success: true } },
-  async listBackups() { return [] },
-  async deleteBackup() { return true },
+  async findAll() {
+    return { items: [], total: 0, hasNextPage: false, hasPreviousPage: false }
+  },
+  async count() {
+    return 0
+  },
+  async search() {
+    return { items: [], total: 0, hasNextPage: false, hasPreviousPage: false }
+  },
+  async create() {
+    return {}
+  },
+  async update() {
+    return {}
+  },
+  async exists() {
+    return false
+  },
+  async findByTableId() {
+    return []
+  },
+  async findByTable() {
+    return []
+  },
+  async findBySourceNodeId() {
+    return []
+  },
+  async findByTargetNodeId() {
+    return []
+  },
+  async findByNodeId() {
+    return []
+  },
+  async findByType() {
+    return []
+  },
+  async getTypeMap() {
+    return new Map()
+  },
+  async findByIdentifier() {
+    return null
+  },
+  async findByApplicableTable() {
+    return []
+  },
+  validateStructure() {
+    return true
+  },
+  async createBackupPoint() {
+    return 'backup-123'
+  },
+  async restoreFromBackup() {
+    return { success: true }
+  },
+  async listBackups() {
+    return []
+  },
+  async deleteBackup() {
+    return true
+  },
 })
 
 // Mock Container
@@ -56,7 +98,7 @@ class MockContainer {
             getQueryType: () => null,
             getMutationType: () => null,
             getSubscriptionType: () => null,
-          })
+          }),
         }
       }
     }
@@ -339,8 +381,8 @@ describe('SchemaIntrospectionService', () => {
         queryType: { name: 'Query' },
         mutationType: null,
         subscriptionType: null,
-        directives: []
-      }
+        directives: [],
+      },
     }
 
     try {
