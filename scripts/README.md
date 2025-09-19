@@ -2,7 +2,79 @@
 
 bun-graph-db 프로젝트의 모든 스크립트 파일들의 목적과 사용법을 정리한 관리 문서입니다.
 
+## 📁 스크립트 디렉토리 구조
+
+```
+scripts/
+├── archive/
+│   ├── fix-scripts/           # 수정 관련 스크립트
+│   │   ├── fix-attribute-name-to-id.ts
+│   │   └── fix-template-attribute-mapping.ts
+│   └── temp-scripts/          # 임시/테스트 스크립트
+│       ├── comprehensive-test-runner.ts
+│       ├── test-templates.ts
+│       ├── test-queries.ts
+│       └── run-template-tests.ts
+└── README.md                  # 이 문서
+
+templates/
+└── scripts/                   # executeTemplate 패턴 스크립트
+    ├── table-crud-templates.ts # 테이블 CRUD 템플릿 생성
+    ├── create-update-templates.ts # 업데이트 쿼리 템플릿
+    ├── create-core-query-templates.ts # 핵심 GraphQL 쿼리 템플릿
+    └── demo-update-via-query.ts # 쿼리 업데이트 시연
+```
+
 ## 📁 스크립트 분류 체계
+
+### 🔥 executeTemplate 패턴 스크립트 (Template Scripts)
+
+`templates/scripts/` 디렉토리에 위치한 주요 스크립트들:
+
+#### `table-crud-templates.ts` ⭐ **executeTemplate 패턴**
+**목적**: 테이블 생성 및 CRUD 작업을 위한 동적 템플릿 시스템
+```bash
+# 사용법
+bun run templates/scripts/table-crud-templates.ts
+```
+**주요 기능**:
+- 동적 테이블 템플릿 10개 자동 생성 (테이블 생성, 노드 관리, 속성 처리)
+- executeTemplate 패턴을 통한 GraphQL 통합
+- 타입 안전한 속성 정의 및 검증
+- 복잡도별 템플릿 분류 (basic: 7개, intermediate: 3개)
+
+#### `create-update-templates.ts` ⭐ **쿼리 기반 업데이트**
+**목적**: 업데이트 작업을 GraphQL 쿼리로 실행하는 템플릿 시스템
+```bash
+# 사용법
+bun run templates/scripts/create-update-templates.ts
+```
+**주요 기능**:
+- 8개 업데이트 템플릿 생성 (기본 업데이트, 속성 업데이트, 벌크 작업)
+- 히스토리 추적 및 검증 기능
+- 100% 성공률 달성
+
+#### `create-core-query-templates.ts` ⭐ **핵심 GraphQL 쿼리**
+**목적**: executeTemplate 방식으로 핵심 GraphQL 쿼리 구현
+```bash
+# 사용법
+bun run templates/scripts/create-core-query-templates.ts
+```
+**주요 기능**:
+- 15개 핵심 쿼리 템플릿 (CRUD: 5개, Search: 3개, Analytics: 3개, Relations: 2개, Batch: 2개)
+- 내부 API 동작과 완전 일치하는 패턴
+- 카테고리별 100% 성공률
+
+#### `demo-update-via-query.ts` ⭐ **실시간 데모**
+**목적**: 쿼리 기반 업데이트 기능의 실시간 시연
+```bash
+# 사용법
+bun run templates/scripts/demo-update-via-query.ts
+```
+**주요 기능**:
+- 모든 업데이트 템플릿 실시간 테스트
+- executeTemplate 유틸리티 활용
+- 실행 통계 및 성능 메트릭
 
 ### 🚀 환경 구축 스크립트 (Environment Setup)
 
@@ -54,6 +126,18 @@ bun run scripts/setup-test-dataset.ts
 - 다중 도메인 테스트 데이터 구성 (e-commerce, project management 등)
 - 관계형 데이터 정합성 보장
 - Clean Architecture 레이어 준수
+
+### 📦 아카이브 스크립트 (Archive Scripts)
+
+#### 🔧 수정 관련 스크립트 (`scripts/archive/fix-scripts/`)
+- `fix-attribute-name-to-id.ts`: 속성 name/id 매핑 수정
+- `fix-template-attribute-mapping.ts`: 템플릿 속성 매핑 수정
+
+#### 🧪 임시/테스트 스크립트 (`scripts/archive/temp-scripts/`)
+- `comprehensive-test-runner.ts`: GraphQL API 종합 테스트 (임시)
+- `test-templates.ts`: 템플릿 시스템 전용 테스트
+- `test-queries.ts`: GraphQL 쿼리 실행 테스트
+- `run-template-tests.ts`: 템플릿 기반 노드 생성 테스트
 
 ### 🧪 테스트 실행 스크립트 (Test Execution)
 
@@ -210,7 +294,19 @@ bun run scripts/setup-test-environment.ts
 bun run scripts/setup-test-dataset.ts
 ```
 
-### 2. 개발 중 검증
+### 2. executeTemplate 패턴 사용
+```bash
+# 핵심 템플릿 스크립트 실행 (권장 순서)
+bun run templates/scripts/table-crud-templates.ts      # 테이블 CRUD 템플릿 생성
+bun run templates/scripts/create-update-templates.ts   # 업데이트 쿼리 템플릿 생성
+bun run templates/scripts/create-core-query-templates.ts # 핵심 GraphQL 쿼리 구현
+bun run templates/scripts/demo-update-via-query.ts     # 실시간 데모 및 검증
+
+# executeTemplate 유틸리티 직접 사용
+bun utils/executeTemplate.ts                           # 데모 실행
+```
+
+### 3. 개발 중 검증
 ```bash
 # API 구현 상태 확인
 bun run scripts/validate-graphql-api-status.ts
@@ -219,7 +315,7 @@ bun run scripts/validate-graphql-api-status.ts
 bun run query:report
 ```
 
-### 3. 기능 테스트
+### 4. 기능 테스트
 ```bash
 # 🆕 통합된 테스트 실행 (권장)
 bun run test                         # 통합 테스트 러너로 전체 실행
@@ -238,14 +334,13 @@ bun templates/tools/template-cli.ts load -e development  # 템플릿 로드
 bun templates/tools/template-cli.ts validate           # 전체 검증
 bun templates/tools/template-cli.ts info -t template-id # 상세 정보
 
-# 기존 템플릿 시스템 테스트 (호환성 유지)
-bun run scripts/test-templates.ts basic-nodes-query
-
-# 종합 기능 테스트
-bun run scripts/comprehensive-test-runner.ts
+# 🆕 아카이브된 테스트 스크립트 (필요시)
+bun run scripts/archive/temp-scripts/test-templates.ts basic-nodes-query
+bun run scripts/archive/temp-scripts/comprehensive-test-runner.ts
+bun run scripts/archive/temp-scripts/test-queries.ts minimal 1
 ```
 
-### 4. 정리 및 리셋
+### 5. 정리 및 리셋
 ```bash
 # 테스트 환경 정리
 bun run scripts/setup-test-environment.ts --cleanup

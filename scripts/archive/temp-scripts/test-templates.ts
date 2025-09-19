@@ -14,7 +14,8 @@
  *   Categories: table, node, todo, template, all
  */
 
-const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
+import { executeTemplate } from '../../../utils/executeTemplate.ts'
+
 const DB_PATH = 'data/bun-graph-db.sqlite'
 
 interface TemplateInfo {
@@ -59,43 +60,26 @@ async function getTemplatesByTag(tag: string): Promise<TemplateInfo[]> {
   }))
 }
 
-// GraphQL client helper
-async function graphqlRequest(query: string, variables?: any): Promise<any> {
-  const response = await fetch(GRAPHQL_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query, variables }),
-  })
+// Using executeTemplate utility instead of direct GraphQL requests
 
-  const result = await response.json()
-
-  if (result.errors) {
-    return { error: result.errors[0].message, data: null }
-  }
-
-  return { error: null, data: result.data }
-}
-
-// Execute a single template
-async function executeTemplate(template: TemplateInfo): Promise<TestResult> {
+// Execute a single template using the utility
+async function executeTemplateTest(template: TemplateInfo): Promise<TestResult> {
   const startTime = Date.now()
 
   try {
     console.log(`🧪 Testing: ${template.identifier}`)
 
-    const result = await graphqlRequest(template.query, template.variables)
+    const result = await executeTemplate(template.identifier, template.variables)
     const executionTime = Date.now() - startTime
 
-    if (result.error) {
+    if (!result.success) {
       console.log(`❌ Failed: ${template.identifier} (${executionTime}ms)`)
-      console.log(`   Error: ${result.error}`)
+      console.log(`   Errors:`, result.errors)
       return {
         identifier: template.identifier,
         success: false,
         executionTime,
-        error: result.error,
+        error: result.errors?.[0]?.message || 'Unknown error',
       }
     }
 
@@ -162,7 +146,7 @@ async function runCRUDTestSuite(category: string): Promise<void> {
   }
 
   for (const template of executionOrder) {
-    const result = await executeTemplate(template)
+    const result = await executeTemplateTest(template)
     results.push(result)
 
     // Small delay between tests

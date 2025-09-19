@@ -1,12 +1,13 @@
-# Todo Templates 완전 가이드
+# GraphQL 테이블 CRUD 템플릿 완전 가이드
 
-할일 관리 시스템을 위한 종합적인 GraphQL 템플릿 모음입니다.
+GraphQL 인터페이스를 통한 동적 테이블 생성 및 CRUD 작업을 위한 종합적인 템플릿 시스템입니다.
 
 ## 📋 템플릿 개요
 
-총 **12개의 활성 템플릿**으로 구성되어 있습니다:
-- **CRUD 템플릿**: 6개 (기본 할일 관리)
-- **Bulk 작업 템플릿**: 6개 (대량 처리 및 분석)
+총 **22개의 활성 템플릿**으로 구성되어 있습니다:
+- **Todo CRUD 템플릿**: 6개 (기본 할일 관리)
+- **Todo Bulk 작업 템플릿**: 6개 (대량 처리 및 분석)
+- **동적 테이블 CRUD 템플릿**: 10개 (범용 테이블 관리) ⭐ **새로 추가**
 
 ## 🏗️ 도메인 구조
 
@@ -424,4 +425,328 @@ mutation ExecuteTemplate {
 - 하위 호환성 유지
 - 변경 이력 문서화
 
-이 가이드를 통해 Todo 템플릿 시스템을 효율적으로 활용하여 강력한 할일 관리 솔루션을 구축할 수 있습니다.
+---
+
+## 🚀 동적 테이블 CRUD 템플릿 (10개) ⭐ 새로 추가
+
+GraphQL 인터페이스를 통해 동적으로 테이블을 생성하고 CRUD 작업을 수행할 수 있는 범용 템플릿 시스템입니다.
+
+### 템플릿 목록
+
+| 템플릿 ID | 이름 | 타입 | 복잡도 | 설명 |
+|-----------|------|------|--------|------|
+| create-dynamic-table | 동적 테이블 생성 | Mutation | 4 | 식별자와 설명을 포함한 새로운 테이블 생성 |
+| create-table-attribute | 테이블 속성 생성 | Mutation | 3 | 테이블에 새로운 속성 추가 |
+| create-table-node | 테이블 노드 생성 | Mutation | 5 | 지정된 테이블에 새로운 노드 생성 |
+| get-table-node | 테이블 노드 조회 | Query | 3 | 특정 노드의 상세 정보 조회 |
+| list-table-nodes | 테이블 노드 목록 조회 | Query | 6 | 테이블의 모든 노드를 페이징과 필터링으로 조회 |
+| update-table-node | 테이블 노드 업데이트 | Mutation | 5 | 기존 노드의 내용과 속성 업데이트 |
+| delete-table-node | 테이블 노드 삭제 | Mutation | 3 | 지정된 노드 삭제 |
+| bulk-create-table-nodes | 대량 노드 생성 | Mutation | 8 | 여러 노드를 한번에 생성 |
+| get-table-info | 테이블 정보 조회 | Query | 4 | 테이블의 상세 정보와 스키마 조회 |
+| search-tables | 테이블 검색 | Query | 5 | 조건에 맞는 테이블들 검색 |
+
+### 🏗️ 동적 테이블 생성 워크플로우
+
+#### 1. create-dynamic-table
+**목적**: 새로운 테이블 동적 생성
+**타입**: Mutation
+**복잡도**: 4
+
+**변수**:
+```json
+{
+  "input": {
+    "identifier": "{{tableIdentifier}}",
+    "description": "{{tableDescription}}"
+  }
+}
+```
+
+**사용 예시**:
+```graphql
+mutation CreateDynamicTable {
+  executeTemplate(
+    identifier: "create-dynamic-table"
+    variables: {
+      input: {
+        identifier: "project-tasks"
+        description: "프로젝트 작업 관리 테이블"
+      }
+    }
+  ) {
+    success
+    result
+  }
+}
+```
+
+#### 2. create-table-attribute
+**목적**: 테이블에 새로운 속성 추가
+**타입**: Mutation
+**복잡도**: 3
+
+**변수**:
+```json
+{
+  "input": {
+    "tableId": "{{tableId}}",
+    "attributeTypeId": "{{attributeTypeId}}",
+    "identifier": "{{attributeIdentifier}}",
+    "name": "{{attributeName}}",
+    "description": "{{attributeDescription}}"
+  }
+}
+```
+
+**사용 예시**:
+```graphql
+mutation CreateTableAttribute {
+  executeTemplate(
+    identifier: "create-table-attribute"
+    variables: {
+      input: {
+        tableId: "123"
+        attributeTypeId: "456"
+        identifier: "priority"
+        name: "우선순위"
+        description: "작업의 우선순위"
+      }
+    }
+  ) {
+    success
+    result
+  }
+}
+```
+
+#### 3. create-table-node
+**목적**: 테이블에 새로운 노드 생성
+**타입**: Mutation
+**복잡도**: 5
+
+**변수**:
+```json
+{
+  "input": {
+    "tableId": "{{tableId}}",
+    "content": "{{nodeContent}}",
+    "attributes": "{{nodeAttributes}}"
+  }
+}
+```
+
+**노드 속성 형식**:
+```json
+{
+  "attributes": [
+    {
+      "attributeId": "123",
+      "value": "값"
+    }
+  ]
+}
+```
+
+#### 4. get-table-node
+**목적**: 특정 노드 상세 조회
+**타입**: Query
+**복잡도**: 3
+
+**변수**:
+```json
+{
+  "id": "{{nodeId}}"
+}
+```
+
+#### 5. list-table-nodes
+**목적**: 노드 목록 조회 (페이징, 필터링)
+**타입**: Query
+**복잡도**: 6
+
+**변수**:
+```json
+{
+  "filter": {
+    "tableId": "{{tableId}}",
+    "search": "{{searchTerm}}",
+    "createdAfter": "{{createdAfter}}",
+    "createdBefore": "{{createdBefore}}"
+  },
+  "pagination": {
+    "limit": "{{limit}}",
+    "offset": "{{offset}}"
+  }
+}
+```
+
+#### 6. update-table-node
+**목적**: 노드 내용 및 속성 업데이트
+**타입**: Mutation
+**복잡도**: 5
+
+**변수**:
+```json
+{
+  "id": "{{nodeId}}",
+  "input": {
+    "content": "{{newContent}}",
+    "attributes": "{{newAttributes}}"
+  }
+}
+```
+
+#### 7. delete-table-node
+**목적**: 노드 삭제
+**타입**: Mutation
+**복잡도**: 3
+
+**변수**:
+```json
+{
+  "id": "{{nodeId}}",
+  "force": "{{force}}"
+}
+```
+
+#### 8. bulk-create-table-nodes
+**목적**: 여러 노드 한번에 생성
+**타입**: Mutation
+**복잡도**: 8
+
+**변수**:
+```json
+{
+  "input": {
+    "tableId": "{{tableId}}",
+    "nodes": "{{nodesData}}"
+  }
+}
+```
+
+#### 9. get-table-info
+**목적**: 테이블 스키마 및 정보 조회
+**타입**: Query
+**복잡도**: 4
+
+**변수**:
+```json
+{
+  "id": "{{tableId}}"
+}
+```
+
+#### 10. search-tables
+**목적**: 테이블 검색
+**타입**: Query
+**복잡도**: 5
+
+**변수**:
+```json
+{
+  "filter": {
+    "search": "{{searchTerm}}",
+    "identifiers": ["{{tableIdentifiers}}"],
+    "hasNodes": "{{hasNodes}}",
+    "nodeCountMin": "{{nodeCountMin}}",
+    "nodeCountMax": "{{nodeCountMax}}"
+  },
+  "pagination": {
+    "limit": "{{limit}}",
+    "offset": "{{offset}}"
+  }
+}
+```
+
+### 🎯 동적 테이블 사용 시나리오
+
+#### 시나리오 1: 새로운 프로젝트 테이블 생성
+```graphql
+# 1. 테이블 생성
+mutation { executeTemplate(identifier: "create-dynamic-table", variables: {...}) }
+
+# 2. 테이블 정보 확인
+query { executeTemplate(identifier: "get-table-info", variables: {...}) }
+
+# 3. 노드 생성
+mutation { executeTemplate(identifier: "create-table-node", variables: {...}) }
+
+# 4. 노드 목록 조회
+query { executeTemplate(identifier: "list-table-nodes", variables: {...}) }
+```
+
+#### 시나리오 2: 기존 테이블 데이터 관리
+```graphql
+# 1. 테이블 검색
+query { executeTemplate(identifier: "search-tables", variables: {...}) }
+
+# 2. 노드 업데이트
+mutation { executeTemplate(identifier: "update-table-node", variables: {...}) }
+
+# 3. 대량 노드 생성
+mutation { executeTemplate(identifier: "bulk-create-table-nodes", variables: {...}) }
+```
+
+### 🔧 동적 템플릿 실행 방법
+
+#### 스크립트를 통한 실행
+```bash
+# 템플릿 생성
+bun run scripts/table-crud-templates.ts create
+
+# CRUD 워크플로우 테스트
+bun run scripts/table-crud-templates.ts test
+
+# 전체 실행 (템플릿 생성 + 테스트)
+bun run scripts/table-crud-templates.ts full
+```
+
+#### GraphQL을 통한 직접 실행
+```graphql
+mutation ExecuteDynamicTemplate {
+  executeTemplate(
+    identifier: "create-dynamic-table"
+    variables: {
+      input: {
+        identifier: "my-custom-table"
+        description: "내 커스텀 테이블"
+      }
+    }
+  ) {
+    success
+    result
+    errors {
+      message
+      code
+    }
+  }
+}
+```
+
+### 🏛️ 아키텍처 특징
+
+1. **강타입 스키마**: AttributeType과 Attribute 분리로 타입 안정성 보장
+2. **변수 템플릿화**: `{{변수명}}` 형태로 재사용 가능
+3. **에러 처리**: 단계별 에러 처리 및 복구
+4. **확장성**: 새로운 테이블 타입 쉽게 추가 가능
+
+### 📊 성능 및 복잡도
+
+| 복잡도 | 템플릿 수 | 설명 |
+|--------|-----------|------|
+| 3점 | 3개 | 단순 CRUD (조회, 삭제, 속성 생성) |
+| 4-5점 | 4개 | 중간 복잡도 (테이블 생성, 노드 CRUD) |
+| 6-8점 | 3개 | 복잡한 작업 (목록 조회, 대량 생성) |
+
+---
+
+## 📚 통합 가이드
+
+이제 **Todo 전용 템플릿**과 **동적 테이블 템플릿**을 함께 사용하여:
+
+1. **Todo 관리**: 기존 Todo 템플릿으로 할일 관리
+2. **커스텀 도메인**: 동적 테이블 템플릿으로 프로젝트, 고객, 제품 등 관리
+3. **통합 워크플로우**: 두 시스템을 연계한 복합 비즈니스 로직 구현
+
+이 가이드를 통해 GraphQL 기반의 완전한 동적 데이터 관리 솔루션을 구축할 수 있습니다.
