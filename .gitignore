@@ -37,7 +37,10 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 cleanup-plan-*.json
 *.backup-*
 
-# SQLite backups
+# SQLite files and backups
+*.sqlite
+*.sqlite3
+*.db
 *.sqlite.backup*
 *.sqlite-journal
 *.sqlite-shm
