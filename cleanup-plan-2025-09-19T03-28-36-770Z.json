@@ -1,0 +1,1515 @@
+{
+  "timestamp": "2025-09-19T03-28-36-770Z",
+  "scripts": {
+    "total": 62,
+    "toRemove": [
+      {
+        "name": "todo-bulk-operations.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/todo-bulk-operations.ts",
+        "exists": true,
+        "category": "deprecated",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "todo-workflow-test.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/todo-workflow-test.ts",
+        "exists": true,
+        "category": "deprecated",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "todo-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/todo-templates.ts",
+        "exists": true,
+        "category": "deprecated",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "todo-domain-setup.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/todo-domain-setup.ts",
+        "exists": true,
+        "category": "deprecated",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "create-relation-concept-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-relation-concept-templates.ts",
+        "exists": true,
+        "category": "duplicate",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "create-relation-type-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-relation-type-templates.ts",
+        "exists": true,
+        "category": "duplicate",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "create-simplified-relation-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-simplified-relation-templates.ts",
+        "exists": true,
+        "category": "duplicate",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "delete-todo-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/delete-todo-templates.ts",
+        "exists": true,
+        "category": "core",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "create-relation-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-relation-templates.ts",
+        "exists": true,
+        "category": "duplicate",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "create-simple-relation-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-simple-relation-templates.ts",
+        "exists": true,
+        "category": "duplicate",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      },
+      {
+        "name": "create-working-relation-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-working-relation-templates.ts",
+        "exists": true,
+        "category": "duplicate",
+        "usage": "none",
+        "recommendation": "remove",
+        "reason": "더 이상 사용되지 않거나 중복된 기능"
+      }
+    ],
+    "toArchive": [
+      {
+        "name": "test-domain-functionality.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/test-domain-functionality.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "template-pipeline.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/template-pipeline.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "clean-failed-exports.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/clean-failed-exports.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "export-monitoring-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/export-monitoring-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "template-import.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/template-import.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "setup-test-dataset.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/setup-test-dataset.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "import-all-exported-final.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/import-all-exported-final.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "analyze-current-domain-structure.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/analyze-current-domain-structure.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "import-all-exported.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/import-all-exported.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "test-batch-operations.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/test-batch-operations.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "create-missing-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-missing-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "template-system-summary.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/template-system-summary.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "create-extended-parameterized-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-extended-parameterized-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "final-system-report.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/final-system-report.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "cleanup-scripts.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/cleanup-scripts.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "generate-schema.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/generate-schema.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "simple-validator.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/simple-validator.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "cleanup-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/cleanup-templates.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "batch-template-manager.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/batch-template-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "core-template-manager.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/core-template-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "create-basic-parameterized-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-basic-parameterized-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "fix-comment-parsing-errors.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/fix-comment-parsing-errors.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "comprehensive-test-runner.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/comprehensive-test-runner.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "test-queries.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/test-queries.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "create-advanced-parameterized-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-advanced-parameterized-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "run-template-tests.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/run-template-tests.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "import-monitoring-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/import-monitoring-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "export-all-templates-fixed.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/export-all-templates-fixed.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "table-package-cli.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "graphql-template-analyzer.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/graphql-template-analyzer.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "setup-test-environment.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/setup-test-environment.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "validate-graphql-api-status.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/validate-graphql-api-status.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "test-cleanup.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/test-cleanup.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "template-registration.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/template-registration.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "create-relationship-analysis-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-relationship-analysis-templates.ts",
+        "exists": true,
+        "category": "duplicate",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "기능이 중복되는 스크립트"
+      },
+      {
+        "name": "query-manager.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/query-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "template-sync.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/template-sync.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "remove-unsupported-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/remove-unsupported-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "add-fixed-tags.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/add-fixed-tags.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "generate-template-demo.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/generate-template-demo.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "create-realistic-template.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/create-realistic-template.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "test-exported-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/test-exported-templates.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "test-import-single.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/test-import-single.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "medium",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "template-analyzer.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/template-analyzer.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "convert-templates-to-export-format.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/convert-templates-to-export-format.ts",
+        "exists": true,
+        "category": "unknown",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "필요시 복원 가능한 보조 기능"
+      },
+      {
+        "name": "export-all-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/export-all-templates.ts",
+        "exists": true,
+        "category": "duplicate",
+        "usage": "low",
+        "recommendation": "archive",
+        "reason": "기능이 중복되는 스크립트"
+      }
+    ],
+    "toKeep": [
+      {
+        "name": "test-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/test-templates.ts",
+        "exists": true,
+        "category": "test",
+        "usage": "high",
+        "recommendation": "keep",
+        "reason": "핵심 기능 또는 높은 사용률"
+      },
+      {
+        "name": "improve-node-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/improve-node-templates.ts",
+        "exists": true,
+        "category": "core",
+        "usage": "high",
+        "recommendation": "keep",
+        "reason": "핵심 기능 또는 높은 사용률"
+      },
+      {
+        "name": "fix-simple-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/fix-simple-templates.ts",
+        "exists": true,
+        "category": "core",
+        "usage": "high",
+        "recommendation": "keep",
+        "reason": "핵심 기능 또는 높은 사용률"
+      },
+      {
+        "name": "recreate-complex-templates.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/recreate-complex-templates.ts",
+        "exists": true,
+        "category": "core",
+        "usage": "high",
+        "recommendation": "keep",
+        "reason": "핵심 기능 또는 높은 사용률"
+      },
+      {
+        "name": "simple-export-fixed.ts",
+        "path": "/Users/junwoobang/project/bun-graph-db/scripts/simple-export-fixed.ts",
+        "exists": true,
+        "category": "core",
+        "usage": "high",
+        "recommendation": "keep",
+        "reason": "핵심 기능 또는 높은 사용률"
+      }
+    ]
+  },
+  "packageScripts": {
+    "total": 104,
+    "toRemove": [
+      {
+        "name": "dev",
+        "command": "bun --watch index.ts",
+        "targetFile": "--watch index.ts",
+        "exists": false,
+        "category": "core",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "build",
+        "command": "bun build index.ts --outdir ./dist --target bun",
+        "targetFile": "build index.ts",
+        "exists": false,
+        "category": "core",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test",
+        "command": "bun test/unified-test-runner.ts all",
+        "targetFile": "test/unified-test-runner.ts",
+        "exists": false,
+        "category": "core",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:list:old",
+        "command": "bun test/unified-test-runner.ts list",
+        "targetFile": "test/unified-test-runner.ts",
+        "exists": false,
+        "category": "deprecated",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:integration:old",
+        "command": "bun test/test-runner.ts full",
+        "targetFile": "test/test-runner.ts",
+        "exists": false,
+        "category": "deprecated",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:specific",
+        "command": "bun test/unified-test-runner.ts run",
+        "targetFile": "test/unified-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:coverage",
+        "command": "bun test/unified-test-runner.ts coverage",
+        "targetFile": "test/unified-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:fix-types",
+        "command": "bun test/framework/scripts/fix-test-types.ts",
+        "targetFile": "test/framework/scripts/fix-test-types.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:validate",
+        "command": "bun test/framework/scripts/fix-test-types.ts --validate",
+        "targetFile": "test/framework/scripts/fix-test-types.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:setup",
+        "command": "bun test/runner/simple-test-runner.ts setup",
+        "targetFile": "test/runner/simple-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:queries",
+        "command": "bun test/runner/simple-test-runner.ts queries",
+        "targetFile": "test/runner/simple-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:all",
+        "command": "bun test/runner/simple-test-runner.ts all",
+        "targetFile": "test/runner/simple-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:query-validator",
+        "command": "bun test/query-validator.ts validate",
+        "targetFile": "test/query-validator.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:query-analytics",
+        "command": "bun test/query-validator.ts analytics",
+        "targetFile": "test/query-validator.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "logs:view",
+        "command": "bun test/setup/utilities/view-logs.ts",
+        "targetFile": "test/setup/utilities/view-logs.ts",
+        "exists": false,
+        "category": "dev-tool",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "logs:stats",
+        "command": "bun test/setup/utilities/view-logs.ts stats",
+        "targetFile": "test/setup/utilities/view-logs.ts",
+        "exists": false,
+        "category": "dev-tool",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "logs:failed",
+        "command": "bun test/setup/utilities/view-logs.ts failed",
+        "targetFile": "test/setup/utilities/view-logs.ts",
+        "exists": false,
+        "category": "dev-tool",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "logs:report",
+        "command": "bun test/setup/utilities/view-logs.ts report",
+        "targetFile": "test/setup/utilities/view-logs.ts",
+        "exists": false,
+        "category": "dev-tool",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "logs:clear",
+        "command": "bun test/setup/utilities/view-logs.ts clear",
+        "targetFile": "test/setup/utilities/view-logs.ts",
+        "exists": false,
+        "category": "dev-tool",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:run",
+        "command": "bun test/runner/entry-points/test-runner.ts",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:list",
+        "command": "bun test/runner/entry-points/test-runner.ts list",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:stats",
+        "command": "bun test/runner/entry-points/test-runner.ts stats",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:log-stats",
+        "command": "bun test/runner/entry-points/test-runner.ts log-stats",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:clear-logs",
+        "command": "bun test/runner/entry-points/test-runner.ts clear-logs",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:template",
+        "command": "bun test/runner/entry-points/test-runner.ts category template",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:crud:old",
+        "command": "bun test/runner/entry-points/test-runner.ts run template-crud",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "deprecated",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:all:old",
+        "command": "bun test/runner/entry-points/test-runner.ts all",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "deprecated",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:clean",
+        "command": "bun test/runner/entry-points/test-runner.ts clear-logs && bun test/runner/entry-points/test-runner.ts all",
+        "targetFile": "test/runner/entry-points/test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:api",
+        "command": "bun test/api/api-test-runner.ts",
+        "targetFile": "test/api/api-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:api:queries",
+        "command": "bun test/api/api-test-runner.ts --category queries",
+        "targetFile": "test/api/api-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:api:mutations",
+        "command": "bun test/api/api-test-runner.ts --category mutations",
+        "targetFile": "test/api/api-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:api:scenarios",
+        "command": "bun test/api/api-test-runner.ts --category scenarios",
+        "targetFile": "test/api/api-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:api:dev",
+        "command": "bun test/api/api-test-runner.ts --env development",
+        "targetFile": "test/api/api-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:api:staging",
+        "command": "bun test/api/api-test-runner.ts --env staging",
+        "targetFile": "test/api/api-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      },
+      {
+        "name": "test:api:prod",
+        "command": "bun test/api/api-test-runner.ts --env production",
+        "targetFile": "test/api/api-test-runner.ts",
+        "exists": false,
+        "category": "duplicate",
+        "recommendation": "remove",
+        "reason": "대상 파일이 존재하지 않음"
+      }
+    ],
+    "toArchive": [
+      {
+        "name": "query:report",
+        "command": "bun scripts/query-manager.ts report",
+        "targetFile": "scripts/query-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "query:validate",
+        "command": "bun scripts/query-manager.ts validate",
+        "targetFile": "scripts/query-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo",
+        "command": "bun demo/run-demo.ts",
+        "targetFile": "demo/run-demo.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo:basic",
+        "command": "bun demo/template-queries/basic-demo.ts",
+        "targetFile": "demo/template-queries/basic-demo.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo:import-export",
+        "command": "bun demo/run-import-export-demo.ts",
+        "targetFile": "demo/run-import-export-demo.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo:file-import-export",
+        "command": "bun demo/run-file-import-export-demo.ts",
+        "targetFile": "demo/run-file-import-export-demo.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo:cleanup-files",
+        "command": "bun demo/run-file-import-export-demo.ts --cleanup",
+        "targetFile": "demo/run-file-import-export-demo.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo:test-dataset",
+        "command": "bun demo/curl-tester.ts",
+        "targetFile": "demo/curl-tester.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "export:all-templates",
+        "command": "bun scripts/export-all-templates.ts",
+        "targetFile": "scripts/export-all-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "cleanup:templates",
+        "command": "bun scripts/cleanup-templates.ts",
+        "targetFile": "scripts/cleanup-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "cleanup:templates-dry-run",
+        "command": "bun scripts/cleanup-templates.ts dry-run",
+        "targetFile": "scripts/cleanup-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "cleanup:templates-auto",
+        "command": "bun scripts/cleanup-templates.ts auto",
+        "targetFile": "scripts/cleanup-templates.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo:test-batch",
+        "command": "bun demo/curl-tester.ts --batch",
+        "targetFile": "demo/curl-tester.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo:test-all",
+        "command": "bun demo/curl-tester.ts --all",
+        "targetFile": "demo/curl-tester.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "demo:template-generation",
+        "command": "bun scripts/generate-template-demo.ts",
+        "targetFile": "scripts/generate-template-demo.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "query:plan",
+        "command": "bun scripts/query-manager.ts plan",
+        "targetFile": "scripts/query-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "query:test",
+        "command": "bun scripts/test-queries.ts",
+        "targetFile": "scripts/test-queries.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "query:minimal",
+        "command": "bun scripts/test-queries.ts minimal",
+        "targetFile": "scripts/test-queries.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "query:detailed",
+        "command": "bun scripts/test-queries.ts detailed",
+        "targetFile": "scripts/test-queries.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "dataset:generate",
+        "command": "bun datasets/scripts/generate-sample-data.ts",
+        "targetFile": "datasets/scripts/generate-sample-data.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "dataset:import",
+        "command": "bun datasets/scripts/import-templates-to-server.ts",
+        "targetFile": "datasets/scripts/import-templates-to-server.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "template:list",
+        "command": "bun datasets/scripts/template-manager.ts list",
+        "targetFile": "datasets/scripts/template-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "template:search",
+        "command": "bun datasets/scripts/template-manager.ts search",
+        "targetFile": "datasets/scripts/template-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "template:validate",
+        "command": "bun datasets/scripts/template-manager.ts validate",
+        "targetFile": "datasets/scripts/template-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "template:complexity",
+        "command": "bun datasets/scripts/template-manager.ts complexity",
+        "targetFile": "datasets/scripts/template-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "template:import",
+        "command": "bun datasets/scripts/template-manager.ts import",
+        "targetFile": "datasets/scripts/template-manager.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "test:isolated",
+        "command": "bun tests/test-runner.ts",
+        "targetFile": "tests/test-runner.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:unit",
+        "command": "bun tests/test-runner.ts unit",
+        "targetFile": "tests/test-runner.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:unit:parallel",
+        "command": "bun tests/test-runner.ts unit --parallel",
+        "targetFile": "tests/test-runner.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:integration",
+        "command": "bun tests/test-runner.ts integration",
+        "targetFile": "tests/test-runner.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:e2e",
+        "command": "bun tests/test-runner.ts e2e",
+        "targetFile": "tests/test-runner.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:legacy",
+        "command": "bun tests/test-runner.ts template-indexing",
+        "targetFile": "tests/test-runner.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:all:isolated",
+        "command": "bun tests/test-runner.ts --parallel",
+        "targetFile": "tests/test-runner.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:cleanup",
+        "command": "bun scripts/test-cleanup.ts",
+        "targetFile": "scripts/test-cleanup.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:cleanup:force",
+        "command": "bun scripts/test-cleanup.ts --force --verbose",
+        "targetFile": "scripts/test-cleanup.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "test:cleanup:dry",
+        "command": "bun scripts/test-cleanup.ts --dry-run --verbose",
+        "targetFile": "scripts/test-cleanup.ts",
+        "exists": true,
+        "category": "duplicate",
+        "recommendation": "archive",
+        "reason": "중복된 기능"
+      },
+      {
+        "name": "template:validate-single",
+        "command": "bun scripts/simple-validator.ts",
+        "targetFile": "scripts/simple-validator.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "template:check-server",
+        "command": "curl -s http://localhost:4000/graphql -d '{\"query\":\"query{__typename}\"}' || echo 'Server not running'",
+        "targetFile": "",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "template:backup",
+        "command": "cp -r demo/templates demo/templates-backup-$(date +%Y%m%d-%H%M%S)",
+        "targetFile": "",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "template:restore",
+        "command": "echo 'Usage: cp -r demo/templates-backup-YYYYMMDD-HHMMSS demo/templates'",
+        "targetFile": "",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "pipeline:validate",
+        "command": "bun scripts/template-pipeline.ts --mode validate",
+        "targetFile": "scripts/template-pipeline.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "pipeline:sync",
+        "command": "bun scripts/template-pipeline.ts --mode sync",
+        "targetFile": "scripts/template-pipeline.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "pipeline:test",
+        "command": "bun scripts/template-pipeline.ts --mode test",
+        "targetFile": "scripts/template-pipeline.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "pipeline:deploy",
+        "command": "bun scripts/template-pipeline.ts --mode deploy",
+        "targetFile": "scripts/template-pipeline.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "pipeline:rollback",
+        "command": "bun scripts/template-pipeline.ts --mode rollback",
+        "targetFile": "scripts/template-pipeline.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "batch:test",
+        "command": "bun scripts/test-batch-operations.ts",
+        "targetFile": "scripts/test-batch-operations.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "batch:manager",
+        "command": "bun scripts/batch-template-manager.ts",
+        "targetFile": "scripts/batch-template-manager.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "report:system",
+        "command": "bun scripts/final-system-report.ts",
+        "targetFile": "scripts/final-system-report.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "table:batch-export",
+        "command": "bun scripts/table-package-cli.ts batch-export",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "table:batch-import",
+        "command": "bun scripts/table-package-cli.ts batch-import",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "dev-tool",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "table:analyze-deps",
+        "command": "bun scripts/table-package-cli.ts analyze-deps",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "table:resolve-order",
+        "command": "bun scripts/table-package-cli.ts resolve-order",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "table:generate-templates",
+        "command": "bun scripts/table-package-cli.ts generate-templates",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "table:validate",
+        "command": "bun scripts/table-package-cli.ts validate",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      },
+      {
+        "name": "table:help",
+        "command": "bun scripts/table-package-cli.ts help",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "unknown",
+        "recommendation": "archive",
+        "reason": "보조 기능"
+      }
+    ],
+    "toKeep": [
+      {
+        "name": "start",
+        "command": "bun index.ts",
+        "targetFile": "index.ts",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "test:bun",
+        "command": "bun test --coverage",
+        "targetFile": "",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "test:templates",
+        "command": "bun tests/test-runner.ts",
+        "targetFile": "tests/test-runner.ts",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "lint",
+        "command": "biome lint .",
+        "targetFile": "",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "format",
+        "command": "biome format --write .",
+        "targetFile": "",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "check",
+        "command": "biome check --write .",
+        "targetFile": "",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "typecheck",
+        "command": "tsc --noEmit",
+        "targetFile": "",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "schema:generate",
+        "command": "bun scripts/generate-schema.ts",
+        "targetFile": "scripts/generate-schema.ts",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "codegen",
+        "command": "graphql-codegen",
+        "targetFile": "",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "schema:update",
+        "command": "bun schema:generate && bun codegen",
+        "targetFile": "",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "export:fixed",
+        "command": "bun scripts/export-all-templates-fixed.ts",
+        "targetFile": "scripts/export-all-templates-fixed.ts",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "import:final",
+        "command": "bun scripts/import-all-exported-final.ts",
+        "targetFile": "scripts/import-all-exported-final.ts",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "table:export",
+        "command": "bun scripts/table-package-cli.ts export",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      },
+      {
+        "name": "table:import",
+        "command": "bun scripts/table-package-cli.ts import",
+        "targetFile": "scripts/table-package-cli.ts",
+        "exists": true,
+        "category": "core",
+        "recommendation": "keep",
+        "reason": "핵심 기능"
+      }
+    ]
+  }
+}
