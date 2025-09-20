@@ -1,0 +1,55 @@
+{
+  "getDocs": {
+    "totalCount": 4,
+    "docs": [
+      {
+        "id": "54",
+        "category": "example",
+        "content": "# Complete API Usage Examples\n\n## Health Check Example\n```bash\ncurl -X POST http://localhost:4000/graphql \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"query\": \"query { healthCheck { status database version } }\"}'\n```\n\n## System Statistics Example\n```bash\ncurl -X POST http://localhost:4000/graphql \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"query\": \"query { systemStats { memory { used total percentage } process { pid cpu platform } } }\"}'\n```\n\n## Template Search Example\n```bash\ncurl -X POST http://localhost:4000/graphql \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"query\": \"query { searchTemplates { templates { identifier name description query tags createdAt } totalCount } }\"}'\n```\n\n## Table Operations Examples\n\n### Create Table\n```bash\ncurl -X POST http://localhost:4000/graphql \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"query\": \"mutation { createTable(input: { identifier: \\\"sample-table\\\", description: \\\"Sample table for demonstration\\\" }) { success table { id identifier description } errors { message } } }\"}'\n```\n\n### List Tables\n```bash\ncurl -X POST http://localhost:4000/graphql \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"query\": \"query { tables { nodes { id identifier description nodeCount attributeCount createdAt } totalCount hasNextPage } }\"}'\n```\n\n## Template Execution Example\n```bash\ncurl -X POST http://localhost:4000/graphql \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"query\": \"mutation { executeTemplateWithGraphQL(templateIdentifier: \\\"system-health-check_v1-0-0\\\", variables: {}) { success data errors { message } } }\"}'\n```\n\n## Complete Workflow Example\n\n1. **Create a new table**\n2. **Define table schema with attributes**\n3. **Create templates for data operations**\n4. **Execute templates with variables**\n\nThis demonstrates the full lifecycle of table management and data operations.",
+        "version": 1,
+        "createdAt": "2025-09-19T21:41:47.702Z",
+        "updatedAt": "2025-09-19T21:41:47.702Z",
+        "table": {
+          "id": "106",
+          "identifier": "test-reliability-check"
+        }
+      },
+      {
+        "id": "53",
+        "category": "spec",
+        "content": "# GraphQL Mutations Reference\n\n## Table Operations\n\n### Create Table\n```graphql\nmutation CreateTable($input: CreateTableInput!) {\n  createTable(input: $input) {\n    success\n    errors { message }\n    table {\n      id\n      identifier\n      description\n      createdAt\n    }\n  }\n}\n```\n\n### Create Attribute\n```graphql\nmutation CreateAttribute($input: CreateAttributeInput!) {\n  createAttribute(input: $input) {\n    success\n    errors { message }\n    attribute {\n      id\n      identifier\n      name\n      attributeType { id name }\n    }\n  }\n}\n```\n\n## Node Operations\n\n### Create Node\n```graphql\nmutation CreateNode($input: CreateNodeInput!) {\n  createNode(input: $input) {\n    success\n    errors { message }\n    node {\n      id\n      attributes {\n        id\n        value\n        attributeType { name }\n      }\n    }\n  }\n}\n```\n\n## Template Operations\n\n### Create Template\n```graphql\nmutation CreateTemplate($input: CreateTemplateInput!) {\n  createTemplate(input: $input) {\n    success\n    errors { message }\n    template {\n      id\n      identifier\n      name\n      description\n      query\n      variables\n      tags\n    }\n  }\n}\n```\n\n### Execute Template\n```graphql\nmutation ExecuteTemplateWithGraphQL($templateIdentifier: String!, $variables: JSON!) {\n  executeTemplateWithGraphQL(\n    templateIdentifier: $templateIdentifier\n    variables: $variables\n  ) {\n    success\n    data\n    errors { message }\n  }\n}\n```\n\n## Batch Operations\n\n### Batch Create Nodes\n```graphql\nmutation BatchCreateNodes($input: BatchCreateNodesInput!) {\n  batchCreateNodes(input: $input) {\n    success\n    errors { message }\n    results {\n      success\n      node { id }\n      errors { message }\n    }\n    summary {\n      total\n      successful\n      failed\n    }\n  }\n}\n```",
+        "version": 1,
+        "createdAt": "2025-09-19T21:39:48.419Z",
+        "updatedAt": "2025-09-19T21:39:48.419Z",
+        "table": {
+          "id": "106",
+          "identifier": "test-reliability-check"
+        }
+      },
+      {
+        "id": "52",
+        "category": "guide",
+        "content": "# GraphQL Queries Guide\n\n## Basic Queries\n\n### Health Check\n```graphql\nquery HealthCheck {\n  healthCheck {\n    status\n    database\n    version\n    timestamp\n  }\n}\n```\n\n### System Statistics\n```graphql\nquery SystemStats {\n  systemStats {\n    memory {\n      used\n      total\n      percentage\n    }\n    process {\n      pid\n      cpu\n      platform\n    }\n  }\n}\n```\n\n### Table Operations\n\n#### List All Tables\n```graphql\nquery GetTables {\n  tables {\n    nodes {\n      id\n      identifier\n      description\n      createdAt\n      updatedAt\n      nodeCount\n      attributeCount\n    }\n    totalCount\n    hasNextPage\n  }\n}\n```\n\n#### Get Specific Table\n```graphql\nquery GetTable($id: ID!) {\n  getTable(id: $id) {\n    id\n    identifier\n    description\n    attributes {\n      id\n      identifier\n      name\n      attributeType {\n        id\n        name\n      }\n    }\n    nodes {\n      nodes {\n        id\n        attributes {\n          id\n          value\n          attributeType {\n            name\n          }\n        }\n      }\n    }\n  }\n}\n```\n\n### Node Operations\n\n#### Search Nodes\n```graphql\nquery SearchNodes($filter: NodesFilter!) {\n  searchNodes(filter: $filter) {\n    nodes {\n      id\n      table {\n        identifier\n      }\n      attributes {\n        id\n        value\n        attributeType {\n          name\n        }\n      }\n    }\n    totalCount\n  }\n}\n```\n\n### Template Operations\n\n#### Search Templates\n```graphql\nquery SearchTemplates($filter: TemplatesFilter) {\n  searchTemplates(filter: $filter) {\n    templates {\n      id\n      identifier\n      name\n      description\n      query\n      variables\n      variablesSchema\n      tags\n      createdAt\n      updatedAt\n      usageCount\n      lastUsedAt\n    }\n    totalCount\n  }\n}\n```\n\n#### Get Template by Identifier\n```graphql\nquery GetTemplateByIdentifier($identifier: String!) {\n  getTemplateByIdentifier(identifier: $identifier) {\n    id\n    identifier\n    name\n    description\n    query\n    variables\n    variablesSchema\n    tags\n    usageCount\n  }\n}\n```\n\n### Documentation Queries\n\n#### Search Documentation\n```graphql\nquery SearchDocs($filter: DocsFilter!) {\n  searchDocs(filter: $filter) {\n    docs {\n      id\n      category\n      content\n      version\n      table {\n        identifier\n      }\n      createdAt\n      updatedAt\n    }\n    totalCount\n  }\n}\n```\n\n## Query Variables Examples\n\n### Table Filter\n```json\n{\n  \"filter\": {\n    \"identifier\": \"user_analytics\"\n  }\n}\n```\n\n### Node Search Filter\n```json\n{\n  \"filter\": {\n    \"tableId\": \"106\",\n    \"searchTerm\": \"example\"\n  }\n}\n```\n\n### Template Filter\n```json\n{\n  \"filter\": {\n    \"tags\": [\"system\", \"health\"],\n    \"searchTerm\": \"check\"\n  }\n}\n```",
+        "version": 1,
+        "createdAt": "2025-09-19T21:39:07.297Z",
+        "updatedAt": "2025-09-19T21:39:07.297Z",
+        "table": {
+          "id": "106",
+          "identifier": "test-reliability-check"
+        }
+      },
+      {
+        "id": "51",
+        "category": "usage",
+        "content": "# Bun Graph DB - Complete API Usage Guide\n\n## Overview\n\nProduction-ready GraphQL-based Graph Database System with TypeScript/Bun runtime featuring:\n\n- **SQLite-backed storage** with relationship scoring\n- **Hexagonal Architecture** with Domain-Driven Design\n- **Type-safe GraphQL operations** with comprehensive schema\n- **Template system** with ExecuteTemplateWithGraphQL engine\n- **Batch operations** with transaction safety\n- **Real-time synchronization** support\n\n## Endpoints\n\n- **GraphQL API**: `http://localhost:4000/graphql`\n- **GraphQL Playground**: `http://localhost:4000/graphql`\n- **Schema SDL**: `http://localhost:4000/schema`\n- **Schema JSON**: `http://localhost:4000/schema.json`\n- **Introspection**: `http://localhost:4000/introspection.json`\n- **TypeScript Types**: `http://localhost:4000/schema/typescript`\n- **MCP JSON-RPC**: `http://localhost:4000/mcp`\n- **MCP Info**: `http://localhost:4000/mcp/info`\n- **MCP Health**: `http://localhost:4000/mcp/health`\n\n## Core Workflow\n\n1. **Create Table** via GraphQL mutation\n2. **Define Schema** with attribute types via GraphQL\n3. **Get Table ID** from creation response\n4. **Create Template** for populating rows using the table ID\n5. **Execute Template** via ExecuteTemplateWithGraphQL engine\n\n## Key Types\n\n- `Table`: Main data container\n- `Node`: Individual data records\n- `Template`: Parameterized query templates\n- `AttributeType`: Schema definitions\n- `NodeAttribute`: Data field values\n- `Relation`: Connections between nodes\n- `Doc`: Documentation entries\n\n## Health Check\n\n```graphql\nquery HealthCheck {\n  healthCheck {\n    status\n    database\n    version\n    timestamp\n  }\n}\n```\n\nExpected Response:\n```json\n{\n  \"healthCheck\": {\n    \"status\": \"OK\",\n    \"database\": \"Connected\",\n    \"version\": \"1.0.0\",\n    \"timestamp\": \"2025-01-19T...\"\n  }\n}\n```",
+        "version": 1,
+        "createdAt": "2025-09-19T21:38:47.248Z",
+        "updatedAt": "2025-09-19T21:38:47.248Z",
+        "table": {
+          "id": "106",
+          "identifier": "test-reliability-check"
+        }
+      }
+    ]
+  }
+}

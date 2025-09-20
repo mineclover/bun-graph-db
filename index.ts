@@ -165,7 +165,7 @@ logger.info(`   • JSON: http://localhost:${graphqlConfig.port}/schema.json`)
 logger.info(`   • Introspection: http://localhost:${graphqlConfig.port}/introspection.json`)
 logger.info(`   • TypeScript: http://localhost:${graphqlConfig.port}/schema/typescript`)
 logger.info('🏗️  Architecture: Hexagonal with Domain-Driven Design')
-logger.info('🎯 Target: GraphQL → MCP conversion via mcp-graphql')
+logger.info('🎯 Features: GraphQL API + Template Engine')
 
 // Graceful shutdown
 const shutdown = async () => {
