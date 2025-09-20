@@ -1,0 +1,121 @@
+# Schema Detection API Contract
+# Purpose: Detect GraphQL schema changes and trigger synchronization
+
+type Query {
+  """
+  Get current schema version and metadata
+  """
+  getSchemaVersion: SchemaVersion!
+
+  """
+  Check if schema has changed since last known version
+  """
+  detectSchemaChanges(
+    lastKnownVersion: String
+    lastKnownHash: String
+  ): SchemaChangeDetection!
+}
+
+type Mutation {
+  """
+  Trigger manual schema detection and synchronization
+  """
+  triggerSchemaSync(
+    force: Boolean = false
+    notifyClients: Boolean = true
+  ): SchemaSyncResult!
+}
+
+# Schema version information
+type SchemaVersion {
+  version: String!
+  hash: String!
+  timestamp: DateTime!
+  status: SchemaStatus!
+  source: SchemaSource!
+  isBreaking: Boolean!
+  changesSince: [SchemaChange!]!
+}
+
+# Schema change detection result
+type SchemaChangeDetection {
+  hasChanged: Boolean!
+  currentVersion: String!
+  previousVersion: String
+  changes: [SchemaChange!]!
+  breakingChanges: [SchemaChange!]!
+  affectedTools: [String!]!
+  syncRequired: Boolean!
+}
+
+# Schema sync operation result
+type SchemaSyncResult {
+  success: Boolean!
+  version: String!
+  duration: Int! # milliseconds
+  changesProcessed: Int!
+  toolsUpdated: Int!
+  errors: [SyncError!]!
+  warnings: [String!]!
+}
+
+# Individual schema change
+type SchemaChange {
+  type: SchemaChangeType!
+  path: String!
+  description: String!
+  breaking: Boolean!
+  severity: ChangeSeverity!
+  oldValue: String
+  newValue: String
+  affectedOperations: [String!]!
+}
+
+# Error during sync operation
+type SyncError {
+  code: String!
+  message: String!
+  path: String
+  details: JSON
+}
+
+# Enums
+enum SchemaStatus {
+  HEALTHY
+  DEGRADED
+  FAILED
+}
+
+enum SchemaSource {
+  LIVE
+  CACHE
+  FALLBACK
+  STATIC
+}
+
+enum SchemaChangeType {
+  TYPE_ADDED
+  TYPE_REMOVED
+  TYPE_CHANGED
+  FIELD_ADDED
+  FIELD_REMOVED
+  FIELD_CHANGED
+  ARGUMENT_ADDED
+  ARGUMENT_REMOVED
+  ARGUMENT_CHANGED
+  ENUM_VALUE_ADDED
+  ENUM_VALUE_REMOVED
+  DIRECTIVE_ADDED
+  DIRECTIVE_REMOVED
+}
+
+enum ChangeSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+# Custom scalars
+scalar DateTime
+scalar JSON
