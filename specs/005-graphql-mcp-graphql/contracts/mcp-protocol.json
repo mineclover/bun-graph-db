@@ -1,0 +1,215 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "MCP-GraphQL Proxy Server",
+    "version": "0.1.0",
+    "description": "Model Context Protocol server that proxies GraphQL graph database operations"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Local development server (shared with GraphQL)"
+    }
+  ],
+  "paths": {
+    "/mcp": {
+      "post": {
+        "summary": "MCP Protocol Endpoint",
+        "description": "Handle all MCP protocol messages including tool discovery and execution",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful MCP response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid MCP request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "McpRequest": {
+        "type": "object",
+        "required": ["jsonrpc", "method", "id"],
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "enum": ["2.0"]
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "initialize",
+              "notifications/initialized",
+              "tools/list",
+              "tools/call"
+            ]
+          },
+          "params": {
+            "type": "object"
+          },
+          "id": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"}
+            ]
+          }
+        }
+      },
+      "McpResponse": {
+        "type": "object",
+        "required": ["jsonrpc", "id"],
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "enum": ["2.0"]
+          },
+          "result": {
+            "type": "object"
+          },
+          "error": {
+            "$ref": "#/components/schemas/McpErrorObject"
+          },
+          "id": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"}
+            ]
+          }
+        }
+      },
+      "McpError": {
+        "type": "object",
+        "required": ["jsonrpc", "error", "id"],
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "enum": ["2.0"]
+          },
+          "error": {
+            "$ref": "#/components/schemas/McpErrorObject"
+          },
+          "id": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"},
+              {"type": "null"}
+            ]
+          }
+        }
+      },
+      "McpErrorObject": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      },
+      "ToolDefinition": {
+        "type": "object",
+        "required": ["name", "description", "inputSchema"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Tool name corresponding to GraphQL operation"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable tool description"
+          },
+          "inputSchema": {
+            "type": "object",
+            "description": "JSON Schema defining tool parameters"
+          }
+        }
+      },
+      "ToolCallRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the tool to execute"
+          },
+          "arguments": {
+            "type": "object",
+            "description": "Tool parameters matching inputSchema"
+          }
+        }
+      },
+      "ToolCallResult": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ToolResultContent"
+            }
+          },
+          "isError": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "ToolResultContent": {
+        "type": "object",
+        "required": ["type", "text"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["text"]
+          },
+          "text": {
+            "type": "string",
+            "description": "JSON-serialized result from GraphQL operation"
+          }
+        }
+      }
+    }
+  }
+}

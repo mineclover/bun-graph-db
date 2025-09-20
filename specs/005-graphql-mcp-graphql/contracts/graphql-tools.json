@@ -1,0 +1,319 @@
+{
+  "title": "GraphQL-to-MCP Tool Definitions",
+  "description": "MCP tool definitions mapped to existing GraphQL operations",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "healthCheck",
+      "description": "Check system health and status",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query healthCheck { healthCheck { status database version } }"
+      }
+    },
+    {
+      "name": "systemStats",
+      "description": "Get system statistics and performance metrics",
+      "inputSchema": {
+        "type": "object",
+        "properties": {},
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query systemStats { systemStats { memory { used total percentage } process { pid cpu platform } } }"
+      }
+    },
+    {
+      "name": "createTable",
+      "description": "Create a new table in the graph database",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "Unique table identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable table name"
+          },
+          "description": {
+            "type": "string",
+            "description": "Table description",
+            "default": ""
+          }
+        },
+        "required": ["identifier", "name"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation createTable($input: CreateTableInput!) { createTable(input: $input) { id identifier name description } }"
+      }
+    },
+    {
+      "name": "searchTables",
+      "description": "Search for tables by criteria",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "Search term for table name or description",
+            "default": ""
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of results",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query searchTables($searchTerm: String, $limit: Int) { tables(searchTerm: $searchTerm, limit: $limit) { id identifier name description } }"
+      }
+    },
+    {
+      "name": "createNode",
+      "description": "Create a new node in a table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "ID of the table to create node in"
+          },
+          "content": {
+            "type": "string",
+            "description": "Node content/data"
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Additional node metadata",
+            "default": {}
+          }
+        },
+        "required": ["tableId", "content"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation createNode($input: CreateNodeInput!) { createNode(input: $input) { id content tableId createdAt } }"
+      }
+    },
+    {
+      "name": "searchNodes",
+      "description": "Search for nodes by content or criteria",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "Table ID to search within"
+          },
+          "searchTerm": {
+            "type": "string",
+            "description": "Search term for node content",
+            "default": ""
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of results",
+            "default": 10,
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query searchNodes($tableId: String, $searchTerm: String, $limit: Int) { searchNodes(tableId: $tableId, searchTerm: $searchTerm, limit: $limit) { id content tableId createdAt } }"
+      }
+    },
+    {
+      "name": "createRelation",
+      "description": "Create a relationship between two nodes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fromNodeId": {
+            "type": "string",
+            "description": "Source node ID"
+          },
+          "toNodeId": {
+            "type": "string",
+            "description": "Target node ID"
+          },
+          "relationshipType": {
+            "type": "string",
+            "description": "Type of relationship"
+          },
+          "properties": {
+            "type": "object",
+            "description": "Relationship properties",
+            "default": {}
+          }
+        },
+        "required": ["fromNodeId", "toNodeId", "relationshipType"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation createRelation($input: CreateRelationInput!) { createRelation(input: $input) { id fromNodeId toNodeId relationshipType properties } }"
+      }
+    },
+    {
+      "name": "createTemplate",
+      "description": "Create a new query template",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "description": "Unique template identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Template name"
+          },
+          "query": {
+            "type": "string",
+            "description": "GraphQL query with parameter placeholders"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Template tags for categorization",
+            "default": []
+          }
+        },
+        "required": ["identifier", "name", "query"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation createTemplate($input: CreateTemplateInput!) { createTemplate(input: $input) { id identifier name query tags } }"
+      }
+    },
+    {
+      "name": "executeTemplateWithGraphQL",
+      "description": "Execute a template with provided variables using GraphQL engine",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "templateIdentifier": {
+            "type": "string",
+            "description": "Template identifier to execute"
+          },
+          "variables": {
+            "type": "object",
+            "description": "Variables to bind to template",
+            "default": {}
+          }
+        },
+        "required": ["templateIdentifier"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation executeTemplateWithGraphQL($templateIdentifier: String!, $variables: JSON!) { executeTemplateWithGraphQL(templateIdentifier: $templateIdentifier, variables: $variables) { success data errors { message } } }"
+      }
+    },
+    {
+      "name": "searchTemplates",
+      "description": "Search for available templates",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "searchTerm": {
+            "type": "string",
+            "description": "Search term for template name or tags",
+            "default": ""
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific tags",
+            "default": []
+          }
+        },
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query searchTemplates($searchTerm: String, $tags: [String!]) { searchTemplates { templates { identifier name query tags } } }"
+      }
+    },
+    {
+      "name": "exportSchema",
+      "description": "Export database schema in specified format",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "format": {
+            "type": "string",
+            "enum": ["json", "graphql", "typescript"],
+            "description": "Export format",
+            "default": "json"
+          },
+          "includeData": {
+            "type": "boolean",
+            "description": "Include sample data in export",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query exportSchema($format: String!, $includeData: Boolean!) { exportSchema(format: $format, includeData: $includeData) { schema data } }"
+      }
+    },
+    {
+      "name": "importSchema",
+      "description": "Import schema from provided data",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "schemaData": {
+            "type": "string",
+            "description": "Schema data to import (JSON or other supported format)"
+          },
+          "format": {
+            "type": "string",
+            "enum": ["json", "graphql"],
+            "description": "Format of the schema data",
+            "default": "json"
+          },
+          "mergeStrategy": {
+            "type": "string",
+            "enum": ["replace", "merge", "append"],
+            "description": "How to handle existing schema",
+            "default": "merge"
+          }
+        },
+        "required": ["schemaData"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation importSchema($input: ImportSchemaInput!) { importSchema(input: $input) { success tablesCreated nodesCreated errors { message } } }"
+      }
+    }
+  ]
+}
