@@ -22,7 +22,7 @@ export class AttributeFieldResolvers extends BaseResolver {
     try {
       this.logger.debug(`Resolving field: Attribute.attributeType`, {
         attributeId: parent.id,
-        attributeTypeId: parent.attributeTypeId
+        attributeTypeId: parent.attributeTypeId,
       })
 
       const attributeType = await this.attributeTypeRepository.findById(parent.attributeTypeId)
@@ -30,7 +30,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       if (!attributeType) {
         this.logger.warn('AttributeType not found for Attribute', {
           attributeId: parent.id,
-          attributeTypeId: parent.attributeTypeId
+          attributeTypeId: parent.attributeTypeId,
         })
         // Return a default attribute type to prevent GraphQL null error
         return {
@@ -44,7 +44,7 @@ export class AttributeFieldResolvers extends BaseResolver {
           defaultValue: null,
           examples: null,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }
       }
 
@@ -60,13 +60,13 @@ export class AttributeFieldResolvers extends BaseResolver {
         defaultValue: attributeType.getDefaultValue(),
         examples: attributeType.getExamples(),
         createdAt: attributeType.getCreatedAt(),
-        updatedAt: attributeType.getUpdatedAt()
+        updatedAt: attributeType.getUpdatedAt(),
       }
 
       this.logger.debug(`Field resolved: Attribute.attributeType`, {
         attributeId: parent.id,
         attributeTypeId: parent.attributeTypeId,
-        attributeTypeName: graphqlAttributeType.identifier
+        attributeTypeName: graphqlAttributeType.identifier,
       })
 
       return graphqlAttributeType
@@ -74,7 +74,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       this.logger.error('Field resolution failed: Attribute.attributeType', {
         error,
         attributeId: parent.id,
-        attributeTypeId: parent.attributeTypeId
+        attributeTypeId: parent.attributeTypeId,
       })
 
       // Must return a non-null value to satisfy GraphQL non-nullable constraint
@@ -89,7 +89,7 @@ export class AttributeFieldResolvers extends BaseResolver {
         defaultValue: null,
         examples: null,
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
     }
   }
@@ -98,7 +98,7 @@ export class AttributeFieldResolvers extends BaseResolver {
     try {
       this.logger.debug(`Resolving field: Attribute.table`, {
         attributeId: parent.id,
-        tableId: parent.tableId
+        tableId: parent.tableId,
       })
 
       const table = await this.tableRepository.findById(parent.tableId)
@@ -106,7 +106,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       if (!table) {
         this.logger.warn('Table not found for Attribute', {
           attributeId: parent.id,
-          tableId: parent.tableId
+          tableId: parent.tableId,
         })
         // Return a default table to prevent GraphQL null error
         return {
@@ -114,7 +114,7 @@ export class AttributeFieldResolvers extends BaseResolver {
           identifier: 'unknown',
           description: 'Table not found in database',
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }
       }
 
@@ -124,13 +124,13 @@ export class AttributeFieldResolvers extends BaseResolver {
         identifier: table.identifier,
         description: table.description,
         createdAt: table.createdAt,
-        updatedAt: table.updatedAt
+        updatedAt: table.updatedAt,
       }
 
       this.logger.debug(`Field resolved: Attribute.table`, {
         attributeId: parent.id,
         tableId: parent.tableId,
-        tableName: graphqlTable.identifier
+        tableName: graphqlTable.identifier,
       })
 
       return graphqlTable
@@ -138,7 +138,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       this.logger.error('Field resolution failed: Attribute.table', {
         error,
         attributeId: parent.id,
-        tableId: parent.tableId
+        tableId: parent.tableId,
       })
 
       // Must return a non-null value to satisfy GraphQL non-nullable constraint
@@ -147,7 +147,7 @@ export class AttributeFieldResolvers extends BaseResolver {
         identifier: 'error',
         description: 'An error occurred while loading the table',
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       }
     }
   }
@@ -156,7 +156,7 @@ export class AttributeFieldResolvers extends BaseResolver {
     try {
       this.logger.debug(`Resolving field: NodeAttribute.attribute`, {
         nodeAttributeId: parent.id,
-        attributeId: parent.attributeId
+        attributeId: parent.attributeId,
       })
 
       const attribute = await this.attributeRepository.findById(parent.attributeId)
@@ -164,7 +164,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       if (!attribute) {
         this.logger.warn('Attribute not found for NodeAttribute', {
           nodeAttributeId: parent.id,
-          attributeId: parent.attributeId
+          attributeId: parent.attributeId,
         })
         // Return a default attribute to prevent GraphQL null error
         return {
@@ -175,7 +175,7 @@ export class AttributeFieldResolvers extends BaseResolver {
           createdAt: new Date(),
           updatedAt: new Date(),
           attributeTypeId: 'unknown',
-          tableId: 'unknown'
+          tableId: 'unknown',
         }
       }
 
@@ -193,14 +193,14 @@ export class AttributeFieldResolvers extends BaseResolver {
         createdAt: attribute.getCreatedAt(),
         updatedAt: attribute.getUpdatedAt(),
         attributeTypeId: attribute.getAttributeTypeId(),
-        tableId: attribute.getTableId()
+        tableId: attribute.getTableId(),
       }
 
       this.logger.debug(`Field resolved: NodeAttribute.attribute`, {
         nodeAttributeId: parent.id,
         attributeId: parent.attributeId,
         attributeName: graphqlAttribute.name,
-        attributeData: JSON.stringify(graphqlAttribute)
+        attributeData: JSON.stringify(graphqlAttribute),
       })
 
       return graphqlAttribute
@@ -208,7 +208,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       this.logger.error('Field resolution failed: NodeAttribute.attribute', {
         error,
         nodeAttributeId: parent.id,
-        attributeId: parent.attributeId
+        attributeId: parent.attributeId,
       })
 
       // Must return a non-null value to satisfy GraphQL non-nullable constraint
@@ -220,7 +220,7 @@ export class AttributeFieldResolvers extends BaseResolver {
         createdAt: new Date(),
         updatedAt: new Date(),
         attributeTypeId: 'error',
-        tableId: 'error'
+        tableId: 'error',
       }
     }
   }

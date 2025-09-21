@@ -21,10 +21,10 @@ async function testTodoCRUDTemplates(): Promise<void> {
     status: 'DONE',
     priority: 'HIGH',
     category: 'WORK',
-    dueDate: '2024-12-31'
+    dueDate: '2024-12-31',
   })
 
-  let todoId = null
+  const _todoId = null
   if (createResult.success) {
     // 결과에서 todoId 추출 시도
     console.log('   Created todo:', JSON.stringify(createResult.data, null, 2))
@@ -35,7 +35,7 @@ async function testTodoCRUDTemplates(): Promise<void> {
   const listResult = await executeTemplate('list-todos', {
     limit: 10,
     offset: 0,
-    status: null // 모든 상태
+    status: null, // 모든 상태
   })
 
   if (listResult.success) {
@@ -48,7 +48,7 @@ async function testTodoCRUDTemplates(): Promise<void> {
     searchTerm: 'GraphQL',
     category: 'WORK',
     priority: 'HIGH',
-    status: null
+    status: null,
   })
 
   if (searchResult.success) {
@@ -58,7 +58,7 @@ async function testTodoCRUDTemplates(): Promise<void> {
   // 4. get-todo 템플릿 (예시 ID)
   console.log('\n4. get-todo 템플릿 테스트')
   const getResult = await executeTemplate('get-todo', {
-    todoId: '1' // 예시 ID
+    todoId: '1', // 예시 ID
   })
 
   if (getResult.success) {
@@ -73,7 +73,7 @@ async function testTodoCRUDTemplates(): Promise<void> {
     description: '업데이트된 설명',
     status: 'IN_PROGRESS',
     priority: 'MEDIUM',
-    category: 'PERSONAL'
+    category: 'PERSONAL',
   })
 
   if (updateResult.success) {
@@ -101,8 +101,8 @@ async function testTodoBulkTemplates(): Promise<void> {
           { name: 'description', value: '대량 가져오기 테스트' },
           { name: 'status', value: 'TODO' },
           { name: 'priority', value: 'MEDIUM' },
-          { name: 'category', value: 'WORK' }
-        ]
+          { name: 'category', value: 'WORK' },
+        ],
       },
       {
         content: '두 번째 일괄 할일',
@@ -111,10 +111,10 @@ async function testTodoBulkTemplates(): Promise<void> {
           { name: 'description', value: '대량 가져오기 테스트' },
           { name: 'status', value: 'TODO' },
           { name: 'priority', value: 'HIGH' },
-          { name: 'category', value: 'PERSONAL' }
-        ]
-      }
-    ]
+          { name: 'category', value: 'PERSONAL' },
+        ],
+      },
+    ],
   })
 
   if (bulkImportResult.success) {
@@ -127,7 +127,7 @@ async function testTodoBulkTemplates(): Promise<void> {
     status: null, // 모든 상태
     category: 'WORK',
     priority: null,
-    includeCompleted: true
+    includeCompleted: true,
   })
 
   if (exportResult.success) {
@@ -139,9 +139,9 @@ async function testTodoBulkTemplates(): Promise<void> {
   const statsResult = await executeTemplate('todo-statistics', {
     dateRange: {
       start: '2024-01-01',
-      end: '2024-12-31'
+      end: '2024-12-31',
     },
-    includeArchived: false
+    includeArchived: false,
   })
 
   if (statsResult.success) {
@@ -153,7 +153,7 @@ async function testTodoBulkTemplates(): Promise<void> {
   const bulkUpdateResult = await executeTemplate('bulk-update-todo-status', {
     todoIds: ['1', '2'], // 예시 IDs
     newStatus: 'IN_PROGRESS',
-    completedAt: null
+    completedAt: null,
   })
 
   if (bulkUpdateResult.success) {
@@ -163,7 +163,7 @@ async function testTodoBulkTemplates(): Promise<void> {
   // 5. bulk-complete-todos 템플릿
   console.log('\n5. bulk-complete-todos 템플릿 테스트')
   const bulkCompleteResult = await executeTemplate('bulk-complete-todos', {
-    todoIds: ['1', '2'] // 예시 IDs
+    todoIds: ['1', '2'], // 예시 IDs
   })
 
   if (bulkCompleteResult.success) {
@@ -173,7 +173,7 @@ async function testTodoBulkTemplates(): Promise<void> {
   // 6. archive-completed-todos 템플릿
   console.log('\n6. archive-completed-todos 템플릿 테스트')
   const archiveResult = await executeTemplate('archive-completed-todos', {
-    olderThanDays: 30
+    olderThanDays: 30,
   })
 
   if (archiveResult.success) {
@@ -203,7 +203,6 @@ async function main() {
     await testTodoBulkTemplates()
 
     console.log('\n🎉 All todo template tests completed!')
-
   } catch (error) {
     console.error('❌ Test execution failed:', error)
     process.exit(1)

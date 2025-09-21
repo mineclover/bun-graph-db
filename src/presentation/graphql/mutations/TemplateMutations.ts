@@ -2,8 +2,8 @@ import type { ExecutionResult, GraphQLSchema } from 'graphql'
 import { execute, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
-import { ExportTemplateUseCase } from '@/application/use-cases/templates/ExportTemplateUseCase.js'
 import { ExportTemplatesUseCase } from '@/application/use-cases/templates/ExportTemplatesUseCase.js'
+import { ExportTemplateUseCase } from '@/application/use-cases/templates/ExportTemplateUseCase.js'
 import { ImportTemplateUseCase } from '@/application/use-cases/templates/ImportTemplateUseCase.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
@@ -304,14 +304,23 @@ export class TemplateMutations extends BaseResolver {
       // Transform the result to match executeTemplate's expected return format
       // Create execution object from metadata if available
       let execution = null
-      if (result.success && result.data && typeof result.data === 'object' && 'metadata' in result.data) {
+      if (
+        result.success &&
+        result.data &&
+        typeof result.data === 'object' &&
+        'metadata' in result.data
+      ) {
         const metadata = (result.data as any).metadata
         execution = {
           id: `exec_${Date.now()}`,
           templateId: metadata.templateId,
           executedAt: new Date().toISOString(),
           duration: metadata.executionTime,
-          resultCount: Array.isArray((result.data as any).data) ? (result.data as any).data.length : (result.data ? 1 : 0),
+          resultCount: Array.isArray((result.data as any).data)
+            ? (result.data as any).data.length
+            : result.data
+              ? 1
+              : 0,
           success: result.success,
           errorMessage: null,
         }
@@ -576,7 +585,7 @@ export class TemplateMutations extends BaseResolver {
       this.logger.info('Batch export result from use case', {
         success: exportResult.success,
         totalCount: exportResult.totalCount,
-        successCount: exportResult.exportedTemplates.filter(t => t.exportSuccess).length,
+        successCount: exportResult.exportedTemplates.filter((t) => t.exportSuccess).length,
         outputDirectory: exportResult.outputDirectory,
         errors: exportResult.errors,
       })
@@ -591,7 +600,7 @@ export class TemplateMutations extends BaseResolver {
 
       this.logger.info('Mutation completed: exportTemplates', {
         totalCount: exportResult.totalCount,
-        outputDirectory: exportResult.outputDirectory
+        outputDirectory: exportResult.outputDirectory,
       })
       return result
     } catch (error) {

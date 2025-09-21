@@ -9,9 +9,8 @@
  * Uses GraphQL API to query the docs stored in the database.
  */
 
-import { writeFileSync, mkdirSync } from 'fs'
-import { join } from 'path'
-import { tmpdir } from 'os'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 interface DocsSummary {
   totalDocs: number
@@ -31,7 +30,7 @@ async function graphqlQuery(query: string, variables: any = {}) {
   const response = await fetch('http://localhost:4000/graphql', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables })
+    body: JSON.stringify({ query, variables }),
   })
 
   const result = await response.json()
@@ -47,7 +46,8 @@ async function fetchAllDocs(): Promise<DocsSummary> {
   console.log('📚 Fetching documentation data from database via GraphQL...')
 
   try {
-    const data = await graphqlQuery(`
+    const data = await graphqlQuery(
+      `
       query GetDocs($tableId: ID!) {
         getDocs(tableId: $tableId) {
           docs {
@@ -65,7 +65,9 @@ async function fetchAllDocs(): Promise<DocsSummary> {
           totalCount
         }
       }
-    `, { tableId: '106' })
+    `,
+      { tableId: '106' }
+    )
 
     const docs = data.getDocs.docs
 
@@ -83,7 +85,7 @@ async function fetchAllDocs(): Promise<DocsSummary> {
     const summary: DocsSummary = {
       totalDocs: docs.length,
       categories: {},
-      docs: []
+      docs: [],
     }
 
     // Process each doc
@@ -100,7 +102,7 @@ async function fetchAllDocs(): Promise<DocsSummary> {
         contentLength: doc.content.length,
         tableId: doc.table.id,
         createdAt: new Date(doc.createdAt),
-        updatedAt: new Date(doc.updatedAt)
+        updatedAt: new Date(doc.updatedAt),
       })
 
       // Write individual doc content to separate file
@@ -134,7 +136,7 @@ ${doc.content}
       tableId: '106',
       graphqlEndpoint: 'http://localhost:4000/graphql',
       categories: Object.keys(summary.categories),
-      debugDir
+      debugDir,
     }
     writeFileSync(metadataFile, JSON.stringify(metadata, null, 2))
     console.log(`🏷️  Metadata saved to: ${metadataFile}`)
@@ -144,7 +146,7 @@ ${doc.content}
     console.log(`   • raw-graphql-response.json - Raw API response`)
     console.log(`   • docs-summary.json - Processed summary`)
     console.log(`   • fetch-metadata.json - Fetch metadata`)
-    docs.forEach(doc => {
+    docs.forEach((doc) => {
       console.log(`   • doc-${doc.id}-${doc.category}.md - Individual doc content`)
     })
 
@@ -159,7 +161,8 @@ async function fetchDocsByCategory(category: string): Promise<any[]> {
   console.log(`📖 Fetching docs for category: ${category}`)
 
   try {
-    const data = await graphqlQuery(`
+    const data = await graphqlQuery(
+      `
       query GetDocsByCategory($tableId: ID!, $category: DocCategory!) {
         getDocs(tableId: $tableId, category: $category) {
           docs {
@@ -177,10 +180,12 @@ async function fetchDocsByCategory(category: string): Promise<any[]> {
           totalCount
         }
       }
-    `, {
-      tableId: '106',
-      category: category.toLowerCase()
-    })
+    `,
+      {
+        tableId: '106',
+        category: category.toLowerCase(),
+      }
+    )
 
     return data.getDocs.docs
   } catch (error) {
@@ -193,7 +198,8 @@ async function fetchDocsByTableId(tableId: string): Promise<any[]> {
   console.log(`🗂️  Fetching docs for table: ${tableId}`)
 
   try {
-    const data = await graphqlQuery(`
+    const data = await graphqlQuery(
+      `
       query GetDocsByTable($tableId: ID!) {
         getDocs(tableId: $tableId) {
           docs {
@@ -211,9 +217,11 @@ async function fetchDocsByTableId(tableId: string): Promise<any[]> {
           totalCount
         }
       }
-    `, {
-      tableId
-    })
+    `,
+      {
+        tableId,
+      }
+    )
 
     return data.getDocs.docs
   } catch (error) {
@@ -226,7 +234,8 @@ async function fetchSpecificDoc(id: string): Promise<any | null> {
   console.log(`📄 Fetching specific doc: ${id}`)
 
   try {
-    const data = await graphqlQuery(`
+    const data = await graphqlQuery(
+      `
       query GetDoc($id: ID!) {
         getDoc(id: $id) {
           id
@@ -241,7 +250,9 @@ async function fetchSpecificDoc(id: string): Promise<any | null> {
           updatedAt
         }
       }
-    `, { id })
+    `,
+      { id }
+    )
 
     return data.getDoc
   } catch (error) {
@@ -283,7 +294,7 @@ async function demonstrateMcpToolPattern(): Promise<void> {
       overview: 'usage',
       queries: 'guide',
       mutations: 'spec',
-      examples: 'example'
+      examples: 'example',
     }
 
     for (const section of sections) {
@@ -320,7 +331,7 @@ async function main() {
     console.log('')
 
     switch (command) {
-      case 'all':
+      case 'all': {
         console.log('🔍 Fetching all documentation...')
         const summary = await fetchAllDocs()
 
@@ -332,12 +343,15 @@ async function main() {
         })
 
         console.log('\n📋 Document Details:')
-        summary.docs.forEach(doc => {
-          console.log(`   • [${doc.id}] ${doc.category} v${doc.version} (${doc.contentLength} chars) - Table ${doc.tableId}`)
+        summary.docs.forEach((doc) => {
+          console.log(
+            `   • [${doc.id}] ${doc.category} v${doc.version} (${doc.contentLength} chars) - Table ${doc.tableId}`
+          )
         })
         break
+      }
 
-      case 'category':
+      case 'category': {
         const category = args[1]
         if (!category) {
           console.error('❌ Please specify a category: usage, guide, example, spec, general')
@@ -348,15 +362,16 @@ async function main() {
         const categoryDocs = await fetchDocsByCategory(category)
 
         console.log(`\n📁 Found ${categoryDocs.length} documents in category '${category}':`)
-        categoryDocs.forEach(doc => {
+        categoryDocs.forEach((doc) => {
           console.log(`\n   • [${doc.id}] v${doc.version} (${doc.content.length} chars)`)
           console.log(`     Table: ${doc.table.identifier} (${doc.table.id})`)
           console.log(`     Created: ${doc.createdAt}`)
           console.log(`     Preview: ${doc.content.substring(0, 200)}...`)
         })
         break
+      }
 
-      case 'table':
+      case 'table': {
         const tableId = args[1]
         if (!tableId) {
           console.error('❌ Please specify a table ID')
@@ -367,14 +382,15 @@ async function main() {
         const tableDocs = await fetchDocsByTableId(tableId)
 
         console.log(`\n🗂️  Found ${tableDocs.length} documents for table '${tableId}':`)
-        tableDocs.forEach(doc => {
+        tableDocs.forEach((doc) => {
           console.log(`\n   • [${doc.id}] ${doc.category} v${doc.version}`)
           console.log(`     Content: ${doc.content.length} characters`)
           console.log(`     Preview: ${doc.content.substring(0, 150)}...`)
         })
         break
+      }
 
-      case 'doc':
+      case 'doc': {
         const docId = args[1]
         if (!docId) {
           console.error('❌ Please specify a document ID')
@@ -394,13 +410,14 @@ async function main() {
           console.log(`   Updated: ${doc.updatedAt}`)
           console.log(`   Content Length: ${doc.content.length} characters`)
           console.log(`\n📝 Full Content:`)
-          console.log('=' .repeat(60))
+          console.log('='.repeat(60))
           console.log(doc.content)
-          console.log('=' .repeat(60))
+          console.log('='.repeat(60))
         } else {
           console.log(`❌ Document ${docId} not found`)
         }
         break
+      }
 
       case 'test-mcp-pattern':
         await demonstrateMcpToolPattern()
@@ -435,7 +452,6 @@ Examples:
         `)
         break
     }
-
   } catch (error) {
     console.error('💥 Script failed:', error)
     process.exit(1)

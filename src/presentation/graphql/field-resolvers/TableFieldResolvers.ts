@@ -94,37 +94,37 @@ export class TableFieldResolvers extends BaseResolver {
   async tableNodes(parent: TableParent, _args?: any, _context?: GraphQLContext) {
     try {
       this.logger.debug(`Resolving field: Table.tableNodes`, {
-        tableId: parent.id
+        tableId: parent.id,
       })
 
       const result = await this.nodeRepository.findByTableId(parent.id)
 
       if (!result || !result.items) {
         this.logger.warn('No nodes found for Table', {
-          tableId: parent.id
+          tableId: parent.id,
         })
         return []
       }
 
       // Transform domain entities to GraphQL-compatible objects
-      const graphqlNodes = result.items.map(node => ({
+      const graphqlNodes = result.items.map((node) => ({
         id: node.getId(),
         content: node.getContent(),
         createdAt: node.getCreatedAt(),
         updatedAt: node.getUpdatedAt(),
-        tableId: node.getTableId()
+        tableId: node.getTableId(),
       }))
 
       this.logger.debug(`Field resolved: Table.tableNodes`, {
         tableId: parent.id,
-        nodeCount: graphqlNodes.length
+        nodeCount: graphqlNodes.length,
       })
 
       return graphqlNodes
     } catch (error) {
       this.logger.error('Field resolution failed: Table.tableNodes', {
         error,
-        tableId: parent.id
+        tableId: parent.id,
       })
 
       // Return empty array to prevent GraphQL errors

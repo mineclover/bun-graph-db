@@ -17,6 +17,7 @@ export const GraphQLTokens = {
   DOC_QUERIES: Symbol.for('DocQueries'),
   ANALYTICS_QUERIES: Symbol.for('AnalyticsQueries'),
   SYSTEM_QUERIES: Symbol.for('SystemQueries'),
+  ENHANCED_ATTRIBUTE_QUERIES: Symbol.for('EnhancedAttributeQueries'),
 
   // Mutation resolvers
   TABLE_MUTATIONS: Symbol.for('TableMutations'),

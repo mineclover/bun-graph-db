@@ -53,10 +53,10 @@ async function fixBulkUpdateTemplate(): Promise<void> {
     `
 
     const defaultVariables = {
-      nodeId1: "80",
-      nodeId2: "81",
+      nodeId1: '80',
+      nodeId2: '81',
       content1: `일괄 업데이트 1 - ${Date.now()}`,
-      content2: `일괄 업데이트 2 - ${Date.now()}`
+      content2: `일괄 업데이트 2 - ${Date.now()}`,
     }
 
     // Update the template
@@ -69,10 +69,7 @@ async function fixBulkUpdateTemplate(): Promise<void> {
       WHERE identifier = 'bulk-update-nodes-content'
     `
 
-    db.run(updateQuery, [
-      fixedQuery.trim(),
-      JSON.stringify(defaultVariables)
-    ])
+    db.run(updateQuery, [fixedQuery.trim(), JSON.stringify(defaultVariables)])
 
     console.log('✅ Fixed bulk update template')
   } catch (error) {
@@ -109,13 +106,13 @@ async function testFixedTemplate(): Promise<boolean> {
           input: {
             templateIdentifier: 'bulk-update-nodes-content',
             variables: {
-              nodeId1: "80",
-              nodeId2: "81",
+              nodeId1: '80',
+              nodeId2: '81',
               content1: `수정된 일괄 업데이트 1 - ${Date.now()}`,
-              content2: `수정된 일괄 업데이트 2 - ${Date.now()}`
-            }
-          }
-        }
+              content2: `수정된 일괄 업데이트 2 - ${Date.now()}`,
+            },
+          },
+        },
       }),
     })
 

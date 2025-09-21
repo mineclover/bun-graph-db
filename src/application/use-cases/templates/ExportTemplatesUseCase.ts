@@ -4,17 +4,19 @@
  * 여러 템플릿을 필터링하여 한번에 내보내는 유스케이스
  */
 
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
-  BatchTemplateExportResult,
   BatchTemplateExportOptions,
+  BatchTemplateExportResult,
   ExportedTemplateInfo,
 } from '@/core/types/TemplateExport.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type {
+  IQueryTemplateRepository,
+  SearchCriteria,
+} from '@/domain/repositories/IQueryTemplateRepository.js'
 import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
-import type { SearchCriteria } from '@/domain/repositories/IQueryTemplateRepository.js'
 
 export interface ExportTemplatesRequest {
   filter?: {
@@ -78,14 +80,11 @@ export class ExportTemplatesUseCase {
 
       for (const template of templates) {
         try {
-          const exportResult = await this.importExportService.exportTemplate(
-            template.getId()!,
-            {
-              includeStatistics: options.includeStatistics,
-              includeMetadata: options.includeMetadata,
-              prettyPrint: options.prettyPrint,
-            }
-          )
+          const exportResult = await this.importExportService.exportTemplate(template.getId()!, {
+            includeStatistics: options.includeStatistics,
+            includeMetadata: options.includeMetadata,
+            prettyPrint: options.prettyPrint,
+          })
 
           if (exportResult.success && exportResult.exportData && exportResult.filename) {
             // Write file to disk
@@ -115,7 +114,9 @@ export class ExportTemplatesUseCase {
               exportError: errorMessage,
             })
 
-            exportErrors.push(`Failed to export template ${template.getIdentifier()}: ${errorMessage}`)
+            exportErrors.push(
+              `Failed to export template ${template.getIdentifier()}: ${errorMessage}`
+            )
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -128,7 +129,9 @@ export class ExportTemplatesUseCase {
             exportError: errorMessage,
           })
 
-          exportErrors.push(`Failed to export template ${template.getIdentifier()}: ${errorMessage}`)
+          exportErrors.push(
+            `Failed to export template ${template.getIdentifier()}: ${errorMessage}`
+          )
           this.logger.error('Template export failed', {
             templateId: template.getId(),
             error: errorMessage,
@@ -136,8 +139,8 @@ export class ExportTemplatesUseCase {
         }
       }
 
-      const successCount = exportedTemplates.filter(t => t.exportSuccess).length
-      const failureCount = exportedTemplates.filter(t => !t.exportSuccess).length
+      const successCount = exportedTemplates.filter((t) => t.exportSuccess).length
+      const failureCount = exportedTemplates.filter((t) => !t.exportSuccess).length
 
       this.logger.info('Batch template export completed', {
         totalTemplates: templates.length,

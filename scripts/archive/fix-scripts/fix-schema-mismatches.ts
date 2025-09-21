@@ -60,12 +60,12 @@ const schemaFixedTemplates: SchemaFixedTemplate[] = [
     defaultVariables: {
       input: {
         content: `스키마 수정된 할일 ${Date.now()}`,
-        tableId: "101",
-        attributes: []
-      }
+        tableId: '101',
+        attributes: [],
+      },
     },
     tags: ['todo', 'create', 'schema-fixed'],
-    complexityScore: 3
+    complexityScore: 3,
   },
   {
     identifier: 'update-todo-schema-fixed',
@@ -101,13 +101,13 @@ const schemaFixedTemplates: SchemaFixedTemplate[] = [
       }
     `,
     defaultVariables: {
-      id: "72",
+      id: '72',
       input: {
-        content: `업데이트된 할일 ${Date.now()}`
-      }
+        content: `업데이트된 할일 ${Date.now()}`,
+      },
     },
     tags: ['todo', 'update', 'schema-fixed'],
-    complexityScore: 3
+    complexityScore: 3,
   },
   {
     identifier: 'create-table-node-schema-fixed',
@@ -144,12 +144,12 @@ const schemaFixedTemplates: SchemaFixedTemplate[] = [
     defaultVariables: {
       input: {
         content: `테이블 노드 ${Date.now()}`,
-        tableId: "101",
-        attributes: []
-      }
+        tableId: '101',
+        attributes: [],
+      },
     },
     tags: ['table', 'node', 'create', 'schema-fixed'],
-    complexityScore: 4
+    complexityScore: 4,
   },
   {
     identifier: 'create-table-attribute-schema-fixed',
@@ -183,16 +183,16 @@ const schemaFixedTemplates: SchemaFixedTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101",
+      tableId: '101',
       attrInput: {
         identifier: `new_attr_${Date.now()}`,
-        name: "새 속성",
-        description: "새로 생성된 속성",
-        dataType: "string"
-      }
+        name: '새 속성',
+        description: '새로 생성된 속성',
+        dataType: 'string',
+      },
     },
     tags: ['table', 'attribute', 'create', 'schema-fixed'],
-    complexityScore: 5
+    complexityScore: 5,
   },
   {
     identifier: 'get-table-statistics-correct',
@@ -236,10 +236,10 @@ const schemaFixedTemplates: SchemaFixedTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101"
+      tableId: '101',
     },
     tags: ['table', 'statistics', 'correct-fields'],
-    complexityScore: 4
+    complexityScore: 4,
   },
   {
     identifier: 'search-nodes-correct-fields',
@@ -278,11 +278,11 @@ const schemaFixedTemplates: SchemaFixedTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101",
-      searchTerm: "노드"
+      tableId: '101',
+      searchTerm: '노드',
     },
     tags: ['node', 'search', 'correct-fields'],
-    complexityScore: 4
+    complexityScore: 4,
   },
   {
     identifier: 'delete-node-simple',
@@ -300,11 +300,11 @@ const schemaFixedTemplates: SchemaFixedTemplate[] = [
       }
     `,
     defaultVariables: {
-      id: "999" // Non-existent ID for safe testing
+      id: '999', // Non-existent ID for safe testing
     },
     tags: ['node', 'delete', 'simple'],
-    complexityScore: 2
-  }
+    complexityScore: 2,
+  },
 ]
 
 // Database operations
@@ -328,7 +328,9 @@ async function insertSchemaFixedTemplate(template: SchemaFixedTemplate): Promise
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
 
-    const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
+    const operationType = template.query.trim().toLowerCase().startsWith('mutation')
+      ? 'mutation'
+      : 'query'
 
     db.run(insertQuery, [
       template.identifier,
@@ -344,7 +346,7 @@ async function insertSchemaFixedTemplate(template: SchemaFixedTemplate): Promise
       0,
       1,
       JSON.stringify(template.tags),
-      '1.0.0'
+      '1.0.0',
     ])
 
     console.log(`✅ Inserted template: ${template.identifier}`)
@@ -373,7 +375,7 @@ async function deactivateBrokenTemplates(): Promise<void> {
       'update-node-with-params',
       'create-todo',
       'update-todo',
-      'bulk-update-todo-status'
+      'bulk-update-todo-status',
     ]
 
     for (const identifier of brokenTemplates) {
@@ -415,9 +417,9 @@ async function testSchemaFixedTemplate(identifier: string, variables: any): Prom
         variables: {
           input: {
             templateIdentifier: identifier,
-            variables: variables
-          }
-        }
+            variables: variables,
+          },
+        },
       }),
     })
 
@@ -447,7 +449,7 @@ async function main() {
     const response = await fetch('http://localhost:4000/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: 'query { __typename }' })
+      body: JSON.stringify({ query: 'query { __typename }' }),
     })
 
     if (!response.ok) {
@@ -475,7 +477,7 @@ async function main() {
   for (const template of schemaFixedTemplates) {
     const success = await testSchemaFixedTemplate(template.identifier, template.defaultVariables)
     testResults.push(success)
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise((resolve) => setTimeout(resolve, 200))
   }
 
   // Step 4: Summary

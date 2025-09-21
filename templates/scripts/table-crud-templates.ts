@@ -85,7 +85,7 @@ async function insertTemplate(template: TableTemplate): Promise<boolean> {
       JSON.stringify(template.variables),
       template.operationType,
       JSON.stringify(template.tags),
-      template.complexityScore
+      template.complexityScore,
     ])
 
     console.log(`✅ Template created: ${template.identifier}`)
@@ -130,10 +130,10 @@ function createTableTemplate(): TableTemplate {
     `,
     variables: {
       input: {
-        identifier: "{{tableIdentifier}}",
-        description: "{{tableDescription}}"
-      }
-    }
+        identifier: '{{tableIdentifier}}',
+        description: '{{tableDescription}}',
+      },
+    },
   }
 }
 
@@ -171,15 +171,15 @@ function createAttributeTemplate(): TableTemplate {
     `,
     variables: {
       input: {
-        tableId: "{{tableId}}",
-        identifier: "{{attributeIdentifier}}",
-        name: "{{attributeName}}",
-        description: "{{attributeDescription}}",
-        dataType: "{{dataType}}",
-        isRequired: "{{isRequired}}",
-        enumValues: "{{enumValues}}"
-      }
-    }
+        tableId: '{{tableId}}',
+        identifier: '{{attributeIdentifier}}',
+        name: '{{attributeName}}',
+        description: '{{attributeDescription}}',
+        dataType: '{{dataType}}',
+        isRequired: '{{isRequired}}',
+        enumValues: '{{enumValues}}',
+      },
+    },
   }
 }
 
@@ -219,11 +219,11 @@ function createNodeTemplate(): TableTemplate {
     `,
     variables: {
       input: {
-        tableId: "{{tableId}}",
-        content: "{{nodeContent}}",
-        attributes: "{{nodeAttributes}}"
-      }
-    }
+        tableId: '{{tableId}}',
+        content: '{{nodeContent}}',
+        attributes: '{{nodeAttributes}}',
+      },
+    },
   }
 }
 
@@ -264,8 +264,8 @@ function getNodeTemplate(): TableTemplate {
       }
     `,
     variables: {
-      id: "{{nodeId}}"
-    }
+      id: '{{nodeId}}',
+    },
   }
 }
 
@@ -306,16 +306,16 @@ function listNodesTemplate(): TableTemplate {
     `,
     variables: {
       filter: {
-        tableIds: ["{{tableId}}"],
-        search: "{{searchTerm}}",
-        createdAfter: "{{createdAfter}}",
-        createdBefore: "{{createdBefore}}"
+        tableIds: ['{{tableId}}'],
+        search: '{{searchTerm}}',
+        createdAfter: '{{createdAfter}}',
+        createdBefore: '{{createdBefore}}',
       },
       pagination: {
-        limit: "{{limit}}",
-        offset: "{{offset}}"
-      }
-    }
+        limit: '{{limit}}',
+        offset: '{{offset}}',
+      },
+    },
   }
 }
 
@@ -353,12 +353,12 @@ function updateNodeTemplate(): TableTemplate {
       }
     `,
     variables: {
-      id: "{{nodeId}}",
+      id: '{{nodeId}}',
       input: {
-        content: "{{newContent}}",
-        attributes: "{{newAttributes}}"
-      }
-    }
+        content: '{{newContent}}',
+        attributes: '{{newAttributes}}',
+      },
+    },
   }
 }
 
@@ -384,9 +384,9 @@ function deleteNodeTemplate(): TableTemplate {
       }
     `,
     variables: {
-      id: "{{nodeId}}",
-      force: "{{force}}"
-    }
+      id: '{{nodeId}}',
+      force: '{{force}}',
+    },
   }
 }
 
@@ -424,10 +424,10 @@ function bulkCreateNodesTemplate(): TableTemplate {
     `,
     variables: {
       input: {
-        tableId: "{{tableId}}",
-        nodes: "{{nodesData}}"
-      }
-    }
+        tableId: '{{tableId}}',
+        nodes: '{{nodesData}}',
+      },
+    },
   }
 }
 
@@ -474,8 +474,8 @@ function getTableTemplate(): TableTemplate {
       }
     `,
     variables: {
-      id: "{{tableId}}"
-    }
+      id: '{{tableId}}',
+    },
   }
 }
 
@@ -508,19 +508,19 @@ function searchTablesTemplate(): TableTemplate {
     `,
     variables: {
       filter: {
-        search: "{{searchTerm}}",
-        identifiers: ["{{tableIdentifiers}}"],
-        hasNodes: "{{hasNodes}}",
-        nodeCountMin: "{{nodeCountMin}}",
-        nodeCountMax: "{{nodeCountMax}}",
-        createdAfter: "{{createdAfter}}",
-        createdBefore: "{{createdBefore}}"
+        search: '{{searchTerm}}',
+        identifiers: ['{{tableIdentifiers}}'],
+        hasNodes: '{{hasNodes}}',
+        nodeCountMin: '{{nodeCountMin}}',
+        nodeCountMax: '{{nodeCountMax}}',
+        createdAfter: '{{createdAfter}}',
+        createdBefore: '{{createdBefore}}',
       },
       pagination: {
-        limit: "{{limit}}",
-        offset: "{{offset}}"
-      }
-    }
+        limit: '{{limit}}',
+        offset: '{{offset}}',
+      },
+    },
   }
 }
 
@@ -538,7 +538,7 @@ async function createAllTemplates(): Promise<boolean> {
     deleteNodeTemplate(),
     bulkCreateNodesTemplate(),
     getTableTemplate(),
-    searchTablesTemplate()
+    searchTablesTemplate(),
   ]
 
   let successCount = 0
@@ -559,7 +559,8 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
   try {
     // 1. 테이블 생성
     console.log('Step 1: Creating table...')
-    const tableResult = await graphqlRequest(`
+    const tableResult = await graphqlRequest(
+      `
       mutation CreateTable($input: CreateTableInput!) {
         createTable(input: $input) {
           success
@@ -574,12 +575,14 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
           }
         }
       }
-    `, {
-      input: {
-        identifier: config.identifier,
-        description: config.description
+    `,
+      {
+        input: {
+          identifier: config.identifier,
+          description: config.description,
+        },
       }
-    })
+    )
 
     if (!tableResult.createTable.success) {
       console.error('❌ Failed to create table:', tableResult.createTable.errors)
@@ -594,7 +597,8 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
     const attributeTypeIds: { [key: string]: string } = {}
 
     for (const attr of config.attributes) {
-      const attrTypeResult = await graphqlRequest(`
+      const attrTypeResult = await graphqlRequest(
+        `
         mutation CreateAttributeType($input: CreateAttributeTypeInput!) {
           createAttributeType(input: $input) {
             success
@@ -609,20 +613,25 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
             }
           }
         }
-      `, {
-        input: {
-          identifier: `${config.identifier.replace(/-/g, '_')}_${attr.identifier}`.toLowerCase(),
-          name: attr.name,
-          description: attr.description,
-          dataType: attr.dataType
+      `,
+        {
+          input: {
+            identifier: `${config.identifier.replace(/-/g, '_')}_${attr.identifier}`.toLowerCase(),
+            name: attr.name,
+            description: attr.description,
+            dataType: attr.dataType,
+          },
         }
-      })
+      )
 
       if (attrTypeResult.createAttributeType.success) {
         attributeTypeIds[attr.identifier] = attrTypeResult.createAttributeType.attributeType.id
         console.log(`  ✅ Attribute type created: ${attr.identifier}`)
       } else {
-        console.log(`  ❌ Failed to create attribute type ${attr.identifier}:`, attrTypeResult.createAttributeType.errors)
+        console.log(
+          `  ❌ Failed to create attribute type ${attr.identifier}:`,
+          attrTypeResult.createAttributeType.errors
+        )
       }
     }
 
@@ -636,7 +645,8 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
         continue
       }
 
-      const attrResult = await graphqlRequest(`
+      const attrResult = await graphqlRequest(
+        `
         mutation CreateAttribute($input: CreateAttributeInput!) {
           createAttribute(input: $input) {
             success
@@ -651,21 +661,26 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
             }
           }
         }
-      `, {
-        input: {
-          tableId: tableId,
-          attributeTypeId: attributeTypeIds[attr.identifier],
-          identifier: attr.identifier,
-          name: attr.name,
-          description: attr.description
+      `,
+        {
+          input: {
+            tableId: tableId,
+            attributeTypeId: attributeTypeIds[attr.identifier],
+            identifier: attr.identifier,
+            name: attr.name,
+            description: attr.description,
+          },
         }
-      })
+      )
 
       if (attrResult.createAttribute.success) {
         attributeIds[attr.identifier] = attrResult.createAttribute.attribute.id
         console.log(`  ✅ Attribute created: ${attr.identifier}`)
       } else {
-        console.log(`  ❌ Failed to create attribute ${attr.identifier}:`, attrResult.createAttribute.errors)
+        console.log(
+          `  ❌ Failed to create attribute ${attr.identifier}:`,
+          attrResult.createAttribute.errors
+        )
       }
     }
 
@@ -674,7 +689,6 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
 
     console.log(`🎉 Complete table "${config.identifier}" created successfully!`)
     return true
-
   } catch (error) {
     console.error('❌ Failed to create complete table:', error)
     return false
@@ -694,7 +708,7 @@ async function testCRUDWorkflow(): Promise<boolean> {
         name: '제목',
         description: '항목의 제목',
         dataType: 'STRING',
-        isRequired: true
+        isRequired: true,
       },
       {
         identifier: 'status',
@@ -702,7 +716,7 @@ async function testCRUDWorkflow(): Promise<boolean> {
         description: '항목의 상태',
         dataType: 'STRING',
         isRequired: true,
-        enumValues: ['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED']
+        enumValues: ['TODO', 'IN_PROGRESS', 'DONE', 'CANCELLED'],
       },
       {
         identifier: 'priority',
@@ -710,16 +724,16 @@ async function testCRUDWorkflow(): Promise<boolean> {
         description: '항목의 우선순위',
         dataType: 'STRING',
         isRequired: false,
-        enumValues: ['LOW', 'MEDIUM', 'HIGH', 'URGENT']
+        enumValues: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'],
       },
       {
         identifier: 'due_date',
         name: '마감일',
         description: '마감일',
         dataType: 'DATE',
-        isRequired: false
-      }
-    ]
+        isRequired: false,
+      },
+    ],
   }
 
   try {
@@ -732,7 +746,8 @@ async function testCRUDWorkflow(): Promise<boolean> {
 
     // 2. 테이블 조회
     console.log('Step 3: Testing table search...')
-    const searchResult = await graphqlRequest(`
+    const searchResult = await graphqlRequest(
+      `
       query SearchTables($filter: TablesFilter) {
         tables(filter: $filter) {
           nodes {
@@ -744,11 +759,13 @@ async function testCRUDWorkflow(): Promise<boolean> {
           }
         }
       }
-    `, {
-      filter: {
-        identifiers: [testTableConfig.identifier]
+    `,
+      {
+        filter: {
+          identifiers: [testTableConfig.identifier],
+        },
       }
-    })
+    )
 
     if (searchResult.tables.nodes.length === 0) {
       console.error('❌ Test table not found')
@@ -769,24 +786,25 @@ async function testCRUDWorkflow(): Promise<boolean> {
       {
         content: '첫 번째 할일',
         attributes: [
-          { attributeId: testTableConfig.attributeIds['title'], value: '프로젝트 시작하기' },
-          { attributeId: testTableConfig.attributeIds['status'], value: 'TODO' },
-          { attributeId: testTableConfig.attributeIds['priority'], value: 'HIGH' },
-          { attributeId: testTableConfig.attributeIds['due_date'], value: '2024-12-31' }
-        ].filter(attr => attr.attributeId) // 유효한 attributeId만 포함
+          { attributeId: testTableConfig.attributeIds.title, value: '프로젝트 시작하기' },
+          { attributeId: testTableConfig.attributeIds.status, value: 'TODO' },
+          { attributeId: testTableConfig.attributeIds.priority, value: 'HIGH' },
+          { attributeId: testTableConfig.attributeIds.due_date, value: '2024-12-31' },
+        ].filter((attr) => attr.attributeId), // 유효한 attributeId만 포함
       },
       {
         content: '두 번째 할일',
         attributes: [
-          { attributeId: testTableConfig.attributeIds['title'], value: '문서 작성하기' },
-          { attributeId: testTableConfig.attributeIds['status'], value: 'IN_PROGRESS' },
-          { attributeId: testTableConfig.attributeIds['priority'], value: 'MEDIUM' }
-        ].filter(attr => attr.attributeId) // 유효한 attributeId만 포함
-      }
+          { attributeId: testTableConfig.attributeIds.title, value: '문서 작성하기' },
+          { attributeId: testTableConfig.attributeIds.status, value: 'IN_PROGRESS' },
+          { attributeId: testTableConfig.attributeIds.priority, value: 'MEDIUM' },
+        ].filter((attr) => attr.attributeId), // 유효한 attributeId만 포함
+      },
     ]
 
     for (const nodeData of sampleNodes) {
-      const nodeResult = await graphqlRequest(`
+      const nodeResult = await graphqlRequest(
+        `
         mutation CreateNode($input: CreateNodeInput!) {
           createNode(input: $input) {
             success
@@ -799,13 +817,15 @@ async function testCRUDWorkflow(): Promise<boolean> {
             }
           }
         }
-      `, {
-        input: {
-          tableId: testTable.id,
-          content: nodeData.content,
-          attributes: nodeData.attributes
+      `,
+        {
+          input: {
+            tableId: testTable.id,
+            content: nodeData.content,
+            attributes: nodeData.attributes,
+          },
         }
-      })
+      )
 
       if (nodeResult.createNode.success) {
         console.log(`  ✅ Node created: ${nodeData.content}`)
@@ -816,7 +836,8 @@ async function testCRUDWorkflow(): Promise<boolean> {
 
     // 4. 노드 목록 조회
     console.log('Step 5: Testing node listing...')
-    const nodesResult = await graphqlRequest(`
+    const nodesResult = await graphqlRequest(
+      `
       query ListNodes($filter: NodesFilter) {
         nodes(filter: $filter) {
           nodes {
@@ -832,17 +853,18 @@ async function testCRUDWorkflow(): Promise<boolean> {
           totalCount
         }
       }
-    `, {
-      filter: {
-        tableId: testTable.id
+    `,
+      {
+        filter: {
+          tableId: testTable.id,
+        },
       }
-    })
+    )
 
     console.log(`✅ Found ${nodesResult.nodes.totalCount} nodes in test table`)
 
     console.log('🎉 CRUD workflow test completed successfully!')
     return true
-
   } catch (error) {
     console.error('❌ CRUD workflow test failed:', error)
     return false
@@ -877,8 +899,6 @@ async function main() {
         await createAllTemplates()
         await testCRUDWorkflow()
         break
-
-      case 'help':
       default:
         console.log(`
 📖 Usage:
@@ -897,7 +917,6 @@ Examples:
         `)
         break
     }
-
   } catch (error) {
     console.error('❌ Execution failed:', error)
     process.exit(1)
@@ -914,5 +933,5 @@ export {
   createCompleteTable,
   testCRUDWorkflow,
   type TableConfig,
-  type AttributeConfig
+  type AttributeConfig,
 }

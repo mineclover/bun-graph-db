@@ -57,11 +57,11 @@ const updatedTemplates: TemplateUpdate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "98", // Use an existing table ID
-      searchTerm: "할일"
+      tableId: '98', // Use an existing table ID
+      searchTerm: '할일',
     },
     tags: ['todo', 'crud', 'search'],
-    complexityScore: 4
+    complexityScore: 4,
   },
   {
     identifier: 'bulk-import-todos',
@@ -113,18 +113,18 @@ const updatedTemplates: TemplateUpdate[] = [
     `,
     defaultVariables: {
       input1: {
-        content: "샘플 할일 1",
-        tableId: "98",
-        attributes: []
+        content: '샘플 할일 1',
+        tableId: '98',
+        attributes: [],
       },
       input2: {
-        content: "샘플 할일 2",
-        tableId: "98",
-        attributes: []
-      }
+        content: '샘플 할일 2',
+        tableId: '98',
+        attributes: [],
+      },
     },
     tags: ['todo', 'bulk', 'import'],
-    complexityScore: 6
+    complexityScore: 6,
   },
   {
     identifier: 'todo-statistics',
@@ -161,11 +161,11 @@ const updatedTemplates: TemplateUpdate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "98" // Use an existing table ID
+      tableId: '98', // Use an existing table ID
     },
     tags: ['todo', 'statistics', 'analytics'],
-    complexityScore: 5
-  }
+    complexityScore: 5,
+  },
 ]
 
 // Database helper to update templates
@@ -177,9 +177,11 @@ async function updateTemplate(template: TemplateUpdate): Promise<void> {
     console.log(`🔧 Updating template: ${template.identifier}`)
 
     // First check if template exists
-    const existingTemplate = db.query(`
+    const existingTemplate = db
+      .query(`
       SELECT id FROM templates WHERE identifier = ?
-    `).get(template.identifier)
+    `)
+      .get(template.identifier)
 
     if (existingTemplate) {
       // Update existing template
@@ -203,7 +205,7 @@ async function updateTemplate(template: TemplateUpdate): Promise<void> {
         JSON.stringify(template.defaultVariables),
         JSON.stringify(template.tags),
         template.complexityScore,
-        template.identifier
+        template.identifier,
       ])
 
       console.log(`✅ Updated template: ${template.identifier}`)
@@ -219,7 +221,9 @@ async function updateTemplate(template: TemplateUpdate): Promise<void> {
       `
 
       // Extract operation type from query
-      const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
+      const operationType = template.query.trim().toLowerCase().startsWith('mutation')
+        ? 'mutation'
+        : 'query'
 
       db.run(insertQuery, [
         template.identifier,
@@ -273,9 +277,9 @@ async function testTemplate(identifier: string, variables: any): Promise<boolean
         variables: {
           input: {
             templateIdentifier: identifier,
-            variables: variables
-          }
-        }
+            variables: variables,
+          },
+        },
       }),
     })
 
@@ -305,7 +309,7 @@ async function main() {
     const response = await fetch('http://localhost:4000/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: 'query { __typename }' })
+      body: JSON.stringify({ query: 'query { __typename }' }),
     })
 
     if (!response.ok) {
@@ -332,7 +336,7 @@ async function main() {
     testResults.push(success)
 
     // Small delay between tests
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
   }
 
   // Summary

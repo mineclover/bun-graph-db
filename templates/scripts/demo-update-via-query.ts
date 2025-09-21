@@ -35,9 +35,9 @@ async function executeUpdateTemplate(templateIdentifier: string, variables: any)
       variables: {
         input: {
           templateIdentifier,
-          variables
-        }
-      }
+          variables,
+        },
+      },
     }),
   })
 
@@ -60,8 +60,8 @@ async function demoBasicUpdate(): Promise<void> {
   console.log('='.repeat(50))
 
   await executeUpdateTemplate('update-todo-content', {
-    nodeId: "81",
-    newContent: `데모 업데이트 - ${new Date().toLocaleString('ko-KR')}`
+    nodeId: '81',
+    newContent: `데모 업데이트 - ${new Date().toLocaleString('ko-KR')}`,
   })
 }
 
@@ -70,10 +70,10 @@ async function demoUpdateWithAttributes(): Promise<void> {
   console.log('='.repeat(50))
 
   await executeUpdateTemplate('update-todo-with-attributes', {
-    nodeId: "81",
+    nodeId: '81',
     content: `속성 포함 업데이트 - ${new Date().toLocaleString('ko-KR')}`,
-    attributeId: "15",
-    attributeValue: `새로운 속성 값 - ${Date.now()}`
+    attributeId: '15',
+    attributeValue: `새로운 속성 값 - ${Date.now()}`,
   })
 }
 
@@ -82,8 +82,8 @@ async function demoTableUpdate(): Promise<void> {
   console.log('='.repeat(50))
 
   await executeUpdateTemplate('update-table-description', {
-    tableId: "101",
-    newDescription: `데모용 테이블 설명 - 업데이트 시간: ${new Date().toLocaleString('ko-KR')}`
+    tableId: '101',
+    newDescription: `데모용 테이블 설명 - 업데이트 시간: ${new Date().toLocaleString('ko-KR')}`,
   })
 }
 
@@ -92,10 +92,10 @@ async function demoBulkUpdate(): Promise<void> {
   console.log('='.repeat(50))
 
   await executeUpdateTemplate('bulk-update-nodes-content', {
-    nodeId1: "80",
-    nodeId2: "81",
+    nodeId1: '80',
+    nodeId2: '81',
     content1: `일괄 업데이트 노드 1 - ${new Date().toLocaleString('ko-KR')}`,
-    content2: `일괄 업데이트 노드 2 - ${new Date().toLocaleString('ko-KR')}`
+    content2: `일괄 업데이트 노드 2 - ${new Date().toLocaleString('ko-KR')}`,
   })
 }
 
@@ -104,8 +104,8 @@ async function demoValidationUpdate(): Promise<void> {
   console.log('='.repeat(50))
 
   await executeUpdateTemplate('update-node-with-validation', {
-    nodeId: "81",
-    newContent: `검증된 업데이트 - ${new Date().toLocaleString('ko-KR')}`
+    nodeId: '81',
+    newContent: `검증된 업데이트 - ${new Date().toLocaleString('ko-KR')}`,
   })
 }
 
@@ -114,9 +114,9 @@ async function demoConditionalUpdate(): Promise<void> {
   console.log('='.repeat(50))
 
   await executeUpdateTemplate('conditional-update-todo', {
-    tableId: "101",
-    searchTerm: "업데이트",
-    newContent: `조건부 업데이트 결과 - ${new Date().toLocaleString('ko-KR')}`
+    tableId: '101',
+    searchTerm: '업데이트',
+    newContent: `조건부 업데이트 결과 - ${new Date().toLocaleString('ko-KR')}`,
   })
 }
 
@@ -125,8 +125,8 @@ async function demoHistoryUpdate(): Promise<void> {
   console.log('='.repeat(50))
 
   await executeUpdateTemplate('update-with-history', {
-    nodeId: "81",
-    newContent: `히스토리 추적 업데이트 - ${new Date().toLocaleString('ko-KR')}`
+    nodeId: '81',
+    newContent: `히스토리 추적 업데이트 - ${new Date().toLocaleString('ko-KR')}`,
   })
 }
 
@@ -157,13 +157,17 @@ function showUsageGuide(): void {
   console.log('2. 속성 포함 업데이트:')
   console.log('   executeTemplate(input: {')
   console.log('     templateIdentifier: "update-todo-with-attributes"')
-  console.log('     variables: { nodeId: "123", content: "내용", attributeId: "456", attributeValue: "값" }')
+  console.log(
+    '     variables: { nodeId: "123", content: "내용", attributeId: "456", attributeValue: "값" }'
+  )
   console.log('   })')
   console.log('')
   console.log('3. 일괄 업데이트:')
   console.log('   executeTemplate(input: {')
   console.log('     templateIdentifier: "bulk-update-nodes-content"')
-  console.log('     variables: { nodeId1: "123", nodeId2: "456", content1: "내용1", content2: "내용2" }')
+  console.log(
+    '     variables: { nodeId1: "123", nodeId2: "456", content1: "내용1", content2: "내용2" }'
+  )
   console.log('   })')
 }
 
@@ -177,7 +181,7 @@ async function main() {
     const healthCheck = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: 'query { __typename }' })
+      body: JSON.stringify({ query: 'query { __typename }' }),
     })
 
     if (!healthCheck.ok) {
@@ -201,7 +205,6 @@ async function main() {
 
     console.log('\n🎉 모든 업데이트 데모 완료!')
     console.log('\n💡 이제 GraphQL 쿼리를 통해 다양한 업데이트 작업을 수행할 수 있습니다!')
-
   } catch (error) {
     console.error('❌ 데모 실행 중 오류 발생:', error)
     process.exit(1)

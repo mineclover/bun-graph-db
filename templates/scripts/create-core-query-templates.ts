@@ -56,11 +56,11 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      nodeId: "80"
+      nodeId: '80',
     },
     tags: ['crud', 'read', 'node'],
     complexityScore: 2,
-    category: 'crud'
+    category: 'crud',
   },
   {
     identifier: 'get-table-by-id',
@@ -80,11 +80,11 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101"
+      tableId: '101',
     },
     tags: ['crud', 'read', 'table'],
     complexityScore: 2,
-    category: 'crud'
+    category: 'crud',
   },
   {
     identifier: 'create-node-simple',
@@ -113,13 +113,13 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
     defaultVariables: {
       input: {
         content: `심플 노드 ${Date.now()}`,
-        tableId: "101",
-        attributes: []
-      }
+        tableId: '101',
+        attributes: [],
+      },
     },
     tags: ['crud', 'create', 'node'],
     complexityScore: 3,
-    category: 'crud'
+    category: 'crud',
   },
   {
     identifier: 'update-node-simple',
@@ -146,14 +146,14 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      id: "80",
+      id: '80',
       input: {
-        content: `업데이트된 노드 ${Date.now()}`
-      }
+        content: `업데이트된 노드 ${Date.now()}`,
+      },
     },
     tags: ['crud', 'update', 'node'],
     complexityScore: 3,
-    category: 'crud'
+    category: 'crud',
   },
   {
     identifier: 'delete-node-simple',
@@ -171,11 +171,11 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      id: "999" // 안전한 테스트를 위해 존재하지 않는 ID 사용
+      id: '999', // 안전한 테스트를 위해 존재하지 않는 ID 사용
     },
     tags: ['crud', 'delete', 'node'],
     complexityScore: 2,
-    category: 'crud'
+    category: 'crud',
   },
 
   // === 고급 검색 및 필터링 쿼리 ===
@@ -213,17 +213,17 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
     `,
     defaultVariables: {
       filter: {
-        tableId: "101",
-        search: "노드"
+        tableId: '101',
+        search: '노드',
       },
       pagination: {
         limit: 20,
-        offset: 0
-      }
+        offset: 0,
+      },
     },
     tags: ['search', 'filter', 'node', 'pagination'],
     complexityScore: 4,
-    category: 'search'
+    category: 'search',
   },
   {
     identifier: 'search-tables-with-stats',
@@ -248,11 +248,11 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
     `,
     defaultVariables: {
       search: null,
-      limit: 10
+      limit: 10,
     },
     tags: ['search', 'table', 'statistics'],
     complexityScore: 3,
-    category: 'search'
+    category: 'search',
   },
   {
     identifier: 'filter-nodes-by-attribute',
@@ -285,13 +285,13 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101",
-      attributeFilter: "완료",
-      limit: 15
+      tableId: '101',
+      attributeFilter: '완료',
+      limit: 15,
     },
     tags: ['search', 'filter', 'attribute'],
     complexityScore: 4,
-    category: 'search'
+    category: 'search',
   },
 
   // === 통계 및 분석 쿼리 ===
@@ -315,7 +315,7 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
     defaultVariables: {},
     tags: ['analytics', 'statistics', 'system'],
     complexityScore: 5,
-    category: 'analytics'
+    category: 'analytics',
   },
   {
     identifier: 'get-table-analytics',
@@ -365,11 +365,11 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101"
+      tableId: '101',
     },
     tags: ['analytics', 'table', 'detailed'],
     complexityScore: 6,
-    category: 'analytics'
+    category: 'analytics',
   },
   {
     identifier: 'get-recent-activity',
@@ -406,11 +406,11 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      limit: 20
+      limit: 20,
     },
     tags: ['analytics', 'activity', 'recent'],
     complexityScore: 4,
-    category: 'analytics'
+    category: 'analytics',
   },
 
   // === 관계형 데이터 쿼리 ===
@@ -454,12 +454,12 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101",
-      nodeLimit: 25
+      tableId: '101',
+      nodeLimit: 25,
     },
     tags: ['relations', 'table', 'nodes'],
     complexityScore: 5,
-    category: 'relations'
+    category: 'relations',
   },
   {
     identifier: 'get-node-with-table-context',
@@ -504,11 +504,11 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      nodeId: "80"
+      nodeId: '80',
     },
     tags: ['relations', 'node', 'context'],
     complexityScore: 5,
-    category: 'relations'
+    category: 'relations',
   },
 
   // === 배치 작업 쿼리 ===
@@ -559,23 +559,23 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
     defaultVariables: {
       input1: {
         content: `배치 노드 1 - ${Date.now()}`,
-        tableId: "101",
-        attributes: []
+        tableId: '101',
+        attributes: [],
       },
       input2: {
         content: `배치 노드 2 - ${Date.now()}`,
-        tableId: "101",
-        attributes: []
+        tableId: '101',
+        attributes: [],
       },
       input3: {
         content: `배치 노드 3 - ${Date.now()}`,
-        tableId: "101",
-        attributes: []
-      }
+        tableId: '101',
+        attributes: [],
+      },
     },
     tags: ['batch', 'create', 'nodes'],
     complexityScore: 7,
-    category: 'batch'
+    category: 'batch',
   },
   {
     identifier: 'batch-node-operations',
@@ -613,21 +613,21 @@ const coreQueryTemplates: CoreQueryTemplate[] = [
       }
     `,
     defaultVariables: {
-      readId: "80",
+      readId: '80',
       createInput: {
         content: `배치 작업 새 노드 ${Date.now()}`,
-        tableId: "101",
-        attributes: []
+        tableId: '101',
+        attributes: [],
       },
-      updateId: "81",
+      updateId: '81',
       updateInput: {
-        content: `배치 작업 업데이트 ${Date.now()}`
-      }
+        content: `배치 작업 업데이트 ${Date.now()}`,
+      },
     },
     tags: ['batch', 'mixed', 'operations'],
     complexityScore: 8,
-    category: 'batch'
-  }
+    category: 'batch',
+  },
 ]
 
 // Database operations
@@ -651,7 +651,9 @@ async function insertCoreQueryTemplate(template: CoreQueryTemplate): Promise<voi
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
 
-    const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
+    const operationType = template.query.trim().toLowerCase().startsWith('mutation')
+      ? 'mutation'
+      : 'query'
 
     db.run(insertQuery, [
       template.identifier,
@@ -667,7 +669,7 @@ async function insertCoreQueryTemplate(template: CoreQueryTemplate): Promise<voi
       0,
       1,
       JSON.stringify([...template.tags, template.category]),
-      '1.0.0'
+      '1.0.0',
     ])
 
     console.log(`✅ Inserted template: ${template.identifier} (${template.category})`)
@@ -704,9 +706,9 @@ async function testCoreQueryTemplate(identifier: string, variables: any): Promis
         variables: {
           input: {
             templateIdentifier: identifier,
-            variables: variables
-          }
-        }
+            variables: variables,
+          },
+        },
       }),
     })
 
@@ -735,26 +737,26 @@ async function demoCoreQueries(): Promise<void> {
     {
       template: 'get-node-by-id',
       description: 'ID로 노드 조회',
-      variables: { nodeId: "80" }
+      variables: { nodeId: '80' },
     },
     {
       template: 'search-nodes-advanced',
       description: '고급 노드 검색',
       variables: {
-        filter: { tableId: "101", search: "노드" },
-        pagination: { limit: 5, offset: 0 }
-      }
+        filter: { tableId: '101', search: '노드' },
+        pagination: { limit: 5, offset: 0 },
+      },
     },
     {
       template: 'get-system-statistics',
       description: '시스템 통계',
-      variables: {}
+      variables: {},
     },
     {
       template: 'get-table-with-nodes',
       description: '테이블과 노드 함께 조회',
-      variables: { tableId: "101", nodeLimit: 3 }
-    }
+      variables: { tableId: '101', nodeLimit: 3 },
+    },
   ]
 
   for (const demo of demoQueries) {
@@ -777,22 +779,25 @@ async function demoCoreQueries(): Promise<void> {
         variables: {
           input: {
             templateIdentifier: demo.template,
-            variables: demo.variables
-          }
-        }
-      })
+            variables: demo.variables,
+          },
+        },
+      }),
     })
 
     const result = await response.json()
 
     if (result.data?.executeTemplate?.success) {
       console.log('✅ 성공!')
-      console.log('📤 결과 미리보기:', JSON.stringify(result.data.executeTemplate.data, null, 2).substring(0, 200) + '...')
+      console.log(
+        '📤 결과 미리보기:',
+        `${JSON.stringify(result.data.executeTemplate.data, null, 2).substring(0, 200)}...`
+      )
     } else {
       console.log('❌ 실패:', result.data?.executeTemplate?.errors || result.errors)
     }
 
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
   }
 }
 
@@ -806,7 +811,7 @@ async function main() {
     const response = await fetch('http://localhost:4000/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: 'query { __typename }' })
+      body: JSON.stringify({ query: 'query { __typename }' }),
     })
 
     if (!response.ok) {
@@ -822,7 +827,7 @@ async function main() {
   const categories = ['crud', 'search', 'analytics', 'relations', 'batch'] as const
 
   for (const category of categories) {
-    const categoryTemplates = coreQueryTemplates.filter(t => t.category === category)
+    const categoryTemplates = coreQueryTemplates.filter((t) => t.category === category)
     console.log(`\n📝 ${category.toUpperCase()} 템플릿 삽입 중... (${categoryTemplates.length}개)`)
 
     for (const template of categoryTemplates) {
@@ -837,7 +842,7 @@ async function main() {
   for (const template of coreQueryTemplates) {
     const success = await testCoreQueryTemplate(template.identifier, template.defaultVariables)
     testResults.push(success)
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise((resolve) => setTimeout(resolve, 200))
   }
 
   // Demo execution
@@ -857,7 +862,7 @@ async function main() {
   // Category breakdown
   console.log('\n📋 카테고리별 템플릿:')
   for (const category of categories) {
-    const categoryTemplates = coreQueryTemplates.filter(t => t.category === category)
+    const categoryTemplates = coreQueryTemplates.filter((t) => t.category === category)
     console.log(`   ${category.toUpperCase()}: ${categoryTemplates.length}개`)
   }
 

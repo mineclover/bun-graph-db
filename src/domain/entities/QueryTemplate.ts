@@ -10,7 +10,34 @@ import { DomainException } from '@/shared/exceptions/DomainException.js'
  */
 function parseJsonSafely<T>(jsonString: string, fallback: T): T {
   try {
-    const parsed = JSON.parse(jsonString)
+    // Handle improperly escaped JSON strings
+    let cleanedJson = jsonString
+
+    // Handle specific case of [\general\,\create\] format
+    if (jsonString.match(/^\[.*\\.*\]$/)) {
+      // This looks like an array with escaped backslashes
+      // Remove all escaping and wrap strings in quotes
+      cleanedJson = jsonString
+        .replace(/\\/g, '') // Remove all backslashes
+        .replace(/(\w+)/g, '"$1"') // Wrap words in quotes
+        .replace(/,"/g, ',"') // Fix comma-quote patterns
+    }
+
+    // Fix other common escaping issues
+    if (jsonString.includes('\\')) {
+      // Replace double backslashes with single backslashes
+      cleanedJson = cleanedJson.replace(/\\\\/g, '\\')
+
+      // If it still has issues, try unescaping
+      if (cleanedJson.includes('\\,')) {
+        cleanedJson = cleanedJson.replace(/\\,/g, ',')
+      }
+      if (cleanedJson.includes('\\"')) {
+        cleanedJson = cleanedJson.replace(/\\"/g, '"')
+      }
+    }
+
+    const parsed = JSON.parse(cleanedJson)
     return parsed as T
   } catch (error) {
     console.warn(`Invalid JSON detected: ${jsonString}. Using fallback value.`, error)
@@ -242,8 +269,10 @@ export class QueryTemplate {
   }
 
   private validateTags(tags: string[]): void {
-    if (!tags || tags.length === 0) {
-      throw new DomainException('At least one tag is required', { code: 'VALIDATION_ERROR' })
+    // Allow empty tags array for backward compatibility
+    // Tags validation can be enforced at the application layer if needed
+    if (tags && !Array.isArray(tags)) {
+      throw new DomainException('Tags must be an array', { code: 'VALIDATION_ERROR' })
     }
   }
 

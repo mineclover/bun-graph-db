@@ -75,9 +75,9 @@ export async function executeTemplate(
         variables: {
           input: {
             templateIdentifier,
-            variables
-          }
-        }
+            variables,
+          },
+        },
       }),
     })
 
@@ -97,8 +97,8 @@ export async function executeTemplate(
       metadata: {
         templateIdentifier,
         executionTime,
-        hasData: !!result.data?.executeTemplate?.data
-      }
+        hasData: !!result.data?.executeTemplate?.data,
+      },
     }
 
     if (executeResult.success) {
@@ -114,7 +114,6 @@ export async function executeTemplate(
     }
 
     return executeResult
-
   } catch (error) {
     const executionTime = Date.now() - startTime
 
@@ -124,15 +123,17 @@ export async function executeTemplate(
 
     return {
       success: false,
-      errors: [{
-        message: error instanceof Error ? error.message : 'Unknown execution error',
-        code: 'EXECUTION_ERROR'
-      }],
+      errors: [
+        {
+          message: error instanceof Error ? error.message : 'Unknown execution error',
+          code: 'EXECUTION_ERROR',
+        },
+      ],
       metadata: {
         templateIdentifier,
         executionTime,
-        hasData: false
-      }
+        hasData: false,
+      },
     }
   }
 }
@@ -151,7 +152,7 @@ export async function executeTemplates(
     results.push(result)
 
     // 템플릿 간 짧은 대기 시간
-    await new Promise(resolve => setTimeout(resolve, 100))
+    await new Promise((resolve) => setTimeout(resolve, 100))
   }
 
   return results
@@ -162,7 +163,7 @@ export async function executeTemplates(
  */
 export function calculateExecutionStats(results: ExecuteTemplateResult[]) {
   const totalCount = results.length
-  const successCount = results.filter(r => r.success).length
+  const successCount = results.filter((r) => r.success).length
   const failureCount = totalCount - successCount
   const totalTime = results.reduce((sum, r) => sum + (r.metadata?.executionTime || 0), 0)
   const avgTime = totalCount > 0 ? totalTime / totalCount : 0
@@ -173,7 +174,7 @@ export function calculateExecutionStats(results: ExecuteTemplateResult[]) {
     failureCount,
     successRate: totalCount > 0 ? (successCount / totalCount) * 100 : 0,
     totalTime,
-    avgTime
+    avgTime,
   }
 }
 
@@ -192,26 +193,48 @@ export const TemplateHelpers = {
   },
 
   // 노드 생성
-  async createNode(content: string, tableId: string, attributes: any[] = [], options?: ExecuteTemplateOptions) {
-    return executeTemplate('create-node-simple', {
-      input: { content, tableId, attributes }
-    }, options)
+  async createNode(
+    content: string,
+    tableId: string,
+    attributes: any[] = [],
+    options?: ExecuteTemplateOptions
+  ) {
+    return executeTemplate(
+      'create-node-simple',
+      {
+        input: { content, tableId, attributes },
+      },
+      options
+    )
   },
 
   // 노드 업데이트
   async updateNode(id: string, content: string, options?: ExecuteTemplateOptions) {
-    return executeTemplate('update-node-simple', {
-      id,
-      input: { content }
-    }, options)
+    return executeTemplate(
+      'update-node-simple',
+      {
+        id,
+        input: { content },
+      },
+      options
+    )
   },
 
   // 노드 검색
-  async searchNodes(tableId: string, search?: string, limit: number = 20, options?: ExecuteTemplateOptions) {
-    return executeTemplate('search-nodes-advanced', {
-      filter: { tableId, search },
-      pagination: { limit, offset: 0 }
-    }, options)
+  async searchNodes(
+    tableId: string,
+    search?: string,
+    limit: number = 20,
+    options?: ExecuteTemplateOptions
+  ) {
+    return executeTemplate(
+      'search-nodes-advanced',
+      {
+        filter: { tableId, search },
+        pagination: { limit, offset: 0 },
+      },
+      options
+    )
   },
 
   // 시스템 통계
@@ -224,17 +247,43 @@ export const TemplateHelpers = {
     return executeTemplate('update-todo-content', { nodeId, newContent }, options)
   },
 
-  async updateTodoWithAttributes(nodeId: string, content: string, attributeId: string, attributeValue: string, options?: ExecuteTemplateOptions) {
-    return executeTemplate('update-todo-with-attributes', {
-      nodeId, content, attributeId, attributeValue
-    }, options)
+  async updateTodoWithAttributes(
+    nodeId: string,
+    content: string,
+    attributeId: string,
+    attributeValue: string,
+    options?: ExecuteTemplateOptions
+  ) {
+    return executeTemplate(
+      'update-todo-with-attributes',
+      {
+        nodeId,
+        content,
+        attributeId,
+        attributeValue,
+      },
+      options
+    )
   },
 
-  async bulkUpdateNodes(nodeId1: string, nodeId2: string, content1: string, content2: string, options?: ExecuteTemplateOptions) {
-    return executeTemplate('bulk-update-nodes-content', {
-      nodeId1, nodeId2, content1, content2
-    }, options)
-  }
+  async bulkUpdateNodes(
+    nodeId1: string,
+    nodeId2: string,
+    content1: string,
+    content2: string,
+    options?: ExecuteTemplateOptions
+  ) {
+    return executeTemplate(
+      'bulk-update-nodes-content',
+      {
+        nodeId1,
+        nodeId2,
+        content1,
+        content2,
+      },
+      options
+    )
+  },
 }
 
 // CLI에서 직접 실행 시 데모
@@ -245,7 +294,7 @@ async function demo() {
   try {
     // 1. 기본 노드 조회
     console.log('\n📋 1. 노드 조회 테스트')
-    const nodeResult = await TemplateHelpers.getNode("80")
+    const nodeResult = await TemplateHelpers.getNode('80')
 
     // 2. 시스템 통계
     console.log('\n📊 2. 시스템 통계 조회')
@@ -253,11 +302,14 @@ async function demo() {
 
     // 3. 노드 검색
     console.log('\n🔍 3. 노드 검색 테스트')
-    const searchResult = await TemplateHelpers.searchNodes("101", "노드", 5)
+    const searchResult = await TemplateHelpers.searchNodes('101', '노드', 5)
 
     // 4. 업데이트 테스트
     console.log('\n✏️ 4. 노드 업데이트 테스트')
-    const updateResult = await TemplateHelpers.updateTodoContent("80", `데모 업데이트 ${Date.now()}`)
+    const updateResult = await TemplateHelpers.updateTodoContent(
+      '80',
+      `데모 업데이트 ${Date.now()}`
+    )
 
     // 통계 계산
     const results = [nodeResult, statsResult, searchResult, updateResult]
@@ -271,7 +323,6 @@ async function demo() {
     console.log(`   평균 실행 시간: ${stats.avgTime.toFixed(0)}ms`)
 
     console.log('\n🎉 executeTemplate 유틸리티 데모 완료!')
-
   } catch (error) {
     console.error('❌ 데모 실행 중 오류:', error)
   }

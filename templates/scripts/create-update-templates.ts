@@ -58,11 +58,11 @@ const updateTemplates: UpdateTemplate[] = [
       }
     `,
     defaultVariables: {
-      nodeId: "80", // Use the recently created node
-      newContent: `업데이트된 내용 ${Date.now()}`
+      nodeId: '80', // Use the recently created node
+      newContent: `업데이트된 내용 ${Date.now()}`,
     },
     tags: ['todo', 'update', 'content'],
-    complexityScore: 3
+    complexityScore: 3,
   },
   {
     identifier: 'update-todo-with-attributes',
@@ -108,13 +108,13 @@ const updateTemplates: UpdateTemplate[] = [
       }
     `,
     defaultVariables: {
-      nodeId: "80",
+      nodeId: '80',
       content: `내용과 속성 업데이트 ${Date.now()}`,
-      attributeId: "15", // Use an existing attribute ID
-      attributeValue: `새로운 속성 값 ${Date.now()}`
+      attributeId: '15', // Use an existing attribute ID
+      attributeValue: `새로운 속성 값 ${Date.now()}`,
     },
     tags: ['todo', 'update', 'attributes'],
-    complexityScore: 5
+    complexityScore: 5,
   },
   {
     identifier: 'update-table-description',
@@ -140,11 +140,11 @@ const updateTemplates: UpdateTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101",
-      newDescription: `업데이트된 테이블 설명 ${Date.now()}`
+      tableId: '101',
+      newDescription: `업데이트된 테이블 설명 ${Date.now()}`,
     },
     tags: ['table', 'update', 'description'],
-    complexityScore: 2
+    complexityScore: 2,
   },
   {
     identifier: 'bulk-update-nodes-content',
@@ -180,12 +180,12 @@ const updateTemplates: UpdateTemplate[] = [
     `,
     defaultVariables: {
       updates: [
-        { nodeId: "80", content: "일괄 업데이트 1" },
-        { nodeId: "72", content: "일괄 업데이트 2" }
-      ]
+        { nodeId: '80', content: '일괄 업데이트 1' },
+        { nodeId: '72', content: '일괄 업데이트 2' },
+      ],
     },
     tags: ['node', 'bulk', 'update'],
-    complexityScore: 6
+    complexityScore: 6,
   },
   {
     identifier: 'update-node-with-validation',
@@ -222,11 +222,11 @@ const updateTemplates: UpdateTemplate[] = [
       }
     `,
     defaultVariables: {
-      nodeId: "80",
-      newContent: `검증된 업데이트 ${Date.now()}`
+      nodeId: '80',
+      newContent: `검증된 업데이트 ${Date.now()}`,
     },
     tags: ['node', 'update', 'validation'],
-    complexityScore: 4
+    complexityScore: 4,
   },
   {
     identifier: 'update-attribute-value',
@@ -272,12 +272,12 @@ const updateTemplates: UpdateTemplate[] = [
       }
     `,
     defaultVariables: {
-      nodeId: "80",
-      attributeId: "15",
-      newValue: `업데이트된 속성 ${Date.now()}`
+      nodeId: '80',
+      attributeId: '15',
+      newValue: `업데이트된 속성 ${Date.now()}`,
     },
     tags: ['attribute', 'update', 'value'],
-    complexityScore: 4
+    complexityScore: 4,
   },
   {
     identifier: 'conditional-update-todo',
@@ -319,12 +319,12 @@ const updateTemplates: UpdateTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "101",
-      searchTerm: "테스트",
-      newContent: `조건부 업데이트 ${Date.now()}`
+      tableId: '101',
+      searchTerm: '테스트',
+      newContent: `조건부 업데이트 ${Date.now()}`,
     },
     tags: ['todo', 'update', 'conditional'],
-    complexityScore: 5
+    complexityScore: 5,
   },
   {
     identifier: 'update-with-history',
@@ -381,12 +381,12 @@ const updateTemplates: UpdateTemplate[] = [
       }
     `,
     defaultVariables: {
-      nodeId: "80",
-      newContent: `히스토리 업데이트 ${Date.now()}`
+      nodeId: '80',
+      newContent: `히스토리 업데이트 ${Date.now()}`,
     },
     tags: ['update', 'history', 'comparison'],
-    complexityScore: 6
-  }
+    complexityScore: 6,
+  },
 ]
 
 // Database operations
@@ -410,7 +410,9 @@ async function insertUpdateTemplate(template: UpdateTemplate): Promise<void> {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
 
-    const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
+    const operationType = template.query.trim().toLowerCase().startsWith('mutation')
+      ? 'mutation'
+      : 'query'
 
     db.run(insertQuery, [
       template.identifier,
@@ -426,7 +428,7 @@ async function insertUpdateTemplate(template: UpdateTemplate): Promise<void> {
       0,
       1,
       JSON.stringify(template.tags),
-      '1.0.0'
+      '1.0.0',
     ])
 
     console.log(`✅ Inserted template: ${template.identifier}`)
@@ -463,9 +465,9 @@ async function testUpdateTemplate(identifier: string, variables: any): Promise<b
         variables: {
           input: {
             templateIdentifier: identifier,
-            variables: variables
-          }
-        }
+            variables: variables,
+          },
+        },
       }),
     })
 
@@ -515,11 +517,11 @@ async function createTestData(): Promise<void> {
         variables: {
           input: {
             content: `업데이트 테스트용 노드 ${Date.now()}`,
-            tableId: "101",
-            attributes: []
-          }
-        }
-      })
+            tableId: '101',
+            attributes: [],
+          },
+        },
+      }),
     })
 
     const createResult = await createResponse.json()
@@ -529,7 +531,7 @@ async function createTestData(): Promise<void> {
       console.log(`✅ Created test node: ${nodeId}`)
 
       // Update template variables to use the new node ID
-      updateTemplates.forEach(template => {
+      updateTemplates.forEach((template) => {
         if (template.defaultVariables.nodeId) {
           template.defaultVariables.nodeId = nodeId
         }
@@ -552,7 +554,7 @@ async function main() {
     const response = await fetch('http://localhost:4000/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: 'query { __typename }' })
+      body: JSON.stringify({ query: 'query { __typename }' }),
     })
 
     if (!response.ok) {
@@ -580,7 +582,7 @@ async function main() {
   for (const template of updateTemplates) {
     const success = await testUpdateTemplate(template.identifier, template.defaultVariables)
     testResults.push(success)
-    await new Promise(resolve => setTimeout(resolve, 300))
+    await new Promise((resolve) => setTimeout(resolve, 300))
   }
 
   // Step 4: Summary

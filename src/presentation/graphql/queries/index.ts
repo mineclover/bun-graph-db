@@ -1,5 +1,6 @@
 export { AttributeQueries } from './AttributeQueries.js'
 export { DocQueries } from './DocQueries.js'
+export { EnhancedAttributeQueries } from './EnhancedAttributeQueries.js'
 export { NodeQueries } from './NodeQueries.js'
 export { RelationQueries } from './RelationQueries.js'
 export { SystemQueries } from './SystemQueries.js'

@@ -4,8 +4,8 @@
  */
 
 import { Database } from 'bun:sqlite'
-import { existsSync, mkdirSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync } from 'node:fs'
+import { join } from 'node:path'
 
 export interface TestDatabaseOptions {
   name: string
@@ -65,7 +65,7 @@ export class TestDatabase {
       // If it's a file-based database, optionally clean up the file
       if (!this.options.inMemory && this.path !== ':memory:') {
         try {
-          const fs = await import('fs/promises')
+          const fs = await import('node:fs/promises')
           if (existsSync(this.path)) {
             await fs.unlink(this.path)
             console.log(`🧹 Cleaned up test database file: ${this.path}`)

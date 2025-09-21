@@ -59,11 +59,11 @@ const fixedTemplates: FixedTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "98",
-      searchTerm: "검색어"
+      tableId: '98',
+      searchTerm: '검색어',
     },
     tags: ['todo', 'crud', 'search', 'fixed'],
-    complexityScore: 4
+    complexityScore: 4,
   },
   {
     identifier: 'create-todo-unique',
@@ -98,12 +98,12 @@ const fixedTemplates: FixedTemplate[] = [
     defaultVariables: {
       input: {
         content: `고유한 할일 ${Date.now()}`,
-        tableId: "98",
-        attributes: []
-      }
+        tableId: '98',
+        attributes: [],
+      },
     },
     tags: ['todo', 'create', 'unique', 'fixed'],
-    complexityScore: 3
+    complexityScore: 3,
   },
   {
     identifier: 'bulk-create-unique-todos',
@@ -140,17 +140,17 @@ const fixedTemplates: FixedTemplate[] = [
     defaultVariables: {
       input1: {
         content: `일괄 할일 1 - ${Date.now()}`,
-        tableId: "98",
-        attributes: []
+        tableId: '98',
+        attributes: [],
       },
       input2: {
         content: `일괄 할일 2 - ${Date.now()}`,
-        tableId: "98",
-        attributes: []
-      }
+        tableId: '98',
+        attributes: [],
+      },
     },
     tags: ['todo', 'bulk', 'create', 'unique', 'fixed'],
-    complexityScore: 6
+    complexityScore: 6,
   },
   {
     identifier: 'create-table-with-valid-attributes',
@@ -200,23 +200,23 @@ const fixedTemplates: FixedTemplate[] = [
     defaultVariables: {
       tableInput: {
         identifier: `fixed_table_${Date.now()}`,
-        description: "수정된 테이블"
+        description: '수정된 테이블',
       },
       attr1: {
         identifier: `title_${Date.now()}`,
-        name: "제목",
-        description: "항목 제목",
-        dataType: "string"
+        name: '제목',
+        description: '항목 제목',
+        dataType: 'string',
       },
       attr2: {
         identifier: `status_${Date.now()}`,
-        name: "상태",
-        description: "항목 상태",
-        dataType: "string"
-      }
+        name: '상태',
+        description: '항목 상태',
+        dataType: 'string',
+      },
     },
     tags: ['table', 'attribute', 'create', 'valid', 'fixed'],
-    complexityScore: 7
+    complexityScore: 7,
   },
   {
     identifier: 'get-table-statistics-enhanced',
@@ -256,11 +256,11 @@ const fixedTemplates: FixedTemplate[] = [
       }
     `,
     defaultVariables: {
-      tableId: "98"
+      tableId: '98',
     },
     tags: ['table', 'statistics', 'enhanced', 'fixed'],
-    complexityScore: 5
-  }
+    complexityScore: 5,
+  },
 ]
 
 // Database operations
@@ -326,7 +326,9 @@ async function insertFixedTemplate(template: FixedTemplate): Promise<void> {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
 
-    const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
+    const operationType = template.query.trim().toLowerCase().startsWith('mutation')
+      ? 'mutation'
+      : 'query'
 
     db.run(insertQuery, [
       template.identifier,
@@ -342,7 +344,7 @@ async function insertFixedTemplate(template: FixedTemplate): Promise<void> {
       0,
       1,
       JSON.stringify(template.tags),
-      '1.0.0'
+      '1.0.0',
     ])
 
     console.log(`✅ Inserted template: ${template.identifier}`)
@@ -379,9 +381,9 @@ async function testFixedTemplate(identifier: string, variables: any): Promise<bo
         variables: {
           input: {
             templateIdentifier: identifier,
-            variables: variables
-          }
-        }
+            variables: variables,
+          },
+        },
       }),
     })
 
@@ -402,7 +404,7 @@ async function testFixedTemplate(identifier: string, variables: any): Promise<bo
 }
 
 // Create a valid test table with proper attribute types
-async function createValidTestTable(): Promise<{ tableId: string, attributeIds: string[] }> {
+async function createValidTestTable(): Promise<{ tableId: string; attributeIds: string[] }> {
   try {
     console.log('🏗️ Creating valid test table...')
 
@@ -429,16 +431,18 @@ async function createValidTestTable(): Promise<{ tableId: string, attributeIds: 
         variables: {
           input: {
             identifier: `valid_test_table_${Date.now()}`,
-            description: "유효한 테스트 테이블"
-          }
-        }
-      })
+            description: '유효한 테스트 테이블',
+          },
+        },
+      }),
     })
 
     const tableResult = await tableResponse.json()
 
     if (!tableResult.data?.createTable?.success) {
-      throw new Error(`Table creation failed: ${JSON.stringify(tableResult.data?.createTable?.errors)}`)
+      throw new Error(
+        `Table creation failed: ${JSON.stringify(tableResult.data?.createTable?.errors)}`
+      )
     }
 
     const tableId = tableResult.data.createTable.table.id
@@ -448,16 +452,16 @@ async function createValidTestTable(): Promise<{ tableId: string, attributeIds: 
     const attributeTypes = [
       {
         identifier: `title_attr_${Date.now()}`,
-        name: "제목",
-        description: "제목 필드",
-        dataType: "string"
+        name: '제목',
+        description: '제목 필드',
+        dataType: 'string',
       },
       {
         identifier: `status_attr_${Date.now()}`,
-        name: "상태",
-        description: "상태 필드",
-        dataType: "string"
-      }
+        name: '상태',
+        description: '상태 필드',
+        dataType: 'string',
+      },
     ]
 
     const attributeIds = []
@@ -482,8 +486,8 @@ async function createValidTestTable(): Promise<{ tableId: string, attributeIds: 
               }
             }
           `,
-          variables: { input: attr }
-        })
+          variables: { input: attr },
+        }),
       })
 
       const attrResult = await attrResponse.json()
@@ -492,7 +496,10 @@ async function createValidTestTable(): Promise<{ tableId: string, attributeIds: 
         attributeIds.push(attrResult.data.createAttributeType.attributeType.id)
         console.log(`✅ Created attribute: ${attr.identifier}`)
       } else {
-        console.log(`❌ Failed to create attribute: ${attr.identifier}`, attrResult.data?.createAttributeType?.errors)
+        console.log(
+          `❌ Failed to create attribute: ${attr.identifier}`,
+          attrResult.data?.createAttributeType?.errors
+        )
       }
     }
 
@@ -513,7 +520,7 @@ async function main() {
     const response = await fetch('http://localhost:4000/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: 'query { __typename }' })
+      body: JSON.stringify({ query: 'query { __typename }' }),
     })
 
     if (!response.ok) {
@@ -529,16 +536,16 @@ async function main() {
   await cleanupDatabase()
 
   // Step 2: Create valid test table
-  let validTable: { tableId: string, attributeIds: string[] }
+  let validTable: { tableId: string; attributeIds: string[] }
   try {
     validTable = await createValidTestTable()
-  } catch (error) {
+  } catch (_error) {
     console.error('❌ Failed to create valid table, using fallback')
-    validTable = { tableId: "98", attributeIds: [] }
+    validTable = { tableId: '98', attributeIds: [] }
   }
 
   // Step 3: Update template variables with valid table ID
-  fixedTemplates.forEach(template => {
+  fixedTemplates.forEach((template) => {
     if (template.defaultVariables.tableId) {
       template.defaultVariables.tableId = validTable.tableId
     }
@@ -566,7 +573,7 @@ async function main() {
   for (const template of fixedTemplates) {
     const success = await testFixedTemplate(template.identifier, template.defaultVariables)
     testResults.push(success)
-    await new Promise(resolve => setTimeout(resolve, 200))
+    await new Promise((resolve) => setTimeout(resolve, 200))
   }
 
   // Step 6: Summary
