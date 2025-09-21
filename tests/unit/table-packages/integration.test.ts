@@ -26,6 +26,36 @@ describe('Table Package System Integration', () => {
 
   describe('GraphQL Integration', () => {
     test('should export table via GraphQL mutation', async () => {
+      // First create a test table to export
+      const createTableMutation = `
+        mutation CreateTable($input: CreateTableInput!) {
+          createTable(input: $input) {
+            success
+            table {
+              id
+              identifier
+            }
+          }
+        }
+      `
+
+      const createTableVariables = {
+        input: {
+          identifier: 'test-table',
+          description: 'Test table for export',
+        },
+      }
+
+      const createResult = await graphql({
+        schema,
+        source: createTableMutation,
+        variableValues: createTableVariables,
+      })
+
+      expect(createResult.errors).toBeUndefined()
+      expect((createResult.data?.createTable as any)?.success).toBe(true)
+
+      // Now export the table
       const mutation = `
         mutation ExportTable($input: ExportTablePackageInput!) {
           exportTablePackage(input: $input) {
@@ -349,12 +379,15 @@ describe('Table Package System Integration', () => {
         }
       `
 
+      // Generate unique table identifier to avoid conflicts
+      const uniqueTableId = `source-table-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+
       await graphql({
         schema,
         source: createTableMutation,
         variableValues: {
           input: {
-            identifier: 'source-table',
+            identifier: uniqueTableId,
             description: 'Test source table for export-import cycle',
           },
         },
@@ -380,7 +413,7 @@ describe('Table Package System Integration', () => {
         source: exportMutation,
         variableValues: {
           input: {
-            tableIdentifier: 'source-table',
+            tableIdentifier: uniqueTableId,
             options: {
               includeData: true,
               includeTemplates: true,
@@ -411,9 +444,12 @@ describe('Table Package System Integration', () => {
 
       const packageData = (exportResult.data?.exportTablePackage as any)?.package
       if (packageData) {
+        // Generate unique import table identifier
+        const uniqueImportTableId = `imported-source-table-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+
         // Modify the package to rename the table
-        packageData.sourceTable.identifier = 'imported-source-table'
-        packageData.package.schema.table.identifier = 'imported-source-table'
+        packageData.sourceTable.identifier = uniqueImportTableId
+        packageData.package.schema.table.identifier = uniqueImportTableId
 
         const importResult = await graphql({
           schema,
@@ -432,7 +468,7 @@ describe('Table Package System Integration', () => {
         expect(importResult.errors).toBeUndefined()
         expect((importResult.data?.importTablePackage as any)?.success).toBe(true)
         expect((importResult.data?.importTablePackage as any)?.importedTable.identifier).toBe(
-          'imported-source-table'
+          uniqueImportTableId
         )
         expect((importResult.data?.importTablePackage as any)?.generatedTemplates).toBeDefined()
         expect(

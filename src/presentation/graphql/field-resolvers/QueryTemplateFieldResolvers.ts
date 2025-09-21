@@ -68,16 +68,16 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async variablesSchema(
+  async inputSchema(
     parent: QueryTemplateParent,
     _args?: any,
     _context?: GraphQLContext
   ): Promise<Record<string, unknown> | null> {
     try {
-      const schema = parent.getVariablesSchema()
+      const schema = parent.getInputSchema()
       return schema as Record<string, unknown> | null
     } catch (error) {
-      this.logger.error('Failed to resolve variablesSchema field', {
+      this.logger.error('Failed to resolve inputSchema field', {
         templateId: parent.getId(),
         error,
       })

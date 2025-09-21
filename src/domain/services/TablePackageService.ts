@@ -859,7 +859,7 @@ export class TablePackageService implements ITablePackageService {
         queryName: t.getQueryName(),
         operationType: t.getOperationType(),
         variables: null,
-        variablesSchema: t.getVariablesSchema(),
+        inputSchema: t.getInputSchema(),
         defaultVariables: t.getDefaultVariables(),
         applicableTables: t.getApplicableTables(),
         complexityScore: t.getComplexityScore(),
@@ -1153,7 +1153,7 @@ export class TablePackageService implements ITablePackageService {
           templateData.tags || undefined,
           {
             description: templateData.description || undefined,
-            variablesSchema: templateData.variablesSchema || undefined,
+            inputSchema: templateData.inputSchema || undefined,
             defaultVariables: templateData.defaultVariables || undefined,
             applicableTables: templateData.applicableTables || undefined,
             complexityScore: templateData.complexityScore,

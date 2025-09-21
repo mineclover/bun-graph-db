@@ -19,12 +19,12 @@ export class TestIsolationHelpers {
   private static contexts: Map<string, IsolatedTestContext> = new Map()
 
   /**
-   * Setup unit test environment (in-memory database only)
+   * Setup unit test environment (file-based database for isolation)
    */
   static async setupUnitTest(suiteName: string): Promise<IsolatedTestContext> {
     console.log(`🧪 Setting up unit test environment: ${suiteName}`)
 
-    const database = await TestDatabaseFactory.createInMemoryEnvironment(suiteName)
+    const database = await TestDatabaseFactory.createTestEnvironment(suiteName)
 
     const context: IsolatedTestContext = {
       type: 'unit',

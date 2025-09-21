@@ -11,7 +11,7 @@ export interface UpdateQueryTemplateRequest {
   name?: string
   description?: string
   queryText?: string
-  variablesSchema?: any
+  inputSchema?: any
   defaultVariables?: Record<string, unknown>
   applicableTables?: string[]
   templateType?: 'query' | 'mutation' | 'subscription'
@@ -64,8 +64,8 @@ export class UpdateQueryTemplate {
       if (request.name !== undefined) updateData.name = request.name
       if (request.description !== undefined) updateData.description = request.description
       if (request.queryText !== undefined) updateData.queryText = request.queryText
-      if (request.variablesSchema !== undefined)
-        updateData.variablesSchema = request.variablesSchema
+      if (request.inputSchema !== undefined)
+        updateData.inputSchema = request.inputSchema
       if (request.defaultVariables !== undefined)
         updateData.defaultVariables = request.defaultVariables
       if (request.applicableTables !== undefined)
@@ -86,12 +86,12 @@ export class UpdateQueryTemplate {
         this.validateTags(request.tags)
       }
 
-      // If updating variables schema or default variables, validate compatibility
-      if (request.variablesSchema !== undefined || request.defaultVariables !== undefined) {
+      // If updating input schema or default variables, validate compatibility
+      if (request.inputSchema !== undefined || request.defaultVariables !== undefined) {
         const updatedSchema =
-          request.variablesSchema !== undefined
-            ? request.variablesSchema
-            : existingTemplate.getVariablesSchema()
+          request.inputSchema !== undefined
+            ? request.inputSchema
+            : existingTemplate.getInputSchema()
 
         const updatedDefaults =
           request.defaultVariables !== undefined

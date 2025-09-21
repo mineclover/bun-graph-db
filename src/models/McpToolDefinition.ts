@@ -8,7 +8,7 @@
 
 import type { JSONSchema7 } from 'json-schema'
 
-export type OperationType = 'query' | 'mutation'
+export type OperationType = 'query' | 'mutation' | 'custom'
 
 export interface GraphQLOperation {
   operationName: string
@@ -50,13 +50,27 @@ export class McpToolDefinitionBuilder {
     }
 
     // Validate that it's a proper JSON Schema
-    if (schema.type !== 'object') {
-      throw new Error('Input schema must be of type "object"')
+    // Accept schemas with 'type: object', or composition keywords (anyOf, oneOf, allOf)
+    const hasValidType = schema.type === 'object'
+    const hasComposition = schema.anyOf || schema.oneOf || schema.allOf
+    
+    if (!hasValidType && !hasComposition) {
+      throw new Error('Input schema must be of type "object" or use composition keywords (anyOf, oneOf, allOf)')
     }
 
-    // Ensure additionalProperties is defined (security requirement)
-    if (schema.additionalProperties === undefined) {
+    // For object type schemas, ensure additionalProperties is defined (security requirement)
+    if (schema.type === 'object' && schema.additionalProperties === undefined) {
       schema.additionalProperties = false
+    }
+
+    // For anyOf/oneOf/allOf schemas, validate that each alternative has proper additionalProperties
+    if (hasComposition) {
+      const alternatives = schema.anyOf || schema.oneOf || schema.allOf || []
+      alternatives.forEach((alt: any, index: number) => {
+        if (alt.type === 'object' && alt.additionalProperties === undefined) {
+          alt.additionalProperties = false
+        }
+      })
     }
 
     this.tool.inputSchema = schema
@@ -72,12 +86,13 @@ export class McpToolDefinitionBuilder {
       throw new Error('GraphQL operation name cannot be empty')
     }
 
+    // For custom operations, allow 'custom' as a valid query placeholder
     if (!operation.query || operation.query.trim().length === 0) {
       throw new Error('GraphQL query cannot be empty')
     }
 
-    if (!operation.operationType || !['query', 'mutation'].includes(operation.operationType)) {
-      throw new Error('GraphQL operation type must be "query" or "mutation"')
+    if (!operation.operationType || !['query', 'mutation', 'custom'].includes(operation.operationType)) {
+      throw new Error('GraphQL operation type must be "query", "mutation", or "custom"')
     }
 
     this.tool.graphqlOperation = {
@@ -139,11 +154,28 @@ export function validateMcpToolDefinition(tool: McpToolDefinition): {
   if (!tool.inputSchema) {
     errors.push('Tool input schema is required')
   } else {
-    if (tool.inputSchema.type !== 'object') {
-      errors.push('Input schema must be of type "object"')
-    }
-    if (tool.inputSchema.additionalProperties === undefined) {
-      errors.push('Input schema must define additionalProperties (recommended: false)')
+    // Check if schema uses anyOf/oneOf/allOf or is a direct object schema
+    if (tool.inputSchema.anyOf || tool.inputSchema.oneOf || tool.inputSchema.allOf) {
+      // For complex schemas with anyOf/oneOf/allOf, validate each sub-schema
+      const subSchemas = tool.inputSchema.anyOf || tool.inputSchema.oneOf || tool.inputSchema.allOf
+      if (subSchemas && Array.isArray(subSchemas)) {
+        subSchemas.forEach((subSchema: any, index: number) => {
+          if (subSchema.type !== 'object') {
+            errors.push(`Sub-schema ${index} must be of type "object"`)
+          }
+          if (subSchema.additionalProperties === undefined) {
+            errors.push(`Sub-schema ${index} must define additionalProperties (recommended: false)`)
+          }
+        })
+      }
+    } else {
+      // Traditional single object schema validation
+      if (tool.inputSchema.type !== 'object') {
+        errors.push('Input schema must be of type "object"')
+      }
+      if (tool.inputSchema.additionalProperties === undefined) {
+        errors.push('Input schema must define additionalProperties (recommended: false)')
+      }
     }
   }
 
@@ -160,7 +192,7 @@ export function validateMcpToolDefinition(tool: McpToolDefinition): {
     if (!tool.graphqlOperation.query || tool.graphqlOperation.query.trim().length === 0) {
       errors.push('GraphQL query is required')
     }
-    if (!['query', 'mutation'].includes(tool.graphqlOperation.operationType)) {
+    if (!['query', 'mutation', 'custom'].includes(tool.graphqlOperation.operationType)) {
       errors.push('GraphQL operation type must be "query" or "mutation"')
     }
   }
@@ -277,19 +309,31 @@ export function createMcpToolFromContract(contractTool: any): McpToolDefinition 
   }
 
   const operationType = contractTool.graphqlOperation.type as OperationType
-  if (!operationType || !['query', 'mutation'].includes(operationType)) {
+  if (!operationType || !['query', 'mutation', 'custom'].includes(operationType)) {
     throw new Error(`Invalid operation type: ${contractTool.graphqlOperation.type}`)
   }
 
-  return new McpToolDefinitionBuilder()
+  const builder = new McpToolDefinitionBuilder()
     .withName(contractTool.name)
     .withDescription(contractTool.description)
     .withInputSchema(contractTool.inputSchema)
-    .withGraphQLOperation({
+
+  // For custom operations, we don't need a GraphQL query
+  if (operationType === 'custom') {
+    builder.withGraphQLOperation({
+      operationName: contractTool.name,
+      query: 'custom', // placeholder for custom operations
+      variables: {},
+      operationType: operationType,
+    })
+  } else {
+    builder.withGraphQLOperation({
       operationName: contractTool.name,
       query: contractTool.graphqlOperation.query,
       variables: {},
       operationType: operationType,
     })
-    .build()
+  }
+
+  return builder.build()
 }

@@ -96,7 +96,7 @@ describe('Tool Schema Validation Contract Tests', () => {
 
         const invalidData: ToolCallResponse = await invalidResponse.json()
         expect(invalidData.error).toBeDefined()
-        expect(invalidData.error?.message).toContain('schema')
+        expect(invalidData.error?.message).toContain('additional properties')
       } catch (error) {
         // Expected to fail - no MCP server implemented yet
         expect(error).toBeDefined()
@@ -216,7 +216,7 @@ describe('Tool Schema Validation Contract Tests', () => {
 
         const invalidData: ToolCallResponse = await invalidResponse.json()
         expect(invalidData.error).toBeDefined()
-        expect(invalidData.error?.message).toContain('maximum')
+        expect(invalidData.error?.message).toContain('<=')
       } catch (error) {
         // Expected to fail - no MCP server implemented yet
         expect(error).toBeDefined()
@@ -343,36 +343,90 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
     })
 
-    test('should validate exportSchema tool parameters', async () => {
-      const toolDef = tools.find((t) => t.name === 'exportSchema')
+    test('should validate exportAllTables tool parameters', async () => {
+      const toolDef = tools.find((t) => t.name === 'exportAllTables')
       expect(toolDef).toBeDefined()
 
-      // Test with valid enum values
+      // Test with valid parameters (empty object)
       const validRequest: ToolCallRequest = {
         jsonrpc: '2.0',
         method: 'tools/call',
         params: {
-          name: 'exportSchema',
-          arguments: {
-            format: 'json',
-            includeData: true,
-          },
+          name: 'exportAllTables',
+          arguments: {},
         },
-        id: 'test-exportschema-1',
+        id: 'test-exportalltables-1',
       }
 
-      // Test with invalid enum value
-      const invalidEnumRequest: ToolCallRequest = {
+      // Test with invalid parameters (extra properties)
+      const invalidRequest: ToolCallRequest = {
         jsonrpc: '2.0',
         method: 'tools/call',
         params: {
-          name: 'exportSchema',
+          name: 'exportAllTables',
           arguments: {
-            format: 'invalid-format', // Not in enum ["json", "graphql", "typescript"]
-            includeData: false,
+            invalidParam: 'should fail', // Not allowed by additionalProperties: false
           },
         },
-        id: 'test-exportschema-2',
+        id: 'test-exportalltables-2',
+      }
+
+      try {
+        const validResponse = await fetch(MCP_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(validRequest),
+        })
+
+        const validData: ToolCallResponse = await validResponse.json()
+        expect(validData.result).toBeDefined()
+        expect(validData.error).toBeUndefined()
+
+        const invalidResponse = await fetch(MCP_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(invalidRequest),
+        })
+
+        const invalidData: ToolCallResponse = await invalidResponse.json()
+        expect(invalidData.error).toBeDefined()
+        expect(invalidData.error?.message).toContain('additional properties')
+      } catch (error) {
+        // Expected to fail - no MCP server implemented yet
+        expect(error).toBeDefined()
+        console.log('Expected failure: MCP server not implemented yet')
+        throw error
+      }
+    })
+
+    test('should validate exportTemplate tool parameters', async () => {
+      const toolDef = tools.find((t) => t.name === 'exportTemplate')
+      expect(toolDef).toBeDefined()
+
+      // Test with valid parameters
+      const validRequest: ToolCallRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: {
+          name: 'exportTemplate',
+          arguments: {
+            templateIdentifier: 'test-template-123',
+          },
+        },
+        id: 'test-exporttemplate-1',
+      }
+
+      // Test with missing required parameter
+      const invalidRequest: ToolCallRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: {
+          name: 'exportTemplate',
+          arguments: {
+            // Missing required templateIdentifier
+          },
+        },
+        id: 'test-exporttemplate-2',
       }
 
       try {
@@ -388,12 +442,71 @@ describe('Tool Schema Validation Contract Tests', () => {
         const invalidResponse = await fetch(MCP_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(invalidEnumRequest),
+          body: JSON.stringify(invalidRequest),
         })
 
         const invalidData: ToolCallResponse = await invalidResponse.json()
         expect(invalidData.error).toBeDefined()
-        expect(invalidData.error?.message).toContain('enum')
+        expect(invalidData.error?.message).toContain('required')
+      } catch (error) {
+        // Expected to fail - no MCP server implemented yet
+        expect(error).toBeDefined()
+        console.log('Expected failure: MCP server not implemented yet')
+        throw error
+      }
+    })
+
+    test('should validate importTemplate tool parameters', async () => {
+      const toolDef = tools.find((t) => t.name === 'importTemplate')
+      expect(toolDef).toBeDefined()
+
+      // Test with valid parameters
+      const validRequest: ToolCallRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: {
+          name: 'importTemplate',
+          arguments: {
+            jsonData: '{"template": {"identifier": "test", "name": "Test"}}',
+            overwriteExisting: false,
+          },
+        },
+        id: 'test-importtemplate-1',
+      }
+
+      // Test with missing required parameter
+      const invalidRequest: ToolCallRequest = {
+        jsonrpc: '2.0',
+        method: 'tools/call',
+        params: {
+          name: 'importTemplate',
+          arguments: {
+            // Missing required jsonData
+            overwriteExisting: true,
+          },
+        },
+        id: 'test-importtemplate-2',
+      }
+
+      try {
+        const validResponse = await fetch(MCP_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(validRequest),
+        })
+
+        const validData: ToolCallResponse = await validResponse.json()
+        expect(validData.result || validData.error).toBeDefined()
+
+        const invalidResponse = await fetch(MCP_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(invalidRequest),
+        })
+
+        const invalidData: ToolCallResponse = await invalidResponse.json()
+        expect(invalidData.error).toBeDefined()
+        expect(invalidData.error?.message).toContain('required')
       } catch (error) {
         // Expected to fail - no MCP server implemented yet
         expect(error).toBeDefined()
@@ -404,7 +517,7 @@ describe('Tool Schema Validation Contract Tests', () => {
   })
 
   describe('All Tools Schema Validation', () => {
-    test('should validate all 12 tools have proper schema definitions', () => {
+    test('should validate all 13 tools have proper schema definitions', () => {
       const expectedTools = [
         'healthCheck',
         'systemStats',
@@ -416,11 +529,12 @@ describe('Tool Schema Validation Contract Tests', () => {
         'createTemplate',
         'executeTemplateWithGraphQL',
         'searchTemplates',
-        'exportSchema',
-        'importSchema',
+        'exportAllTables',
+        'exportTemplate',
+        'importTemplate',
       ]
 
-      expect(tools).toHaveLength(12)
+      expect(tools).toHaveLength(13)
 
       expectedTools.forEach((toolName) => {
         const tool = tools.find((t) => t.name === toolName)
@@ -447,17 +561,28 @@ describe('Tool Schema Validation Contract Tests', () => {
         const schema = tool.inputSchema
 
         // Basic JSON Schema validation
-        expect(schema.type).toBe('object')
-        expect(typeof schema.additionalProperties).toBe('boolean')
-
-        if (schema.properties) {
-          Object.values(schema.properties).forEach((prop: any) => {
-            expect(prop.type).toBeDefined()
+        if (schema.anyOf || schema.oneOf || schema.allOf) {
+          // Complex schema with anyOf/oneOf/allOf
+          const subSchemas = schema.anyOf || schema.oneOf || schema.allOf
+          expect(Array.isArray(subSchemas)).toBe(true)
+          subSchemas.forEach((subSchema: any) => {
+            expect(subSchema.type).toBe('object')
+            expect(typeof subSchema.additionalProperties).toBe('boolean')
           })
-        }
+        } else {
+          // Traditional single object schema
+          expect(schema.type).toBe('object')
+          expect(typeof schema.additionalProperties).toBe('boolean')
 
-        if (schema.required) {
-          expect(Array.isArray(schema.required)).toBe(true)
+          if (schema.properties) {
+            Object.values(schema.properties).forEach((prop: any) => {
+              expect(prop.type).toBeDefined()
+            })
+          }
+
+          if (schema.required) {
+            expect(Array.isArray(schema.required)).toBe(true)
+          }
         }
       })
     })

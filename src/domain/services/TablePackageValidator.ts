@@ -813,8 +813,8 @@ export class TablePackageValidator {
     }
 
     // Check if variables schema matches defined variables
-    if (template.variablesSchema) {
-      const schemaVariables = new Set(Object.keys(template.variablesSchema.properties || {}))
+    if (template.inputSchema) {
+      const schemaVariables = new Set(Object.keys(template.inputSchema.properties || {}))
 
       for (const variable of definedVariables) {
         if (!schemaVariables.has(variable)) {

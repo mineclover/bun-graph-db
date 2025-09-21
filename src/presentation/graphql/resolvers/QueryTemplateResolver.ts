@@ -59,7 +59,7 @@ export class QueryTemplateResolver extends BaseResolver {
     const processedVariables = this.processVariables(
       template.defaultVariables,
       (input.variables as any) || null,
-      template.variablesSchema,
+      template.inputSchema,
       input.validateVariables !== false
     )
 
@@ -289,15 +289,13 @@ export class QueryTemplateResolver extends BaseResolver {
         // Map the input properties that can be updated
         ...(input.name && { name: input.name }),
         ...(input.description !== undefined && { description: input.description }),
-        ...((input as any).query && { queryText: (input as any).query }),
-        ...(input.queryText && { queryText: input.queryText }),
-        ...(input.variablesSchema !== undefined && { variablesSchema: input.variablesSchema }),
+        ...(input.query && { queryText: input.query }),
+        ...(input.inputSchema !== undefined && { inputSchema: input.inputSchema }),
         ...(input.defaultVariables !== undefined && { defaultVariables: input.defaultVariables }),
         ...(input.applicableTables !== undefined && { applicableTables: input.applicableTables }),
         ...(input.templateType && { templateType: input.templateType }),
         ...(input.complexityScore !== undefined && { complexityScore: input.complexityScore }),
         ...(input.version && { version: input.version }),
-        ...(input.isActive !== undefined && { isActive: input.isActive }),
         ...(input.tags !== undefined && { tags: input.tags }),
       }
 
@@ -428,7 +426,7 @@ export class QueryTemplateResolver extends BaseResolver {
       }
 
       if (args.updateVariables) {
-        updateData.variablesSchema = args.updateVariables as any
+        updateData.inputSchema = args.updateVariables as any
       }
 
       const templateId = template.getId()

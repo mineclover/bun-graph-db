@@ -161,6 +161,8 @@ export class GraphQLSchemaBuilder {
           deps.tableQueries.tableByIdentifier(_, args as any),
         tables: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.tableQueries.tables(_, args as any),
+        tableDocumentation: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tableQueries.tableDocumentation(_, args as any),
 
         // Attribute type queries
         attributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
@@ -295,6 +297,10 @@ export class GraphQLSchemaBuilder {
           deps.nodeMutations.deleteNode(_, args as any),
         setNodeAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.nodeMutations.setNodeAttribute(_, args as any),
+        removeNodeAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.removeNodeAttribute(_, args as any),
+        updateNodeAttributeValue: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.updateNodeAttributeValue(_, args as any),
 
         // Relation mutations
         createRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>
@@ -431,8 +437,8 @@ export class GraphQLSchemaBuilder {
           deps.queryTemplateFieldResolvers.operationType(parent as QueryTemplate),
         variables: (parent: GraphQLParent) =>
           deps.queryTemplateFieldResolvers.variables(parent as QueryTemplate),
-        variablesSchema: (parent: GraphQLParent) =>
-          deps.queryTemplateFieldResolvers.variablesSchema(parent as QueryTemplate),
+        inputSchema: (parent: GraphQLParent) =>
+          deps.queryTemplateFieldResolvers.inputSchema(parent as QueryTemplate),
         defaultVariables: (parent: GraphQLParent) =>
           deps.queryTemplateFieldResolvers.defaultVariables(parent as QueryTemplate),
         applicableTables: (parent: GraphQLParent) =>

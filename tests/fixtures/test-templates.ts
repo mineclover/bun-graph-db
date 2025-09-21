@@ -12,7 +12,7 @@ export const testTemplates = [
     identifier: 'test-simple-query',
     name: 'Simple User Query',
     queryText: sampleQueries.simpleQuery,
-    variablesSchema: sampleVariablesSchemas.simpleQuery,
+    inputSchema: sampleVariablesSchemas.simpleQuery,
     description: 'Basic query for retrieving a single user by ID',
     expectedQueryName: 'GetUser',
     expectedOperationType: 'query',
@@ -23,7 +23,7 @@ export const testTemplates = [
     identifier: 'test-complex-query',
     name: 'Complex User List Query',
     queryText: sampleQueries.complexQuery,
-    variablesSchema: sampleVariablesSchemas.complexQuery,
+    inputSchema: sampleVariablesSchemas.complexQuery,
     description: 'Advanced query with filtering and pagination',
     expectedQueryName: 'ListUsers',
     expectedOperationType: 'query',
@@ -34,7 +34,7 @@ export const testTemplates = [
     identifier: 'test-mutation',
     name: 'Create User Mutation',
     queryText: sampleQueries.mutation,
-    variablesSchema: sampleVariablesSchemas.mutation,
+    inputSchema: sampleVariablesSchemas.mutation,
     description: 'Mutation for creating a new user',
     expectedQueryName: 'CreateUser',
     expectedOperationType: 'mutation',
@@ -45,7 +45,7 @@ export const testTemplates = [
     identifier: 'test-anonymous-query',
     name: 'Anonymous Health Check',
     queryText: sampleQueries.anonymousQuery,
-    variablesSchema: null,
+    inputSchema: null,
     description: 'Anonymous query without operation name',
     expectedQueryName: null,
     expectedOperationType: 'query',
@@ -56,7 +56,7 @@ export const testTemplates = [
     identifier: 'test-subscription',
     name: 'Node Updates Subscription',
     queryText: sampleQueries.subscription,
-    variablesSchema: {
+    inputSchema: {
       type: 'object',
       properties: {
         nodeId: { type: 'string' },
@@ -73,7 +73,7 @@ export const testTemplates = [
     identifier: 'test-nested-query',
     name: 'Nested Relations Query',
     queryText: sampleQueries.nestedQuery,
-    variablesSchema: {
+    inputSchema: {
       type: 'object',
       properties: {
         id: { type: 'string', description: 'Node ID' },
@@ -93,7 +93,7 @@ export const performanceTestTemplates = [
     identifier: `perf-test-${i + 1}`,
     name: `Performance Test Query ${i + 1}`,
     queryText: `query PerfTest${i + 1}($id: ID!) { node(id: $id) { id content } }`,
-    variablesSchema: {
+    inputSchema: {
       type: 'object',
       properties: { id: { type: 'string' } },
       required: ['id'],

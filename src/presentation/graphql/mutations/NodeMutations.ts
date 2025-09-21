@@ -233,4 +233,127 @@ export class NodeMutations extends BaseResolver {
       { input: args.input }
     )
   }
+
+  async removeNodeAttribute(_: GraphQLParent, args: { nodeId: string; attributeId: string }, _context?: GraphQLContext) {
+    try {
+      this.validateArgs(
+        args as any,
+        [
+          BaseResolver.validationRules.required('nodeId', 'Node ID'),
+          BaseResolver.validationRules.required('attributeId', 'Attribute ID'),
+          BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),
+          BaseResolver.validationRules.nonEmpty('attributeId', 'Attribute ID'),
+        ],
+        'removeNodeAttribute'
+      )
+
+      this.logger.info('Executing mutation: removeNodeAttribute', { nodeId: args.nodeId, attributeId: args.attributeId })
+
+      // Check if the node attribute exists
+      const existingNodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
+        args.nodeId,
+        args.attributeId
+      )
+
+      if (!existingNodeAttribute) {
+        this.logger.warn('Node attribute not found', { nodeId: args.nodeId, attributeId: args.attributeId })
+        return {
+          success: false,
+          nodeAttribute: null,
+          errors: [
+            {
+              message: 'Node attribute not found',
+              code: 'NOT_FOUND',
+            },
+          ],
+        }
+      }
+
+      // Delete the node attribute
+      await this.nodeAttributeRepository.delete(existingNodeAttribute.id)
+
+      return {
+        success: true,
+        nodeAttribute: null,
+        errors: [],
+      }
+    } catch (error) {
+      this.logger.error('Mutation failed: removeNodeAttribute', { error, nodeId: args.nodeId, attributeId: args.attributeId })
+
+      return {
+        success: false,
+        nodeAttribute: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
+      }
+    }
+  }
+
+  async updateNodeAttributeValue(_: GraphQLParent, args: { nodeId: string; attributeId: string; value: string }, _context?: GraphQLContext) {
+    try {
+      this.validateArgs(
+        args as any,
+        [
+          BaseResolver.validationRules.required('nodeId', 'Node ID'),
+          BaseResolver.validationRules.required('attributeId', 'Attribute ID'),
+          BaseResolver.validationRules.required('value', 'Attribute value'),
+          BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),
+          BaseResolver.validationRules.nonEmpty('attributeId', 'Attribute ID'),
+        ],
+        'updateNodeAttributeValue'
+      )
+
+      this.logger.info('Executing mutation: updateNodeAttributeValue', { nodeId: args.nodeId, attributeId: args.attributeId, value: args.value })
+
+      // Check if the node attribute exists
+      const existingNodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
+        args.nodeId,
+        args.attributeId
+      )
+
+      if (!existingNodeAttribute) {
+        this.logger.warn('Node attribute not found, creating new one', { nodeId: args.nodeId, attributeId: args.attributeId })
+
+        // If it doesn't exist, create it (set operation)
+        const result = await this.nodeAttributeRepository.setNodeAttribute(
+          args.nodeId,
+          args.attributeId,
+          args.value
+        )
+
+        return {
+          success: true,
+          nodeAttribute: result,
+          errors: [],
+        }
+      }
+
+      // Update the existing node attribute value
+      existingNodeAttribute.updateValue(args.value)
+      await this.nodeAttributeRepository.update(existingNodeAttribute)
+
+      return {
+        success: true,
+        nodeAttribute: existingNodeAttribute,
+        errors: [],
+      }
+    } catch (error) {
+      this.logger.error('Mutation failed: updateNodeAttributeValue', { error, nodeId: args.nodeId, attributeId: args.attributeId, value: args.value })
+
+      return {
+        success: false,
+        nodeAttribute: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
+      }
+    }
+  }
 }

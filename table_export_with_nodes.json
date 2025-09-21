@@ -1,0 +1,126 @@
+{
+  "metadata": {
+    "exportedAt": "2025-09-22T00:00:00.000Z",
+    "version": "1.0.0",
+    "exportType": "single_table_with_nodes",
+    "source": "bun-graph-db MCP export",
+    "tableId": "128",
+    "tableIdentifier": "test-korean-table"
+  },
+  "table": {
+    "id": "128",
+    "identifier": "test-korean-table",
+    "description": "한국어로 생성된 테스트 테이블입니다",
+    "createdAt": "2025-09-21T15:04:57.004Z",
+    "nodes": [
+      {
+        "id": "93",
+        "content": "사용자 정보: 김철수",
+        "createdAt": "2025-09-21T15:30:30.257Z",
+        "attributes": {
+          "name": "김철수",
+          "type": "사용자",
+          "category": "개인정보"
+        },
+        "table": {
+          "id": "128",
+          "identifier": "test-korean-table"
+        }
+      },
+      {
+        "id": "94",
+        "content": "사용자 정보: 이영희",
+        "createdAt": "2025-09-21T15:30:38.986Z",
+        "attributes": {
+          "name": "이영희",
+          "type": "사용자",
+          "category": "개인정보"
+        },
+        "table": {
+          "id": "128",
+          "identifier": "test-korean-table"
+        }
+      },
+      {
+        "id": "95",
+        "content": "사용자 정보: 박민수",
+        "createdAt": "2025-09-21T15:30:40.193Z",
+        "attributes": {
+          "name": "박민수",
+          "type": "사용자",
+          "category": "개인정보"
+        },
+        "table": {
+          "id": "128",
+          "identifier": "test-korean-table"
+        }
+      },
+      {
+        "id": "96",
+        "content": "프로젝트 정보: AI 챗봇 개발",
+        "createdAt": "2025-09-21T15:30:41.830Z",
+        "attributes": {
+          "name": "AI 챗봇 개발",
+          "type": "프로젝트",
+          "category": "업무정보"
+        },
+        "table": {
+          "id": "128",
+          "identifier": "test-korean-table"
+        }
+      }
+    ],
+    "nodeCount": 4,
+    "relationships": [],
+    "relationshipCount": 0,
+    "attributes": [
+      {
+        "name": "name",
+        "type": "string",
+        "description": "이름 또는 제목"
+      },
+      {
+        "name": "type",
+        "type": "string",
+        "description": "데이터 유형 (사용자/프로젝트)"
+      },
+      {
+        "name": "category",
+        "type": "string",
+        "description": "카테고리 (개인정보/업무정보)"
+      }
+    ],
+    "schema": {
+      "tableStructure": "korean_data",
+      "hasCustomAttributes": true,
+      "supportedOperations": ["create", "read", "update", "delete", "search"],
+      "attributeTypes": ["string", "number", "boolean", "date", "json"],
+      "nodeStructure": {
+        "requiredFields": ["id", "content", "createdAt", "table"],
+        "optionalFields": ["attributes", "updatedAt", "metadata"]
+      }
+    }
+  },
+  "statistics": {
+    "totalTables": 1,
+    "totalNodes": 4,
+    "totalRelationships": 0,
+    "totalAttributes": 12,
+    "averageNodesPerTable": 4,
+    "exportSize": "detailed",
+    "languages": ["Korean"],
+    "dataTypes": {
+      "사용자": 3,
+      "프로젝트": 1
+    }
+  },
+  "exportFormat": {
+    "includesNodes": true,
+    "includesAttributes": true,
+    "includesRelationships": true,
+    "includesSchema": true,
+    "includesStatistics": true,
+    "compression": false,
+    "encoding": "UTF-8"
+  }
+}

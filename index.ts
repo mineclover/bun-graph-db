@@ -105,10 +105,15 @@ const yoga = createYoga({
 // Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes.js'
 import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes.js'
+import { McpHttpServer } from './src/mcp/http-server/McpHttpServer.js'
 
 // Create route handlers
 const schemaHandler = await createSchemaHandler(container)
 const templateFileHandler = await createTemplateFileHandler(container)
+
+// Create MCP HTTP server
+const mcpServer = new McpHttpServer(`http://localhost:${graphqlConfig.port}/graphql`)
+await mcpServer.initialize()
 
 // Combined request handler
 const requestHandler = async (request: Request): Promise<Response> => {
@@ -143,6 +148,11 @@ const requestHandler = async (request: Request): Promise<Response> => {
     return schemaResponse
   }
 
+  // Handle MCP requests
+  if (pathname === '/mcp' && request.method === 'POST') {
+    return await mcpServer.handleRequest(request)
+  }
+
   // Handle GraphQL requests
   return yoga.fetch(request)
 }
@@ -159,13 +169,14 @@ logger.info(
 logger.info(
   `📊 GraphiQL available at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`
 )
+logger.info(`🔌 MCP Protocol available at http://localhost:${graphqlConfig.port}/mcp`)
 logger.info(`📋 Schema endpoints available:`)
 logger.info(`   • SDL: http://localhost:${graphqlConfig.port}/schema`)
 logger.info(`   • JSON: http://localhost:${graphqlConfig.port}/schema.json`)
 logger.info(`   • Introspection: http://localhost:${graphqlConfig.port}/introspection.json`)
 logger.info(`   • TypeScript: http://localhost:${graphqlConfig.port}/schema/typescript`)
 logger.info('🏗️  Architecture: Hexagonal with Domain-Driven Design')
-logger.info('🎯 Features: GraphQL API + Template Engine')
+logger.info('🎯 Features: GraphQL API + Template Engine + MCP Proxy')
 
 // Graceful shutdown
 const shutdown = async () => {

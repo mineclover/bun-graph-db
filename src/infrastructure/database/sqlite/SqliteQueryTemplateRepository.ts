@@ -404,7 +404,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         updates.queryText ?? existing.getQueryText(),
         existing.getQueryName(),
         existing.getOperationType(),
-        updates.variablesSchema ?? existing.getVariablesSchema(),
+        updates.inputSchema ?? existing.getInputSchema(),
         updates.defaultVariables ?? existing.getDefaultVariables(),
         updates.applicableTables ?? existing.getApplicableTables(),
         updates.templateType ?? existing.getTemplateType(),

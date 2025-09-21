@@ -1,5 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import { QueryTemplate, type OperationType } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
@@ -9,10 +9,10 @@ export interface CreateQueryTemplateRequest {
   queryText: string
   tags: string[]
   description?: string
-  variablesSchema?: any
+  inputSchema?: any
   defaultVariables?: Record<string, unknown>
   applicableTables?: string[]
-  templateType?: 'query' | 'mutation' | 'subscription'
+  templateType?: OperationType
   complexityScore?: number
   version?: string
 }
@@ -32,26 +32,14 @@ export class CreateQueryTemplate {
     private readonly logger: ILogger
   ) {}
 
-  async execute(request: CreateQueryTemplateRequest): Promise<CreateQueryTemplateResponse> {
+  async execute(request: CreateQueryTemplateRequest): Promise<QueryTemplate> {
     try {
-      this.logger.info('Creating query template', { identifier: request.identifier })
+      this.logger.info('Creating query template', { 
+        identifier: request.identifier,
+        name: request.name 
+      })
 
-      // Check for existing template with same identifier
-      const existing = await this.queryTemplateRepository.findByIdentifier(request.identifier)
-      if (existing) {
-        return {
-          success: false,
-          template: null,
-          errors: [
-            {
-              message: `Template with identifier '${request.identifier}' already exists`,
-              code: 'TEMPLATE_ALREADY_EXISTS',
-            },
-          ],
-        }
-      }
-
-      // Create template entity
+      // Create the template entity
       const template = QueryTemplate.create(
         request.identifier,
         request.name,
@@ -59,7 +47,7 @@ export class CreateQueryTemplate {
         request.tags,
         {
           description: request.description,
-          variablesSchema: request.variablesSchema,
+          inputSchema: request.inputSchema,
           defaultVariables: request.defaultVariables,
           applicableTables: request.applicableTables,
           templateType: request.templateType,
@@ -68,46 +56,21 @@ export class CreateQueryTemplate {
         }
       )
 
-      // Validate variables if provided
-      if (request.defaultVariables && !template.validateVariables(request.defaultVariables)) {
-        return {
-          success: false,
-          template: null,
-          errors: [
-            {
-              message: 'Default variables do not match the provided schema',
-              code: 'INVALID_DEFAULT_VARIABLES',
-            },
-          ],
-        }
-      }
-
-      // Save to repository
-      const savedTemplate = await this.queryTemplateRepository.create(template)
+      // Save the template
+      const saved = await this.queryTemplateRepository.create(template)
 
       this.logger.info('Query template created successfully', {
-        id: savedTemplate.getId(),
-        identifier: savedTemplate.getIdentifier(),
+        id: saved.getId(),
+        identifier: saved.getIdentifier(),
       })
 
-      return {
-        success: true,
-        template: savedTemplate,
-        errors: [],
-      }
+      return saved
     } catch (error) {
-      this.logger.error('Failed to create query template', {
-        error,
-        identifier: request.identifier,
+      this.logger.error('Failed to create query template', { 
+        error: error instanceof Error ? error.message : String(error),
+        request 
       })
-
-      if (error instanceof ValidationException) {
-        throw error
-      }
-
-      throw new ValidationException('Failed to create query template', {
-        originalError: error,
-      })
+      throw error
     }
   }
 }

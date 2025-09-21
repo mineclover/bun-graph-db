@@ -5,6 +5,7 @@
  * Lifecycle: http://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle
  */
 
+import Ajv from 'ajv'
 import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
 import { McpToolRegistry } from '../../services/McpToolRegistry.ts'
 
@@ -45,6 +46,7 @@ export class McpHttpServer {
   private graphqlExecutor: GraphQLOperationExecutor
   private initialized: boolean = false
   private protocolVersion: string = "2025-06-18"
+  private ajv: Ajv
 
   // Server capabilities according to MCP spec
   private capabilities = {
@@ -61,6 +63,7 @@ export class McpHttpServer {
   constructor(graphqlEndpoint: string) {
     this.toolRegistry = new McpToolRegistry()
     this.graphqlExecutor = new GraphQLOperationExecutor(graphqlEndpoint)
+    this.ajv = new Ajv()
   }
 
   async initialize(): Promise<void> {
@@ -250,12 +253,26 @@ export class McpHttpServer {
         return this.createErrorMcpResponse(id, -32603, "Internal error", `Tool ${name} has no GraphQL operation`)
       }
 
+      // Validate input against tool's input schema
+      if (tool.inputSchema) {
+        const validate = this.ajv.compile(tool.inputSchema)
+        const valid = validate(args || {})
+
+        if (!valid) {
+          const errors = validate.errors?.map(err => `${err.instancePath} ${err.message}`).join(', ') || 'Unknown validation error'
+          return this.createErrorMcpResponse(id, -32602, `Schema validation failed: ${errors}`, undefined)
+        }
+      }
+
+      // Transform parameters for GraphQL compatibility
+      const transformedVariables = this.transformParametersForGraphQL(name, args || {})
+
       // Execute the tool's GraphQL operation directly
       const result = await this.graphqlExecutor.execute({
         operationType: tool.graphqlOperation.operationType,
         operationName: name,
         query: tool.graphqlOperation.query,
-        variables: args || {}
+        variables: transformedVariables
       })
 
       // Return MCP-compliant response
@@ -330,5 +347,74 @@ export class McpHttpServer {
     ]
 
     return allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')
+  }
+
+  private transformParametersForGraphQL(toolName: string, params: any): any {
+    // Transform flat MCP parameters into GraphQL input objects
+    switch (toolName) {
+      case 'createTable':
+        return {
+          input: {
+            identifier: params.identifier,
+            description: params.description
+          }
+        }
+
+      case 'createNode':
+        return {
+          input: {
+            tableId: params.tableId,
+            content: params.content,
+            attributes: params.metadata
+          }
+        }
+
+      case 'createRelation':
+        return {
+          input: {
+            fromNodeId: params.fromNodeId,
+            toNodeId: params.toNodeId,
+            relationshipType: params.relationshipType,
+            properties: params.properties
+          }
+        }
+
+      case 'createTemplate':
+        return {
+          input: {
+            identifier: params.identifier,
+            name: params.name,
+            query: params.query,
+            tags: params.tags
+          }
+        }
+
+      case 'searchNodes':
+        return {
+          filter: {
+            tableId: params.tableId,
+            search: params.searchTerm
+          }
+        }
+
+      case 'searchTemplates':
+        return {
+          filter: {
+            search: params.searchTerm,
+            tags: params.tags
+          }
+        }
+
+      case 'searchTables':
+        return {
+          filter: {
+            search: params.searchTerm
+          }
+        }
+
+      default:
+        // For tools that don't need transformation, return parameters as-is
+        return params
+    }
   }
 }

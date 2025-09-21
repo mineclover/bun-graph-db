@@ -95,7 +95,7 @@ export interface TableTemplatesExport {
     queryName: string[]
     operationType: 'query' | 'mutation' | 'subscription'
     variables: Record<string, unknown> | null
-    variablesSchema: QueryVariablesSchema | null
+    inputSchema: QueryVariablesSchema | null
     defaultVariables: Record<string, unknown> | null
     applicableTables: string[] | null
     complexityScore: number

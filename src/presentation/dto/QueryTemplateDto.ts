@@ -6,32 +6,34 @@ import {
 } from '@/domain/entities/QueryTemplate.js'
 
 export interface QueryTemplateDto {
-  id: string | null
+  id: string
   identifier: string
   name: string
   description: string | null
-  queryText: string
+  query: string
   queryName: string[]
   operationType: OperationType
-  variablesSchema: QueryVariablesSchema | null
+  inputSchema: QueryVariablesSchema | null
   defaultVariables: Record<string, unknown> | null
   applicableTables: string[] | null
   templateType: TemplateType
   complexityScore: number
   usageCount: number
+  lastUsedAt: Date | null
+  avgExecutionTimeMs: number
   version: string
   isActive: boolean
   tags: string[]
-  createdAt: string
-  updatedAt: string
+  createdAt: Date
+  updatedAt: Date
 }
 
 export interface CreateQueryTemplateInput {
   identifier: string
   name: string
   description?: string
-  queryText: string
-  variablesSchema?: QueryVariablesSchema
+  query: string
+  inputSchema?: QueryVariablesSchema
   defaultVariables?: Record<string, unknown>
   applicableTables?: string[]
   templateType?: TemplateType
@@ -41,17 +43,16 @@ export interface CreateQueryTemplateInput {
 }
 
 export interface UpdateQueryTemplateInput {
-  id: string
+  identifier?: string
   name?: string
   description?: string
-  queryText?: string
-  variablesSchema?: QueryVariablesSchema
+  query?: string
+  inputSchema?: QueryVariablesSchema
   defaultVariables?: Record<string, unknown>
   applicableTables?: string[]
   templateType?: TemplateType
   complexityScore?: number
   version?: string
-  isActive?: boolean
   tags?: string[]
 }
 
@@ -98,24 +99,26 @@ export interface QueryTemplatesConnection {
 
 export function queryTemplateToDto(entity: QueryTemplate): QueryTemplateDto {
   return {
-    id: entity.getId(),
+    id: entity.getId() || '',
     identifier: entity.getIdentifier(),
     name: entity.getName(),
     description: entity.getDescription(),
-    queryText: entity.getQueryText(),
+    query: entity.getQueryText(),
     queryName: entity.getQueryName(),
     operationType: entity.getOperationType(),
-    variablesSchema: entity.getVariablesSchema(),
+    inputSchema: entity.getInputSchema(),
     defaultVariables: entity.getDefaultVariables(),
     applicableTables: entity.getApplicableTables(),
     templateType: entity.getTemplateType(),
     complexityScore: entity.getComplexityScore(),
     usageCount: entity.getUsageCount(),
+    lastUsedAt: entity.getLastUsedAt(),
+    avgExecutionTimeMs: entity.getAvgExecutionTimeMs(),
     version: entity.getVersion(),
     isActive: entity.getIsActive(),
     tags: entity.getTags(),
-    createdAt: entity.getCreatedAt().toISOString(),
-    updatedAt: entity.getUpdatedAt().toISOString(),
+    createdAt: entity.getCreatedAt(),
+    updatedAt: entity.getUpdatedAt(),
   }
 }
 
@@ -124,9 +127,9 @@ export function queryTemplatesToDtoList(entities: QueryTemplate[]): QueryTemplat
 }
 
 export function createInputToEntity(input: CreateQueryTemplateInput): QueryTemplate {
-  return QueryTemplate.create(input.identifier, input.name, input.queryText, input.tags, {
+  return QueryTemplate.create(input.identifier, input.name, input.query, input.tags, {
     description: input.description,
-    variablesSchema: input.variablesSchema,
+    inputSchema: input.inputSchema,
     defaultVariables: input.defaultVariables,
     applicableTables: input.applicableTables,
     templateType: input.templateType,

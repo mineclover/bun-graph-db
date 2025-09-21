@@ -9,7 +9,7 @@ type QueryTemplate implements Node {
   queryName: [String!]!
   operationType: OperationType!
   variables: JSON
-  variablesSchema: JSON
+  inputSchema: JSON
   defaultVariables: JSON
   applicableTables: [String!]
   complexityScore: Int!
@@ -52,7 +52,7 @@ input CreateQueryTemplateInput {
   query: String!
   queryName: String
   variables: JSON
-  variablesSchema: JSON
+  inputSchema: JSON
   defaultVariables: JSON
   applicableTables: [String!]
   complexityScore: Int
@@ -67,7 +67,7 @@ input UpdateQueryTemplateInput {
   query: String
   queryName: String
   variables: JSON
-  variablesSchema: JSON
+  inputSchema: JSON
   defaultVariables: JSON
   applicableTables: [String!]
   complexityScore: Int

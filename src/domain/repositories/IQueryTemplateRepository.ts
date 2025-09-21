@@ -8,7 +8,7 @@ export interface QueryTemplateUpdateData {
   name?: string
   description?: string | null
   queryText?: string
-  variablesSchema?: QueryVariablesSchema | null
+  inputSchema?: QueryVariablesSchema | null
   defaultVariables?: Record<string, unknown> | null
   applicableTables?: string[] | null
   templateType?: TemplateType

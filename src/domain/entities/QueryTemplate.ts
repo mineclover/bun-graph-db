@@ -52,15 +52,12 @@ export interface ValidationResult {
 
 export interface QueryVariablesSchema {
   type: string
-  properties: Record<
-    string,
-    {
-      type: string
-      description?: string
-      default?: unknown
-      enum?: unknown[]
-    }
-  >
+  properties: Record<string, {
+    type: string
+    description?: string    // Extended: 필드 설명
+    default?: unknown      // Extended: 기본값 지원  
+    enum?: unknown[]       // Extended: enum 검증
+  }>
   required?: string[]
 }
 
@@ -76,7 +73,7 @@ export class QueryTemplate {
     private readonly queryText: string,
     private readonly queryName: string[],
     private readonly operationType: OperationType,
-    private readonly variablesSchema: QueryVariablesSchema | null,
+    private readonly inputSchema: QueryVariablesSchema | null,
     private readonly defaultVariables: Record<string, unknown> | null,
     private readonly applicableTables: string[] | null,
     private readonly templateType: TemplateType, // Legacy field
@@ -103,7 +100,7 @@ export class QueryTemplate {
     tags: string[],
     options?: {
       description?: string
-      variablesSchema?: QueryVariablesSchema
+      inputSchema?: QueryVariablesSchema
       defaultVariables?: Record<string, unknown>
       applicableTables?: string[]
       templateType?: TemplateType // Legacy, will be overridden by parsed operationType
@@ -126,7 +123,7 @@ export class QueryTemplate {
       queryText,
       systemQueries, // Store system queries in queryName field
       operationInfo.operationType,
-      options?.variablesSchema || null,
+      options?.inputSchema || null,
       options?.defaultVariables || null,
       options?.applicableTables || null,
       operationInfo.operationType, // Use parsed type, not legacy templateType
@@ -150,7 +147,7 @@ export class QueryTemplate {
     queryText: string,
     queryName: string | null,
     operationType: string | null,
-    variablesSchema: string | null,
+    inputSchema: string | null,
     defaultVariables: string | null,
     applicableTables: string | null,
     templateType: string, // Legacy field
@@ -164,8 +161,8 @@ export class QueryTemplate {
     createdAt: string,
     updatedAt: string
   ): QueryTemplate {
-    const parsedVariablesSchema = variablesSchema
-      ? (JSON.parse(variablesSchema) as QueryVariablesSchema)
+    const parsedInputSchema = inputSchema
+      ? (JSON.parse(inputSchema) as QueryVariablesSchema)
       : null
     const parsedDefaultVariables = defaultVariables
       ? (JSON.parse(defaultVariables) as Record<string, unknown>)
@@ -223,7 +220,7 @@ export class QueryTemplate {
       queryText,
       parsedQueryName,
       finalOperationType,
-      parsedVariablesSchema,
+      parsedInputSchema,
       parsedDefaultVariables,
       parsedApplicableTables,
       finalOperationType, // Keep templateType in sync
@@ -298,8 +295,8 @@ export class QueryTemplate {
   getOperationType(): OperationType {
     return this.operationType
   }
-  getVariablesSchema(): QueryVariablesSchema | null {
-    return this.variablesSchema
+  getInputSchema(): QueryVariablesSchema | null {
+    return this.inputSchema
   }
   getDefaultVariables(): Record<string, unknown> | null {
     return this.defaultVariables
@@ -348,7 +345,7 @@ export class QueryTemplate {
       this.queryText,
       this.queryName,
       this.operationType,
-      this.variablesSchema,
+      this.inputSchema,
       this.defaultVariables,
       this.applicableTables,
       this.templateType,
@@ -383,7 +380,7 @@ export class QueryTemplate {
       this.queryText,
       this.queryName,
       this.operationType,
-      this.variablesSchema,
+      this.inputSchema,
       this.defaultVariables,
       this.applicableTables,
       this.templateType,
@@ -408,7 +405,7 @@ export class QueryTemplate {
       this.queryText,
       this.queryName,
       this.operationType,
-      this.variablesSchema,
+      this.inputSchema,
       this.defaultVariables,
       this.applicableTables,
       this.templateType,
@@ -433,7 +430,7 @@ export class QueryTemplate {
       this.queryText,
       this.queryName,
       this.operationType,
-      this.variablesSchema,
+      this.inputSchema,
       this.defaultVariables,
       this.applicableTables,
       this.templateType,
@@ -450,15 +447,15 @@ export class QueryTemplate {
   }
 
   validateVariables(variables: Record<string, unknown>): ValidationResult {
-    if (!this.variablesSchema) {
+    if (!this.inputSchema) {
       return { isValid: true, errors: [] }
     }
 
     const errors: string[] = []
 
     // Check required fields
-    if (this.variablesSchema.required) {
-      const missingRequired = this.variablesSchema.required.filter(
+    if (this.inputSchema.required) {
+      const missingRequired = this.inputSchema.required.filter(
         (requiredField) =>
           !Object.hasOwn(variables, requiredField) || variables[requiredField] === undefined
       )
@@ -468,8 +465,8 @@ export class QueryTemplate {
     }
 
     // Check type validation for each property
-    if (this.variablesSchema.properties) {
-      for (const [key, propSchema] of Object.entries(this.variablesSchema.properties)) {
+    if (this.inputSchema.properties) {
+      for (const [key, propSchema] of Object.entries(this.inputSchema.properties)) {
         if (Object.hasOwn(variables, key) && variables[key] !== undefined) {
           const value = variables[key]
 
@@ -561,7 +558,7 @@ export class QueryTemplate {
       query_text: this.queryText,
       query_name: this.queryName.length > 0 ? JSON.stringify(this.queryName) : null,
       operation_type: this.operationType,
-      variables_schema: this.variablesSchema ? JSON.stringify(this.variablesSchema) : null,
+      variables_schema: this.inputSchema ? JSON.stringify(this.inputSchema) : null,
       default_variables: this.defaultVariables ? JSON.stringify(this.defaultVariables) : null,
       applicable_tables: this.applicableTables ? JSON.stringify(this.applicableTables) : null,
       template_type: this.templateType, // Keep for backwards compatibility

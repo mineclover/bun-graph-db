@@ -157,7 +157,7 @@ export const tablePackageTypes = `
     queryName: [String!]!
     operationType: OperationType!
     variables: JSON
-    variablesSchema: JSON
+    inputSchema: JSON
     defaultVariables: JSON
     applicableTables: [String!]
     complexityScore: Int!
@@ -293,7 +293,7 @@ export const tablePackageTypes = `
     queryName: [String!]!
     operationType: OperationType!
     variables: JSON
-    variablesSchema: JSON
+    inputSchema: JSON
     defaultVariables: JSON
     applicableTables: [String!]
     complexityScore: Int!

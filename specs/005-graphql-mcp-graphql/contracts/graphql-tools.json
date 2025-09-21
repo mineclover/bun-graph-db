@@ -49,12 +49,12 @@
             "default": ""
           }
         },
-        "required": ["identifier", "name"],
+        "required": ["identifier"],
         "additionalProperties": false
       },
       "graphqlOperation": {
         "type": "mutation",
-        "query": "mutation createTable($input: CreateTableInput!) { createTable(input: $input) { id identifier name description } }"
+        "query": "mutation createTable($input: CreateTableInput!) { createTable(input: $input) { success table { id identifier description } errors { message } } }"
       }
     },
     {
@@ -80,7 +80,7 @@
       },
       "graphqlOperation": {
         "type": "query",
-        "query": "query searchTables($searchTerm: String, $limit: Int) { tables(searchTerm: $searchTerm, limit: $limit) { id identifier name description } }"
+        "query": "query searchTables($filter: TablesFilter) { tables(filter: $filter) { nodes { id identifier description } } }"
       }
     },
     {
@@ -108,7 +108,7 @@
       },
       "graphqlOperation": {
         "type": "mutation",
-        "query": "mutation createNode($input: CreateNodeInput!) { createNode(input: $input) { id content tableId createdAt } }"
+        "query": "mutation createNode($input: CreateNodeInput!) { createNode(input: $input) { success node { id content table { id identifier } createdAt } errors { message } } }"
       }
     },
     {
@@ -138,7 +138,7 @@
       },
       "graphqlOperation": {
         "type": "query",
-        "query": "query searchNodes($tableId: String, $searchTerm: String, $limit: Int) { searchNodes(tableId: $tableId, searchTerm: $searchTerm, limit: $limit) { id content tableId createdAt } }"
+        "query": "query searchNodes($filter: SearchNodesFilter!) { searchNodes(filter: $filter) { nodes { id content table { id identifier } createdAt } } }"
       }
     },
     {
@@ -170,7 +170,7 @@
       },
       "graphqlOperation": {
         "type": "mutation",
-        "query": "mutation createRelation($input: CreateRelationInput!) { createRelation(input: $input) { id fromNodeId toNodeId relationshipType properties } }"
+        "query": "mutation createRelation($input: CreateRelationInput!) { createRelation(input: $input) { success relation { id sourceNode { id } targetNode { id } relationType { identifier } } errors { message } } }"
       }
     },
     {
@@ -205,7 +205,7 @@
       },
       "graphqlOperation": {
         "type": "mutation",
-        "query": "mutation createTemplate($input: CreateTemplateInput!) { createTemplate(input: $input) { id identifier name query tags } }"
+        "query": "mutation createTemplate($input: CreateQueryTemplateInput!) { createTemplate(input: $input) { success template { id identifier name query tags } errors { message } } }"
       }
     },
     {
@@ -256,63 +256,68 @@
       },
       "graphqlOperation": {
         "type": "query",
-        "query": "query searchTemplates($searchTerm: String, $tags: [String!]) { searchTemplates { templates { identifier name query tags } } }"
+        "query": "query searchTemplates($filter: QueryTemplatesFilter) { searchTemplates(filter: $filter) { templates { identifier name query tags } } }"
       }
     },
     {
-      "name": "exportSchema",
-      "description": "Export database schema in specified format",
+      "name": "exportAllTables",
+      "description": "Export all tables with metadata and structure",
       "inputSchema": {
         "type": "object",
-        "properties": {
-          "format": {
-            "type": "string",
-            "enum": ["json", "graphql", "typescript"],
-            "description": "Export format",
-            "default": "json"
-          },
-          "includeData": {
-            "type": "boolean",
-            "description": "Include sample data in export",
-            "default": false
-          }
-        },
+        "properties": {},
         "additionalProperties": false
       },
       "graphqlOperation": {
         "type": "query",
-        "query": "query exportSchema($format: String!, $includeData: Boolean!) { exportSchema(format: $format, includeData: $includeData) { schema data } }"
+        "query": "query exportAllTables { exportAllTables { metadata { exportedAt version } tables { identifier description metadata } } }"
       }
     },
     {
-      "name": "importSchema",
-      "description": "Import schema from provided data",
+      "name": "exportTemplate",
+      "description": "Export a specific template with all its data",
       "inputSchema": {
         "type": "object",
         "properties": {
-          "schemaData": {
+          "templateIdentifier": {
             "type": "string",
-            "description": "Schema data to import (JSON or other supported format)"
-          },
-          "format": {
-            "type": "string",
-            "enum": ["json", "graphql"],
-            "description": "Format of the schema data",
-            "default": "json"
-          },
-          "mergeStrategy": {
-            "type": "string",
-            "enum": ["replace", "merge", "append"],
-            "description": "How to handle existing schema",
-            "default": "merge"
+            "description": "Identifier of the template to export"
           }
         },
-        "required": ["schemaData"],
+        "required": ["templateIdentifier"],
         "additionalProperties": false
       },
       "graphqlOperation": {
         "type": "mutation",
-        "query": "mutation importSchema($input: ImportSchemaInput!) { importSchema(input: $input) { success tablesCreated nodesCreated errors { message } } }"
+        "query": "mutation exportTemplate($templateIdentifier: String!) { exportTemplate(templateIdentifier: $templateIdentifier) { success exportData errors { message } } }"
+      }
+    },
+    {
+      "name": "importTemplate",
+      "description": "Import a template from JSON data",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "jsonData": {
+            "type": "string",
+            "description": "JSON data containing the template to import"
+          },
+          "overwriteExisting": {
+            "type": "boolean",
+            "description": "Whether to overwrite existing template with same identifier",
+            "default": false
+          },
+          "generateNewIdentifier": {
+            "type": "boolean",
+            "description": "Whether to generate a new identifier if conflict exists",
+            "default": false
+          }
+        },
+        "required": ["jsonData"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation importTemplate($jsonData: String!, $overwriteExisting: Boolean, $generateNewIdentifier: Boolean) { importTemplate(jsonData: $jsonData, overwriteExisting: $overwriteExisting, generateNewIdentifier: $generateNewIdentifier) { success template { identifier name } errors { message } } }"
       }
     }
   ]

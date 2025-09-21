@@ -20,7 +20,7 @@ export interface TemplateExportFormat {
 
     // 메타데이터
     variables: Record<string, unknown> | null
-    variablesSchema: QueryVariablesSchema | null
+    inputSchema: QueryVariablesSchema | null
     defaultVariables: Record<string, unknown> | null
     applicableTables: string[] | null
     complexityScore: number

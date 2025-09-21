@@ -50,7 +50,7 @@ export class TemplateImportExportService {
 
           // 메타데이터
           variables: null, // QueryTemplate에는 variables 필드가 없음
-          variablesSchema: template.getVariablesSchema(),
+          inputSchema: template.getInputSchema(),
           defaultVariables: template.getDefaultVariables(),
           applicableTables: template.getApplicableTables(),
           complexityScore: template.getComplexityScore(),
@@ -169,7 +169,7 @@ export class TemplateImportExportService {
         exportData.template.tags,
         {
           description: exportData.template.description || undefined,
-          variablesSchema: exportData.template.variablesSchema || undefined,
+          inputSchema: exportData.template.inputSchema || undefined,
           defaultVariables: exportData.template.defaultVariables || undefined,
           applicableTables: exportData.template.applicableTables || undefined,
           complexityScore: exportData.template.complexityScore,

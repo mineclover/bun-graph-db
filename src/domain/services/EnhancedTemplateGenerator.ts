@@ -212,7 +212,7 @@ export class EnhancedTemplateGenerator {
                 `Enhanced ${template.operationType} template for ${tableIdentifier} table`,
               complexityScore: this.calculateComplexityScore(template.query),
               applicableTables: [tableIdentifier],
-              variablesSchema: template.variables
+              inputSchema: template.variables
                 ? {
                     type: 'object',
                     properties: template.variables,

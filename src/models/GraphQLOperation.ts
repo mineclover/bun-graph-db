@@ -7,7 +7,7 @@
 
 import { type OperationDefinitionNode, parse } from 'graphql'
 
-export type GraphQLOperationType = 'query' | 'mutation'
+export type GraphQLOperationType = 'query' | 'mutation' | 'custom'
 
 export interface GraphQLOperation {
   operationName: string
@@ -59,7 +59,7 @@ export class GraphQLOperationBuilder {
   }
 
   withOperationType(type: GraphQLOperationType): GraphQLOperationBuilder {
-    if (!type || !['query', 'mutation'].includes(type)) {
+    if (!type || !['query', 'mutation', 'custom'].includes(type)) {
       throw new Error('Operation type must be "query" or "mutation"')
     }
     this.operation.operationType = type
@@ -132,7 +132,7 @@ export function validateGraphQLOperation(operation: GraphQLOperation): {
   }
 
   // Validate operation type
-  if (!operation.operationType || !['query', 'mutation'].includes(operation.operationType)) {
+  if (!operation.operationType || !['query', 'mutation', 'custom'].includes(operation.operationType)) {
     errors.push('Operation type must be "query" or "mutation"')
   }
 

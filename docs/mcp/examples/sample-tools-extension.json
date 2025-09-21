@@ -1,0 +1,530 @@
+{
+  "title": "Practical MCP Tools Extension",
+  "description": "Common and useful tools demonstrating executeTemplateWithGraphQL-based extension patterns",
+  "version": "1.0.0",
+  "baseUrl": "http://localhost:4000/graphql",
+  "tools": [
+    {
+      "name": "getNodeById",
+      "description": "Get a specific node by its ID with full details",
+      "category": "basic-queries",
+      "complexity": "low",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "Optional table ID to filter analytics"
+          },
+          "timeRange": {
+            "type": "string",
+            "enum": ["1h", "24h", "7d", "30d"],
+            "description": "Time range for analytics",
+            "default": "24h"
+          },
+          "includePerformance": {
+            "type": "boolean",
+            "description": "Include performance metrics",
+            "default": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query getAnalytics($tableId: String, $timeRange: String, $includePerformance: Boolean) { getAnalytics(tableId: $tableId, timeRange: $timeRange, includePerformance: $includePerformance) { totalNodes totalRelations tableMetrics { tableId nodeCount relationCount avgQueryTime } performanceMetrics { queriesPerSecond avgResponseTime memoryUsage } } }"
+      },
+      "examples": [
+        {
+          "name": "Basic analytics",
+          "description": "Get basic analytics for all tables",
+          "input": {
+            "timeRange": "24h",
+            "includePerformance": false
+          }
+        },
+        {
+          "name": "Table-specific analytics",
+          "description": "Get detailed analytics for a specific table",
+          "input": {
+            "tableId": "user-profiles",
+            "timeRange": "7d",
+            "includePerformance": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "advancedSearch",
+      "description": "Perform advanced multi-table search with relationship traversal",
+      "category": "search",
+      "complexity": "high",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search query string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "tableIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Table IDs to search within",
+            "default": [],
+            "maxItems": 10
+          },
+          "maxDepth": {
+            "type": "integer",
+            "description": "Maximum relationship traversal depth",
+            "minimum": 1,
+            "maximum": 10,
+            "default": 3
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of results",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 50
+          },
+          "rankBy": {
+            "type": "string",
+            "enum": ["RELEVANCE", "RECENCY", "POPULARITY", "CONNECTIVITY"],
+            "description": "Ranking strategy",
+            "default": "RELEVANCE"
+          },
+          "filters": {
+            "type": "object",
+            "description": "Additional search filters",
+            "properties": {
+              "createdAfter": { "type": "string", "format": "date-time" },
+              "createdBefore": { "type": "string", "format": "date-time" },
+              "hasRelations": { "type": "boolean" },
+              "minRelationCount": { "type": "integer", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        },
+        "required": ["query"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query advancedSearch($query: String!, $tableIds: [String!], $maxDepth: Int, $limit: Int, $rankBy: SearchRankingType, $filters: SearchFilters) { advancedSearch(query: $query, tableIds: $tableIds, maxDepth: $maxDepth, limit: $limit, rankBy: $rankBy, filters: $filters) { nodes { id content tableId relevanceScore createdAt metadata } relations { fromNodeId toNodeId relationshipType strength } totalCount searchTime ranking { nodeId score explanation } suggestions { query reason } } }"
+      },
+      "examples": [
+        {
+          "name": "Simple text search",
+          "description": "Basic text search across all tables",
+          "input": {
+            "query": "machine learning",
+            "limit": 20
+          }
+        },
+        {
+          "name": "Targeted search with depth",
+          "description": "Search specific tables with relationship traversal",
+          "input": {
+            "query": "artificial intelligence",
+            "tableIds": ["research-papers", "projects"],
+            "maxDepth": 2,
+            "rankBy": "CONNECTIVITY"
+          }
+        },
+        {
+          "name": "Filtered search",
+          "description": "Search with time and relation filters",
+          "input": {
+            "query": "neural networks",
+            "filters": {
+              "createdAfter": "2025-01-01T00:00:00Z",
+              "hasRelations": true,
+              "minRelationCount": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "bulkCreateNodes",
+      "description": "Create multiple nodes in batch with validation and rollback support",
+      "category": "data-management",
+      "complexity": "medium",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "ID of the table to create nodes in"
+          },
+          "nodes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "content": {
+                  "type": "string",
+                  "description": "Node content",
+                  "minLength": 1,
+                  "maxLength": 10000
+                },
+                "metadata": {
+                  "type": "object",
+                  "description": "Node metadata",
+                  "additionalProperties": true
+                },
+                "tags": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Node tags",
+                  "maxItems": 20
+                }
+              },
+              "required": ["content"],
+              "additionalProperties": false
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "validateOnly": {
+            "type": "boolean",
+            "description": "Only validate without creating",
+            "default": false
+          },
+          "skipDuplicates": {
+            "type": "boolean",
+            "description": "Skip duplicate content",
+            "default": true
+          }
+        },
+        "required": ["tableId", "nodes"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation bulkCreateNodes($tableId: String!, $nodes: [NodeInput!]!, $validateOnly: Boolean, $skipDuplicates: Boolean) { bulkCreateNodes(tableId: $tableId, nodes: $nodes, validateOnly: $validateOnly, skipDuplicates: $skipDuplicates) { success totalRequested totalCreated totalSkipped errors { index message severity } validation { passed issues { field message } } createdNodes { id content } } }"
+      },
+      "examples": [
+        {
+          "name": "Simple batch creation",
+          "description": "Create multiple nodes with basic content",
+          "input": {
+            "tableId": "knowledge-base",
+            "nodes": [
+              { "content": "GraphQL is a query language" },
+              { "content": "REST API design patterns" },
+              { "content": "Database normalization principles" }
+            ]
+          }
+        },
+        {
+          "name": "Rich nodes with metadata",
+          "description": "Create nodes with metadata and tags",
+          "input": {
+            "tableId": "research-papers",
+            "nodes": [
+              {
+                "content": "Attention Is All You Need",
+                "metadata": {
+                  "authors": ["Vaswani", "Shazeer", "Parmar"],
+                  "year": 2017,
+                  "venue": "NIPS"
+                },
+                "tags": ["transformer", "attention", "nlp"]
+              }
+            ]
+          }
+        },
+        {
+          "name": "Validation only",
+          "description": "Validate nodes without creating them",
+          "input": {
+            "tableId": "test-table",
+            "nodes": [
+              { "content": "Test node 1" },
+              { "content": "Test node 2" }
+            ],
+            "validateOnly": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "getNetworkAnalysis",
+      "description": "Analyze network structure and connectivity patterns",
+      "category": "analytics",
+      "complexity": "high",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "Table ID to analyze"
+          },
+          "analysisType": {
+            "type": "string",
+            "enum": ["CENTRALITY", "CLUSTERING", "COMMUNITY", "PATHS", "COMPREHENSIVE"],
+            "description": "Type of network analysis",
+            "default": "COMPREHENSIVE"
+          },
+          "includeVisualization": {
+            "type": "boolean",
+            "description": "Include visualization data",
+            "default": false
+          },
+          "sampleSize": {
+            "type": "integer",
+            "description": "Sample size for large networks",
+            "minimum": 100,
+            "maximum": 10000,
+            "default": 1000
+          }
+        },
+        "required": ["tableId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query networkAnalysis($tableId: String!, $analysisType: NetworkAnalysisType, $includeVisualization: Boolean, $sampleSize: Int) { networkAnalysis(tableId: $tableId, analysisType: $analysisType, includeVisualization: $includeVisualization, sampleSize: $sampleSize) { summary { nodeCount edgeCount density diameter } centrality { betweenness { nodeId score } closeness { nodeId score } pagerank { nodeId score } } clustering { globalCoefficient localCoefficients { nodeId coefficient } } communities { algorithm communityCount communities { id nodes size } modularity } paths { averagePathLength shortestPaths { from to distance path } } visualization { nodes { id x y size color label } edges { source target weight } layout { width height scale } } } }"
+      },
+      "examples": [
+        {
+          "name": "Basic network analysis",
+          "description": "Comprehensive analysis without visualization",
+          "input": {
+            "tableId": "social-network",
+            "analysisType": "COMPREHENSIVE"
+          }
+        },
+        {
+          "name": "Centrality analysis",
+          "description": "Focus on node centrality measures",
+          "input": {
+            "tableId": "collaboration-network",
+            "analysisType": "CENTRALITY",
+            "includeVisualization": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "migrateData",
+      "description": "Migrate data between tables or import from external sources",
+      "category": "data-management",
+      "complexity": "high",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "description": "Source table ID or external source identifier"
+          },
+          "targetId": {
+            "type": "string",
+            "description": "Target table ID"
+          },
+          "mappingRules": {
+            "type": "object",
+            "description": "Field mapping and transformation rules",
+            "properties": {
+              "fieldMappings": {
+                "type": "object",
+                "additionalProperties": { "type": "string" }
+              },
+              "transformations": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": { "type": "string" },
+                    "operation": {
+                      "type": "string",
+                      "enum": ["UPPERCASE", "LOWERCASE", "TRIM", "REGEX_REPLACE", "DATE_FORMAT"]
+                    },
+                    "parameters": { "type": "object" }
+                  }
+                }
+              }
+            },
+            "additionalProperties": false
+          },
+          "validateOnly": {
+            "type": "boolean",
+            "description": "Only validate migration without executing",
+            "default": false
+          },
+          "batchSize": {
+            "type": "integer",
+            "description": "Number of records to process per batch",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 100
+          },
+          "onConflict": {
+            "type": "string",
+            "enum": ["SKIP", "OVERWRITE", "MERGE", "ERROR"],
+            "description": "How to handle conflicts",
+            "default": "SKIP"
+          }
+        },
+        "required": ["sourceId", "targetId", "mappingRules"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation migrateData($sourceId: String!, $targetId: String!, $mappingRules: JSON!, $validateOnly: Boolean, $batchSize: Int, $onConflict: ConflictResolution) { migrateData(sourceId: $sourceId, targetId: $targetId, mappingRules: $mappingRules, validateOnly: $validateOnly, batchSize: $batchSize, onConflict: $onConflict) { success totalRecords processedRecords migratedCount skippedCount errors { batchIndex recordIndex message severity } validation { passed issues { field message severity } fieldMappings { source target valid } } progress { completed total percentage estimatedTimeRemaining } summary { duration avgRecordsPerSecond conflictsResolved } } }"
+      },
+      "examples": [
+        {
+          "name": "Simple table migration",
+          "description": "Migrate data between two tables",
+          "input": {
+            "sourceId": "old-users",
+            "targetId": "new-users",
+            "mappingRules": {
+              "fieldMappings": {
+                "user_name": "username",
+                "email_address": "email",
+                "creation_date": "createdAt"
+              }
+            }
+          }
+        },
+        {
+          "name": "Migration with transformations",
+          "description": "Migrate with field transformations",
+          "input": {
+            "sourceId": "legacy-products",
+            "targetId": "products",
+            "mappingRules": {
+              "fieldMappings": {
+                "product_name": "name",
+                "product_desc": "description"
+              },
+              "transformations": [
+                {
+                  "field": "name",
+                  "operation": "UPPERCASE",
+                  "parameters": {}
+                },
+                {
+                  "field": "description",
+                  "operation": "TRIM",
+                  "parameters": {}
+                }
+              ]
+            },
+            "onConflict": "MERGE"
+          }
+        }
+      ]
+    },
+    {
+      "name": "generateReport",
+      "description": "Generate comprehensive reports with data visualization",
+      "category": "reporting",
+      "complexity": "medium",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "reportType": {
+            "type": "string",
+            "enum": ["SUMMARY", "DETAILED", "ANALYTICAL", "COMPARATIVE"],
+            "description": "Type of report to generate"
+          },
+          "scope": {
+            "type": "object",
+            "properties": {
+              "tableIds": {
+                "type": "array",
+                "items": { "type": "string" },
+                "description": "Tables to include in report"
+              },
+              "dateRange": {
+                "type": "object",
+                "properties": {
+                  "from": { "type": "string", "format": "date-time" },
+                  "to": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          },
+          "format": {
+            "type": "string",
+            "enum": ["JSON", "CSV", "PDF", "HTML"],
+            "description": "Output format",
+            "default": "JSON"
+          },
+          "includeCharts": {
+            "type": "boolean",
+            "description": "Include visualization charts",
+            "default": true
+          }
+        },
+        "required": ["reportType", "scope"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query generateReport($reportType: ReportType!, $scope: ReportScope!, $format: ReportFormat, $includeCharts: Boolean) { generateReport(reportType: $reportType, scope: $scope, format: $format, includeCharts: $includeCharts) { reportId title generatedAt summary { totalRecords totalTables dataSize } sections { title content charts { type data config } } downloadUrl expiresAt } }"
+      },
+      "examples": [
+        {
+          "name": "Summary report",
+          "description": "Generate a summary report for all tables",
+          "input": {
+            "reportType": "SUMMARY",
+            "scope": {
+              "tableIds": ["users", "products", "orders"],
+              "dateRange": {
+                "from": "2025-01-01T00:00:00Z",
+                "to": "2025-01-31T23:59:59Z"
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "categories": {
+    "analytics": {
+      "description": "Tools for data analysis and insights",
+      "icon": "📊",
+      "tools": ["getAnalytics", "getNetworkAnalysis"]
+    },
+    "search": {
+      "description": "Advanced search and discovery tools",
+      "icon": "🔍",
+      "tools": ["advancedSearch"]
+    },
+    "data-management": {
+      "description": "Tools for data manipulation and migration",
+      "icon": "📦",
+      "tools": ["bulkCreateNodes", "migrateData"]
+    },
+    "reporting": {
+      "description": "Report generation and visualization tools",
+      "icon": "📈",
+      "tools": ["generateReport"]
+    }
+  },
+  "complexity": {
+    "low": {
+      "description": "Simple tools with minimal configuration",
+      "executionTime": "< 1s",
+      "resourceUsage": "minimal"
+    },
+    "medium": {
+      "description": "Moderate complexity with some configuration options",
+      "executionTime": "1-10s",
+      "resourceUsage": "moderate"
+    },
+    "high": {
+      "description": "Complex tools requiring careful configuration",
+      "executionTime": "10s+",
+      "resourceUsage": "high"
+    }
+  }
+}

@@ -54,7 +54,7 @@ export class TemplateMutations extends BaseResolver {
         args.input.tags || ['general'],
         {
           description: args.input.description,
-          variablesSchema: args.input.variablesSchema,
+          inputSchema: args.input.inputSchema,
           defaultVariables: args.input.defaultVariables,
           applicableTables: args.input.applicableTables,
           templateType: args.input.templateType,

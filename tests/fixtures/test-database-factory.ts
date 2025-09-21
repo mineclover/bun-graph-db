@@ -269,7 +269,7 @@ export class TestDatabaseFactory {
         query_text TEXT NOT NULL,
         query_name TEXT, -- Extracted GraphQL operation name
         operation_type TEXT NOT NULL,
-        variables_schema TEXT, -- JSON schema for variables
+        input_schema TEXT, -- JSON schema for variables
         default_variables TEXT, -- JSON default variable values
         applicable_tables TEXT, -- JSON array of applicable table names
         complexity_score INTEGER DEFAULT 1,

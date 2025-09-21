@@ -8,7 +8,7 @@
 import { beforeAll, describe, expect, test } from 'bun:test'
 
 describe('CreateTable Tool Integration', () => {
-  const MCP_SERVER_URL = 'http://localhost:4002/mcp'
+  const MCP_SERVER_URL = 'http://localhost:4000/mcp'
 
   beforeAll(async () => {
     // Wait for MCP server to be ready
