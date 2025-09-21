@@ -1,350 +1,334 @@
 /**
- * T023: HTTP server integration
+ * MCP HTTP Server implementing 2025-06-18 specification
  *
- * Purpose: HTTP server for /mcp endpoint on shared port 4000
- * Must Include: JSON transport, port sharing with existing GraphQL server
- * Dependencies: T022 (requires request handler)
+ * Official spec: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
+ * Lifecycle: http://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle
  */
 
-import type { Server } from 'bun'
 import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
-import {
-  generateMcpSessionId,
-  McpSessionManager,
-  validateMcpClientCapabilities,
-  validateMcpClientInfo,
-} from '../../models/McpSession.ts'
 import { McpToolRegistry } from '../../services/McpToolRegistry.ts'
 
-// MCP Protocol Types
 interface McpRequest {
-  jsonrpc: '2.0'
-  method: 'initialize' | 'notifications/initialized' | 'tools/list' | 'tools/call'
-  params?: any
+  jsonrpc: "2.0"
   id?: string | number
+  method: string
+  params?: any
 }
 
 interface McpResponse {
-  jsonrpc: '2.0'
+  jsonrpc: "2.0"
+  id?: string | number | null
   result?: any
   error?: {
     code: number
     message: string
     data?: any
   }
-  id?: string | number
 }
 
-interface ToolCallParams {
-  name: string
-  arguments?: Record<string, any>
+interface McpInitializeParams {
+  protocolVersion: string
+  capabilities: {
+    roots?: {
+      listChanged?: boolean
+    }
+    sampling?: object
+  }
+  clientInfo: {
+    name: string
+    version: string
+  }
 }
 
 export class McpHttpServer {
   private toolRegistry: McpToolRegistry
   private graphqlExecutor: GraphQLOperationExecutor
-  private sessionManager: McpSessionManager
-  private server?: Server
-  private port: number
+  private initialized: boolean = false
+  private protocolVersion: string = "2025-06-18"
 
-  constructor(port: number = 4000) {
-    this.port = port
+  // Server capabilities according to MCP spec
+  private capabilities = {
+    tools: {},
+    logging: {}
+  }
+
+  // Server info
+  private serverInfo = {
+    name: "bun-graph-db-mcp-server",
+    version: "1.0.0"
+  }
+
+  constructor(graphqlEndpoint: string) {
     this.toolRegistry = new McpToolRegistry()
-    this.graphqlExecutor = new GraphQLOperationExecutor()
-    this.sessionManager = new McpSessionManager()
+    this.graphqlExecutor = new GraphQLOperationExecutor(graphqlEndpoint)
   }
 
   async initialize(): Promise<void> {
+    if (this.initialized) return
+
     console.log('Initializing MCP server...')
 
-    // Load tool definitions from contract
-    await this.toolRegistry.initialize()
-    console.log(`Loaded ${this.toolRegistry.getToolCount()} MCP tools`)
+    // Load tools from contract
+    await this.toolRegistry.loadFromContract()
 
-    // Validate tools
-    const validation = this.toolRegistry.validateAllTools()
-    if (!validation.valid) {
-      console.error('Tool validation errors:', validation.errors)
-      throw new Error('Tool validation failed')
-    }
+    const toolCount = (await this.toolRegistry.getAllTools()).length
+    console.log(`Loaded ${toolCount} MCP tools`)
 
+    this.initialized = true
     console.log('MCP server initialized successfully')
   }
 
-  async start(): Promise<void> {
-    await this.initialize()
+  // Main HTTP request handler according to MCP HTTP transport spec
+  async handleRequest(request: Request): Promise<Response> {
+    // Validate HTTP method
+    if (request.method !== 'POST' && request.method !== 'GET') {
+      return this.createErrorResponse(null, -32600, "Invalid Request", "Only POST and GET methods are supported")
+    }
 
-    this.server = Bun.serve({
-      port: this.port,
-      fetch: async (request) => {
-        const url = new URL(request.url)
+    // Validate protocol version header
+    const protocolVersion = request.headers.get('MCP-Protocol-Version')
+    if (protocolVersion && !this.isSupportedProtocolVersion(protocolVersion)) {
+      return new Response(JSON.stringify({
+        error: "Unsupported protocol version"
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
 
-        // Handle MCP endpoint
-        if (url.pathname === '/mcp' && request.method === 'POST') {
-          return await this.handleMcpRequest(request)
+    // Validate Origin header for security (DNS rebinding protection)
+    const origin = request.headers.get('Origin')
+    if (origin && !this.isValidOrigin(origin)) {
+      return new Response(JSON.stringify({
+        error: "Invalid origin"
+      }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Handle GET requests (for SSE discovery)
+    if (request.method === 'GET') {
+      return new Response(JSON.stringify({
+        name: this.serverInfo.name,
+        version: this.serverInfo.version,
+        protocolVersion: this.protocolVersion,
+        capabilities: this.capabilities
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Handle POST requests (JSON-RPC)
+    try {
+      await this.initialize()
+
+      const body = await request.text()
+      if (!body) {
+        return this.createErrorResponse(null, -32600, "Invalid Request", "Empty request body")
+      }
+
+      let jsonRpcRequest: McpRequest
+      try {
+        jsonRpcRequest = JSON.parse(body)
+      } catch (_error) {
+        return this.createErrorResponse(null, -32700, "Parse error", "Invalid JSON")
+      }
+
+      // Validate JSON-RPC format
+      if (jsonRpcRequest.jsonrpc !== "2.0") {
+        return this.createErrorResponse(jsonRpcRequest.id, -32600, "Invalid Request", "Invalid JSON-RPC version")
+      }
+
+      // Route the request based on method
+      const result = await this.handleMethod(jsonRpcRequest)
+
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         }
+      })
 
-        // For all other requests, we could proxy to the existing GraphQL server
-        // or return 404 for now since we're focusing on MCP implementation
-        return new Response('Not Found', { status: 404 })
-      },
-    })
-
-    console.log(`MCP HTTP Server running on http://localhost:${this.port}`)
-    console.log(`MCP endpoint available at: http://localhost:${this.port}/mcp`)
-  }
-
-  async stop(): Promise<void> {
-    if (this.server) {
-      this.server.stop()
-      console.log('MCP HTTP Server stopped')
+    } catch (error) {
+      console.error('MCP request error:', error)
+      return this.createErrorResponse(null, -32603, "Internal error",
+        error instanceof Error ? error.message : String(error))
     }
   }
 
-  private async handleMcpRequest(request: Request): Promise<Response> {
+  private async handleMethod(request: McpRequest): Promise<McpResponse> {
+    const { method, params, id } = request
+
     try {
-      // Parse JSON-RPC request
-      const body = await request.text()
-      let mcpRequest: McpRequest
-
-      try {
-        mcpRequest = JSON.parse(body)
-      } catch (_parseError) {
-        return this.createErrorResponse(null, -32700, 'Parse error')
-      }
-
-      // Validate JSON-RPC structure
-      if (mcpRequest.jsonrpc !== '2.0') {
-        return this.createErrorResponse(mcpRequest.id, -32600, 'Invalid Request')
-      }
-
-      // Route to appropriate handler
-      switch (mcpRequest.method) {
+      switch (method) {
         case 'initialize':
-          return this.handleInitialize(mcpRequest)
+          return await this.handleInitialize(id, params)
 
-        case 'notifications/initialized':
-          return this.handleInitialized(mcpRequest)
+        case 'initialized':
+          // Client notification that initialization is complete
+          return this.createNotificationResponse()
 
         case 'tools/list':
-          return this.handleToolsList(mcpRequest)
+          return await this.handleToolsList(id)
 
         case 'tools/call':
-          return this.handleToolCall(mcpRequest)
+          return await this.handleToolsCall(id, params)
 
         default:
-          return this.createErrorResponse(mcpRequest.id, -32601, 'Method not found')
+          return this.createErrorMcpResponse(id, -32601, "Method not found", `Unknown method: ${method}`)
       }
     } catch (error) {
-      console.error('MCP request handling error:', error)
-      return this.createErrorResponse(null, -32603, 'Internal error')
+      console.error(`Error handling method ${method}:`, error)
+      return this.createErrorMcpResponse(id, -32603, "Internal error",
+        error instanceof Error ? error.message : String(error))
     }
   }
 
-  private async handleInitialize(request: McpRequest): Promise<Response> {
-    try {
-      const params = request.params || {}
+  private async handleInitialize(id: string | number | undefined, params: McpInitializeParams): Promise<McpResponse> {
+    if (!params) {
+      return this.createErrorMcpResponse(id, -32602, "Invalid params", "Initialize params required")
+    }
 
-      // Validate client info
-      const clientInfo = validateMcpClientInfo(params.clientInfo)
-      const capabilities = validateMcpClientCapabilities(params.capabilities || {})
+    // Validate protocol version
+    const clientVersion = params.protocolVersion
+    if (!this.isSupportedProtocolVersion(clientVersion)) {
+      return this.createErrorMcpResponse(id, -32602, "Invalid params",
+        `Unsupported protocol version: ${clientVersion}`)
+    }
 
-      // Create session
-      const session = this.sessionManager.create({
-        sessionId: generateMcpSessionId(),
-        clientInfo,
-        capabilities,
-        protocolVersion: params.protocolVersion,
-      })
+    // Use client's version if supported, otherwise use our latest compatible version
+    const negotiatedVersion = this.negotiateProtocolVersion(clientVersion)
 
-      // Transition to negotiated state
-      this.sessionManager.transitionState(
-        session.sessionId,
-        'negotiated',
-        'Initialization completed'
-      )
-
-      const response: McpResponse = {
-        jsonrpc: '2.0',
-        result: {
-          protocolVersion: '2025-06-18',
-          capabilities: {
-            tools: true,
-            logging: true,
-          },
-          serverInfo: {
-            name: 'GraphQL-MCP Proxy Server',
-            version: '0.1.0',
-          },
-          sessionId: session.sessionId,
-        },
-        id: request.id,
+    return {
+      jsonrpc: "2.0",
+      id,
+      result: {
+        protocolVersion: negotiatedVersion,
+        capabilities: this.capabilities,
+        serverInfo: this.serverInfo
       }
-
-      return new Response(JSON.stringify(response), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    } catch (error) {
-      return this.createErrorResponse(request.id, -32603, `Initialization failed: ${error}`)
     }
   }
 
-  private async handleInitialized(_request: McpRequest): Promise<Response> {
-    // Notification - no response required
-    console.log('Client initialized notification received')
-    return new Response('', { status: 200 })
-  }
+  private async handleToolsList(id: string | number | undefined): Promise<McpResponse> {
+    const tools = await this.toolRegistry.getAllTools()
 
-  private async handleToolsList(request: McpRequest): Promise<Response> {
-    try {
-      const toolsList = this.toolRegistry.listTools()
-
-      const response: McpResponse = {
-        jsonrpc: '2.0',
-        result: toolsList,
-        id: request.id,
+    return {
+      jsonrpc: "2.0",
+      id,
+      result: {
+        tools: tools.map(tool => ({
+          name: tool.name,
+          description: tool.description,
+          inputSchema: tool.inputSchema
+        }))
       }
-
-      return new Response(JSON.stringify(response), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      })
-    } catch (error) {
-      return this.createErrorResponse(request.id, -32603, `Tools list failed: ${error}`)
     }
   }
 
-  private async handleToolCall(request: McpRequest): Promise<Response> {
+  private async handleToolsCall(id: string | number | undefined, params: any): Promise<McpResponse> {
+    if (!params || !params.name) {
+      return this.createErrorMcpResponse(id, -32602, "Invalid params", "Tool name required")
+    }
+
+    const { name, arguments: args } = params
+
     try {
-      const params = request.params as ToolCallParams
-
-      if (!params || !params.name) {
-        return this.createErrorResponse(request.id, -32602, 'Tool name is required')
-      }
-
       // Get tool definition
-      const toolLookup = this.toolRegistry.getTool(params.name)
+      const toolLookup = await this.toolRegistry.getTool(name)
       if (!toolLookup.found || !toolLookup.tool) {
-        return this.createErrorResponse(request.id, -32601, `Tool "${params.name}" not found`)
+        return this.createErrorMcpResponse(id, -32602, "Invalid params", `Tool not found: ${name}`)
       }
 
       const tool = toolLookup.tool
-      const toolArguments = params.arguments || {}
 
-      // TODO: Validate arguments against tool's input schema
-      // For now, we'll proceed with execution
-
-      // Execute GraphQL operation
-      const executionResult = await this.graphqlExecutor.execute(
-        tool.graphqlOperation,
-        toolArguments
-      )
-
-      // Convert GraphQL result to MCP format
-      if (executionResult.errors && executionResult.errors.length > 0) {
-        const response: McpResponse = {
-          jsonrpc: '2.0',
-          result: {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({ errors: executionResult.errors }),
-              },
-            ],
-            isError: true,
-          },
-          id: request.id,
-        }
-
-        return new Response(JSON.stringify(response), {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        })
+      // Validate tool has GraphQL operation
+      if (!tool.graphqlOperation) {
+        return this.createErrorMcpResponse(id, -32603, "Internal error", `Tool ${name} has no GraphQL operation`)
       }
 
-      const response: McpResponse = {
-        jsonrpc: '2.0',
-        result: {
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify(executionResult.data || executionResult),
-            },
-          ],
-          isError: false,
-        },
-        id: request.id,
-      }
-
-      return new Response(JSON.stringify(response), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
+      // Execute the tool's GraphQL operation directly
+      const result = await this.graphqlExecutor.execute({
+        operationType: tool.graphqlOperation.operationType,
+        operationName: name,
+        query: tool.graphqlOperation.query,
+        variables: args || {}
       })
+
+      // Return MCP-compliant response
+      return {
+        jsonrpc: "2.0",
+        id,
+        result: {
+          content: [{
+            type: "text",
+            text: JSON.stringify(result, null, 2)
+          }]
+        }
+      }
+
     } catch (error) {
-      return this.createErrorResponse(request.id, -32603, `Tool execution failed: ${error}`)
+      console.error(`Tool execution error for ${name}:`, error)
+      return this.createErrorMcpResponse(id, -32603, "Internal error",
+        `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
-  private createErrorResponse(
-    id: string | number | null | undefined,
-    code: number,
-    message: string
-  ): Response {
-    const response: McpResponse = {
-      jsonrpc: '2.0',
-      error: {
-        code,
-        message,
-      },
-      id: id || undefined,
-    }
+  private createErrorResponse(id: string | number | undefined | null, code: number, message: string, data?: any): Response {
+    const errorResponse = this.createErrorMcpResponse(id, code, message, data)
+    const status = code === -32601 ? 404 : code === -32602 ? 400 : 500
 
-    return new Response(JSON.stringify(response), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+    return new Response(JSON.stringify(errorResponse), {
+      status,
+      headers: { 'Content-Type': 'application/json' }
     })
   }
 
-  // Utility methods for debugging and monitoring
-  getStats() {
+  private createErrorMcpResponse(id: string | number | undefined | null, code: number, message: string, data?: any): McpResponse {
     return {
-      tools: this.toolRegistry.getStats(),
-      sessions: this.sessionManager.getStats(),
+      jsonrpc: "2.0",
+      id: id ?? null,
+      error: {
+        code,
+        message,
+        ...(data && { data })
+      }
     }
   }
 
-  getHealthStatus() {
+  private createNotificationResponse(): McpResponse {
+    // Notifications don't have responses in JSON-RPC
     return {
-      status: 'healthy',
-      toolsLoaded: this.toolRegistry.isLoaded(),
-      toolCount: this.toolRegistry.getToolCount(),
-      activeSessions: this.sessionManager.getActiveSessions().length,
+      jsonrpc: "2.0"
     }
   }
-}
 
-// CLI entry point for standalone server
-if (import.meta.main) {
-  const port = parseInt(process.env.PORT || '4000', 10)
-  const server = new McpHttpServer(port)
+  private isSupportedProtocolVersion(version: string): boolean {
+    const supportedVersions = ["2024-11-05", "2025-06-18"]
+    return supportedVersions.includes(version)
+  }
 
-  // Handle graceful shutdown
-  process.on('SIGINT', async () => {
-    console.log('\\nShutting down MCP server...')
-    await server.stop()
-    process.exit(0)
-  })
+  private negotiateProtocolVersion(clientVersion: string): string {
+    // Prefer client's version if we support it
+    if (this.isSupportedProtocolVersion(clientVersion)) {
+      return clientVersion
+    }
 
-  process.on('SIGTERM', async () => {
-    console.log('\\nShutting down MCP server...')
-    await server.stop()
-    process.exit(0)
-  })
+    // Otherwise use our latest supported version
+    return this.protocolVersion
+  }
 
-  // Start server
-  server.start().catch((error) => {
-    console.error('Failed to start MCP server:', error)
-    process.exit(1)
-  })
+  private isValidOrigin(origin: string): boolean {
+    // Allow localhost and same-origin requests
+    const allowedOrigins = [
+      'http://localhost:4000',
+      'http://127.0.0.1:4000',
+      'null' // For file:// origins
+    ]
+
+    return allowedOrigins.includes(origin) || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')
+  }
 }
