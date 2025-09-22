@@ -76,7 +76,7 @@ export class SqliteNodeRepository implements INodeRepository {
     `
 
     try {
-      const row = this.db.query<NodeRow, [string]>(query).get(id)
+      const row = this.db.query<NodeRow, [number]>(query).get(Number(id))
       return row ? this.mapRowToEntity(row) : null
     } catch (error) {
       throw new DatabaseException(`Failed to find node by id: ${error}`)

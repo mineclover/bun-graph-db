@@ -3,6 +3,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { DocId } from '@/core/types/CommonTypes.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface ActivateDocOutput {
   doc: DocDto
@@ -50,7 +51,7 @@ export class ActivateDocUseCase {
         doc: DocDto.fromEntity(doc),
       }
     } catch (error) {
-      this.logger.error('Failed to activate doc', { id, error })
+      this.logger.error('Failed to activate doc', { id, ...toErrorMeta(error) })
       throw error
     }
   }

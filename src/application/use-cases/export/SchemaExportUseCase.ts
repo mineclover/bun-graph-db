@@ -5,6 +5,7 @@ import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeT
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 
 export interface SchemaExportOptions {
@@ -178,7 +179,7 @@ export class SchemaExportUseCase {
 
       return result
     } catch (error) {
-      this.logger.error('Failed to export table', { tableId, options, error })
+      this.logger.error('Failed to export table', { tableId, options, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -242,7 +243,7 @@ export class SchemaExportUseCase {
 
       return result
     } catch (error) {
-      this.logger.error('Failed to export database', { options, error })
+      this.logger.error('Failed to export database', { options, ...toErrorMeta(error) })
       throw error
     }
   }

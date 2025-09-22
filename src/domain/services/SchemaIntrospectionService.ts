@@ -15,6 +15,7 @@ import { introspectionFromSchema, parse, validate, validateSchema } from 'graphq
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
 import { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export interface SchemaAnalysisResult {
   isValid: boolean
@@ -125,7 +126,7 @@ export class SchemaIntrospectionService {
 
       return this.cachedSchema
     } catch (error) {
-      this.logger.error('Failed to load current schema', { error })
+      this.logger.error('Failed to load current schema', toErrorMeta(error))
       throw new Error(
         `Schema loading failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -168,7 +169,7 @@ export class SchemaIntrospectionService {
 
       return result
     } catch (error) {
-      this.logger.error('Schema analysis failed', { error })
+      this.logger.error('Schema analysis failed', toErrorMeta(error))
       throw error
     }
   }
@@ -220,7 +221,7 @@ export class SchemaIntrospectionService {
 
       return result
     } catch (error) {
-      this.logger.error('Template query validation failed', { query, error })
+      this.logger.error('Template query validation failed', { query, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -254,7 +255,7 @@ export class SchemaIntrospectionService {
 
       return result
     } catch (error) {
-      this.logger.error('Schema compatibility check failed', { error })
+      this.logger.error('Schema compatibility check failed', toErrorMeta(error))
       throw error
     }
   }
@@ -313,7 +314,7 @@ export class SchemaIntrospectionService {
         fragments,
       }
     } catch (error) {
-      this.logger.error('Template generation failed', { tableIdentifier, error })
+      this.logger.error('Template generation failed', { tableIdentifier, ...toErrorMeta(error) })
       throw error
     }
   }

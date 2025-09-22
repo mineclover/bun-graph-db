@@ -17,6 +17,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import {
   ConflictException,
   NotFoundException,
@@ -98,7 +99,7 @@ export class AttributeResolver extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to find attribute type by identifier', {
         identifier: args.identifier,
-        error,
+        ...toErrorMeta(error),
       })
       throw error
     }
@@ -113,7 +114,7 @@ export class AttributeResolver extends BaseResolver {
       }
       return result.data.map((attributeType) => attributeTypeFromEntity(attributeType))
     } catch (error) {
-      this.logger.error('Failed to find attribute types', { error })
+      this.logger.error('Failed to find attribute types', toErrorMeta(error))
       throw error
     }
   }
@@ -124,7 +125,7 @@ export class AttributeResolver extends BaseResolver {
       const attribute = await this.attributeRepository.findById(args.id as AttributeId)
       return attribute ? attributeFromEntity(attribute) : null
     } catch (error) {
-      this.logger.error('Failed to find attribute by id', { id: args.id, error })
+      this.logger.error('Failed to find attribute by id', { id: args.id, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -143,7 +144,7 @@ export class AttributeResolver extends BaseResolver {
       }
       return result.data.map((attribute) => attributeFromEntity(attribute))
     } catch (error) {
-      this.logger.error('Failed to find attributes by table id', { tableId: args.tableId, error })
+      this.logger.error('Failed to find attributes by table id', { tableId: args.tableId, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -160,7 +161,7 @@ export class AttributeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to create attribute type', { input: args.input, error })
+      this.logger.error('Failed to create attribute type', { input: args.input, ...toErrorMeta(error) })
 
       if (error instanceof ValidationException) {
         return {
@@ -220,7 +221,7 @@ export class AttributeResolver extends BaseResolver {
       this.logger.error('Failed to update attribute type', {
         id: args.id,
         input: args.input,
-        error,
+        ...toErrorMeta(error),
       })
 
       return {
@@ -252,7 +253,7 @@ export class AttributeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to delete attribute type', { id: args.id, error })
+      this.logger.error('Failed to delete attribute type', { id: args.id, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -278,7 +279,7 @@ export class AttributeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to create attribute', { input: args.input, error })
+      this.logger.error('Failed to create attribute', { input: args.input, ...toErrorMeta(error) })
 
       if (error instanceof ValidationException) {
         return {
@@ -347,7 +348,7 @@ export class AttributeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update attribute', { id: args.id, input: args.input, error })
+      this.logger.error('Failed to update attribute', { id: args.id, input: args.input, ...toErrorMeta(error) })
 
       return {
         attribute: null,
@@ -378,7 +379,7 @@ export class AttributeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to delete attribute', { id: args.id, error })
+      this.logger.error('Failed to delete attribute', { id: args.id, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -434,7 +435,7 @@ export class AttributeResolver extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to resolve attribute field for NodeAttribute', {
         nodeAttributeId: nodeAttribute.attributeId,
-        error,
+        ...toErrorMeta(error),
       })
       return null
     }

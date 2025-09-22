@@ -12,6 +12,7 @@ import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttrib
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '../base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class NodeMutations extends BaseResolver {
   protected logger: ILogger
@@ -98,7 +99,7 @@ export class NodeMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createNode', { error, input: args.input })
+      this.logger.error('Mutation failed: createNode', { input: args.input, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -151,7 +152,7 @@ export class NodeMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateNode', { error, id: args.id, input: args.input })
+      this.logger.error('Mutation failed: updateNode', { id: args.id, input: args.input, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -191,7 +192,7 @@ export class NodeMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: deleteNode', { error, id: args.id })
+      this.logger.error('Mutation failed: deleteNode', { id: args.id, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -302,9 +303,9 @@ export class NodeMutations extends BaseResolver {
       }
     } catch (error) {
       this.logger.error('Mutation failed: removeNodeAttribute', {
-        error,
         nodeId: args.nodeId,
         attributeId: args.attributeId,
+        ...toErrorMeta(error),
       })
 
       return {
@@ -381,10 +382,10 @@ export class NodeMutations extends BaseResolver {
       }
     } catch (error) {
       this.logger.error('Mutation failed: updateNodeAttributeValue', {
-        error,
         nodeId: args.nodeId,
         attributeId: args.attributeId,
         value: args.value,
+        ...toErrorMeta(error),
       })
 
       return {

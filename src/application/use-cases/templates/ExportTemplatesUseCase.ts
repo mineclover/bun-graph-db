@@ -17,6 +17,7 @@ import type {
   SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface ExportTemplatesRequest {
   filter?: {
@@ -134,7 +135,7 @@ export class ExportTemplatesUseCase {
           )
           this.logger.error('Template export failed', {
             templateId: template.getId(),
-            error: errorMessage,
+            ...toErrorMeta(new Error(errorMessage)),
           })
         }
       }
@@ -157,7 +158,7 @@ export class ExportTemplatesUseCase {
         errors: exportErrors,
       }
     } catch (error) {
-      this.logger.error('Unexpected error during batch template export', { error, request })
+      this.logger.error('Unexpected error during batch template export', { ...toErrorMeta(error), request })
 
       return {
         success: false,

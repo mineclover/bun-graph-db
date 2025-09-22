@@ -9,6 +9,7 @@ import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class TemplateMutations extends BaseResolver {
   protected logger: ILogger
@@ -76,7 +77,7 @@ export class TemplateMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to create template', { error, input: args.input })
+      this.logger.error('Failed to create template', { input: args.input, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -157,7 +158,7 @@ export class TemplateMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update template', { id: args.id, error })
+      this.logger.error('Failed to update template', { id: args.id, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -336,7 +337,7 @@ export class TemplateMutations extends BaseResolver {
       this.logger.error('Failed to execute template (wrapper)', {
         templateId: args.input.templateId,
         templateIdentifier: args.input.templateIdentifier,
-        error,
+        ...toErrorMeta(error),
       })
 
       return {
@@ -409,8 +410,8 @@ export class TemplateMutations extends BaseResolver {
           document = parse(templateResult.queryText)
         } catch (parseError) {
           this.logger.error('GraphQL query parse error', {
-            error: parseError,
             queryText: templateResult.queryText,
+            ...toErrorMeta(parseError),
           })
 
           return {
@@ -549,7 +550,7 @@ export class TemplateMutations extends BaseResolver {
       this.logger.info('Mutation completed: exportTemplate', { filename: exportResult.filename })
       return result
     } catch (error) {
-      this.logger.error('Mutation failed: exportTemplate', { error })
+      this.logger.error('Mutation failed: exportTemplate', toErrorMeta(error))
       return {
         success: false,
         exportData: null,
@@ -604,7 +605,7 @@ export class TemplateMutations extends BaseResolver {
       })
       return result
     } catch (error) {
-      this.logger.error('Mutation failed: exportTemplates', { error })
+      this.logger.error('Mutation failed: exportTemplates', toErrorMeta(error))
       return {
         success: false,
         exportedTemplates: [],
@@ -654,7 +655,7 @@ export class TemplateMutations extends BaseResolver {
       this.logger.info('Mutation completed: importTemplate', { success: importResult.success })
       return result
     } catch (error) {
-      this.logger.error('Mutation failed: importTemplate', { error })
+      this.logger.error('Mutation failed: importTemplate', toErrorMeta(error))
       return {
         success: false,
         template: null,
@@ -736,7 +737,7 @@ export class TemplateMutations extends BaseResolver {
         previousQuery,
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateTemplateQuery', { error })
+      this.logger.error('Mutation failed: updateTemplateQuery', toErrorMeta(error))
       return {
         success: false,
         errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }],

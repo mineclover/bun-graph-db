@@ -28,6 +28,7 @@ import { EnhancedDependencyAnalyzer } from './EnhancedDependencyAnalyzer.js'
 import { EnhancedTemplateGenerator } from './EnhancedTemplateGenerator.js'
 import type { ITablePackageService } from './ITablePackageService.js'
 import { SchemaIntrospectionService } from './SchemaIntrospectionService.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class TablePackageService implements ITablePackageService {
   private readonly importSessions = new Map<string, ImportSession>()
@@ -143,7 +144,7 @@ export class TablePackageService implements ITablePackageService {
         warnings: [],
       }
     } catch (error) {
-      this.logger.error('Table export failed', { tableIdentifier, error })
+      this.logger.error('Table export failed', { tableIdentifier, ...toErrorMeta(error) })
       return {
         success: false,
         errors: [error instanceof Error ? error.message : 'Unknown export error'],
@@ -483,7 +484,7 @@ export class TablePackageService implements ITablePackageService {
 
       this.logger.info('Import session rollback completed', { sessionId })
     } catch (error) {
-      this.logger.error('Import session rollback failed', { sessionId, error })
+      this.logger.error('Import session rollback failed', { sessionId, ...toErrorMeta(error) })
       session.errors.push(
         `Rollback failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -1272,7 +1273,7 @@ export class TablePackageService implements ITablePackageService {
         validationResults,
       }
     } catch (error) {
-      this.logger.error('Failed to generate schema-aware templates', { tableIdentifier, error })
+      this.logger.error('Failed to generate schema-aware templates', { tableIdentifier, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -1373,7 +1374,7 @@ export class TablePackageService implements ITablePackageService {
     try {
       return await this.schemaIntrospectionService.analyzeSchema()
     } catch (error) {
-      this.logger.error('Failed to get schema analysis', { error })
+      this.logger.error('Failed to get schema analysis', toErrorMeta(error))
       throw error
     }
   }

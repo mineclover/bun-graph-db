@@ -15,6 +15,7 @@ import { DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class DocResolver extends BaseResolver {
   protected logger: ILogger
@@ -140,7 +141,7 @@ export class DocResolver extends BaseResolver {
         hasPreviousPage: (pagination.offset || 0) > 0,
       }
     } catch (error) {
-      this.logger.error('Failed to find docs', { args, error })
+      this.logger.error('Failed to find docs', { args, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -213,7 +214,7 @@ export class DocResolver extends BaseResolver {
         hasPreviousPage: (pagination.offset || 0) > 0,
       }
     } catch (error) {
-      this.logger.error('Failed to search docs', { args, error })
+      this.logger.error('Failed to search docs', { args, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -285,7 +286,7 @@ export class DocResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update doc', { id: args.id, input: args.input, error })
+      this.logger.error('Failed to update doc', { id: args.id, input: args.input, ...toErrorMeta(error) })
 
       if (error instanceof NotFoundException || error instanceof ValidationException) {
         return {
@@ -334,7 +335,7 @@ export class DocResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to delete doc', { id: args.id, error })
+      this.logger.error('Failed to delete doc', { id: args.id, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -371,7 +372,7 @@ export class DocResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to activate doc', { id: args.id, error })
+      this.logger.error('Failed to activate doc', { id: args.id, ...toErrorMeta(error) })
 
       return {
         success: false,

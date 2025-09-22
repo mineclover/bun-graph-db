@@ -10,6 +10,7 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '../base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class TableMutations extends BaseResolver {
   protected logger: ILogger
@@ -51,7 +52,7 @@ export class TableMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createTable', { error, input: args.input })
+      this.logger.error('Mutation failed: createTable', { input: args.input, ...toErrorMeta(error) })
 
       const errorCode =
         (error as any).code ||
@@ -103,7 +104,7 @@ export class TableMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateTable', { error, id: args.id, input: args.input })
+      this.logger.error('Mutation failed: updateTable', { id: args.id, input: args.input, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -155,10 +156,10 @@ export class TableMutations extends BaseResolver {
       }
     } catch (error) {
       this.logger.error('Mutation failed: deleteTable', {
-        error,
         id: args.id,
         force: args.force,
         cascadeDelete: args.cascadeDelete,
+        ...toErrorMeta(error),
       })
 
       const errorMessage = (error as Error).message || 'Unknown error occurred'

@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { toErrorMeta, getErrorMessage } from '../utils/errorHelpers.js'
 
 export class GraphApiController {
   constructor(
@@ -30,7 +31,7 @@ export class GraphApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Get tables error:', error)
+      this.logger.error('Get tables error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Get tables failed'
@@ -74,7 +75,7 @@ export class GraphApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Get table docs error:', error)
+      this.logger.error('Get table docs error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Get table docs failed'
@@ -108,7 +109,7 @@ export class GraphApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Export table with nodes error:', error)
+      this.logger.error('Export table with nodes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Export table with nodes failed'
@@ -138,7 +139,7 @@ export class GraphApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Search relations error:', error)
+      this.logger.error('Search relations error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Search relations failed'
@@ -181,7 +182,7 @@ export class GraphApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Get connected nodes error:', error)
+      this.logger.error('Get connected nodes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Get connected nodes failed'
@@ -215,7 +216,7 @@ export class GraphApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Find shortest path error:', error)
+      this.logger.error('Find shortest path error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Find shortest path failed'
@@ -257,7 +258,7 @@ export class GraphApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Get node relations error:', error)
+      this.logger.error('Get node relations error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Get node relations failed'

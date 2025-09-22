@@ -1,4 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { QueryTemplate } from '../entities/QueryTemplate.js'
 import type { IAttributeRepository } from '../repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '../repositories/IAttributeTypeRepository.js'
@@ -242,7 +243,7 @@ export class EnhancedTemplateGenerator {
         errors,
       }
     } catch (error) {
-      this.logger.error('Enhanced template generation failed', { tableIdentifier, error })
+      this.logger.error('Enhanced template generation failed', { tableIdentifier, ...toErrorMeta(error) })
       return {
         success: false,
         templates: [],
@@ -763,7 +764,7 @@ export class EnhancedTemplateGenerator {
 
       return schema
     } catch (error) {
-      this.logger.warn('Failed to get table schema', { tableId, error })
+      this.logger.warn('Failed to get table schema', { tableId, ...toErrorMeta(error) })
       return { attributes: [], types: new Map() }
     }
   }

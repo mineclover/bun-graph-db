@@ -2,6 +2,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { ExportTablePackageUseCase } from '@/application/use-cases/table-packages/ExportTablePackageUseCase.js'
 import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 import { BaseResolver } from '../base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class TablePackageResolver extends BaseResolver {
   protected logger: ILogger
@@ -160,7 +161,7 @@ export class TablePackageResolver extends BaseResolver {
         warnings: result.warnings ?? [],
       }
     } catch (error) {
-      this.logger.error(`Import table package failed`, { error })
+      this.logger.error(`Import table package failed`, toErrorMeta(error))
       return {
         success: false,
         importedTable: null,
@@ -279,7 +280,7 @@ export class TablePackageResolver extends BaseResolver {
         errors: results.flatMap((r) => r.errors ?? []),
       }
     } catch (error) {
-      this.logger.error(`Batch import table packages failed`, { error })
+      this.logger.error(`Batch import table packages failed`, toErrorMeta(error))
       return {
         success: false,
         results: [],

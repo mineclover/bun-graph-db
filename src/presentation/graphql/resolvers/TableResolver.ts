@@ -11,6 +11,7 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export class TableResolver extends BaseResolver {
@@ -102,7 +103,7 @@ export class TableResolver extends BaseResolver {
         hasPreviousPage: (pagination.offset || 0) > 0,
       }
     } catch (error) {
-      this.logger.error('Failed to find tables', { args, error })
+      this.logger.error('Failed to find tables', { args, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -259,7 +260,7 @@ export class TableResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update table', { id: args.id, input: args.input, error })
+      this.logger.error('Failed to update table', { id: args.id, input: args.input, ...toErrorMeta(error) })
 
       if (error instanceof NotFoundException || error instanceof ValidationException) {
         return {
@@ -307,7 +308,7 @@ export class TableResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to delete table', { id: args.id, error })
+      this.logger.error('Failed to delete table', { id: args.id, ...toErrorMeta(error) })
 
       return {
         success: false,

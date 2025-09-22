@@ -8,6 +8,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TemplateExportOptions, TemplateExportResult } from '@/core/types/TemplateExport.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface ExportTemplateRequest {
   templateId?: string
@@ -85,7 +86,7 @@ export class ExportTemplateUseCase {
         errors: ['Invalid request parameters'],
       }
     } catch (error) {
-      this.logger.error('Unexpected error during template export', { error, request })
+      this.logger.error('Unexpected error during template export', { ...toErrorMeta(error), request })
 
       return {
         success: false,

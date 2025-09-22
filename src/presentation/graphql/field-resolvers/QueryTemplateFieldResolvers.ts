@@ -2,6 +2,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 type QueryTemplateParent = QueryTemplate
 
@@ -21,7 +22,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getQueryText()
     } catch (error) {
-      this.logger.error('Failed to resolve query field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve query field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -34,7 +35,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getQueryName()
     } catch (error) {
-      this.logger.error('Failed to resolve queryName field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve queryName field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -49,7 +50,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to resolve operationType field', {
         templateId: parent.getId(),
-        error,
+        ...toErrorMeta(error),
       })
       throw error
     }
@@ -63,7 +64,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getDefaultVariables()
     } catch (error) {
-      this.logger.error('Failed to resolve variables field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve variables field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -79,7 +80,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to resolve inputSchema field', {
         templateId: parent.getId(),
-        error,
+        ...toErrorMeta(error),
       })
       throw error
     }
@@ -95,7 +96,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to resolve defaultVariables field', {
         templateId: parent.getId(),
-        error,
+        ...toErrorMeta(error),
       })
       throw error
     }
@@ -111,7 +112,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to resolve applicableTables field', {
         templateId: parent.getId(),
-        error,
+        ...toErrorMeta(error),
       })
       throw error
     }
@@ -127,7 +128,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to resolve complexityScore field', {
         templateId: parent.getId(),
-        error,
+        ...toErrorMeta(error),
       })
       throw error
     }
@@ -141,7 +142,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getUsageCount()
     } catch (error) {
-      this.logger.error('Failed to resolve usageCount field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve usageCount field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -155,7 +156,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
       const lastUsed = parent.getLastUsedAt()
       return lastUsed ? lastUsed.toISOString() : null
     } catch (error) {
-      this.logger.error('Failed to resolve lastUsedAt field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve lastUsedAt field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -170,7 +171,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to resolve avgExecutionTimeMs field', {
         templateId: parent.getId(),
-        error,
+        ...toErrorMeta(error),
       })
       throw error
     }
@@ -184,7 +185,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getVersion()
     } catch (error) {
-      this.logger.error('Failed to resolve version field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve version field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -197,7 +198,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getIsActive()
     } catch (error) {
-      this.logger.error('Failed to resolve isActive field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve isActive field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -210,7 +211,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getTags()
     } catch (error) {
-      this.logger.error('Failed to resolve tags field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve tags field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -223,7 +224,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return null // Not tracked in current implementation
     } catch (error) {
-      this.logger.error('Failed to resolve createdBy field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve createdBy field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -236,7 +237,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getCreatedAt().toISOString()
     } catch (error) {
-      this.logger.error('Failed to resolve createdAt field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve createdAt field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -249,7 +250,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return parent.getUpdatedAt().toISOString()
     } catch (error) {
-      this.logger.error('Failed to resolve updatedAt field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve updatedAt field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -262,7 +263,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     try {
       return this.validateQuery(parent.getQueryText())
     } catch (error) {
-      this.logger.error('Failed to resolve isValid field', { templateId: parent.getId(), error })
+      this.logger.error('Failed to resolve isValid field', { templateId: parent.getId(), ...toErrorMeta(error) })
       throw error
     }
   }
@@ -295,7 +296,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     } catch (error) {
       this.logger.error('Failed to resolve validationErrors field', {
         templateId: parent.getId(),
-        error,
+        ...toErrorMeta(error),
       })
       throw error
     }

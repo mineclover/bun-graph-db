@@ -8,6 +8,7 @@ import type {
   ImportSchemaArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 interface SchemaResolverDependencies {
   tableRepository: ITableRepository
@@ -35,7 +36,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
           }
           return await schemaExportUseCase.exportTable(tableId, exportOptions)
         } catch (error) {
-          logger.error('Failed to export table', { tableId: args.tableId, error })
+          logger.error('Failed to export table', { tableId: args.tableId, ...toErrorMeta(error) })
           throw error
         }
       },
@@ -54,7 +55,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
           }
           return await schemaExportUseCase.exportAllTables(exportOptions)
         } catch (error) {
-          logger.error('Failed to export all tables', { error })
+          logger.error('Failed to export all tables', toErrorMeta(error))
           throw error
         }
       },
@@ -79,7 +80,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
           }
           return await schemaImportUseCase.importSchema(exportData as any, importOptions)
         } catch (error) {
-          logger.error('Failed to import schema', { error })
+          logger.error('Failed to import schema', toErrorMeta(error))
           throw error
         }
       },

@@ -5,6 +5,7 @@ import type {
   TablePackageImportResult,
 } from '@/core/types/TablePackage.js'
 import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface ImportTablePackageRequest {
   packageData?: TablePackageFormat
@@ -111,7 +112,7 @@ export class ImportTablePackageUseCase {
     } catch (error) {
       this.logger.error('Table package import use case failed', {
         packagePath: request.packagePath,
-        error,
+        ...toErrorMeta(error),
       })
 
       return {
@@ -127,7 +128,7 @@ export class ImportTablePackageUseCase {
       const content = await fs.readFile(packagePath, 'utf8')
       return JSON.parse(content) as TablePackageFormat
     } catch (error) {
-      this.logger.error('Failed to load package from file', { packagePath, error })
+      this.logger.error('Failed to load package from file', { packagePath, ...toErrorMeta(error) })
       return undefined
     }
   }

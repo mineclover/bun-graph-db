@@ -5,6 +5,7 @@ import type {
   SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface SearchQueryTemplatesRequest {
   tags?: string[]
@@ -75,7 +76,7 @@ export class SearchQueryTemplates {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to search query templates', { error, request })
+      this.logger.error('Failed to search query templates', { ...toErrorMeta(error), request })
 
       if (error instanceof ValidationException) {
         throw error

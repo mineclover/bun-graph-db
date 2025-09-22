@@ -8,6 +8,7 @@ import type {
   TablePackageImportOptions,
 } from '@/core/types/TablePackage.js'
 import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 /**
  * CLI Commands for Table Package Export/Import System
@@ -89,7 +90,7 @@ export class TablePackageCommands {
         }
       }
     } catch (error) {
-      this.logger.error('Table export command failed', { error })
+      this.logger.error('Table export command failed', toErrorMeta(error))
       console.error('❌ Export failed:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
@@ -175,7 +176,7 @@ export class TablePackageCommands {
         }
       }
     } catch (error) {
-      this.logger.error('Table import command failed', { error })
+      this.logger.error('Table import command failed', toErrorMeta(error))
       console.error('❌ Import failed:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
@@ -246,7 +247,7 @@ export class TablePackageCommands {
         process.exit(1)
       }
     } catch (error) {
-      this.logger.error('Batch export command failed', { error })
+      this.logger.error('Batch export command failed', toErrorMeta(error))
       console.error(
         '❌ Batch export failed:',
         error instanceof Error ? error.message : 'Unknown error'
@@ -348,7 +349,7 @@ export class TablePackageCommands {
         }
       }
     } catch (error) {
-      this.logger.error('Batch import command failed', { error })
+      this.logger.error('Batch import command failed', toErrorMeta(error))
       console.error(
         '❌ Batch import failed:',
         error instanceof Error ? error.message : 'Unknown error'
@@ -398,7 +399,7 @@ export class TablePackageCommands {
         console.log('\n⚠️  Warning: Circular dependencies may cause import issues')
       }
     } catch (error) {
-      this.logger.error('Dependency analysis command failed', { error })
+      this.logger.error('Dependency analysis command failed', toErrorMeta(error))
       console.error('❌ Analysis failed:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
@@ -422,7 +423,7 @@ export class TablePackageCommands {
 
       console.log('\n💡 Import in this order to resolve dependencies correctly')
     } catch (error) {
-      this.logger.error('Import order resolution command failed', { error })
+      this.logger.error('Import order resolution command failed', toErrorMeta(error))
       console.error(
         '❌ Resolution failed:',
         error instanceof Error ? error.message : 'Unknown error'
@@ -478,7 +479,7 @@ export class TablePackageCommands {
         }
       }
     } catch (error) {
-      this.logger.error('Template generation command failed', { error })
+      this.logger.error('Template generation command failed', toErrorMeta(error))
       console.error(
         '❌ Generation failed:',
         error instanceof Error ? error.message : 'Unknown error'
@@ -539,7 +540,7 @@ export class TablePackageCommands {
         }
       }
     } catch (error) {
-      this.logger.error('Package validation command failed', { error })
+      this.logger.error('Package validation command failed', toErrorMeta(error))
       console.error(
         '❌ Validation failed:',
         error instanceof Error ? error.message : 'Unknown error'

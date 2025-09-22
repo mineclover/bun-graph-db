@@ -18,6 +18,7 @@ import type {
   ExportedTable,
   SchemaExportResult,
 } from '../export/SchemaExportUseCase.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface SchemaImportOptions {
   overwriteExisting?: boolean
@@ -135,7 +136,7 @@ export class SchemaImportUseCase {
       result.statistics.errors++
       result.executionTime = Date.now() - startTime
 
-      this.logger.error('Schema import failed', { error, result })
+      this.logger.error('Schema import failed', { ...toErrorMeta(error), result })
       throw error
     }
   }

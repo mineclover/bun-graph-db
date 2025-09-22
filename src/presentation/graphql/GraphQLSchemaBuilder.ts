@@ -410,6 +410,13 @@ export class GraphQLSchemaBuilder {
           deps.nodeFieldResolvers.incomingRelations(parent as any),
         relationCount: (parent: GraphQLParent) =>
           deps.nodeFieldResolvers.relationCount(parent as any),
+        // Graph traversal field resolvers
+        connectedNodes: (parent: GraphQLParent, args: any) =>
+          deps.nodeFieldResolvers.connectedNodes(parent as any, args),
+        shortestPath: (parent: GraphQLParent, args: any) =>
+          deps.nodeFieldResolvers.shortestPath(parent as any, args),
+        neighborsByRelationType: (parent: GraphQLParent, args: any) =>
+          deps.nodeFieldResolvers.neighborsByRelationType(parent as any, args),
       },
 
       NodeAttribute: {

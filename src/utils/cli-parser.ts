@@ -8,6 +8,7 @@ export interface CliOptions {
   port?: number
   host?: string
   env?: string
+  databasePath?: string
   help?: boolean
   version?: boolean
 }
@@ -57,6 +58,16 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
         break
       }
 
+      case '--database-path':
+      case '-d': {
+        const dbPath = args[++i]
+        if (!dbPath) {
+          throw new Error('Database path value is required')
+        }
+        options.databasePath = dbPath
+        break
+      }
+
       case '--help':
         options.help = true
         break
@@ -96,6 +107,14 @@ export function parseCliArgs(args: string[] = process.argv.slice(2)): ParsedArgs
               }
               break
 
+            case '--database-path':
+              if (value) {
+                options.databasePath = value
+              } else {
+                throw new Error('Database path value is required')
+              }
+              break
+
             default:
               unknown.push(arg)
               break
@@ -119,25 +138,29 @@ export function printHelp(): void {
 Usage: bun index.ts [options]
 
 Options:
-  -p, --port <number>       Port number (default: 4000)
-  -h, --host <string>       Host address (default: 0.0.0.0)
-  -e, --env <environment>   Environment (development, production, test)
-  --help                    Show this help message
-  -v, --version            Show version information
+  -p, --port <number>         Port number (default: 4000)
+  -h, --host <string>         Host address (default: 0.0.0.0)
+  -e, --env <environment>     Environment (development, production, test)
+  -d, --database-path <path>  SQLite database file path (default: ./data/bun-graph-db.sqlite)
+  --help                      Show this help message
+  -v, --version              Show version information
 
 Environment Variables:
-  GRAPHQL_PORT              Port number for both HTTP and WebSocket (overridden by --port)
-  PORT                      Standard port environment variable (fallback after GRAPHQL_PORT)
-  GRAPHQL_HOST              Host address (overridden by --host)
-  NODE_ENV                  Environment (overridden by --env)
-  CORS_ORIGIN               CORS origins (comma-separated)
+  GRAPHQL_PORT                Port number for both HTTP and WebSocket (overridden by --port)
+  PORT                        Standard port environment variable (fallback after GRAPHQL_PORT)
+  GRAPHQL_HOST                Host address (overridden by --host)
+  NODE_ENV                    Environment (overridden by --env)
+  DATABASE_PATH               SQLite database file path (overridden by --database-path)
+  CORS_ORIGIN                 CORS origins (comma-separated)
 
 Examples:
-  bun index.ts                          # Start with default settings (port 4000)
-  bun index.ts --port 3000              # Start on port 3000 (unified port)
-  bun index.ts --host 127.0.0.1 -p 8080 # Custom host and port
-  bun index.ts --env production          # Production environment
-  bun index.ts --port=5000               # Alternative syntax
+  bun index.ts                              # Start with default settings (port 4000)
+  bun index.ts --port 3000                  # Start on port 3000 (unified port)
+  bun index.ts --host 127.0.0.1 -p 8080     # Custom host and port
+  bun index.ts --env production              # Production environment
+  bun index.ts --port=5000                   # Alternative syntax
+  bun index.ts -d /tmp/demo.sqlite           # Custom database path
+  bun index.ts --database-path=./custom.db   # Alternative database path syntax
 `)
 }
 
@@ -157,6 +180,7 @@ export function mergeWithEnvironment(options: CliOptions): CliOptions {
     port: options.port ?? (process.env.GRAPHQL_PORT ? Number(process.env.GRAPHQL_PORT) : undefined),
     host: options.host ?? process.env.GRAPHQL_HOST,
     env: options.env ?? process.env.NODE_ENV,
+    databasePath: options.databasePath ?? process.env.DATABASE_PATH,
     help: options.help,
     version: options.version,
   }

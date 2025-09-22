@@ -10,6 +10,7 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class NodeQueries extends BaseResolver {
   protected logger: ILogger
@@ -36,6 +37,15 @@ export class NodeQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         const node = await this.nodeRepository.findById(args.id)
+        this.logger.info(`Repository findById result for ${args.id}:`, {
+          node: node ? {
+            id: node.getId ? node.getId() : 'no getId method',
+            content: node.getContent ? node.getContent() : 'no getContent method',
+            type: typeof node,
+            constructor: node.constructor?.name,
+            keys: Object.keys(node)
+          } : null
+        })
         return node
       },
       'findNodeById',
@@ -76,7 +86,7 @@ export class NodeQueries extends BaseResolver {
           )
 
           // Check if result is properly formatted
-          if (!result || !result.items) {
+          if (!result || !result.nodes) {
             this.logger.warn('Invalid result from nodeRepository.findAll', { result })
             return {
               nodes: [],
@@ -87,13 +97,13 @@ export class NodeQueries extends BaseResolver {
           }
 
           return {
-            nodes: result.items,
-            totalCount: result.total || 0,
+            nodes: result.nodes,
+            totalCount: result.totalCount || 0,
             hasNextPage: result.hasNextPage || false,
             hasPreviousPage: result.hasPreviousPage || false,
           }
         } catch (error) {
-          this.logger.error('Error in nodes query', { error, args })
+          this.logger.error('Error in nodes query', { args, ...toErrorMeta(error) })
           throw error
         }
       },
@@ -115,8 +125,8 @@ export class NodeQueries extends BaseResolver {
 
           // Ensure all fields are non-null to satisfy GraphQL schema
           return {
-            nodes: result.items || [],
-            totalCount: result.total || 0,
+            nodes: result.nodes || [],
+            totalCount: result.totalCount || 0,
             hasNextPage: result.hasNextPage || false,
             hasPreviousPage: result.hasPreviousPage || false,
           }

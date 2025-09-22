@@ -12,6 +12,7 @@ import type {
 } from '@/core/types/TemplateExport.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface ImportTemplateRequest {
   jsonData?: TemplateExportFormat
@@ -89,7 +90,7 @@ export class ImportTemplateUseCase {
 
       return result
     } catch (error) {
-      this.logger.error('Unexpected error during template import', { error, request })
+      this.logger.error('Unexpected error during template import', { ...toErrorMeta(error), request })
 
       return {
         success: false,

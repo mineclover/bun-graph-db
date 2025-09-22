@@ -1,4 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import type { TablePackageFormat, TablePackageImportResult } from '@/core/types/TablePackage.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 import type { INodeRepository } from '../repositories/INodeRepository.js'
@@ -182,7 +183,7 @@ export class TablePackageRecoveryManager {
 
       this.logger.error('Import failed with recovery management', {
         sessionId: recoverySession.sessionId,
-        error,
+        ...toErrorMeta(error),
       })
 
       throw error
@@ -284,7 +285,7 @@ export class TablePackageRecoveryManager {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown rollback error'
       rollbackResult.errors.push(errorMsg)
-      this.logger.error('Rollback failed', { sessionId, error })
+      this.logger.error('Rollback failed', { sessionId, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -326,7 +327,7 @@ export class TablePackageRecoveryManager {
 
       return backupId
     } catch (error) {
-      this.logger.error('Failed to create system backup', { tableIdentifier, error })
+      this.logger.error('Failed to create system backup', { tableIdentifier, ...toErrorMeta(error) })
       throw new DomainException(
         `Failed to create backup: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
@@ -384,7 +385,7 @@ export class TablePackageRecoveryManager {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown restore error'
       restoreResult.errors.push(errorMsg)
-      this.logger.error('System restore failed', { backupId, error })
+      this.logger.error('System restore failed', { backupId, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -463,7 +464,7 @@ export class TablePackageRecoveryManager {
     } catch (error) {
       this.logger.error('Data integrity verification failed', {
         tableIdentifier: packageData.sourceTable.identifier,
-        error,
+        ...toErrorMeta(error),
       })
 
       integrityResult.success = false

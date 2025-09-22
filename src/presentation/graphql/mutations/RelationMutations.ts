@@ -14,6 +14,7 @@ import { RelationType } from '@/domain/entities/RelationType.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import {
   ConflictException,
   NotFoundException,
@@ -69,7 +70,7 @@ export class RelationMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createRelationType', { error, input: args.input })
+      this.logger.error('Mutation failed: createRelationType', { input: args.input, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -115,7 +116,7 @@ export class RelationMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createRelation', { error, input: args.input })
+      this.logger.error('Mutation failed: createRelation', { input: args.input, ...toErrorMeta(error) })
 
       // Handle specific domain exceptions
       if (error instanceof ConflictException) {
@@ -222,9 +223,9 @@ export class RelationMutations extends BaseResolver {
       }
     } catch (error) {
       this.logger.error('Mutation failed: updateRelationType', {
-        error,
         id: args.id,
         input: args.input,
+        ...toErrorMeta(error),
       })
 
       if (error instanceof NotFoundException) {
@@ -295,7 +296,7 @@ export class RelationMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: deleteRelationType', { error, id: args.id })
+      this.logger.error('Mutation failed: deleteRelationType', { id: args.id, ...toErrorMeta(error) })
 
       if (error instanceof NotFoundException) {
         return {

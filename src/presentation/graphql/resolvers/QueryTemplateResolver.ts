@@ -17,6 +17,7 @@ import {
   type UpdateQueryTemplateInput,
 } from '@/presentation/dto/QueryTemplateDto.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class QueryTemplateResolver extends BaseResolver {
   protected logger: ILogger
@@ -302,7 +303,7 @@ export class QueryTemplateResolver extends BaseResolver {
       const savedTemplate = await this.queryTemplateRepository.update(id, updateData)
       return queryTemplateToDto(savedTemplate)
     } catch (error) {
-      this.logger.error('Failed to update template', { id, error })
+      this.logger.error('Failed to update template', { id, ...toErrorMeta(error) })
       throw new GraphQLError('Failed to update template', {
         extensions: { code: 'TEMPLATE_UPDATE_FAILED' },
       })
@@ -323,7 +324,7 @@ export class QueryTemplateResolver extends BaseResolver {
 
       return templates.map(queryTemplateToDto)
     } catch (error) {
-      this.logger.error('Failed to find templates by table', { input, error })
+      this.logger.error('Failed to find templates by table', { input, ...toErrorMeta(error) })
       throw new GraphQLError('Failed to find templates by table', {
         extensions: { code: 'TEMPLATE_SEARCH_FAILED' },
       })
@@ -340,7 +341,7 @@ export class QueryTemplateResolver extends BaseResolver {
       const templates = await this.queryTemplateRepository.findTemplatesWithTableDependencies()
       return templates.map(queryTemplateToDto)
     } catch (error) {
-      this.logger.error('Failed to find templates with table dependencies', { error })
+      this.logger.error('Failed to find templates with table dependencies', toErrorMeta(error))
       throw new GraphQLError('Failed to find templates with table dependencies', {
         extensions: { code: 'TEMPLATE_SEARCH_FAILED' },
       })
@@ -376,7 +377,7 @@ export class QueryTemplateResolver extends BaseResolver {
         totalCount: tableTemplates.length,
       }))
     } catch (error) {
-      this.logger.error('Failed to get table dependency templates', { error })
+      this.logger.error('Failed to get table dependency templates', toErrorMeta(error))
       throw new GraphQLError('Failed to get table dependency templates', {
         extensions: { code: 'TEMPLATE_SEARCH_FAILED' },
       })
@@ -444,7 +445,7 @@ export class QueryTemplateResolver extends BaseResolver {
         previousQuery,
       }
     } catch (error) {
-      this.logger.error('Update template query error:', { error })
+      this.logger.error('Update template query error:', toErrorMeta(error))
       return {
         success: false,
         errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }],
@@ -469,7 +470,7 @@ export class QueryTemplateResolver extends BaseResolver {
       await this.queryTemplateRepository.delete(id)
       return true
     } catch (error) {
-      this.logger.error('Failed to delete template', { id, error })
+      this.logger.error('Failed to delete template', { id, ...toErrorMeta(error) })
       throw new GraphQLError('Failed to delete template', {
         extensions: { code: 'TEMPLATE_DELETION_FAILED' },
       })
@@ -486,7 +487,7 @@ export class QueryTemplateResolver extends BaseResolver {
       const savedTemplate = await this.queryTemplateRepository.updateStatus(id, true)
       return queryTemplateToDto(savedTemplate)
     } catch (error) {
-      this.logger.error('Failed to activate template', { id, error })
+      this.logger.error('Failed to activate template', { id, ...toErrorMeta(error) })
       throw new GraphQLError('Failed to activate template', {
         extensions: { code: 'TEMPLATE_ACTIVATION_FAILED' },
       })
@@ -503,7 +504,7 @@ export class QueryTemplateResolver extends BaseResolver {
       const savedTemplate = await this.queryTemplateRepository.updateStatus(id, false)
       return queryTemplateToDto(savedTemplate)
     } catch (error) {
-      this.logger.error('Failed to deactivate template', { id, error })
+      this.logger.error('Failed to deactivate template', { id, ...toErrorMeta(error) })
       throw new GraphQLError('Failed to deactivate template', {
         extensions: { code: 'TEMPLATE_DEACTIVATION_FAILED' },
       })

@@ -148,25 +148,24 @@
       "inputSchema": {
         "type": "object",
         "properties": {
-          "fromNodeId": {
+          "sourceNodeId": {
             "type": "string",
             "description": "Source node ID"
           },
-          "toNodeId": {
+          "targetNodeId": {
             "type": "string",
             "description": "Target node ID"
           },
-          "relationshipType": {
+          "relationTypeId": {
             "type": "string",
-            "description": "Type of relationship"
+            "description": "Relation type ID"
           },
-          "properties": {
-            "type": "object",
-            "description": "Relationship properties",
-            "default": {}
+          "tableId": {
+            "type": "string",
+            "description": "Table ID that owns the relationship"
           }
         },
-        "required": ["fromNodeId", "toNodeId", "relationshipType"],
+        "required": ["sourceNodeId", "targetNodeId", "relationTypeId", "tableId"],
         "additionalProperties": false
       },
       "graphqlOperation": {
@@ -436,7 +435,7 @@
       },
       "graphqlOperation": {
         "type": "query",
-        "query": "query getTableAttributes($tableId: ID!) { table(id: $tableId) { id identifier attributes { id identifier name attributeType { id name } } } }"
+        "query": "query getTableAttributes($tableId: ID!) { table(id: $tableId) { id identifier attributes { id identifier name attributeType { id } } } }"
       }
     },
     {
@@ -558,7 +557,7 @@
     },
     {
       "name": "getTableDocs",
-      "description": "Get detailed documentation and schema information for a specific table including full attribute definitions, sample data, and usage examples",
+      "description": "Get documentation and schema information for a specific table including attribute definitions and usage examples (documentation purpose only)",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -572,20 +571,15 @@
           },
           "includeSampleNodes": {
             "type": "boolean",
-            "description": "Whether to include sample nodes data",
+            "description": "Whether to include sample nodes data for documentation",
             "default": true
           },
           "sampleLimit": {
             "type": "integer",
             "description": "Maximum number of sample nodes to include",
-            "default": 5,
+            "default": 3,
             "minimum": 0,
-            "maximum": 20
-          },
-          "includeRelationships": {
-            "type": "boolean",
-            "description": "Whether to include relationship information",
-            "default": true
+            "maximum": 10
           },
           "includeUsageStats": {
             "type": "boolean",
@@ -597,7 +591,7 @@
       },
       "graphqlOperation": {
         "type": "query",
-        "query": "query getTableDocs($tableId: ID, $identifier: String, $includeRelationships: Boolean, $includeSampleNodes: Boolean, $includeUsageStats: Boolean, $sampleLimit: Int) { tableDocumentation(tableId: $tableId, identifier: $identifier, includeRelationships: $includeRelationships, includeSampleNodes: $includeSampleNodes, includeUsageStats: $includeUsageStats, sampleLimit: $sampleLimit) { table { id identifier description createdAt updatedAt } schema { totalAttributes attributes { attribute { id identifier name } attributeType { id name } sampleValues valueCount nullCount } } sampleNodes { id content createdAt } relationships { incomingRelations { relationshipType count relatedTable { identifier } } outgoingRelations { relationshipType count relatedTable { identifier } } relatedTables { id identifier } } usageStats { totalNodes recentlyCreatedNodes frequentlyAccessedAttributes averageAttributeUsage } usageExamples { category title description exampleQuery exampleMutation } } }"
+        "query": "query getTableDocs($tableId: ID, $identifier: String, $includeSampleNodes: Boolean, $includeUsageStats: Boolean, $sampleLimit: Int) { tableDocumentation(tableId: $tableId, identifier: $identifier, includeSampleNodes: $includeSampleNodes, includeUsageStats: $includeUsageStats, sampleLimit: $sampleLimit) { table { id identifier description createdAt updatedAt } schema { totalAttributes attributes { attribute { id identifier name } attributeType { id name } sampleValues valueCount nullCount } } sampleNodes { id content createdAt } usageStats { totalNodes recentlyCreatedNodes frequentlyAccessedAttributes averageAttributeUsage } usageExamples { category title description exampleQuery exampleMutation } } }"
       }
     },
     {
@@ -626,7 +620,147 @@
       },
       "graphqlOperation": {
         "type": "query",
-        "query": "query exportTableWithNodes($tableId: String!, $options: SchemaExportOptions) { exportTable(tableId: $tableId, options: $options) { metadata { exportedAt version source options checksum } tables { id identifier description nodes { id content attributes createdAt updatedAt } attributes { id identifier name attributeType { id name dataType } } statistics { nodeCount attributeCount relationCount } } statistics { totalTables totalNodes totalRelations totalAttributes exportSize } } }"
+        "query": "query exportTableWithNodes($tableId: String!) { exportTable(tableId: $tableId, options: {format: \"json\", includeData: true}) { metadata { exportedAt version source options checksum } tables { id identifier description nodes { id content attributes createdAt updatedAt } attributes { id identifier name attributeType { id name dataType } } statistics { nodeCount attributeCount relationCount } } statistics { totalTables totalNodes totalRelations totalAttributes exportSize } } }"
+      }
+    },
+    {
+      "name": "searchRelations",
+      "description": "Search for relationships in the graph database with flexible filtering options",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "Table ID to search relations within"
+          },
+          "relationTypeId": {
+            "type": "string",
+            "description": "Filter by specific relationship type ID"
+          },
+          "sourceNodeId": {
+            "type": "string",
+            "description": "Filter by source node ID"
+          },
+          "targetNodeId": {
+            "type": "string",
+            "description": "Filter by target node ID"
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of results",
+            "default": 20,
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query searchRelations($filter: NodeRelationsFilter, $pagination: PaginationInput) { nodeRelations(filter: $filter, pagination: $pagination) { nodes { id sourceNode { id content table { identifier } } targetNode { id content table { identifier } } relationType { id identifier description } createdAt } totalCount } }"
+      }
+    },
+    {
+      "name": "getConnectedNodes",
+      "description": "Get all nodes connected to a specific node with graph traversal options",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "ID of the node to find connections for"
+          },
+          "depth": {
+            "type": "integer",
+            "description": "Maximum traversal depth (default: 1, max recommended: 10)",
+            "default": 1,
+            "minimum": 1,
+            "maximum": 10
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["INCOMING", "OUTGOING", "BOTH"],
+            "description": "Direction of relationships to follow",
+            "default": "BOTH"
+          },
+          "relationTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific relationship types (optional)",
+            "default": []
+          }
+        },
+        "required": ["nodeId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query getConnectedNodes($nodeId: ID!, $depth: Int, $direction: RelationDirection, $relationTypes: [String!]) { node(id: $nodeId) { id content connectedNodes(depth: $depth, direction: $direction, relationTypes: $relationTypes) { id content table { id identifier } relationCount attributeCount } } }"
+      }
+    },
+    {
+      "name": "findShortestPath",
+      "description": "Find the shortest path between two nodes in the graph using BFS algorithm",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "fromNodeId": {
+            "type": "string",
+            "description": "Source node ID to start path from"
+          },
+          "toNodeId": {
+            "type": "string",
+            "description": "Target node ID to find path to"
+          },
+          "maxDepth": {
+            "type": "integer",
+            "description": "Maximum depth to search (default: 6, prevents infinite loops)",
+            "default": 6,
+            "minimum": 1,
+            "maximum": 20
+          }
+        },
+        "required": ["fromNodeId", "toNodeId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query findShortestPath($fromNodeId: ID!, $toNodeId: ID!, $maxDepth: Int) { node(id: $fromNodeId) { id content shortestPath(targetNodeId: $toNodeId, maxDepth: $maxDepth) { id content table { id identifier } } } }"
+      }
+    },
+    {
+      "name": "getNodeRelations",
+      "description": "Get all relationships for a specific node (both incoming and outgoing)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "ID of the node to get relations for"
+          },
+          "direction": {
+            "type": "string",
+            "enum": ["INCOMING", "OUTGOING", "BOTH"],
+            "description": "Direction of relationships to retrieve",
+            "default": "BOTH"
+          },
+          "relationTypes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Filter by specific relationship types",
+            "default": []
+          }
+        },
+        "required": ["nodeId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query getNodeRelations($nodeId: ID!) { node(id: $nodeId) { id content outgoingRelations { id targetNode { id content table { identifier } } relationType { id identifier description } createdAt } incomingRelations { id sourceNode { id content table { identifier } } relationType { id identifier description } createdAt } } }"
       }
     }
   ]

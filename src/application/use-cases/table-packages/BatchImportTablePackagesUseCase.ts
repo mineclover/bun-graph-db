@@ -6,6 +6,7 @@ import type {
   TablePackageImportResult,
 } from '@/core/types/TablePackage.js'
 import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface BatchImportRequest {
   packages: TablePackageFormat[]
@@ -148,7 +149,7 @@ export class BatchImportTablePackagesUseCase {
             failed++
             const errorMessage = error instanceof Error ? error.message : 'Unknown error'
 
-            this.logger.error('Package import error', { identifier, error })
+            this.logger.error('Package import error', { identifier, ...toErrorMeta(error) })
 
             results.push({
               success: false,
@@ -209,7 +210,7 @@ export class BatchImportTablePackagesUseCase {
     } catch (error) {
       this.logger.error('Batch import use case failed', {
         packagesCount: request.packages.length,
-        error,
+        ...toErrorMeta(error),
       })
 
       return {

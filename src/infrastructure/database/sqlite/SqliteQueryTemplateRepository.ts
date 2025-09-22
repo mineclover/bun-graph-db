@@ -6,6 +6,7 @@ import type {
   QueryTemplateUpdateData,
   SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 interface QueryTemplateRow {
@@ -68,7 +69,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.updated_at
       )
     } catch (error) {
-      this.logger.error('Failed to find template by id', { id, error })
+      this.logger.error('Failed to find template by id', { id, ...toErrorMeta(error) })
       throw new DomainException('Failed to find template', { code: 'DATABASE_ERROR' })
     }
   }
@@ -105,7 +106,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.updated_at
       )
     } catch (error) {
-      this.logger.error('Failed to find template by identifier', { identifier, error })
+      this.logger.error('Failed to find template by identifier', { identifier, ...toErrorMeta(error) })
       throw new DomainException('Failed to find template', { code: 'DATABASE_ERROR' })
     }
   }
@@ -234,7 +235,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         hasPreviousPage: offset > 0,
       }
     } catch (error) {
-      this.logger.error('Failed to search templates', { criteria, error })
+      this.logger.error('Failed to search templates', { criteria, ...toErrorMeta(error) })
       throw new DomainException('Failed to search templates', { code: 'DATABASE_ERROR' })
     }
   }
@@ -279,7 +280,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         )
       )
     } catch (error) {
-      this.logger.error('Failed to search templates by query name', { queryName, error })
+      this.logger.error('Failed to search templates by query name', { queryName, ...toErrorMeta(error) })
       throw new DomainException('Failed to search templates by query name', {
         code: 'DATABASE_ERROR',
       })
@@ -321,7 +322,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         )
       )
     } catch (error) {
-      this.logger.error('Failed to search templates by operation type', { operationType, error })
+      this.logger.error('Failed to search templates by operation type', { operationType, ...toErrorMeta(error) })
       throw new DomainException('Failed to search templates by operation type', {
         code: 'DATABASE_ERROR',
       })
@@ -383,7 +384,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         data.updated_at
       )
     } catch (error) {
-      this.logger.error('Failed to create template', { template, error })
+      this.logger.error('Failed to create template', { template, ...toErrorMeta(error) })
       throw new DomainException('Failed to create template', { code: 'DATABASE_ERROR' })
     }
   }
@@ -469,7 +470,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
       return result
     } catch (error) {
-      this.logger.error('Failed to update template', { id, updates, error })
+      this.logger.error('Failed to update template', { id, updates, ...toErrorMeta(error) })
       throw new DomainException('Failed to update template', { code: 'DATABASE_ERROR' })
     }
   }
@@ -480,7 +481,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const result = this.db.run(query, [id])
       return result.changes > 0
     } catch (error) {
-      this.logger.error('Failed to delete template', { id, error })
+      this.logger.error('Failed to delete template', { id, ...toErrorMeta(error) })
       throw new DomainException('Failed to delete template', { code: 'DATABASE_ERROR' })
     }
   }
@@ -512,7 +513,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const stmt = this.db.prepare(query)
       stmt.run(templateId)
     } catch (error) {
-      this.logger.error('Failed to increment usage', { id, error })
+      this.logger.error('Failed to increment usage', { id, ...toErrorMeta(error) })
       throw new DomainException('Failed to increment usage', { code: 'DATABASE_ERROR' })
     }
   }
@@ -551,7 +552,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const stmt = this.db.prepare(query)
       stmt.run(validExecutionTime, validExecutionTime, templateId)
     } catch (error) {
-      this.logger.error('Failed to update execution stats', { id, executionTimeMs, error })
+      this.logger.error('Failed to update execution stats', { id, executionTimeMs, ...toErrorMeta(error) })
       throw new DomainException('Failed to update execution stats', { code: 'DATABASE_ERROR' })
     }
   }
@@ -682,7 +683,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         )
       )
     } catch (error) {
-      this.logger.error('Failed to find popular templates', { limit, error })
+      this.logger.error('Failed to find popular templates', { limit, ...toErrorMeta(error) })
       throw new DomainException('Failed to find popular templates', { code: 'DATABASE_ERROR' })
     }
   }
@@ -707,7 +708,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
 
       return updatedTemplate
     } catch (error) {
-      this.logger.error('Failed to update template status', { id, isActive, error })
+      this.logger.error('Failed to update template status', { id, isActive, ...toErrorMeta(error) })
       throw new DomainException('Failed to update template status', { code: 'DATABASE_ERROR' })
     }
   }

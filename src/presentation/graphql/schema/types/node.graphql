@@ -1,31 +1,87 @@
 # Node domain types
+# Nodes represent entities in the graph database with attributes and relationships
 
+"""
+TableNode - Core graph entity representing any data object in the system
+Examples: Person, Product, Company, Document, etc.
+Supports rich attributes, bidirectional relationships, and advanced graph traversal
+"""
 type TableNode implements Node {
+  "Unique identifier for the node"
   id: ID!
+
+  "Primary content/description of the node - searchable text field"
   content: String!
+
+  "Optional title for the node - useful for display purposes"
+  title: String
+
+  "Optional description providing additional context about the node"
+  description: String
+
+  "Timestamp when the node was created"
   createdAt: DateTime!
+
+  "Timestamp when the node was last updated"
   updatedAt: DateTime!
 
   # Relationships
+  "Parent table that defines the schema and structure for this node"
   table: Table!
+
+  "All attributes attached to this node with their current values"
   attributes: [NodeAttribute!]!
+
+  "All relationships where this node is the source (outgoing edges)"
   outgoingRelations: [NodeRelation!]!
+
+  "All relationships where this node is the target (incoming edges)"
   incomingRelations: [NodeRelation!]!
 
   # Computed fields
+  "Total number of attributes attached to this node"
   attributeCount: Int!
+
+  "Total number of relationships (both incoming and outgoing)"
   relationCount: Int!
 
-  # 그래프 탐색 필드들
+  # Advanced Graph Traversal Fields
+  """
+  Find all nodes connected to this node within specified parameters
+  Uses BFS/DFS algorithms to traverse the graph efficiently
+  Supports depth control, direction filtering, and relationship type filtering
+  """
   connectedNodes(
+    "Maximum traversal depth (default: 1, max recommended: 10)"
     depth: Int = 1
+    "Direction of relationships to follow (INCOMING, OUTGOING, or BOTH)"
     direction: RelationDirection = BOTH
-    relationTypes: [ID!]
-  ): [ConnectedNode!]!
+    "Filter by specific relationship types (optional)"
+    relationTypes: [String!]
+  ): [TableNode!]!
 
-  shortestPath(targetNodeId: ID!, maxDepth: Int = 6): GraphPath
+  """
+  Find the shortest path between this node and a target node
+  Uses BFS algorithm to guarantee shortest path discovery
+  Returns empty array if no path exists within maxDepth
+  """
+  shortestPath(
+    "Target node ID to find path to"
+    targetNodeId: ID!
+    "Maximum depth to search (default: 6, prevents infinite loops)"
+    maxDepth: Int = 6
+  ): [TableNode!]!
 
-  neighborsByRelationType(relationTypeId: ID!): [TableNode!]!
+  """
+  Find direct neighbors connected via specific relationship types
+  More efficient than connectedNodes for direct relationships only
+  """
+  neighborsByRelationType(
+    "Relationship types to filter by"
+    relationTypes: [String!]!
+    "Direction of relationships to follow"
+    direction: RelationDirection = BOTH
+  ): [TableNode!]!
 }
 
 type NodeAttribute {
@@ -67,38 +123,109 @@ input NodesFilter {
   createdBefore: DateTime
 }
 
+"""
+Advanced search filter for finding nodes with complex criteria
+Supports full-text search, attribute filtering, and relationship filtering
+Can be combined for sophisticated queries across the graph
+"""
 input SearchNodesFilter {
+  "Full-text search across node content and attributes"
   search: String
+
+  "Search specifically in node content field"
   content: String
+
+  "Table ID to restrict search to specific node types"
   tableId: ID!
+
+  "Filter by node attribute values with various operators"
   attributeFilters: [AttributeFilter!]
+
+  "Filter by relationship patterns and connected nodes"
   relationFilters: [RelationFilter!]
 }
 
+"""
+Filter nodes by attribute values with flexible operators
+Supports text matching, numeric comparisons, and range queries
+"""
 input AttributeFilter {
+  "Attribute identifier to filter on"
   attributeId: ID!
+
+  "Value to compare against (string representation)"
   value: String!
+
+  "Comparison operator for the filter"
   operator: FilterOperator = EQUALS
 }
 
+"""
+Filter nodes by their relationships to other nodes
+Useful for finding nodes with specific connection patterns
+"""
 input RelationFilter {
+  "Relationship type to filter by"
   relationTypeId: ID!
+
+  "Direction of the relationship from the perspective of the node"
   direction: RelationDirection!
+
+  "Optional: specific target node ID to match against"
   targetNodeId: ID
 }
 
+"""
+Operators for attribute value comparisons
+Supports text matching and numeric/date comparisons
+"""
 enum FilterOperator {
+  "Exact equality match"
   EQUALS
+
+  "Contains substring (case-insensitive)"
   CONTAINS
+
+  "String starts with value"
   STARTS_WITH
+
+  "String ends with value"
   ENDS_WITH
+
+  "Numeric/date greater than"
   GREATER_THAN
+
+  "Numeric/date less than"
   LESS_THAN
+
+  "Value within range (requires min/max format)"
+  RANGE
+
+  "Value in list of options"
+  IN
+
+  "Value not in list of options"
+  NOT_IN
+
+  "Field is null or empty"
+  IS_NULL
+
+  "Field has a value"
+  IS_NOT_NULL
 }
 
+"""
+Direction for relationship traversal
+Controls which edges to follow from a node's perspective
+"""
 enum RelationDirection {
+  "Follow relationships where this node is the target"
   INCOMING
+
+  "Follow relationships where this node is the source"
   OUTGOING
+
+  "Follow relationships in both directions"
   BOTH
 }
 

@@ -1,5 +1,13 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type {
+  ApiResponse,
+  AttributeData,
+  NodeAttributeData,
+  TableAttributesData,
+  NodeAttributesData
+} from '../types/ApiResponseTypes.js'
+import { toErrorMeta, getErrorMessage } from '../utils/errorHelpers.js'
 
 export class AttributeApiController {
   constructor(
@@ -21,19 +29,20 @@ export class AttributeApiController {
       const { nodeId, attributeId, value } = input
 
       // TODO: Implement with actual use case
-      const result = {
+      const result: NodeAttributeData = {
         nodeId,
         attributeId,
         value,
         success: true
       }
 
-      res.json({
+      const response: ApiResponse<NodeAttributeData> = {
         success: true,
         data: result
-      })
+      }
+      res.json(response)
     } catch (error) {
-      this.logger.error('Set node attribute error:', error)
+      this.logger.error('Set node attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Set node attribute failed'
@@ -54,7 +63,7 @@ export class AttributeApiController {
       }
 
       // TODO: Implement with actual use case
-      const result = {
+      const result: AttributeData = {
         id: Date.now().toString(),
         tableId,
         identifier,
@@ -62,12 +71,13 @@ export class AttributeApiController {
         attributeTypeId
       }
 
-      res.json({
+      const response: ApiResponse<AttributeData> = {
         success: true,
         data: result
-      })
+      }
+      res.json(response)
     } catch (error) {
-      this.logger.error('Create attribute error:', error)
+      this.logger.error('Create attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Create attribute failed'
@@ -100,7 +110,7 @@ export class AttributeApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Update attribute error:', error)
+      this.logger.error('Update attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Update attribute failed'
@@ -131,7 +141,7 @@ export class AttributeApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Delete attribute error:', error)
+      this.logger.error('Delete attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Delete attribute failed'
@@ -152,17 +162,18 @@ export class AttributeApiController {
       }
 
       // TODO: Implement with actual use case
-      const result = {
+      const result: TableAttributesData = {
         tableId,
         attributes: []
       }
 
-      res.json({
+      const response: ApiResponse<TableAttributesData> = {
         success: true,
         data: result
-      })
+      }
+      res.json(response)
     } catch (error) {
-      this.logger.error('Get table attributes error:', error)
+      this.logger.error('Get table attributes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Get table attributes failed'
@@ -194,7 +205,7 @@ export class AttributeApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Remove node attribute error:', error)
+      this.logger.error('Remove node attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Remove node attribute failed'
@@ -227,7 +238,7 @@ export class AttributeApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Update node attribute value error:', error)
+      this.logger.error('Update node attribute value error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Update node attribute value failed'
@@ -258,7 +269,7 @@ export class AttributeApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Get node attributes error:', error)
+      this.logger.error('Get node attributes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Get node attributes failed'

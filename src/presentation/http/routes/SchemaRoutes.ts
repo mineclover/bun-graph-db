@@ -9,6 +9,7 @@ import type { ILogger } from '../../../application/ports/ILogger.js'
 import type { DIContainer } from '../../../infrastructure/container/DIContainer.js'
 import { CommonTokens } from '../../../infrastructure/container/tokens/CommonTokens.js'
 import { GraphQLSchemaBuilder } from '../../graphql/GraphQLSchemaBuilder.js'
+import { toErrorMeta } from '../utils/errorHelpers.js'
 
 export interface SchemaEndpoint {
   path: string
@@ -95,7 +96,7 @@ export class SchemaRoutes {
       })
     } catch (error) {
       const logger = await this.getLogger()
-      logger.error('Failed to generate schema SDL', { error })
+      logger.error('Failed to generate schema SDL', toErrorMeta(error))
 
       return new Response(
         JSON.stringify({
@@ -136,7 +137,7 @@ export class SchemaRoutes {
       })
     } catch (error) {
       const logger = await this.getLogger()
-      logger.error('Failed to generate schema JSON', { error })
+      logger.error('Failed to generate schema JSON', toErrorMeta(error))
 
       return new Response(
         JSON.stringify({
@@ -170,7 +171,7 @@ export class SchemaRoutes {
       })
     } catch (error) {
       const logger = await this.getLogger()
-      logger.error('Failed to generate introspection query', { error })
+      logger.error('Failed to generate introspection query', toErrorMeta(error))
 
       return new Response(
         JSON.stringify({
@@ -216,7 +217,7 @@ export class SchemaRoutes {
       })
     } catch (error) {
       const logger = await this.getLogger()
-      logger.error('Failed to generate introspection JSON', { error })
+      logger.error('Failed to generate introspection JSON', toErrorMeta(error))
 
       return new Response(
         JSON.stringify({
@@ -260,7 +261,7 @@ export class SchemaRoutes {
       })
     } catch (error) {
       const logger = await this.getLogger()
-      logger.error('Failed to generate TypeScript types', { error })
+      logger.error('Failed to generate TypeScript types', toErrorMeta(error))
 
       return new Response(
         JSON.stringify({

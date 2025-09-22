@@ -1,4 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import type { TableDependencyInfo } from '@/core/types/TablePackage.js'
 import { extractFieldNames, validateQuerySyntax } from '@/core/utils/GraphQLParser.js'
 import type { IAttributeRepository } from '../repositories/IAttributeRepository.js'
@@ -103,7 +104,7 @@ export class EnhancedDependencyAnalyzer {
         circularReferences,
       }
     } catch (error) {
-      this.logger.error('Dependency analysis failed', { tableIdentifier, error })
+      this.logger.error('Dependency analysis failed', { tableIdentifier, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -216,7 +217,7 @@ export class EnhancedDependencyAnalyzer {
         }
       }
     } catch (error) {
-      this.logger.warn('Failed to analyze foreign key dependencies', { tableId, error })
+      this.logger.warn('Failed to analyze foreign key dependencies', { tableId, ...toErrorMeta(error) })
     }
 
     return dependencies
@@ -255,7 +256,7 @@ export class EnhancedDependencyAnalyzer {
         }
       }
     } catch (error) {
-      this.logger.warn('Failed to analyze relation dependencies', { tableId, error })
+      this.logger.warn('Failed to analyze relation dependencies', { tableId, ...toErrorMeta(error) })
     }
 
     return dependencies
@@ -280,7 +281,7 @@ export class EnhancedDependencyAnalyzer {
         dependencies.push(...referencedTables.filter((t) => t !== tableIdentifier))
       }
     } catch (error) {
-      this.logger.warn('Failed to analyze template dependencies', { tableIdentifier, error })
+      this.logger.warn('Failed to analyze template dependencies', { tableIdentifier, ...toErrorMeta(error) })
     }
 
     return dependencies
@@ -377,7 +378,7 @@ export class EnhancedDependencyAnalyzer {
 
       return [...new Set(dependencies)]
     } catch (error) {
-      this.logger.warn('Failed to get direct dependencies', { tableIdentifier, error })
+      this.logger.warn('Failed to get direct dependencies', { tableIdentifier, ...toErrorMeta(error) })
       return []
     }
   }

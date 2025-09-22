@@ -1,5 +1,12 @@
 import type { DatabaseConfig } from '@/core/types/CommonTypes.js'
 
+// Global variable to store CLI-provided database path
+let cliDatabasePath: string | undefined
+
+export const setDatabasePath = (path: string | undefined): void => {
+  cliDatabasePath = path
+}
+
 export const databaseConfig: DatabaseConfig = {
   path: process.env.DATABASE_PATH || './data/bun-graph-db.sqlite',
   poolSize: Number.parseInt(process.env.DATABASE_POOL_SIZE || '5', 10),
@@ -7,7 +14,8 @@ export const databaseConfig: DatabaseConfig = {
 }
 
 export const getDatabasePath = (): string => {
-  const path = databaseConfig.path
+  // Use CLI path first, then env variable, then default
+  const path = cliDatabasePath || process.env.DATABASE_PATH || './data/bun-graph-db.sqlite'
 
   // Ensure directory exists
   const dir = path.substring(0, path.lastIndexOf('/'))

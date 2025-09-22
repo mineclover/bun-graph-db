@@ -9,6 +9,7 @@ import {
   NotFoundException,
   ValidationException,
 } from '@/shared/exceptions/DomainException.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface CreateDocInput {
   tableId: TableId
@@ -110,7 +111,7 @@ export class CreateDocUseCase {
         doc: DocDto.fromEntity(savedDoc),
       }
     } catch (error) {
-      this.logger.error('Failed to create doc', { input, error })
+      this.logger.error('Failed to create doc', { input, ...toErrorMeta(error) })
       throw error
     }
   }

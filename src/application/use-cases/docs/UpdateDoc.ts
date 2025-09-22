@@ -3,6 +3,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { DocId } from '@/core/types/CommonTypes.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface UpdateDocInput {
   content?: string
@@ -63,7 +64,7 @@ export class UpdateDocUseCase {
         doc: DocDto.fromEntity(doc),
       }
     } catch (error) {
-      this.logger.error('Failed to update doc', { id, input, error })
+      this.logger.error('Failed to update doc', { id, input, ...toErrorMeta(error) })
       throw error
     }
   }

@@ -7,6 +7,7 @@ import type { DocId } from '@/core/types/CommonTypes.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import type { DocCategory } from '@/domain/entities/Doc.js'
 import { BaseResolver } from '../base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 interface CreateDocArgs {
   input: {
@@ -87,7 +88,7 @@ export class DocMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createDoc', { error, input: args.input })
+      this.logger.error('Mutation failed: createDoc', { input: args.input, ...toErrorMeta(error) })
 
       const errorCode = (error as any).code || 'CREATE_DOC_ERROR'
       const errorMessage = (error as Error).message || 'Unknown error occurred'
@@ -128,7 +129,7 @@ export class DocMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateDoc', { error, id: args.id, input: args.input })
+      this.logger.error('Mutation failed: updateDoc', { id: args.id, input: args.input, ...toErrorMeta(error) })
 
       const errorCode = (error as any).code || 'UPDATE_DOC_ERROR'
       const errorMessage = (error as Error).message || 'Unknown error occurred'
@@ -163,7 +164,7 @@ export class DocMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: deleteDoc', { error, id: args.id })
+      this.logger.error('Mutation failed: deleteDoc', { id: args.id, ...toErrorMeta(error) })
 
       const errorCode = (error as any).code || 'DELETE_DOC_ERROR'
       const errorMessage = (error as Error).message || 'Unknown error occurred'
@@ -198,7 +199,7 @@ export class DocMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: activateDoc', { error, id: args.id })
+      this.logger.error('Mutation failed: activateDoc', { id: args.id, ...toErrorMeta(error) })
 
       const errorCode = (error as any).code || 'ACTIVATE_DOC_ERROR'
       const errorMessage = (error as Error).message || 'Unknown error occurred'
@@ -243,7 +244,7 @@ export class DocMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createDocVersion', { error, input: args.input })
+      this.logger.error('Mutation failed: createDocVersion', { input: args.input, ...toErrorMeta(error) })
 
       const errorCode = (error as any).code || 'CREATE_DOC_VERSION_ERROR'
       const errorMessage = (error as Error).message || 'Unknown error occurred'

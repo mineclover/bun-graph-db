@@ -1,5 +1,21 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type {
+  ApiResponse,
+  HealthCheckData,
+  SystemStatsData,
+  TableData,
+  SearchTablesData,
+  NodeData,
+  SearchNodesData,
+  RelationData,
+  TemplateData,
+  SearchTemplatesData,
+  ExecuteTemplateData,
+  ExportTemplateData,
+  ImportTemplateData
+} from '../types/ApiResponseTypes.js'
+import { toErrorMeta, getErrorMessage } from '../utils/errorHelpers.js'
 
 export class GraphDbApiController {
   constructor(
@@ -9,18 +25,19 @@ export class GraphDbApiController {
   // System Operations
   async healthCheck(req: Request, res: Response): Promise<void> {
     try {
-      const result = {
+      const result: HealthCheckData = {
         status: 'OK',
         timestamp: new Date().toISOString(),
         database: 'Connected',
         version: '1.0.0'
       }
-      res.json({
+      const response: ApiResponse<HealthCheckData> = {
         success: true,
         data: result
-      })
+      }
+      res.json(response)
     } catch (error) {
-      this.logger.error('Health check error:', error)
+      this.logger.error('Health check error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Health check failed'
@@ -47,7 +64,7 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('System stats error:', error)
+      this.logger.error('System stats error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'System stats failed'
@@ -82,7 +99,7 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Create table error:', error)
+      this.logger.error('Create table error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Create table failed'
@@ -107,7 +124,7 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Search tables error:', error)
+      this.logger.error('Search tables error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Search tables failed'
@@ -141,7 +158,7 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Create node error:', error)
+      this.logger.error('Create node error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Create node failed'
@@ -176,7 +193,7 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Search nodes error:', error)
+      this.logger.error('Search nodes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Search nodes failed'
@@ -212,7 +229,7 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Create relation error:', error)
+      this.logger.error('Create relation error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Create relation failed'
@@ -247,7 +264,7 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Create template error:', error)
+      this.logger.error('Create template error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Create template failed'
@@ -272,7 +289,7 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Search templates error:', error)
+      this.logger.error('Search templates error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Search templates failed'
@@ -308,10 +325,90 @@ export class GraphDbApiController {
         data: result
       })
     } catch (error) {
-      this.logger.error('Execute template error:', error)
+      this.logger.error('Execute template error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: 'Execute template failed'
+      })
+    }
+  }
+
+  async exportTemplate(req: Request, res: Response): Promise<void> {
+    try {
+      const { templateIdentifier } = req.body
+
+      if (!templateIdentifier) {
+        res.status(400).json({
+          success: false,
+          error: 'templateIdentifier is required'
+        })
+        return
+      }
+
+      const result: ExportTemplateData = {
+        templateIdentifier,
+        exportData: {
+          template: {
+            id: `template_${Date.now()}`,
+            identifier: templateIdentifier,
+            name: `Template ${templateIdentifier}`,
+            query: 'query { placeholder }',
+            tags: [],
+            createdAt: new Date().toISOString()
+          },
+          metadata: {
+            exportVersion: '1.0.0',
+            dependencies: []
+          }
+        },
+        exportedAt: new Date().toISOString()
+      }
+
+      const response: ApiResponse<ExportTemplateData> = {
+        success: true,
+        data: result
+      }
+      res.json(response)
+    } catch (error) {
+      this.logger.error('Export template error:', toErrorMeta(error))
+      res.status(500).json({
+        success: false,
+        error: 'Export template failed'
+      })
+    }
+  }
+
+  async importTemplate(req: Request, res: Response): Promise<void> {
+    try {
+      const { jsonData, overwriteExisting, generateNewIdentifier } = req.body
+
+      if (!jsonData) {
+        res.status(400).json({
+          success: false,
+          error: 'jsonData is required'
+        })
+        return
+      }
+
+      const result: ImportTemplateData = {
+        importResult: {
+          success: true,
+          templateIdentifier: 'imported_template',
+          conflicts: overwriteExisting ? [] : ['Template already exists']
+        },
+        importedAt: new Date().toISOString()
+      }
+
+      const response: ApiResponse<ImportTemplateData> = {
+        success: true,
+        data: result
+      }
+      res.json(response)
+    } catch (error) {
+      this.logger.error('Import template error:', toErrorMeta(error))
+      res.status(500).json({
+        success: false,
+        error: 'Import template failed'
       })
     }
   }

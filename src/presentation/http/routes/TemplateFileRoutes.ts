@@ -8,6 +8,7 @@ import { readFile, stat } from 'node:fs/promises'
 import type { ILogger } from '../../../application/ports/ILogger.js'
 import type { DIContainer } from '../../../infrastructure/container/DIContainer.js'
 import { CommonTokens } from '../../../infrastructure/container/tokens/CommonTokens.js'
+import { toErrorMeta } from '../utils/errorHelpers.js'
 
 export interface TemplateFileEndpoint {
   path: string
@@ -129,7 +130,7 @@ export class TemplateFileRoutes {
           }
         )
       } catch (fileError) {
-        logger.warn('Failed to read template file', { filePath, error: fileError })
+        logger.warn('Failed to read template file', { filePath, ...toErrorMeta(fileError) })
 
         return new Response(
           JSON.stringify({
@@ -145,7 +146,7 @@ export class TemplateFileRoutes {
       }
     } catch (error) {
       const logger = await this.getLogger()
-      logger.error('Failed to process template file request', { error })
+      logger.error('Failed to process template file request', toErrorMeta(error))
 
       return new Response(
         JSON.stringify({

@@ -16,6 +16,7 @@ import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttrib
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { NotFoundException } from '@/shared/exceptions/DomainException.js'
 
 // Input types matching GraphQL schema
@@ -188,7 +189,7 @@ export class NodeResolver extends BaseResolver {
         hasPreviousPage: (pagination.offset || 0) > 0,
       }
     } catch (error) {
-      this.logger.error('Failed to find nodes', { args, error })
+      this.logger.error('Failed to find nodes', { args, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -223,7 +224,7 @@ export class NodeResolver extends BaseResolver {
         },
       }
     } catch (error) {
-      this.logger.error('Failed to search nodes', { input: args.input, error })
+      this.logger.error('Failed to search nodes', { input: args.input, ...toErrorMeta(error) })
       throw error
     }
   }
@@ -325,7 +326,7 @@ export class NodeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update node', { id: args.id, input: args.input, error })
+      this.logger.error('Failed to update node', { id: args.id, input: args.input, ...toErrorMeta(error) })
 
       return {
         node: null,
@@ -440,7 +441,7 @@ export class NodeResolver extends BaseResolver {
       this.logger.error('Failed to set node attribute', {
         nodeId: args.nodeId,
         attributeId: args.attributeId,
-        error,
+        ...toErrorMeta(error),
       })
 
       return {

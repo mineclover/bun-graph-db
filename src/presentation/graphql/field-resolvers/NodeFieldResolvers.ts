@@ -98,23 +98,46 @@ export class NodeFieldResolvers extends BaseResolver {
     },
     _context?: GraphQLContext
   ) {
-    return this.handleFieldResolution(
-      async () => {
-        const depth = args?.depth || 1
-        const direction = args?.direction || 'BOTH'
-        const relationTypes = args?.relationTypes
+    this.logger.info('connectedNodes field resolver called', {
+      parentId: parent.id,
+      args
+    })
+    
+    try {
+      const depth = args?.depth || 1
+      const direction = args?.direction || 'BOTH'
+      const relationTypes = args?.relationTypes
 
-        const visited = new Set<string>()
-        const result: any[] = []
+      const visited = new Set<string>()
+      const result: any[] = []
 
-        await this._traverseGraph(parent.id, depth, direction, relationTypes, visited, result, 0)
+      await this._traverseGraph(parent.id, depth, direction, relationTypes, visited, result, 0)
 
-        return result
-      },
-      'connectedNodes',
-      'Node',
-      { nodeId: parent.id, depth: args?.depth, direction: args?.direction }
-    )
+      // Extract just the nodes from the result objects since GraphQL expects [TableNode!]!
+      // Filter out the starting node itself and only return connected nodes
+      const connectedNodes = result
+        .filter(item => item.node && item.node.getId() !== parent.id)
+        .map(item => item.node)
+        .filter(node => node !== null)
+
+      this.logger.info('connectedNodes field resolver result', {
+        parentId: parent.id,
+        resultLength: result.length,
+        connectedNodesLength: connectedNodes.length,
+        connectedNodes: connectedNodes.map(n => ({ id: n.getId(), content: n.getContent() }))
+      })
+
+      return connectedNodes
+    } catch (error) {
+      this.logger.error('Error in connectedNodes field resolver', {
+        error,
+        nodeId: parent.id,
+        args
+      })
+      // Always return empty array for GraphQL non-nullable field
+      this.logger.info('Returning empty array due to error')
+      return []
+    }
   }
 
   async shortestPath(
@@ -135,7 +158,9 @@ export class NodeFieldResolvers extends BaseResolver {
       async () => {
         const { targetNodeId, maxDepth = 6 } = args
         const path = await this._findShortestPath(parent.id, targetNodeId, maxDepth)
-        return path
+
+        // Return just the nodes array since GraphQL expects [TableNode!]!
+        return path ? path.nodes : []
       },
       'shortestPath',
       'Node',

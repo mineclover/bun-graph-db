@@ -1,5 +1,6 @@
 import type { ILogger } from '../../../application/ports/ILogger.js'
 import type { SystemMonitoringUseCase } from '../../../application/use-cases/monitoring/SystemMonitoringUseCase.js'
+import { toErrorMeta } from '../../http/utils/errorHelpers.js'
 
 interface HealthStatus {
   status: string
@@ -34,7 +35,7 @@ export class SystemQueries {
 
       return stats
     } catch (error) {
-      this.logger.error('Error fetching system statistics', { error })
+      this.logger.error('Error fetching system statistics', toErrorMeta(error))
       throw error
     }
   }
@@ -52,7 +53,7 @@ export class SystemQueries {
 
       return memoryStats
     } catch (error) {
-      this.logger.error('Error fetching memory statistics', { error })
+      this.logger.error('Error fetching memory statistics', toErrorMeta(error))
       throw error
     }
   }
@@ -81,7 +82,7 @@ export class SystemQueries {
 
       return healthStatus
     } catch (error) {
-      this.logger.error('Error during health check', { error })
+      this.logger.error('Error during health check', toErrorMeta(error))
 
       return {
         status: 'ERROR',

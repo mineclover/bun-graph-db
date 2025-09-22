@@ -80,6 +80,10 @@ export class RestApiClient {
   } {
     const [method, pathTemplate] = endpoint.split(' ')
 
+    if (!pathTemplate) {
+      throw new Error(`Invalid endpoint format: ${endpoint}. Expected format: "METHOD /path"`)
+    }
+
     // URL 파라미터 치환
     let path = pathTemplate.replace('/api', '')
     Object.keys(params).forEach(key => {
@@ -94,7 +98,7 @@ export class RestApiClient {
           queryParams[key] = String(params[key])
         }
       })
-      return { method, path, queryParams }
+      return { method: method!, path, queryParams }
     }
 
     // POST/PUT 요청의 경우 body 데이터로 전환
@@ -105,7 +109,7 @@ export class RestApiClient {
       }
     })
 
-    return { method, path, body }
+    return { method: method!, path, body }
   }
 
   // 개별 API 메서드들
