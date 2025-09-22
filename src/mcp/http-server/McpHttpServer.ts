@@ -8,6 +8,7 @@
 import Ajv from 'ajv'
 import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
 import { McpToolRegistry } from '../../services/McpToolRegistry.ts'
+import { RestApiClient } from '../../services/RestApiClient.js'
 
 interface McpRequest {
   jsonrpc: '2.0'
@@ -44,6 +45,7 @@ interface McpInitializeParams {
 export class McpHttpServer {
   private toolRegistry: McpToolRegistry
   private graphqlExecutor: GraphQLOperationExecutor
+  private restApiClient: RestApiClient
   private initialized: boolean = false
   private protocolVersion: string = '2025-06-18'
   private ajv: Ajv
@@ -56,13 +58,14 @@ export class McpHttpServer {
 
   // Server info
   private serverInfo = {
-    name: 'bun-graph-db-mcp-server',
+    name: 'Bun Graph DB MCP Server',
     version: '1.0.0',
   }
 
-  constructor(graphqlEndpoint: string) {
+  constructor(graphqlEndpoint: string, restApiBaseUrl?: string) {
     this.toolRegistry = new McpToolRegistry()
     this.graphqlExecutor = new GraphQLOperationExecutor(graphqlEndpoint)
+    this.restApiClient = new RestApiClient(restApiBaseUrl || 'http://localhost:4000/api')
     this.ajv = new Ajv()
   }
 
@@ -284,7 +287,7 @@ export class McpHttpServer {
       // Get tool definition
       const toolLookup = await this.toolRegistry.getTool(name)
       if (!toolLookup.found || !toolLookup.tool) {
-        return this.createErrorMcpResponse(id, -32602, 'Invalid params', `Tool not found: ${name}`)
+        return this.createErrorMcpResponse(id, -32602, `Tool not found: ${name}`)
       }
 
       const tool = toolLookup.tool
@@ -323,16 +326,8 @@ export class McpHttpServer {
         )
       }
 
-      // Transform parameters for GraphQL compatibility
-      const transformedVariables = this.transformParametersForGraphQL(name, args || {})
-
-      // Execute the tool's GraphQL operation directly
-      const result = await this.graphqlExecutor.execute({
-        operationType: tool.graphqlOperation.operationType,
-        operationName: name,
-        query: tool.graphqlOperation.query,
-        variables: transformedVariables,
-      })
+      // Call REST API instead of GraphQL
+      const result = await this.restApiClient.callMcpTool(name, args || {})
 
       // Return MCP-compliant response
       return {
@@ -612,10 +607,10 @@ export class McpHttpServer {
       case 'createRelation':
         return {
           input: {
-            fromNodeId: params.fromNodeId,
-            toNodeId: params.toNodeId,
-            relationshipType: params.relationshipType,
-            properties: params.properties,
+            sourceNodeId: params.sourceNodeId,
+            targetNodeId: params.targetNodeId,
+            relationTypeId: params.relationTypeId,
+            tableId: params.tableId,
           },
         }
 
@@ -677,23 +672,62 @@ export class McpHttpServer {
         if (params.tableId) {
           return {
             tableId: params.tableId,
-            includeSampleNodes: params.includeSampleNodes !== false,
-            sampleLimit: params.sampleLimit || 5,
-            includeRelationships: params.includeRelationships !== false,
-            includeUsageStats: params.includeUsageStats || false,
+            includeSampleNodes: params.includeSampleNodes,
+            sampleLimit: params.sampleLimit,
+            includeUsageStats: params.includeUsageStats,
           }
         } else if (params.identifier) {
           return {
             identifier: params.identifier,
-            includeSampleNodes: params.includeSampleNodes !== false,
-            sampleLimit: params.sampleLimit || 5,
-            includeRelationships: params.includeRelationships !== false,
-            includeUsageStats: params.includeUsageStats || false,
+            includeSampleNodes: params.includeSampleNodes,
+            sampleLimit: params.sampleLimit,
+            includeUsageStats: params.includeUsageStats,
           }
         } else {
           throw new Error('Either tableId or identifier must be provided for getTableDocs')
         }
 
+      case 'createAttribute':
+        return {
+          input: {
+            identifier: params.identifier,
+            name: params.name,
+            description: params.description,
+            attributeTypeId: params.attributeTypeId,
+            tableId: params.tableId,
+          },
+        }
+      case 'updateAttribute':
+        return {
+          id: params.attributeId,
+          input: {
+            name: params.name,
+            description: params.description,
+          },
+        }
+      case 'deleteAttribute':
+        return {
+          id: params.attributeId,
+        }
+      case 'importTemplate':
+        return {
+          jsonData: params.jsonData,
+          overwriteExisting: params.overwriteExisting || false,
+          generateNewIdentifier: params.generateNewIdentifier || false,
+        }
+      case 'searchRelations':
+        return {
+          filter: {
+            tableId: params.tableId,
+            sourceNodeId: params.sourceNodeId,
+            targetNodeId: params.targetNodeId,
+            relationTypeId: params.relationTypeId,
+          },
+          pagination: {
+            limit: params.limit || 20,
+            offset: params.offset || 0,
+          },
+        }
       default:
         // For tools that don't need transformation, return parameters as-is
         return params

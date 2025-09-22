@@ -1,0 +1,87 @@
+import express from 'express'
+import type { GraphDbApiController } from '../controllers/GraphDbApiController.js'
+import type { AttributeApiController } from '../controllers/AttributeApiController.js'
+import type { GraphApiController } from '../controllers/GraphApiController.js'
+
+export function createApiRoutes(
+  graphDbController: GraphDbApiController,
+  attributeController: AttributeApiController,
+  graphController: GraphApiController
+): express.Router {
+  const router = express.Router()
+
+  // System Operations
+  router.get('/health', (req, res) => graphDbController.healthCheck(req, res))
+  router.get('/stats', (req, res) => graphDbController.systemStats(req, res))
+
+  // Table Operations
+  router.post('/tables', (req, res) => graphDbController.createTable(req, res))
+  router.get('/tables', (req, res) => graphController.getTables(req, res))
+  router.get('/tables/search', (req, res) => graphDbController.searchTables(req, res))
+  router.get('/tables/:tableId/docs', (req, res) => graphController.getTableDocs(req, res))
+  router.post('/tables/:tableId/export', (req, res) => graphController.exportTableWithNodes(req, res))
+
+  // Node Operations
+  router.post('/nodes', (req, res) => graphDbController.createNode(req, res))
+  router.get('/nodes/search', (req, res) => graphDbController.searchNodes(req, res))
+  router.get('/nodes/:nodeId/connected', (req, res) => graphController.getConnectedNodes(req, res))
+  router.get('/nodes/:nodeId/relations', (req, res) => graphController.getNodeRelations(req, res))
+  router.get('/nodes/:nodeId/attributes', (req, res) => attributeController.getNodeAttributes(req, res))
+  router.post('/nodes/shortest-path', (req, res) => graphController.findShortestPath(req, res))
+
+  // Relation Operations
+  router.post('/relations', (req, res) => graphDbController.createRelation(req, res))
+  router.get('/relations/search', (req, res) => graphController.searchRelations(req, res))
+
+  // Template Operations
+  router.post('/templates', (req, res) => graphDbController.createTemplate(req, res))
+  router.get('/templates/search', (req, res) => graphDbController.searchTemplates(req, res))
+  router.post('/templates/execute', (req, res) => graphDbController.executeTemplateWithGraphQL(req, res))
+  router.get('/templates/:templateIdentifier/export', (req, res) => graphDbController.exportTemplate(req, res))
+  router.post('/templates/import', (req, res) => graphDbController.importTemplate(req, res))
+
+  // Attribute Operations
+  router.post('/attributes', (req, res) => attributeController.createAttribute(req, res))
+  router.put('/attributes/:attributeId', (req, res) => attributeController.updateAttribute(req, res))
+  router.delete('/attributes/:attributeId', (req, res) => attributeController.deleteAttribute(req, res))
+  router.get('/attributes/tables/:tableId', (req, res) => attributeController.getTableAttributes(req, res))
+
+  // Node Attribute Operations
+  router.post('/node-attributes', (req, res) => attributeController.setNodeAttribute(req, res))
+  router.put('/node-attributes', (req, res) => attributeController.updateNodeAttributeValue(req, res))
+  router.delete('/node-attributes', (req, res) => attributeController.removeNodeAttribute(req, res))
+
+  return router
+}
+
+// API 엔드포인트 매핑 문서화
+export const API_ENDPOINT_MAPPING = {
+  // MCP Tool Name -> REST API Endpoint
+  healthCheck: 'GET /api/health',
+  systemStats: 'GET /api/stats',
+  createTable: 'POST /api/tables',
+  searchTables: 'GET /api/tables/search',
+  createNode: 'POST /api/nodes',
+  searchNodes: 'GET /api/nodes/search',
+  createRelation: 'POST /api/relations',
+  createTemplate: 'POST /api/templates',
+  executeTemplateWithGraphQL: 'POST /api/templates/execute',
+  searchTemplates: 'GET /api/templates/search',
+  exportTemplate: 'GET /api/templates/:templateIdentifier/export',
+  importTemplate: 'POST /api/templates/import',
+  setNodeAttribute: 'POST /api/node-attributes',
+  createAttribute: 'POST /api/attributes',
+  updateAttribute: 'PUT /api/attributes/:attributeId',
+  deleteAttribute: 'DELETE /api/attributes/:attributeId',
+  getTableAttributes: 'GET /api/attributes/tables/:tableId',
+  removeNodeAttribute: 'DELETE /api/node-attributes',
+  updateNodeAttributeValue: 'PUT /api/node-attributes',
+  getNodeAttributes: 'GET /api/nodes/:nodeId/attributes',
+  getTables: 'GET /api/tables',
+  getTableDocs: 'GET /api/tables/:tableId/docs',
+  exportTableWithNodes: 'POST /api/tables/:tableId/export',
+  searchRelations: 'GET /api/relations/search',
+  getConnectedNodes: 'GET /api/nodes/:nodeId/connected',
+  findShortestPath: 'POST /api/nodes/shortest-path',
+  getNodeRelations: 'GET /api/nodes/:nodeId/relations'
+}

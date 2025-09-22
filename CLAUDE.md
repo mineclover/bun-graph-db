@@ -3,9 +3,10 @@
 **Production-ready GraphQL-based Graph Database System** with TypeScript/Bun runtime and advanced batch operations.
 
 [![System Health](https://img.shields.io/badge/System%20Health-✅%20Verified-brightgreen)](#system-status)
+[![MCP Architecture](https://img.shields.io/badge/MCP%20Proxy-✅%20Complete-brightgreen)](#mcp-architecture)
 [![Templates](https://img.shields.io/badge/Templates-145%20Active-green)](#templates)
 [![Tables](https://img.shields.io/badge/Tables-105%20Active-blue)](#tables)
-[![Tests](https://img.shields.io/badge/Tests-76/76%20Passing-brightgreen)](#testing)
+[![Tests](https://img.shields.io/badge/Tests-42/42%20Passing-brightgreen)](#testing)
 
 ## ⚡ Quick Start
 
@@ -54,35 +55,43 @@ curl -X POST http://localhost:4000/graphql \
 - **Schema validation** and progress monitoring
 - **Transaction safety** with rollback support
 
+### 🔌 MCP-to-REST Architecture
+- **27 MCP Tools** proxying to REST API endpoints
+- **JSON-RPC 2.0** protocol compliance
+- **Dual Interface**: Direct REST API + MCP proxy layer
+- **Parameter transformation** and routing
+
 ## 🏗️ Architecture
 
 ```
-📁 Hexagonal Architecture
-├── 🎯 Core Layer (Business Logic)
-│   ├── Database Abstraction
-│   ├── Type Definitions
-│   └── Configuration
+📁 MCP-to-REST Architecture
+├── 🔌 MCP Layer (JSON-RPC 2.0)
+│   ├── 27 MCP Tool Definitions
+│   ├── Parameter Transformation
+│   ├── HTTP Server (port 4000/mcp)
+│   └── Proxy to REST API
 │
-├── 🏢 Domain Layer (Models)
+├── 🌐 REST API Layer (Primary Interface)
+│   ├── Express Controllers
+│   ├── Parameter Validation
+│   ├── HTTP Routes (/api/*)
+│   └── Direct GraphQL Execution
+│
+├── 🎯 Core Business Logic
+│   ├── GraphQL Schema & Resolvers
+│   ├── Domain Services
+│   ├── Use Case Orchestration
+│   └── Template Engine
+│
+├── 🏢 Domain Layer
 │   ├── Entities (Node, Table, Relation)
 │   ├── Repository Interfaces
 │   └── Value Objects
 │
-├── ⚙️ Application Layer (Use Cases)
-│   ├── CRUD Operations
-│   ├── Search & Analytics
-│   ├── Template Engine
-│   └── Batch Operations
-│
-├── 🔌 Infrastructure Layer
-│   ├── SQLite Repositories
-│   ├── Dependency Injection
-│   └── Logging & Monitoring
-│
-└── 🌐 Presentation Layer
-    ├── GraphQL Schema
-    ├── Resolvers
-    └── Type-Safe Integration
+└── 🔌 Infrastructure Layer
+    ├── SQLite Repositories
+    ├── Dependency Injection
+    └── Database Abstraction
 ```
 
 ## 📋 Commands
@@ -193,6 +202,352 @@ curl -X POST http://localhost:4000/graphql -H "Content-Type: application/json" \
 **Basic Operations**: Create table, define attributes, create template, execute template
 - Full syntax: [Doc API Reference](docs/api/doc-api-reference.md) - Complete GraphQL schema
 - Usage patterns: [Quick Start Guide](docs/guides/QUICK_START_IMPORT_EXPORT.md) - Template import/export workflow
+
+## 🎯 Common Query Patterns
+
+External AI systems can easily understand and generate queries using these proven patterns:
+
+### 🔍 Basic Data Operations
+
+**Find all tables and their schemas:**
+```graphql
+query GetTableOverview {
+  tables {
+    nodes {
+      id
+      identifier
+      description
+      attributeCount
+      nodeCount
+      attributes {
+        id
+        identifier
+        name
+        attributeType { dataType }
+      }
+    }
+  }
+}
+```
+
+**Search nodes with text and attribute filters:**
+```graphql
+query SearchPeople($tableId: ID!) {
+  searchNodes(
+    tableId: $tableId
+    searchQuery: {
+      textSearch: "engineer"
+      conditions: [{
+        logicalOperator: AND
+        filters: [{
+          field: "age"
+          operator: "range"
+          value: { min: "25", max: "40" }
+        }]
+      }]
+      sortBy: [{ field: "created_at", direction: DESC }]
+      limit: 20
+    }
+  ) {
+    nodes {
+      node { id title content }
+      attributes
+    }
+    totalCount
+  }
+}
+```
+
+### 🕸️ Graph Traversal Patterns
+
+**Find shortest path between nodes:**
+```graphql
+query FindConnection($sourceId: ID!, $targetId: ID!) {
+  node(id: $sourceId) {
+    title
+    shortestPath(targetNodeId: $targetId, maxDepth: 6) {
+      id
+      title
+      content
+    }
+  }
+}
+```
+
+**Explore connected nodes with depth control:**
+```graphql
+query ExploreNetwork($nodeId: ID!) {
+  node(id: $nodeId) {
+    title
+    # Direct connections
+    directFriends: connectedNodes(
+      depth: 1,
+      direction: OUTGOING,
+      relationTypes: ["knows", "friends_with"]
+    ) {
+      id
+      title
+    }
+
+    # Extended network (2 hops)
+    extendedNetwork: connectedNodes(
+      depth: 2,
+      direction: BOTH
+    ) {
+      id
+      title
+    }
+  }
+}
+```
+
+**Find nodes by relationship patterns:**
+```graphql
+query FindByRelationship($nodeId: ID!) {
+  node(id: $nodeId) {
+    title
+    # Who does this person employ?
+    employees: neighborsByRelationType(
+      relationTypes: ["employs"]
+      direction: OUTGOING
+    ) {
+      id
+      title
+    }
+
+    # Who employs this person?
+    employers: neighborsByRelationType(
+      relationTypes: ["employs"]
+      direction: INCOMING
+    ) {
+      id
+      title
+    }
+  }
+}
+```
+
+### 🏗️ Complex Data Construction
+
+**Create a complete entity with relationships:**
+```graphql
+mutation CreatePersonWithConnections {
+  # Step 1: Create the person
+  createNode(input: {
+    tableId: "person-table-id"
+    content: "Software Engineer Profile"
+    title: "Alice Smith"
+  }) {
+    success
+    node {
+      id
+      title
+    }
+  }
+}
+
+# Then in separate operations:
+mutation SetPersonAttributes($nodeId: ID!) {
+  setAge: setNodeAttribute(input: {
+    nodeId: $nodeId
+    attributeId: "age"
+    value: "30"
+  }) { success }
+
+  setEmail: setNodeAttribute(input: {
+    nodeId: $nodeId
+    attributeId: "email"
+    value: "alice@example.com"
+  }) { success }
+}
+
+mutation CreateRelationships($personId: ID!, $companyId: ID!) {
+  employment: createRelation(input: {
+    fromNodeId: $companyId
+    toNodeId: $personId
+    relationshipType: "employs"
+  }) { success }
+}
+```
+
+### 📊 Analytics and Insights
+
+**Analyze relationship patterns:**
+```graphql
+query NetworkAnalysis($nodeId: ID!) {
+  node(id: $nodeId) {
+    title
+
+    # Basic network metrics
+    incomingCount: incomingRelations { id }
+    outgoingCount: outgoingRelations { id }
+
+    # Relationship breakdown by type
+    allRelations: outgoingRelations {
+      relationType { identifier }
+      targetNode { title }
+    }
+
+    # Network reach analysis
+    oneHopNetwork: connectedNodes(depth: 1) { id }
+    twoHopNetwork: connectedNodes(depth: 2) { id }
+    threeHopNetwork: connectedNodes(depth: 3) { id }
+  }
+}
+```
+
+**Advanced search with multiple conditions:**
+```graphql
+query ComplexSearch($tableId: ID!) {
+  searchNodes(
+    tableId: $tableId
+    searchQuery: {
+      # Combine text search with attribute filters
+      textSearch: "senior"
+      conditions: [
+        {
+          logicalOperator: OR
+          filters: [
+            { field: "department", operator: "equals", value: "Engineering" }
+            { field: "department", operator: "equals", value: "Product" }
+          ]
+        }
+        {
+          logicalOperator: AND
+          filters: [
+            { field: "experience_years", operator: "gte", value: "5" }
+            { field: "location", operator: "contains", value: "San Francisco" }
+          ]
+        }
+      ]
+      sortBy: [
+        { field: "experience_years", direction: DESC }
+        { field: "created_at", direction: ASC }
+      ]
+      limit: 50
+    }
+  ) {
+    nodes {
+      node {
+        id
+        title
+        content
+      }
+      attributes
+    }
+    totalCount
+    hasNextPage
+  }
+}
+```
+
+### 🚀 Template-Based Operations
+
+**Create reusable query templates:**
+```graphql
+mutation CreateSearchTemplate {
+  createTemplate(input: {
+    identifier: "find-senior-engineers"
+    name: "Find Senior Engineers by Location"
+    query: """
+      query FindSeniorEngineers($location: String!, $minExperience: String!) {
+        searchNodes(
+          tableId: "people-table"
+          searchQuery: {
+            conditions: [{
+              logicalOperator: AND
+              filters: [
+                { field: "role", operator: "contains", value: "Engineer" }
+                { field: "experience_years", operator: "gte", value: $minExperience }
+                { field: "location", operator: "contains", value: $location }
+              ]
+            }]
+            sortBy: [{ field: "experience_years", direction: DESC }]
+            limit: 20
+          }
+        ) {
+          nodes { node { title } attributes }
+        }
+      }
+    """
+    tags: ["search", "people", "engineering"]
+  }) {
+    success
+    template { identifier }
+  }
+}
+```
+
+**Execute templates with variables:**
+```graphql
+mutation RunEngineersSearch {
+  executeTemplateWithGraphQL(
+    templateIdentifier: "find-senior-engineers"
+    variables: {
+      location: "San Francisco"
+      minExperience: "5"
+    }
+  ) {
+    success
+    data
+    errors { message }
+  }
+}
+```
+
+### 🔄 Batch Operations
+
+**Process multiple entities efficiently:**
+```graphql
+query BatchNodeLookup($nodeIds: [ID!]!) {
+  nodes: nodesByIds(ids: $nodeIds) {
+    id
+    title
+    content
+    attributes {
+      attribute { identifier }
+      value
+    }
+    relationCount
+  }
+}
+
+# AI Tip: Use fragments for consistent field selection
+fragment NodeDetails on TableNode {
+  id
+  title
+  content
+  createdAt
+  attributes {
+    attribute {
+      identifier
+      name
+    }
+    value
+  }
+}
+
+query SearchWithFragments($tableId: ID!) {
+  searchNodes(tableId: $tableId, searchQuery: { limit: 10 }) {
+    nodes {
+      node {
+        ...NodeDetails
+      }
+    }
+  }
+}
+```
+
+### 💡 AI Query Generation Tips
+
+1. **Schema Introspection**: Always start with `__schema` queries to understand available types
+2. **Depth Control**: Use `depth` parameters to control traversal scope (max recommended: 10)
+3. **Pagination**: Always include pagination for large result sets
+4. **Field Selection**: Be specific about required fields to optimize performance
+5. **Variable Usage**: Use GraphQL variables for dynamic queries instead of string interpolation
+6. **Fragment Reuse**: Create fragments for commonly used field sets
+7. **Error Handling**: Always check `errors` field in mutation responses
+8. **Relationship Direction**: Be explicit about `INCOMING`, `OUTGOING`, or `BOTH` for clarity
 
 ## 📊 System Status
 
