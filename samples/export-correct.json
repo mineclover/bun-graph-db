@@ -1,6 +1,0 @@
-{
-  "query": "mutation ExportCorrectTemplate($templateIdentifier: String!) { exportTemplate(templateIdentifier: $templateIdentifier) { success exportData filename } }",
-  "variables": {
-    "templateIdentifier": "search-templates-advanced"
-  }
-}
