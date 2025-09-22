@@ -127,6 +127,7 @@ Options:
 
 Environment Variables:
   GRAPHQL_PORT              Port number for both HTTP and WebSocket (overridden by --port)
+  PORT                      Standard port environment variable (fallback after GRAPHQL_PORT)
   GRAPHQL_HOST              Host address (overridden by --host)
   NODE_ENV                  Environment (overridden by --env)
   CORS_ORIGIN               CORS origins (comma-separated)

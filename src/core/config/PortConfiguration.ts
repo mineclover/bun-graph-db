@@ -171,9 +171,9 @@ export function getPortConfiguration(
     | 'test'
     | 'production'
 
-  // Priority: CLI > ENV > Default
+  // Priority: CLI > GRAPHQL_PORT/envPort > PORT > Default
   const basePort = PortManager.parsePort(
-    cliPort || envPort || process.env.GRAPHQL_PORT,
+    cliPort || envPort || process.env.GRAPHQL_PORT || process.env.PORT,
     DEFAULT_PORTS[environment]
   )
 

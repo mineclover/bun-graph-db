@@ -161,6 +161,8 @@ export class GraphQLSchemaBuilder {
           deps.tableQueries.tableByIdentifier(_, args as any),
         tables: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.tableQueries.tables(_, args as any),
+        searchTables: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.tableQueries.searchTables(_, args as any),
         tableDocumentation: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.tableQueries.tableDocumentation(_, args as any),
 

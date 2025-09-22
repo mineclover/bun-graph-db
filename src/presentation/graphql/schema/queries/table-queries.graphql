@@ -7,4 +7,17 @@ extend type Query {
 
   # Get multiple tables with filtering and pagination
   tables(filter: TablesFilter, pagination: TablesPagination, sort: [SortInput!]): TablesConnection!
+
+  # Search tables with simplified interface (for MCP compatibility)
+  searchTables(filter: TablesFilter): TablesConnection!
+
+  # Get comprehensive table documentation
+  tableDocumentation(
+    tableId: ID
+    identifier: String
+    includeRelationships: Boolean = true
+    includeSampleNodes: Boolean = true
+    includeUsageStats: Boolean = false
+    sampleLimit: Int = 5
+  ): TableDocumentation
 }
