@@ -244,7 +244,7 @@ export class DocResolver extends BaseResolver {
         const useCaseResult = await this.createDocUseCase.execute({
           tableId: args.input.tableId as TableId,
           category: args.input.category as DocCategory,
-          content: args.input.content,
+          content: args.input.content || '',
           version: args.input.version || 1,
         })
         return useCaseResult.doc

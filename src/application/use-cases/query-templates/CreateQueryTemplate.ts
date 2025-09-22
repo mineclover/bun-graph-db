@@ -1,7 +1,6 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { QueryTemplate, type OperationType } from '@/domain/entities/QueryTemplate.js'
+import { type OperationType, QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface CreateQueryTemplateRequest {
   identifier: string
@@ -34,9 +33,9 @@ export class CreateQueryTemplate {
 
   async execute(request: CreateQueryTemplateRequest): Promise<QueryTemplate> {
     try {
-      this.logger.info('Creating query template', { 
+      this.logger.info('Creating query template', {
         identifier: request.identifier,
-        name: request.name 
+        name: request.name,
       })
 
       // Create the template entity
@@ -66,9 +65,9 @@ export class CreateQueryTemplate {
 
       return saved
     } catch (error) {
-      this.logger.error('Failed to create query template', { 
+      this.logger.error('Failed to create query template', {
         error: error instanceof Error ? error.message : String(error),
-        request 
+        request,
       })
       throw error
     }

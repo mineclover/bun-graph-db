@@ -185,6 +185,13 @@ export class GraphQLTestServerManager {
         throw new Error(`GraphQL request failed: ${response.status}`)
       }
 
+      // Log GraphQL errors for debugging
+      if (result.errors) {
+        console.error('GraphQL Response Errors:', JSON.stringify(result.errors, null, 2))
+        console.error('GraphQL Query:', query)
+        console.error('GraphQL Variables:', variables)
+      }
+
       return result
     }
   }

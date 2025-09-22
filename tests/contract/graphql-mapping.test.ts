@@ -220,7 +220,6 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
       const variables = {
         input: {
           identifier: 'test-table-contract',
-          name: 'Test Table Contract',
           description: 'Test table for contract validation',
         },
       }
@@ -365,7 +364,17 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
                 (v: any) => v.variable.name.value === 'input'
               )
               // Most mutations should use input variable pattern
-              if (!['executeTemplateWithGraphQL'].includes(tool.name)) {
+              // Some mutations use individual variables instead of input object
+              if (
+                ![
+                  'executeTemplateWithGraphQL',
+                  'exportTemplate',
+                  'importTemplate',
+                  'removeNodeAttribute',
+                  'updateNodeAttributeValue',
+                  'setNodeAttribute',
+                ].includes(tool.name)
+              ) {
                 expect(hasInputVar).toBe(true)
               }
             }

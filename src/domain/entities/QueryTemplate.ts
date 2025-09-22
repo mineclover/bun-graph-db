@@ -52,12 +52,15 @@ export interface ValidationResult {
 
 export interface QueryVariablesSchema {
   type: string
-  properties: Record<string, {
-    type: string
-    description?: string    // Extended: 필드 설명
-    default?: unknown      // Extended: 기본값 지원  
-    enum?: unknown[]       // Extended: enum 검증
-  }>
+  properties: Record<
+    string,
+    {
+      type: string
+      description?: string // Extended: 필드 설명
+      default?: unknown // Extended: 기본값 지원
+      enum?: unknown[] // Extended: enum 검증
+    }
+  >
   required?: string[]
 }
 
@@ -161,9 +164,7 @@ export class QueryTemplate {
     createdAt: string,
     updatedAt: string
   ): QueryTemplate {
-    const parsedInputSchema = inputSchema
-      ? (JSON.parse(inputSchema) as QueryVariablesSchema)
-      : null
+    const parsedInputSchema = inputSchema ? (JSON.parse(inputSchema) as QueryVariablesSchema) : null
     const parsedDefaultVariables = defaultVariables
       ? (JSON.parse(defaultVariables) as Record<string, unknown>)
       : null

@@ -1,531 +1,621 @@
 # MCP Tools Extension Reference
-## executeTemplateWithGraphQL 기반 도구 확장 가이드
 
-**버전**: 1.0.0
-**최종 업데이트**: 2025-09-21
-**작성자**: Bun Graph DB Development Team
+**버전**: 2.0.0
+**최종 업데이트**: 2025-09-22
+**대상**: 개발자, 시스템 아키텍트
+**난이도**: 중급 → 고급
 
 ## 🎯 개요
 
-이 문서는 `executeTemplateWithGraphQL`을 중심으로 한 MCP (Model Context Protocol) 도구 확장 방법론을 제공합니다. 모든 MCP 도구는 GraphQL 템플릿 실행 엔진을 통해 작동하며, JSON-RPC 2.0 프로토콜을 사용합니다.
+이 문서는 Bun Graph Database의 MCP (Model Context Protocol) 도구 확장 시스템에 대한 완전한 참조 가이드입니다. 표준 프록시 도구 추가부터 고급 커스텀 최적화까지 체계적으로 다룹니다.
 
-## 📐 아키텍처 원칙
+## 📚 목차
 
-### 핵심 설계 철학
-- **Template-Centric**: 모든 MCP 도구는 GraphQL 템플릿을 기반으로 작동
-- **Unified Execution**: `executeTemplateWithGraphQL` 단일 엔진을 통한 실행
-- **JSON Schema Validation**: 입력 데이터 무결성 보장
-- **GraphQL Native**: GraphQL 쿼리/뮤테이션과 1:1 매핑
+1. [도구 분류 시스템](#도구-분류-시스템)
+2. [표준 프록시 도구 개발](#표준-프록시-도구-개발)
+3. [커스텀 최적화 도구 개발](#커스텀-최적화-도구-개발)
+4. [도구 계약 명세](#도구-계약-명세)
+5. [실전 예제](#실전-예제)
+6. [성능 최적화](#성능-최적화)
+7. [디버깅 가이드](#디버깅-가이드)
 
-### 시스템 구성
-```
-MCP Client → JSON-RPC 2.0 → MCP Proxy → executeTemplateWithGraphQL → GraphQL Schema
-```
+## 🏗️ 도구 분류 시스템
 
-## 🛠️ 기존 도구 분석
+### 표준 프록시 도구 (87% - 20/23)
+**특징**: GraphQL 쿼리/뮤테이션을 직접 실행하여 최고 성능 달성
 
-### 현재 구현된 12개 도구
-| 도구명 | 타입 | 목적 | Template 기반 |
-|--------|------|------|---------------|
-| **executeTemplateWithGraphQL** | Core | 템플릿 실행 엔진 | ✅ 핵심 |
-| healthCheck | Query | 시스템 상태 확인 | ✅ |
-| systemStats | Query | 성능 메트릭 조회 | ✅ |
-| createTable | Mutation | 테이블 생성 | ✅ |
-| searchTables | Query | 테이블 검색 | ✅ |
-| createNode | Mutation | 노드 생성 | ✅ |
-| searchNodes | Query | 노드 검색 | ✅ |
-| createRelation | Mutation | 관계 생성 | ✅ |
-| createTemplate | Mutation | 템플릿 생성 | ✅ |
-| searchTemplates | Query | 템플릿 검색 | ✅ |
-| exportSchema | Query | 스키마 내보내기 | ✅ |
-| importSchema | Mutation | 스키마 가져오기 | ✅ |
-
-## 🔧 도구 확장 방법론
-
-### 1. GraphQL First 접근법
-
-새로운 MCP 도구를 추가하기 전에 먼저 GraphQL 스키마를 확장해야 합니다.
-
-**예시: 새로운 Analytics 도구 추가**
-
-```graphql
-# 1. GraphQL 스키마 확장
-type AnalyticsData {
-  totalNodes: Int!
-  totalRelations: Int!
-  tableMetrics: [TableMetric!]!
-  performanceMetrics: PerformanceMetric!
-}
-
-extend type Query {
-  getAnalytics(
-    tableId: String
-    timeRange: String = "24h"
-    includePerformance: Boolean = true
-  ): AnalyticsData!
-}
+```typescript
+// 표준 프록시 실행 패턴
+const result = await graphqlExecutor.execute({
+  operationType: tool.graphqlOperation.operationType,
+  query: tool.graphqlOperation.query,
+  variables: transformedVariables
+})
 ```
 
-### 2. MCP 도구 정의
+**적용 기준**:
+- ✅ 단순한 CRUD 작업
+- ✅ 직접적인 데이터베이스 조회
+- ✅ 표준 GraphQL 스키마로 완전히 표현 가능한 작업
+- ✅ 파라미터 변환이 간단한 경우
 
-GraphQL 스키마가 준비되면 MCP 도구를 정의합니다.
+### 커스텀 최적화 도구 (13% - 3/23)
+**특징**: 복잡한 비즈니스 로직과 데이터 가공이 필요한 경우
 
-```json
-{
-  "name": "getAnalytics",
-  "description": "Get comprehensive analytics data for the graph database",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "tableId": {
-        "type": "string",
-        "description": "Optional table ID to filter analytics"
-      },
-      "timeRange": {
-        "type": "string",
-        "enum": ["1h", "24h", "7d", "30d"],
-        "description": "Time range for analytics",
-        "default": "24h"
-      },
-      "includePerformance": {
-        "type": "boolean",
-        "description": "Include performance metrics",
-        "default": true
-      }
-    },
-    "additionalProperties": false
-  },
-  "graphqlOperation": {
-    "type": "query",
-    "query": "query getAnalytics($tableId: String, $timeRange: String, $includePerformance: Boolean) { getAnalytics(tableId: $tableId, timeRange: $timeRange, includePerformance: $includePerformance) { totalNodes totalRelations tableMetrics { tableId nodeCount relationCount avgQueryTime } performanceMetrics { queriesPerSecond avgResponseTime memoryUsage } } }"
+```typescript
+// 커스텀 최적화 실행 패턴
+private async handleCustomTool(id: string | number | undefined, toolName: string, args: any) {
+  switch (toolName) {
+    case 'getTableDocs':
+      return await this.handleGetTableDocs(id, args)
+    // ... 기타 커스텀 도구들
   }
 }
 ```
 
-### 3. 템플릿 기반 실행
+**적용 기준**:
+- ✅ 복합 데이터 조합이 필요한 경우
+- ✅ 복잡한 비즈니스 로직 적용
+- ✅ 다중 데이터 소스 통합
+- ✅ 실시간 데이터 가공 및 변환
 
-모든 도구는 `executeTemplateWithGraphQL`을 통해 실행됩니다:
+## 🔧 표준 프록시 도구 개발
 
-```typescript
-// 내부 실행 흐름
-async function executeMcpTool(toolName: string, arguments: Record<string, any>) {
-  // 1. 도구 정의 조회
-  const tool = registry.getTool(toolName);
+### 1단계: GraphQL 스키마 확장
 
-  // 2. executeTemplateWithGraphQL을 통한 실행
-  const result = await graphqlExecutor.execute(
-    tool.graphqlOperation,
-    arguments
-  );
-
-  // 3. MCP 응답 형식으로 변환
-  return {
-    content: [{
-      type: 'text',
-      text: JSON.stringify(result.data || result)
-    }],
-    isError: !!result.errors
-  };
-}
-```
-
-## 📋 실제 확장 예시
-
-### Case Study: 고급 검색 도구 추가
-
-**1단계: 요구사항 정의**
-- 다중 테이블 검색
-- 관계 깊이 제한
-- 결과 랭킹
-
-**2단계: GraphQL 스키마 확장**
 ```graphql
-type AdvancedSearchResult {
-  nodes: [SearchResultNode!]!
-  relations: [SearchResultRelation!]!
+# src/presentation/graphql/schema/types/new-feature.graphql
+extend type Query {
+  newQueryOperation(
+    input: NewQueryInput!
+  ): NewQueryResult!
+}
+
+extend type Mutation {
+  newMutationOperation(
+    input: NewMutationInput!
+  ): NewMutationResult!
+}
+
+input NewQueryInput {
+  param1: String!
+  param2: Int
+  filters: [FilterInput!]
+}
+
+type NewQueryResult {
+  success: Boolean!
+  data: [NewDataType!]!
   totalCount: Int!
-  searchTime: Float!
-  ranking: [RankingInfo!]!
-}
-
-extend type Query {
-  advancedSearch(
-    query: String!
-    tableIds: [String!] = []
-    maxDepth: Int = 3
-    limit: Int = 50
-    rankBy: SearchRankingType = RELEVANCE
-  ): AdvancedSearchResult!
+  errors: [GraphQLError!]!
 }
 ```
 
-**3단계: MCP 도구 정의**
+### 2단계: GraphQL 리졸버 구현
+
+```typescript
+// src/presentation/graphql/queries/NewQueries.ts
+export class NewQueries extends BaseResolver {
+  async newQueryOperation(_: GraphQLParent, args: NewQueryArgs, _context?: GraphQLContext) {
+    this.validateArgs(
+      args as any,
+      [
+        BaseResolver.validationRules.required('input', 'Query input'),
+        BaseResolver.validationRules.required('input.param1', 'Parameter 1'),
+        BaseResolver.validationRules.nonEmpty('input.param1', 'Parameter 1'),
+      ],
+      'newQueryOperation'
+    )
+
+    return this.handleQuery(
+      async () => {
+        // 비즈니스 로직 구현
+        const result = await this.repository.performOperation(args.input)
+        return {
+          success: true,
+          data: result.data,
+          totalCount: result.total,
+          errors: []
+        }
+      },
+      'newQueryOperation',
+      { input: args.input }
+    )
+  }
+}
+```
+
+### 3단계: MCP 도구 계약 정의
+
 ```json
+// specs/005-graphql-mcp-graphql/contracts/graphql-tools.json
 {
-  "name": "advancedSearch",
-  "description": "Perform advanced multi-table search with relationship traversal",
+  "name": "newTool",
+  "description": "새로운 도구에 대한 명확한 설명",
   "inputSchema": {
     "type": "object",
     "properties": {
-      "query": {
+      "param1": {
         "type": "string",
-        "description": "Search query string",
-        "minLength": 1
+        "description": "첫 번째 매개변수"
       },
-      "tableIds": {
-        "type": "array",
-        "items": { "type": "string" },
-        "description": "Table IDs to search within",
-        "default": []
-      },
-      "maxDepth": {
+      "param2": {
         "type": "integer",
-        "description": "Maximum relationship traversal depth",
-        "minimum": 1,
-        "maximum": 10,
-        "default": 3
-      },
-      "limit": {
-        "type": "integer",
-        "description": "Maximum number of results",
-        "minimum": 1,
-        "maximum": 1000,
-        "default": 50
-      },
-      "rankBy": {
-        "type": "string",
-        "enum": ["RELEVANCE", "RECENCY", "POPULARITY", "CONNECTIVITY"],
-        "description": "Ranking strategy",
-        "default": "RELEVANCE"
+        "description": "두 번째 매개변수 (선택사항)"
       }
     },
-    "required": ["query"],
+    "required": ["param1"],
     "additionalProperties": false
   },
   "graphqlOperation": {
-    "type": "query",
-    "query": "query advancedSearch($query: String!, $tableIds: [String!], $maxDepth: Int, $limit: Int, $rankBy: SearchRankingType) { advancedSearch(query: $query, tableIds: $tableIds, maxDepth: $maxDepth, limit: $limit, rankBy: $rankBy) { nodes { id content tableId relevanceScore } relations { fromNodeId toNodeId relationshipType strength } totalCount searchTime ranking { nodeId score explanation } } }"
+    "operationType": "query",
+    "query": "query newTool($param1: String!, $param2: Int) { newQueryOperation(input: { param1: $param1, param2: $param2 }) { success data { id name } totalCount errors { message code } } }"
   }
 }
 ```
 
-**4단계: 테스트**
-```bash
-curl -X POST http://localhost:4000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "advancedSearch",
-      "arguments": {
-        "query": "machine learning",
-        "tableIds": ["research-papers", "projects"],
-        "maxDepth": 2,
-        "limit": 20,
-        "rankBy": "RELEVANCE"
-      }
-    },
-    "id": 1
-  }'
-```
+### 4단계: 스키마 빌더에 등록
 
-## 🎨 도구 설계 패턴
-
-### 1. 단순 조회 패턴 (Simple Query Pattern)
-```json
-{
-  "name": "getEntityCount",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "entityType": { "type": "string", "enum": ["nodes", "relations", "tables"] }
+```typescript
+// src/presentation/graphql/GraphQLSchemaBuilder.ts
+private buildResolvers(deps: GraphQLDependencies): IResolvers {
+  return {
+    Query: {
+      // ... 기존 쿼리들
+      newQueryOperation: (_: GraphQLParent, args: Record<string, unknown>) =>
+        deps.newQueries.newQueryOperation(_, args as any),
     },
-    "required": ["entityType"]
-  },
-  "graphqlOperation": {
-    "type": "query",
-    "query": "query getEntityCount($entityType: String!) { getEntityCount(entityType: $entityType) }"
+    // ... 기타 리졸버들
   }
 }
 ```
 
-### 2. 복합 뮤테이션 패턴 (Complex Mutation Pattern)
-```json
-{
-  "name": "bulkCreateNodes",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "tableId": { "type": "string" },
-      "nodes": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "content": { "type": "string" },
-            "metadata": { "type": "object" }
-          }
+## ⚡ 커스텀 최적화 도구 개발
+
+### 고급 예제: 복합 테이블 문서화 도구
+
+```typescript
+// src/mcp/http-server/McpHttpServer.ts
+private async handleGetTableDocs(id: string | number | undefined, args: any) {
+  try {
+    // 1단계: 기본 테이블 정보 수집
+    const tableResult = await this.graphqlExecutor.execute({
+      operationType: 'query',
+      query: `query GetTable($tableId: String, $identifier: String) {
+        tableDocumentation(
+          tableId: $tableId,
+          identifier: $identifier,
+          includeRelationships: false,
+          includeSampleNodes: false
+        ) {
+          table { id identifier name description }
         }
+      }`,
+      variables: {
+        tableId: args.tableId,
+        identifier: args.identifier
       }
-    },
-    "required": ["tableId", "nodes"]
-  },
-  "graphqlOperation": {
-    "type": "mutation",
-    "query": "mutation bulkCreateNodes($tableId: String!, $nodes: [NodeInput!]!) { bulkCreateNodes(tableId: $tableId, nodes: $nodes) { success count errors { index message } } }"
-  }
-}
-```
+    })
 
-### 3. 조건부 실행 패턴 (Conditional Execution Pattern)
-```json
-{
-  "name": "conditionalUpdate",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "conditions": { "type": "object" },
-      "updates": { "type": "object" },
-      "dryRun": { "type": "boolean", "default": false }
-    },
-    "required": ["conditions", "updates"]
-  },
-  "graphqlOperation": {
-    "type": "mutation",
-    "query": "mutation conditionalUpdate($conditions: JSON!, $updates: JSON!, $dryRun: Boolean) { conditionalUpdate(conditions: $conditions, updates: $updates, dryRun: $dryRun) { affected preview { before after } } }"
-  }
-}
-```
-
-## 🔐 보안 및 검증
-
-### 입력 검증 규칙
-1. **JSON Schema 검증**: 모든 입력은 정의된 스키마를 따라야 함
-2. **필수 필드 검증**: required 필드는 반드시 제공되어야 함
-3. **타입 안전성**: GraphQL 스키마와 MCP 입력 스키마의 타입 일치
-4. **범위 제한**: 숫자 필드는 최소/최대값 제한
-
-### 권한 관리
-```json
-{
-  "name": "adminOnlyOperation",
-  "description": "Administrative operation requiring elevated privileges",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "adminToken": { "type": "string", "description": "Admin authentication token" }
-    },
-    "required": ["adminToken"]
-  },
-  "graphqlOperation": {
-    "type": "mutation",
-    "query": "mutation adminOnlyOperation($adminToken: String!) { adminOperation(token: $adminToken) { success message } }"
-  }
-}
-```
-
-## 📊 성능 최적화
-
-### 1. 쿼리 최적화
-- **필드 선택**: 필요한 필드만 요청
-- **페이지네이션**: 대용량 데이터 처리
-- **캐싱**: 반복적인 조회 최적화
-
-### 2. 배치 처리
-```json
-{
-  "name": "batchOperation",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "operations": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "type": { "type": "string", "enum": ["create", "update", "delete"] },
-            "data": { "type": "object" }
-          }
-        },
-        "maxItems": 100
-      }
+    if (!tableResult.data?.tableDocumentation?.table) {
+      return this.createMcpResponse(id, {
+        success: false,
+        documentation: null,
+        errors: [{ message: 'Table not found', code: 'NOT_FOUND' }]
+      })
     }
+
+    const table = tableResult.data.tableDocumentation.table
+
+    // 2단계: 병렬 데이터 수집
+    const [attributesResult, sampleNodesResult, relationshipsResult] = await Promise.all([
+      // 속성 정보 수집
+      this.graphqlExecutor.execute({
+        operationType: 'query',
+        query: `query GetAttributes($tableId: String!) {
+          getTableAttributes(tableId: $tableId) {
+            success
+            attributes { id identifier name attributeTypeId }
+          }
+        }`,
+        variables: { tableId: table.id }
+      }),
+
+      // 샘플 노드 수집 (조건부)
+      args.includeSampleNodes !== false ? this.graphqlExecutor.execute({
+        operationType: 'query',
+        query: `query GetSampleNodes($tableId: String!) {
+          searchNodes(tableId: $tableId, searchTerm: "", limit: ${args.sampleLimit || 5}) {
+            success
+            nodes { id content createdAt }
+          }
+        }`,
+        variables: { tableId: table.id }
+      }) : Promise.resolve(null),
+
+      // 관계 정보 수집 (조건부)
+      args.includeRelationships !== false ? this.collectTableRelationships(table.id) : Promise.resolve(null)
+    ])
+
+    // 3단계: 데이터 가공 및 구조화
+    const documentation = {
+      table: table,
+      schema: {
+        totalAttributes: attributesResult.data?.getTableAttributes?.attributes?.length || 0,
+        attributes: attributesResult.data?.getTableAttributes?.attributes || []
+      },
+      sampleNodes: sampleNodesResult?.data?.searchNodes?.nodes || null,
+      relationships: relationshipsResult,
+      usageStats: args.includeUsageStats ? await this.generateUsageStats(table.id) : null,
+      usageExamples: this.generateUsageExamples(table)
+    }
+
+    // 4단계: 최종 응답 생성
+    return this.createMcpResponse(id, {
+      success: true,
+      documentation: documentation,
+      errors: []
+    })
+
+  } catch (error) {
+    this.logger.error('Custom tool failed: getTableDocs', { error, args })
+    return this.createMcpResponse(id, {
+      success: false,
+      documentation: null,
+      errors: [{
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: 'INTERNAL_ERROR'
+      }]
+    })
   }
 }
-```
 
-## 🧪 테스트 전략
+private async collectTableRelationships(tableId: string) {
+  // 복잡한 관계 수집 로직
+  // 이 부분이 단순 GraphQL로는 효율적으로 구현하기 어려운 부분
+  const incomingQuery = `/* 복잡한 관계 쿼리 */`
+  const outgoingQuery = `/* 복잡한 관계 쿼리 */`
 
-### 1. 단위 테스트
-```typescript
-describe('MCP Tool: advancedSearch', () => {
-  test('should validate input schema', () => {
-    const tool = registry.getTool('advancedSearch');
-    const result = validateInput(tool.inputSchema, {
-      query: 'test',
-      maxDepth: 2
-    });
-    expect(result.valid).toBe(true);
-  });
+  const [incoming, outgoing] = await Promise.all([
+    this.graphqlExecutor.execute({ operationType: 'query', query: incomingQuery, variables: { tableId } }),
+    this.graphqlExecutor.execute({ operationType: 'query', query: outgoingQuery, variables: { tableId } })
+  ])
 
-  test('should execute GraphQL operation', async () => {
-    const result = await executor.execute(tool.graphqlOperation, {
-      query: 'machine learning',
-      limit: 10
-    });
-    expect(result.data).toBeDefined();
-    expect(result.errors).toBeUndefined();
-  });
-});
-```
-
-### 2. 통합 테스트
-```bash
-# MCP 프로토콜 테스트
-curl -X POST http://localhost:4000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "advancedSearch",
-      "arguments": { "query": "test", "limit": 5 }
-    },
-    "id": 1
-  }' | jq '.result.content[0].text | fromjson'
-```
-
-## 📚 확장 예시 라이브러리
-
-### 분석 도구
-```json
-{
-  "name": "getNetworkAnalysis",
-  "description": "Analyze network structure and connectivity patterns",
-  "graphqlOperation": {
-    "type": "query",
-    "query": "query networkAnalysis($tableId: String!, $analysisType: NetworkAnalysisType!) { networkAnalysis(tableId: $tableId, analysisType: $analysisType) { centralityScores clusteringCoefficient pathLengths communityDetection } }"
+  return {
+    incomingRelations: incoming.data || [],
+    outgoingRelations: outgoing.data || [],
+    relatedTables: this.extractRelatedTables(incoming.data, outgoing.data)
   }
 }
-```
 
-### 시각화 도구
-```json
-{
-  "name": "generateVisualization",
-  "description": "Generate graph visualization data",
-  "graphqlOperation": {
-    "type": "query",
-    "query": "query generateVisualization($tableId: String!, $layout: LayoutType!, $format: VisualizationFormat!) { generateVisualization(tableId: $tableId, layout: $layout, format: $format) { nodes { id x y size color } edges { source target weight } metadata { width height scale } } }"
-  }
-}
-```
-
-### 데이터 마이그레이션 도구
-```json
-{
-  "name": "migrateData",
-  "description": "Migrate data between tables or external sources",
-  "graphqlOperation": {
-    "type": "mutation",
-    "query": "mutation migrateData($sourceId: String!, $targetId: String!, $mappingRules: JSON!, $validateOnly: Boolean) { migrateData(sourceId: $sourceId, targetId: $targetId, mappingRules: $mappingRules, validateOnly: $validateOnly) { success migratedCount errors { rowIndex message } validation { passed issues } } }"
-  }
-}
-```
-
-## 🚀 배포 및 등록
-
-### 1. 도구 등록 프로세스
-```typescript
-// 1. GraphQL 스키마 업데이트
-// 2. MCP 도구 정의 추가
-// 3. 계약 파일 업데이트
-await registry.loadFromContract();
-console.log(`Loaded ${registry.getToolCount()} MCP tools`);
-
-// 4. 검증
-const validation = registry.validateAllTools();
-if (!validation.valid) {
-  throw new Error('Tool validation failed');
-}
-```
-
-### 2. 버전 관리
-```json
-{
-  "title": "GraphQL-to-MCP Tool Definitions",
-  "version": "0.2.0",
-  "changelog": [
+private generateUsageExamples(table: any) {
+  return [
     {
-      "version": "0.2.0",
-      "changes": ["Added advancedSearch tool", "Enhanced analytics capabilities"],
-      "breaking": false
+      category: 'basic',
+      title: '새 노드 생성',
+      description: `${table.identifier} 테이블에 새로운 노드 추가`,
+      exampleMutation: `mutation {
+  createNode(input: {
+    tableId: "${table.id}"
+    content: "새로운 내용"
+  }) {
+    success
+    node { id content }
+    errors { message }
+  }
+}`
+    },
+    {
+      category: 'search',
+      title: '노드 검색',
+      description: `${table.identifier} 테이블에서 노드 검색`,
+      exampleQuery: `query {
+  searchNodes(
+    tableId: "${table.id}"
+    searchTerm: "검색어"
+    limit: 10
+  ) {
+    success
+    nodes { id content }
+  }
+}`
     }
   ]
 }
 ```
 
-## 🎯 모범 사례
+## 📋 도구 계약 명세
 
-### 1. 명명 규칙
-- **동사 시작**: `get`, `create`, `update`, `delete`, `search`, `analyze`
-- **명확한 목적**: `getUserPreferences` vs `getUser`
-- **일관성**: 유사한 동작은 유사한 패턴 사용
+### JSON Schema 구조
 
-### 2. 스키마 설계
-- **최소 필수 필드**: 꼭 필요한 필드만 required로 설정
-- **기본값 제공**: 합리적인 기본값으로 사용성 향상
-- **enum 활용**: 제한된 선택지는 enum으로 정의
+```typescript
+interface ToolDefinition {
+  name: string                    // 도구 이름 (camelCase)
+  description: string             // 명확한 기능 설명
+  inputSchema: JSONSchema         // 입력 파라미터 스키마
+  graphqlOperation: {
+    operationType: 'query' | 'mutation' | 'custom'
+    query: string                 // GraphQL 쿼리/뮤테이션
+  }
+}
+```
 
-### 3. 오류 처리
+### 스키마 검증 규칙
+
 ```json
 {
   "inputSchema": {
     "type": "object",
     "properties": {
-      "data": {
-        "type": "object",
-        "additionalProperties": false,
-        "errorMessage": {
-          "additionalProperties": "Unknown property in data object"
-        }
+      "requiredParam": {
+        "type": "string",
+        "description": "필수 파라미터에 대한 명확한 설명"
+      },
+      "optionalParam": {
+        "type": "integer",
+        "description": "선택적 파라미터 설명",
+        "default": 10,
+        "minimum": 1,
+        "maximum": 100
       }
-    }
+    },
+    "required": ["requiredParam"],
+    "additionalProperties": false
   }
 }
 ```
 
-## 🔧 디버깅 및 모니터링
+## 🎯 실전 예제
 
-### 로그 패턴
-```typescript
-logger.info('MCP Tool Execution', {
-  tool: 'advancedSearch',
-  arguments: { query: 'machine learning', limit: 20 },
-  executionTime: 150,
-  resultCount: 15
-});
+### 예제 1: 단순 검색 도구 (표준 프록시)
+
+```json
+{
+  "name": "searchTablesByTag",
+  "description": "태그로 테이블 검색",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tag": {
+        "type": "string",
+        "description": "검색할 태그"
+      },
+      "limit": {
+        "type": "integer",
+        "description": "최대 결과 수",
+        "default": 10,
+        "minimum": 1,
+        "maximum": 50
+      }
+    },
+    "required": ["tag"],
+    "additionalProperties": false
+  },
+  "graphqlOperation": {
+    "operationType": "query",
+    "query": "query searchTablesByTag($tag: String!, $limit: Int) { searchTables(searchTerm: $tag, limit: $limit) { success tables { id identifier name } } }"
+  }
+}
 ```
 
-### 성능 메트릭
-- 도구별 실행 시간
-- 사용 빈도 통계
-- 오류율 모니터링
-- GraphQL 쿼리 복잡도
+### 예제 2: 복합 분석 도구 (커스텀 최적화)
 
-## 📞 지원 및 문의
+```json
+{
+  "name": "analyzeTablePerformance",
+  "description": "테이블 성능 종합 분석 (노드 수, 관계 복잡도, 쿼리 패턴)",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tableId": {
+        "type": "string",
+        "description": "분석할 테이블 ID"
+      },
+      "timeRange": {
+        "type": "string",
+        "enum": ["1d", "7d", "30d"],
+        "description": "분석 기간",
+        "default": "7d"
+      },
+      "includeOptimizations": {
+        "type": "boolean",
+        "description": "최적화 제안 포함 여부",
+        "default": true
+      }
+    },
+    "required": ["tableId"],
+    "additionalProperties": false
+  },
+  "graphqlOperation": {
+    "operationType": "custom",
+    "query": "custom_analysis"
+  }
+}
+```
 
-### 개발팀 연락처
-- **이슈 리포팅**: GitHub Issues
-- **기능 요청**: Feature Request Template
-- **문서 개선**: Documentation PR
+## ⚡ 성능 최적화
 
-### 관련 문서
-- [GraphQL Schema Reference](../api/graphql-schema.md)
-- [Template System Guide](../templates/template-system-guide.md)
-- [MCP Protocol Specification](./mcp-protocol-spec.md)
+### 캐싱 전략
+
+```typescript
+class McpHttpServer {
+  private toolCache = new Map<string, ToolDefinition>()
+  private schemaCache = new Map<string, DocumentNode>()
+  private transformCache = new Map<string, Function>()
+
+  private async getCachedTool(name: string): Promise<ToolDefinition> {
+    if (!this.toolCache.has(name)) {
+      const tool = await this.loadToolDefinition(name)
+      this.toolCache.set(name, tool)
+    }
+    return this.toolCache.get(name)!
+  }
+
+  private getCachedTransform(toolName: string): Function | undefined {
+    return this.transformCache.get(toolName)
+  }
+}
+```
+
+### 병렬 실행 패턴
+
+```typescript
+// 병렬 데이터 수집 예제
+const [basicData, relatedData, statsData] = await Promise.all([
+  this.getBasicTableInfo(tableId),
+  this.getRelatedTableInfo(tableId),
+  this.getTableStats(tableId)
+])
+
+// 결과 조합
+const result = {
+  ...basicData,
+  relationships: relatedData,
+  statistics: statsData
+}
+```
+
+### 파라미터 변환 최적화
+
+```typescript
+transformParametersForGraphQL(toolName: string, params: any): any {
+  // 캐시된 변환 함수 사용
+  const cachedTransform = this.getCachedTransform(toolName)
+  if (cachedTransform) {
+    return cachedTransform(params)
+  }
+
+  // 동적 변환 로직
+  const transformed = this.dynamicTransform(toolName, params)
+
+  // 자주 사용되는 패턴은 캐시에 저장
+  if (this.isFrequentPattern(toolName)) {
+    this.transformCache.set(toolName, (p: any) => this.dynamicTransform(toolName, p))
+  }
+
+  return transformed
+}
+```
+
+## 🐛 디버깅 가이드
+
+### 일반적인 문제들
+
+#### 1. JSON Schema 검증 실패
+```bash
+# 증상: "Validation failed" 오류
+# 원인: 입력 파라미터가 스키마와 불일치
+
+# 해결방법:
+curl -X POST http://localhost:4000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": "test",
+    "method": "tools/call",
+    "params": {
+      "name": "toolName",
+      "arguments": {
+        // 정확한 스키마 형식으로 전송
+        "requiredParam": "value",
+        "optionalParam": 10
+      }
+    }
+  }'
+```
+
+#### 2. GraphQL 쿼리 오류
+```typescript
+// 문제: 쿼리 구문 오류 또는 필드 불일치
+// 해결: GraphQL Playground에서 쿼리 테스트
+
+// GraphQL Playground: http://localhost:4000/graphql
+query TestQuery($param: String!) {
+  targetOperation(input: { param: $param }) {
+    success
+    errors { message }
+  }
+}
+```
+
+#### 3. 커스텀 도구 오류
+```typescript
+// 디버깅 로그 추가
+private async handleCustomTool(id: string | number | undefined, toolName: string, args: any) {
+  this.logger.info('Custom tool execution', { toolName, args })
+
+  try {
+    const result = await this.executeCustomLogic(toolName, args)
+    this.logger.info('Custom tool success', { toolName, resultSize: JSON.stringify(result).length })
+    return result
+  } catch (error) {
+    this.logger.error('Custom tool error', { toolName, error, stack: error.stack })
+    throw error
+  }
+}
+```
+
+### 성능 모니터링
+
+```typescript
+// 실행 시간 측정
+const startTime = Date.now()
+const result = await this.executeOperation()
+const executionTime = Date.now() - startTime
+
+this.logger.info('Tool performance', {
+  toolName,
+  executionTime,
+  inputSize: JSON.stringify(args).length,
+  outputSize: JSON.stringify(result).length,
+  success: !result.errors?.length
+})
+```
+
+## 📊 도구 분류별 개발 가이드라인
+
+### 표준 프록시 도구 개발 체크리스트
+- [ ] GraphQL 스키마에 정확히 매핑되는가?
+- [ ] 입력 파라미터가 GraphQL 변수와 1:1 대응되는가?
+- [ ] JSON Schema 검증이 GraphQL 타입과 일치하는가?
+- [ ] 에러 처리가 표준 패턴을 따르는가?
+- [ ] 성능 최적화 여지가 없는가?
+
+### 커스텀 최적화 도구 개발 체크리스트
+- [ ] 표준 프록시로 구현 불가능한 복잡성이 있는가?
+- [ ] 다중 데이터 소스 통합이 필요한가?
+- [ ] 실시간 데이터 가공이 필요한가?
+- [ ] 비즈니스 로직이 GraphQL 스키마로 표현하기 어려운가?
+- [ ] 성능상 이점이 명확한가?
+
+## 🚀 향후 확장 계획
+
+### 플러그인 시스템
+```typescript
+interface McpPlugin {
+  name: string
+  version: string
+  tools: ToolDefinition[]
+  middleware?: MiddlewareFunction[]
+  validators?: ValidatorFunction[]
+}
+
+// 플러그인 등록
+mcpServer.registerPlugin(new AnalyticsPlugin())
+mcpServer.registerPlugin(new VisualizationPlugin())
+```
+
+### 자동화된 도구 생성
+```bash
+# CLI 도구를 통한 도구 스캐폴딩
+bun run generate:mcp-tool --name newTool --type proxy --schema schema.json
+bun run generate:mcp-tool --name complexTool --type custom --template analytics
+```
 
 ---
 
-**© 2025 Bun Graph DB Development Team. All rights reserved.**
+**이 문서는 Bun Graph Database MCP 시스템의 발전과 함께 지속적으로 업데이트됩니다.**
+
+**기여 방법**: 새로운 도구 패턴이나 최적화 기법을 발견했다면 이 문서를 업데이트해 주세요.
+
+**연락처**: 기술적 질문이나 제안사항이 있으시면 프로젝트 이슈 트래커를 이용해 주세요.

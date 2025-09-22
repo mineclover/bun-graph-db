@@ -107,6 +107,99 @@ export class TableResolver extends BaseResolver {
     }
   }
 
+  async searchTables(args: {
+    filter?: TablesFilter
+  }): Promise<{
+    nodes: TableDto[]
+    totalCount: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+  }> {
+    // searchTables is a simplified interface for MCP compatibility
+    // It delegates to the full tables method with default pagination
+    return this.tables({
+      filter: args.filter,
+      pagination: { limit: 50, offset: 0 }, // Default pagination for search
+      sort: [{ field: 'createdAt', direction: 'DESC' }],
+    })
+  }
+
+  async tableDocumentation(args: {
+    tableId?: string
+    identifier?: string
+    includeRelationships?: boolean
+    includeSampleNodes?: boolean
+    includeUsageStats?: boolean
+    sampleLimit?: number
+  }): Promise<any> {
+    // Validate that either tableId or identifier is provided
+    if (!args.tableId && !args.identifier) {
+      throw new ValidationException('Either tableId or identifier must be provided')
+    }
+
+    return this.handleQuery(
+      async () => {
+        // Find the table first
+        let table: any
+        if (args.tableId) {
+          table = await this.tableRepository.findById(args.tableId as TableId)
+        } else if (args.identifier) {
+          table = await this.tableRepository.findByIdentifier(args.identifier)
+        }
+
+        if (!table) {
+          throw new NotFoundException('Table not found')
+        }
+
+        // For now, return a basic structure - this will be expanded
+        return {
+          table: tableFromEntity(table),
+          schema: {
+            totalAttributes: 0,
+            attributes: [],
+          },
+          sampleNodes: args.includeSampleNodes !== false ? [] : null,
+          relationships:
+            args.includeRelationships !== false
+              ? {
+                  incomingRelations: [],
+                  outgoingRelations: [],
+                  relatedTables: [],
+                }
+              : null,
+          usageStats:
+            args.includeUsageStats === true
+              ? {
+                  totalNodes: 0,
+                  recentlyCreatedNodes: 0,
+                  frequentlyAccessedAttributes: [],
+                  averageAttributeUsage: 0.0,
+                }
+              : null,
+          usageExamples: [
+            {
+              category: 'basic',
+              title: 'Create a new node',
+              description: `Add a new node to the ${table.identifier} table`,
+              exampleMutation: `mutation {
+  createNode(input: {
+    tableId: "${table.id}"
+    content: "Your content here"
+  }) {
+    success
+    node { id content }
+    errors { message }
+  }
+}`,
+            },
+          ],
+        }
+      },
+      'tableDocumentation',
+      { tableId: args.tableId, identifier: args.identifier }
+    )
+  }
+
   // Mutation resolvers
   async createTable(
     args: { input: CreateTableInput },

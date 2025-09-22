@@ -39,9 +39,11 @@ describe('Table Package System Integration', () => {
         }
       `
 
+      const testTableIdentifier = `test-table-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+
       const createTableVariables = {
         input: {
-          identifier: 'test-table',
+          identifier: testTableIdentifier,
           description: 'Test table for export',
         },
       }
@@ -76,7 +78,7 @@ describe('Table Package System Integration', () => {
 
       const variables = {
         input: {
-          tableIdentifier: 'test-table',
+          tableIdentifier: testTableIdentifier,
           options: {
             includeData: true,
             includeTemplates: true,

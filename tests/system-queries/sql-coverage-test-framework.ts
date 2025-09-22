@@ -8,8 +8,10 @@
 import Database from 'bun:sqlite'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { loadFilesSync } from '@graphql-tools/load-files'
+import { mergeTypeDefs } from '@graphql-tools/merge'
 import { glob } from 'glob'
-import { buildSchema, execute, type GraphQLSchema, parse } from 'graphql'
+import { buildASTSchema, execute, type GraphQLSchema, parse } from 'graphql'
 
 export interface SQLCoverageConfig {
   testDatabase: string
@@ -87,9 +89,14 @@ export class SQLCoverageTestFramework {
   }
 
   async initialize(): Promise<void> {
-    // Load GraphQL schema
-    const schemaContent = readFileSync(this.config.schemaPath, 'utf-8')
-    this.schema = buildSchema(schemaContent)
+    // Load GraphQL schema from distributed files
+    const typesArray = loadFilesSync(this.config.schemaPath, {
+      extensions: ['graphql'],
+      recursive: true,
+    })
+    const typeDefs = mergeTypeDefs(typesArray)
+    // Build schema directly from AST using buildASTSchema
+    this.schema = buildASTSchema(typeDefs)
 
     // Initialize test database
     this.database = new Database(this.config.testDatabase)
@@ -938,7 +945,8 @@ export function createSQLCoverageFramework(
 ): SQLCoverageTestFramework {
   const defaultConfig: SQLCoverageConfig = {
     testDatabase: ':memory:',
-    schemaPath: join(process.cwd(), 'generated/schema.graphql'),
+    // Use a path that doesn't exist to trigger schema generation from distributed files
+    schemaPath: join(process.cwd(), 'src/presentation/graphql/schema'),
     repositoryPaths: ['src/infrastructure/database/sqlite/**/*.ts'],
     excludePatterns: ['.test.', '.spec.', 'node_modules'],
     coverageThreshold: 85,

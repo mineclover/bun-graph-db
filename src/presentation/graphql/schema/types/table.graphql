@@ -82,3 +82,63 @@ type TableDependencyInfo {
   attributeCount: Int!
   relationCount: Int!
 }
+
+# Comprehensive table documentation
+type TableDocumentation {
+  table: Table!
+
+  # Schema information
+  schema: TableSchema!
+
+  # Sample data
+  sampleNodes: [TableNode!]
+
+  # Relationship information
+  relationships: TableRelationshipInfo
+
+  # Usage statistics
+  usageStats: TableUsageStats
+
+  # Generated usage examples
+  usageExamples: [TableUsageExample!]!
+}
+
+type TableSchema {
+  totalAttributes: Int!
+  attributes: [AttributeDocumentation!]!
+}
+
+type AttributeDocumentation {
+  attribute: Attribute!
+  attributeType: AttributeType!
+  sampleValues: [String!]
+  valueCount: Int!
+  nullCount: Int!
+}
+
+type TableRelationshipInfo {
+  incomingRelations: [RelationshipSummary!]!
+  outgoingRelations: [RelationshipSummary!]!
+  relatedTables: [Table!]!
+}
+
+type RelationshipSummary {
+  relationshipType: String!
+  count: Int!
+  relatedTable: Table!
+}
+
+type TableUsageStats {
+  totalNodes: Int!
+  recentlyCreatedNodes: Int!
+  frequentlyAccessedAttributes: [String!]!
+  averageAttributeUsage: Float!
+}
+
+type TableUsageExample {
+  category: String!
+  title: String!
+  description: String!
+  exampleQuery: String
+  exampleMutation: String
+}

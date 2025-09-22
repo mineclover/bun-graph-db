@@ -224,7 +224,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
         expect(false).toBe(true) // Force failure
       } catch (error) {
         // Should have GraphQL validation error about missing tableId
-        expect(error.message).toContain('GraphQL request failed')
+        expect(error.message).toContain('GraphQL request failed: 400')
         // The validation error should be in the console output (already logged)
         expect(true).toBe(true) // Test passes if error is thrown
       }

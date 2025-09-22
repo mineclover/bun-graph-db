@@ -8,9 +8,11 @@
 import { beforeAll, describe, expect, it } from 'bun:test'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { loadFilesSync } from '@graphql-tools/load-files'
+import { mergeTypeDefs } from '@graphql-tools/merge'
 import { glob } from 'glob'
 import type { IntrospectionField, IntrospectionObjectType, IntrospectionQuery } from 'graphql'
-import { buildSchema, introspectionFromSchema } from 'graphql'
+import { buildASTSchema, introspectionFromSchema } from 'graphql'
 
 interface SQLOperation {
   file: string
@@ -39,17 +41,20 @@ interface CoverageAnalysis {
 }
 
 describe('API Coverage Analysis', () => {
-  let schemaContent: string
   let introspection: IntrospectionQuery
   let sqlOperations: SQLOperation[]
   let apiOperations: APIOperation[]
 
   beforeAll(async () => {
-    // Load GraphQL schema
-    const schemaPath = join(process.cwd(), 'generated/schema.graphql')
-    schemaContent = readFileSync(schemaPath, 'utf-8')
+    // Load GraphQL schema from distributed files
+    const typesArray = loadFilesSync(join(process.cwd(), 'src/presentation/graphql/schema'), {
+      extensions: ['graphql'],
+      recursive: true,
+    })
+    const typeDefs = mergeTypeDefs(typesArray)
 
-    const schema = buildSchema(schemaContent)
+    // Build schema directly from AST using buildASTSchema
+    const schema = buildASTSchema(typeDefs)
     introspection = introspectionFromSchema(schema)
 
     // Extract SQL operations

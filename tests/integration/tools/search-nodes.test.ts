@@ -25,7 +25,8 @@ describe('SearchNodes Tool Integration', () => {
       params: {
         name: 'searchNodes',
         arguments: {
-          searchTerm: 'test',
+          tableId: '1',
+          search: 'test',
           limit: 5,
         },
       },
@@ -64,15 +65,19 @@ describe('SearchNodes Tool Integration', () => {
     expect(content.type).toBe('text')
 
     const graphqlResult = JSON.parse(content.text)
-    expect(graphqlResult.searchNodes).toBeDefined()
-    expect(Array.isArray(graphqlResult.searchNodes)).toBe(true)
+    expect(graphqlResult.data).toBeDefined()
+    expect(graphqlResult.data.searchNodes).toBeDefined()
+    expect(graphqlResult.data.searchNodes.nodes).toBeDefined()
+    expect(Array.isArray(graphqlResult.data.searchNodes.nodes)).toBe(true)
+    expect(typeof graphqlResult.data.searchNodes.totalCount).toBe('number')
 
     // Each node should have expected fields
-    if (graphqlResult.searchNodes.length > 0) {
-      const node = graphqlResult.searchNodes[0]
+    if (graphqlResult.data.searchNodes.nodes.length > 0) {
+      const node = graphqlResult.data.searchNodes.nodes[0]
       expect(typeof node.id).toBe('string')
       expect(typeof node.content).toBe('string')
-      expect(typeof node.tableId).toBe('string')
+      expect(node.table).toBeDefined()
+      expect(typeof node.table.id).toBe('string')
       expect(typeof node.createdAt).toBe('string')
     }
 
@@ -89,8 +94,8 @@ describe('SearchNodes Tool Integration', () => {
       params: {
         name: 'searchNodes',
         arguments: {
-          tableId: 'some-table-id',
-          searchTerm: 'content',
+          tableId: '1',
+          search: 'content',
           limit: 10,
         },
       },
@@ -123,8 +128,10 @@ describe('SearchNodes Tool Integration', () => {
 
     const content = result.result.content[0]
     const graphqlResult = JSON.parse(content.text)
-    expect(graphqlResult.searchNodes).toBeDefined()
-    expect(Array.isArray(graphqlResult.searchNodes)).toBe(true)
+    expect(graphqlResult.data).toBeDefined()
+    expect(graphqlResult.data.searchNodes).toBeDefined()
+    expect(graphqlResult.data.searchNodes.nodes).toBeDefined()
+    expect(Array.isArray(graphqlResult.data.searchNodes.nodes)).toBe(true)
 
     console.log(`✅ SearchNodes with tableId executed in ${responseTime}ms`)
   })
@@ -137,7 +144,8 @@ describe('SearchNodes Tool Integration', () => {
       params: {
         name: 'searchNodes',
         arguments: {
-          searchTerm: '',
+          tableId: '1',
+          search: '',
           limit: 3,
         },
       },
@@ -162,8 +170,10 @@ describe('SearchNodes Tool Integration', () => {
 
     const content = result.result.content[0]
     const graphqlResult = JSON.parse(content.text)
-    expect(graphqlResult.searchNodes).toBeDefined()
-    expect(Array.isArray(graphqlResult.searchNodes)).toBe(true)
+    expect(graphqlResult.data).toBeDefined()
+    expect(graphqlResult.data.searchNodes).toBeDefined()
+    expect(graphqlResult.data.searchNodes.nodes).toBeDefined()
+    expect(Array.isArray(graphqlResult.data.searchNodes.nodes)).toBe(true)
 
     console.log('✅ SearchNodes with empty term handled correctly')
   })
@@ -176,7 +186,8 @@ describe('SearchNodes Tool Integration', () => {
       params: {
         name: 'searchNodes',
         arguments: {
-          searchTerm: 'test',
+          tableId: '1',
+          search: 'test',
           limit: 999, // Exceeds maximum of 100
         },
       },
@@ -196,12 +207,19 @@ describe('SearchNodes Tool Integration', () => {
 
     // Should either cap the limit or return validation error
     expect(result.jsonrpc).toBe('2.0')
-    expect(result.result).toBeDefined()
 
-    const content = result.result.content[0]
-    const _graphqlResult = JSON.parse(content.text)
+    // Check if it's an error response (validation failed)
+    if (result.error) {
+      expect(result.error.code).toBe(-32602)
+      expect(result.error.message).toContain('limit must be <= 100')
+    } else {
+      // Or if it capped the limit and returned successful result
+      expect(result.result).toBeDefined()
+      const content = result.result.content[0]
+      const graphqlResult = JSON.parse(content.text)
+      expect(graphqlResult.data).toBeDefined()
+    }
 
-    // May have nodes or errors depending on implementation
     // The important thing is that the MCP protocol is working correctly
     console.log('✅ SearchNodes limit validation verified')
   })
@@ -214,7 +232,8 @@ describe('SearchNodes Tool Integration', () => {
       params: {
         name: 'searchNodes',
         arguments: {
-          // Test with minimal arguments (searchTerm and limit have defaults)
+          tableId: '1',
+          // Test with minimal arguments (search and limit have defaults)
         },
       },
       id: 'test-schema-minimal',
@@ -244,8 +263,10 @@ describe('SearchNodes Tool Integration', () => {
       const errorResult = JSON.parse(content.text)
       console.log('Schema validation errors:', errorResult.errors)
     } else {
-      expect(graphqlResult.searchNodes).toBeDefined()
-      expect(Array.isArray(graphqlResult.searchNodes)).toBe(true)
+      expect(graphqlResult.data).toBeDefined()
+      expect(graphqlResult.data.searchNodes).toBeDefined()
+      expect(graphqlResult.data.searchNodes.nodes).toBeDefined()
+      expect(Array.isArray(graphqlResult.data.searchNodes.nodes)).toBe(true)
     }
 
     console.log('✅ SearchNodes tool schema compliance verified')
@@ -264,7 +285,8 @@ describe('SearchNodes Tool Integration', () => {
         params: {
           name: 'searchNodes',
           arguments: {
-            searchTerm: `perf-test-${i}`,
+            tableId: '1',
+            search: `perf-test-${i}`,
             limit: 5,
           },
         },

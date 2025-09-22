@@ -2,24 +2,168 @@
  * Common GraphQL types and interfaces
  */
 
-// Import generated GraphQL types
-export type {
-  CreateDocInput,
-  CreateNodeInput,
-  CreateRelationInput,
-  CreateTableInput,
-  DocsFilter,
-  MutationDeleteRelationTypeArgs,
-  MutationUpdateRelationTypeArgs,
-  SearchNodesFilter,
-  SearchRelatedNodesFilter,
-  TablesFilter,
-  TablesPagination,
-  UpdateDocInput,
-  UpdateNodeInput,
-  UpdateQueryTemplateInput,
-  UpdateTableInput,
-} from '../../../generated/graphql.types.js'
+// GraphQL Input Types
+export interface CreateDocInput {
+  title: string
+  content?: string
+  tags?: string[]
+  tableId?: string
+  category?: string
+  version?: number
+  [key: string]: unknown
+}
+
+export interface CreateNodeInput {
+  tableId: string
+  content: string
+  metadata?: Record<string, any>
+}
+
+export interface CreateRelationInput {
+  fromNodeId: string
+  toNodeId: string
+  relationshipType: string
+  properties?: Record<string, any>
+}
+
+export interface CreateTableInput {
+  identifier: string
+  name?: string
+  description?: string
+  [key: string]: unknown
+}
+
+export interface UpdateDocInput {
+  title?: string
+  content?: string
+  tags?: string[]
+}
+
+export interface UpdateNodeInput {
+  content?: string
+  metadata?: Record<string, any>
+}
+
+export interface UpdateQueryTemplateInput {
+  name?: string
+  query?: string
+  tags?: string[]
+}
+
+export interface UpdateTableInput {
+  name?: string
+  description?: string
+}
+
+// Filter and Pagination Types
+export interface DocsFilter {
+  tags?: string[]
+  search?: string
+  category?: string
+  isActive?: boolean
+  version?: number
+  createdAfter?: string
+  createdBefore?: string
+  tableId?: string
+}
+
+export interface SearchNodesFilter {
+  tableId?: string
+  searchTerm?: string
+  limit?: number
+}
+
+export interface SearchRelatedNodesFilter {
+  nodeId: string
+  relationshipType?: string
+  direction?: 'incoming' | 'outgoing' | 'both'
+  limit?: number
+}
+
+export interface TablesFilter {
+  search?: string
+  hasNodes?: boolean
+  createdAfter?: string
+  createdBefore?: string
+}
+
+export interface TablesPagination {
+  limit?: number
+  offset?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
+// Mutation Args Types
+export interface MutationDeleteRelationTypeArgs {
+  id: string
+  [key: string]: unknown
+}
+
+export interface MutationUpdateRelationTypeArgs {
+  id: string
+  input: {
+    oldType?: string
+    newType?: string
+    description?: string
+    name?: string
+  }
+  [key: string]: unknown
+}
+
+// Attribute Mutation Args Types
+export interface MutationCreateAttributeArgs {
+  input: {
+    tableId: string
+    identifier: string
+    name: string
+    attributeTypeId: string
+    description?: string
+  }
+  [key: string]: unknown
+}
+
+export interface MutationCreateAttributeTypeArgs {
+  input: {
+    identifier: string
+    name: string
+    dataType: string
+    description?: string
+    constraints?: any
+    defaultValue?: string
+  }
+  [key: string]: unknown
+}
+
+export interface MutationDeleteAttributeArgs {
+  id: string
+  [key: string]: unknown
+}
+
+export interface MutationDeleteAttributeTypeArgs {
+  id: string
+  [key: string]: unknown
+}
+
+export interface MutationUpdateAttributeArgs {
+  id: string
+  input: {
+    name?: string
+    description?: string
+  }
+  [key: string]: unknown
+}
+
+export interface MutationUpdateAttributeTypeArgs {
+  id: string
+  input: {
+    name?: string
+    description?: string
+    constraints?: any
+    defaultValue?: string
+  }
+  [key: string]: unknown
+}
 
 export interface GraphQLContext {
   requestId: string

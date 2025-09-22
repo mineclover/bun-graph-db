@@ -119,9 +119,9 @@
         "properties": {
           "tableId": {
             "type": "string",
-            "description": "Table ID to search within"
+            "description": "Table ID to search within (required)"
           },
-          "searchTerm": {
+          "search": {
             "type": "string",
             "description": "Search term for node content",
             "default": ""
@@ -134,11 +134,12 @@
             "maximum": 100
           }
         },
+        "required": ["tableId"],
         "additionalProperties": false
       },
       "graphqlOperation": {
         "type": "query",
-        "query": "query searchNodes($filter: SearchNodesFilter!) { searchNodes(filter: $filter) { nodes { id content table { id identifier } createdAt } } }"
+        "query": "query searchNodes($filter: SearchNodesFilter!, $pagination: NodesPagination) { searchNodes(filter: $filter, pagination: $pagination) { nodes { id content table { id identifier } createdAt } totalCount } }"
       }
     },
     {
@@ -260,19 +261,6 @@
       }
     },
     {
-      "name": "exportAllTables",
-      "description": "Export all tables with metadata and structure",
-      "inputSchema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": false
-      },
-      "graphqlOperation": {
-        "type": "query",
-        "query": "query exportAllTables { exportAllTables { metadata { exportedAt version } tables { identifier description metadata } } }"
-      }
-    },
-    {
       "name": "exportTemplate",
       "description": "Export a specific template with all its data",
       "inputSchema": {
@@ -318,6 +306,327 @@
       "graphqlOperation": {
         "type": "mutation",
         "query": "mutation importTemplate($jsonData: String!, $overwriteExisting: Boolean, $generateNewIdentifier: Boolean) { importTemplate(jsonData: $jsonData, overwriteExisting: $overwriteExisting, generateNewIdentifier: $generateNewIdentifier) { success template { identifier name } errors { message } } }"
+      }
+    },
+    {
+      "name": "setNodeAttribute",
+      "description": "Set, update, or delete one or multiple attributes for a node (supports both single attribute and bulk operations)",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "input": {
+            "type": "object",
+            "properties": {
+              "nodeId": {
+                "type": "string",
+                "description": "ID of the node to modify attributes for"
+              },
+              "attributeId": {
+                "type": "string",
+                "description": "ID of the attribute type"
+              },
+              "value": {
+                "type": "string",
+                "description": "Value to set for the attribute"
+              }
+            },
+            "required": ["nodeId", "attributeId", "value"],
+            "additionalProperties": false
+          }
+        },
+        "required": ["input"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation setNodeAttribute($input: SetNodeAttributeInput!) { setNodeAttribute(input: $input) { success nodeAttribute { id value attribute { id identifier name } } errors { message code field } } }"
+      }
+    },
+    {
+      "name": "createAttribute",
+      "description": "Create a new attribute definition for a table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "ID of the table to create attribute for"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "Unique identifier for the attribute"
+          },
+          "name": {
+            "type": "string",
+            "description": "Human-readable name for the attribute"
+          },
+          "attributeTypeId": {
+            "type": "string",
+            "description": "ID of the attribute type (1=text, 2=number, etc.)",
+            "default": "1"
+          }
+        },
+        "required": ["tableId", "identifier", "name"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation createAttribute($input: CreateAttributeInput!) { createAttribute(input: $input) { success attribute { id identifier name } errors { message } } }"
+      }
+    },
+    {
+      "name": "updateAttribute",
+      "description": "Update an existing attribute definition",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "string",
+            "description": "ID of the attribute to update"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "New identifier for the attribute"
+          },
+          "name": {
+            "type": "string",
+            "description": "New name for the attribute"
+          }
+        },
+        "required": ["attributeId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation updateAttribute($input: UpdateAttributeInput!) { updateAttribute(input: $input) { success attribute { id identifier name } errors { message } } }"
+      }
+    },
+    {
+      "name": "deleteAttribute",
+      "description": "Delete an attribute definition from a table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "string",
+            "description": "ID of the attribute to delete"
+          }
+        },
+        "required": ["attributeId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation deleteAttribute($input: DeleteAttributeInput!) { deleteAttribute(input: $input) { success errors { message } } }"
+      }
+    },
+    {
+      "name": "getTableAttributes",
+      "description": "Get all attribute definitions for a table",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "ID of the table to get attributes for"
+          }
+        },
+        "required": ["tableId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query getTableAttributes($tableId: ID!) { table(id: $tableId) { id identifier attributes { id identifier name attributeType { id name } } } }"
+      }
+    },
+    {
+      "name": "removeNodeAttribute",
+      "description": "Remove/delete a specific attribute value from a node",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "ID of the node"
+          },
+          "attributeId": {
+            "type": "string",
+            "description": "ID of the attribute to remove"
+          }
+        },
+        "required": ["nodeId", "attributeId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation removeNodeAttribute($nodeId: ID!, $attributeId: ID!) { removeNodeAttribute(nodeId: $nodeId, attributeId: $attributeId) { success nodeAttribute { id value attribute { id identifier name } } errors { message code field } } }"
+      }
+    },
+    {
+      "name": "updateNodeAttributeValue",
+      "description": "Update/modify an existing attribute value on a node",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "ID of the node"
+          },
+          "attributeId": {
+            "type": "string",
+            "description": "ID of the attribute to update"
+          },
+          "value": {
+            "type": "string",
+            "description": "New value for the attribute"
+          }
+        },
+        "required": ["nodeId", "attributeId", "value"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "mutation",
+        "query": "mutation updateNodeAttributeValue($nodeId: ID!, $attributeId: ID!, $value: String!) { updateNodeAttributeValue(nodeId: $nodeId, attributeId: $attributeId, value: $value) { success nodeAttribute { id value attribute { id identifier name } } errors { message code field } } }"
+      }
+    },
+    {
+      "name": "getNodeAttributes",
+      "description": "Get all attribute values for a specific node",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "string",
+            "description": "ID of the node to get attributes for"
+          }
+        },
+        "required": ["nodeId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query getNodeAttributes($nodeId: ID!) { node(id: $nodeId) { id content attributes { id value attribute { id identifier name } } } }"
+      }
+    },
+    {
+      "name": "getTables",
+      "description": "Get comprehensive list of all tables with summary information including node counts and attributes",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "description": "Maximum number of tables to return",
+            "default": 50,
+            "minimum": 1,
+            "maximum": 200
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Number of tables to skip for pagination",
+            "default": 0,
+            "minimum": 0
+          },
+          "search": {
+            "type": "string",
+            "description": "Search term to filter tables by identifier or description",
+            "default": ""
+          },
+          "hasNodes": {
+            "type": "boolean",
+            "description": "Filter tables that have nodes (true) or are empty (false)"
+          },
+          "sortBy": {
+            "type": "string",
+            "enum": ["identifier", "createdAt", "nodeCount", "attributeCount"],
+            "description": "Field to sort tables by",
+            "default": "createdAt"
+          },
+          "sortOrder": {
+            "type": "string",
+            "enum": ["asc", "desc"],
+            "description": "Sort order direction",
+            "default": "desc"
+          }
+        },
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query getTables($filter: TablesFilter, $pagination: TablesPagination, $sort: [SortInput!]) { tables(filter: $filter, pagination: $pagination, sort: $sort) { nodes { id identifier description createdAt updatedAt tableNodeCount attributeCount attributes { id identifier name } } totalCount hasNextPage hasPreviousPage } }"
+      }
+    },
+    {
+      "name": "getTableDocs",
+      "description": "Get detailed documentation and schema information for a specific table including full attribute definitions, sample data, and usage examples",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "ID of the table to get documentation for (optional if identifier is provided)"
+          },
+          "identifier": {
+            "type": "string",
+            "description": "Identifier of the table to get documentation for (optional if tableId is provided)"
+          },
+          "includeSampleNodes": {
+            "type": "boolean",
+            "description": "Whether to include sample nodes data",
+            "default": true
+          },
+          "sampleLimit": {
+            "type": "integer",
+            "description": "Maximum number of sample nodes to include",
+            "default": 5,
+            "minimum": 0,
+            "maximum": 20
+          },
+          "includeRelationships": {
+            "type": "boolean",
+            "description": "Whether to include relationship information",
+            "default": true
+          },
+          "includeUsageStats": {
+            "type": "boolean",
+            "description": "Whether to include usage statistics and metrics",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query getTableDocs($tableId: ID, $identifier: String, $includeRelationships: Boolean, $includeSampleNodes: Boolean, $includeUsageStats: Boolean, $sampleLimit: Int) { tableDocumentation(tableId: $tableId, identifier: $identifier, includeRelationships: $includeRelationships, includeSampleNodes: $includeSampleNodes, includeUsageStats: $includeUsageStats, sampleLimit: $sampleLimit) { table { id identifier description createdAt updatedAt } schema { totalAttributes attributes { attribute { id identifier name } attributeType { id name } sampleValues valueCount nullCount } } sampleNodes { id content createdAt } relationships { incomingRelations { relationshipType count relatedTable { identifier } } outgoingRelations { relationshipType count relatedTable { identifier } } relatedTables { id identifier } } usageStats { totalNodes recentlyCreatedNodes frequentlyAccessedAttributes averageAttributeUsage } usageExamples { category title description exampleQuery exampleMutation } } }"
+      }
+    },
+    {
+      "name": "exportTableWithNodes",
+      "description": "Export specific table with all nodes in user-friendly flat format, optionally save to specified folder path",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "tableId": {
+            "type": "string",
+            "description": "ID of the table to export"
+          },
+          "outputPath": {
+            "type": "string",
+            "description": "Optional folder path to save the export file (if not provided, returns JSON data only)",
+            "default": ""
+          },
+          "flatFormat": {
+            "type": "boolean",
+            "description": "Whether to use flat format (attributes at same level as id/content)",
+            "default": true
+          }
+        },
+        "required": ["tableId"],
+        "additionalProperties": false
+      },
+      "graphqlOperation": {
+        "type": "query",
+        "query": "query exportTableWithNodes($tableId: String!, $options: SchemaExportOptions) { exportTable(tableId: $tableId, options: $options) { metadata { exportedAt version source options checksum } tables { id identifier description nodes { id content attributes createdAt updatedAt } attributes { id identifier name attributeType { id name dataType } } statistics { nodeCount attributeCount relationCount } } statistics { totalTables totalNodes totalRelations totalAttributes exportSize } } }"
       }
     }
   ]

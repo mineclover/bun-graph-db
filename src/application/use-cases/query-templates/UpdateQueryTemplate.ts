@@ -64,8 +64,7 @@ export class UpdateQueryTemplate {
       if (request.name !== undefined) updateData.name = request.name
       if (request.description !== undefined) updateData.description = request.description
       if (request.queryText !== undefined) updateData.queryText = request.queryText
-      if (request.inputSchema !== undefined)
-        updateData.inputSchema = request.inputSchema
+      if (request.inputSchema !== undefined) updateData.inputSchema = request.inputSchema
       if (request.defaultVariables !== undefined)
         updateData.defaultVariables = request.defaultVariables
       if (request.applicableTables !== undefined)

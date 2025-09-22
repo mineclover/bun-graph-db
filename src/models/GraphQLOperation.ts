@@ -132,7 +132,10 @@ export function validateGraphQLOperation(operation: GraphQLOperation): {
   }
 
   // Validate operation type
-  if (!operation.operationType || !['query', 'mutation', 'custom'].includes(operation.operationType)) {
+  if (
+    !operation.operationType ||
+    !['query', 'mutation', 'custom'].includes(operation.operationType)
+  ) {
     errors.push('Operation type must be "query" or "mutation"')
   }
 

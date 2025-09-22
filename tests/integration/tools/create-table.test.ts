@@ -65,11 +65,17 @@ describe('CreateTable Tool Integration', () => {
     expect(content.type).toBe('text')
 
     const graphqlResult = JSON.parse(content.text)
-    expect(graphqlResult.createTable).toBeDefined()
-    expect(graphqlResult.createTable.id).toBeDefined()
-    expect(graphqlResult.createTable.identifier).toBe(mcpRequest.params.arguments.identifier)
-    expect(graphqlResult.createTable.name).toBe(mcpRequest.params.arguments.name)
-    expect(graphqlResult.createTable.description).toBe(mcpRequest.params.arguments.description)
+    expect(graphqlResult.data).toBeDefined()
+    expect(graphqlResult.data.createTable).toBeDefined()
+    expect(graphqlResult.data.createTable.success).toBe(true)
+    expect(graphqlResult.data.createTable.table).toBeDefined()
+    expect(graphqlResult.data.createTable.table.id).toBeDefined()
+    expect(graphqlResult.data.createTable.table.identifier).toBe(
+      mcpRequest.params.arguments.identifier
+    )
+    expect(graphqlResult.data.createTable.table.description).toBe(
+      mcpRequest.params.arguments.description
+    )
 
     console.log(`✅ CreateTable tool executed in ${responseTime}ms`)
   })
@@ -100,16 +106,11 @@ describe('CreateTable Tool Integration', () => {
     const result = await response.json()
     console.log('CreateTable Error Response:', JSON.stringify(result, null, 2))
 
-    // Should return GraphQL validation errors
+    // Should return MCP schema validation error
     expect(result.jsonrpc).toBe('2.0')
-    expect(result.result).toBeDefined()
-    expect(result.result.content).toBeDefined()
-    expect(result.result.isError).toBe(true)
-
-    const content = result.result.content[0]
-    const errorResult = JSON.parse(content.text)
-    expect(errorResult.errors).toBeDefined()
-    expect(Array.isArray(errorResult.errors)).toBe(true)
+    expect(result.error).toBeDefined()
+    expect(result.error.code).toBe(-32602)
+    expect(result.error.message).toContain('identifier')
 
     console.log('✅ CreateTable validation error handled correctly')
   })

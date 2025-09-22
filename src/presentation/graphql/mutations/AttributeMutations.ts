@@ -1,17 +1,18 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
-import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type {
+  GraphQLContext,
+  GraphQLParent,
   MutationCreateAttributeArgs,
   MutationCreateAttributeTypeArgs,
   MutationDeleteAttributeArgs,
   MutationDeleteAttributeTypeArgs,
   MutationUpdateAttributeArgs,
   MutationUpdateAttributeTypeArgs,
-} from '../../../../generated/graphql.types.js'
+} from '@/core/types/GraphQLTypes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class AttributeMutations extends BaseResolver {

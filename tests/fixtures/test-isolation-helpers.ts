@@ -163,6 +163,15 @@ export class TestIsolationHelpers {
 
     // Seed common test data
     db.transaction(() => {
+      // Insert test tables with specific IDs that E2E tests expect
+      db.exec(`
+        INSERT OR IGNORE INTO tables (id, identifier, description, created_at, updated_at)
+        VALUES
+        (58, 'todos', 'Test todos table for E2E', datetime('now'), datetime('now')),
+        (59, 'users', 'Test users table for E2E', datetime('now'), datetime('now')),
+        (60, 'projects', 'Test projects table for E2E', datetime('now'), datetime('now'))
+      `)
+
       // Insert test todos
       db.exec(`
         INSERT OR IGNORE INTO todos (id, title, completed)
@@ -172,13 +181,17 @@ export class TestIsolationHelpers {
         (3, 'Test Todo 3', 0)
       `)
 
-      // Insert test documentation
+      // Insert test documentation (using table 61 to avoid conflicts with E2E tests that use tables 58-60)
       db.exec(`
-        INSERT OR IGNORE INTO docs (table_id, category, version, content, is_active)
+        INSERT OR IGNORE INTO tables (id, identifier, description, created_at, updated_at)
         VALUES
-        (58, 'USAGE', 1, 'Test usage documentation', 1),
-        (58, 'GUIDE', 1, 'Test guide documentation', 1),
-        (58, 'EXAMPLE', 1, 'Test example documentation', 1)
+        (61, 'seeded-table', 'Test table for seeded docs', datetime('now'), datetime('now'))
+      `)
+
+      db.exec(`
+        INSERT OR IGNORE INTO docs (table_id, category, version, content, is_active, created_at, updated_at)
+        VALUES
+        (61, 'usage', 1, 'Test usage documentation', 1, datetime('now'), datetime('now'))
       `)
 
       // Insert test templates

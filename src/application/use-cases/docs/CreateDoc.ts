@@ -81,10 +81,8 @@ export class CreateDocUseCase {
       // Create domain entity
       const doc = Doc.create(input.tableId, mappedCategory, input.content, version)
 
-      // If this is version 1 or if user wants to make it active, deactivate others in same category
-      if (version === 1) {
-        await this.docRepository.deactivateOthersInCategory(input.tableId, mappedCategory)
-      }
+      // When creating any new version, it becomes the active version and deactivates others
+      await this.docRepository.deactivateOthersInCategory(input.tableId, mappedCategory)
 
       // Save to repository
       await this.docRepository.save(doc)

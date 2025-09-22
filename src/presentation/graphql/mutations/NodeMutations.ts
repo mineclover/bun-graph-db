@@ -234,7 +234,11 @@ export class NodeMutations extends BaseResolver {
     )
   }
 
-  async removeNodeAttribute(_: GraphQLParent, args: { nodeId: string; attributeId: string }, _context?: GraphQLContext) {
+  async removeNodeAttribute(
+    _: GraphQLParent,
+    args: { nodeId: string; attributeId: string },
+    _context?: GraphQLContext
+  ) {
     try {
       this.validateArgs(
         args as any,
@@ -247,7 +251,10 @@ export class NodeMutations extends BaseResolver {
         'removeNodeAttribute'
       )
 
-      this.logger.info('Executing mutation: removeNodeAttribute', { nodeId: args.nodeId, attributeId: args.attributeId })
+      this.logger.info('Executing mutation: removeNodeAttribute', {
+        nodeId: args.nodeId,
+        attributeId: args.attributeId,
+      })
 
       // Check if the node attribute exists
       const existingNodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
@@ -256,7 +263,10 @@ export class NodeMutations extends BaseResolver {
       )
 
       if (!existingNodeAttribute) {
-        this.logger.warn('Node attribute not found', { nodeId: args.nodeId, attributeId: args.attributeId })
+        this.logger.warn('Node attribute not found', {
+          nodeId: args.nodeId,
+          attributeId: args.attributeId,
+        })
         return {
           success: false,
           nodeAttribute: null,
@@ -270,7 +280,20 @@ export class NodeMutations extends BaseResolver {
       }
 
       // Delete the node attribute
-      await this.nodeAttributeRepository.delete(existingNodeAttribute.id)
+      const nodeAttributeId = existingNodeAttribute.getId()
+      if (!nodeAttributeId) {
+        return {
+          success: false,
+          nodeAttribute: null,
+          errors: [
+            {
+              message: 'Node attribute has no valid ID',
+              code: 'INVALID_STATE',
+            },
+          ],
+        }
+      }
+      await this.nodeAttributeRepository.delete(nodeAttributeId)
 
       return {
         success: true,
@@ -278,7 +301,11 @@ export class NodeMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: removeNodeAttribute', { error, nodeId: args.nodeId, attributeId: args.attributeId })
+      this.logger.error('Mutation failed: removeNodeAttribute', {
+        error,
+        nodeId: args.nodeId,
+        attributeId: args.attributeId,
+      })
 
       return {
         success: false,
@@ -293,7 +320,11 @@ export class NodeMutations extends BaseResolver {
     }
   }
 
-  async updateNodeAttributeValue(_: GraphQLParent, args: { nodeId: string; attributeId: string; value: string }, _context?: GraphQLContext) {
+  async updateNodeAttributeValue(
+    _: GraphQLParent,
+    args: { nodeId: string; attributeId: string; value: string },
+    _context?: GraphQLContext
+  ) {
     try {
       this.validateArgs(
         args as any,
@@ -307,7 +338,11 @@ export class NodeMutations extends BaseResolver {
         'updateNodeAttributeValue'
       )
 
-      this.logger.info('Executing mutation: updateNodeAttributeValue', { nodeId: args.nodeId, attributeId: args.attributeId, value: args.value })
+      this.logger.info('Executing mutation: updateNodeAttributeValue', {
+        nodeId: args.nodeId,
+        attributeId: args.attributeId,
+        value: args.value,
+      })
 
       // Check if the node attribute exists
       const existingNodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
@@ -316,7 +351,10 @@ export class NodeMutations extends BaseResolver {
       )
 
       if (!existingNodeAttribute) {
-        this.logger.warn('Node attribute not found, creating new one', { nodeId: args.nodeId, attributeId: args.attributeId })
+        this.logger.warn('Node attribute not found, creating new one', {
+          nodeId: args.nodeId,
+          attributeId: args.attributeId,
+        })
 
         // If it doesn't exist, create it (set operation)
         const result = await this.nodeAttributeRepository.setNodeAttribute(
@@ -342,7 +380,12 @@ export class NodeMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateNodeAttributeValue', { error, nodeId: args.nodeId, attributeId: args.attributeId, value: args.value })
+      this.logger.error('Mutation failed: updateNodeAttributeValue', {
+        error,
+        nodeId: args.nodeId,
+        attributeId: args.attributeId,
+        value: args.value,
+      })
 
       return {
         success: false,

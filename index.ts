@@ -102,10 +102,10 @@ const yoga = createYoga({
   landingPage: false,
 })
 
+import { McpHttpServer } from './src/mcp/http-server/McpHttpServer.js'
 // Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes.js'
 import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes.js'
-import { McpHttpServer } from './src/mcp/http-server/McpHttpServer.js'
 
 // Create route handlers
 const schemaHandler = await createSchemaHandler(container)

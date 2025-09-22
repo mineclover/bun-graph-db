@@ -108,14 +108,15 @@ describe('Health Check Tool Integration Tests', () => {
 
           // Parse the returned JSON to verify GraphQL health check data
           const healthData = JSON.parse(data.result.content[0].text)
-          expect(healthData.healthCheck).toBeDefined()
-          expect(healthData.healthCheck.status).toBeDefined()
-          expect(healthData.healthCheck.database).toBeDefined()
-          expect(healthData.healthCheck.version).toBeDefined()
+          expect(healthData.data).toBeDefined()
+          expect(healthData.data.healthCheck).toBeDefined()
+          expect(healthData.data.healthCheck.status).toBeDefined()
+          expect(healthData.data.healthCheck.database).toBeDefined()
+          expect(healthData.data.healthCheck.version).toBeDefined()
 
           // Health status should be healthy
           expect(['healthy', 'ok', 'running']).toContain(
-            healthData.healthCheck.status.toLowerCase()
+            healthData.data.healthCheck.status.toLowerCase()
           )
 
           // Should not be an error
@@ -163,7 +164,8 @@ describe('Health Check Tool Integration Tests', () => {
 
           // Should return valid health check data
           const healthData = JSON.parse(data.result.content[0].text)
-          expect(healthData.healthCheck).toBeDefined()
+          expect(healthData.data).toBeDefined()
+          expect(healthData.data.healthCheck).toBeDefined()
         }
       } catch (error) {
         // Expected to fail initially
@@ -198,7 +200,7 @@ describe('Health Check Tool Integration Tests', () => {
         // Should return an error for invalid arguments
         expect(data.error).toBeDefined()
         expect(data.error?.code).toBeDefined()
-        expect(data.error?.message).toContain('schema')
+        expect(data.error?.message).toContain('Schema validation failed')
       } catch (error) {
         // Expected to fail initially
         console.log('Expected failure: MCP health check tool not implemented yet')
@@ -287,8 +289,9 @@ describe('Health Check Tool Integration Tests', () => {
             expect(data.result.content.length).toBeGreaterThan(0)
 
             const healthData = JSON.parse(data.result.content[0].text)
-            expect(healthData.healthCheck).toBeDefined()
-            expect(healthData.healthCheck.status).toBeDefined()
+            expect(healthData.data).toBeDefined()
+            expect(healthData.data.healthCheck).toBeDefined()
+            expect(healthData.data.healthCheck.status).toBeDefined()
           }
         })
       } catch (error) {
@@ -339,9 +342,11 @@ describe('Health Check Tool Integration Tests', () => {
           const mcpHealthData = JSON.parse(mcpData.result.content[0].text)
 
           // Both should have the same health check data
-          expect(mcpHealthData.healthCheck.status).toBe(graphqlData.data.healthCheck.status)
-          expect(mcpHealthData.healthCheck.database).toBe(graphqlData.data.healthCheck.database)
-          expect(mcpHealthData.healthCheck.version).toBe(graphqlData.data.healthCheck.version)
+          expect(mcpHealthData.data.healthCheck.status).toBe(graphqlData.data.healthCheck.status)
+          expect(mcpHealthData.data.healthCheck.database).toBe(
+            graphqlData.data.healthCheck.database
+          )
+          expect(mcpHealthData.data.healthCheck.version).toBe(graphqlData.data.healthCheck.version)
         }
       } catch (error) {
         // Expected to fail initially

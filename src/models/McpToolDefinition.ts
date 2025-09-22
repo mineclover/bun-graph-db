@@ -53,9 +53,11 @@ export class McpToolDefinitionBuilder {
     // Accept schemas with 'type: object', or composition keywords (anyOf, oneOf, allOf)
     const hasValidType = schema.type === 'object'
     const hasComposition = schema.anyOf || schema.oneOf || schema.allOf
-    
+
     if (!hasValidType && !hasComposition) {
-      throw new Error('Input schema must be of type "object" or use composition keywords (anyOf, oneOf, allOf)')
+      throw new Error(
+        'Input schema must be of type "object" or use composition keywords (anyOf, oneOf, allOf)'
+      )
     }
 
     // For object type schemas, ensure additionalProperties is defined (security requirement)
@@ -66,7 +68,7 @@ export class McpToolDefinitionBuilder {
     // For anyOf/oneOf/allOf schemas, validate that each alternative has proper additionalProperties
     if (hasComposition) {
       const alternatives = schema.anyOf || schema.oneOf || schema.allOf || []
-      alternatives.forEach((alt: any, index: number) => {
+      alternatives.forEach((alt: any, _index: number) => {
         if (alt.type === 'object' && alt.additionalProperties === undefined) {
           alt.additionalProperties = false
         }
@@ -91,7 +93,10 @@ export class McpToolDefinitionBuilder {
       throw new Error('GraphQL query cannot be empty')
     }
 
-    if (!operation.operationType || !['query', 'mutation', 'custom'].includes(operation.operationType)) {
+    if (
+      !operation.operationType ||
+      !['query', 'mutation', 'custom'].includes(operation.operationType)
+    ) {
       throw new Error('GraphQL operation type must be "query", "mutation", or "custom"')
     }
 

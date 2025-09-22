@@ -17,7 +17,7 @@ extend type Query {
   ): DocsConnection!
 
   # Get doc versions
-  getDocVersions(tableId: ID!, category: DocCategory!): [Doc!]!
+  getDocVersions(tableId: ID!, category: DocCategory!): DocsConnection!
 
   # Search docs across tables
   searchDocs(filter: DocsFilter!, pagination: PaginationInput, sort: [SortInput!]): DocsConnection!
