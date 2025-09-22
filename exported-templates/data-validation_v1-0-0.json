@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.241Z",
   "template": {
+    "id": "874",
     "identifier": "data-validation",
     "name": "ValidateDataIntegrity",
     "description": "스키마 규칙 위반, 고아 노드, 중복 데이터 등을 검사하는 데이터 무결성 검증 템플릿",
@@ -11,7 +12,7 @@
     ],
     "operationType": "query",
     "variables": null,
-    "variablesSchema": null,
+    "inputSchema": null,
     "defaultVariables": null,
     "applicableTables": [],
     "complexityScore": 10,
@@ -23,6 +24,13 @@
       "schema",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 54,
+    "lastUsedAt": "2025-09-11T02:03:36.000Z",
+    "statistics": {
+      "usageCount": 54,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-11T02:03:36.000Z"
+    }
   }
 }

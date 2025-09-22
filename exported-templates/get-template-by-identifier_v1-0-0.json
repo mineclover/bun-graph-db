@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "exportedAt": "2025-09-22T07:03:36.557Z",
   "template": {
+    "id": "886",
     "identifier": "get-template-by-identifier",
     "name": "GetTemplateByIdentifier",
     "description": "식별자로 템플릿 정보를 조회합니다",
@@ -10,8 +11,10 @@
       "getTemplateByIdentifier"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "identifier": "example-template"
+    },
+    "inputSchema": {
       "identifier": {
         "type": "string",
         "required": true,
@@ -31,6 +34,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 24,
+    "lastUsedAt": "2025-09-02T19:03:36.000Z",
+    "statistics": {
+      "usageCount": 24,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-02T19:03:36.000Z"
+    }
   }
 }

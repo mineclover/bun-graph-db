@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.523Z",
+  "exportedAt": "2025-09-22T07:03:35.935Z",
   "template": {
+    "id": "862",
     "identifier": "analyze-table-relationships-with-params",
     "name": "AnalyzeTableRelationshipsWithParams",
     "description": "파라미터를 사용하여 테이블 간 관계를 분석합니다",
@@ -10,8 +11,12 @@
       "analyzeTableRelationships"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "tableId": "example-table-id",
+      "depth": 2,
+      "includeStats": true
+    },
+    "inputSchema": {
       "tableId": {
         "type": "string",
         "required": true,
@@ -42,6 +47,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 1004,
+    "lastUsedAt": "2025-09-07T16:03:36.000Z",
+    "statistics": {
+      "usageCount": 1004,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-07T16:03:36.000Z"
+    }
   }
 }

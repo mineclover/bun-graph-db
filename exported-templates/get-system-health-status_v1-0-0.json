@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:35.934Z",
   "template": {
+    "id": "885",
     "identifier": "get-system-health-status",
     "name": "GetSystemHealthStatus",
     "description": "시스템 상태를 확인합니다",
@@ -10,8 +11,8 @@
       "health"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {},
+    "variables": {},
+    "inputSchema": {},
     "defaultVariables": {},
     "applicableTables": null,
     "complexityScore": 2,
@@ -23,6 +24,13 @@
       "basic",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 1911,
+    "lastUsedAt": "2025-09-19T02:25:52.000Z",
+    "statistics": {
+      "usageCount": 1911,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-19T02:25:52.000Z"
+    }
   }
 }

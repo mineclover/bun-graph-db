@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.037Z",
   "template": {
+    "id": "877",
     "identifier": "delete-node-with-params",
     "name": "DeleteNodeWithParams",
     "description": "파라미터를 사용하여 노드를 삭제합니다",
@@ -10,8 +11,10 @@
       "deleteNode"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "id": "example-node-id"
+    },
+    "inputSchema": {
       "id": {
         "type": "string",
         "required": true,
@@ -31,6 +34,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 713,
+    "lastUsedAt": "2025-09-15T21:03:36.000Z",
+    "statistics": {
+      "usageCount": 713,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-15T21:03:36.000Z"
+    }
   }
 }

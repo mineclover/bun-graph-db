@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.519Z",
+  "exportedAt": "2025-09-22T07:03:36.661Z",
   "template": {
+    "id": "1235",
     "identifier": "search-todos-fixed",
     "name": "Todo 검색 (수정됨)",
     "description": "Todo 항목을 검색합니다",
@@ -10,8 +11,11 @@
       "search-todos-fixed"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": null,
+    "variables": {
+      "tableId": "101",
+      "searchTerm": "검색어"
+    },
+    "inputSchema": null,
     "defaultVariables": {
       "tableId": "101",
       "searchTerm": "검색어"
@@ -25,6 +29,13 @@
       "search",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 1,
+    "lastUsedAt": "2025-09-18T21:56:29.000Z",
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-18T21:56:29.000Z"
+    }
   }
 }

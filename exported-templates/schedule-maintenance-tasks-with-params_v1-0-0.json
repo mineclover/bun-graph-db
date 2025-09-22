@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "exportedAt": "2025-09-22T07:03:36.557Z",
   "template": {
+    "id": "893",
     "identifier": "schedule-maintenance-tasks-with-params",
     "name": "ScheduleMaintenanceTasksWithParams",
     "description": "파라미터를 사용하여 유지보수 작업을 예약합니다",
@@ -10,8 +11,32 @@
       "scheduleMaintenanceTasks"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "tasks": [
+        {
+          "type": "CLEANUP_ORPHANED_NODES",
+          "priority": "MEDIUM",
+          "options": {
+            "dryRun": false,
+            "batchSize": 100
+          }
+        },
+        {
+          "type": "REBUILD_INDEXES",
+          "priority": "LOW",
+          "tables": [
+            "example-table-id"
+          ]
+        }
+      ],
+      "schedule": {
+        "frequency": "WEEKLY",
+        "startTime": "02:00",
+        "timezone": "UTC",
+        "maintainWindow": 120
+      }
+    },
+    "inputSchema": {
       "tasks": {
         "type": "array",
         "required": true,
@@ -76,6 +101,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 24,
+    "lastUsedAt": "2025-09-13T11:03:36.000Z",
+    "statistics": {
+      "usageCount": 24,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-13T11:03:36.000Z"
+    }
   }
 }

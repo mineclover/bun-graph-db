@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.519Z",
+  "exportedAt": "2025-09-22T07:03:36.661Z",
   "template": {
+    "id": "1236",
     "identifier": "create-todo-unique",
     "name": "Todo 생성 (고유)",
     "description": "Todo 항목을 고유한 내용으로 생성합니다",
@@ -10,8 +11,14 @@
       "create-todo-unique"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": null,
+    "variables": {
+      "input": {
+        "content": "고유한 할일 1758264989235",
+        "tableId": "101",
+        "attributes": []
+      }
+    },
+    "inputSchema": null,
     "defaultVariables": {
       "input": {
         "content": "고유한 할일 1758264989235",
@@ -28,6 +35,13 @@
       "unique",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 1,
+    "lastUsedAt": "2025-09-18T21:56:29.000Z",
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-18T21:56:29.000Z"
+    }
   }
 }

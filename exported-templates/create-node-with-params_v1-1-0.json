@@ -1,7 +1,8 @@
 {
-  "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "version": "1.1.0",
+  "exportedAt": "2025-09-22T07:03:36.037Z",
   "template": {
+    "id": "868",
     "identifier": "create-node-with-params",
     "name": "CreateNodeWithParams",
     "description": "파라미터를 사용하여 새 노드를 생성합니다",
@@ -10,8 +11,13 @@
       "createNode"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "input": {
+        "content": "새로운 노드",
+        "tableId": "1"
+      }
+    },
+    "inputSchema": {
       "type": "object",
       "properties": {
         "input": {
@@ -52,6 +58,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 736,
+    "lastUsedAt": "2025-09-14T18:03:36.000Z",
+    "statistics": {
+      "usageCount": 736,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-14T18:03:36.000Z"
+    }
   }
 }

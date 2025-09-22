@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.454Z",
   "template": {
+    "id": "880",
     "identifier": "get-attribute-by-id",
     "name": "GetAttributeById",
     "description": "특정 ID로 속성 정보를 조회합니다",
@@ -10,8 +11,10 @@
       "getAttribute"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "attributeId": "example-attribute-id"
+    },
+    "inputSchema": {
       "attributeId": {
         "type": "string",
         "required": true,
@@ -31,6 +34,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 26,
+    "lastUsedAt": "2025-09-04T15:03:36.000Z",
+    "statistics": {
+      "usageCount": 26,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-04T15:03:36.000Z"
+    }
   }
 }

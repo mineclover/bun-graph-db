@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "exportedAt": "2025-09-22T07:03:36.139Z",
   "template": {
+    "id": "894",
     "identifier": "search-nodes-with-filter",
     "name": "SearchNodesWithFilter",
     "description": "필터와 페이지네이션을 사용하여 노드를 검색합니다",
@@ -10,8 +11,23 @@
       "searchNodes"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "filter": {
+        "searchTerm": "example",
+        "tableId": null
+      },
+      "pagination": {
+        "limit": 20,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "relevanceScore",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "inputSchema": {
       "filter": {
         "type": "object",
         "required": true,
@@ -67,6 +83,13 @@
       "pagination",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 689,
+    "lastUsedAt": "2025-08-20T08:03:36.000Z",
+    "statistics": {
+      "usageCount": 689,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-20T08:03:36.000Z"
+    }
   }
 }

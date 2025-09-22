@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.347Z",
   "template": {
+    "id": "867",
     "identifier": "create-attribute-with-params",
     "name": "CreateAttributeWithParams",
     "description": "파라미터를 사용하여 새 속성을 생성합니다",
@@ -10,8 +11,16 @@
       "createAttribute"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "input": {
+        "name": "새_속성",
+        "type": "STRING",
+        "description": "새로운 속성입니다",
+        "tableId": "example-table-id",
+        "isRequired": false
+      }
+    },
+    "inputSchema": {
       "input": {
         "type": "object",
         "required": true,
@@ -61,6 +70,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 36,
+    "lastUsedAt": "2025-09-04T20:03:36.000Z",
+    "statistics": {
+      "usageCount": 36,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-04T20:03:36.000Z"
+    }
   }
 }

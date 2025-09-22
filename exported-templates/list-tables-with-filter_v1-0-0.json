@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "exportedAt": "2025-09-22T07:03:35.935Z",
   "template": {
+    "id": "888",
     "identifier": "list-tables-with-filter",
     "name": "ListTablesWithFilter",
     "description": "필터와 페이지네이션을 사용하여 테이블 목록을 조회합니다",
@@ -10,8 +11,22 @@
       "tables"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "filter": {
+        "isActive": true
+      },
+      "pagination": {
+        "limit": 10,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "createdAt",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "inputSchema": {
       "filter": {
         "type": "object",
         "properties": {
@@ -69,6 +84,13 @@
       "pagination",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 1034,
+    "lastUsedAt": "2025-09-05T12:03:36.000Z",
+    "statistics": {
+      "usageCount": 1034,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-05T12:03:36.000Z"
+    }
   }
 }

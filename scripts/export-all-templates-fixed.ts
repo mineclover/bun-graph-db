@@ -21,7 +21,7 @@ interface FullTemplate {
   queryName: string[]
   operationType: string
   variables: any
-  variablesSchema: any
+  inputSchema: any
   defaultVariables: any
   applicableTables: string[]
   complexityScore: number
@@ -29,7 +29,6 @@ interface FullTemplate {
   tags: string[]
   isActive: boolean
   usageCount: number
-  avgExecutionTimeMs: number
   lastUsedAt: string | null
 }
 
@@ -120,7 +119,7 @@ async function getAllTemplatesDetailed(): Promise<FullTemplate[]> {
           queryName
           operationType
           variables
-          variablesSchema
+          inputSchema
           defaultVariables
           applicableTables
           complexityScore
@@ -128,7 +127,6 @@ async function getAllTemplatesDetailed(): Promise<FullTemplate[]> {
           tags
           isActive
           usageCount
-          avgExecutionTimeMs
           lastUsedAt
         }
         totalCount
@@ -212,7 +210,7 @@ async function exportSingleTemplateFixed(template: FullTemplate): Promise<Export
         // statistics 필드를 기존 export 형태에 맞게 조정
         statistics: {
           usageCount: template.usageCount,
-          avgExecutionTimeMs: template.avgExecutionTimeMs,
+          avgExecutionTimeMs: 0, // 기본값으로 설정
           lastUsedAt: template.lastUsedAt,
         },
       },

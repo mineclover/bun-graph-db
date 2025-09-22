@@ -84,11 +84,15 @@ export class TableQueries extends BaseResolver {
   async searchTables(_: GraphQLParent, args: { filter?: any }, _context?: GraphQLContext) {
     // searchTables is a simplified interface for MCP compatibility
     // It delegates to the tables method with default pagination
-    return this.tables(_, {
-      filter: args.filter,
-      pagination: { limit: 50, offset: 0 },
-      sort: [{ field: 'createdAt', direction: 'DESC' }]
-    }, _context)
+    return this.tables(
+      _,
+      {
+        filter: args.filter,
+        pagination: { limit: 50, offset: 0 },
+        sort: { field: 'createdAt', direction: 'DESC' },
+      },
+      _context
+    )
   }
 
   async tableDocumentation(

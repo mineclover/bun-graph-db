@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.454Z",
   "template": {
+    "id": "872",
     "identifier": "create-template-basic",
     "name": "CreateTemplate",
     "description": "기본적인 새 템플릿 생성 (identifier, name, description, query 필수)",
@@ -10,8 +11,15 @@
       "createTemplate"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": null,
+    "variables": {
+      "input": {
+        "identifier": "new-template",
+        "name": "New Template",
+        "description": "A new template for testing",
+        "query": "query { __typename }"
+      }
+    },
+    "inputSchema": null,
     "defaultVariables": {
       "input": {
         "identifier": "new-template",
@@ -29,6 +37,13 @@
       "management",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 31,
+    "lastUsedAt": "2025-09-06T06:03:36.000Z",
+    "statistics": {
+      "usageCount": 31,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-06T06:03:36.000Z"
+    }
   }
 }

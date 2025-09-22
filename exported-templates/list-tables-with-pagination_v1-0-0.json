@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "exportedAt": "2025-09-22T07:03:36.037Z",
   "template": {
+    "id": "889",
     "identifier": "list-tables-with-pagination",
     "name": "ListTablesWithPagination",
     "description": "Enhanced table listing with comprehensive pagination, search filtering, and sorting capabilities. Supports dynamic filtering by table metadata.",
@@ -10,8 +11,67 @@
       "tables"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": null,
+    "variables": {
+      "type": "object",
+      "properties": {
+        "pagination": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100,
+              "description": "페이지당 결과 개수"
+            },
+            "offset": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0,
+              "description": "건너뛸 결과 개수"
+            }
+          },
+          "description": "페이지네이션 옵션"
+        },
+        "filter": {
+          "type": "string",
+          "description": "테이블 이름/설명 검색 필터"
+        },
+        "sortBy": {
+          "type": "string",
+          "enum": [
+            "createdAt",
+            "updatedAt",
+            "name",
+            "nodeCount",
+            "attributeCount"
+          ],
+          "default": "createdAt",
+          "description": "정렬 기준 필드"
+        },
+        "sortOrder": {
+          "type": "string",
+          "enum": [
+            "ASC",
+            "DESC"
+          ],
+          "default": "DESC",
+          "description": "정렬 순서"
+        },
+        "minNodeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "최소 노드 개수 필터"
+        },
+        "maxNodeCount": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "최대 노드 개수 필터"
+        }
+      },
+      "required": []
+    },
+    "inputSchema": null,
     "defaultVariables": {
       "type": "object",
       "properties": {
@@ -79,6 +139,13 @@
       "general",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 842,
+    "lastUsedAt": "2025-08-22T17:03:36.000Z",
+    "statistics": {
+      "usageCount": 842,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-22T17:03:36.000Z"
+    }
   }
 }

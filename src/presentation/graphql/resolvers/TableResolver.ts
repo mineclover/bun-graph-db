@@ -107,9 +107,7 @@ export class TableResolver extends BaseResolver {
     }
   }
 
-  async searchTables(args: {
-    filter?: TablesFilter
-  }): Promise<{
+  async searchTables(args: { filter?: TablesFilter }): Promise<{
     nodes: TableDto[]
     totalCount: number
     hasNextPage: boolean

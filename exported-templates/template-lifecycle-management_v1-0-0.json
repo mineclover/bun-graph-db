@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "exportedAt": "2025-09-22T07:03:36.557Z",
   "template": {
+    "id": "900",
     "identifier": "template-lifecycle-management",
     "name": "TemplateLifecycleManagement",
     "description": "템플릿의 생성부터 삭제까지 전체 생명주기 관리 및 버전 관리",
@@ -11,7 +12,7 @@
     ],
     "operationType": "query",
     "variables": null,
-    "variablesSchema": null,
+    "inputSchema": null,
     "defaultVariables": null,
     "applicableTables": [],
     "complexityScore": 10,
@@ -23,6 +24,13 @@
       "analytics",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 22,
+    "lastUsedAt": "2025-09-13T04:03:36.000Z",
+    "statistics": {
+      "usageCount": 22,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-13T04:03:36.000Z"
+    }
   }
 }

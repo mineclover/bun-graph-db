@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.519Z",
+  "exportedAt": "2025-09-22T07:03:36.661Z",
   "template": {
+    "id": "1279",
     "identifier": "universal_metric_entry",
     "name": "UniversalMetricEntry",
     "description": "Universal template that works with any table having metric_name, metric_value, timestamp attributes",
@@ -10,8 +11,8 @@
       "createNode"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": "{\"type\": \"object\", \"properties\": { \"tableId\": { \"type\": \"string\", \"description\": \"Target table ID (part of composite key)\", \"enum\": [\"103\", \"104\"] }, \"content\": { \"type\": \"string\", \"description\": \"Descriptive content for the metric entry\" }, \"metricName\": { \"type\": \"string\", \"description\": \"Metric identifier (unique within table scope)\" }, \"metricValue\": { \"type\": \"string\", \"description\": \"Metric value\" }, \"timestamp\": { \"type\": \"string\", \"description\": \"ISO timestamp\" } }, \"required\": [\"tableId\", \"content\", \"metricName\", \"metricValue\", \"timestamp\"] }",
+    "variables": "{ \"tableId\": \"103\", \"content\": \"Universal Metric Entry\", \"metricName\": \"api_calls\", \"metricValue\": \"150\", \"timestamp\": \"2025-09-19T10:30:00.000Z\" }",
+    "inputSchema": "{\"type\": \"object\", \"properties\": { \"tableId\": { \"type\": \"string\", \"description\": \"Target table ID (part of composite key)\", \"enum\": [\"103\", \"104\"] }, \"content\": { \"type\": \"string\", \"description\": \"Descriptive content for the metric entry\" }, \"metricName\": { \"type\": \"string\", \"description\": \"Metric identifier (unique within table scope)\" }, \"metricValue\": { \"type\": \"string\", \"description\": \"Metric value\" }, \"timestamp\": { \"type\": \"string\", \"description\": \"ISO timestamp\" } }, \"required\": [\"tableId\", \"content\", \"metricName\", \"metricValue\", \"timestamp\"] }",
     "defaultVariables": "{ \"tableId\": \"103\", \"content\": \"Universal Metric Entry\", \"metricName\": \"api_calls\", \"metricValue\": \"150\", \"timestamp\": \"2025-09-19T10:30:00.000Z\" }",
     "applicableTables": null,
     "complexityScore": 3,
@@ -24,6 +25,13 @@
       "fixed",
       "documented"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 0,
+    "lastUsedAt": null,
+    "statistics": {
+      "usageCount": 0,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": null
+    }
   }
 }

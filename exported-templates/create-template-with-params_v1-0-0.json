@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.454Z",
   "template": {
+    "id": "873",
     "identifier": "create-template-with-params",
     "name": "CreateTemplateWithParams",
     "description": "파라미터를 사용하여 새 템플릿을 생성합니다",
@@ -10,8 +11,21 @@
       "createTemplate"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "input": {
+        "identifier": "new-custom-template",
+        "name": "새 커스텀 템플릿",
+        "description": "사용자 정의 템플릿입니다",
+        "query": "query CustomQuery { health { status } }",
+        "tags": [
+          "custom",
+          "user-defined"
+        ],
+        "complexityScore": 1,
+        "version": "1.0.0"
+      }
+    },
+    "inputSchema": {
       "input": {
         "type": "object",
         "required": true,
@@ -74,6 +88,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 30,
+    "lastUsedAt": "2025-08-24T07:03:36.000Z",
+    "statistics": {
+      "usageCount": 30,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-24T07:03:36.000Z"
+    }
   }
 }

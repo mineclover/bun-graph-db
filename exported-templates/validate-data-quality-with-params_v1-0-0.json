@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "exportedAt": "2025-09-22T07:03:36.454Z",
   "template": {
+    "id": "906",
     "identifier": "validate-data-quality-with-params",
     "name": "ValidateDataQualityWithParams",
     "description": "파라미터를 사용하여 데이터 품질을 검증합니다",
@@ -10,8 +11,26 @@
       "validateDataQuality"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "scope": {
+        "tableIds": [
+          "example-table-id"
+        ],
+        "includeRelationships": true
+      },
+      "checks": [
+        "COMPLETENESS",
+        "CONSISTENCY",
+        "ACCURACY",
+        "DUPLICATES"
+      ],
+      "options": {
+        "sampleSize": 1000,
+        "strictMode": false,
+        "generateReport": true
+      }
+    },
+    "inputSchema": {
       "scope": {
         "type": "object",
         "required": true,
@@ -78,6 +97,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 29,
+    "lastUsedAt": "2025-09-01T20:03:36.000Z",
+    "statistics": {
+      "usageCount": 29,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-01T20:03:36.000Z"
+    }
   }
 }

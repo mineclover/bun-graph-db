@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.523Z",
+  "exportedAt": "2025-09-22T07:03:36.241Z",
   "template": {
+    "id": "864",
     "identifier": "bulk-data-import",
     "name": "BulkImport",
     "description": "CSV, JSON 등의 파일에서 대량의 노드를 한번에 생성하는 템플릿",
@@ -11,7 +12,7 @@
     ],
     "operationType": "mutation",
     "variables": null,
-    "variablesSchema": null,
+    "inputSchema": null,
     "defaultVariables": null,
     "applicableTables": [],
     "complexityScore": 5,
@@ -23,6 +24,13 @@
       "batch-processing",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 49,
+    "lastUsedAt": "2025-08-28T06:03:36.000Z",
+    "statistics": {
+      "usageCount": 49,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-28T06:03:36.000Z"
+    }
   }
 }

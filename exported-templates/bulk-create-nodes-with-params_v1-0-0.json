@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.523Z",
+  "exportedAt": "2025-09-22T07:03:36.037Z",
   "template": {
+    "id": "865",
     "identifier": "bulk-create-nodes-with-params",
     "name": "BulkCreateNodesWithParams",
     "description": "파라미터를 사용하여 여러 노드를 일괄 생성합니다",
@@ -10,8 +11,27 @@
       "bulkCreateNodes"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "input": {
+        "nodes": [
+          {
+            "title": "배치 노드 1",
+            "content": "첫 번째 노드 내용",
+            "tableId": "example-table-id"
+          },
+          {
+            "title": "배치 노드 2",
+            "content": "두 번째 노드 내용",
+            "tableId": "example-table-id"
+          }
+        ],
+        "options": {
+          "skipErrors": true,
+          "validateBeforeCreate": true
+        }
+      }
+    },
+    "inputSchema": {
       "input": {
         "type": "object",
         "required": true,
@@ -69,6 +89,13 @@
       "fixed",
       "create"
     ],
-    "isActive": false
+    "isActive": false,
+    "usageCount": 806,
+    "lastUsedAt": "2025-09-04T06:03:36.000Z",
+    "statistics": {
+      "usageCount": 806,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-04T06:03:36.000Z"
+    }
   }
 }

@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.557Z",
   "template": {
+    "id": "875",
     "identifier": "data-export",
     "name": "ExportData",
     "description": "다양한 형식(JSON, CSV, GraphML)으로 데이터를 내보내는 고급 내보내기 템플릿",
@@ -11,7 +12,7 @@
     ],
     "operationType": "mutation",
     "variables": null,
-    "variablesSchema": null,
+    "inputSchema": null,
     "defaultVariables": null,
     "applicableTables": [],
     "complexityScore": 8,
@@ -23,6 +24,13 @@
       "streaming",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 23,
+    "lastUsedAt": "2025-08-28T06:03:36.000Z",
+    "statistics": {
+      "usageCount": 23,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-28T06:03:36.000Z"
+    }
   }
 }

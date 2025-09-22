@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "exportedAt": "2025-09-22T07:03:36.661Z",
   "template": {
+    "id": "1237",
     "identifier": "bulk-create-unique-todos",
     "name": "Todo 일괄 생성 (고유)",
     "description": "Todo 항목들을 고유한 내용으로 일괄 생성합니다",
@@ -10,8 +11,19 @@
       "bulk-create-unique-todos"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": null,
+    "variables": {
+      "input1": {
+        "content": "일괄 할일 1 - 1758264989235",
+        "tableId": "101",
+        "attributes": []
+      },
+      "input2": {
+        "content": "일괄 할일 2 - 1758264989235",
+        "tableId": "101",
+        "attributes": []
+      }
+    },
+    "inputSchema": null,
     "defaultVariables": {
       "input1": {
         "content": "일괄 할일 1 - 1758264989235",
@@ -34,6 +46,13 @@
       "unique",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 1,
+    "lastUsedAt": "2025-09-18T21:56:29.000Z",
+    "statistics": {
+      "usageCount": 1,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-18T21:56:29.000Z"
+    }
   }
 }

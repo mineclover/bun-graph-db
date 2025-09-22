@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "exportedAt": "2025-09-22T07:03:36.347Z",
   "template": {
+    "id": "891",
     "identifier": "migrate-data-with-params",
     "name": "MigrateDataWithParams",
     "description": "파라미터를 사용하여 데이터를 마이그레이션합니다",
@@ -10,8 +11,28 @@
       "migrateData"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "source": {
+        "type": "TABLE",
+        "identifier": "source-table-id",
+        "filters": {
+          "dateRange": "2024-01-01,2024-12-31"
+        }
+      },
+      "target": {
+        "type": "TABLE",
+        "identifier": "target-table-id",
+        "createIfNotExists": true
+      },
+      "options": {
+        "batchSize": 500,
+        "validateBeforeMigration": true,
+        "preserveRelationships": true,
+        "handleConflicts": "SKIP",
+        "generateReport": true
+      }
+    },
+    "inputSchema": {
       "source": {
         "type": "object",
         "required": true,
@@ -103,6 +124,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 45,
+    "lastUsedAt": "2025-09-04T15:03:36.000Z",
+    "statistics": {
+      "usageCount": 45,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-04T15:03:36.000Z"
+    }
   }
 }

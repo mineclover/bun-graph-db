@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "exportedAt": "2025-09-22T07:03:36.139Z",
   "template": {
+    "id": "895",
     "identifier": "search-related-nodes-with-params",
     "name": "SearchRelatedNodesWithParams",
     "description": "파라미터를 사용하여 관련 노드들을 검색합니다",
@@ -10,8 +11,18 @@
       "searchRelatedNodes"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "filter": {
+        "sourceNodeId": "example-source-node-id",
+        "maxDistance": 3,
+        "minStrength": 0.5
+      },
+      "pagination": {
+        "limit": 15,
+        "offset": 0
+      }
+    },
+    "inputSchema": {
       "filter": {
         "type": "object",
         "required": true,
@@ -67,6 +78,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 697,
+    "lastUsedAt": "2025-09-08T20:03:36.000Z",
+    "statistics": {
+      "usageCount": 697,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-08T20:03:36.000Z"
+    }
   }
 }

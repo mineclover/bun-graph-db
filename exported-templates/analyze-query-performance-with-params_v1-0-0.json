@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.523Z",
+  "exportedAt": "2025-09-22T07:03:36.347Z",
   "template": {
+    "id": "863",
     "identifier": "analyze-query-performance-with-params",
     "name": "AnalyzeQueryPerformanceWithParams",
     "description": "파라미터를 사용하여 쿼리 성능을 분석합니다",
@@ -10,8 +11,15 @@
       "analyzeQueryPerformance"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "timeRange": "24h",
+      "queryTypes": [
+        "QUERY",
+        "MUTATION"
+      ],
+      "threshold": 100
+    },
+    "inputSchema": {
       "timeRange": {
         "type": "string",
         "required": true,
@@ -45,6 +53,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 31,
+    "lastUsedAt": "2025-08-24T05:03:36.000Z",
+    "statistics": {
+      "usageCount": 31,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-24T05:03:36.000Z"
+    }
   }
 }

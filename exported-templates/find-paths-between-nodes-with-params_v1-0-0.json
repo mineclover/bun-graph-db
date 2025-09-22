@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.139Z",
   "template": {
+    "id": "879",
     "identifier": "find-paths-between-nodes-with-params",
     "name": "FindPathsBetweenNodesWithParams",
     "description": "파라미터를 사용하여 노드 간 경로를 찾습니다",
@@ -10,8 +11,15 @@
       "findPathsBetweenNodes"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "input": {
+        "sourceNodeId": "example-source-node-id",
+        "targetNodeId": "example-target-node-id",
+        "maxDepth": 5,
+        "algorithm": "SHORTEST_PATH"
+      }
+    },
+    "inputSchema": {
       "input": {
         "type": "object",
         "required": true,
@@ -56,6 +64,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 661,
+    "lastUsedAt": "2025-08-21T01:03:36.000Z",
+    "statistics": {
+      "usageCount": 661,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-21T01:03:36.000Z"
+    }
   }
 }

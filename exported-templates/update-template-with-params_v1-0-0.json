@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "exportedAt": "2025-09-22T07:03:36.241Z",
   "template": {
+    "id": "904",
     "identifier": "update-template-with-params",
     "name": "UpdateTemplateWithParams",
     "description": "파라미터를 사용하여 템플릿을 업데이트합니다",
@@ -10,8 +11,18 @@
       "updateTemplate"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "id": "example-template-id",
+      "input": {
+        "name": "업데이트된 템플릿 이름",
+        "description": "업데이트된 설명",
+        "tags": [
+          "updated",
+          "modified"
+        ]
+      }
+    },
+    "inputSchema": {
       "id": {
         "type": "string",
         "required": true,
@@ -57,6 +68,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 55,
+    "lastUsedAt": "2025-08-29T07:03:36.000Z",
+    "statistics": {
+      "usageCount": 55,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-29T07:03:36.000Z"
+    }
   }
 }

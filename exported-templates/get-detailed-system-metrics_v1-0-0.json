@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.522Z",
+  "exportedAt": "2025-09-22T07:03:36.347Z",
   "template": {
+    "id": "883",
     "identifier": "get-detailed-system-metrics",
     "name": "GetDetailedSystemMetrics",
     "description": "파라미터를 사용하여 상세한 시스템 메트릭을 조회합니다",
@@ -10,8 +11,11 @@
       "systemMetrics"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "timeRange": "1h",
+      "includeHistory": true
+    },
+    "inputSchema": {
       "timeRange": {
         "type": "string",
         "description": "시간 범위 (1h, 24h, 7d)"
@@ -36,6 +40,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 45,
+    "lastUsedAt": "2025-09-17T18:03:36.000Z",
+    "statistics": {
+      "usageCount": 45,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-17T18:03:36.000Z"
+    }
   }
 }

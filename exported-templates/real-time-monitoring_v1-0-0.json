@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "exportedAt": "2025-09-22T07:03:36.557Z",
   "template": {
+    "id": "892",
     "identifier": "real-time-monitoring",
     "name": "SystemMonitoring",
     "description": "시스템 성능, 메모리 사용량, 쿼리 성능을 실시간으로 모니터링하는 구독 템플릿",
@@ -11,7 +12,7 @@
     ],
     "operationType": "subscription",
     "variables": null,
-    "variablesSchema": null,
+    "inputSchema": null,
     "defaultVariables": null,
     "applicableTables": [],
     "complexityScore": 10,
@@ -24,6 +25,13 @@
       "system",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 21,
+    "lastUsedAt": "2025-09-17T18:03:36.000Z",
+    "statistics": {
+      "usageCount": 21,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-17T18:03:36.000Z"
+    }
   }
 }

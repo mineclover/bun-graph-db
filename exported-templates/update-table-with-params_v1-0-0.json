@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "exportedAt": "2025-09-22T07:03:35.935Z",
   "template": {
+    "id": "905",
     "identifier": "update-table-with-params",
     "name": "UpdateTableWithParams",
     "description": "파라미터를 사용하여 테이블을 업데이트합니다",
@@ -10,8 +11,13 @@
       "updateTable"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "id": "example-table-id",
+      "input": {
+        "description": "업데이트된 테이블 설명"
+      }
+    },
+    "inputSchema": {
       "id": {
         "type": "string",
         "required": true,
@@ -44,6 +50,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 1075,
+    "lastUsedAt": "2025-08-24T23:03:36.000Z",
+    "statistics": {
+      "usageCount": 1075,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-24T23:03:36.000Z"
+    }
   }
 }

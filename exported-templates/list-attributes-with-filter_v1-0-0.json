@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.521Z",
+  "exportedAt": "2025-09-22T07:03:36.343Z",
   "template": {
+    "id": "887",
     "identifier": "list-attributes-with-filter",
     "name": "ListAttributesWithFilter",
     "description": "필터와 페이지네이션을 사용하여 속성 목록을 조회합니다",
@@ -10,8 +11,22 @@
       "attributes"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "filter": {
+        "tableId": null
+      },
+      "pagination": {
+        "limit": 50,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "name",
+          "direction": "ASC"
+        }
+      ]
+    },
+    "inputSchema": {
       "filter": {
         "type": "object",
         "properties": {
@@ -52,6 +67,13 @@
       "pagination",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 48,
+    "lastUsedAt": "2025-08-25T10:03:36.000Z",
+    "statistics": {
+      "usageCount": 48,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-25T10:03:36.000Z"
+    }
   }
 }

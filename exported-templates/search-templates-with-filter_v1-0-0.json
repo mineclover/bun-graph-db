@@ -1,7 +1,8 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "exportedAt": "2025-09-22T07:03:36.139Z",
   "template": {
+    "id": "898",
     "identifier": "search-templates-with-filter",
     "name": "SearchTemplatesWithFilter",
     "description": "필터와 페이지네이션을 사용하여 템플릿을 검색합니다",
@@ -10,8 +11,25 @@
       "searchTemplates"
     ],
     "operationType": "query",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "filter": {
+        "tags": [
+          "fixed"
+        ],
+        "isActive": true
+      },
+      "pagination": {
+        "limit": 25,
+        "offset": 0
+      },
+      "sort": [
+        {
+          "field": "usageCount",
+          "direction": "DESC"
+        }
+      ]
+    },
+    "inputSchema": {
       "filter": {
         "type": "object",
         "properties": {
@@ -59,6 +77,13 @@
       "pagination",
       "fixed"
     ],
-    "isActive": true
+    "isActive": true,
+    "usageCount": 554,
+    "lastUsedAt": "2025-09-17T18:03:36.000Z",
+    "statistics": {
+      "usageCount": 554,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-09-17T18:03:36.000Z"
+    }
   }
 }

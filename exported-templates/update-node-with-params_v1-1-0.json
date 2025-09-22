@@ -1,7 +1,8 @@
 {
-  "version": "1.0.0",
-  "exportedAt": "2025-09-19T11:07:21.520Z",
+  "version": "1.1.0",
+  "exportedAt": "2025-09-22T07:03:36.037Z",
   "template": {
+    "id": "903",
     "identifier": "update-node-with-params",
     "name": "UpdateNodeWithParams",
     "description": "파라미터를 사용하여 노드를 업데이트합니다",
@@ -10,8 +11,13 @@
       "updateNode"
     ],
     "operationType": "mutation",
-    "variables": null,
-    "variablesSchema": {
+    "variables": {
+      "id": "1",
+      "input": {
+        "content": "업데이트된 내용"
+      }
+    },
+    "inputSchema": {
       "type": "object",
       "properties": {
         "id": {
@@ -52,6 +58,13 @@
       "parameterized",
       "fixed"
     ],
-    "isActive": false
+    "isActive": false,
+    "usageCount": 899,
+    "lastUsedAt": "2025-08-19T08:03:36.000Z",
+    "statistics": {
+      "usageCount": 899,
+      "avgExecutionTimeMs": 0,
+      "lastUsedAt": "2025-08-19T08:03:36.000Z"
+    }
   }
 }
