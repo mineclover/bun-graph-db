@@ -1,16 +1,16 @@
 import { createYoga } from 'graphql-yoga'
-import type { ILogger } from './src/application/ports/ILogger.js'
-import { createGraphQLConfig } from './src/config/graphql.js'
-import { ContainerBootstrap } from './src/infrastructure/container/ContainerBootstrap.js'
-import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens.js'
-import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder.js'
+import type { ILogger } from './src/application/ports/ILogger'
+import { createGraphQLConfig } from './src/config/graphql'
+import { ContainerBootstrap } from './src/infrastructure/container/ContainerBootstrap'
+import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens'
+import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder'
 import {
   mergeWithEnvironment,
   parseCliArgs,
   printHelp,
   printVersion,
   validateOptions,
-} from './src/utils/cli-parser.js'
+} from './src/utils/cli-parser'
 
 // Parse CLI arguments
 const { options, unknown } = parseCliArgs()
@@ -102,10 +102,10 @@ const yoga = createYoga({
   landingPage: false,
 })
 
-import { McpHttpServer } from './src/mcp/http-server/McpHttpServer.js'
+import { McpHttpServer } from './src/mcp/http-server/McpHttpServer'
 // Import route handlers
-import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes.js'
-import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes.js'
+import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes'
+import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes'
 
 // Create route handlers
 const schemaHandler = await createSchemaHandler(container)
