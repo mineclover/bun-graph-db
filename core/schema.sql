@@ -291,15 +291,15 @@ INSERT OR IGNORE INTO attribute_types (identifier, json_type, format, descriptio
    '{"id": "user_42", "last_response": null, "fetched_at": null, "cache_status": "invalid"}', 
    '[{"id": "user_42", "last_response": {"name": "John", "email": "john@example.com"}, "fetched_at": "2024-01-01T12:00:00Z", "cache_status": "valid"}]');
 
--- Insert default relation types
-INSERT OR IGNORE INTO relation_types (identifier, description, category) VALUES 
-  ('depends_on', 'Direct dependency', 'structural'),
-  ('related_to', 'Related entity', 'semantic'),
+-- Insert default relation types (camelCase naming convention)
+INSERT OR IGNORE INTO relation_types (identifier, description, category) VALUES
+  ('dependsOn', 'Direct dependency', 'structural'),
+  ('relatedTo', 'Related entity', 'semantic'),
   ('extends', 'Extension relationship', 'hierarchy'),
   ('implements', 'Implementation relationship', 'structural'),
   ('references', 'Reference relationship', 'reference'),
-  ('parent_of', 'Parent-child relationship', 'hierarchy'),
-  ('linked_to', 'Bidirectional link', 'semantic');
+  ('parentOf', 'Parent-child relationship', 'hierarchy'),
+  ('linkedTo', 'Bidirectional link', 'semantic');
 
 -- Template execution log table (for performance tracking)
 CREATE TABLE IF NOT EXISTS template_executions (

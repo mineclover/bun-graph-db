@@ -214,7 +214,7 @@ create_relations {
     {
       "source_node_content": "API Endpoint Test",
       "target_node_content": "Database Connection Test",
-      "relation_type_id": "depends_on",
+      "relation_type_id": "dependsOn",
       "properties": {
         "dependency_type": "prerequisite",
         "blocking": "true",
@@ -224,7 +224,7 @@ create_relations {
     {
       "source_node_content": "API Endpoint Test", 
       "target_node_content": "User Authentication Test",
-      "relation_type_id": "depends_on",
+      "relation_type_id": "dependsOn",
       "properties": {
         "dependency_type": "prerequisite",
         "blocking": "true",
@@ -234,7 +234,7 @@ create_relations {
     {
       "source_node_content": "Performance Load Test",
       "target_node_content": "API Endpoint Test",
-      "relation_type_id": "depends_on", 
+      "relation_type_id": "dependsOn", 
       "properties": {
         "dependency_type": "prerequisite",
         "blocking": "true",

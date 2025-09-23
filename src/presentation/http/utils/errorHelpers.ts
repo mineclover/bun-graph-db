@@ -5,7 +5,7 @@ export function toErrorMeta(error: unknown): Record<string, unknown> {
     return {
       name: error.name,
       message: error.message,
-      stack: error.stack
+      stack: error.stack,
     }
   }
 
@@ -14,7 +14,7 @@ export function toErrorMeta(error: unknown): Record<string, unknown> {
   }
 
   return {
-    error: String(error)
+    error: String(error),
   }
 }
 

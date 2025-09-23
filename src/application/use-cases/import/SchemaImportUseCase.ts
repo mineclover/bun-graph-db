@@ -11,6 +11,7 @@ import type { INodeRelationRepository } from '@/domain/repositories/INodeRelatio
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 import type {
   ExportedAttribute,
   ExportedNode,
@@ -18,7 +19,6 @@ import type {
   ExportedTable,
   SchemaExportResult,
 } from '../export/SchemaExportUseCase.js'
-import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface SchemaImportOptions {
   overwriteExisting?: boolean

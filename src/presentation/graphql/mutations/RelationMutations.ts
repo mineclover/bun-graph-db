@@ -70,7 +70,10 @@ export class RelationMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createRelationType', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: createRelationType', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       return {
         success: false,
@@ -116,7 +119,10 @@ export class RelationMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createRelation', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: createRelation', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       // Handle specific domain exceptions
       if (error instanceof ConflictException) {
@@ -296,7 +302,10 @@ export class RelationMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: deleteRelationType', { id: args.id, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: deleteRelationType', {
+        id: args.id,
+        ...toErrorMeta(error),
+      })
 
       if (error instanceof NotFoundException) {
         return {

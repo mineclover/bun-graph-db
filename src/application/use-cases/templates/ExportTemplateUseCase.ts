@@ -86,7 +86,10 @@ export class ExportTemplateUseCase {
         errors: ['Invalid request parameters'],
       }
     } catch (error) {
-      this.logger.error('Unexpected error during template export', { ...toErrorMeta(error), request })
+      this.logger.error('Unexpected error during template export', {
+        ...toErrorMeta(error),
+        request,
+      })
 
       return {
         success: false,

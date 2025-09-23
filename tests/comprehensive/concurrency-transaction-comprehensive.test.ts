@@ -16,9 +16,9 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
+import type { Container } from 'inversify'
 import { createContainer } from '../../src/infrastructure/container/Container'
-import { Container } from 'inversify'
+import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
 import { TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 interface ConcurrencyTestResult {
@@ -46,7 +46,7 @@ class ConcurrencyTester {
           data: result.data,
           error: result.errors,
           duration,
-          timestamp: start
+          timestamp: start,
         }
         this.results.push(testResult)
         return testResult
@@ -57,7 +57,7 @@ class ConcurrencyTester {
           success: false,
           error,
           duration,
-          timestamp: start
+          timestamp: start,
         }
         this.results.push(testResult)
         return testResult
@@ -68,7 +68,7 @@ class ConcurrencyTester {
 
   async runConcurrently(): Promise<ConcurrencyTestResult[]> {
     this.results = []
-    await Promise.all(this.operations.map(op => op()))
+    await Promise.all(this.operations.map((op) => op()))
     return this.results.sort((a, b) => a.timestamp - b.timestamp)
   }
 
@@ -77,7 +77,7 @@ class ConcurrencyTester {
   }
 
   getSuccessRate(): number {
-    const successCount = this.results.filter(r => r.success).length
+    const successCount = this.results.filter((r) => r.success).length
     return successCount / this.results.length
   }
 }
@@ -92,7 +92,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
     const response = await yoga.fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables }),
     })
     return await response.json()
   }
@@ -177,7 +177,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       `)
 
       expect(nodesQuery.errors).toBeUndefined()
-      const createdCount = results.filter(r => r.success).length
+      const createdCount = results.filter((r) => r.success).length
       expect(nodesQuery.data.searchNodes.totalCount).toBe(createdCount)
 
       // Verify no duplicate content
@@ -231,11 +231,13 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       expect(concurrencyTester.getSuccessRate()).toBe(1.0) // 100% success for reads
 
       // All should return consistent data
-      const firstResult = results.find(r => r.success)?.data?.searchNodes
-      results.filter(r => r.success).forEach(result => {
-        expect(result.data.searchNodes.totalCount).toBe(firstResult.totalCount)
-        expect(result.data.searchNodes.nodes.length).toBe(firstResult.nodes.length)
-      })
+      const firstResult = results.find((r) => r.success)?.data?.searchNodes
+      results
+        .filter((r) => r.success)
+        .forEach((result) => {
+          expect(result.data.searchNodes.totalCount).toBe(firstResult.totalCount)
+          expect(result.data.searchNodes.nodes.length).toBe(firstResult.nodes.length)
+        })
 
       // Performance should be reasonable
       const avgDuration = results.reduce((sum, r) => sum + r.duration, 0) / results.length
@@ -287,7 +289,9 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         }
       `)
 
-      const writeSuccessCount = results.filter(r => r.success && r.operationId.startsWith('write')).length
+      const writeSuccessCount = results.filter(
+        (r) => r.success && r.operationId.startsWith('write')
+      ).length
       expect(finalQuery.data.searchNodes.totalCount).toBe(writeSuccessCount)
     })
   })
@@ -313,10 +317,11 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         concurrencyTester.addOperation(`batch-${i}`, async () => {
           const nodes = Array.from({ length: 5 }, (_, j) => ({
             tableId,
-            content: `Batch ${i} Node ${j + 1}`
+            content: `Batch ${i} Node ${j + 1}`,
           }))
 
-          return await graphqlExecute(`
+          return await graphqlExecute(
+            `
             mutation BatchCreateNodes($nodes: [CreateNodeInput!]!) {
               batchCreateNodes(nodes: $nodes) {
                 success
@@ -331,19 +336,23 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
                 }
               }
             }
-          `, { nodes })
+          `,
+            { nodes }
+          )
         })
       }
 
       const results = await concurrencyTester.runConcurrently()
 
       // All batch operations should succeed
-      results.filter(r => r.success).forEach(result => {
-        const batchData = result.data.batchCreateNodes
-        expect(batchData.success).toBe(true)
-        expect(batchData.totalCreated).toBe(5)
-        expect(batchData.totalFailed).toBe(0)
-      })
+      results
+        .filter((r) => r.success)
+        .forEach((result) => {
+          const batchData = result.data.batchCreateNodes
+          expect(batchData.success).toBe(true)
+          expect(batchData.totalCreated).toBe(5)
+          expect(batchData.totalFailed).toBe(0)
+        })
 
       // Verify total count matches successful batches
       const finalQuery = await graphqlExecute(`
@@ -354,7 +363,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         }
       `)
 
-      const successfulBatches = results.filter(r => r.success).length
+      const successfulBatches = results.filter((r) => r.success).length
       expect(finalQuery.data.searchNodes.totalCount).toBe(successfulBatches * 5)
     })
 
@@ -398,15 +407,16 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         concurrencyTester.addOperation(`rollback-test-${i}`, async () => {
           const validNodes = Array.from({ length: 3 }, (_, j) => ({
             tableId,
-            content: `Valid Node ${i}-${j + 1}`
+            content: `Valid Node ${i}-${j + 1}`,
           }))
 
           const invalidNode = {
             tableId: 'invalid-table-id',
-            content: 'This should fail'
+            content: 'This should fail',
           }
 
-          return await graphqlExecute(`
+          return await graphqlExecute(
+            `
             mutation TransactionalBatch($nodes: [CreateNodeInput!]!) {
               batchCreateNodesTransactional(nodes: $nodes) {
                 success
@@ -415,7 +425,9 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
                 rollbackOccurred
               }
             }
-          `, { nodes: [...validNodes, invalidNode] })
+          `,
+            { nodes: [...validNodes, invalidNode] }
+          )
         })
       }
 
@@ -431,9 +443,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       `)
 
       // Should have same count as initial (rollbacks should prevent any changes)
-      expect(finalCount.data.searchNodes.totalCount).toBe(
-        initialCount.data.searchNodes.totalCount
-      )
+      expect(finalCount.data.searchNodes.totalCount).toBe(initialCount.data.searchNodes.totalCount)
     })
   })
 
@@ -508,7 +518,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         if (updateResult.errors) return updateResult
 
         // Small delay to increase chance of deadlock
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 10))
 
         return await graphqlExecute(`
           mutation {
@@ -540,7 +550,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         if (updateResult.errors) return updateResult
 
         // Small delay to increase chance of deadlock
-        await new Promise(resolve => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 10))
 
         return await graphqlExecute(`
           mutation {
@@ -562,12 +572,12 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       expect(results).toHaveLength(2)
 
       // At least one operation should succeed
-      const successCount = results.filter(r => r.success).length
+      const successCount = results.filter((r) => r.success).length
       expect(successCount).toBeGreaterThanOrEqual(1)
 
       // If one failed, it should be due to proper deadlock detection, not hanging
-      const failedResults = results.filter(r => !r.success)
-      failedResults.forEach(result => {
+      const failedResults = results.filter((r) => !r.success)
+      failedResults.forEach((result) => {
         if (result.error) {
           expect(JSON.stringify(result.error)).toMatch(/deadlock|timeout|conflict/i)
         }
@@ -679,7 +689,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       )
 
       const nodeResults = await Promise.all(nodeCreationPromises)
-      const nodeIds = nodeResults.map(r => r.data.createNode.node.id)
+      const nodeIds = nodeResults.map((r) => r.data.createNode.node.id)
 
       const concurrencyTester = new ConcurrencyTester()
 
@@ -885,7 +895,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       for (let i = 0; i < 100; i++) {
         concurrencyTester.addOperation(`pool-stress-${i}`, async () => {
           // Add small delay to hold connections longer
-          await new Promise(resolve => setTimeout(resolve, Math.random() * 100))
+          await new Promise((resolve) => setTimeout(resolve, Math.random() * 100))
 
           return await graphqlExecute(`
             query {
@@ -961,7 +971,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       await concurrencyTester.runConcurrently()
 
       // Give time for cleanup
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // Force garbage collection if available
       if (global.gc) {
@@ -1063,7 +1073,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       expect(avgDuration).toBeLessThan(2000) // < 2 seconds average per operation
 
       // Verify no operations took excessively long (potential deadlock)
-      const maxDuration = Math.max(...results.map(r => r.duration))
+      const maxDuration = Math.max(...results.map((r) => r.duration))
       expect(maxDuration).toBeLessThan(10000) // < 10 seconds max
     })
   })

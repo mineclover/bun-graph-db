@@ -273,14 +273,14 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       const result = await graphqlRequest(query, {
         nodeId: global.testData.aliceId,
         depth: 1,
-        direction: 'OUTGOING'
+        direction: 'OUTGOING',
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.node.connectedNodes).toBeDefined()
       expect(Array.isArray(result.data.node.connectedNodes)).toBe(true)
       // Alice should be connected to Bob (depth 1 outgoing)
-      expect(result.data.node.connectedNodes.some(node => node.title === 'Bob')).toBe(true)
+      expect(result.data.node.connectedNodes.some((node) => node.title === 'Bob')).toBe(true)
     })
 
     test('connectedNodes - Deep traversal with multiple hops', async () => {
@@ -298,13 +298,13 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       `
 
       const result = await graphqlRequest(query, {
-        nodeId: global.testData.aliceId
+        nodeId: global.testData.aliceId,
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.node.connectedNodes).toBeDefined()
       // Alice -> Bob -> Charlie (depth 2) should include both Bob and Charlie
-      const connectedTitles = result.data.node.connectedNodes.map(node => node.title)
+      const connectedTitles = result.data.node.connectedNodes.map((node) => node.title)
       expect(connectedTitles).toContain('Bob')
       expect(connectedTitles).toContain('Charlie')
     })
@@ -324,13 +324,13 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       `
 
       const result = await graphqlRequest(query, {
-        nodeId: global.testData.bobId
+        nodeId: global.testData.bobId,
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.node.connectedNodes).toBeDefined()
       // Bob should be connected to Alice (incoming) and Charlie (outgoing) and TechCorp (incoming)
-      const connectedTitles = result.data.node.connectedNodes.map(node => node.title)
+      const connectedTitles = result.data.node.connectedNodes.map((node) => node.title)
       expect(connectedTitles).toContain('Alice')
       expect(connectedTitles).toContain('Charlie')
       expect(connectedTitles).toContain('TechCorp')
@@ -355,14 +355,14 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
 
       const result = await graphqlRequest(query, {
         sourceId: global.testData.aliceId,
-        targetId: global.testData.bobId
+        targetId: global.testData.bobId,
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.node.shortestPath).toBeDefined()
       expect(Array.isArray(result.data.node.shortestPath)).toBe(true)
       // Path should include Alice and Bob
-      const pathTitles = result.data.node.shortestPath.map(node => node.title)
+      const pathTitles = result.data.node.shortestPath.map((node) => node.title)
       expect(pathTitles).toContain('Alice')
       expect(pathTitles).toContain('Bob')
     })
@@ -383,13 +383,13 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
 
       const result = await graphqlRequest(query, {
         sourceId: global.testData.aliceId,
-        targetId: global.testData.charlieId
+        targetId: global.testData.charlieId,
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.node.shortestPath).toBeDefined()
       // Path from Alice to Charlie should go through Bob
-      const pathTitles = result.data.node.shortestPath.map(node => node.title)
+      const pathTitles = result.data.node.shortestPath.map((node) => node.title)
       expect(pathTitles).toContain('Alice')
       expect(pathTitles).toContain('Bob')
       expect(pathTitles).toContain('Charlie')
@@ -421,7 +421,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
 
       const result = await graphqlRequest(query, {
         sourceId: global.testData.aliceId,
-        targetId: isolatedId
+        targetId: isolatedId,
       })
 
       expect(result.errors).toBeUndefined()
@@ -448,13 +448,13 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
 
       const result = await graphqlRequest(query, {
         nodeId: global.testData.techCorpId,
-        relationTypes: ['employs']
+        relationTypes: ['employs'],
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.node.neighborsByRelationType).toBeDefined()
       // TechCorp employs Alice and Bob
-      const neighborTitles = result.data.node.neighborsByRelationType.map(node => node.title)
+      const neighborTitles = result.data.node.neighborsByRelationType.map((node) => node.title)
       expect(neighborTitles).toContain('Alice')
       expect(neighborTitles).toContain('Bob')
       expect(neighborTitles).not.toContain('Charlie') // Not employed by TechCorp
@@ -475,13 +475,13 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       `
 
       const result = await graphqlRequest(query, {
-        nodeId: global.testData.aliceId
+        nodeId: global.testData.aliceId,
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.node.connectedNodes).toBeDefined()
       // Alice knows Bob but doesn't employ anyone
-      const connectedTitles = result.data.node.connectedNodes.map(node => node.title)
+      const connectedTitles = result.data.node.connectedNodes.map((node) => node.title)
       expect(connectedTitles).toContain('Bob')
       expect(connectedTitles).not.toContain('TechCorp')
     })
@@ -509,22 +509,28 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       const result = await graphqlRequest(query, {
         tableId: global.testData.personTableId,
         searchQuery: {
-          textSearch: "Alice",
-          conditions: [{
-            logicalOperator: "AND",
-            filters: [{
-              field: "age",
-              operator: "gte",
-              value: "25"
-            }]
-          }],
-          sortBy: [{
-            field: "created_at",
-            direction: "DESC"
-          }],
+          textSearch: 'Alice',
+          conditions: [
+            {
+              logicalOperator: 'AND',
+              filters: [
+                {
+                  field: 'age',
+                  operator: 'gte',
+                  value: '25',
+                },
+              ],
+            },
+          ],
+          sortBy: [
+            {
+              field: 'created_at',
+              direction: 'DESC',
+            },
+          ],
           limit: 10,
-          offset: 0
-        }
+          offset: 0,
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -532,7 +538,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       expect(result.data.searchNodes.nodes).toBeDefined()
       // Should find Alice (contains "Alice" and age >= 25)
       const foundNodes = result.data.searchNodes.nodes
-      expect(foundNodes.some(item => item.node.title === 'Alice')).toBe(true)
+      expect(foundNodes.some((item) => item.node.title === 'Alice')).toBe(true)
     })
 
     test('searchNodes - Range queries and multiple operators', async () => {
@@ -554,22 +560,26 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       const result = await graphqlRequest(query, {
         tableId: global.testData.personTableId,
         searchQuery: {
-          conditions: [{
-            logicalOperator: "AND",
-            filters: [{
-              field: "age",
-              operator: "range",
-              value: { min: "20", max: "32" }
-            }]
-          }],
-          limit: 10
-        }
+          conditions: [
+            {
+              logicalOperator: 'AND',
+              filters: [
+                {
+                  field: 'age',
+                  operator: 'range',
+                  value: { min: '20', max: '32' },
+                },
+              ],
+            },
+          ],
+          limit: 10,
+        },
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.searchNodes.nodes).toBeDefined()
       // Should find Alice (30) and Bob (25), but not Charlie (35)
-      const foundTitles = result.data.searchNodes.nodes.map(item => item.node.title)
+      const foundTitles = result.data.searchNodes.nodes.map((item) => item.node.title)
       expect(foundTitles).toContain('Alice')
       expect(foundTitles).toContain('Bob')
       expect(foundTitles).not.toContain('Charlie')
@@ -594,37 +604,39 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
         searchQuery: {
           conditions: [
             {
-              logicalOperator: "OR",
+              logicalOperator: 'OR',
               filters: [
                 {
-                  field: "name",
-                  operator: "contains",
-                  value: "Alice"
+                  field: 'name',
+                  operator: 'contains',
+                  value: 'Alice',
                 },
                 {
-                  field: "name",
-                  operator: "contains",
-                  value: "Bob"
-                }
-              ]
+                  field: 'name',
+                  operator: 'contains',
+                  value: 'Bob',
+                },
+              ],
             },
             {
-              logicalOperator: "AND",
-              filters: [{
-                field: "age",
-                operator: "lt",
-                value: "32"
-              }]
-            }
+              logicalOperator: 'AND',
+              filters: [
+                {
+                  field: 'age',
+                  operator: 'lt',
+                  value: '32',
+                },
+              ],
+            },
           ],
-          limit: 10
-        }
+          limit: 10,
+        },
       })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.searchNodes.nodes).toBeDefined()
       // Should find Bob (name contains "Bob" and age < 32) and Alice (name contains "Alice" and age < 32)
-      const foundTitles = result.data.searchNodes.nodes.map(item => item.node.title)
+      const foundTitles = result.data.searchNodes.nodes.map((item) => item.node.title)
       expect(foundTitles).toContain('Alice')
       expect(foundTitles).toContain('Bob')
     })
@@ -645,7 +657,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       `
 
       const result = await graphqlRequest(query, {
-        nodeId: global.testData.aliceId
+        nodeId: global.testData.aliceId,
       })
 
       expect(result.errors).toBeUndefined()
@@ -667,7 +679,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       `
 
       const result = await graphqlRequest(query, {
-        nodeId: global.testData.aliceId
+        nodeId: global.testData.aliceId,
       })
 
       expect(result.errors).toBeUndefined()
@@ -693,9 +705,9 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       const result = await graphqlRequest(query, {
         tableId: global.testData.personTableId,
         searchQuery: {
-          textSearch: "NonExistentContent12345",
-          limit: 10
-        }
+          textSearch: 'NonExistentContent12345',
+          limit: 10,
+        },
       })
 
       expect(result.errors).toBeUndefined()
@@ -719,7 +731,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       `
 
       const result = await graphqlRequest(query, {
-        nodeId: '999999'
+        nodeId: '999999',
       })
 
       expect(result.errors).toBeUndefined()
@@ -738,7 +750,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       `
 
       const result = await graphqlRequest(query, {
-        tableId: '999999'
+        tableId: '999999',
       })
 
       // Should handle gracefully - either error or empty result
@@ -759,7 +771,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
 
       const result = await graphqlRequest(query, {
         sourceId: global.testData.aliceId,
-        targetId: '999999'
+        targetId: '999999',
       })
 
       expect(result.errors).toBeUndefined()

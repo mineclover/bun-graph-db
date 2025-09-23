@@ -260,7 +260,11 @@ export class TableResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update table', { id: args.id, input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to update table', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       if (error instanceof NotFoundException || error instanceof ValidationException) {
         return {

@@ -16,9 +16,9 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
+import type { Container } from 'inversify'
 import { createContainer } from '../../src/infrastructure/container/Container'
-import { Container } from 'inversify'
+import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
 import { TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 interface WorkflowStep {
@@ -77,7 +77,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
     const response = await yoga.fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables }),
     })
     return await response.json()
   }
@@ -102,9 +102,9 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
       const workflow = new WorkflowRunner()
 
       let tableId: string
-      let attributeIds: { [key: string]: string } = {}
-      let nodeIds: string[] = []
-      let relationIds: string[] = []
+      const attributeIds: { [key: string]: string } = {}
+      const nodeIds: string[] = []
+      const relationIds: string[] = []
 
       // Step 1: Create domain table
       workflow.addStep({
@@ -132,7 +132,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(result.errors).toBeUndefined()
           expect(result.data.createTable.table.identifier).toBe('customers')
           tableId = result.data.createTable.table.id
-        }
+        },
       })
 
       // Step 2: Define comprehensive schema
@@ -145,11 +145,11 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             { identifier: 'age', name: 'Age', typeId: '2' },
             { identifier: 'is_premium', name: 'Premium Customer', typeId: '3' },
             { identifier: 'join_date', name: 'Join Date', typeId: '4' },
-            { identifier: 'lifetime_value', name: 'Customer Lifetime Value', typeId: '2' }
+            { identifier: 'lifetime_value', name: 'Customer Lifetime Value', typeId: '2' },
           ]
 
           const results = await Promise.all(
-            attributes.map(attr =>
+            attributes.map((attr) =>
               graphqlExecute(`
                 mutation {
                   createAttribute(input: {
@@ -178,7 +178,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             const attr = result.data.createAttribute.attribute
             attributeIds[attr.identifier] = attr.id
           })
-        }
+        },
       })
 
       // Step 3: Create customer entities
@@ -186,11 +186,46 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
         name: 'Create Customer Entities',
         action: async () => {
           const customers = [
-            { name: 'John Smith', email: 'john@example.com', age: 35, is_premium: true, join_date: '2023-01-15', lifetime_value: 5000 },
-            { name: 'Sarah Johnson', email: 'sarah@example.com', age: 28, is_premium: false, join_date: '2023-03-22', lifetime_value: 1200 },
-            { name: 'Mike Wilson', email: 'mike@example.com', age: 42, is_premium: true, join_date: '2022-11-08', lifetime_value: 8500 },
-            { name: 'Emily Davis', email: 'emily@example.com', age: 31, is_premium: true, join_date: '2023-02-14', lifetime_value: 3200 },
-            { name: 'David Brown', email: 'david@example.com', age: 25, is_premium: false, join_date: '2023-04-10', lifetime_value: 800 }
+            {
+              name: 'John Smith',
+              email: 'john@example.com',
+              age: 35,
+              is_premium: true,
+              join_date: '2023-01-15',
+              lifetime_value: 5000,
+            },
+            {
+              name: 'Sarah Johnson',
+              email: 'sarah@example.com',
+              age: 28,
+              is_premium: false,
+              join_date: '2023-03-22',
+              lifetime_value: 1200,
+            },
+            {
+              name: 'Mike Wilson',
+              email: 'mike@example.com',
+              age: 42,
+              is_premium: true,
+              join_date: '2022-11-08',
+              lifetime_value: 8500,
+            },
+            {
+              name: 'Emily Davis',
+              email: 'emily@example.com',
+              age: 31,
+              is_premium: true,
+              join_date: '2023-02-14',
+              lifetime_value: 3200,
+            },
+            {
+              name: 'David Brown',
+              email: 'david@example.com',
+              age: 25,
+              is_premium: false,
+              join_date: '2023-04-10',
+              lifetime_value: 800,
+            },
           ]
 
           const nodeCreationResults = await Promise.all(
@@ -224,7 +259,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             expect(nodeResult.errors).toBeUndefined()
             nodeIds.push(nodeResult.data.createNode.node.id)
           })
-        }
+        },
       })
 
       // Step 4: Set comprehensive attributes
@@ -232,11 +267,46 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
         name: 'Set Customer Attributes',
         action: async () => {
           const customers = [
-            { name: 'John Smith', email: 'john@example.com', age: 35, is_premium: true, join_date: '2023-01-15', lifetime_value: 5000 },
-            { name: 'Sarah Johnson', email: 'sarah@example.com', age: 28, is_premium: false, join_date: '2023-03-22', lifetime_value: 1200 },
-            { name: 'Mike Wilson', email: 'mike@example.com', age: 42, is_premium: true, join_date: '2022-11-08', lifetime_value: 8500 },
-            { name: 'Emily Davis', email: 'emily@example.com', age: 31, is_premium: true, join_date: '2023-02-14', lifetime_value: 3200 },
-            { name: 'David Brown', email: 'david@example.com', age: 25, is_premium: false, join_date: '2023-04-10', lifetime_value: 800 }
+            {
+              name: 'John Smith',
+              email: 'john@example.com',
+              age: 35,
+              is_premium: true,
+              join_date: '2023-01-15',
+              lifetime_value: 5000,
+            },
+            {
+              name: 'Sarah Johnson',
+              email: 'sarah@example.com',
+              age: 28,
+              is_premium: false,
+              join_date: '2023-03-22',
+              lifetime_value: 1200,
+            },
+            {
+              name: 'Mike Wilson',
+              email: 'mike@example.com',
+              age: 42,
+              is_premium: true,
+              join_date: '2022-11-08',
+              lifetime_value: 8500,
+            },
+            {
+              name: 'Emily Davis',
+              email: 'emily@example.com',
+              age: 31,
+              is_premium: true,
+              join_date: '2023-02-14',
+              lifetime_value: 3200,
+            },
+            {
+              name: 'David Brown',
+              email: 'david@example.com',
+              age: 25,
+              is_premium: false,
+              join_date: '2023-04-10',
+              lifetime_value: 800,
+            },
           ]
 
           const attributeSetResults = []
@@ -275,7 +345,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             expect(result.errors).toBeUndefined()
             expect(result.data.setNodeAttribute.success).toBe(true)
           })
-        }
+        },
       })
 
       // Step 5: Create customer relationships
@@ -287,11 +357,11 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             { from: 2, to: 3, type: 'REFERRED', properties: { referral_bonus: 150 } },
             { from: 0, to: 2, type: 'SIMILAR_INTERESTS', properties: { similarity_score: 0.8 } },
             { from: 1, to: 4, type: 'SAME_COHORT', properties: { cohort: '2023_Q1' } },
-            { from: 3, to: 0, type: 'CROSS_SELL_OPPORTUNITY', properties: { confidence: 0.75 } }
+            { from: 3, to: 0, type: 'CROSS_SELL_OPPORTUNITY', properties: { confidence: 0.75 } },
           ]
 
           const relationResults = await Promise.all(
-            relationships.map(rel =>
+            relationships.map((rel) =>
               graphqlExecute(`
                 mutation {
                   createRelation(input: {
@@ -320,7 +390,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             expect(result.errors).toBeUndefined()
             relationIds.push(result.data.createRelation.relation.id)
           })
-        }
+        },
       })
 
       // Step 6: Query and validate complete model
@@ -370,15 +440,18 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           })
 
           // Verify relationships exist
-          const totalRelations = nodes.reduce((sum: number, node: any) => sum + node.relations.length, 0)
+          const totalRelations = nodes.reduce(
+            (sum: number, node: any) => sum + node.relations.length,
+            0
+          )
           expect(totalRelations).toBe(5)
-        }
+        },
       })
 
       // Execute workflow
       const results = await workflow.execute()
       expect(results).toHaveLength(6)
-      expect(results.every(r => r.success)).toBe(true)
+      expect(results.every((r) => r.success)).toBe(true)
     }, 45000)
   })
 
@@ -388,7 +461,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
 
       let tableId: string
       let templateIdentifier: string
-      let executionResults: any[] = []
+      const executionResults: any[] = []
 
       // Step 1: Setup data structure for templates
       workflow.addStep({
@@ -425,7 +498,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(result.tableResult.errors).toBeUndefined()
           expect(result.attrResult.errors).toBeUndefined()
           tableId = result.tableResult.data.createTable.table.id
-        }
+        },
       })
 
       // Step 2: Create parameterized template
@@ -468,10 +541,16 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
         },
         validate: (result) => {
           expect(result.errors).toBeUndefined()
-          expect(result.data.createTemplate.template.identifier).toBe('create-product-with-category')
+          expect(result.data.createTemplate.template.identifier).toBe(
+            'create-product-with-category'
+          )
           templateIdentifier = result.data.createTemplate.template.identifier
-          expect(result.data.createTemplate.template.variables).toEqual(['productName', 'category', 'tableId'])
-        }
+          expect(result.data.createTemplate.template.variables).toEqual([
+            'productName',
+            'category',
+            'tableId',
+          ])
+        },
       })
 
       // Step 3: Execute template with multiple parameter sets
@@ -483,11 +562,11 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             { productName: 'Running Shoes', category: 'Sports' },
             { productName: 'Coffee Maker', category: 'Kitchen' },
             { productName: 'Yoga Mat', category: 'Fitness' },
-            { productName: 'Notebook', category: 'Office' }
+            { productName: 'Notebook', category: 'Office' },
           ]
 
           const executions = await Promise.all(
-            products.map(product =>
+            products.map((product) =>
               graphqlExecute(`
                 mutation {
                   executeTemplateWithGraphQL(
@@ -520,7 +599,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             expect(result.data.executeTemplateWithGraphQL.executionTime).toBeLessThan(1000)
             executionResults.push(JSON.parse(result.data.executeTemplateWithGraphQL.data))
           })
-        }
+        },
       })
 
       // Step 4: Validate template execution results
@@ -547,14 +626,20 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(result.data.searchNodes.totalCount).toBe(5)
 
           const nodes = result.data.searchNodes.nodes
-          const expectedProducts = ['Wireless Headphones', 'Running Shoes', 'Coffee Maker', 'Yoga Mat', 'Notebook']
+          const expectedProducts = [
+            'Wireless Headphones',
+            'Running Shoes',
+            'Coffee Maker',
+            'Yoga Mat',
+            'Notebook',
+          ]
 
           nodes.forEach((node: any) => {
             expect(expectedProducts).toContain(node.content)
             expect(node.metadata.templateCreated).toBe(true)
             expect(node.metadata.category).toBeDefined()
           })
-        }
+        },
       })
 
       // Step 5: Template versioning and updates
@@ -601,15 +686,20 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
         },
         validate: (result) => {
           expect(result.errors).toBeUndefined()
-          expect(result.data.updateTemplate.template.variables).toEqual(['productName', 'category', 'price', 'tableId'])
+          expect(result.data.updateTemplate.template.variables).toEqual([
+            'productName',
+            'category',
+            'price',
+            'tableId',
+          ])
           expect(result.data.updateTemplate.template.tags).toContain('v2')
-        }
+        },
       })
 
       // Execute workflow
       const results = await workflow.execute()
       expect(results).toHaveLength(5)
-      expect(results.every(r => r.success)).toBe(true)
+      expect(results.every((r) => r.success)).toBe(true)
     }, 30000)
   })
 
@@ -640,11 +730,11 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           const users = Array.from({ length: 20 }, (_, i) => ({
             name: `User ${i + 1}`,
             influence: Math.floor(Math.random() * 100),
-            activity: Math.floor(Math.random() * 50)
+            activity: Math.floor(Math.random() * 50),
           }))
 
           const nodeResults = await Promise.all(
-            users.map(user =>
+            users.map((user) =>
               graphqlExecute(`
                 mutation {
                   createNode(input: {
@@ -671,7 +761,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(nodeResults).toHaveLength(20)
           tableId = tableResult.data.createTable.table.id
           nodeIds = nodeResults.map((r: any) => r.data.createNode.node.id)
-        }
+        },
       })
 
       // Step 2: Create complex network relationships
@@ -685,16 +775,20 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           // Star pattern: User 1 connected to many
           for (let i = 1; i < 10; i++) {
             relationships.push({
-              from: nodeIds[0], to: nodeIds[i], type: 'INFLUENCES',
-              weight: Math.random()
+              from: nodeIds[0],
+              to: nodeIds[i],
+              type: 'INFLUENCES',
+              weight: Math.random(),
             })
           }
 
           // Chain pattern: Sequential connections
           for (let i = 10; i < 15; i++) {
             relationships.push({
-              from: nodeIds[i], to: nodeIds[i + 1], type: 'FOLLOWS',
-              weight: Math.random()
+              from: nodeIds[i],
+              to: nodeIds[i + 1],
+              type: 'FOLLOWS',
+              weight: Math.random(),
             })
           }
 
@@ -702,14 +796,16 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           for (let i = 15; i < 19; i++) {
             for (let j = i + 1; j < 20; j++) {
               relationships.push({
-                from: nodeIds[i], to: nodeIds[j], type: 'FRIENDS',
-                weight: Math.random()
+                from: nodeIds[i],
+                to: nodeIds[j],
+                type: 'FRIENDS',
+                weight: Math.random(),
               })
             }
           }
 
           const relationResults = await Promise.all(
-            relationships.map(rel =>
+            relationships.map((rel) =>
               graphqlExecute(`
                 mutation {
                   createRelation(input: {
@@ -734,7 +830,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           relationResults.forEach((result: any) => {
             expect(result.errors).toBeUndefined()
           })
-        }
+        },
       })
 
       // Step 3: Perform centrality analysis
@@ -743,7 +839,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
         action: async () => {
           // Analyze connections for each node
           const centralityResults = await Promise.all(
-            nodeIds.slice(0, 10).map(async nodeId => {
+            nodeIds.slice(0, 10).map(async (nodeId) => {
               const connections = await graphqlExecute(`
                 query {
                   getConnectedNodes(nodeId: "${nodeId}", depth: 2) {
@@ -770,7 +866,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           // Node 0 should have highest centrality (star pattern)
           const node0Result = results.find((r: any) => r.nodeId === nodeIds[0])
           expect(node0Result.connections.totalConnections).toBeGreaterThan(5)
-        }
+        },
       })
 
       // Step 4: Find shortest paths between key nodes
@@ -780,11 +876,11 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           const pathFindings = [
             { from: nodeIds[0], to: nodeIds[19] }, // Star to cluster
             { from: nodeIds[10], to: nodeIds[15] }, // Chain to cluster
-            { from: nodeIds[5], to: nodeIds[18] }   // Random paths
+            { from: nodeIds[5], to: nodeIds[18] }, // Random paths
           ]
 
           const pathResults = await Promise.all(
-            pathFindings.map(async path => {
+            pathFindings.map(async (path) => {
               const result = await graphqlExecute(`
                 query {
                   findShortestPath(
@@ -815,7 +911,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
               expect(result.result.path.length).toBeGreaterThan(0)
             }
           })
-        }
+        },
       })
 
       // Step 5: Community detection analysis
@@ -854,13 +950,13 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             expect(community.size).toBeGreaterThanOrEqual(3)
             expect(community.nodeIds.length).toBe(community.size)
           })
-        }
+        },
       })
 
       // Execute workflow
       const results = await workflow.execute()
       expect(results).toHaveLength(5)
-      expect(results.every(r => r.success)).toBe(true)
+      expect(results.every((r) => r.success)).toBe(true)
     }, 60000)
   })
 
@@ -903,11 +999,11 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
 
           const nodes = Array.from({ length: 10 }, (_, i) => ({
             content: `Export Test Item ${i + 1}`,
-            status: i % 2 === 0 ? 'active' : 'inactive'
+            status: i % 2 === 0 ? 'active' : 'inactive',
           }))
 
           const nodeResults = await Promise.all(
-            nodes.map(node =>
+            nodes.map((node) =>
               graphqlExecute(`
                 mutation {
                   createNode(input: {
@@ -930,7 +1026,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(attributeResult.errors).toBeUndefined()
           expect(nodeResults).toHaveLength(10)
           originalTableId = tableResult.data.createTable.table.id
-        }
+        },
       })
 
       // Step 2: Export table with all data
@@ -961,7 +1057,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           exportData = JSON.parse(result.data.exportTableWithNodes.exportData)
           expect(exportData.table).toBeDefined()
           expect(exportData.nodes).toHaveLength(10)
-        }
+        },
       })
 
       // Step 3: Validate export data structure
@@ -980,7 +1076,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
             expect(node.content).toContain('Export Test Item')
             expect(node.metadata.status).toMatch(/^(active|inactive)$/)
           })
-        }
+        },
       })
 
       // Step 4: Import data to new table
@@ -1016,7 +1112,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(result.data.importTableWithNodes.importedNodeCount).toBe(10)
           expect(result.data.importTableWithNodes.importedAttributeCount).toBe(1)
           importedTableId = result.data.importTableWithNodes.table.id
-        }
+        },
       })
 
       // Step 5: Verify imported data integrity
@@ -1062,7 +1158,9 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(importedData.errors).toBeUndefined()
           expect(originalData.errors).toBeUndefined()
 
-          expect(importedData.data.searchNodes.totalCount).toBe(originalData.data.searchNodes.totalCount)
+          expect(importedData.data.searchNodes.totalCount).toBe(
+            originalData.data.searchNodes.totalCount
+          )
 
           const importedNodes = importedData.data.searchNodes.nodes
           const originalNodes = originalData.data.searchNodes.nodes
@@ -1073,13 +1171,13 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           const importedContents = importedNodes.map((n: any) => n.content).sort()
           const originalContents = originalNodes.map((n: any) => n.content).sort()
           expect(importedContents).toEqual(originalContents)
-        }
+        },
       })
 
       // Execute workflow
       const results = await workflow.execute()
       expect(results).toHaveLength(5)
-      expect(results.every(r => r.success)).toBe(true)
+      expect(results.every((r) => r.success)).toBe(true)
     }, 45000)
   })
 
@@ -1127,7 +1225,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(tableResult.errors).toBeUndefined()
           expect(nodeResults).toHaveLength(5)
           tableId = tableResult.data.createTable.table.id
-        }
+        },
       })
 
       // Step 2: Create backup before risky operations
@@ -1150,7 +1248,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(result.errors).toBeUndefined()
           expect(result.data.exportTableWithNodes.success).toBe(true)
           backupData = JSON.parse(result.data.exportTableWithNodes.exportData)
-        }
+        },
       })
 
       // Step 3: Simulate and handle transaction failures
@@ -1191,7 +1289,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                   node { id }
                 }
               }
-            `)
+            `),
           ]
 
           const results = await Promise.allSettled(operations)
@@ -1202,7 +1300,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(results[0].status).toBe('fulfilled') // Valid operation
           expect(results[2].status).toBe('fulfilled') // Recovery operation
           // Middle operation may fail or succeed depending on error handling
-        }
+        },
       })
 
       // Step 4: Validate system consistency after errors
@@ -1240,7 +1338,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
 
           expect(dataCheck.errors).toBeUndefined()
           expect(dataCheck.data.searchNodes.totalCount).toBeGreaterThanOrEqual(5) // At least original nodes
-        }
+        },
       })
 
       // Step 5: Recovery from backup if needed
@@ -1251,7 +1349,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           const backupValidation = {
             hasTable: backupData.table !== undefined,
             hasNodes: backupData.nodes && backupData.nodes.length > 0,
-            nodeCount: backupData.nodes ? backupData.nodes.length : 0
+            nodeCount: backupData.nodes ? backupData.nodes.length : 0,
           }
 
           // Test that we could restore if needed (without actually doing it)
@@ -1278,13 +1376,13 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           if (restoreCapability.data && restoreCapability.data.validateImportData) {
             expect(restoreCapability.data.validateImportData.valid).toBe(true)
           }
-        }
+        },
       })
 
       // Execute workflow
       const results = await workflow.execute()
       expect(results).toHaveLength(5)
-      expect(results.every(r => r.success)).toBe(true)
+      expect(results.every((r) => r.success)).toBe(true)
     }, 30000)
   })
 })

@@ -57,7 +57,11 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
     }
   })
 
-  async function callMcpTool(toolName: string, args: any = {}, id: string | number = Date.now()): Promise<McpResponse> {
+  async function callMcpTool(
+    toolName: string,
+    args: any = {},
+    id: string | number = Date.now()
+  ): Promise<McpResponse> {
     const request: McpRequest = {
       jsonrpc: '2.0',
       method: 'tools/call',
@@ -102,7 +106,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const createTableResponse = await callMcpTool('createTable', {
         identifier: testTableId,
         name: 'E2E Test Table',
-        description: 'Table created for E2E testing'
+        description: 'Table created for E2E testing',
       })
 
       const tableResult = extractRestResponse(createTableResponse)
@@ -115,7 +119,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
         tableId: testTableId,
         identifier: testAttributeId,
         name: 'E2E Test Attribute',
-        attributeTypeId: '1'
+        attributeTypeId: '1',
       })
 
       const attributeResult = extractRestResponse(createAttributeResponse)
@@ -127,7 +131,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const createNodeResponse = await callMcpTool('createNode', {
         tableId: testTableId,
         content: 'E2E Test Node Content',
-        metadata: { testType: 'e2e', timestamp: Date.now() }
+        metadata: { testType: 'e2e', timestamp: Date.now() },
       })
 
       const nodeResult = extractRestResponse(createNodeResponse)
@@ -147,7 +151,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       console.log('E2E Verification: Querying tables...')
       const getTablesResponse = await callMcpTool('getTables', {
         limit: 100,
-        search: 'e2e-test'
+        search: 'e2e-test',
       })
 
       const tablesResult = extractRestResponse(getTablesResponse)
@@ -157,7 +161,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       // Search for our specific table
       const searchTablesResponse = await callMcpTool('searchTables', {
         searchTerm: testTableId,
-        limit: 10
+        limit: 10,
       })
 
       const searchResult = extractRestResponse(searchTablesResponse)
@@ -182,7 +186,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
         toNodeId: 'node-2',
         relationshipType: 'CONNECTED',
         tableId: testTableId,
-        properties: { strength: 0.8, type: 'e2e-test' }
+        properties: { strength: 0.8, type: 'e2e-test' },
       })
 
       const relationResult = extractRestResponse(createRelationResponse)
@@ -193,7 +197,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const getConnectedResponse = await callMcpTool('getConnectedNodes', {
         nodeId: 'node-1',
         depth: 2,
-        direction: 'BOTH'
+        direction: 'BOTH',
       })
 
       const connectedResult = extractRestResponse(getConnectedResponse)
@@ -204,7 +208,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const shortestPathResponse = await callMcpTool('findShortestPath', {
         fromNodeId: 'node-1',
         toNodeId: 'node-2',
-        maxDepth: 5
+        maxDepth: 5,
       })
 
       const pathResult = extractRestResponse(shortestPathResponse)
@@ -225,8 +229,8 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
         input: {
           nodeId: testNodeId,
           attributeId: testAttributeId,
-          value: 'E2E Test Value'
-        }
+          value: 'E2E Test Value',
+        },
       })
 
       const setAttribute = extractRestResponse(setAttributeResponse)
@@ -235,7 +239,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       // Get node attributes
       console.log('E2E Attributes: Getting node attributes...')
       const getAttributesResponse = await callMcpTool('getNodeAttributes', {
-        nodeId: testNodeId
+        nodeId: testNodeId,
       })
 
       const getAttributes = extractRestResponse(getAttributesResponse)
@@ -246,7 +250,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const updateAttributeResponse = await callMcpTool('updateNodeAttributeValue', {
         nodeId: testNodeId,
         attributeId: testAttributeId,
-        value: 'Updated E2E Test Value'
+        value: 'Updated E2E Test Value',
       })
 
       const updateAttribute = extractRestResponse(updateAttributeResponse)
@@ -271,7 +275,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
         identifier: templateId,
         name: 'E2E Test Template',
         query: 'query TestQuery { healthCheck { status } }',
-        tags: ['e2e', 'test', 'automation']
+        tags: ['e2e', 'test', 'automation'],
       })
 
       const createTemplate = extractRestResponse(createTemplateResponse)
@@ -281,7 +285,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       console.log('E2E Template: Executing template...')
       const executeTemplateResponse = await callMcpTool('executeTemplateWithGraphQL', {
         templateIdentifier: templateId,
-        variables: { testMode: true }
+        variables: { testMode: true },
       })
 
       const executeTemplate = extractRestResponse(executeTemplateResponse)
@@ -291,7 +295,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       console.log('E2E Template: Searching templates...')
       const searchTemplatesResponse = await callMcpTool('searchTemplates', {
         searchTerm: 'e2e',
-        tags: ['test']
+        tags: ['test'],
       })
 
       const searchTemplates = extractRestResponse(searchTemplatesResponse)
@@ -300,7 +304,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       // Export template
       console.log('E2E Template: Exporting template...')
       const exportTemplateResponse = await callMcpTool('exportTemplate', {
-        templateIdentifier: templateId
+        templateIdentifier: templateId,
       })
 
       const exportTemplate = extractRestResponse(exportTemplateResponse)
@@ -322,7 +326,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const exportResponse = await callMcpTool('exportTableWithNodes', {
         tableId: testTableId,
         flatFormat: true,
-        outputPath: ''
+        outputPath: '',
       })
 
       const exportResult = extractRestResponse(exportResponse)
@@ -334,7 +338,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
         tableId: testTableId,
         includeSampleNodes: true,
         includeUsageStats: false,
-        sampleLimit: 5
+        sampleLimit: 5,
       })
 
       const docsResult = extractRestResponse(getDocsResponse)
@@ -355,14 +359,14 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
         name: 'Imported E2E Template',
         query: 'query ImportedQuery { systemStats { memory } }',
         tags: ['imported', 'e2e'],
-        version: '1.0.0'
+        version: '1.0.0',
       }
 
       console.log('E2E Import: Importing template...')
       const importResponse = await callMcpTool('importTemplate', {
         jsonData: JSON.stringify(templateData),
         overwriteExisting: false,
-        generateNewIdentifier: false
+        generateNewIdentifier: false,
       })
 
       const importResult = extractRestResponse(importResponse)
@@ -393,7 +397,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       console.log('E2E Error: Testing invalid parameters...')
       const invalidParamsResponse = await callMcpTool('createTable', {
         // Missing required identifier
-        name: 'Invalid Table'
+        name: 'Invalid Table',
       })
 
       const invalidResult = extractRestResponse(invalidParamsResponse)
@@ -442,10 +446,12 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const responses = await Promise.allSettled(concurrentRequests)
       const endTime = Date.now()
 
-      const successful = responses.filter(r => r.status === 'fulfilled').length
-      const failed = responses.filter(r => r.status === 'rejected').length
+      const successful = responses.filter((r) => r.status === 'fulfilled').length
+      const failed = responses.filter((r) => r.status === 'rejected').length
 
-      console.log(`E2E Performance Results: ${successful} successful, ${failed} failed, ${endTime - startTime}ms total`)
+      console.log(
+        `E2E Performance Results: ${successful} successful, ${failed} failed, ${endTime - startTime}ms total`
+      )
 
       // At least 80% should succeed
       expect(successful / responses.length).toBeGreaterThanOrEqual(0.8)
@@ -468,13 +474,13 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
         properties: Object.fromEntries(
           Array.from({ length: 100 }, (_, i) => [`prop${i}`, `value${i}`.repeat(10)])
         ),
-        tags: Array.from({ length: 50 }, (_, i) => `tag-${i}`)
+        tags: Array.from({ length: 50 }, (_, i) => `tag-${i}`),
       }
 
       const largePayloadResponse = await callMcpTool('createNode', {
         tableId: testTableId,
         content: 'Large payload test node',
-        metadata: largeMetadata
+        metadata: largeMetadata,
       })
 
       const largeResult = extractRestResponse(largePayloadResponse)
@@ -544,7 +550,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
         'createTable',
         'searchNodes',
         'createAttribute',
-        'getConnectedNodes'
+        'getConnectedNodes',
       ]
 
       for (const toolName of sampleTools) {

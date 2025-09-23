@@ -7,14 +7,14 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
+import type { QueryTemplateDto } from '../../src/presentation/dto/QueryTemplateDto'
 import type {
+  ExportResult,
+  ImportResult,
   StandardMutationResult,
   TemplateResult,
-  ExportResult,
-  ImportResult
 } from '../../src/presentation/graphql/types/StandardTypes'
-import type { QueryTemplateDto } from '../../src/presentation/dto/QueryTemplateDto'
+import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 // Typed interfaces for template responses
 interface CreateTemplateResponse {
@@ -44,7 +44,6 @@ const SUITE_NAME = 'template-system-comprehensive'
 let testContext: IsolatedTestContext
 
 describe('Comprehensive Template System Test Suite', () => {
-
   beforeAll(async () => {
     console.log('🚀 Setting up comprehensive template system test environment...')
     testContext = await TestIsolationHelpers.setupIntegrationTest(SUITE_NAME)
@@ -95,8 +94,8 @@ describe('Comprehensive Template System Test Suite', () => {
               timestamp
             }
           }`,
-          tags: ['health', 'system', 'basic']
-        }
+          tags: ['health', 'system', 'basic'],
+        },
       }
 
       const result = await testContext.graphqlRequest!<CreateTemplateResponse>(mutation, variables)
@@ -106,7 +105,7 @@ describe('Comprehensive Template System Test Suite', () => {
       expect(result.data.createTemplate.template).toMatchObject({
         identifier: 'basic-health-check',
         name: 'Basic Health Check Template',
-        tags: ['health', 'system', 'basic']
+        tags: ['health', 'system', 'basic'],
       })
       expect(result.data.createTemplate.template?.id).toBeDefined()
       expect(result.data.createTemplate.template?.createdAt).toBeDefined()
@@ -143,7 +142,7 @@ describe('Comprehensive Template System Test Suite', () => {
           }
         `,
         variables: ['tableId', 'searchTerm', 'limit'],
-        tags: ['search', 'parameterized', 'nodes']
+        tags: ['search', 'parameterized', 'nodes'],
       }
 
       const result = await createTemplateUseCase.execute(templateData)
@@ -166,7 +165,7 @@ describe('Comprehensive Template System Test Suite', () => {
             missingClosingBrace
         `,
         variables: [],
-        tags: ['invalid']
+        tags: ['invalid'],
       }
 
       const result = await createTemplateUseCase.execute(invalidTemplateData)
@@ -175,7 +174,7 @@ describe('Comprehensive Template System Test Suite', () => {
       expect(result.errors).toContainEqual(
         expect.objectContaining({
           field: 'query',
-          message: expect.stringContaining('syntax')
+          message: expect.stringContaining('syntax'),
         })
       )
     })
@@ -186,7 +185,7 @@ describe('Comprehensive Template System Test Suite', () => {
         name: 'First Template',
         query: 'query { healthCheck { status } }',
         variables: [],
-        tags: ['test']
+        tags: ['test'],
       }
 
       // Create first template
@@ -195,7 +194,7 @@ describe('Comprehensive Template System Test Suite', () => {
       // Try to create duplicate
       const duplicateData = {
         ...templateData,
-        name: 'Second Template'
+        name: 'Second Template',
       }
 
       const result = await createTemplateUseCase.execute(duplicateData)
@@ -204,7 +203,7 @@ describe('Comprehensive Template System Test Suite', () => {
       expect(result.errors).toContainEqual(
         expect.objectContaining({
           field: 'identifier',
-          message: expect.stringContaining('already exists')
+          message: expect.stringContaining('already exists'),
         })
       )
     })
@@ -221,15 +220,15 @@ describe('Comprehensive Template System Test Suite', () => {
       // Create test nodes
       await testDbFactory.createTestNode(testTableId, {
         title: 'Template Test Node 1',
-        content: 'Content for template testing with keyword alpha'
+        content: 'Content for template testing with keyword alpha',
       })
       await testDbFactory.createTestNode(testTableId, {
         title: 'Template Test Node 2',
-        content: 'Content for template testing with keyword beta'
+        content: 'Content for template testing with keyword beta',
       })
       await testDbFactory.createTestNode(testTableId, {
         title: 'Different Node',
-        content: 'Different content without keywords'
+        content: 'Different content without keywords',
       })
     })
 
@@ -254,7 +253,7 @@ describe('Comprehensive Template System Test Suite', () => {
           }
         `,
         variables: [],
-        tags: ['simple']
+        tags: ['simple'],
       }
 
       await createTemplateUseCase.execute(templateData)
@@ -262,14 +261,14 @@ describe('Comprehensive Template System Test Suite', () => {
       // Execute template
       const result = await executeTemplateUseCase.execute({
         templateIdentifier: 'simple-health-template',
-        variables: {}
+        variables: {},
       })
 
       expect(result.success).toBe(true)
       expect(result.data).toBeDefined()
       expect(result.data.healthCheck).toMatchObject({
         status: 'OK',
-        database: 'Connected'
+        database: 'Connected',
       })
       expect(result.data.systemStats.memory).toBeDefined()
       expect(result.executionTime).toBeGreaterThan(0)
@@ -305,7 +304,7 @@ describe('Comprehensive Template System Test Suite', () => {
           }
         `,
         variables: ['tableId', 'searchTerm', 'limit'],
-        tags: ['parameterized', 'search']
+        tags: ['parameterized', 'search'],
       }
 
       await createTemplateUseCase.execute(templateData)
@@ -316,8 +315,8 @@ describe('Comprehensive Template System Test Suite', () => {
         variables: {
           tableId: testTableId,
           searchTerm: 'template',
-          limit: 5
-        }
+          limit: 5,
+        },
       })
 
       expect(result.success).toBe(true)
@@ -327,7 +326,7 @@ describe('Comprehensive Template System Test Suite', () => {
       expect(result.variablesUsed).toEqual({
         tableId: testTableId,
         searchTerm: 'template',
-        limit: 5
+        limit: 5,
       })
     })
 
@@ -390,14 +389,14 @@ describe('Comprehensive Template System Test Suite', () => {
           }
         `,
         variables: ['tableId'],
-        tags: ['complex', 'nested']
+        tags: ['complex', 'nested'],
       }
 
       await createTemplateUseCase.execute(templateData)
 
       const result = await executeTemplateUseCase.execute({
         templateIdentifier: 'complex-nested-template',
-        variables: { tableId: testTableId }
+        variables: { tableId: testTableId },
       })
 
       expect(result.success).toBe(true)
@@ -419,7 +418,7 @@ describe('Comprehensive Template System Test Suite', () => {
           }
         `,
         variables: ['invalidTableId'],
-        tags: ['error']
+        tags: ['error'],
       }
 
       await createTemplateUseCase.execute(templateData)
@@ -427,7 +426,7 @@ describe('Comprehensive Template System Test Suite', () => {
       // Execute with invalid table ID
       const result = await executeTemplateUseCase.execute({
         templateIdentifier: 'error-prone-template',
-        variables: { invalidTableId: 'non-existent-table-id' }
+        variables: { invalidTableId: 'non-existent-table-id' },
       })
 
       expect(result.success).toBe(false)
@@ -448,7 +447,7 @@ describe('Comprehensive Template System Test Suite', () => {
           }
         `,
         variables: ['tableId', 'requiredParam'],
-        tags: ['validation']
+        tags: ['validation'],
       }
 
       await createTemplateUseCase.execute(templateData)
@@ -456,13 +455,13 @@ describe('Comprehensive Template System Test Suite', () => {
       // Execute without required variable
       const result = await executeTemplateUseCase.execute({
         templateIdentifier: 'required-vars-template',
-        variables: { tableId: testTableId } // Missing requiredParam
+        variables: { tableId: testTableId }, // Missing requiredParam
       })
 
       expect(result.success).toBe(false)
       expect(result.errors).toContainEqual(
         expect.objectContaining({
-          message: expect.stringContaining('requiredParam')
+          message: expect.stringContaining('requiredParam'),
         })
       )
     })
@@ -483,7 +482,7 @@ describe('Comprehensive Template System Test Suite', () => {
           }
         `,
         variables: ['param'],
-        tags: ['export', 'test']
+        tags: ['export', 'test'],
       }
 
       const createResult = await createTemplateUseCase.execute(templateData)
@@ -497,15 +496,15 @@ describe('Comprehensive Template System Test Suite', () => {
         metadata: {
           exportedAt: expect.any(String),
           version: expect.any(String),
-          source: 'Bun Graph Database'
+          source: 'Bun Graph Database',
         },
         template: {
           identifier: 'export-test-template',
           name: 'Export Test Template',
           query: expect.stringContaining('ExportTest'),
           variables: ['param'],
-          tags: ['export', 'test']
-        }
+          tags: ['export', 'test'],
+        },
       })
     })
 
@@ -514,7 +513,7 @@ describe('Comprehensive Template System Test Suite', () => {
         metadata: {
           exportedAt: new Date().toISOString(),
           version: '1.0.0',
-          source: 'Test System'
+          source: 'Test System',
         },
         template: {
           identifier: 'imported-test-template',
@@ -529,21 +528,21 @@ describe('Comprehensive Template System Test Suite', () => {
             }
           `,
           variables: ['id'],
-          tags: ['imported', 'test']
-        }
+          tags: ['imported', 'test'],
+        },
       }
 
-      const result = await importExportService.importTemplate(
-        JSON.stringify(importData),
-        { validateSchema: true, overwriteExisting: false }
-      )
+      const result = await importExportService.importTemplate(JSON.stringify(importData), {
+        validateSchema: true,
+        overwriteExisting: false,
+      })
 
       expect(result.success).toBe(true)
       expect(result.template).toMatchObject({
         identifier: 'imported-test-template',
         name: 'Imported Test Template',
         variables: ['id'],
-        tags: ['imported', 'test']
+        tags: ['imported', 'test'],
       })
     })
 
@@ -554,7 +553,7 @@ describe('Comprehensive Template System Test Suite', () => {
         name: 'Original Template',
         query: 'query { healthCheck { status } }',
         variables: [],
-        tags: ['original']
+        tags: ['original'],
       }
 
       await createTemplateUseCase.execute(originalTemplate)
@@ -564,35 +563,33 @@ describe('Comprehensive Template System Test Suite', () => {
         metadata: {
           exportedAt: new Date().toISOString(),
           version: '1.0.0',
-          source: 'Test System'
+          source: 'Test System',
         },
         template: {
           identifier: 'conflict-template',
           name: 'Conflicting Template',
           query: 'query { systemStats { memory { used } } }',
           variables: [],
-          tags: ['conflicting']
-        }
+          tags: ['conflicting'],
+        },
       }
 
       // Import without overwrite (should fail)
-      const failResult = await importExportService.importTemplate(
-        JSON.stringify(importData),
-        { overwriteExisting: false }
-      )
+      const failResult = await importExportService.importTemplate(JSON.stringify(importData), {
+        overwriteExisting: false,
+      })
 
       expect(failResult.success).toBe(false)
       expect(failResult.errors).toContainEqual(
         expect.objectContaining({
-          message: expect.stringContaining('already exists')
+          message: expect.stringContaining('already exists'),
         })
       )
 
       // Import with overwrite (should succeed)
-      const successResult = await importExportService.importTemplate(
-        JSON.stringify(importData),
-        { overwriteExisting: true }
-      )
+      const successResult = await importExportService.importTemplate(JSON.stringify(importData), {
+        overwriteExisting: true,
+      })
 
       expect(successResult.success).toBe(true)
       expect(successResult.template.name).toBe('Conflicting Template')
@@ -606,22 +603,22 @@ describe('Comprehensive Template System Test Suite', () => {
           name: 'Batch Template 1',
           query: 'query { healthCheck { status } }',
           variables: [],
-          tags: ['batch', 'first']
+          tags: ['batch', 'first'],
         },
         {
           identifier: 'batch-template-2',
           name: 'Batch Template 2',
           query: 'query { systemStats { memory { used } } }',
           variables: [],
-          tags: ['batch', 'second']
+          tags: ['batch', 'second'],
         },
         {
           identifier: 'batch-template-3',
           name: 'Batch Template 3',
           query: 'query($id: ID!) { table(id: $id) { identifier } }',
           variables: ['id'],
-          tags: ['batch', 'third']
-        }
+          tags: ['batch', 'third'],
+        },
       ]
 
       const templateIds = []
@@ -637,7 +634,7 @@ describe('Comprehensive Template System Test Suite', () => {
       expect(exportResult.exportData.templates).toHaveLength(3)
       expect(exportResult.exportData.metadata).toMatchObject({
         totalTemplates: 3,
-        exportedAt: expect.any(String)
+        exportedAt: expect.any(String),
       })
     })
   })
@@ -651,7 +648,7 @@ describe('Comprehensive Template System Test Suite', () => {
         query: 'query { healthCheck { status } }',
         variables: [],
         tags: ['versioned'],
-        version: '1.0.0'
+        version: '1.0.0',
       }
 
       const v1Result = await createTemplateUseCase.execute(templateData)
@@ -661,12 +658,12 @@ describe('Comprehensive Template System Test Suite', () => {
       const updatedData = {
         ...templateData,
         query: 'query { healthCheck { status database } }',
-        version: '1.1.0'
+        version: '1.1.0',
       }
 
       const v2Result = await createTemplateUseCase.execute({
         ...updatedData,
-        id: templateId
+        id: templateId,
       })
 
       expect(v2Result.success).toBe(true)
@@ -686,7 +683,7 @@ describe('Comprehensive Template System Test Suite', () => {
         name: 'Rollback Template',
         query: 'query { healthCheck { status } }',
         variables: [],
-        tags: ['rollback']
+        tags: ['rollback'],
       }
 
       // Create and update template multiple times
@@ -697,14 +694,14 @@ describe('Comprehensive Template System Test Suite', () => {
         ...templateData,
         id: templateId,
         query: 'query { healthCheck { status database } }',
-        version: '1.1.0'
+        version: '1.1.0',
       })
 
       await createTemplateUseCase.execute({
         ...templateData,
         id: templateId,
         query: 'query { healthCheck { status database version } }',
-        version: '1.2.0'
+        version: '1.2.0',
       })
 
       // Rollback to version 1.1.0
@@ -723,7 +720,7 @@ describe('Comprehensive Template System Test Suite', () => {
         name: 'Cached Template',
         query: 'query { healthCheck { status timestamp } }',
         variables: [],
-        tags: ['cached']
+        tags: ['cached'],
       }
 
       await createTemplateUseCase.execute(templateData)
@@ -734,18 +731,18 @@ describe('Comprehensive Template System Test Suite', () => {
         const startTime = Date.now()
         const result = await executeTemplateUseCase.execute({
           templateIdentifier: 'cached-template',
-          variables: {}
+          variables: {},
         })
         const endTime = Date.now()
 
         executions.push({
           success: result.success,
-          executionTime: endTime - startTime
+          executionTime: endTime - startTime,
         })
       }
 
       // All executions should succeed
-      executions.forEach(exec => {
+      executions.forEach((exec) => {
         expect(exec.success).toBe(true)
       })
 
@@ -774,7 +771,7 @@ describe('Comprehensive Template System Test Suite', () => {
           }
         `,
         variables: ['delay'],
-        tags: ['concurrent']
+        tags: ['concurrent'],
       }
 
       await createTemplateUseCase.execute(templateData)
@@ -783,7 +780,7 @@ describe('Comprehensive Template System Test Suite', () => {
       const promises = Array.from({ length: 10 }, (_, i) =>
         executeTemplateUseCase.execute({
           templateIdentifier: 'concurrent-template',
-          variables: { delay: i * 10 }
+          variables: { delay: i * 10 },
         })
       )
 
@@ -805,7 +802,7 @@ describe('Comprehensive Template System Test Suite', () => {
           name: `Performance Template ${i}`,
           query: `query PerfTest${i} { healthCheck { status } }`,
           variables: [],
-          tags: ['performance', `batch-${Math.floor(i / 10)}`]
+          tags: ['performance', `batch-${Math.floor(i / 10)}`],
         })
       )
 
@@ -816,7 +813,7 @@ describe('Comprehensive Template System Test Suite', () => {
       const searchResult = await importExportService.searchTemplates({
         tags: ['performance'],
         textSearch: 'Performance Template',
-        limit: 20
+        limit: 20,
       })
       const endTime = Date.now()
 

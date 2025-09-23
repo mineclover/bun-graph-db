@@ -1,10 +1,12 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { toErrorMeta, getErrorMessage } from '../utils/errorHelpers.js'
+import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
+import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 
 export class GraphApiController {
   constructor(
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
+    private readonly getTableDocsUseCase: GetTableDocsUseCase
   ) {}
 
   async getTables(req: Request, res: Response): Promise<void> {
@@ -15,7 +17,7 @@ export class GraphApiController {
         offset = 0,
         search = '',
         sortBy = 'createdAt',
-        sortOrder = 'desc'
+        sortOrder = 'desc',
       } = req.query
 
       // TODO: Implement with actual use case
@@ -23,18 +25,18 @@ export class GraphApiController {
         tables: [],
         total: 0,
         limit: parseInt(limit as string, 10),
-        offset: parseInt(offset as string, 10)
+        offset: parseInt(offset as string, 10),
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Get tables error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get tables failed'
+        error: 'Get tables failed',
       })
     }
   }
@@ -45,40 +47,46 @@ export class GraphApiController {
       const {
         includeSampleNodes = true,
         includeUsageStats = false,
-        sampleLimit = 3
+        includeRelatedTemplates = true,
+        sampleLimit = 3,
       } = req.query
 
       if (!tableId && !identifier) {
         res.status(400).json({
           success: false,
-          error: 'Either tableId or identifier is required'
+          error: 'Either tableId or identifier is required',
         })
         return
       }
 
-      // TODO: Implement with actual use case
-      const result = {
-        table: {
-          id: tableId || '1',
-          identifier: identifier || 'example-table',
-          description: 'Table documentation'
-        },
-        schema: {
-          attributes: []
-        },
-        sampleNodes: includeSampleNodes ? [] : undefined,
-        usageStats: includeUsageStats ? {} : undefined
+      // Use the actual GetTableDocs Use Case
+      const result = await this.getTableDocsUseCase.execute({
+        tableId: tableId as string,
+        identifier: identifier as string,
+        includeSampleNodes: (typeof includeSampleNodes === 'string' ? includeSampleNodes === 'true' : !!includeSampleNodes),
+        includeUsageStats: (typeof includeUsageStats === 'string' ? includeUsageStats === 'true' : !!includeUsageStats),
+        includeRelatedTemplates:
+          includeRelatedTemplates === 'true' || includeRelatedTemplates === true,
+        sampleLimit: parseInt(sampleLimit as string, 10) || 3,
+      })
+
+      if (!result.tableDocs) {
+        res.status(404).json({
+          success: false,
+          error: 'Table not found',
+        })
+        return
       }
 
       res.json({
         success: true,
-        data: result
+        data: result.tableDocs,
       })
     } catch (error) {
       this.logger.error('Get table docs error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get table docs failed'
+        error: 'Get table docs failed',
       })
     }
   }
@@ -91,7 +99,7 @@ export class GraphApiController {
       if (!tableId) {
         res.status(400).json({
           success: false,
-          error: 'tableId is required'
+          error: 'tableId is required',
         })
         return
       }
@@ -101,48 +109,42 @@ export class GraphApiController {
         tableId,
         flatFormat,
         exportData: {},
-        outputPath: outputPath || null
+        outputPath: outputPath || null,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Export table with nodes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Export table with nodes failed'
+        error: error instanceof Error ? error.message : 'Export table with nodes failed',
       })
     }
   }
 
   async searchRelations(req: Request, res: Response): Promise<void> {
     try {
-      const {
-        tableId,
-        sourceNodeId,
-        targetNodeId,
-        relationTypeId,
-        limit = 20
-      } = req.query
+      const { tableId, sourceNodeId, targetNodeId, relationTypeId, limit = 20 } = req.query
 
       // TODO: Implement with actual use case
       const result = {
         relations: [],
         total: 0,
-        limit: parseInt(limit as string, 10)
+        limit: parseInt(limit as string, 10),
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Search relations error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Search relations failed'
+        error: 'Search relations failed',
       })
     }
   }
@@ -150,23 +152,21 @@ export class GraphApiController {
   async getConnectedNodes(req: Request, res: Response): Promise<void> {
     try {
       const { nodeId } = req.params
-      const {
-        depth = 1,
-        direction = 'BOTH',
-        relationTypes = []
-      } = req.query
+      const { depth = 1, direction = 'BOTH', relationTypes = [] } = req.query
 
       if (!nodeId) {
         res.status(400).json({
           success: false,
-          error: 'nodeId is required'
+          error: 'nodeId is required',
         })
         return
       }
 
       const relationTypesArray = Array.isArray(relationTypes)
         ? relationTypes
-        : (relationTypes ? [relationTypes] : [])
+        : relationTypes
+          ? [relationTypes]
+          : []
 
       // TODO: Implement with actual use case
       const result = {
@@ -174,18 +174,18 @@ export class GraphApiController {
         depth: parseInt(depth as string, 10),
         direction,
         relationTypes: relationTypesArray,
-        connectedNodes: []
+        connectedNodes: [],
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Get connected nodes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get connected nodes failed'
+        error: 'Get connected nodes failed',
       })
     }
   }
@@ -197,7 +197,7 @@ export class GraphApiController {
       if (!fromNodeId || !toNodeId) {
         res.status(400).json({
           success: false,
-          error: 'fromNodeId and toNodeId are required'
+          error: 'fromNodeId and toNodeId are required',
         })
         return
       }
@@ -208,18 +208,18 @@ export class GraphApiController {
         toNodeId,
         maxDepth: parseInt(maxDepth as string, 10),
         path: [],
-        distance: -1
+        distance: -1,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Find shortest path error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Find shortest path failed'
+        error: error instanceof Error ? error.message : 'Find shortest path failed',
       })
     }
   }
@@ -227,22 +227,21 @@ export class GraphApiController {
   async getNodeRelations(req: Request, res: Response): Promise<void> {
     try {
       const { nodeId } = req.params
-      const {
-        direction = 'BOTH',
-        relationTypes = []
-      } = req.query
+      const { direction = 'BOTH', relationTypes = [] } = req.query
 
       if (!nodeId) {
         res.status(400).json({
           success: false,
-          error: 'nodeId is required'
+          error: 'nodeId is required',
         })
         return
       }
 
       const relationTypesArray = Array.isArray(relationTypes)
         ? relationTypes
-        : (relationTypes ? [relationTypes] : [])
+        : relationTypes
+          ? [relationTypes]
+          : []
 
       // TODO: Implement with actual use case
       const result = {
@@ -250,18 +249,18 @@ export class GraphApiController {
         direction,
         relationTypes: relationTypesArray,
         outgoingRelations: [],
-        incomingRelations: []
+        incomingRelations: [],
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Get node relations error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get node relations failed'
+        error: 'Get node relations failed',
       })
     }
   }

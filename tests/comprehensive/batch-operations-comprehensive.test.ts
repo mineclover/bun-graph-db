@@ -16,9 +16,9 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
+import type { Container } from 'inversify'
 import { createContainer } from '../../src/infrastructure/container/Container'
-import { Container } from 'inversify'
+import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
 import { TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 describe('Batch Operations Comprehensive Tests', () => {
@@ -31,7 +31,7 @@ describe('Batch Operations Comprehensive Tests', () => {
     const response = await yoga.fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables }),
     })
     return await response.json()
   }
@@ -75,7 +75,7 @@ describe('Batch Operations Comprehensive Tests', () => {
       const tables = Array.from({ length: 10 }, (_, i) => ({
         identifier: `batch-table-${i + 1}`,
         name: `Batch Table ${i + 1}`,
-        description: `Table created in batch operation ${i + 1}`
+        description: `Table created in batch operation ${i + 1}`,
       }))
 
       const response = await graphqlExecute(batchCreateQuery, { tables })
@@ -129,7 +129,7 @@ describe('Batch Operations Comprehensive Tests', () => {
         { identifier: 'conflicting-table', name: 'Conflicting Table' }, // This should fail
         { identifier: 'valid-table-2', name: 'Valid Table 2' },
         { identifier: '', name: 'Invalid Table' }, // This should fail
-        { identifier: 'valid-table-3', name: 'Valid Table 3' }
+        { identifier: 'valid-table-3', name: 'Valid Table 3' },
       ]
 
       const response = await graphqlExecute(batchCreateQuery, { tables })
@@ -177,7 +177,7 @@ describe('Batch Operations Comprehensive Tests', () => {
         }
       `
 
-      const tableIds = tables.map(table => table.id)
+      const tableIds = tables.map((table) => table.id)
       const response = await graphqlExecute(batchDeleteQuery, { tableIds })
 
       expect(response.errors).toBeUndefined()
@@ -241,7 +241,7 @@ describe('Batch Operations Comprehensive Tests', () => {
       const nodes = Array.from({ length: 100 }, (_, i) => ({
         tableId,
         content: `Batch Node ${i + 1}`,
-        metadata: { batchIndex: i + 1 }
+        metadata: { batchIndex: i + 1 },
       }))
 
       const response = await graphqlExecute(batchCreateQuery, { nodes })
@@ -283,7 +283,7 @@ describe('Batch Operations Comprehensive Tests', () => {
         { tableId: 'invalid-table-id', content: 'Invalid Table ID' },
         { tableId, content: '' }, // Empty content should fail
         { tableId, content: 'Valid Node 2' },
-        { tableId: null, content: 'Null Table ID' }
+        { tableId: null, content: 'Null Table ID' },
       ]
 
       const response = await graphqlExecute(batchCreateQuery, { nodes })
@@ -338,7 +338,7 @@ describe('Batch Operations Comprehensive Tests', () => {
       const updates = nodes.map((node, i) => ({
         nodeId: node.id,
         content: `Updated Content ${i + 1}`,
-        metadata: { updated: true }
+        metadata: { updated: true },
       }))
 
       const response = await graphqlExecute(batchUpdateQuery, { updates })
@@ -398,7 +398,7 @@ describe('Batch Operations Comprehensive Tests', () => {
         { tableId, identifier: 'age', name: 'Age', attributeTypeId: '2' },
         { tableId, identifier: 'email', name: 'Email', attributeTypeId: '1' },
         { tableId, identifier: 'is_active', name: 'Is Active', attributeTypeId: '3' },
-        { tableId, identifier: 'created_at', name: 'Created At', attributeTypeId: '4' }
+        { tableId, identifier: 'created_at', name: 'Created At', attributeTypeId: '4' },
       ]
 
       const response = await graphqlExecute(batchCreateQuery, { attributes })
@@ -469,7 +469,7 @@ describe('Batch Operations Comprehensive Tests', () => {
       const attributeUpdates = nodes.map((node, i) => ({
         nodeId: node.id,
         attributeId,
-        value: `Category ${i % 5 + 1}` // 5 different categories
+        value: `Category ${(i % 5) + 1}`, // 5 different categories
       }))
 
       const response = await graphqlExecute(batchSetQuery, { attributeUpdates })
@@ -481,7 +481,7 @@ describe('Batch Operations Comprehensive Tests', () => {
 
       // Verify attribute values were set
       response.data.batchSetNodeAttributes.results.forEach((result: any, index: number) => {
-        expect(result.value).toBe(`Category ${index % 5 + 1}`)
+        expect(result.value).toBe(`Category ${(index % 5) + 1}`)
         expect(result.errors).toHaveLength(0)
       })
     })
@@ -550,7 +550,7 @@ describe('Batch Operations Comprehensive Tests', () => {
         toNodeId: nodes[i + 1].id,
         relationshipType: 'FOLLOWS',
         tableId,
-        properties: { weight: i + 1 }
+        properties: { weight: i + 1 },
       }))
 
       const response = await graphqlExecute(batchCreateQuery, { relations })
@@ -585,7 +585,7 @@ describe('Batch Operations Comprehensive Tests', () => {
         fromNodeId: nodes[0].id,
         toNodeId: nodes[i + 1].id,
         relationshipType: 'STAR_CONNECTION',
-        tableId
+        tableId,
       }))
 
       // Create ring topology: each node connected to next (circular)
@@ -593,7 +593,7 @@ describe('Batch Operations Comprehensive Tests', () => {
         fromNodeId: nodes[i].id,
         toNodeId: nodes[(i + 1) % 50].id,
         relationshipType: 'RING_CONNECTION',
-        tableId
+        tableId,
       }))
 
       // Combine all relations
@@ -638,20 +638,20 @@ describe('Batch Operations Comprehensive Tests', () => {
       const operations = [
         {
           type: 'CREATE_NODE',
-          data: { tableId, content: 'Valid Node 1' }
+          data: { tableId, content: 'Valid Node 1' },
         },
         {
           type: 'CREATE_NODE',
-          data: { tableId, content: 'Valid Node 2' }
+          data: { tableId, content: 'Valid Node 2' },
         },
         {
           type: 'CREATE_NODE',
-          data: { tableId: 'invalid-table-id', content: 'Invalid Node' } // This should cause rollback
+          data: { tableId: 'invalid-table-id', content: 'Invalid Node' }, // This should cause rollback
         },
         {
           type: 'CREATE_NODE',
-          data: { tableId, content: 'Valid Node 3' }
-        }
+          data: { tableId, content: 'Valid Node 3' },
+        },
       ]
 
       const response = await graphqlExecute(batchOperationQuery, { operations })
@@ -700,7 +700,7 @@ describe('Batch Operations Comprehensive Tests', () => {
       const concurrentOperations = Array.from({ length: 5 }, (_, batchIndex) => {
         const nodes = Array.from({ length: 20 }, (_, nodeIndex) => ({
           tableId,
-          content: `Batch ${batchIndex + 1} Node ${nodeIndex + 1}`
+          content: `Batch ${batchIndex + 1} Node ${nodeIndex + 1}`,
         }))
         return graphqlExecute(batchCreateQuery, { nodes })
       })
@@ -762,8 +762,8 @@ describe('Batch Operations Comprehensive Tests', () => {
         content: `Performance Node ${i + 1}`,
         metadata: {
           index: i + 1,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       }))
 
       const response = await graphqlExecute(batchCreateQuery, { nodes })
@@ -812,12 +812,12 @@ describe('Batch Operations Comprehensive Tests', () => {
 
       const nodes = Array.from({ length: 500 }, (_, i) => ({
         tableId,
-        content: `Progress Node ${i + 1}`
+        content: `Progress Node ${i + 1}`,
       }))
 
       const response = await graphqlExecute(batchCreateWithProgressQuery, {
         nodes,
-        progressCallback: 'test-progress'
+        progressCallback: 'test-progress',
       })
 
       expect(response.errors).toBeUndefined()
@@ -867,7 +867,7 @@ describe('Batch Operations Comprehensive Tests', () => {
       const nodes = Array.from({ length: 100 }, (_, i) => ({
         tableId,
         content: `${largeContent} Node ${i + 1}`,
-        metadata: { size: 'large' }
+        metadata: { size: 'large' },
       }))
 
       const response = await graphqlExecute(batchCreateQuery, { nodes })
@@ -914,7 +914,7 @@ describe('Batch Operations Comprehensive Tests', () => {
         { tableId: null, content: 'Node 2' },
         { tableId: '', content: 'Node 3' },
         { tableId: 'another-invalid-id', content: '' }, // Multiple errors
-        { tableId: 'valid-but-missing', content: 'Node 5' }
+        { tableId: 'valid-but-missing', content: 'Node 5' },
       ]
 
       const response = await graphqlExecute(batchCreateQuery, { nodes })

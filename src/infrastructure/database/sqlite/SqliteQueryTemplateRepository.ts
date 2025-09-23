@@ -106,7 +106,10 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         row.updated_at
       )
     } catch (error) {
-      this.logger.error('Failed to find template by identifier', { identifier, ...toErrorMeta(error) })
+      this.logger.error('Failed to find template by identifier', {
+        identifier,
+        ...toErrorMeta(error),
+      })
       throw new DomainException('Failed to find template', { code: 'DATABASE_ERROR' })
     }
   }
@@ -280,7 +283,10 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         )
       )
     } catch (error) {
-      this.logger.error('Failed to search templates by query name', { queryName, ...toErrorMeta(error) })
+      this.logger.error('Failed to search templates by query name', {
+        queryName,
+        ...toErrorMeta(error),
+      })
       throw new DomainException('Failed to search templates by query name', {
         code: 'DATABASE_ERROR',
       })
@@ -322,7 +328,10 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
         )
       )
     } catch (error) {
-      this.logger.error('Failed to search templates by operation type', { operationType, ...toErrorMeta(error) })
+      this.logger.error('Failed to search templates by operation type', {
+        operationType,
+        ...toErrorMeta(error),
+      })
       throw new DomainException('Failed to search templates by operation type', {
         code: 'DATABASE_ERROR',
       })
@@ -552,7 +561,11 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       const stmt = this.db.prepare(query)
       stmt.run(validExecutionTime, validExecutionTime, templateId)
     } catch (error) {
-      this.logger.error('Failed to update execution stats', { id, executionTimeMs, ...toErrorMeta(error) })
+      this.logger.error('Failed to update execution stats', {
+        id,
+        executionTimeMs,
+        ...toErrorMeta(error),
+      })
       throw new DomainException('Failed to update execution stats', { code: 'DATABASE_ERROR' })
     }
   }

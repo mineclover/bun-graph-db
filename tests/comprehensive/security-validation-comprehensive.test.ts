@@ -16,9 +16,9 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
+import type { Container } from 'inversify'
 import { createContainer } from '../../src/infrastructure/container/Container'
-import { Container } from 'inversify'
+import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
 import { TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 interface SecurityTestCase {
@@ -51,8 +51,9 @@ class SecurityTester {
           result,
           hasErrors,
           passed: testCase.expectedError === hasErrors,
-          errorMatch: testCase.expectedErrorPattern ?
-            testCase.expectedErrorPattern.test(JSON.stringify(result)) : true
+          errorMatch: testCase.expectedErrorPattern
+            ? testCase.expectedErrorPattern.test(JSON.stringify(result))
+            : true,
         })
       } catch (error) {
         results.push({
@@ -60,7 +61,7 @@ class SecurityTester {
           input: testCase.input,
           error,
           passed: testCase.expectedError === true,
-          errorMatch: true
+          errorMatch: true,
         })
       }
     }
@@ -79,7 +80,7 @@ describe('Security and Validation Comprehensive Tests', () => {
     const response = await yoga.fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables }),
     })
     return await response.json()
   }
@@ -125,67 +126,68 @@ describe('Security and Validation Comprehensive Tests', () => {
           name: 'XSS Script Tag',
           input: {
             identifier: '<script>alert("xss")</script>',
-            name: 'Normal Name'
+            name: 'Normal Name',
           },
           expectedError: true,
-          expectedErrorPattern: /invalid.*identifier/i
+          expectedErrorPattern: /invalid.*identifier/i,
         })
         .addTestCase({
           name: 'SQL Injection Attempt',
           input: {
             identifier: "'; DROP TABLE users; --",
-            name: 'Injection Test'
+            name: 'Injection Test',
           },
           expectedError: true,
-          expectedErrorPattern: /invalid.*identifier/i
+          expectedErrorPattern: /invalid.*identifier/i,
         })
         .addTestCase({
           name: 'Unicode Control Characters',
           input: {
             identifier: 'test\u0000\u0001\u0002table',
-            name: 'Control Chars Test'
+            name: 'Control Chars Test',
           },
           expectedError: true,
-          expectedErrorPattern: /invalid.*identifier/i
+          expectedErrorPattern: /invalid.*identifier/i,
         })
         .addTestCase({
           name: 'Extremely Long Identifier',
           input: {
             identifier: 'a'.repeat(1000),
-            name: 'Long ID Test'
+            name: 'Long ID Test',
           },
           expectedError: true,
-          expectedErrorPattern: /identifier.*too.*long/i
+          expectedErrorPattern: /identifier.*too.*long/i,
         })
         .addTestCase({
           name: 'Empty Required Fields',
           input: {
             identifier: '',
-            name: ''
+            name: '',
           },
           expectedError: true,
-          expectedErrorPattern: /required/i
+          expectedErrorPattern: /required/i,
         })
         .addTestCase({
           name: 'Null Values',
           input: {
             identifier: null,
-            name: null
+            name: null,
           },
           expectedError: true,
-          expectedErrorPattern: /required/i
+          expectedErrorPattern: /required/i,
         })
         .addTestCase({
           name: 'Valid Input (Control)',
           input: {
             identifier: 'valid-security-table',
-            name: 'Valid Security Table'
+            name: 'Valid Security Table',
           },
-          expectedError: false
+          expectedError: false,
         })
 
       const results = await securityTester.runTests(async (input) => {
-        return await graphqlExecute(`
+        return await graphqlExecute(
+          `
           mutation CreateTable($input: CreateTableInput!) {
             createTable(input: $input) {
               table {
@@ -195,11 +197,13 @@ describe('Security and Validation Comprehensive Tests', () => {
               }
             }
           }
-        `, { input })
+        `,
+          { input }
+        )
       })
 
       // Validate security test results
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.passed).toBe(true)
         if (result.hasErrors && result.expectedErrorPattern) {
           expect(result.errorMatch).toBe(true)
@@ -232,51 +236,52 @@ describe('Security and Validation Comprehensive Tests', () => {
           input: {
             tableId,
             content: '<script>document.cookie</script>',
-            metadata: { test: true }
+            metadata: { test: true },
           },
           expectedError: false, // Content should be stored but escaped
-          shouldPreventExecution: true
+          shouldPreventExecution: true,
         })
         .addTestCase({
           name: 'HTML Injection',
           input: {
             tableId,
             content: '<img src="x" onerror="alert(1)">',
-            metadata: { test: true }
+            metadata: { test: true },
           },
           expectedError: false, // Content should be stored but escaped
-          shouldPreventExecution: true
+          shouldPreventExecution: true,
         })
         .addTestCase({
           name: 'JSON Injection in Metadata',
           input: {
             tableId,
             content: 'Normal content',
-            metadata: { malicious: '"; DROP TABLE nodes; --' }
+            metadata: { malicious: '"; DROP TABLE nodes; --' },
           },
-          expectedError: false // Should be stored safely as JSON
+          expectedError: false, // Should be stored safely as JSON
         })
         .addTestCase({
           name: 'Binary Data in Content',
           input: {
             tableId,
             content: '\x00\x01\x02\x03\xFF',
-            metadata: { test: true }
+            metadata: { test: true },
           },
-          expectedError: false // Should handle binary data safely
+          expectedError: false, // Should handle binary data safely
         })
         .addTestCase({
           name: 'Unicode Edge Cases',
           input: {
             tableId,
             content: '🚀💻🔒\u200B\u200C\u200D', // Zero-width characters
-            metadata: { unicode: true }
+            metadata: { unicode: true },
           },
-          expectedError: false
+          expectedError: false,
         })
 
       const results = await securityTester.runTests(async (input) => {
-        return await graphqlExecute(`
+        return await graphqlExecute(
+          `
           mutation CreateNode($input: CreateNodeInput!) {
             createNode(input: $input) {
               node {
@@ -286,11 +291,13 @@ describe('Security and Validation Comprehensive Tests', () => {
               }
             }
           }
-        `, { input })
+        `,
+          { input }
+        )
       })
 
       // Verify no malicious code execution occurred
-      results.forEach(result => {
+      results.forEach((result) => {
         if (!result.hasErrors) {
           const nodeContent = result.result.data?.createNode?.node?.content
           if (nodeContent && nodeContent.includes('<script>')) {
@@ -400,53 +407,54 @@ describe('Security and Validation Comprehensive Tests', () => {
           input: {
             nodeId,
             attributeId,
-            value: '42'
+            value: '42',
           },
-          expectedError: false
+          expectedError: false,
         })
         .addTestCase({
           name: 'Invalid Number - Text',
           input: {
             nodeId,
             attributeId,
-            value: 'not a number'
+            value: 'not a number',
           },
           expectedError: true,
-          expectedErrorPattern: /invalid.*number|type.*mismatch/i
+          expectedErrorPattern: /invalid.*number|type.*mismatch/i,
         })
         .addTestCase({
           name: 'Invalid Number - Script',
           input: {
             nodeId,
             attributeId,
-            value: '<script>alert(1)</script>'
+            value: '<script>alert(1)</script>',
           },
           expectedError: true,
-          expectedErrorPattern: /invalid.*number|type.*mismatch/i
+          expectedErrorPattern: /invalid.*number|type.*mismatch/i,
         })
         .addTestCase({
           name: 'Number Overflow',
           input: {
             nodeId,
             attributeId,
-            value: '9'.repeat(1000)
+            value: '9'.repeat(1000),
           },
           expectedError: true,
-          expectedErrorPattern: /overflow|too.*large|invalid/i
+          expectedErrorPattern: /overflow|too.*large|invalid/i,
         })
         .addTestCase({
           name: 'SQL Injection in Attribute Value',
           input: {
             nodeId,
             attributeId,
-            value: "1; DROP TABLE attributes; --"
+            value: '1; DROP TABLE attributes; --',
           },
           expectedError: true,
-          expectedErrorPattern: /invalid.*number|type.*mismatch/i
+          expectedErrorPattern: /invalid.*number|type.*mismatch/i,
         })
 
       const results = await securityTester.runTests(async (input) => {
-        return await graphqlExecute(`
+        return await graphqlExecute(
+          `
           mutation SetNodeAttribute($input: SetNodeAttributeInput!) {
             setNodeAttribute(input: $input) {
               success
@@ -455,10 +463,12 @@ describe('Security and Validation Comprehensive Tests', () => {
               }
             }
           }
-        `, { input })
+        `,
+          { input }
+        )
       })
 
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.passed).toBe(true)
       })
     })
@@ -496,11 +506,12 @@ describe('Security and Validation Comprehensive Tests', () => {
         "' UNION SELECT * FROM users --",
         "'; INSERT INTO nodes (content) VALUES ('hacked'); --",
         "' AND (SELECT COUNT(*) FROM information_schema.tables) > 0 --",
-        "'; ALTER TABLE nodes ADD COLUMN hacked TEXT; --"
+        "'; ALTER TABLE nodes ADD COLUMN hacked TEXT; --",
       ]
 
       for (const injection of injectionAttempts) {
-        const searchResult = await graphqlExecute(`
+        const searchResult = await graphqlExecute(
+          `
           query SearchNodes($tableId: ID!, $search: String!) {
             searchNodes(input: {
               tableId: $tableId
@@ -513,10 +524,12 @@ describe('Security and Validation Comprehensive Tests', () => {
               }
             }
           }
-        `, {
-          tableId,
-          search: injection
-        })
+        `,
+          {
+            tableId,
+            search: injection,
+          }
+        )
 
         // Should not cause errors or return unexpected results
         expect(searchResult.errors).toBeUndefined()
@@ -552,11 +565,12 @@ describe('Security and Validation Comprehensive Tests', () => {
       const injectionAttempts = [
         "'; DROP TABLE templates; --",
         "' OR 1=1 --",
-        "'; UPDATE templates SET query='malicious'; --"
+        "'; UPDATE templates SET query='malicious'; --",
       ]
 
       for (const injection of injectionAttempts) {
-        const execResult = await graphqlExecute(`
+        const execResult = await graphqlExecute(
+          `
           mutation ExecuteTemplate($templateIdentifier: String!, $variables: JSON!) {
             executeTemplateWithGraphQL(
               templateIdentifier: $templateIdentifier
@@ -569,10 +583,12 @@ describe('Security and Validation Comprehensive Tests', () => {
               }
             }
           }
-        `, {
-          templateIdentifier: 'sql-injection-template',
-          variables: { search: injection }
-        })
+        `,
+          {
+            templateIdentifier: 'sql-injection-template',
+            variables: { search: injection },
+          }
+        )
 
         // Should execute safely without SQL injection
         expect(execResult.data.executeTemplateWithGraphQL.success).toBe(true)
@@ -604,20 +620,20 @@ describe('Security and Validation Comprehensive Tests', () => {
       const sensitiveQueries = [
         {
           name: 'Non-existent table ID',
-          query: `query { searchNodes(input: { tableId: "non-existent-id" }) { nodes { id } } }`
+          query: `query { searchNodes(input: { tableId: "non-existent-id" }) { nodes { id } } }`,
         },
         {
           name: 'Invalid node ID format',
-          query: `query { getNodeAttributes(nodeId: "../../etc/passwd") { attributes { value } } }`
+          query: `query { getNodeAttributes(nodeId: "../../etc/passwd") { attributes { value } } }`,
         },
         {
           name: 'Malformed GraphQL',
-          query: `query { invalid syntax here }`
+          query: `query { invalid syntax here }`,
         },
         {
           name: 'System path injection',
-          query: `mutation { createTable(input: { identifier: "/etc/passwd", name: "hack" }) { table { id } } }`
-        }
+          query: `mutation { createTable(input: { identifier: "/etc/passwd", name: "hack" }) { table { id } } }`,
+        },
       ]
 
       for (const testCase of sensitiveQueries) {
@@ -643,12 +659,12 @@ describe('Security and Validation Comprehensive Tests', () => {
       const unauthorizedOperations = [
         {
           name: 'Admin operation without auth',
-          query: `mutation { deleteAllTables { success } }`
+          query: `mutation { deleteAllTables { success } }`,
         },
         {
           name: 'System information access',
-          query: `query { systemInternals { databasePath connectionString } }`
-        }
+          query: `query { systemInternals { databasePath connectionString } }`,
+        },
       ]
 
       for (const operation of unauthorizedOperations) {
@@ -686,8 +702,8 @@ describe('Security and Validation Comprehensive Tests', () => {
       expect(responses).toHaveLength(50)
 
       // Check for rate limiting indicators
-      const errors = responses.filter(r => r.errors && r.errors.length > 0)
-      const rateLimitErrors = errors.filter(r =>
+      const errors = responses.filter((r) => r.errors && r.errors.length > 0)
+      const rateLimitErrors = errors.filter((r) =>
         JSON.stringify(r.errors).match(/rate.*limit|too.*many.*requests|throttle/i)
       )
 
@@ -704,7 +720,8 @@ describe('Security and Validation Comprehensive Tests', () => {
     test('should handle large payload requests', async () => {
       const largeContent = 'x'.repeat(100000) // 100KB content
 
-      const largePayloadResult = await graphqlExecute(`
+      const largePayloadResult = await graphqlExecute(
+        `
         mutation CreateLargeNode($tableId: ID!, $content: String!) {
           createTable(input: {
             identifier: "large-payload-test"
@@ -713,14 +730,18 @@ describe('Security and Validation Comprehensive Tests', () => {
             table { id }
           }
         }
-      `, {
-        tableId: 'dummy',
-        content: largeContent
-      })
+      `,
+        {
+          tableId: 'dummy',
+          content: largeContent,
+        }
+      )
 
       // Should either accept or reject gracefully
       if (largePayloadResult.errors) {
-        expect(JSON.stringify(largePayloadResult.errors)).toMatch(/payload.*too.*large|size.*limit/i)
+        expect(JSON.stringify(largePayloadResult.errors)).toMatch(
+          /payload.*too.*large|size.*limit/i
+        )
       } else {
         expect(largePayloadResult.data).toBeDefined()
       }
@@ -750,32 +771,33 @@ describe('Security and Validation Comprehensive Tests', () => {
         {
           name: 'Valid JSON',
           metadata: { valid: true, number: 42, text: 'hello' },
-          expectedError: false
+          expectedError: false,
         },
         {
           name: 'Nested Objects',
           metadata: { level1: { level2: { level3: 'deep' } } },
-          expectedError: false
+          expectedError: false,
         },
         {
           name: 'Large Numbers',
           metadata: { number: Number.MAX_SAFE_INTEGER },
-          expectedError: false
+          expectedError: false,
         },
         {
           name: 'Special Characters',
           metadata: { special: '!@#$%^&*(){}[]|\\:";\'<>?,./' },
-          expectedError: false
+          expectedError: false,
         },
         {
           name: 'Unicode Content',
           metadata: { unicode: '🚀🔒💻中文العربية' },
-          expectedError: false
-        }
+          expectedError: false,
+        },
       ]
 
       for (const testCase of jsonTestCases) {
-        const result = await graphqlExecute(`
+        const result = await graphqlExecute(
+          `
           mutation CreateNodeWithMetadata($tableId: ID!, $metadata: JSON!) {
             createNode(input: {
               tableId: $tableId
@@ -788,10 +810,12 @@ describe('Security and Validation Comprehensive Tests', () => {
               }
             }
           }
-        `, {
-          tableId,
-          metadata: testCase.metadata
-        })
+        `,
+          {
+            tableId,
+            metadata: testCase.metadata,
+          }
+        )
 
         if (testCase.expectedError) {
           expect(result.errors).toBeDefined()
@@ -816,13 +840,14 @@ describe('Security and Validation Comprehensive Tests', () => {
       const tableId = tableResponse.data.createTable.table.id
 
       const pollutionAttempts = [
-        { "__proto__": { "polluted": true } },
-        { "constructor": { "prototype": { "polluted": true } } },
-        { "prototype": { "polluted": true } }
+        { __proto__: { polluted: true } },
+        { constructor: { prototype: { polluted: true } } },
+        { prototype: { polluted: true } },
       ]
 
       for (const attempt of pollutionAttempts) {
-        const result = await graphqlExecute(`
+        const result = await graphqlExecute(
+          `
           mutation CreateNodeWithPollution($tableId: ID!, $metadata: JSON!) {
             createNode(input: {
               tableId: $tableId
@@ -835,10 +860,12 @@ describe('Security and Validation Comprehensive Tests', () => {
               }
             }
           }
-        `, {
-          tableId,
-          metadata: attempt
-        })
+        `,
+          {
+            tableId,
+            metadata: attempt,
+          }
+        )
 
         // Should either reject or sanitize the input
         if (!result.errors) {
@@ -860,10 +887,10 @@ describe('Security and Validation Comprehensive Tests', () => {
       const preflightResponse = await yoga.fetch('/graphql', {
         method: 'OPTIONS',
         headers: {
-          'Origin': 'https://malicious-site.com',
+          Origin: 'https://malicious-site.com',
           'Access-Control-Request-Method': 'POST',
-          'Access-Control-Request-Headers': 'Content-Type'
-        }
+          'Access-Control-Request-Headers': 'Content-Type',
+        },
       })
 
       // Should handle OPTIONS requests
@@ -881,7 +908,7 @@ describe('Security and Validation Comprehensive Tests', () => {
       const response = await yoga.fetch('/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: 'query { healthCheck { status } }' })
+        body: JSON.stringify({ query: 'query { healthCheck { status } }' }),
       })
 
       const headers = response.headers
@@ -891,7 +918,7 @@ describe('Security and Validation Comprehensive Tests', () => {
         'x-content-type-options': 'nosniff',
         'x-frame-options': 'DENY',
         'x-xss-protection': '1; mode=block',
-        'strict-transport-security': /max-age=\d+/
+        'strict-transport-security': /max-age=\d+/,
       }
 
       for (const [headerName, expectedValue] of Object.entries(securityHeaders)) {

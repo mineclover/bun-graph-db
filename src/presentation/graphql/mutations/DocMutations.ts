@@ -6,8 +6,8 @@ import type { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js
 import type { DocId } from '@/core/types/CommonTypes.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import type { DocCategory } from '@/domain/entities/Doc.js'
-import { BaseResolver } from '../base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { BaseResolver } from '../base/BaseResolver.js'
 
 interface CreateDocArgs {
   input: {
@@ -129,7 +129,11 @@ export class DocMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateDoc', { id: args.id, input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: updateDoc', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       const errorCode = (error as any).code || 'UPDATE_DOC_ERROR'
       const errorMessage = (error as Error).message || 'Unknown error occurred'
@@ -244,7 +248,10 @@ export class DocMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createDocVersion', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: createDocVersion', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       const errorCode = (error as any).code || 'CREATE_DOC_VERSION_ERROR'
       const errorMessage = (error as Error).message || 'Unknown error occurred'

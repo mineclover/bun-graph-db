@@ -243,7 +243,10 @@ export class EnhancedTemplateGenerator {
         errors,
       }
     } catch (error) {
-      this.logger.error('Enhanced template generation failed', { tableIdentifier, ...toErrorMeta(error) })
+      this.logger.error('Enhanced template generation failed', {
+        tableIdentifier,
+        ...toErrorMeta(error),
+      })
       return {
         success: false,
         templates: [],

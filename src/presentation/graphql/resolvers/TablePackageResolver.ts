@@ -1,8 +1,8 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { ExportTablePackageUseCase } from '@/application/use-cases/table-packages/ExportTablePackageUseCase.js'
 import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
-import { BaseResolver } from '../base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { BaseResolver } from '../base/BaseResolver.js'
 
 export class TablePackageResolver extends BaseResolver {
   protected logger: ILogger

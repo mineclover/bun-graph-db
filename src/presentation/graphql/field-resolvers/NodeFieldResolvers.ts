@@ -100,9 +100,9 @@ export class NodeFieldResolvers extends BaseResolver {
   ) {
     this.logger.info('connectedNodes field resolver called', {
       parentId: parent.id,
-      args
+      args,
     })
-    
+
     try {
       const depth = args?.depth || 1
       const direction = args?.direction || 'BOTH'
@@ -116,15 +116,15 @@ export class NodeFieldResolvers extends BaseResolver {
       // Extract just the nodes from the result objects since GraphQL expects [TableNode!]!
       // Filter out the starting node itself and only return connected nodes
       const connectedNodes = result
-        .filter(item => item.node && item.node.getId() !== parent.id)
-        .map(item => item.node)
-        .filter(node => node !== null)
+        .filter((item) => item.node && item.node.getId() !== parent.id)
+        .map((item) => item.node)
+        .filter((node) => node !== null)
 
       this.logger.info('connectedNodes field resolver result', {
         parentId: parent.id,
         resultLength: result.length,
         connectedNodesLength: connectedNodes.length,
-        connectedNodes: connectedNodes.map(n => ({ id: n.getId(), content: n.getContent() }))
+        connectedNodes: connectedNodes.map((n) => ({ id: n.getId(), content: n.getContent() })),
       })
 
       return connectedNodes
@@ -132,7 +132,7 @@ export class NodeFieldResolvers extends BaseResolver {
       this.logger.error('Error in connectedNodes field resolver', {
         error,
         nodeId: parent.id,
-        args
+        args,
       })
       // Always return empty array for GraphQL non-nullable field
       this.logger.info('Returning empty array due to error')

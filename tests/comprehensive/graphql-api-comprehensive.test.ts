@@ -7,18 +7,18 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
-import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
-import type {
-  StandardMutationResult,
-  StandardQueryResult,
-  GraphQLError,
-  NodeMutationResult,
-  TemplateResult,
-  ExportResult
-} from '../../src/presentation/graphql/types/StandardTypes'
 import type { NodeDto } from '../../src/application/dtos/NodeDto'
 import type { TableDto } from '../../src/application/dtos/TableDto'
 import type { QueryTemplateDto } from '../../src/presentation/dto/QueryTemplateDto'
+import type {
+  ExportResult,
+  GraphQLError,
+  NodeMutationResult,
+  StandardMutationResult,
+  StandardQueryResult,
+  TemplateResult,
+} from '../../src/presentation/graphql/types/StandardTypes'
+import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 // Typed interfaces for GraphQL responses
 interface HealthCheckData {
@@ -78,7 +78,6 @@ const SUITE_NAME = 'graphql-api-comprehensive'
 let testContext: IsolatedTestContext
 
 describe('Comprehensive GraphQL API Test Suite', () => {
-
   beforeAll(async () => {
     console.log('🚀 Setting up comprehensive GraphQL API test environment...')
     testContext = await TestIsolationHelpers.setupIntegrationTest(SUITE_NAME)
@@ -118,7 +117,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         status: 'OK',
         database: true,
         version: expect.any(String),
-        timestamp: expect.any(String)
+        timestamp: expect.any(String),
       })
     })
 
@@ -151,7 +150,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       expect(result.data.systemStats.memory).toMatchObject({
         used: expect.any(Number),
         total: expect.any(Number),
-        percentage: expect.any(Number)
+        percentage: expect.any(Number),
       })
     })
   })
@@ -191,8 +190,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const variables = {
         input: {
           identifier: 'comprehensive-test-table',
-          description: 'Table for comprehensive testing'
-        }
+          description: 'Table for comprehensive testing',
+        },
       }
 
       const result = await testContext.graphqlRequest!(mutation, variables)
@@ -204,7 +203,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         identifier: 'comprehensive-test-table',
         description: 'Table for comprehensive testing',
         tableNodeCount: 0,
-        attributeCount: 0
+        attributeCount: 0,
       })
     })
 
@@ -221,7 +220,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       `
 
       const variables = {
-        input: { identifier: 'duplicate-test-table' }
+        input: { identifier: 'duplicate-test-table' },
       }
 
       await testContext.graphqlRequest!(mutation, variables)
@@ -232,7 +231,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       expect(result.data.createTable.success).toBe(false)
       expect(result.data.createTable.errors).toContainEqual({
         field: null,
-        message: expect.stringContaining('already exists')
+        message: expect.stringContaining('already exists'),
       })
     })
 
@@ -241,7 +240,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const tables = [
         { identifier: 'search-table-1', description: 'First test table' },
         { identifier: 'search-table-2', description: 'Second test table' },
-        { identifier: 'other-table', description: 'Different table' }
+        { identifier: 'other-table', description: 'Different table' },
       ]
 
       for (const table of tables) {
@@ -270,8 +269,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const variables = {
         filter: {
           search: 'search-table',
-          identifiers: ['search-table-1', 'search-table-2']
-        }
+          identifiers: ['search-table-1', 'search-table-2'],
+        },
       }
 
       const result = await testContext.graphqlRequest!(query, variables)
@@ -279,7 +278,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       expect(result.errors).toBeUndefined()
       expect(result.data.searchTables.nodes.length).toBeGreaterThanOrEqual(2)
       expect(result.data.searchTables.totalCount).toBeGreaterThanOrEqual(2)
-      const matchingTables = result.data.searchTables.nodes.filter(table =>
+      const matchingTables = result.data.searchTables.nodes.filter((table) =>
         table.identifier.includes('search-table')
       )
       expect(matchingTables.length).toBeGreaterThanOrEqual(2)
@@ -329,8 +328,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const variables = {
         input: {
           tableId,
-          content: 'Comprehensive test node content'
-        }
+          content: 'Comprehensive test node content',
+        },
       }
 
       const result = await testContext.graphqlRequest!(mutation, variables)
@@ -341,9 +340,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         id: expect.any(String),
         content: 'Comprehensive test node content',
         attributeCount: 0,
-        relationCount: 0
+        relationCount: 0,
       })
-
     })
 
     test.skip('should search nodes with complex text and metadata filters', async () => {
@@ -351,7 +349,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const nodes = [
         { content: 'Content about technology' },
         { content: 'Content about science' },
-        { content: 'Technology and innovation' }
+        { content: 'Technology and innovation' },
       ]
 
       for (const node of nodes) {
@@ -396,17 +394,17 @@ describe('Comprehensive GraphQL API Test Suite', () => {
             {
               field: 'category',
               operator: 'equals',
-              value: 'tech'
+              value: 'tech',
             },
             {
               field: 'score',
               operator: 'gte',
-              value: 80
-            }
+              value: 80,
+            },
           ],
           sortBy: [{ field: 'score', direction: 'DESC' }],
-          limit: 10
-        }
+          limit: 10,
+        },
       }
 
       const result = await testContext.graphqlRequest!(query, variables)
@@ -449,13 +447,13 @@ describe('Comprehensive GraphQL API Test Suite', () => {
             { content: 'Second batch node' },
             { content: 'Third batch node' },
             { content: '' }, // Should fail
-            { content: 'Fourth batch node' }
+            { content: 'Fourth batch node' },
           ],
           options: {
             continueOnError: true,
-            validateBeforeInsert: true
-          }
-        }
+            validateBeforeInsert: true,
+          },
+        },
       }
 
       const result = await testContext.graphqlRequest!(mutation, variables)
@@ -466,7 +464,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       expect(result.data.batchCreateNodes.statistics).toMatchObject({
         totalRequested: 5,
         successfullyCreated: 4,
-        failed: 1
+        failed: 1,
       })
     })
   })
@@ -491,7 +489,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         { identifier: 'age', name: 'Age', attributeTypeId: '2' }, // number
         { identifier: 'active', name: 'Is Active', attributeTypeId: '3' }, // boolean
         { identifier: 'birthdate', name: 'Birth Date', attributeTypeId: '4' }, // date
-        { identifier: 'tags', name: 'Tags', attributeTypeId: '5' } // array
+        { identifier: 'tags', name: 'Tags', attributeTypeId: '5' }, // array
       ]
 
       for (const attr of attributes) {
@@ -589,7 +587,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
   describe('Relationship Operations', () => {
     let tableId: string
-    let nodeIds: string[] = []
+    const nodeIds: string[] = []
 
     beforeEach(async () => {
       // Create table
@@ -657,9 +655,9 @@ describe('Comprehensive GraphQL API Test Suite', () => {
           properties: {
             strength: 'strong',
             since: '2023-01-01',
-            verified: true
-          }
-        }
+            verified: true,
+          },
+        },
       }
 
       const result = await testContext.graphqlRequest!(mutation, variables)
@@ -673,8 +671,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         properties: {
           strength: 'strong',
           since: '2023-01-01',
-          verified: true
-        }
+          verified: true,
+        },
       })
     })
 
@@ -685,7 +683,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         { from: 1, to: 2, type: 'collaborates' },
         { from: 2, to: 3, type: 'mentors' },
         { from: 3, to: 0, type: 'reports_to' },
-        { from: 0, to: 2, type: 'manages' }
+        { from: 0, to: 2, type: 'manages' },
       ]
 
       for (const rel of relationships) {
@@ -803,8 +801,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
             }
           `,
           variables: ['tableId', 'nodeTitle'],
-          tags: ['test', 'comprehensive', 'search']
-        }
+          tags: ['test', 'comprehensive', 'search'],
+        },
       }
 
       const createResult = await testContext.graphqlRequest!(createMutation, templateVariables)
@@ -856,8 +854,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         templateIdentifier: 'comprehensive-test-template',
         variables: {
           tableId,
-          nodeTitle: 'Template Test'
-        }
+          nodeTitle: 'Template Test',
+        },
       }
 
       const executeResult = await testContext.graphqlRequest!(executeMutation, executeVariables)
@@ -1025,8 +1023,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
           metadata: {
             batch,
             index: i,
-            category: i % 3 === 0 ? 'category-a' : i % 3 === 1 ? 'category-b' : 'category-c'
-          }
+            category: i % 3 === 0 ? 'category-a' : i % 3 === 1 ? 'category-b' : 'category-c',
+          },
         }))
 
         await testContext.graphqlRequest!(`
@@ -1047,7 +1045,8 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const startTime = Date.now()
 
       // Perform complex search operation
-      const searchResult = await testContext.graphqlRequest!(`
+      const searchResult = await testContext.graphqlRequest!(
+        `
         query PerformanceSearch($tableId: ID!) {
           searchNodes(tableId: $tableId, searchQuery: {
             textSearch: "searchable"
@@ -1072,7 +1071,9 @@ describe('Comprehensive GraphQL API Test Suite', () => {
             executionTime
           }
         }
-      `, { tableId })
+      `,
+        { tableId }
+      )
 
       const endTime = Date.now()
       const executionTime = endTime - startTime

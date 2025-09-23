@@ -9,8 +9,8 @@ import type {
   UpdateTableArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import { BaseResolver } from '../base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { BaseResolver } from '../base/BaseResolver.js'
 
 export class TableMutations extends BaseResolver {
   protected logger: ILogger
@@ -52,7 +52,10 @@ export class TableMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: createTable', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: createTable', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       const errorCode =
         (error as any).code ||
@@ -104,7 +107,11 @@ export class TableMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateTable', { id: args.id, input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: updateTable', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       return {
         success: false,

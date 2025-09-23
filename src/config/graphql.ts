@@ -28,8 +28,16 @@ export function createGraphQLConfig(cliOptions?: CliOptions): GraphQLConfig {
   }
 }
 
-// Legacy export for backward compatibility
-export const graphqlConfig: GraphQLConfig = createGraphQLConfig()
+// Legacy export for backward compatibility - lazy evaluation to avoid duplicate config display
+let _graphqlConfig: GraphQLConfig | undefined
+export const graphqlConfig: GraphQLConfig = new Proxy({} as GraphQLConfig, {
+  get(target, prop) {
+    if (!_graphqlConfig) {
+      _graphqlConfig = createGraphQLConfig()
+    }
+    return _graphqlConfig[prop as keyof GraphQLConfig]
+  },
+})
 
 export const getGraphQLEndpoint = (): string => {
   return process.env.GRAPHQL_ENDPOINT || '/graphql'

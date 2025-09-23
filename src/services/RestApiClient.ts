@@ -47,7 +47,7 @@ export class RestApiClient {
       console.error(`REST API ${method} ${endpoint} error:`, error)
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }
@@ -59,7 +59,7 @@ export class RestApiClient {
     if (!endpoint) {
       return {
         success: false,
-        error: `No REST API endpoint found for tool: ${toolName}`
+        error: `No REST API endpoint found for tool: ${toolName}`,
       }
     }
 
@@ -72,7 +72,11 @@ export class RestApiClient {
     return API_ENDPOINT_MAPPING[toolName as keyof typeof API_ENDPOINT_MAPPING] || null
   }
 
-  private prepareRequest(toolName: string, endpoint: string, params: any): {
+  private prepareRequest(
+    toolName: string,
+    endpoint: string,
+    params: any
+  ): {
     method: string
     path: string
     queryParams?: Record<string, string>
@@ -86,14 +90,14 @@ export class RestApiClient {
 
     // URL 파라미터 치환
     let path = pathTemplate.replace('/api', '')
-    Object.keys(params).forEach(key => {
+    Object.keys(params).forEach((key) => {
       path = path.replace(`:${key}`, params[key])
     })
 
     // GET 요청의 경우 쿼리 파라미터로 전환
     if (method === 'GET') {
       const queryParams: Record<string, string> = {}
-      Object.keys(params).forEach(key => {
+      Object.keys(params).forEach((key) => {
         if (!pathTemplate.includes(`:${key}`)) {
           queryParams[key] = String(params[key])
         }
@@ -103,7 +107,7 @@ export class RestApiClient {
 
     // POST/PUT 요청의 경우 body 데이터로 전환
     const body = { ...params }
-    Object.keys(params).forEach(key => {
+    Object.keys(params).forEach((key) => {
       if (pathTemplate.includes(`:${key}`)) {
         delete body[key]
       }
@@ -121,26 +125,38 @@ export class RestApiClient {
     return this.makeRequest('GET', '/stats')
   }
 
-  async createTable(params: { identifier: string; name?: string; description?: string }): Promise<ApiResponse> {
+  async createTable(params: {
+    identifier: string
+    name?: string
+    description?: string
+  }): Promise<ApiResponse> {
     return this.makeRequest('POST', '/tables', params)
   }
 
   async searchTables(params: { searchTerm?: string; limit?: number }): Promise<ApiResponse> {
     return this.makeRequest('GET', '/tables/search', undefined, {
       searchTerm: params.searchTerm || '',
-      limit: String(params.limit || 10)
+      limit: String(params.limit || 10),
     })
   }
 
-  async createNode(params: { tableId: string; content: string; metadata?: any }): Promise<ApiResponse> {
+  async createNode(params: {
+    tableId: string
+    content: string
+    metadata?: any
+  }): Promise<ApiResponse> {
     return this.makeRequest('POST', '/nodes', params)
   }
 
-  async searchNodes(params: { tableId: string; search?: string; limit?: number }): Promise<ApiResponse> {
+  async searchNodes(params: {
+    tableId: string
+    search?: string
+    limit?: number
+  }): Promise<ApiResponse> {
     return this.makeRequest('GET', '/nodes/search', undefined, {
       tableId: params.tableId,
       search: params.search || '',
-      limit: String(params.limit || 10)
+      limit: String(params.limit || 10),
     })
   }
 
@@ -172,7 +188,7 @@ export class RestApiClient {
 
   async searchTemplates(params: { searchTerm?: string; tags?: string[] }): Promise<ApiResponse> {
     const queryParams: Record<string, string> = {
-      searchTerm: params.searchTerm || ''
+      searchTerm: params.searchTerm || '',
     }
 
     if (params.tags && params.tags.length > 0) {

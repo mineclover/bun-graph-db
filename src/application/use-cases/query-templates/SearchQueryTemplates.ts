@@ -4,8 +4,8 @@ import type {
   IQueryTemplateRepository,
   SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
-import { ValidationException } from '@/shared/exceptions/DomainException.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
+import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface SearchQueryTemplatesRequest {
   tags?: string[]

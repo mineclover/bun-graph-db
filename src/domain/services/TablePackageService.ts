@@ -14,6 +14,7 @@ import type {
   TableTemplatesExport,
 } from '@/core/types/TablePackage.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 import { QueryTemplate } from '../entities/QueryTemplate.js'
 import type { IAttributeRepository } from '../repositories/IAttributeRepository.js'
@@ -28,7 +29,6 @@ import { EnhancedDependencyAnalyzer } from './EnhancedDependencyAnalyzer.js'
 import { EnhancedTemplateGenerator } from './EnhancedTemplateGenerator.js'
 import type { ITablePackageService } from './ITablePackageService.js'
 import { SchemaIntrospectionService } from './SchemaIntrospectionService.js'
-import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class TablePackageService implements ITablePackageService {
   private readonly importSessions = new Map<string, ImportSession>()
@@ -1273,7 +1273,10 @@ export class TablePackageService implements ITablePackageService {
         validationResults,
       }
     } catch (error) {
-      this.logger.error('Failed to generate schema-aware templates', { tableIdentifier, ...toErrorMeta(error) })
+      this.logger.error('Failed to generate schema-aware templates', {
+        tableIdentifier,
+        ...toErrorMeta(error),
+      })
       throw error
     }
   }

@@ -1,0 +1,428 @@
+[
+  {
+    "templateId": 874,
+    "identifier": "data-validation",
+    "name": "ValidateDataIntegrity",
+    "complexity": 10,
+    "status": "SUCCESS",
+    "executionTime": 6
+  },
+  {
+    "templateId": 890,
+    "identifier": "query-optimization",
+    "name": "OptimizeQueries",
+    "complexity": 10,
+    "status": "SUCCESS",
+    "executionTime": 2
+  },
+  {
+    "templateId": 892,
+    "identifier": "real-time-monitoring",
+    "name": "SystemMonitoring",
+    "complexity": 10,
+    "status": "SUCCESS",
+    "executionTime": 3
+  },
+  {
+    "templateId": 900,
+    "identifier": "template-lifecycle-management",
+    "name": "TemplateLifecycleManagement",
+    "complexity": 10,
+    "status": "SUCCESS",
+    "executionTime": 2
+  },
+  {
+    "templateId": 893,
+    "identifier": "schedule-maintenance-tasks-with-params",
+    "name": "ScheduleMaintenanceTasksWithParams",
+    "complexity": 9,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 891,
+    "identifier": "migrate-data-with-params",
+    "name": "MigrateDataWithParams",
+    "complexity": 9,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 0
+  },
+  {
+    "templateId": 899,
+    "identifier": "smart-search-with-params",
+    "name": "SmartSearchWithParams",
+    "complexity": 8,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 875,
+    "identifier": "data-export",
+    "name": "ExportData",
+    "complexity": 8,
+    "status": "SUCCESS",
+    "executionTime": 6
+  },
+  {
+    "templateId": 906,
+    "identifier": "validate-data-quality-with-params",
+    "name": "ValidateDataQualityWithParams",
+    "complexity": 8,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 862,
+    "identifier": "analyze-table-relationships-with-params",
+    "name": "AnalyzeTableRelationshipsWithParams",
+    "complexity": 7,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 863,
+    "identifier": "analyze-query-performance-with-params",
+    "name": "AnalyzeQueryPerformanceWithParams",
+    "complexity": 7,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 2
+  },
+  {
+    "templateId": 1237,
+    "identifier": "bulk-create-unique-todos",
+    "name": "Todo 일괄 생성 (고유)",
+    "complexity": 6,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 3
+  },
+  {
+    "templateId": 902,
+    "identifier": "track-changes-with-params",
+    "name": "TrackChangesWithParams",
+    "complexity": 6,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 879,
+    "identifier": "find-paths-between-nodes-with-params",
+    "name": "FindPathsBetweenNodesWithParams",
+    "complexity": 6,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 865,
+    "identifier": "bulk-create-nodes-with-params",
+    "name": "BulkCreateNodesWithParams",
+    "complexity": 6,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 1239,
+    "identifier": "get-table-statistics-enhanced",
+    "name": "테이블 통계 조회 (향상됨)",
+    "complexity": 5,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 2
+  },
+  {
+    "templateId": 1245,
+    "identifier": "create-table-attribute-schema-fixed",
+    "name": "테이블 속성 생성 (스키마 수정)",
+    "complexity": 5,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 895,
+    "identifier": "search-related-nodes-with-params",
+    "name": "SearchRelatedNodesWithParams",
+    "complexity": 5,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 883,
+    "identifier": "get-detailed-system-metrics",
+    "name": "GetDetailedSystemMetrics",
+    "complexity": 5,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 864,
+    "identifier": "bulk-data-import",
+    "name": "BulkImport",
+    "complexity": 5,
+    "status": "SUCCESS",
+    "executionTime": 3
+  },
+  {
+    "templateId": 1235,
+    "identifier": "search-todos-fixed",
+    "name": "Todo 검색 (수정됨)",
+    "complexity": 4,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 1244,
+    "identifier": "create-table-node-schema-fixed",
+    "name": "테이블 노드 생성 (스키마 수정)",
+    "complexity": 4,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 1626,
+    "identifier": "search-templates-advanced",
+    "name": "SearchTemplatesAdvanced",
+    "complexity": 4,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 889,
+    "identifier": "list-tables-with-pagination",
+    "name": "ListTablesWithPagination",
+    "complexity": 4,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 2
+  },
+  {
+    "templateId": 867,
+    "identifier": "create-attribute-with-params",
+    "name": "CreateAttributeWithParams",
+    "complexity": 4,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 872,
+    "identifier": "create-template-basic",
+    "name": "CreateTemplate",
+    "complexity": 4,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 873,
+    "identifier": "create-template-with-params",
+    "name": "CreateTemplateWithParams",
+    "complexity": 4,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 1236,
+    "identifier": "create-todo-unique",
+    "name": "Todo 생성 (고유)",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 1242,
+    "identifier": "create-todo-schema-fixed",
+    "name": "Todo 생성 (스키마 수정)",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 1243,
+    "identifier": "update-todo-schema-fixed",
+    "name": "Todo 업데이트 (스키마 수정)",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 1279,
+    "identifier": "universal_metric_entry",
+    "name": "UniversalMetricEntry",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 0
+  },
+  {
+    "templateId": 903,
+    "identifier": "update-node-with-params",
+    "name": "UpdateNodeWithParams",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 905,
+    "identifier": "update-table-with-params",
+    "name": "UpdateTableWithParams",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 0
+  },
+  {
+    "templateId": 904,
+    "identifier": "update-template-with-params",
+    "name": "UpdateTemplateWithParams",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 871,
+    "identifier": "create-table-with-params",
+    "name": "CreateTableWithParams",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 0
+  },
+  {
+    "templateId": 868,
+    "identifier": "create-node-with-params",
+    "name": "CreateNodeWithParams",
+    "complexity": 3,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 886,
+    "identifier": "get-template-by-identifier",
+    "name": "GetTemplateByIdentifier",
+    "complexity": 2,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 2
+  },
+  {
+    "templateId": 880,
+    "identifier": "get-attribute-by-id",
+    "name": "GetAttributeById",
+    "complexity": 2,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 2
+  },
+  {
+    "templateId": 887,
+    "identifier": "list-attributes-with-filter",
+    "name": "ListAttributesWithFilter",
+    "complexity": 2,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 2
+  },
+  {
+    "templateId": 888,
+    "identifier": "list-tables-with-filter",
+    "name": "ListTablesWithFilter",
+    "complexity": 2,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 898,
+    "identifier": "search-templates-with-filter",
+    "name": "SearchTemplatesWithFilter",
+    "complexity": 2,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 894,
+    "identifier": "search-nodes-with-filter",
+    "name": "SearchNodesWithFilter",
+    "complexity": 2,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 877,
+    "identifier": "delete-node-with-params",
+    "name": "DeleteNodeWithParams",
+    "complexity": 2,
+    "status": "ERROR",
+    "errorType": "SCHEMA_ERROR",
+    "message": "Syntax Error: Unexpected character: \"\\\".",
+    "executionTime": 1
+  },
+  {
+    "templateId": 885,
+    "identifier": "get-system-health-status",
+    "name": "GetSystemHealthStatus",
+    "complexity": 2,
+    "status": "SUCCESS",
+    "executionTime": 3
+  }
+]

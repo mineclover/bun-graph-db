@@ -326,7 +326,11 @@ export class NodeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update node', { id: args.id, input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to update node', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       return {
         node: null,

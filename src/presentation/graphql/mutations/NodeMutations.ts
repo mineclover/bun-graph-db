@@ -11,8 +11,8 @@ import type {
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import { BaseResolver } from '../base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { BaseResolver } from '../base/BaseResolver.js'
 
 export class NodeMutations extends BaseResolver {
   protected logger: ILogger
@@ -152,7 +152,11 @@ export class NodeMutations extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: updateNode', { id: args.id, input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: updateNode', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       return {
         success: false,

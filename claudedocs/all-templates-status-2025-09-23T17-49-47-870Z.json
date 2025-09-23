@@ -1,0 +1,350 @@
+{
+  "summary": {
+    "totalExpected": 44,
+    "foundInDB": 46,
+    "missing": 4,
+    "testPassed": 46,
+    "testFailed": 0
+  },
+  "missingTemplates": [
+    "create-node-advanced",
+    "list-nodes-with-filter",
+    "system-health-check",
+    "system-health-check_v1-0-0"
+  ],
+  "extraTemplates": [
+    "update-template-with-params",
+    "create-template-with-params",
+    "create-todo-schema-fixed",
+    "create-todo-unique",
+    "update-todo-schema-fixed",
+    "new-template",
+    "new-custom-template"
+  ],
+  "dbTemplates": [
+    "get-system-health-status",
+    "update-table-with-params",
+    "create-table-with-params",
+    "list-tables-with-filter",
+    "analyze-table-relationships-with-params",
+    "update-node-with-params",
+    "list-tables-with-pagination",
+    "bulk-create-nodes-with-params",
+    "create-node-with-params",
+    "delete-node-with-params",
+    "search-related-nodes-with-params",
+    "search-nodes-with-filter",
+    "find-paths-between-nodes-with-params",
+    "search-templates-with-filter",
+    "smart-search-with-params",
+    "query-optimization",
+    "data-validation",
+    "update-template-with-params",
+    "bulk-data-import",
+    "list-attributes-with-filter",
+    "get-detailed-system-metrics",
+    "migrate-data-with-params",
+    "create-attribute-with-params",
+    "analyze-query-performance-with-params",
+    "create-template-basic",
+    "create-template-with-params",
+    "track-changes-with-params",
+    "validate-data-quality-with-params",
+    "get-attribute-by-id",
+    "get-template-by-identifier",
+    "data-export",
+    "schedule-maintenance-tasks-with-params",
+    "template-lifecycle-management",
+    "real-time-monitoring",
+    "search-templates-advanced",
+    "create-todo-schema-fixed",
+    "search-todos-fixed",
+    "create-todo-unique",
+    "bulk-create-unique-todos",
+    "get-table-statistics-enhanced",
+    "update-todo-schema-fixed",
+    "create-table-node-schema-fixed",
+    "create-table-attribute-schema-fixed",
+    "universal_metric_entry",
+    "new-template",
+    "new-custom-template"
+  ],
+  "testResults": [
+    {
+      "identifier": "get-system-health-status",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "update-table-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-table-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "list-tables-with-filter",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "analyze-table-relationships-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "update-node-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "list-tables-with-pagination",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "bulk-create-nodes-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-node-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "delete-node-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "search-related-nodes-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "search-nodes-with-filter",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "find-paths-between-nodes-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "search-templates-with-filter",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "smart-search-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "query-optimization",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "data-validation",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "update-template-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "bulk-data-import",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "list-attributes-with-filter",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "get-detailed-system-metrics",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "migrate-data-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-attribute-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "analyze-query-performance-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-template-basic",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-template-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "track-changes-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "validate-data-quality-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "get-attribute-by-id",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "get-template-by-identifier",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "data-export",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "schedule-maintenance-tasks-with-params",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "template-lifecycle-management",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "real-time-monitoring",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "search-templates-advanced",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-todo-schema-fixed",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "search-todos-fixed",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-todo-unique",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "bulk-create-unique-todos",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "get-table-statistics-enhanced",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "update-todo-schema-fixed",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-table-node-schema-fixed",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "create-table-attribute-schema-fixed",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "universal_metric_entry",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "new-template",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    },
+    {
+      "identifier": "new-custom-template",
+      "success": true,
+      "errors": [],
+      "graphqlErrors": []
+    }
+  ]
+}

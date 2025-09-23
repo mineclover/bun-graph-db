@@ -6,6 +6,7 @@ export const UseCaseTokens = {
   // Table use cases
   CREATE_TABLE_USE_CASE: Symbol.for('CreateTableUseCase'),
   DELETE_TABLE_USE_CASE: Symbol.for('DeleteTableUseCase'),
+  GET_TABLE_DOCS_USE_CASE: Symbol.for('GetTableDocsUseCase'),
 
   // Attribute use cases
   CREATE_ATTRIBUTE_TYPE_USE_CASE: Symbol.for('CreateAttributeTypeUseCase'),

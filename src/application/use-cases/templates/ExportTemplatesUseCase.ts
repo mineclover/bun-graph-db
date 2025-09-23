@@ -158,7 +158,10 @@ export class ExportTemplatesUseCase {
         errors: exportErrors,
       }
     } catch (error) {
-      this.logger.error('Unexpected error during batch template export', { ...toErrorMeta(error), request })
+      this.logger.error('Unexpected error during batch template export', {
+        ...toErrorMeta(error),
+        request,
+      })
 
       return {
         success: false,

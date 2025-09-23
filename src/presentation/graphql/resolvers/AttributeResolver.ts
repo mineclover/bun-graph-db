@@ -144,7 +144,10 @@ export class AttributeResolver extends BaseResolver {
       }
       return result.data.map((attribute) => attributeFromEntity(attribute))
     } catch (error) {
-      this.logger.error('Failed to find attributes by table id', { tableId: args.tableId, ...toErrorMeta(error) })
+      this.logger.error('Failed to find attributes by table id', {
+        tableId: args.tableId,
+        ...toErrorMeta(error),
+      })
       throw error
     }
   }
@@ -161,7 +164,10 @@ export class AttributeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to create attribute type', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to create attribute type', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       if (error instanceof ValidationException) {
         return {
@@ -348,7 +354,11 @@ export class AttributeResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update attribute', { id: args.id, input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to update attribute', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       return {
         attribute: null,

@@ -5,8 +5,8 @@ import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeT
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
-import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface SchemaExportOptions {
   includeData?: boolean

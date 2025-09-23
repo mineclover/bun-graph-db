@@ -88,7 +88,7 @@ query RelationSystemOverview {
   "nodeId": "6",           # Performance Node 1 (most connected)
   "strengthFilter": {
     "tableIds": ["6"],
-    "relationTypes": ["related_to"],
+    "relationTypes": ["relatedTo"],
     "strengthRange": { "min": 2, "max": 4 },
     "confidenceRange": { "min": 3, "max": 4 }
   }
@@ -102,7 +102,7 @@ query OptimalPathFinding($sourceNodeId: ID!, $targetNodeId: ID!) {
     algorithm: WEIGHTED_SHORTEST
     weightingStrategy: STRENGTH_CONFIDENCE  # strength + confidence 가중치
     maxDepth: 5
-    preferredRelationTypes: ["related_to", "references"]
+    preferredRelationTypes: ["relatedTo", "references"]
   }) {
     path {
       node {
@@ -282,7 +282,7 @@ query RelationshipStrengthAnalysis($strengthFilter: StrengthAnalysisFilter!) {
 query HighConfidenceRelations {
   getHighConfidenceRelations(
     minConfidence: 3      # confident 이상만
-    relationTypes: ["related_to", "references", "parent_of"]
+    relationTypes: ["relatedTo", "references", "parentOf"]
     tableIds: ["6", "1", "5"]  # 특정 테이블들만
   ) {
     relation {
@@ -375,7 +375,7 @@ query RelationPatternDiscovery {
 #       "relationTypeDistribution": [
 #         {
 #           "relationType": {
-#             "identifier": "related_to",
+#             "identifier": "relatedTo",
 #             "category": "semantic"
 #           },
 #           "count": 15,

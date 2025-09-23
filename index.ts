@@ -1,10 +1,12 @@
 import { createYoga } from 'graphql-yoga'
 import type { ILogger } from './src/application/ports/ILogger'
-import { createGraphQLConfig } from './src/config/graphql'
 import { setDatabasePath } from './src/config/database'
+import { createGraphQLConfig } from './src/config/graphql'
 import { ContainerBootstrap } from './src/infrastructure/container/ContainerBootstrap'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens'
+import { UseCaseTokens } from './src/infrastructure/container/tokens/UseCaseTokens'
 import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder'
+import { toErrorMeta } from './src/presentation/http/utils/errorHelpers.js'
 import {
   mergeWithEnvironment,
   parseCliArgs,
@@ -12,7 +14,6 @@ import {
   printVersion,
   validateOptions,
 } from './src/utils/cli-parser'
-import { toErrorMeta } from './src/presentation/http/utils/errorHelpers.js'
 
 // Parse CLI arguments
 const { options, unknown } = parseCliArgs()
@@ -110,18 +111,19 @@ const yoga = createYoga({
 })
 
 import { McpHttpServer } from './src/mcp/http-server/McpHttpServer'
+import { AttributeApiController } from './src/presentation/http/controllers/AttributeApiController'
+import { GraphApiController } from './src/presentation/http/controllers/GraphApiController'
+// Import controllers
+import { GraphDbApiController } from './src/presentation/http/controllers/GraphDbApiController'
 // Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes'
 import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes'
-// Import controllers
-import { GraphDbApiController } from './src/presentation/http/controllers/GraphDbApiController'
-import { AttributeApiController } from './src/presentation/http/controllers/AttributeApiController'
-import { GraphApiController } from './src/presentation/http/controllers/GraphApiController'
 
 // Create controllers
 const graphDbController = new GraphDbApiController(logger)
 const attributeController = new AttributeApiController(logger)
-const graphController = new GraphApiController(logger)
+const getTableDocsUseCase = await container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE) as any
+const graphController = new GraphApiController(logger, getTableDocsUseCase)
 
 // Create route handlers
 const schemaHandler = await createSchemaHandler(container)
@@ -159,7 +161,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       query: Object.fromEntries(url.searchParams.entries()),
       params: {},
       headers: Object.fromEntries(request.headers.entries()),
-      body
+      body,
     }
 
     let responseData: any
@@ -175,7 +177,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       },
       send: (data: any) => {
         responseData = data
-      }
+      },
     }
 
     // Route matching and execution
@@ -188,8 +190,8 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
           status: 'OK',
           timestamp: new Date().toISOString(),
           database: 'Connected',
-          version: '1.0.0'
-        }
+          version: '1.0.0',
+        },
       }
     } else if (method === 'GET' && pathname === '/api/stats') {
       await graphDbController.systemStats(req, res)
@@ -199,6 +201,8 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       await graphDbController.searchTables(req, res)
     } else if (method === 'GET' && pathname === '/api/tables') {
       await graphController.getTables(req, res)
+    } else if (method === 'GET' && pathname === '/api/tables/docs') {
+      await graphController.getTableDocs(req, res)
     } else if (method === 'POST' && pathname === '/api/nodes') {
       await graphDbController.createNode(req, res)
     } else if (method === 'GET' && pathname === '/api/nodes/search') {
@@ -213,7 +217,11 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       await graphDbController.executeTemplateWithGraphQL(req, res)
     } else if (method === 'POST' && pathname === '/api/attributes') {
       await attributeController.createAttribute(req, res)
-    } else if (method === 'GET' && pathname.startsWith('/api/nodes/') && pathname.endsWith('/attributes')) {
+    } else if (
+      method === 'GET' &&
+      pathname.startsWith('/api/nodes/') &&
+      pathname.endsWith('/attributes')
+    ) {
       // Extract nodeId from path like /api/nodes/123/attributes
       const nodeId = pathname.split('/')[3]
       req.params.nodeId = nodeId
@@ -227,18 +235,15 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       typeof responseData === 'string' ? responseData : JSON.stringify(responseData),
       {
         status: statusCode,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       }
     )
   } catch (error) {
     logger.error('API request error:', toErrorMeta(error))
-    return new Response(
-      JSON.stringify({ success: false, error: 'Internal server error' }),
-      {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    )
+    return new Response(JSON.stringify({ success: false, error: 'Internal server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 }
 

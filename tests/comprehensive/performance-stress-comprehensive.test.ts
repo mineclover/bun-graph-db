@@ -16,9 +16,9 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
+import type { Container } from 'inversify'
 import { createContainer } from '../../src/infrastructure/container/Container'
-import { Container } from 'inversify'
+import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
 import { TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
 
 interface PerformanceMetrics {
@@ -53,10 +53,10 @@ class PerformanceMonitor {
         heapUsed: endMemory.heapUsed - this.startMemory.heapUsed,
         heapTotal: endMemory.heapTotal - this.startMemory.heapTotal,
         external: endMemory.external - this.startMemory.external,
-        arrayBuffers: endMemory.arrayBuffers - this.startMemory.arrayBuffers
+        arrayBuffers: endMemory.arrayBuffers - this.startMemory.arrayBuffers,
       },
       operations,
-      operationsPerSecond: operations / (duration / 1000)
+      operationsPerSecond: operations / (duration / 1000),
     }
   }
 }
@@ -72,7 +72,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
     const response = await yoga.fetch('/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables })
+      body: JSON.stringify({ query, variables }),
     })
     return await response.json()
   }
@@ -141,10 +141,10 @@ describe('Performance and Stress Comprehensive Tests', () => {
         tableId,
         content: `Performance Node ${i + 1}`,
         metadata: {
-          category: `Category ${i % 10 + 1}`,
+          category: `Category ${(i % 10) + 1}`,
           value: Math.floor(Math.random() * 1000),
-          created: new Date().toISOString()
-        }
+          created: new Date().toISOString(),
+        },
       }))
 
       const response = await graphqlExecute(batchCreateQuery, { nodes })
@@ -176,7 +176,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.memoryUsage.heapUsed).toBeLessThan(100 * 1024 * 1024) // < 100MB heap growth
 
       // All responses should be successful
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.healthCheck.status).toBe('healthy')
       })
@@ -213,9 +213,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       performanceMonitor.start()
 
       // Execute complex query 10 times
-      const promises = Array.from({ length: 10 }, () =>
-        graphqlExecute(complexQuery, { tableId })
-      )
+      const promises = Array.from({ length: 10 }, () => graphqlExecute(complexQuery, { tableId }))
       const responses = await Promise.all(promises)
 
       const metrics = performanceMonitor.stop(10)
@@ -226,7 +224,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.memoryUsage.heapUsed).toBeLessThan(200 * 1024 * 1024) // < 200MB heap growth
 
       // Verify responses
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.searchNodes.nodes).toHaveLength(100)
       })
@@ -256,7 +254,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
         graphqlExecute(paginationQuery, {
           tableId,
           offset: page * 100,
-          limit: 100
+          limit: 100,
         })
       )
       const responses = await Promise.all(promises)
@@ -293,14 +291,22 @@ describe('Performance and Stress Comprehensive Tests', () => {
       `
 
       const searchTerms = [
-        'Node 1', 'Node 2', 'Node 5', 'Node 10', 'Node 50',
-        'Category 1', 'Category 5', 'Performance', 'Test', 'Data'
+        'Node 1',
+        'Node 2',
+        'Node 5',
+        'Node 10',
+        'Node 50',
+        'Category 1',
+        'Category 5',
+        'Performance',
+        'Test',
+        'Data',
       ]
 
       performanceMonitor.start()
 
       // Execute searches in parallel
-      const promises = searchTerms.map(term =>
+      const promises = searchTerms.map((term) =>
         graphqlExecute(searchQuery, { tableId, searchTerm: term })
       )
       const responses = await Promise.all(promises)
@@ -312,7 +318,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.operationsPerSecond).toBeGreaterThan(2) // > 2 searches per second
 
       // Verify search results
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.searchNodes.nodes.length).toBeGreaterThanOrEqual(0)
       })
@@ -353,8 +359,8 @@ describe('Performance and Stress Comprehensive Tests', () => {
           metadata: {
             batch: batchIndex + 1,
             index: nodeIndex + 1,
-            category: `Category ${(batchIndex * 1000 + nodeIndex) % 20 + 1}`
-          }
+            category: `Category ${((batchIndex * 1000 + nodeIndex) % 20) + 1}`,
+          },
         }))
         return graphqlExecute(batchCreateQuery, { nodes })
       })
@@ -368,7 +374,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.memoryUsage.heapUsed).toBeLessThan(500 * 1024 * 1024) // < 500MB heap growth
 
       // Verify all batches succeeded
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.batchCreateNodes.success).toBe(true)
         expect(response.data.batchCreateNodes.totalCreated).toBe(1000)
@@ -411,7 +417,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
 
       const nodes = Array.from({ length: 1000 }, (_, i) => ({
         tableId,
-        content: `Graph Node ${i + 1}`
+        content: `Graph Node ${i + 1}`,
       }))
 
       const nodeResponse = await graphqlExecute(nodeCreationQuery, { nodes })
@@ -442,9 +448,9 @@ describe('Performance and Stress Comprehensive Tests', () => {
           return {
             fromNodeId: nodeIds[fromIndex],
             toNodeId: nodeIds[toIndex],
-            relationshipType: `REL_TYPE_${relIndex % 5 + 1}`,
+            relationshipType: `REL_TYPE_${(relIndex % 5) + 1}`,
             tableId,
-            properties: { weight: Math.random() }
+            properties: { weight: Math.random() },
           }
         })
         return graphqlExecute(relationshipCreationQuery, { relations })
@@ -459,7 +465,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.memoryUsage.heapUsed).toBeLessThan(750 * 1024 * 1024) // < 750MB heap growth
 
       // Verify all relationship batches succeeded
-      relationshipResponses.forEach(response => {
+      relationshipResponses.forEach((response) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.batchCreateRelations.success).toBe(true)
         expect(response.data.batchCreateRelations.totalCreated).toBe(1000)
@@ -482,7 +488,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       const traversalStart = Date.now()
       const traversalResponse = await graphqlExecute(traversalQuery, {
         nodeId: nodeIds[0],
-        depth: 3
+        depth: 3,
       })
       const traversalTime = Date.now() - traversalStart
 
@@ -516,18 +522,21 @@ describe('Performance and Stress Comprehensive Tests', () => {
           content: `Memory Test Node ${cycle * 500 + i + 1}`,
           metadata: {
             cycle,
-            largeData: 'x'.repeat(1000) // 1KB per node
-          }
+            largeData: 'x'.repeat(1000), // 1KB per node
+          },
         }))
 
-        const createResponse = await graphqlExecute(`
+        const createResponse = await graphqlExecute(
+          `
           mutation BatchCreateNodes($nodes: [CreateNodeInput!]!) {
             batchCreateNodes(nodes: $nodes) {
               success
               totalCreated
             }
           }
-        `, { nodes })
+        `,
+          { nodes }
+        )
 
         expect(createResponse.data.batchCreateNodes.success).toBe(true)
 
@@ -600,32 +609,38 @@ describe('Performance and Stress Comprehensive Tests', () => {
       for (let batch = 0; batch < batches; batch++) {
         const nodes = Array.from({ length: batchSize }, (_, i) => ({
           tableId,
-          content: `Index Test Node ${batch * batchSize + i + 1}`
+          content: `Index Test Node ${batch * batchSize + i + 1}`,
         }))
 
-        const response = await graphqlExecute(`
+        const response = await graphqlExecute(
+          `
           mutation BatchCreateNodes($nodes: [CreateNodeInput!]!) {
             batchCreateNodes(nodes: $nodes) {
               results { node { id } }
             }
           }
-        `, { nodes })
+        `,
+          { nodes }
+        )
 
         // Set attributes for indexing
         const nodeIds = response.data.batchCreateNodes.results.map((r: any) => r.node.id)
         const attributeUpdates = nodeIds.map((nodeId: string, index: number) => ({
           nodeId,
           attributeId,
-          value: `IndexValue_${(batch * batchSize + index) % 100}` // 100 unique values
+          value: `IndexValue_${(batch * batchSize + index) % 100}`, // 100 unique values
         }))
 
-        await graphqlExecute(`
+        await graphqlExecute(
+          `
           mutation BatchSetNodeAttributes($attributeUpdates: [NodeAttributeUpdateInput!]!) {
             batchSetNodeAttributes(attributeUpdates: $attributeUpdates) {
               success
             }
           }
-        `, { attributeUpdates })
+        `,
+          { attributeUpdates }
+        )
       }
 
       // Test query performance with attribute filtering
@@ -651,7 +666,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       const searchPromises = Array.from({ length: 20 }, (_, i) =>
         graphqlExecute(indexedSearchQuery, {
           tableId,
-          attributeValue: `IndexValue_${i * 5}`
+          attributeValue: `IndexValue_${i * 5}`,
         })
       )
 
@@ -663,7 +678,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.operationsPerSecond).toBeGreaterThan(6) // > 6 searches per second
 
       // Verify search results
-      searchResponses.forEach(response => {
+      searchResponses.forEach((response) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.searchNodesByAttribute.nodes.length).toBeGreaterThan(0)
         expect(response.data.searchNodesByAttribute.queryTime).toBeLessThan(500) // < 500ms per query
@@ -689,32 +704,35 @@ describe('Performance and Stress Comprehensive Tests', () => {
       // Create some initial data
       const nodes = Array.from({ length: 100 }, (_, i) => ({
         tableId,
-        content: `Concurrent Test Node ${i + 1}`
+        content: `Concurrent Test Node ${i + 1}`,
       }))
 
-      await graphqlExecute(`
+      await graphqlExecute(
+        `
         mutation BatchCreateNodes($nodes: [CreateNodeInput!]!) {
           batchCreateNodes(nodes: $nodes) {
             success
           }
         }
-      `, { nodes })
+      `,
+        { nodes }
+      )
 
       performanceMonitor.start()
 
       // Execute 50 concurrent queries of different types
       const concurrentQueries = [
         // Health checks
-        ...Array.from({ length: 10 }, () =>
-          graphqlExecute('query { healthCheck { status } }')
-        ),
+        ...Array.from({ length: 10 }, () => graphqlExecute('query { healthCheck { status } }')),
         // Table searches
         ...Array.from({ length: 10 }, () =>
           graphqlExecute('query { getTables(input: { limit: 10 }) { tables { id identifier } } }')
         ),
         // Node searches
         ...Array.from({ length: 15 }, () =>
-          graphqlExecute(`query { searchNodes(input: { tableId: "${tableId}", limit: 10 }) { nodes { id content } } }`)
+          graphqlExecute(
+            `query { searchNodes(input: { tableId: "${tableId}", limit: 10 }) { nodes { id content } } }`
+          )
         ),
         // System stats
         ...Array.from({ length: 10 }, () =>
@@ -722,8 +740,10 @@ describe('Performance and Stress Comprehensive Tests', () => {
         ),
         // Template searches
         ...Array.from({ length: 5 }, () =>
-          graphqlExecute('query { searchTemplates(input: { limit: 5 }) { templates { identifier name } } }')
-        )
+          graphqlExecute(
+            'query { searchTemplates(input: { limit: 5 }) { templates { identifier name } } }'
+          )
+        ),
       ]
 
       const responses = await Promise.all(concurrentQueries)
@@ -735,7 +755,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.memoryUsage.heapUsed).toBeLessThan(150 * 1024 * 1024) // < 150MB heap growth
 
       // Verify all queries succeeded
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.errors).toBeUndefined()
       })
     }, 25000)
@@ -774,7 +794,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       })
 
       // Verify no duplicate identifiers were created
-      const identifiers = responses.map(r => r.data.createTable.table.identifier)
+      const identifiers = responses.map((r) => r.data.createTable.table.identifier)
       const uniqueIdentifiers = new Set(identifiers)
       expect(uniqueIdentifiers.size).toBe(20)
     })
@@ -802,7 +822,8 @@ describe('Performance and Stress Comprehensive Tests', () => {
 
       // Execute template 100 times with different variables
       const executions = Array.from({ length: 100 }, (_, i) =>
-        graphqlExecute(`
+        graphqlExecute(
+          `
           mutation ExecuteTemplate($templateIdentifier: String!, $variables: JSON!) {
             executeTemplateWithGraphQL(
               templateIdentifier: $templateIdentifier
@@ -813,10 +834,12 @@ describe('Performance and Stress Comprehensive Tests', () => {
               executionTime
             }
           }
-        `, {
-          templateIdentifier,
-          variables: { limit: (i % 10) + 1 }
-        })
+        `,
+          {
+            templateIdentifier,
+            variables: { limit: (i % 10) + 1 },
+          }
+        )
       )
 
       const responses = await Promise.all(executions)
@@ -827,15 +850,16 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.operationsPerSecond).toBeGreaterThan(6) // > 6 executions per second
 
       // Verify all executions succeeded
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.executeTemplateWithGraphQL.success).toBe(true)
         expect(response.data.executeTemplateWithGraphQL.executionTime).toBeLessThan(1000) // < 1 second per execution
       })
 
       // Calculate average execution time
-      const executionTimes = responses.map(r => r.data.executeTemplateWithGraphQL.executionTime)
-      const avgExecutionTime = executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length
+      const executionTimes = responses.map((r) => r.data.executeTemplateWithGraphQL.executionTime)
+      const avgExecutionTime =
+        executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length
       expect(avgExecutionTime).toBeLessThan(200) // < 200ms average execution time
     }, 30000)
   })
@@ -889,14 +913,17 @@ describe('Performance and Stress Comprehensive Tests', () => {
         const nodes = Array.from({ length: batchSize }, (_, i) => ({
           tableId,
           content: `Resource Test Node ${batch * batchSize + i + 1}`,
-          metadata: { batch, resourceTest: true }
+          metadata: { batch, resourceTest: true },
         }))
 
-        await graphqlExecute(`
+        await graphqlExecute(
+          `
           mutation BatchCreateNodes($nodes: [CreateNodeInput!]!) {
             batchCreateNodes(nodes: $nodes) { success }
           }
-        `, { nodes })
+        `,
+          { nodes }
+        )
 
         // Monitor resources during operation
         const duringResponse = await graphqlExecute(resourceMonitoringQuery)

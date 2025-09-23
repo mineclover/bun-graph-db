@@ -338,15 +338,15 @@ export class TestDatabaseFactory {
         ('json', 'object', NULL, 'JSON object', NULL, NULL, '{}', '[{"key": "value"}, {"name": "John", "age": 30}]'),
         ('array', 'array', NULL, 'JSON array', NULL, NULL, '[]', '[["item1", "item2"], [1, 2, 3]]');
 
-      -- Insert default relation types
+      -- Insert default relation types (camelCase naming convention)
       INSERT OR IGNORE INTO relation_types (identifier, description, category) VALUES
-        ('depends_on', 'Direct dependency', 'structural'),
-        ('related_to', 'Related entity', 'semantic'),
+        ('dependsOn', 'Direct dependency', 'structural'),
+        ('relatedTo', 'Related entity', 'semantic'),
         ('extends', 'Extension relationship', 'hierarchy'),
         ('implements', 'Implementation relationship', 'structural'),
         ('references', 'Reference relationship', 'reference'),
-        ('parent_of', 'Parent-child relationship', 'hierarchy'),
-        ('linked_to', 'Bidirectional link', 'semantic');
+        ('parentOf', 'Parent-child relationship', 'hierarchy'),
+        ('linkedTo', 'Bidirectional link', 'semantic');
 
       -- Indexes for performance
       CREATE INDEX IF NOT EXISTS idx_nodes_table_content ON nodes(table_id, content);

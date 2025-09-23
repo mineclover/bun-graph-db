@@ -4,12 +4,12 @@ import type { TableId } from '@/core/types/CommonTypes.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 import {
   ConflictException,
   NotFoundException,
   ValidationException,
 } from '@/shared/exceptions/DomainException.js'
-import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 
 export interface CreateDocInput {
   tableId: TableId

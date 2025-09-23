@@ -103,7 +103,7 @@ SELECT
   2 + (abs(random()) % 3)  -- confidence 2-4
 FROM nodes n1, nodes n2, relation_types rt
 WHERE n1.table_id = 6 AND n2.table_id = 6 AND n1.id < n2.id
-  AND rt.identifier = 'related_to'
+  AND rt.identifier = 'relatedTo'
   AND abs(random()) % 3 = 0 -- 33% chance to create relation
 LIMIT 20;
 

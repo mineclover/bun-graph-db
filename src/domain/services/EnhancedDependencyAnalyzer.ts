@@ -1,7 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import type { TableDependencyInfo } from '@/core/types/TablePackage.js'
 import { extractFieldNames, validateQuerySyntax } from '@/core/utils/GraphQLParser.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import type { IAttributeRepository } from '../repositories/IAttributeRepository.js'
 import type { INodeRelationRepository } from '../repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '../repositories/INodeRepository.js'
@@ -217,7 +217,10 @@ export class EnhancedDependencyAnalyzer {
         }
       }
     } catch (error) {
-      this.logger.warn('Failed to analyze foreign key dependencies', { tableId, ...toErrorMeta(error) })
+      this.logger.warn('Failed to analyze foreign key dependencies', {
+        tableId,
+        ...toErrorMeta(error),
+      })
     }
 
     return dependencies
@@ -256,7 +259,10 @@ export class EnhancedDependencyAnalyzer {
         }
       }
     } catch (error) {
-      this.logger.warn('Failed to analyze relation dependencies', { tableId, ...toErrorMeta(error) })
+      this.logger.warn('Failed to analyze relation dependencies', {
+        tableId,
+        ...toErrorMeta(error),
+      })
     }
 
     return dependencies
@@ -281,7 +287,10 @@ export class EnhancedDependencyAnalyzer {
         dependencies.push(...referencedTables.filter((t) => t !== tableIdentifier))
       }
     } catch (error) {
-      this.logger.warn('Failed to analyze template dependencies', { tableIdentifier, ...toErrorMeta(error) })
+      this.logger.warn('Failed to analyze template dependencies', {
+        tableIdentifier,
+        ...toErrorMeta(error),
+      })
     }
 
     return dependencies
@@ -378,7 +387,10 @@ export class EnhancedDependencyAnalyzer {
 
       return [...new Set(dependencies)]
     } catch (error) {
-      this.logger.warn('Failed to get direct dependencies', { tableIdentifier, ...toErrorMeta(error) })
+      this.logger.warn('Failed to get direct dependencies', {
+        tableIdentifier,
+        ...toErrorMeta(error),
+      })
       return []
     }
   }

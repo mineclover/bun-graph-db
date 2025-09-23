@@ -1,6 +1,6 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import type { TablePackageFormat, TablePackageImportResult } from '@/core/types/TablePackage.js'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 import type { INodeRepository } from '../repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '../repositories/IQueryTemplateRepository.js'
@@ -327,7 +327,10 @@ export class TablePackageRecoveryManager {
 
       return backupId
     } catch (error) {
-      this.logger.error('Failed to create system backup', { tableIdentifier, ...toErrorMeta(error) })
+      this.logger.error('Failed to create system backup', {
+        tableIdentifier,
+        ...toErrorMeta(error),
+      })
       throw new DomainException(
         `Failed to create backup: ${error instanceof Error ? error.message : 'Unknown error'}`
       )

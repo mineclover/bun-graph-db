@@ -14,8 +14,8 @@ import type {
 import { DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
-import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export class DocResolver extends BaseResolver {
   protected logger: ILogger
@@ -286,7 +286,11 @@ export class DocResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update doc', { id: args.id, input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to update doc', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       if (error instanceof NotFoundException || error instanceof ValidationException) {
         return {

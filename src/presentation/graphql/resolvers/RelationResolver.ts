@@ -165,7 +165,10 @@ export class RelationResolver extends BaseResolver {
       const relationType = await this.relationTypeRepository.findById(args.id as RelationTypeId)
       return relationType ? relationTypeFromEntity(relationType) : null
     } catch (error) {
-      this.logger.error('Failed to find relation type by id', { id: args.id, ...toErrorMeta(error) })
+      this.logger.error('Failed to find relation type by id', {
+        id: args.id,
+        ...toErrorMeta(error),
+      })
       throw error
     }
   }
@@ -204,7 +207,10 @@ export class RelationResolver extends BaseResolver {
         hasMore: result.hasMore,
       }
     } catch (error) {
-      this.logger.error('Failed to search related nodes', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to search related nodes', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
       throw error
     }
   }
@@ -269,7 +275,10 @@ export class RelationResolver extends BaseResolver {
         totalCount: dependencyNodes.length,
       }
     } catch (error) {
-      this.logger.error('Failed to get dependency chain', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to get dependency chain', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
       throw error
     }
   }
@@ -374,7 +383,10 @@ export class RelationResolver extends BaseResolver {
       // Sort paths by length (shortest first)
       return paths.sort((a, b) => a.length - b.length)
     } catch (error) {
-      this.logger.error('Failed to find paths between nodes', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to find paths between nodes', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
       throw error
     }
   }
@@ -495,7 +507,10 @@ export class RelationResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to create relation type', { input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to create relation type', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       if (error instanceof ValidationException) {
         return {
@@ -578,7 +593,11 @@ export class RelationResolver extends BaseResolver {
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Failed to update relation type', { id: args.id, input: args.input, ...toErrorMeta(error) })
+      this.logger.error('Failed to update relation type', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
 
       if (error instanceof NotFoundException) {
         return {
@@ -713,7 +732,10 @@ export class RelationResolver extends BaseResolver {
       const node = await this.nodeRepository.findById(relation.sourceNodeId as NodeId)
       return node ? nodeFromEntity(node) : null
     } catch (error) {
-      this.logger.error('Failed to resolve source node field', { relationId: relation.id, ...toErrorMeta(error) })
+      this.logger.error('Failed to resolve source node field', {
+        relationId: relation.id,
+        ...toErrorMeta(error),
+      })
       return null
     }
   }
@@ -725,7 +747,10 @@ export class RelationResolver extends BaseResolver {
       const node = await this.nodeRepository.findById(relation.targetNodeId as NodeId)
       return node ? nodeFromEntity(node) : null
     } catch (error) {
-      this.logger.error('Failed to resolve target node field', { relationId: relation.id, ...toErrorMeta(error) })
+      this.logger.error('Failed to resolve target node field', {
+        relationId: relation.id,
+        ...toErrorMeta(error),
+      })
       return null
     }
   }
@@ -737,7 +762,10 @@ export class RelationResolver extends BaseResolver {
       )
       return relationType ? relationTypeFromEntity(relationType) : null
     } catch (error) {
-      this.logger.error('Failed to resolve relation type field', { relationId: relation.id, ...toErrorMeta(error) })
+      this.logger.error('Failed to resolve relation type field', {
+        relationId: relation.id,
+        ...toErrorMeta(error),
+      })
       return null
     }
   }
@@ -756,7 +784,10 @@ export class RelationResolver extends BaseResolver {
       )
       return nodeRelationFromEntities(result.items || [])
     } catch (error) {
-      this.logger.error('Failed to resolve outgoing relations', { nodeId: node.id, ...toErrorMeta(error) })
+      this.logger.error('Failed to resolve outgoing relations', {
+        nodeId: node.id,
+        ...toErrorMeta(error),
+      })
       return []
     }
   }
@@ -774,7 +805,10 @@ export class RelationResolver extends BaseResolver {
       )
       return nodeRelationFromEntities(result.items || [])
     } catch (error) {
-      this.logger.error('Failed to resolve incoming relations', { nodeId: node.id, ...toErrorMeta(error) })
+      this.logger.error('Failed to resolve incoming relations', {
+        nodeId: node.id,
+        ...toErrorMeta(error),
+      })
       return []
     }
   }
@@ -789,7 +823,10 @@ export class RelationResolver extends BaseResolver {
       })
       return relations.incoming.length + relations.outgoing.length
     } catch (error) {
-      this.logger.error('Failed to resolve relation count', { nodeId: node.id, ...toErrorMeta(error) })
+      this.logger.error('Failed to resolve relation count', {
+        nodeId: node.id,
+        ...toErrorMeta(error),
+      })
       return 0
     }
   }

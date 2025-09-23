@@ -4,15 +4,13 @@ import type {
   ApiResponse,
   AttributeData,
   NodeAttributeData,
+  NodeAttributesData,
   TableAttributesData,
-  NodeAttributesData
 } from '../types/ApiResponseTypes.js'
-import { toErrorMeta, getErrorMessage } from '../utils/errorHelpers.js'
+import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 
 export class AttributeApiController {
-  constructor(
-    private readonly logger: ILogger
-  ) {}
+  constructor(private readonly logger: ILogger) {}
 
   async setNodeAttribute(req: Request, res: Response): Promise<void> {
     try {
@@ -21,7 +19,7 @@ export class AttributeApiController {
       if (!input || !input.nodeId || !input.attributeId || input.value === undefined) {
         res.status(400).json({
           success: false,
-          error: 'input with nodeId, attributeId, and value is required'
+          error: 'input with nodeId, attributeId, and value is required',
         })
         return
       }
@@ -33,19 +31,19 @@ export class AttributeApiController {
         nodeId,
         attributeId,
         value,
-        success: true
+        success: true,
       }
 
       const response: ApiResponse<NodeAttributeData> = {
         success: true,
-        data: result
+        data: result,
       }
       res.json(response)
     } catch (error) {
       this.logger.error('Set node attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Set node attribute failed'
+        error: error instanceof Error ? error.message : 'Set node attribute failed',
       })
     }
   }
@@ -57,7 +55,7 @@ export class AttributeApiController {
       if (!tableId || !identifier || !name) {
         res.status(400).json({
           success: false,
-          error: 'tableId, identifier, and name are required'
+          error: 'tableId, identifier, and name are required',
         })
         return
       }
@@ -68,19 +66,19 @@ export class AttributeApiController {
         tableId,
         identifier,
         name,
-        attributeTypeId
+        attributeTypeId,
       }
 
       const response: ApiResponse<AttributeData> = {
         success: true,
-        data: result
+        data: result,
       }
       res.json(response)
     } catch (error) {
       this.logger.error('Create attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Create attribute failed'
+        error: error instanceof Error ? error.message : 'Create attribute failed',
       })
     }
   }
@@ -93,7 +91,7 @@ export class AttributeApiController {
       if (!attributeId) {
         res.status(400).json({
           success: false,
-          error: 'attributeId is required'
+          error: 'attributeId is required',
         })
         return
       }
@@ -102,18 +100,18 @@ export class AttributeApiController {
       const result = {
         id: attributeId,
         identifier,
-        name
+        name,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Update attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Update attribute failed'
+        error: error instanceof Error ? error.message : 'Update attribute failed',
       })
     }
   }
@@ -125,7 +123,7 @@ export class AttributeApiController {
       if (!attributeId) {
         res.status(400).json({
           success: false,
-          error: 'attributeId is required'
+          error: 'attributeId is required',
         })
         return
       }
@@ -133,18 +131,18 @@ export class AttributeApiController {
       // TODO: Implement with actual use case
       const result = {
         id: attributeId,
-        deleted: true
+        deleted: true,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Delete attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Delete attribute failed'
+        error: error instanceof Error ? error.message : 'Delete attribute failed',
       })
     }
   }
@@ -156,7 +154,7 @@ export class AttributeApiController {
       if (!tableId) {
         res.status(400).json({
           success: false,
-          error: 'tableId is required'
+          error: 'tableId is required',
         })
         return
       }
@@ -164,19 +162,19 @@ export class AttributeApiController {
       // TODO: Implement with actual use case
       const result: TableAttributesData = {
         tableId,
-        attributes: []
+        attributes: [],
       }
 
       const response: ApiResponse<TableAttributesData> = {
         success: true,
-        data: result
+        data: result,
       }
       res.json(response)
     } catch (error) {
       this.logger.error('Get table attributes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get table attributes failed'
+        error: 'Get table attributes failed',
       })
     }
   }
@@ -188,7 +186,7 @@ export class AttributeApiController {
       if (!nodeId || !attributeId) {
         res.status(400).json({
           success: false,
-          error: 'nodeId and attributeId are required'
+          error: 'nodeId and attributeId are required',
         })
         return
       }
@@ -197,18 +195,18 @@ export class AttributeApiController {
       const result = {
         nodeId,
         attributeId,
-        removed: true
+        removed: true,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Remove node attribute error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Remove node attribute failed'
+        error: error instanceof Error ? error.message : 'Remove node attribute failed',
       })
     }
   }
@@ -220,7 +218,7 @@ export class AttributeApiController {
       if (!nodeId || !attributeId || value === undefined) {
         res.status(400).json({
           success: false,
-          error: 'nodeId, attributeId, and value are required'
+          error: 'nodeId, attributeId, and value are required',
         })
         return
       }
@@ -230,18 +228,18 @@ export class AttributeApiController {
         nodeId,
         attributeId,
         value,
-        updated: true
+        updated: true,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Update node attribute value error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: error instanceof Error ? error.message : 'Update node attribute value failed'
+        error: error instanceof Error ? error.message : 'Update node attribute value failed',
       })
     }
   }
@@ -253,7 +251,7 @@ export class AttributeApiController {
       if (!nodeId) {
         res.status(400).json({
           success: false,
-          error: 'nodeId is required'
+          error: 'nodeId is required',
         })
         return
       }
@@ -261,18 +259,18 @@ export class AttributeApiController {
       // TODO: Implement with actual use case
       const result = {
         nodeId,
-        attributes: []
+        attributes: [],
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Get node attributes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get node attributes failed'
+        error: 'Get node attributes failed',
       })
     }
   }

@@ -8,11 +8,11 @@
  * of the MCP-to-REST proxy architecture
  */
 
-import { beforeEach, describe, expect, test, mock } from 'bun:test'
+import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import type { Request, Response } from 'express'
-import { GraphDbApiController } from '../../src/presentation/http/controllers/GraphDbApiController'
 import { AttributeApiController } from '../../src/presentation/http/controllers/AttributeApiController'
 import { GraphApiController } from '../../src/presentation/http/controllers/GraphApiController'
+import { GraphDbApiController } from '../../src/presentation/http/controllers/GraphDbApiController'
 
 // Mock logger for testing
 const mockLogger = {
@@ -40,7 +40,7 @@ function createMockResponse() {
   const res = {
     status: mock((code: number) => res),
     json: mock((data: any) => {}),
-    send: mock((data: any) => {})
+    send: mock((data: any) => {}),
   } as unknown as Response
 
   return res
@@ -71,8 +71,8 @@ describe('GraphDbApiController Unit Tests', () => {
           status: 'OK',
           timestamp: expect.any(String),
           database: 'Connected',
-          version: '1.0.0'
-        })
+          version: '1.0.0',
+        }),
       })
     })
 
@@ -86,7 +86,7 @@ describe('GraphDbApiController Unit Tests', () => {
             this.logger.error('Health check error:', error)
             res.status(500).json({
               success: false,
-              error: 'Health check failed'
+              error: 'Health check failed',
             })
           }
         }
@@ -100,7 +100,7 @@ describe('GraphDbApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(500)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'Health check failed'
+        error: 'Health check failed',
       })
       expect(mockLogger.error).toHaveBeenCalled()
     })
@@ -112,8 +112,8 @@ describe('GraphDbApiController Unit Tests', () => {
         body: {
           identifier: 'test-table',
           name: 'Test Table',
-          description: 'A test table'
-        }
+          description: 'A test table',
+        },
       })
       const res = createMockResponse()
 
@@ -125,17 +125,17 @@ describe('GraphDbApiController Unit Tests', () => {
           id: expect.any(String),
           identifier: 'test-table',
           name: 'Test Table',
-          description: 'A test table'
-        })
+          description: 'A test table',
+        }),
       })
     })
 
     test('should handle missing identifier parameter', async () => {
       const req = createMockRequest({
         body: {
-          name: 'Test Table'
+          name: 'Test Table',
           // Missing identifier
-        }
+        },
       })
       const res = createMockResponse()
 
@@ -144,7 +144,7 @@ describe('GraphDbApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'identifier is required'
+        error: 'identifier is required',
       })
     })
   })
@@ -154,8 +154,8 @@ describe('GraphDbApiController Unit Tests', () => {
       const req = createMockRequest({
         query: {
           searchTerm: 'test',
-          limit: '10'
-        }
+          limit: '10',
+        },
       })
       const res = createMockResponse()
 
@@ -167,8 +167,8 @@ describe('GraphDbApiController Unit Tests', () => {
           tables: expect.any(Array),
           total: expect.any(Number),
           searchTerm: 'test',
-          limit: 10
-        })
+          limit: 10,
+        }),
       })
     })
 
@@ -182,8 +182,8 @@ describe('GraphDbApiController Unit Tests', () => {
         success: true,
         data: expect.objectContaining({
           searchTerm: '',
-          limit: 10
-        })
+          limit: 10,
+        }),
       })
     })
   })
@@ -194,8 +194,8 @@ describe('GraphDbApiController Unit Tests', () => {
         body: {
           tableId: 'table-123',
           content: 'Test node content',
-          metadata: { type: 'test' }
-        }
+          metadata: { type: 'test' },
+        },
       })
       const res = createMockResponse()
 
@@ -206,17 +206,17 @@ describe('GraphDbApiController Unit Tests', () => {
         data: expect.objectContaining({
           id: expect.any(String),
           tableId: 'table-123',
-          content: 'Test node content'
-        })
+          content: 'Test node content',
+        }),
       })
     })
 
     test('should handle missing required parameters', async () => {
       const req = createMockRequest({
         body: {
-          content: 'Test content'
+          content: 'Test content',
           // Missing tableId
-        }
+        },
       })
       const res = createMockResponse()
 
@@ -225,7 +225,7 @@ describe('GraphDbApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'tableId and content are required'
+        error: 'tableId and content are required',
       })
     })
   })
@@ -241,7 +241,7 @@ describe('GraphDbApiController Unit Tests', () => {
             this.logger.error('System stats error:', error)
             res.status(500).json({
               success: false,
-              error: 'System stats failed'
+              error: 'System stats failed',
             })
           }
         }
@@ -255,7 +255,7 @@ describe('GraphDbApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(500)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'System stats failed'
+        error: 'System stats failed',
       })
       expect(mockLogger.error).toHaveBeenCalledWith('System stats error:', expect.any(Error))
     })
@@ -277,8 +277,8 @@ describe('AttributeApiController Unit Tests', () => {
           tableId: 'table-123',
           identifier: 'test-attr',
           name: 'Test Attribute',
-          attributeTypeId: '1'
-        }
+          attributeTypeId: '1',
+        },
       })
       const res = createMockResponse()
 
@@ -290,17 +290,17 @@ describe('AttributeApiController Unit Tests', () => {
           id: expect.any(String),
           tableId: 'table-123',
           identifier: 'test-attr',
-          name: 'Test Attribute'
-        })
+          name: 'Test Attribute',
+        }),
       })
     })
 
     test('should handle missing required parameters', async () => {
       const req = createMockRequest({
         body: {
-          identifier: 'test-attr'
+          identifier: 'test-attr',
           // Missing tableId and name
-        }
+        },
       })
       const res = createMockResponse()
 
@@ -309,7 +309,7 @@ describe('AttributeApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'tableId, identifier, and name are required'
+        error: 'tableId, identifier, and name are required',
       })
     })
   })
@@ -317,7 +317,7 @@ describe('AttributeApiController Unit Tests', () => {
   describe('getNodeAttributes', () => {
     test('should get node attributes with valid nodeId', async () => {
       const req = createMockRequest({
-        params: { nodeId: 'node-123' }
+        params: { nodeId: 'node-123' },
       })
       const res = createMockResponse()
 
@@ -327,8 +327,8 @@ describe('AttributeApiController Unit Tests', () => {
         success: true,
         data: expect.objectContaining({
           nodeId: 'node-123',
-          attributes: expect.any(Array)
-        })
+          attributes: expect.any(Array),
+        }),
       })
     })
 
@@ -341,7 +341,7 @@ describe('AttributeApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'nodeId is required'
+        error: 'nodeId is required',
       })
     })
   })
@@ -353,9 +353,9 @@ describe('AttributeApiController Unit Tests', () => {
           input: {
             nodeId: 'node-123',
             attributeId: 'attr-456',
-            value: 'test value'
-          }
-        }
+            value: 'test value',
+          },
+        },
       })
       const res = createMockResponse()
 
@@ -366,17 +366,17 @@ describe('AttributeApiController Unit Tests', () => {
         data: expect.objectContaining({
           nodeId: 'node-123',
           attributeId: 'attr-456',
-          value: 'test value'
-        })
+          value: 'test value',
+        }),
       })
     })
 
     test('should handle missing input structure', async () => {
       const req = createMockRequest({
         body: {
-          nodeId: 'node-123'
+          nodeId: 'node-123',
           // Missing input wrapper
-        }
+        },
       })
       const res = createMockResponse()
 
@@ -385,7 +385,7 @@ describe('AttributeApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'input with nodeId, attributeId, and value is required'
+        error: 'input with nodeId, attributeId, and value is required',
       })
     })
   })
@@ -407,8 +407,8 @@ describe('GraphApiController Unit Tests', () => {
           offset: '10',
           search: 'test',
           sortBy: 'createdAt',
-          sortOrder: 'desc'
-        }
+          sortOrder: 'desc',
+        },
       })
       const res = createMockResponse()
 
@@ -420,8 +420,8 @@ describe('GraphApiController Unit Tests', () => {
           tables: expect.any(Array),
           total: expect.any(Number),
           limit: 50,
-          offset: 10
-        })
+          offset: 10,
+        }),
       })
     })
 
@@ -435,8 +435,8 @@ describe('GraphApiController Unit Tests', () => {
         success: true,
         data: expect.objectContaining({
           limit: 50,
-          offset: 0
-        })
+          offset: 0,
+        }),
       })
     })
   })
@@ -448,8 +448,8 @@ describe('GraphApiController Unit Tests', () => {
         query: {
           depth: '2',
           direction: 'BOTH',
-          relationTypes: 'CONNECTED'
-        }
+          relationTypes: 'CONNECTED',
+        },
       })
       const res = createMockResponse()
 
@@ -461,15 +461,15 @@ describe('GraphApiController Unit Tests', () => {
           nodeId: 'node-123',
           depth: 2,
           direction: 'BOTH',
-          connectedNodes: expect.any(Array)
-        })
+          connectedNodes: expect.any(Array),
+        }),
       })
     })
 
     test('should handle missing nodeId parameter', async () => {
       const req = createMockRequest({
         params: {},
-        query: {}
+        query: {},
       })
       const res = createMockResponse()
 
@@ -478,7 +478,7 @@ describe('GraphApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'nodeId is required'
+        error: 'nodeId is required',
       })
     })
   })
@@ -489,8 +489,8 @@ describe('GraphApiController Unit Tests', () => {
         body: {
           fromNodeId: 'node-123',
           toNodeId: 'node-456',
-          maxDepth: 10
-        }
+          maxDepth: 10,
+        },
       })
       const res = createMockResponse()
 
@@ -503,17 +503,17 @@ describe('GraphApiController Unit Tests', () => {
           toNodeId: 'node-456',
           maxDepth: 10,
           path: expect.any(Array),
-          distance: expect.any(Number)
-        })
+          distance: expect.any(Number),
+        }),
       })
     })
 
     test('should handle missing required parameters', async () => {
       const req = createMockRequest({
         body: {
-          fromNodeId: 'node-123'
+          fromNodeId: 'node-123',
           // Missing toNodeId
-        }
+        },
       })
       const res = createMockResponse()
 
@@ -522,7 +522,7 @@ describe('GraphApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'fromNodeId and toNodeId are required'
+        error: 'fromNodeId and toNodeId are required',
       })
     })
   })
@@ -533,8 +533,8 @@ describe('GraphApiController Unit Tests', () => {
         params: { tableId: 'table-123' },
         body: {
           flatFormat: true,
-          outputPath: '/tmp/export.json'
-        }
+          outputPath: '/tmp/export.json',
+        },
       })
       const res = createMockResponse()
 
@@ -546,15 +546,15 @@ describe('GraphApiController Unit Tests', () => {
           tableId: 'table-123',
           flatFormat: true,
           outputPath: '/tmp/export.json',
-          exportData: expect.any(Object)
-        })
+          exportData: expect.any(Object),
+        }),
       })
     })
 
     test('should handle missing tableId parameter', async () => {
       const req = createMockRequest({
         params: {},
-        body: {}
+        body: {},
       })
       const res = createMockResponse()
 
@@ -563,7 +563,7 @@ describe('GraphApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'tableId is required'
+        error: 'tableId is required',
       })
     })
   })
@@ -580,9 +580,13 @@ describe('Controller Response Format Consistency', () => {
     // Test methods that should return consistent success format
     const testMethods = [
       { controller: 0, method: 'healthCheck', req: createMockRequest() },
-      { controller: 1, method: 'createAttribute', req: createMockRequest({
-        body: { tableId: 'test', identifier: 'test', name: 'test' }
-      })},
+      {
+        controller: 1,
+        method: 'createAttribute',
+        req: createMockRequest({
+          body: { tableId: 'test', identifier: 'test', name: 'test' },
+        }),
+      },
       { controller: 2, method: 'getTables', req: createMockRequest() },
     ]
 
@@ -595,7 +599,7 @@ describe('Controller Response Format Consistency', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           success: true,
-          data: expect.any(Object)
+          data: expect.any(Object),
         })
       )
     }
@@ -606,7 +610,7 @@ describe('Controller Response Format Consistency', () => {
 
     // Test method with missing required parameter
     const req = createMockRequest({
-      body: {} // Missing required fields
+      body: {}, // Missing required fields
     })
     const res = createMockResponse()
 
@@ -615,7 +619,7 @@ describe('Controller Response Format Consistency', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         success: false,
-        error: expect.any(String)
+        error: expect.any(String),
       })
     )
     expect(res.status).toHaveBeenCalledWith(400)

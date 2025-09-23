@@ -38,13 +38,15 @@ export class NodeQueries extends BaseResolver {
       async () => {
         const node = await this.nodeRepository.findById(args.id)
         this.logger.info(`Repository findById result for ${args.id}:`, {
-          node: node ? {
-            id: node.getId ? node.getId() : 'no getId method',
-            content: node.getContent ? node.getContent() : 'no getContent method',
-            type: typeof node,
-            constructor: node.constructor?.name,
-            keys: Object.keys(node)
-          } : null
+          node: node
+            ? {
+                id: node.getId ? node.getId() : 'no getId method',
+                content: node.getContent ? node.getContent() : 'no getContent method',
+                type: typeof node,
+                constructor: node.constructor?.name,
+                keys: Object.keys(node),
+              }
+            : null,
         })
         return node
       },

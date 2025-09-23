@@ -2,25 +2,23 @@ import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
   ApiResponse,
-  HealthCheckData,
-  SystemStatsData,
-  TableData,
-  SearchTablesData,
-  NodeData,
-  SearchNodesData,
-  RelationData,
-  TemplateData,
-  SearchTemplatesData,
   ExecuteTemplateData,
   ExportTemplateData,
-  ImportTemplateData
+  HealthCheckData,
+  ImportTemplateData,
+  NodeData,
+  RelationData,
+  SearchNodesData,
+  SearchTablesData,
+  SearchTemplatesData,
+  SystemStatsData,
+  TableData,
+  TemplateData,
 } from '../types/ApiResponseTypes.js'
-import { toErrorMeta, getErrorMessage } from '../utils/errorHelpers.js'
+import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 
 export class GraphDbApiController {
-  constructor(
-    private readonly logger: ILogger
-  ) {}
+  constructor(private readonly logger: ILogger) {}
 
   // System Operations
   async healthCheck(req: Request, res: Response): Promise<void> {
@@ -29,18 +27,18 @@ export class GraphDbApiController {
         status: 'OK',
         timestamp: new Date().toISOString(),
         database: 'Connected',
-        version: '1.0.0'
+        version: '1.0.0',
       }
       const response: ApiResponse<HealthCheckData> = {
         success: true,
-        data: result
+        data: result,
       }
       res.json(response)
     } catch (error) {
       this.logger.error('Health check error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Health check failed'
+        error: 'Health check failed',
       })
     }
   }
@@ -51,23 +49,25 @@ export class GraphDbApiController {
         memory: {
           used: process.memoryUsage().heapUsed,
           total: process.memoryUsage().heapTotal,
-          percentage: Math.round((process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100)
+          percentage: Math.round(
+            (process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100
+          ),
         },
         process: {
           pid: process.pid,
           cpu: process.cpuUsage(),
-          platform: process.platform
-        }
+          platform: process.platform,
+        },
       }
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('System stats error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'System stats failed'
+        error: 'System stats failed',
       })
     }
   }
@@ -80,7 +80,7 @@ export class GraphDbApiController {
       if (!identifier) {
         res.status(400).json({
           success: false,
-          error: 'identifier is required'
+          error: 'identifier is required',
         })
         return
       }
@@ -91,43 +91,43 @@ export class GraphDbApiController {
         name: name || identifier,
         description: description || '',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Create table error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Create table failed'
+        error: 'Create table failed',
       })
     }
   }
 
   async searchTables(req: Request, res: Response): Promise<void> {
     try {
-      const searchTerm = req.query.searchTerm as string || ''
+      const searchTerm = (req.query.searchTerm as string) || ''
       const limit = parseInt(req.query.limit as string) || 10
 
       const result = {
         tables: [],
         total: 0,
         searchTerm,
-        limit
+        limit,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Search tables error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Search tables failed'
+        error: 'Search tables failed',
       })
     }
   }
@@ -140,7 +140,7 @@ export class GraphDbApiController {
       if (!tableId || !content) {
         res.status(400).json({
           success: false,
-          error: 'tableId and content are required'
+          error: 'tableId and content are required',
         })
         return
       }
@@ -150,18 +150,18 @@ export class GraphDbApiController {
         tableId,
         content,
         metadata: metadata || {},
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Create node error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Create node failed'
+        error: 'Create node failed',
       })
     }
   }
@@ -169,13 +169,13 @@ export class GraphDbApiController {
   async searchNodes(req: Request, res: Response): Promise<void> {
     try {
       const tableId = req.query.tableId as string
-      const search = req.query.search as string || ''
+      const search = (req.query.search as string) || ''
       const limit = parseInt(req.query.limit as string) || 10
 
       if (!tableId) {
         res.status(400).json({
           success: false,
-          error: 'tableId is required'
+          error: 'tableId is required',
         })
         return
       }
@@ -185,18 +185,18 @@ export class GraphDbApiController {
         total: 0,
         tableId,
         search,
-        limit
+        limit,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Search nodes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Search nodes failed'
+        error: 'Search nodes failed',
       })
     }
   }
@@ -209,7 +209,7 @@ export class GraphDbApiController {
       if (!fromNodeId || !toNodeId || !relationshipType || !tableId) {
         res.status(400).json({
           success: false,
-          error: 'fromNodeId, toNodeId, relationshipType, and tableId are required'
+          error: 'fromNodeId, toNodeId, relationshipType, and tableId are required',
         })
         return
       }
@@ -221,18 +221,18 @@ export class GraphDbApiController {
         relationshipType,
         tableId,
         properties: properties || {},
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Create relation error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Create relation failed'
+        error: 'Create relation failed',
       })
     }
   }
@@ -245,7 +245,7 @@ export class GraphDbApiController {
       if (!identifier || !name || !query) {
         res.status(400).json({
           success: false,
-          error: 'identifier, name, and query are required'
+          error: 'identifier, name, and query are required',
         })
         return
       }
@@ -256,43 +256,43 @@ export class GraphDbApiController {
         name,
         query,
         tags: tags || [],
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Create template error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Create template failed'
+        error: 'Create template failed',
       })
     }
   }
 
   async searchTemplates(req: Request, res: Response): Promise<void> {
     try {
-      const searchTerm = req.query.searchTerm as string || ''
-      const tags = req.query.tags as string[] || []
+      const searchTerm = (req.query.searchTerm as string) || ''
+      const tags = (req.query.tags as string[]) || []
 
       const result = {
         templates: [],
         total: 0,
         searchTerm,
-        tags
+        tags,
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Search templates error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Search templates failed'
+        error: 'Search templates failed',
       })
     }
   }
@@ -304,7 +304,7 @@ export class GraphDbApiController {
       if (!templateIdentifier) {
         res.status(400).json({
           success: false,
-          error: 'templateIdentifier is required'
+          error: 'templateIdentifier is required',
         })
         return
       }
@@ -315,20 +315,20 @@ export class GraphDbApiController {
         executionResult: {
           success: true,
           data: {},
-          errors: []
+          errors: [],
         },
-        executedAt: new Date().toISOString()
+        executedAt: new Date().toISOString(),
       }
 
       res.json({
         success: true,
-        data: result
+        data: result,
       })
     } catch (error) {
       this.logger.error('Execute template error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Execute template failed'
+        error: 'Execute template failed',
       })
     }
   }
@@ -340,7 +340,7 @@ export class GraphDbApiController {
       if (!templateIdentifier) {
         res.status(400).json({
           success: false,
-          error: 'templateIdentifier is required'
+          error: 'templateIdentifier is required',
         })
         return
       }
@@ -354,26 +354,26 @@ export class GraphDbApiController {
             name: `Template ${templateIdentifier}`,
             query: 'query { placeholder }',
             tags: [],
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
           },
           metadata: {
             exportVersion: '1.0.0',
-            dependencies: []
-          }
+            dependencies: [],
+          },
         },
-        exportedAt: new Date().toISOString()
+        exportedAt: new Date().toISOString(),
       }
 
       const response: ApiResponse<ExportTemplateData> = {
         success: true,
-        data: result
+        data: result,
       }
       res.json(response)
     } catch (error) {
       this.logger.error('Export template error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Export template failed'
+        error: 'Export template failed',
       })
     }
   }
@@ -385,7 +385,7 @@ export class GraphDbApiController {
       if (!jsonData) {
         res.status(400).json({
           success: false,
-          error: 'jsonData is required'
+          error: 'jsonData is required',
         })
         return
       }
@@ -394,21 +394,21 @@ export class GraphDbApiController {
         importResult: {
           success: true,
           templateIdentifier: 'imported_template',
-          conflicts: overwriteExisting ? [] : ['Template already exists']
+          conflicts: overwriteExisting ? [] : ['Template already exists'],
         },
-        importedAt: new Date().toISOString()
+        importedAt: new Date().toISOString(),
       }
 
       const response: ApiResponse<ImportTemplateData> = {
         success: true,
-        data: result
+        data: result,
       }
       res.json(response)
     } catch (error) {
       this.logger.error('Import template error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Import template failed'
+        error: 'Import template failed',
       })
     }
   }

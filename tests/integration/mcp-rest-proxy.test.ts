@@ -155,57 +155,57 @@ describe('MCP-to-REST API Proxy Integration Tests', () => {
         arguments: {},
         expectedRestEndpoint: 'GET /api/health',
         expectedHttpMethod: 'GET',
-        description: 'Health check should proxy to REST API health endpoint'
+        description: 'Health check should proxy to REST API health endpoint',
       },
       {
         toolName: 'systemStats',
         arguments: {},
         expectedRestEndpoint: 'GET /api/stats',
         expectedHttpMethod: 'GET',
-        description: 'System stats should proxy to REST API stats endpoint'
+        description: 'System stats should proxy to REST API stats endpoint',
       },
       {
         toolName: 'createTable',
         arguments: {
           identifier: 'test-table-proxy',
           name: 'Test Table via Proxy',
-          description: 'Created through MCP proxy'
+          description: 'Created through MCP proxy',
         },
         expectedRestEndpoint: 'POST /api/tables',
         expectedHttpMethod: 'POST',
-        description: 'Table creation should proxy to REST API tables endpoint'
+        description: 'Table creation should proxy to REST API tables endpoint',
       },
       {
         toolName: 'searchTables',
         arguments: {
           searchTerm: 'test',
-          limit: 5
+          limit: 5,
         },
         expectedRestEndpoint: 'GET /api/tables/search',
         expectedHttpMethod: 'GET',
-        description: 'Table search should proxy to REST API search endpoint'
+        description: 'Table search should proxy to REST API search endpoint',
       },
       {
         toolName: 'getTables',
         arguments: {
           limit: 10,
-          offset: 0
+          offset: 0,
         },
         expectedRestEndpoint: 'GET /api/tables',
         expectedHttpMethod: 'GET',
-        description: 'Get tables should proxy to REST API tables endpoint'
+        description: 'Get tables should proxy to REST API tables endpoint',
       },
       {
         toolName: 'createAttribute',
         arguments: {
           tableId: 'test-table',
           identifier: 'test-attr-proxy',
-          name: 'Test Attribute via Proxy'
+          name: 'Test Attribute via Proxy',
         },
         expectedRestEndpoint: 'POST /api/attributes',
         expectedHttpMethod: 'POST',
-        description: 'Attribute creation should proxy to REST API attributes endpoint'
-      }
+        description: 'Attribute creation should proxy to REST API attributes endpoint',
+      },
     ]
 
     test.each(testCases)('$description', async ({ toolName, arguments: toolArgs, description }) => {
@@ -301,7 +301,7 @@ describe('MCP-to-REST API Proxy Integration Tests', () => {
           name: 'searchTables',
           arguments: {
             searchTerm: 'integration-test',
-            limit: 20
+            limit: 20,
           },
         },
         id: 'param-transform-1',
@@ -337,7 +337,7 @@ describe('MCP-to-REST API Proxy Integration Tests', () => {
           arguments: {
             identifier: 'param-test-table',
             name: 'Parameter Test Table',
-            description: 'Testing parameter transformation'
+            description: 'Testing parameter transformation',
           },
         },
         id: 'param-transform-2',
@@ -371,7 +371,7 @@ describe('MCP-to-REST API Proxy Integration Tests', () => {
         params: {
           name: 'getNodeAttributes',
           arguments: {
-            nodeId: 'test-node-123'
+            nodeId: 'test-node-123',
           },
         },
         id: 'param-transform-3',
@@ -528,7 +528,7 @@ describe('MCP-to-REST API Proxy Integration Tests', () => {
         id: `concurrent-${i}`,
       }))
 
-      const promises = concurrentRequests.map(request =>
+      const promises = concurrentRequests.map((request) =>
         fetch(MCP_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -543,7 +543,7 @@ describe('MCP-to-REST API Proxy Integration Tests', () => {
         expect(response.status).toBe(200)
       })
 
-      const responsesData = await Promise.all(responses.map(r => r.json()))
+      const responsesData = await Promise.all(responses.map((r) => r.json()))
 
       // All responses should have correct IDs and structure
       responsesData.forEach((data, index) => {

@@ -17,6 +17,7 @@ import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/Cre
 import { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import { DeleteTableUseCase } from '@/application/use-cases/tables/DeleteTable.js'
+import { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import type { DIContainer } from '../DIContainer.js'
 import { GraphQLTokens, RepositoryTokens, UseCaseTokens } from '../tokens/index.js'
 
@@ -68,6 +69,38 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.NODE_RELATION_REPOSITORY,
+    ]
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.GET_TABLE_DOCS_USE_CASE,
+    async (c) => {
+      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
+      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
+      const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as any
+      const queryTemplateRepository = (await c.resolve(
+        RepositoryTokens.QUERY_TEMPLATE_REPOSITORY
+      )) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new GetTableDocsUseCase(
+        tableRepository,
+        attributeRepository,
+        nodeRepository,
+        queryTemplateRepository,
+        simpleLogger
+      )
+    },
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     ]
   )
 

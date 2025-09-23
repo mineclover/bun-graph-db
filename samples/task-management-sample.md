@@ -215,7 +215,7 @@ create_relations {
     {
       "source_node_content": "Implement Authentication System",
       "target_node_content": "Database Schema Design", 
-      "relation_type_id": "depends_on",
+      "relation_type_id": "dependsOn",
       "properties": {
         "dependency_type": "schema_required",
         "blocking": "true",
@@ -401,7 +401,7 @@ create_relations {
     {
       "source_node_content": "Fix Critical Bug",
       "target_node_content": "PROJ-456",
-      "relation_type_id": "linked_to",
+      "relation_type_id": "linkedTo",
       "properties": {
         "integration_type": "hybrid",
         "internal_reference": "jira-tickets-internal",
@@ -424,7 +424,7 @@ create_relations {
     {
       "source_node_content": "task-1",        # 내부 content로 직접 참조 가능
       "target_node_content": "PROJ-456",       # 내부 content로 직접 참조 가능
-      "relation_type_id": "linked_to"
+      "relation_type_id": "linkedTo"
     }
   ]
 }
@@ -456,7 +456,7 @@ create_nodes_with_external_refs {
           "system": "jira",
           "external_id": "PROJ-456",           # JIRA의 고유 식별자
           "reference_url": "https://company.atlassian.net/browse/PROJ-456",
-          "relation_type": "linked_to",
+          "relation_type": "linkedTo",
           "sync_timestamp": "2025-01-15T14:30:00Z"
         },
         {
@@ -666,7 +666,7 @@ read_table {
 # 작업 의존성 전체 분석
 analyze_relations {
   "table_id": "task-management",
-  "relation_type": "depends_on"
+  "relation_type": "dependsOn"
 }
 ```
 
@@ -686,7 +686,7 @@ task-2: Database Schema Design [COMPLETED]
   └── task-2.2: Migration Scripts [COMPLETED]
 
 Dependencies:
-task-1 → depends_on → task-2 (schema_required)
+task-1 → dependsOn → task-2 (schema_required)
 ```
 
 ## 📈 활용 패턴

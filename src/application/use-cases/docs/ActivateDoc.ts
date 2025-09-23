@@ -2,8 +2,8 @@ import { DocDto } from '@/application/dtos/DocDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { DocId } from '@/core/types/CommonTypes.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
-import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface ActivateDocOutput {
   doc: DocDto

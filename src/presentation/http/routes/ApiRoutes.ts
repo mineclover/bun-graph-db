@@ -1,7 +1,7 @@
 import express from 'express'
-import type { GraphDbApiController } from '../controllers/GraphDbApiController.js'
 import type { AttributeApiController } from '../controllers/AttributeApiController.js'
 import type { GraphApiController } from '../controllers/GraphApiController.js'
+import type { GraphDbApiController } from '../controllers/GraphDbApiController.js'
 
 export function createApiRoutes(
   graphDbController: GraphDbApiController,
@@ -19,14 +19,18 @@ export function createApiRoutes(
   router.get('/tables', (req, res) => graphController.getTables(req, res))
   router.get('/tables/search', (req, res) => graphDbController.searchTables(req, res))
   router.get('/tables/:tableId/docs', (req, res) => graphController.getTableDocs(req, res))
-  router.post('/tables/:tableId/export', (req, res) => graphController.exportTableWithNodes(req, res))
+  router.post('/tables/:tableId/export', (req, res) =>
+    graphController.exportTableWithNodes(req, res)
+  )
 
   // Node Operations
   router.post('/nodes', (req, res) => graphDbController.createNode(req, res))
   router.get('/nodes/search', (req, res) => graphDbController.searchNodes(req, res))
   router.get('/nodes/:nodeId/connected', (req, res) => graphController.getConnectedNodes(req, res))
   router.get('/nodes/:nodeId/relations', (req, res) => graphController.getNodeRelations(req, res))
-  router.get('/nodes/:nodeId/attributes', (req, res) => attributeController.getNodeAttributes(req, res))
+  router.get('/nodes/:nodeId/attributes', (req, res) =>
+    attributeController.getNodeAttributes(req, res)
+  )
   router.post('/nodes/shortest-path', (req, res) => graphController.findShortestPath(req, res))
 
   // Relation Operations
@@ -36,19 +40,31 @@ export function createApiRoutes(
   // Template Operations
   router.post('/templates', (req, res) => graphDbController.createTemplate(req, res))
   router.get('/templates/search', (req, res) => graphDbController.searchTemplates(req, res))
-  router.post('/templates/execute', (req, res) => graphDbController.executeTemplateWithGraphQL(req, res))
-  router.get('/templates/:templateIdentifier/export', (req, res) => graphDbController.exportTemplate(req, res))
+  router.post('/templates/execute', (req, res) =>
+    graphDbController.executeTemplateWithGraphQL(req, res)
+  )
+  router.get('/templates/:templateIdentifier/export', (req, res) =>
+    graphDbController.exportTemplate(req, res)
+  )
   router.post('/templates/import', (req, res) => graphDbController.importTemplate(req, res))
 
   // Attribute Operations
   router.post('/attributes', (req, res) => attributeController.createAttribute(req, res))
-  router.put('/attributes/:attributeId', (req, res) => attributeController.updateAttribute(req, res))
-  router.delete('/attributes/:attributeId', (req, res) => attributeController.deleteAttribute(req, res))
-  router.get('/attributes/tables/:tableId', (req, res) => attributeController.getTableAttributes(req, res))
+  router.put('/attributes/:attributeId', (req, res) =>
+    attributeController.updateAttribute(req, res)
+  )
+  router.delete('/attributes/:attributeId', (req, res) =>
+    attributeController.deleteAttribute(req, res)
+  )
+  router.get('/attributes/tables/:tableId', (req, res) =>
+    attributeController.getTableAttributes(req, res)
+  )
 
   // Node Attribute Operations
   router.post('/node-attributes', (req, res) => attributeController.setNodeAttribute(req, res))
-  router.put('/node-attributes', (req, res) => attributeController.updateNodeAttributeValue(req, res))
+  router.put('/node-attributes', (req, res) =>
+    attributeController.updateNodeAttributeValue(req, res)
+  )
   router.delete('/node-attributes', (req, res) => attributeController.removeNodeAttribute(req, res))
 
   return router
@@ -83,5 +99,5 @@ export const API_ENDPOINT_MAPPING = {
   searchRelations: 'GET /api/relations/search',
   getConnectedNodes: 'GET /api/nodes/:nodeId/connected',
   findShortestPath: 'POST /api/nodes/shortest-path',
-  getNodeRelations: 'GET /api/nodes/:nodeId/relations'
+  getNodeRelations: 'GET /api/nodes/:nodeId/relations',
 }

@@ -90,7 +90,10 @@ export class ImportTemplateUseCase {
 
       return result
     } catch (error) {
-      this.logger.error('Unexpected error during template import', { ...toErrorMeta(error), request })
+      this.logger.error('Unexpected error during template import', {
+        ...toErrorMeta(error),
+        request,
+      })
 
       return {
         success: false,
