@@ -8,6 +8,7 @@ import type { INodeRelationRepository } from '@/domain/repositories/INodeRelatio
 import type { TableId, NodeId } from '@/core/types/CommonTypes.js'
 import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
+import { ResponseHelper } from '../utils/responseHelpers.js'
 
 interface GraphQLResponse<T = any> {
   data?: T
@@ -42,6 +43,7 @@ class GraphQLClient {
 
 export class GraphApiController {
   private graphqlClient: GraphQLClient
+  private responseHelper: ResponseHelper
 
   constructor(
     private readonly logger: ILogger,
@@ -55,6 +57,7 @@ export class GraphApiController {
     // Use the same port as the server instance
     const serverPort = port || 4000
     this.graphqlClient = new GraphQLClient(`http://localhost:${serverPort}/graphql`)
+    this.responseHelper = new ResponseHelper(logger)
   }
 
   async getTables(req: Request, res: Response): Promise<void> {
@@ -96,16 +99,9 @@ export class GraphApiController {
         hasPreviousPage: parseInt(offset as string, 10) > 0,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Get tables error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Get tables failed',
-      })
+      this.responseHelper.handleError(res, error, 'Get tables')
     }
   }
 
@@ -120,10 +116,7 @@ export class GraphApiController {
       } = req.query
 
       if (!tableId && !identifier) {
-        res.status(400).json({
-          success: false,
-          error: 'Either tableId or identifier is required',
-        })
+        this.responseHelper.validationError(res, 'Either tableId or identifier is required')
         return
       }
 
@@ -139,23 +132,13 @@ export class GraphApiController {
       })
 
       if (!result.tableDocs) {
-        res.status(404).json({
-          success: false,
-          error: 'Table not found',
-        })
+        this.responseHelper.notFound(res, 'Table')
         return
       }
 
-      res.json({
-        success: true,
-        data: result.tableDocs,
-      })
+      this.responseHelper.success(res, result.tableDocs)
     } catch (error) {
-      this.logger.error('Get table docs error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Get table docs failed',
-      })
+      this.responseHelper.handleError(res, error, 'Get table docs')
     }
   }
 
@@ -165,10 +148,7 @@ export class GraphApiController {
       const { flatFormat = true, outputPath = '' } = req.body
 
       if (!tableId) {
-        res.status(400).json({
-          success: false,
-          error: 'tableId is required',
-        })
+        this.responseHelper.validationError(res, 'tableId is required')
         return
       }
 
@@ -225,19 +205,13 @@ export class GraphApiController {
 
       if (graphqlResult.errors) {
         this.logger.error('GraphQL export error:', { errors: graphqlResult.errors })
-        res.status(500).json({
-          success: false,
-          error: `GraphQL error: ${graphqlResult.errors.map(e => e.message).join(', ')}`,
-        })
+        this.responseHelper.error(res, 500, `GraphQL error: ${graphqlResult.errors.map(e => e.message).join(', ')}`, 'Export table with nodes')
         return
       }
 
       const exportData = graphqlResult.data?.exportTable
       if (!exportData) {
-        res.status(404).json({
-          success: false,
-          error: 'No export data returned',
-        })
+        this.responseHelper.notFound(res, 'Export data')
         return
       }
 
@@ -256,37 +230,23 @@ export class GraphApiController {
 
           this.logger.info(`Table ${tableId} exported to ${outputPath}`)
 
-          res.json({
-            success: true,
-            data: {
-              tableId,
-              flatFormat,
-              outputPath,
-              fileSize: JSON.stringify(exportData).length,
-              metadata: exportData.metadata,
-              statistics: exportData.statistics,
-            },
+          this.responseHelper.success(res, {
+            tableId,
+            flatFormat,
+            outputPath,
+            fileSize: JSON.stringify(exportData).length,
+            metadata: exportData.metadata,
+            statistics: exportData.statistics,
           })
         } catch (fileError) {
-          this.logger.error('File write error:', toErrorMeta(fileError))
-          res.status(500).json({
-            success: false,
-            error: `Failed to save file: ${fileError instanceof Error ? fileError.message : 'Unknown error'}`,
-          })
+          this.responseHelper.handleError(res, fileError, 'File write')
         }
       } else {
         // JSON 응답으로 반환
-        res.json({
-          success: true,
-          data: exportData,
-        })
+        this.responseHelper.success(res, exportData)
       }
     } catch (error) {
-      this.logger.error('Export table with nodes error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Export table with nodes failed',
-      })
+      this.responseHelper.handleError(res, error, 'Export table with nodes')
     }
   }
 
@@ -295,10 +255,7 @@ export class GraphApiController {
       const { tableId, sourceNodeId, targetNodeId, relationTypeId, limit = 20 } = req.query
 
       if (!tableId) {
-        res.status(400).json({
-          success: false,
-          error: 'tableId is required',
-        })
+        this.responseHelper.validationError(res, 'tableId is required')
         return
       }
 
@@ -364,16 +321,9 @@ export class GraphApiController {
         hasMore: relationsResult.hasMore || false,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Search relations error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Search relations failed',
-      })
+      this.responseHelper.handleError(res, error, 'Search relations')
     }
   }
 
@@ -383,18 +333,12 @@ export class GraphApiController {
       const { depth = 1, direction = 'BOTH', relationTypes = [], tableId } = req.query
 
       if (!nodeId) {
-        res.status(400).json({
-          success: false,
-          error: 'nodeId is required',
-        })
+        this.responseHelper.validationError(res, 'nodeId is required')
         return
       }
 
       if (!tableId) {
-        res.status(400).json({
-          success: false,
-          error: 'tableId is required',
-        })
+        this.responseHelper.validationError(res, 'tableId is required')
         return
       }
 
@@ -435,16 +379,9 @@ export class GraphApiController {
         totalCount: searchResult.totalCount,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Get connected nodes error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Get connected nodes failed',
-      })
+      this.responseHelper.handleError(res, error, 'Get connected nodes')
     }
   }
 
@@ -453,18 +390,12 @@ export class GraphApiController {
       const { fromNodeId, toNodeId, maxDepth = 6, tableId } = req.body
 
       if (!fromNodeId || !toNodeId) {
-        res.status(400).json({
-          success: false,
-          error: 'fromNodeId and toNodeId are required',
-        })
+        this.responseHelper.validationError(res, 'fromNodeId and toNodeId are required')
         return
       }
 
       if (!tableId) {
-        res.status(400).json({
-          success: false,
-          error: 'tableId is required',
-        })
+        this.responseHelper.validationError(res, 'tableId is required')
         return
       }
 
@@ -495,16 +426,9 @@ export class GraphApiController {
         found: path !== null,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Find shortest path error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Find shortest path failed',
-      })
+      this.responseHelper.handleError(res, error, 'Find shortest path')
     }
   }
 
@@ -514,10 +438,7 @@ export class GraphApiController {
       const { direction = 'BOTH', relationTypes = [] } = req.query
 
       if (!nodeId) {
-        res.status(400).json({
-          success: false,
-          error: 'nodeId is required',
-        })
+        this.responseHelper.validationError(res, 'nodeId is required')
         return
       }
 
@@ -578,16 +499,9 @@ export class GraphApiController {
       result.totalIncoming = incomingRelations.length
       result.totalOutgoing = outgoingRelations.length
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Get node relations error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Get node relations failed',
-      })
+      this.responseHelper.handleError(res, error, 'Get node relations')
     }
   }
 }

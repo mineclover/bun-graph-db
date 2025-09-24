@@ -137,15 +137,26 @@ import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes
 import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes'
 import { RepositoryTokens } from './src/infrastructure/container/tokens/RepositoryTokens'
 
-// Resolve dependencies from container
-const createAttributeUseCase = await container.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE) as any
-const attributeRepository = await container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
-const nodeAttributeRepository = await container.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
-const getTableDocsUseCase = await container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE) as any
-const searchNodesUseCase = await container.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE) as any
-const searchRelatedNodesUseCase = await container.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE) as any
-const tableRepository = await container.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
-const nodeRelationRepository = await container.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as any
+// Resolve dependencies from container in parallel
+const [
+  createAttributeUseCase,
+  attributeRepository,
+  nodeAttributeRepository,
+  getTableDocsUseCase,
+  searchNodesUseCase,
+  searchRelatedNodesUseCase,
+  tableRepository,
+  nodeRelationRepository
+] = await Promise.all([
+  container.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE),
+  container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY),
+  container.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY),
+  container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE),
+  container.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE),
+  container.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE),
+  container.resolve(RepositoryTokens.TABLE_REPOSITORY),
+  container.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
+]) as any[]
 
 // Create controllers
 const graphDbController = new GraphDbApiController(logger)
@@ -166,9 +177,11 @@ const graphController = new GraphApiController(
 )
 const mcpToolController = new McpToolController(logger, graphqlConfig.port)
 
-// Create route handlers
-const schemaHandler = await createSchemaHandler(container)
-const templateFileHandler = await createTemplateFileHandler(container)
+// Create route handlers in parallel
+const [schemaHandler, templateFileHandler] = await Promise.all([
+  createSchemaHandler(container),
+  createTemplateFileHandler(container)
+])
 
 // Create MCP HTTP server with REST API base URL
 const mcpServer = new McpHttpServer(

@@ -36,6 +36,7 @@ export class AttributeFieldResolvers extends BaseResolver {
         return {
           id: parent.attributeTypeId || 'unknown',
           identifier: 'unknown',
+          name: 'unknown', // Add name field for GraphQL non-nullable constraint
           dataType: 'string', // Map to dataType for GraphQL schema
           format: null,
           description: 'AttributeType not found in database',
@@ -52,6 +53,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       const graphqlAttributeType = {
         id: attributeType.getId(),
         identifier: attributeType.getIdentifier(),
+        name: attributeType.getIdentifier(), // Add name field using identifier value
         dataType: attributeType.getJsonType(), // Map jsonType to dataType for GraphQL schema
         format: attributeType.getFormat(),
         description: attributeType.getDescription(),
@@ -81,6 +83,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       return {
         id: parent.attributeTypeId || 'error',
         identifier: 'error',
+        name: 'error', // Add name field for GraphQL non-nullable constraint
         dataType: 'string', // Map to dataType for GraphQL schema
         format: null,
         description: 'An error occurred while loading the attribute type',

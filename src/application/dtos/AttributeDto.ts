@@ -15,7 +15,13 @@ export interface AttributeDto {
 }
 
 export function fromEntity(attribute: Attribute): AttributeDto {
-  return {
+  console.log('DEBUG: AttributeDto.fromEntity input:', {
+    id: attribute.getId(),
+    attributeTypeId: attribute.getAttributeTypeId(),
+    attributeTypeIdType: typeof attribute.getAttributeTypeId(),
+  })
+
+  const dto = {
     id: attribute.getId(),
     tableId: attribute.getTableId(),
     identifier: attribute.getIdentifier(),
@@ -27,6 +33,14 @@ export function fromEntity(attribute: Attribute): AttributeDto {
     createdAt: attribute.getCreatedAt().toISOString(),
     updatedAt: attribute.getUpdatedAt().toISOString(),
   }
+
+  console.log('DEBUG: AttributeDto.fromEntity output:', {
+    id: dto.id,
+    attributeTypeId: dto.attributeTypeId,
+    attributeTypeIdType: typeof dto.attributeTypeId,
+  })
+
+  return dto
 }
 
 export function fromEntities(attributes: Attribute[]): AttributeDto[] {

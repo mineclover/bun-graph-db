@@ -118,7 +118,7 @@ export class NodeQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         // Temporary fallback to basic findAll when SearchNodesUseCase is not available
-        // TODO: Restore proper search functionality after circular dependency is resolved
+        // Search functionality disabled pending resolution of circular dependency issue
         if (!this.searchNodesUseCase) {
           this.logger.warn('SearchNodesUseCase not available, using basic node listing')
           const result = await this.nodeRepository.findAll(

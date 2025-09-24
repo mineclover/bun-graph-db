@@ -16,6 +16,7 @@ import type {
   TemplateData,
 } from '../types/ApiResponseTypes.js'
 import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
+import { sendSuccess, sendHandleError, sendValidationError } from '../utils/responseHelpers.js'
 
 export class GraphDbApiController {
   constructor(private readonly logger: ILogger) {}
@@ -29,17 +30,9 @@ export class GraphDbApiController {
         database: 'Connected',
         version: '1.0.0',
       }
-      const response: ApiResponse<HealthCheckData> = {
-        success: true,
-        data: result,
-      }
-      res.json(response)
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Health check error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Health check failed',
-      })
+      sendHandleError(res, this.logger, error, 'Health check')
     }
   }
 
@@ -59,16 +52,9 @@ export class GraphDbApiController {
           platform: process.platform,
         },
       }
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('System stats error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'System stats failed',
-      })
+      sendHandleError(res, this.logger, error, 'System stats')
     }
   }
 
@@ -78,10 +64,7 @@ export class GraphDbApiController {
       const { identifier, name, description } = req.body
 
       if (!identifier) {
-        res.status(400).json({
-          success: false,
-          error: 'identifier is required',
-        })
+        sendValidationError(res, 'identifier is required')
         return
       }
 
@@ -94,16 +77,9 @@ export class GraphDbApiController {
         updatedAt: new Date().toISOString(),
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Create table error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Create table failed',
-      })
+      sendHandleError(res, this.logger, error, 'Create table')
     }
   }
 
@@ -119,16 +95,9 @@ export class GraphDbApiController {
         limit,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Search tables error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Search tables failed',
-      })
+      sendHandleError(res, this.logger, error, 'Search tables')
     }
   }
 
@@ -138,10 +107,7 @@ export class GraphDbApiController {
       const { tableId, content, metadata } = req.body
 
       if (!tableId || !content) {
-        res.status(400).json({
-          success: false,
-          error: 'tableId and content are required',
-        })
+        sendValidationError(res, 'tableId and content are required')
         return
       }
 
@@ -153,16 +119,9 @@ export class GraphDbApiController {
         createdAt: new Date().toISOString(),
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Create node error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Create node failed',
-      })
+      sendHandleError(res, this.logger, error, 'Create node')
     }
   }
 
@@ -173,10 +132,7 @@ export class GraphDbApiController {
       const limit = parseInt(req.query.limit as string) || 10
 
       if (!tableId) {
-        res.status(400).json({
-          success: false,
-          error: 'tableId is required',
-        })
+        sendValidationError(res, 'tableId is required')
         return
       }
 
@@ -188,16 +144,9 @@ export class GraphDbApiController {
         limit,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Search nodes error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Search nodes failed',
-      })
+      sendHandleError(res, this.logger, error, 'Search nodes')
     }
   }
 
@@ -207,10 +156,7 @@ export class GraphDbApiController {
       const { fromNodeId, toNodeId, relationshipType, tableId, properties } = req.body
 
       if (!fromNodeId || !toNodeId || !relationshipType || !tableId) {
-        res.status(400).json({
-          success: false,
-          error: 'fromNodeId, toNodeId, relationshipType, and tableId are required',
-        })
+        sendValidationError(res, 'fromNodeId, toNodeId, relationshipType, and tableId are required')
         return
       }
 
@@ -224,16 +170,9 @@ export class GraphDbApiController {
         createdAt: new Date().toISOString(),
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Create relation error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Create relation failed',
-      })
+      sendHandleError(res, this.logger, error, 'Create relation')
     }
   }
 
@@ -243,10 +182,7 @@ export class GraphDbApiController {
       const { identifier, name, query, tags } = req.body
 
       if (!identifier || !name || !query) {
-        res.status(400).json({
-          success: false,
-          error: 'identifier, name, and query are required',
-        })
+        sendValidationError(res, 'identifier, name, and query are required')
         return
       }
 
@@ -259,16 +195,9 @@ export class GraphDbApiController {
         createdAt: new Date().toISOString(),
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Create template error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Create template failed',
-      })
+      sendHandleError(res, this.logger, error, 'Create template')
     }
   }
 
@@ -284,16 +213,9 @@ export class GraphDbApiController {
         tags,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Search templates error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Search templates failed',
-      })
+      sendHandleError(res, this.logger, error, 'Search templates')
     }
   }
 
@@ -302,10 +224,7 @@ export class GraphDbApiController {
       const { templateIdentifier, variables } = req.body
 
       if (!templateIdentifier) {
-        res.status(400).json({
-          success: false,
-          error: 'templateIdentifier is required',
-        })
+        sendValidationError(res, 'templateIdentifier is required')
         return
       }
 
@@ -320,16 +239,9 @@ export class GraphDbApiController {
         executedAt: new Date().toISOString(),
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Execute template error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Execute template failed',
-      })
+      sendHandleError(res, this.logger, error, 'Execute template')
     }
   }
 
@@ -338,10 +250,7 @@ export class GraphDbApiController {
       const { templateIdentifier } = req.body
 
       if (!templateIdentifier) {
-        res.status(400).json({
-          success: false,
-          error: 'templateIdentifier is required',
-        })
+        sendValidationError(res, 'templateIdentifier is required')
         return
       }
 
@@ -364,17 +273,9 @@ export class GraphDbApiController {
         exportedAt: new Date().toISOString(),
       }
 
-      const response: ApiResponse<ExportTemplateData> = {
-        success: true,
-        data: result,
-      }
-      res.json(response)
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Export template error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Export template failed',
-      })
+      sendHandleError(res, this.logger, error, 'Export template')
     }
   }
 
@@ -383,10 +284,7 @@ export class GraphDbApiController {
       const { jsonData, overwriteExisting, generateNewIdentifier } = req.body
 
       if (!jsonData) {
-        res.status(400).json({
-          success: false,
-          error: 'jsonData is required',
-        })
+        sendValidationError(res, 'jsonData is required')
         return
       }
 
@@ -399,17 +297,9 @@ export class GraphDbApiController {
         importedAt: new Date().toISOString(),
       }
 
-      const response: ApiResponse<ImportTemplateData> = {
-        success: true,
-        data: result,
-      }
-      res.json(response)
+      sendSuccess(res, result)
     } catch (error) {
-      this.logger.error('Import template error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Import template failed',
-      })
+      sendHandleError(res, this.logger, error, 'Import template')
     }
   }
 }

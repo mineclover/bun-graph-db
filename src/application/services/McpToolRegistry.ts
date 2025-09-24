@@ -47,7 +47,7 @@ export class McpToolRegistry {
    */
   async loadFromContract(): Promise<void> {
     try {
-      // TODO: Restore contract loading when contract file is available
+      // Contract loading is disabled pending implementation of contract file system
       console.log('MCP Tool Registry: Contract loading temporarily disabled')
       this.loaded = true
       console.log(`Loaded ${this.tools.size} tools from contract (empty registry)`)
@@ -158,7 +158,7 @@ export class McpToolRegistry {
   validateAllTools(): { valid: boolean; errors: Array<{ tool: string; errors: string[] }> } {
     const errors: Array<{ tool: string; errors: string[] }> = []
 
-    // TODO: Restore validation when contract validation is available
+    // Enhanced validation will be implemented when contract validation system is available
     for (const [name, tool] of this.tools) {
       // Basic validation - ensure tool has required fields
       const toolErrors: string[] = []

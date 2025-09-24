@@ -6,6 +6,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import { toErrorMeta } from '../utils/errorHelpers.js'
+import { ResponseHelper } from '../utils/responseHelpers.js'
 import type {
   ApiResponse,
   AttributeData,
@@ -15,22 +16,23 @@ import type {
 } from '../types/ApiResponseTypes.js'
 
 export class AttributeApiController {
+  private responseHelper: ResponseHelper
+
   constructor(
     private readonly createAttributeUseCase: CreateAttributeUseCase,
     private readonly attributeRepository: IAttributeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly logger: ILogger
-  ) {}
+  ) {
+    this.responseHelper = new ResponseHelper(logger)
+  }
 
   async setNodeAttribute(req: Request, res: Response): Promise<void> {
     try {
       const { input } = req.body
 
       if (!input || !input.nodeId || !input.attributeId || input.value === undefined) {
-        res.status(400).json({
-          success: false,
-          error: 'input with nodeId, attributeId, and value is required',
-        })
+        this.responseHelper.validationError(res, 'input with nodeId, attributeId, and value is required')
         return
       }
 
@@ -50,17 +52,9 @@ export class AttributeApiController {
         success: true,
       }
 
-      const response: ApiResponse<NodeAttributeData> = {
-        success: true,
-        data: result,
-      }
-      res.json(response)
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Set node attribute error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Set node attribute failed',
-      })
+      this.responseHelper.handleError(res, error, 'Set node attribute')
     }
   }
 
@@ -69,10 +63,7 @@ export class AttributeApiController {
       const { tableId, identifier, attributeTypeId = '1' } = req.body
 
       if (!tableId || !identifier) {
-        res.status(400).json({
-          success: false,
-          error: 'tableId and identifier are required',
-        })
+        this.responseHelper.validationError(res, 'tableId and identifier are required')
         return
       }
 
@@ -94,17 +85,9 @@ export class AttributeApiController {
         attributeTypeId: createResult.attribute.attributeTypeId,
       }
 
-      const response: ApiResponse<AttributeData> = {
-        success: true,
-        data: result,
-      }
-      res.json(response)
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Create attribute error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Create attribute failed',
-      })
+      this.responseHelper.handleError(res, error, 'Create attribute')
     }
   }
 
@@ -114,20 +97,14 @@ export class AttributeApiController {
       const { description, isRequired, metadata } = req.body
 
       if (!attributeId) {
-        res.status(400).json({
-          success: false,
-          error: 'attributeId is required',
-        })
+        this.responseHelper.validationError(res, 'attributeId is required')
         return
       }
 
       // Use attribute repository to update attribute
       const attribute = await this.attributeRepository.findById(attributeId as AttributeId)
       if (!attribute) {
-        res.status(404).json({
-          success: false,
-          error: `Attribute with id ${attributeId} not found`,
-        })
+        this.responseHelper.notFound(res, `Attribute with id ${attributeId}`)
         return
       }
 
@@ -158,16 +135,9 @@ export class AttributeApiController {
         metadata: updatedAttribute.getParsedMetadata(),
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Update attribute error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Update attribute failed',
-      })
+      this.responseHelper.handleError(res, error, 'Update attribute')
     }
   }
 
@@ -176,20 +146,14 @@ export class AttributeApiController {
       const { attributeId } = req.params
 
       if (!attributeId) {
-        res.status(400).json({
-          success: false,
-          error: 'attributeId is required',
-        })
+        this.responseHelper.validationError(res, 'attributeId is required')
         return
       }
 
       // Use attribute repository to delete attribute
       const attribute = await this.attributeRepository.findById(attributeId as AttributeId)
       if (!attribute) {
-        res.status(404).json({
-          success: false,
-          error: `Attribute with id ${attributeId} not found`,
-        })
+        this.responseHelper.notFound(res, `Attribute with id ${attributeId}`)
         return
       }
 
@@ -200,16 +164,9 @@ export class AttributeApiController {
         deleted: true,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Delete attribute error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Delete attribute failed',
-      })
+      this.responseHelper.handleError(res, error, 'Delete attribute')
     }
   }
 
@@ -218,10 +175,7 @@ export class AttributeApiController {
       const { tableId } = req.params
 
       if (!tableId) {
-        res.status(400).json({
-          success: false,
-          error: 'tableId is required',
-        })
+        this.responseHelper.validationError(res, 'tableId is required')
         return
       }
 
@@ -240,17 +194,9 @@ export class AttributeApiController {
         })),
       }
 
-      const response: ApiResponse<TableAttributesData> = {
-        success: true,
-        data: result,
-      }
-      res.json(response)
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Get table attributes error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Get table attributes failed',
-      })
+      this.responseHelper.handleError(res, error, 'Get table attributes')
     }
   }
 
@@ -259,10 +205,7 @@ export class AttributeApiController {
       const { nodeId, attributeId } = req.body
 
       if (!nodeId || !attributeId) {
-        res.status(400).json({
-          success: false,
-          error: 'nodeId and attributeId are required',
-        })
+        this.responseHelper.validationError(res, 'nodeId and attributeId are required')
         return
       }
 
@@ -273,19 +216,13 @@ export class AttributeApiController {
       )
 
       if (!nodeAttribute) {
-        res.status(404).json({
-          success: false,
-          error: `Node attribute not found for nodeId: ${nodeId}, attributeId: ${attributeId}`,
-        })
+        this.responseHelper.notFound(res, `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`)
         return
       }
 
       const nodeAttributeId = nodeAttribute.getId()
       if (!nodeAttributeId) {
-        res.status(500).json({
-          success: false,
-          error: 'Node attribute ID is null',
-        })
+        this.responseHelper.error(res, 500, 'Node attribute ID is null', 'Remove node attribute')
         return
       }
       await this.nodeAttributeRepository.delete(nodeAttributeId)
@@ -296,16 +233,9 @@ export class AttributeApiController {
         removed: true,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Remove node attribute error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Remove node attribute failed',
-      })
+      this.responseHelper.handleError(res, error, 'Remove node attribute')
     }
   }
 
@@ -314,10 +244,7 @@ export class AttributeApiController {
       const { nodeId, attributeId, value } = req.body
 
       if (!nodeId || !attributeId || value === undefined) {
-        res.status(400).json({
-          success: false,
-          error: 'nodeId, attributeId, and value are required',
-        })
+        this.responseHelper.validationError(res, 'nodeId, attributeId, and value are required')
         return
       }
 
@@ -328,10 +255,7 @@ export class AttributeApiController {
       )
 
       if (!nodeAttribute) {
-        res.status(404).json({
-          success: false,
-          error: `Node attribute not found for nodeId: ${nodeId}, attributeId: ${attributeId}`,
-        })
+        this.responseHelper.notFound(res, `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`)
         return
       }
 
@@ -345,16 +269,9 @@ export class AttributeApiController {
         updated: true,
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Update node attribute value error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Update node attribute value failed',
-      })
+      this.responseHelper.handleError(res, error, 'Update node attribute value')
     }
   }
 
@@ -363,10 +280,7 @@ export class AttributeApiController {
       const { nodeId } = req.params
 
       if (!nodeId) {
-        res.status(400).json({
-          success: false,
-          error: 'nodeId is required',
-        })
+        this.responseHelper.validationError(res, 'nodeId is required')
         return
       }
 
@@ -383,16 +297,9 @@ export class AttributeApiController {
         })),
       }
 
-      res.json({
-        success: true,
-        data: result,
-      })
+      this.responseHelper.success(res, result)
     } catch (error) {
-      this.logger.error('Get node attributes error:', toErrorMeta(error))
-      res.status(500).json({
-        success: false,
-        error: 'Get node attributes failed',
-      })
+      this.responseHelper.handleError(res, error, 'Get node attributes')
     }
   }
 }

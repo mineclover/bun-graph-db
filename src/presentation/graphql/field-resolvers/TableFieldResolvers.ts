@@ -37,6 +37,7 @@ export class TableFieldResolvers extends BaseResolver {
               identifier: attribute.getIdentifier(),
               name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
               description: attribute.getDescription(),
+              attributeTypeId: attribute.getAttributeTypeId(), // Include attributeTypeId for Attribute.attributeType field resolver
               createdAt: attribute.getCreatedAt(),
               updatedAt: attribute.getUpdatedAt(),
             }

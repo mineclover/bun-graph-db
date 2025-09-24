@@ -225,7 +225,7 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.NODE_MUTATIONS,
     async (c) => {
       // Temporarily remove CreateNodeUseCase to break circular dependency
-      // TODO: Restore proper use case integration after circular dependency is resolved
+      // Use case integration temporarily disabled to resolve circular dependency in DI container
       const createNodeUseCase = null as any // Placeholder
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
       const nodeAttributeRepository = (await c.resolve(

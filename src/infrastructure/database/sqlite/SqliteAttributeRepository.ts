@@ -380,7 +380,19 @@ export class SqliteAttributeRepository implements IAttributeRepository {
   }
 
   private mapRowToEntity(row: AttributeRow): Attribute {
-    return Attribute.fromDatabase(
+    console.log('DEBUG: mapRowToEntity row data:', {
+      id: row.id,
+      table_id: row.table_id,
+      identifier: row.identifier,
+      attribute_type_id: row.attribute_type_id,
+      description: row.description,
+      is_required: row.is_required,
+      metadata: row.metadata,
+      created_at: row.created_at,
+      updated_at: row.updated_at
+    })
+
+    const attribute = Attribute.fromDatabase(
       row.id.toString(),
       row.table_id.toString(),
       row.identifier,
@@ -391,6 +403,15 @@ export class SqliteAttributeRepository implements IAttributeRepository {
       new Date(row.created_at),
       new Date(row.updated_at)
     )
+
+    console.log('DEBUG: created attribute:', {
+      id: attribute.getId(),
+      tableId: attribute.getTableId(),
+      identifier: attribute.getIdentifier(),
+      attributeTypeId: attribute.getAttributeTypeId(),
+    })
+
+    return attribute
   }
 
   async update(id: AttributeId, updates: AttributeUpdateData): Promise<Attribute> {

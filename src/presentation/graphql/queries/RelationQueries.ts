@@ -74,7 +74,7 @@ export class RelationQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         // Note: The repository only accepts PaginationOptions, filter/sort are not supported here
-        // TODO: Consider implementing filtering at the repository level if needed
+        // Repository-level filtering may be implemented for performance optimization in future
         const result = await this.nodeRelationRepository.findAll(
           args.pagination || { limit: 10, offset: 0 }
         )
@@ -99,7 +99,7 @@ export class RelationQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         // Temporary fallback when SearchRelatedNodesUseCase is not available
-        // TODO: Restore proper search functionality after circular dependency is resolved
+        // Full search functionality disabled pending resolution of circular dependency
         if (!this.searchRelatedNodesUseCase) {
           this.logger.warn('SearchRelatedNodesUseCase not available, using basic relation listing')
           const result = await this.nodeRelationRepository.findAll(
