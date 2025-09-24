@@ -95,17 +95,7 @@ export class DeleteTableUseCase {
         dependencies,
       })
 
-      // Note: This would need to be implemented with proper transaction handling
-      // For now, we'll just log what would be deleted
-      this.logger.warn('Cascade deletion not fully implemented - would delete related data', {
-        tableId: id,
-        nodeCount: dependencies.nodeCount,
-        attributeCount: dependencies.attributeCount,
-        relationCount: dependencies.relationCount,
-      })
-
-      // TODO: Implement actual cascade deletion with proper transaction handling
-      // await this.deleteCascadeData(id, dependencies)
+      await this.deleteCascadeData(id, dependencies)
     }
 
     // Perform the actual table deletion
@@ -120,12 +110,39 @@ export class DeleteTableUseCase {
     return dependencies
   }
 
-  // TODO: Implement this method for actual cascade deletion
-  // private async deleteCascadeData(tableId: TableId, dependencies: TableDependencyInfo): Promise<void> {
-  //   // Delete in proper order to maintain referential integrity:
-  //   // 1. Relations (referencing nodes)
-  //   // 2. Node attributes (referencing nodes and attributes)
-  //   // 3. Nodes (referencing table)
-  //   // 4. Attributes (referencing table)
-  // }
+  private async deleteCascadeData(tableId: TableId, dependencies: TableDependencyInfo): Promise<void> {
+    this.logger.info('Starting cascade deletion process', {
+      tableId,
+      nodeCount: dependencies.nodeCount,
+      attributeCount: dependencies.attributeCount,
+      relationCount: dependencies.relationCount,
+    })
+
+    // Delete in proper order to maintain referential integrity:
+    // 1. Relations (referencing nodes)
+    if (dependencies.relationCount > 0) {
+      this.logger.info('Deleting relations for table', { tableId, count: dependencies.relationCount })
+      await this.relationRepository.deleteByTableId(tableId)
+      this.logger.info('Relations deleted successfully', { tableId })
+    }
+
+    // 2. Node attributes (referencing nodes and attributes)
+    // Note: We'll delete these when we delete nodes, as they're tied to node lifecycle
+
+    // 3. Nodes (referencing table)
+    if (dependencies.nodeCount > 0) {
+      this.logger.info('Deleting nodes for table', { tableId, count: dependencies.nodeCount })
+      await this.nodeRepository.deleteByTableId(tableId)
+      this.logger.info('Nodes deleted successfully', { tableId })
+    }
+
+    // 4. Attributes (referencing table)
+    if (dependencies.attributeCount > 0) {
+      this.logger.info('Deleting attributes for table', { tableId, count: dependencies.attributeCount })
+      await this.attributeRepository.deleteByTableId(tableId)
+      this.logger.info('Attributes deleted successfully', { tableId })
+    }
+
+    this.logger.info('Cascade deletion completed successfully', { tableId })
+  }
 }

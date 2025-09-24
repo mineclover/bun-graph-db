@@ -1,3 +1,6 @@
+import { type AttributeDto, fromEntities as attributeFromEntities } from '@/application/dtos/AttributeDto.js'
+import { type AttributeTypeDto, fromEntities as attributeTypeFromEntities } from '@/application/dtos/AttributeTypeDto.js'
+import { type NodeDto, fromEntities as nodeFromEntities } from '@/application/dtos/NodeDto.js'
 import { type TableDto, fromEntity as tableFromEntity } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
@@ -9,6 +12,9 @@ import type {
   TablesPagination,
   UpdateTableInput,
 } from '@/core/types/GraphQLTypes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
@@ -20,6 +26,9 @@ export class TableResolver extends BaseResolver {
   constructor(
     private readonly createTableUseCase: CreateTableUseCase,
     private readonly tableRepository: ITableRepository,
+    private readonly nodeRepository: INodeRepository,
+    private readonly attributeRepository: IAttributeRepository,
+    private readonly attributeTypeRepository: IAttributeTypeRepository,
     logger: ILogger
   ) {
     super()
@@ -330,8 +339,7 @@ export class TableResolver extends BaseResolver {
   async nodeCount(table: TableDto, _context?: GraphQLContext): Promise<number> {
     const result = await this.handleFieldResolution(
       async () => {
-        // TODO: Implement node count query
-        return 0
+        return await this.nodeRepository.countByTableId(table.id)
       },
       'nodeCount',
       'Table',
@@ -343,8 +351,7 @@ export class TableResolver extends BaseResolver {
   async attributeCount(table: TableDto, _context?: GraphQLContext): Promise<number> {
     const result = await this.handleFieldResolution(
       async () => {
-        // TODO: Implement attribute count query
-        return 0
+        return await this.attributeRepository.countByTableId(table.id)
       },
       'attributeCount',
       'Table',
@@ -353,5 +360,45 @@ export class TableResolver extends BaseResolver {
     return result ?? 0
   }
 
-  // TODO: Implement relationship resolvers (attributes, nodes)
+  // Relationship field resolvers
+  async attributes(table: TableDto, _context?: GraphQLContext): Promise<AttributeDto[]> {
+    const result = await this.handleFieldResolution(
+      async () => {
+        const attributesResult = await this.attributeRepository.findByTableId(table.id)
+        return attributeFromEntities(attributesResult.data || [])
+      },
+      'attributes',
+      'Table',
+      { tableId: table.id }
+    )
+    return result ?? []
+  }
+
+  async attributeTypes(table: TableDto, _context?: GraphQLContext): Promise<AttributeTypeDto[]> {
+    const result = await this.handleFieldResolution(
+      async () => {
+        // Get all attribute types - table-specific attribute types would need a different approach
+        // For now, return all available attribute types
+        const attributeTypesResult = await this.attributeTypeRepository.findAll({ limit: 100 })
+        return attributeTypeFromEntities(attributeTypesResult.data || [])
+      },
+      'attributeTypes',
+      'Table',
+      { tableId: table.id }
+    )
+    return result ?? []
+  }
+
+  async tableNodes(table: TableDto, _context?: GraphQLContext): Promise<NodeDto[]> {
+    const result = await this.handleFieldResolution(
+      async () => {
+        const nodesResult = await this.nodeRepository.findByTableId(table.id, { limit: 100 })
+        return nodeFromEntities(nodesResult.data || [])
+      },
+      'tableNodes',
+      'Table',
+      { tableId: table.id }
+    )
+    return result ?? []
+  }
 }

@@ -1,4 +1,4 @@
-import { API_ENDPOINT_MAPPING } from '../presentation/http/routes/ApiRoutes.js'
+import { API_ENDPOINT_MAPPING } from '../../presentation/http/routes/ApiRoutes.js'
 
 interface ApiResponse<T = any> {
   success: boolean

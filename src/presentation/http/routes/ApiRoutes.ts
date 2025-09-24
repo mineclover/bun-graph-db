@@ -2,11 +2,13 @@ import express from 'express'
 import type { AttributeApiController } from '../controllers/AttributeApiController.js'
 import type { GraphApiController } from '../controllers/GraphApiController.js'
 import type { GraphDbApiController } from '../controllers/GraphDbApiController.js'
+import type { McpToolController } from '../controllers/McpToolController.js'
 
 export function createApiRoutes(
   graphDbController: GraphDbApiController,
   attributeController: AttributeApiController,
-  graphController: GraphApiController
+  graphController: GraphApiController,
+  mcpToolController?: McpToolController
 ): express.Router {
   const router = express.Router()
 
@@ -67,6 +69,15 @@ export function createApiRoutes(
   )
   router.delete('/node-attributes', (req, res) => attributeController.removeNodeAttribute(req, res))
 
+  // MCP Tool Operations (Bridge between GraphQL and local services)
+  if (mcpToolController) {
+    router.get('/mcp-tools', (req, res) => mcpToolController.listMcpTools(req, res))
+    router.post('/mcp-tools/call', (req, res) => mcpToolController.callMcpTool(req, res))
+    router.post('/mcp-tools/bulk-import-templates', (req, res) => mcpToolController.bulkImportTemplates(req, res))
+    router.get('/mcp-tools/list-available-templates', (req, res) => mcpToolController.listAvailableTemplates(req, res))
+    router.get('/mcp-tools/import-status', (req, res) => mcpToolController.getImportStatus(req, res))
+  }
+
   return router
 }
 
@@ -100,4 +111,11 @@ export const API_ENDPOINT_MAPPING = {
   getConnectedNodes: 'GET /api/nodes/:nodeId/connected',
   findShortestPath: 'POST /api/nodes/shortest-path',
   getNodeRelations: 'GET /api/nodes/:nodeId/relations',
+
+  // MCP Tool endpoints
+  'bulk-import-templates': 'POST /api/mcp-tools/bulk-import-templates',
+  'list-available-templates': 'GET /api/mcp-tools/list-available-templates',
+  'get-import-status': 'GET /api/mcp-tools/import-status',
+  callMcpTool: 'POST /api/mcp-tools/call',
+  listMcpTools: 'GET /api/mcp-tools',
 }

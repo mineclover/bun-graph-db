@@ -15,6 +15,7 @@ import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relation
 import type { NodeId, NodeRelationId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
 import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
+import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
@@ -78,6 +79,7 @@ export class RelationResolver extends BaseResolver {
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly nodeRepository: INodeRepository,
+    private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly tableRepository: ITableRepository,
     logger: ILogger
   ) {
@@ -191,16 +193,24 @@ export class RelationResolver extends BaseResolver {
         offset: args.input.offset,
       })
 
+      // Extract attributes for each node
+      const nodesWithAttributes = await Promise.all(
+        result.nodes.map(async (n) => {
+          const attributes = await this.extractNodeAttributes(n.id)
+          return {
+            node: n,
+            attributes,
+            sourceNodeId: null,
+            targetNodeId: null,
+            relationTypeId: null,
+            properties: null,
+            strength: null,
+          }
+        })
+      )
+
       return {
-        nodes: result.nodes.map((n) => ({
-          node: n,
-          attributes: {}, // TODO: Extract attributes from node
-          sourceNodeId: null,
-          targetNodeId: null,
-          relationTypeId: null,
-          properties: null,
-          strength: null,
-        })),
+        nodes: nodesWithAttributes,
         relations: result.relations || [],
         paths: result.paths || [],
         total: result.total,
@@ -828,6 +838,29 @@ export class RelationResolver extends BaseResolver {
         ...toErrorMeta(error),
       })
       return 0
+    }
+  }
+
+  private async extractNodeAttributes(nodeId: string): Promise<Record<string, any>> {
+    try {
+      const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(nodeId as NodeId)
+      const attributes: Record<string, any> = {}
+
+      for (const nodeAttribute of nodeAttributes) {
+        const attributeId = nodeAttribute.getAttributeId()
+        const value = nodeAttribute.getValue()
+
+        // Use attribute ID as key for now - could be enhanced to use attribute identifier
+        attributes[attributeId] = value
+      }
+
+      return attributes
+    } catch (error) {
+      this.logger.error('Failed to extract node attributes', {
+        nodeId,
+        ...toErrorMeta(error),
+      })
+      return {}
     }
   }
 

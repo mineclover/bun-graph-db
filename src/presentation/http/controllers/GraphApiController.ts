@@ -1,6 +1,12 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
+import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
+import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { TableId, NodeId } from '@/core/types/CommonTypes.js'
+import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 
 interface GraphQLResponse<T = any> {
@@ -40,6 +46,10 @@ export class GraphApiController {
   constructor(
     private readonly logger: ILogger,
     private readonly getTableDocsUseCase: GetTableDocsUseCase,
+    private readonly searchNodesUseCase: SearchNodesUseCase,
+    private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase,
+    private readonly tableRepository: ITableRepository,
+    private readonly nodeRelationRepository: INodeRelationRepository,
     port?: number
   ) {
     // Use the same port as the server instance
@@ -58,12 +68,32 @@ export class GraphApiController {
         sortOrder = 'desc',
       } = req.query
 
-      // TODO: Implement with actual use case
-      const result = {
-        tables: [],
-        total: 0,
+      // Use tableRepository to get tables with search and pagination
+      const searchOptions = {
         limit: parseInt(limit as string, 10),
         offset: parseInt(offset as string, 10),
+        search: search as string,
+        sortBy: sortBy as string,
+        sortDirection: (sortOrder as string).toUpperCase() as 'ASC' | 'DESC',
+        hasNodes: hasNodes ? hasNodes === 'true' : undefined,
+      }
+
+      const tablesResult = await this.tableRepository.findAll(searchOptions)
+
+      const result = {
+        tables: (tablesResult.data || []).map((table) => ({
+          id: table.id,
+          identifier: table.identifier,
+          description: table.description,
+          createdAt: table.createdAt,
+          updatedAt: table.updatedAt,
+        })),
+        total: tablesResult.total,
+        limit: parseInt(limit as string, 10),
+        offset: parseInt(offset as string, 10),
+        hasMore: tablesResult.hasMore,
+        hasNextPage: tablesResult.hasMore,
+        hasPreviousPage: parseInt(offset as string, 10) > 0,
       }
 
       res.json({
@@ -74,7 +104,7 @@ export class GraphApiController {
       this.logger.error('Get tables error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get tables failed',
+        error: error instanceof Error ? error.message : 'Get tables failed',
       })
     }
   }
@@ -264,11 +294,74 @@ export class GraphApiController {
     try {
       const { tableId, sourceNodeId, targetNodeId, relationTypeId, limit = 20 } = req.query
 
-      // TODO: Implement with actual use case
-      const result = {
-        relations: [],
-        total: 0,
+      if (!tableId) {
+        res.status(400).json({
+          success: false,
+          error: 'tableId is required',
+        })
+        return
+      }
+
+      // Use nodeRelationRepository to search relations with filters
+      const searchOptions = {
         limit: parseInt(limit as string, 10),
+        offset: 0,
+      }
+
+      let relationsResult
+
+      if (sourceNodeId && targetNodeId) {
+        // Search for specific relation between two nodes
+        const relation = await this.nodeRelationRepository.findByExternalIds(
+          sourceNodeId as string,
+          targetNodeId as string,
+          tableId as TableId
+        )
+        relationsResult = {
+          data: relation ? [relation] : [],
+          total: relation ? 1 : 0,
+          hasMore: false,
+        }
+      } else if (sourceNodeId) {
+        // Search relations by source node
+        relationsResult = await this.nodeRelationRepository.findBySourceExternalId(
+          sourceNodeId as string,
+          tableId as TableId,
+          searchOptions
+        )
+      } else if (targetNodeId) {
+        // Search relations by target node
+        relationsResult = await this.nodeRelationRepository.findByTargetExternalId(
+          targetNodeId as string,
+          tableId as TableId,
+          searchOptions
+        )
+      } else if (relationTypeId) {
+        // Search relations by type
+        relationsResult = await this.nodeRelationRepository.findByRelationType(
+          relationTypeId as string,
+          searchOptions
+        )
+      } else {
+        // Search all relations for the table
+        relationsResult = await this.nodeRelationRepository.findByTableId(
+          tableId as TableId,
+          searchOptions
+        )
+      }
+
+      const result = {
+        relations: (relationsResult.data || []).map((relation) => ({
+          id: relation.getId(),
+          sourceNodeId: relation.getSourceNodeId(),
+          targetNodeId: relation.getTargetNodeId(),
+          relationTypeId: relation.getRelationTypeId(),
+          tableId: relation.getTableId(),
+          createdAt: relation.getCreatedAt(),
+        })),
+        total: relationsResult.total || 0,
+        limit: parseInt(limit as string, 10),
+        hasMore: relationsResult.hasMore || false,
       }
 
       res.json({
@@ -279,7 +372,7 @@ export class GraphApiController {
       this.logger.error('Search relations error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Search relations failed',
+        error: error instanceof Error ? error.message : 'Search relations failed',
       })
     }
   }
@@ -287,12 +380,20 @@ export class GraphApiController {
   async getConnectedNodes(req: Request, res: Response): Promise<void> {
     try {
       const { nodeId } = req.params
-      const { depth = 1, direction = 'BOTH', relationTypes = [] } = req.query
+      const { depth = 1, direction = 'BOTH', relationTypes = [], tableId } = req.query
 
       if (!nodeId) {
         res.status(400).json({
           success: false,
           error: 'nodeId is required',
+        })
+        return
+      }
+
+      if (!tableId) {
+        res.status(400).json({
+          success: false,
+          error: 'tableId is required',
         })
         return
       }
@@ -303,13 +404,35 @@ export class GraphApiController {
           ? [relationTypes]
           : []
 
-      // TODO: Implement with actual use case
+      // Use SearchRelatedNodesUseCase to find connected nodes
+      const searchInput = {
+        tableId: tableId as string,
+        sourceNodeIds: [nodeId as string],
+        relationFilters: relationTypesArray.length > 0 ? [{
+          relationTypes: relationTypesArray as string[],
+          direction: direction === 'INCOMING' ? RelationDirection.INCOMING : direction === 'OUTGOING' ? RelationDirection.OUTGOING : RelationDirection.BOTH,
+          depth: parseInt(depth as string, 10),
+        }] : undefined,
+        limit: 100, // Default limit for connected nodes
+      }
+
+      const searchResult = await this.searchRelatedNodesUseCase.execute(searchInput)
+
       const result = {
         nodeId,
         depth: parseInt(depth as string, 10),
         direction,
         relationTypes: relationTypesArray,
-        connectedNodes: [],
+        connectedNodes: searchResult.nodes.map((node) => ({
+          id: node.id,
+          title: node.title,
+          content: node.content,
+          createdAt: node.createdAt,
+          updatedAt: node.updatedAt,
+          attributes: node.attributes || {},
+        })),
+        relations: searchResult.relations,
+        totalCount: searchResult.totalCount,
       }
 
       res.json({
@@ -320,14 +443,14 @@ export class GraphApiController {
       this.logger.error('Get connected nodes error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get connected nodes failed',
+        error: error instanceof Error ? error.message : 'Get connected nodes failed',
       })
     }
   }
 
   async findShortestPath(req: Request, res: Response): Promise<void> {
     try {
-      const { fromNodeId, toNodeId, maxDepth = 6 } = req.body
+      const { fromNodeId, toNodeId, maxDepth = 6, tableId } = req.body
 
       if (!fromNodeId || !toNodeId) {
         res.status(400).json({
@@ -337,13 +460,39 @@ export class GraphApiController {
         return
       }
 
-      // TODO: Implement with actual use case
+      if (!tableId) {
+        res.status(400).json({
+          success: false,
+          error: 'tableId is required',
+        })
+        return
+      }
+
+      // Use SearchRelatedNodesUseCase with path queries to find shortest path
+      const searchInput = {
+        tableId: tableId as string,
+        pathQueries: [{
+          startNodeIds: [fromNodeId as string],
+          endNodeIds: [toNodeId as string],
+          maxDepth: parseInt(maxDepth as string, 10),
+        }],
+        limit: 1, // We only need one path result
+      }
+
+      const searchResult = await this.searchRelatedNodesUseCase.execute(searchInput)
+
+      // Extract the path from the search result
+      const path = searchResult.paths && searchResult.paths.length > 0
+        ? searchResult.paths[0]
+        : null
+
       const result = {
         fromNodeId,
         toNodeId,
         maxDepth: parseInt(maxDepth as string, 10),
-        path: [],
-        distance: -1,
+        path: path ? path.path : [],
+        distance: path ? path.length : -1,
+        found: path !== null,
       }
 
       res.json({
@@ -378,14 +527,56 @@ export class GraphApiController {
           ? [relationTypes]
           : []
 
-      // TODO: Implement with actual use case
-      const result = {
+      // Use nodeRelationRepository to get node relations
+      const relations = await this.nodeRelationRepository.findByNodeId(
+        nodeId as NodeId,
+        { limit: 1000 } // Default limit for relations
+      )
+
+      // Filter relations by type if specified
+      let incomingRelations = relations.incoming || []
+      let outgoingRelations = relations.outgoing || []
+
+      if (relationTypesArray.length > 0) {
+        incomingRelations = incomingRelations.filter((relation) =>
+          relationTypesArray.includes(relation.getRelationTypeId())
+        )
+        outgoingRelations = outgoingRelations.filter((relation) =>
+          relationTypesArray.includes(relation.getRelationTypeId())
+        )
+      }
+
+      // Filter by direction
+      const result: any = {
         nodeId,
         direction,
         relationTypes: relationTypesArray,
-        outgoingRelations: [],
-        incomingRelations: [],
       }
+
+      if (direction === 'BOTH' || direction === 'INCOMING') {
+        result.incomingRelations = incomingRelations.map((relation) => ({
+          id: relation.getId(),
+          sourceNodeId: relation.getSourceNodeId(),
+          targetNodeId: relation.getTargetNodeId(),
+          relationTypeId: relation.getRelationTypeId(),
+          tableId: relation.getTableId(),
+          createdAt: relation.getCreatedAt(),
+        }))
+      }
+
+      if (direction === 'BOTH' || direction === 'OUTGOING') {
+        result.outgoingRelations = outgoingRelations.map((relation) => ({
+          id: relation.getId(),
+          sourceNodeId: relation.getSourceNodeId(),
+          targetNodeId: relation.getTargetNodeId(),
+          relationTypeId: relation.getRelationTypeId(),
+          tableId: relation.getTableId(),
+          createdAt: relation.getCreatedAt(),
+        }))
+      }
+
+      result.totalIncoming = incomingRelations.length
+      result.totalOutgoing = outgoingRelations.length
 
       res.json({
         success: true,
@@ -395,7 +586,7 @@ export class GraphApiController {
       this.logger.error('Get node relations error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: 'Get node relations failed',
+        error: error instanceof Error ? error.message : 'Get node relations failed',
       })
     }
   }

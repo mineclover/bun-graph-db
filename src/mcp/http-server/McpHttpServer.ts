@@ -6,9 +6,10 @@
  */
 
 import Ajv from 'ajv'
+import { readFile } from 'fs/promises'
 import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
-import { McpToolRegistry } from '../../services/McpToolRegistry.ts'
-import { RestApiClient } from '../../services/RestApiClient.js'
+import { McpToolRegistry } from '../../application/services/McpToolRegistry.ts'
+import { RestApiClient } from '../../application/services/RestApiClient.js'
 
 interface McpRequest {
   jsonrpc: '2.0'
@@ -74,8 +75,8 @@ export class McpHttpServer {
 
     console.log('Initializing MCP server...')
 
-    // Load tools from contract
-    await this.toolRegistry.loadFromContract()
+    // Initialize tools (contract + built-in tools)
+    await this.toolRegistry.initialize()
 
     const toolCount = (await this.toolRegistry.getAllTools()).length
     console.log(`Loaded ${toolCount} MCP tools`)
@@ -376,6 +377,15 @@ export class McpHttpServer {
         case 'updateNodeAttributeValue':
           return await this.handleUpdateNodeAttributeValue(id, args)
 
+        case 'bulk-import-templates':
+          return await this.handleBulkImportTemplates(id, args)
+
+        case 'list-available-templates':
+          return await this.handleListAvailableTemplates(id, args)
+
+        case 'get-import-status':
+          return await this.handleGetImportStatus(id, args)
+
         default:
           return this.createErrorMcpResponse(
             id,
@@ -539,6 +549,334 @@ export class McpHttpServer {
       'Method not found',
       'updateNodeAttributeValue not implemented yet'
     )
+  }
+
+  /**
+   * Handle bulk template import - parallel processing of JSON files
+   */
+  private async handleBulkImportTemplates(
+    id: string | number | undefined,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      const {
+        filePaths = [],
+        overwriteExisting = false,
+        generateNewIdentifier = false,
+        dryRun = false,
+        batchSize = 10
+      } = args
+
+      if (!Array.isArray(filePaths) || filePaths.length === 0) {
+        return this.createErrorMcpResponse(
+          id,
+          -32602,
+          'Invalid params',
+          'filePaths array is required and must not be empty'
+        )
+      }
+
+      console.log(`🚀 Starting bulk template import: ${filePaths.length} files`)
+      console.log(`Options: overwrite=${overwriteExisting}, dryRun=${dryRun}, batch=${batchSize}`)
+
+      const results = []
+      let successful = 0
+      let failed = 0
+      let skipped = 0
+      const startTime = Date.now()
+
+      // Process files in parallel batches
+      for (let i = 0; i < filePaths.length; i += batchSize) {
+        const batch = filePaths.slice(i, i + batchSize)
+        console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filePaths.length / batchSize)}`)
+
+        const batchResults = await Promise.allSettled(
+          batch.map(filePath => this.importSingleTemplate(filePath, {
+            overwriteExisting,
+            generateNewIdentifier,
+            dryRun
+          }))
+        )
+
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled') {
+            results.push(result.value)
+            if (result.value.success) successful++
+            else if (result.value.skipped) skipped++
+            else failed++
+          } else {
+            failed++
+            results.push({
+              identifier: 'unknown',
+              success: false,
+              error: `Batch processing error: ${result.reason}`
+            })
+          }
+        }
+
+        // Small delay between batches
+        if (i + batchSize < filePaths.length) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+      }
+
+      const duration = Date.now() - startTime
+      const summary = {
+        totalFiles: filePaths.length,
+        attempted: filePaths.length,
+        successful,
+        failed,
+        skipped,
+        results,
+        duration
+      }
+
+      console.log(`✅ Bulk import completed in ${duration}ms`)
+      console.log(`📊 Results: ${successful} successful, ${failed} failed, ${skipped} skipped`)
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(summary, null, 2)
+            }
+          ],
+          isError: false
+        }
+      }
+    } catch (error) {
+      console.error('Bulk import error:', error)
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Bulk import failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Import a single template from file path with parallel processing support
+   */
+  private async importSingleTemplate(
+    filePath: string,
+    options: { overwriteExisting: boolean; generateNewIdentifier: boolean; dryRun: boolean }
+  ): Promise<{ identifier: string; success: boolean; error?: string; skipped?: boolean; reason?: string }> {
+    try {
+      // Extract identifier from filename for logging
+      const filename = filePath.split('/').pop() || 'unknown'
+      const identifier = filename.replace('_v1-0-0.json', '').replace('.json', '')
+
+      console.log(`📝 Processing: ${identifier}`)
+
+      // Read and parse the template file
+      const fileContent = await readFile(filePath, 'utf-8')
+      let templateData
+
+      try {
+        templateData = JSON.parse(fileContent)
+      } catch (parseError) {
+        return {
+          identifier,
+          success: false,
+          error: `JSON parse error: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`
+        }
+      }
+
+      // Validate template structure
+      if (!templateData.template) {
+        return {
+          identifier,
+          success: false,
+          error: 'Invalid template structure: missing template object'
+        }
+      }
+
+      // If dry run, just validate and return
+      if (options.dryRun) {
+        return {
+          identifier: templateData.template.identifier || identifier,
+          success: true,
+          skipped: true,
+          reason: 'Dry run - would have imported'
+        }
+      }
+
+      // Use GraphQL import directly instead of REST API
+      const importResult = await this.importTemplateViaGraphQL({
+        jsonData: fileContent,
+        overwriteExisting: options.overwriteExisting,
+        generateNewIdentifier: options.generateNewIdentifier
+      })
+
+      if (importResult.success) {
+        console.log(`✅ ${identifier}: imported successfully`)
+        return {
+          identifier: templateData.template.identifier || identifier,
+          success: true
+        }
+      } else {
+        console.log(`❌ ${identifier}: ${importResult.error}`)
+        return {
+          identifier: templateData.template.identifier || identifier,
+          success: false,
+          error: importResult.error
+        }
+      }
+
+    } catch (error) {
+      const identifier = filePath.split('/').pop()?.replace('.json', '') || 'unknown'
+      console.log(`💥 ${identifier}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+
+      return {
+        identifier,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
+      }
+    }
+  }
+
+  /**
+   * List available templates in exported-templates directory
+   */
+  private async handleListAvailableTemplates(
+    id: string | number | undefined,
+    _args: any
+  ): Promise<McpResponse> {
+    try {
+      const { readdir } = await import('fs/promises')
+      const { join } = await import('path')
+      const templatesPath = join(process.cwd(), 'exported-templates')
+
+      try {
+        const files = await readdir(templatesPath)
+        const templateFiles = files.filter(file =>
+          file.endsWith('.json') &&
+          !file.startsWith('.') &&
+          file !== 'INDEX.json'
+        )
+
+        const templates = []
+        for (const filename of templateFiles) {
+          try {
+            const filePath = join(templatesPath, filename)
+            const fileContent = await readFile(filePath, 'utf-8')
+            const templateData = JSON.parse(fileContent)
+
+            if (templateData.template) {
+              templates.push({
+                filename,
+                filePath,
+                identifier: templateData.template.identifier || '',
+                name: templateData.template.name || '',
+                description: templateData.template.description || '',
+                tags: templateData.template.tags || []
+              })
+            }
+          } catch (error) {
+            console.warn(`Warning: Could not parse ${filename}:`, error)
+          }
+        }
+
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  templates,
+                  count: templates.length,
+                  directory: templatesPath
+                }, null, 2)
+              }
+            ],
+            isError: false
+          }
+        }
+      } catch (error) {
+        return this.createErrorMcpResponse(
+          id,
+          -32603,
+          'Internal error',
+          `Failed to read templates directory: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `List templates failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Get import status and estimation
+   */
+  private async handleGetImportStatus(
+    id: string | number | undefined,
+    _args: any
+  ): Promise<McpResponse> {
+    try {
+      const { readdir, stat } = await import('fs/promises')
+      const { join } = await import('path')
+      const templatesPath = join(process.cwd(), 'exported-templates')
+
+      try {
+        const dirStats = await stat(templatesPath)
+        if (!dirStats.isDirectory()) {
+          throw new Error('exported-templates is not a directory')
+        }
+
+        const files = await readdir(templatesPath)
+        const templateFiles = files.filter(file =>
+          file.endsWith('.json') &&
+          !file.startsWith('.') &&
+          file !== 'INDEX.json'
+        )
+
+        const status = {
+          availableTemplates: templateFiles.length,
+          templateFiles: templateFiles,
+          directory: templatesPath,
+          estimatedImportTime: templateFiles.length * 100 // rough estimate: 100ms per template
+        }
+
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(status, null, 2)
+              }
+            ],
+            isError: false
+          }
+        }
+      } catch (error) {
+        return this.createErrorMcpResponse(
+          id,
+          -32603,
+          'Internal error',
+          `Failed to get import status: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Get import status failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
   }
 
   private createErrorResponse(
@@ -774,6 +1112,85 @@ export class McpHttpServer {
       default:
         // For tools that don't need transformation, return parameters as-is
         return params
+    }
+  }
+
+  /**
+   * Import template via GraphQL instead of REST API
+   */
+  private async importTemplateViaGraphQL(params: {
+    jsonData: string
+    overwriteExisting?: boolean
+    generateNewIdentifier?: boolean
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Parse the exported template data
+      const exportedData = JSON.parse(params.jsonData)
+      const templateData = exportedData.template
+
+      // Build the GraphQL mutation using the importTemplate mutation
+      const mutation = `
+        mutation ImportTemplate(
+          $jsonData: String!
+          $overwriteExisting: Boolean
+          $generateNewIdentifier: Boolean
+        ) {
+          importTemplate(
+            jsonData: $jsonData
+            overwriteExisting: $overwriteExisting
+            generateNewIdentifier: $generateNewIdentifier
+          ) {
+            success
+            template {
+              identifier
+              name
+            }
+            errors {
+              message
+            }
+          }
+        }
+      `
+
+      const variables = {
+        jsonData: params.jsonData,
+        overwriteExisting: params.overwriteExisting || false,
+        generateNewIdentifier: params.generateNewIdentifier || false
+      }
+
+      // Create GraphQL operation
+      const operation = {
+        operationName: 'ImportTemplate',
+        query: mutation,
+        variables,
+        operationType: 'mutation' as const
+      }
+
+      // Execute GraphQL mutation using the executor
+      const result = await this.graphqlExecutor.execute(operation)
+
+      if (result.errors && result.errors.length > 0) {
+        return {
+          success: false,
+          error: result.errors[0]?.message || 'GraphQL error'
+        }
+      }
+
+      const mutationResult = result.data?.importTemplate
+      if (mutationResult?.success) {
+        return { success: true }
+      } else {
+        return {
+          success: false,
+          error: mutationResult?.errors?.[0]?.message || 'Template import failed'
+        }
+      }
+
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
     }
   }
 }

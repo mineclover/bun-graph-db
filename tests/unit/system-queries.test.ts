@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
-import type { Logger } from '../../src/services/system-queries'
-import { SystemQueries } from '../../src/services/system-queries'
+import type { Logger } from '../../src/application/services/system-queries'
+import { SystemQueries } from '../../src/application/services/system-queries'
 
 describe('SystemQueries', () => {
   let systemQueries: SystemQueries

@@ -131,15 +131,40 @@ import { AttributeApiController } from './src/presentation/http/controllers/Attr
 import { GraphApiController } from './src/presentation/http/controllers/GraphApiController'
 // Import controllers
 import { GraphDbApiController } from './src/presentation/http/controllers/GraphDbApiController'
+import { McpToolController } from './src/presentation/http/controllers/McpToolController'
 // Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes'
 import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes'
+import { RepositoryTokens } from './src/infrastructure/container/tokens/RepositoryTokens'
+
+// Resolve dependencies from container
+const createAttributeUseCase = await container.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE) as any
+const attributeRepository = await container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as any
+const nodeAttributeRepository = await container.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
+const getTableDocsUseCase = await container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE) as any
+const searchNodesUseCase = await container.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE) as any
+const searchRelatedNodesUseCase = await container.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE) as any
+const tableRepository = await container.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
+const nodeRelationRepository = await container.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as any
 
 // Create controllers
 const graphDbController = new GraphDbApiController(logger)
-const attributeController = new AttributeApiController(logger)
-const getTableDocsUseCase = await container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE) as any
-const graphController = new GraphApiController(logger, getTableDocsUseCase, graphqlConfig.port)
+const attributeController = new AttributeApiController(
+  createAttributeUseCase,
+  attributeRepository,
+  nodeAttributeRepository,
+  logger
+)
+const graphController = new GraphApiController(
+  logger,
+  getTableDocsUseCase,
+  searchNodesUseCase,
+  searchRelatedNodesUseCase,
+  tableRepository,
+  nodeRelationRepository,
+  graphqlConfig.port
+)
+const mcpToolController = new McpToolController(logger, graphqlConfig.port)
 
 // Create route handlers
 const schemaHandler = await createSchemaHandler(container)

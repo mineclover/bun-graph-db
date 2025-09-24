@@ -217,10 +217,24 @@ export class AttributeResolver extends BaseResolver {
         throw new NotFoundException(`Attribute type with id ${args.id} not found`)
       }
 
-      // TODO: Implement update logic for AttributeType entity
-      // For now, return existing entity
+      // Use repository update method for AttributeType
+      const updates = {
+        identifier: args.input.identifier,
+        description: args.input.description,
+        jsonType: args.input.jsonType,
+        format: args.input.format,
+        validationSchema: args.input.validationSchema
+          ? args.input.validationSchema
+          : null,
+        defaultValue: args.input.defaultValue !== undefined
+          ? args.input.defaultValue
+          : null,
+      }
+
+      const updatedAttributeType = await this.attributeTypeRepository.update(args.id as AttributeTypeId, updates)
+
       return {
-        attributeType: attributeTypeFromEntity(attributeType),
+        attributeType: attributeTypeFromEntity(updatedAttributeType),
         errors: [],
       }
     } catch (error) {
@@ -347,10 +361,28 @@ export class AttributeResolver extends BaseResolver {
         throw new NotFoundException(`Attribute with id ${args.id} not found`)
       }
 
-      // TODO: Implement update methods in Attribute entity
-      // For now, return existing entity
+      let updatedAttribute = attribute
+
+      // Apply updates using entity methods
+      if (args.input.description !== undefined) {
+        updatedAttribute = updatedAttribute.updateDescription(args.input.description)
+      }
+
+      if (args.input.isRequired !== undefined) {
+        updatedAttribute = updatedAttribute.updateRequiredStatus(args.input.isRequired)
+      }
+
+      if (args.input.metadata !== undefined) {
+        const metadataString = args.input.metadata ? JSON.stringify(args.input.metadata) : null
+        updatedAttribute = updatedAttribute.updateMetadata(metadataString)
+      }
+
+      // Save the updated attribute
+      await this.attributeRepository.save(updatedAttribute)
+      const savedAttribute = updatedAttribute
+
       return {
-        attribute: attributeFromEntity(attribute),
+        attribute: attributeFromEntity(savedAttribute),
         errors: [],
       }
     } catch (error) {
