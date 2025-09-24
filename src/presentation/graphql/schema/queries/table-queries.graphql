@@ -17,9 +17,7 @@ extend type Query {
     identifier: String
     includeDocs: Boolean = true
     includeRelationships: Boolean = true
-    includeSampleNodes: Boolean = false
     includeRelatedTemplates: Boolean = false
     includeUsageStats: Boolean = false
-    sampleLimit: Int = 3
   ): TableDocumentation
 }

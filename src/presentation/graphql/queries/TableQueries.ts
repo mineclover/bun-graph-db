@@ -105,10 +105,8 @@ export class TableQueries extends BaseResolver {
       identifier?: string
       includeDocs?: boolean
       includeRelationships?: boolean
-      includeSampleNodes?: boolean
       includeRelatedTemplates?: boolean
       includeUsageStats?: boolean
-      sampleLimit?: number
     },
     _context?: GraphQLContext
   ) {
@@ -126,10 +124,8 @@ export class TableQueries extends BaseResolver {
           tableId: args.tableId,
           identifier: args.identifier,
           includeDocs: args.includeDocs,
-          includeSampleNodes: args.includeSampleNodes,
           includeRelatedTemplates: args.includeRelatedTemplates,
           includeUsageStats: args.includeUsageStats,
-          sampleLimit: args.sampleLimit,
         })
 
         return result.tableDocs

@@ -100,7 +100,7 @@ export class TableFieldResolvers extends BaseResolver {
 
       const result = await this.nodeRepository.findByTableId(parent.id)
 
-      if (!result || !result.items) {
+      if (!result || !result.nodes || result.nodes.length === 0) {
         this.logger.warn('No nodes found for Table', {
           tableId: parent.id,
         })
@@ -108,7 +108,7 @@ export class TableFieldResolvers extends BaseResolver {
       }
 
       // Transform domain entities to GraphQL-compatible objects
-      const graphqlNodes = result.items.map((node) => ({
+      const graphqlNodes = result.nodes.map((node) => ({
         id: node.getId(),
         content: node.getContent(),
         createdAt: node.getCreatedAt(),
