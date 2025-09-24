@@ -6,8 +6,9 @@
  * Expected: All tests FAIL initially (no implementation)
  */
 
-import { beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import toolsContract from '../../specs/005-graphql-mcp-graphql/contracts/graphql-tools.json'
+import { TestServerManager } from '../fixtures/test-server-manager'
 
 // MCP Tool Call types
 interface ToolCallRequest {
@@ -38,12 +39,22 @@ interface ToolCallResponse {
 }
 
 describe('Tool Schema Validation Contract Tests', () => {
-  const MCP_ENDPOINT = 'http://localhost:4000/mcp'
   const tools = toolsContract.tools
+  let mcpEndpoint: string
 
   beforeAll(async () => {
-    // Note: These tests are expected to FAIL initially as no MCP server exists yet
     console.log(`Testing ${tools.length} tools from contract`)
+
+    // Start isolated test server for this test suite
+    const serverInstance = await TestServerManager.startServerForSuite('tool-schema-validation')
+    mcpEndpoint = `${serverInstance.url.replace('/graphql', '/mcp')}`
+
+    console.log(`Test server started on ${mcpEndpoint}`)
+  })
+
+  afterAll(async () => {
+    // Clean up test server
+    await TestServerManager.stopServerForSuite('tool-schema-validation')
   })
 
   describe('Tool Schema Compliance', () => {
@@ -77,7 +88,7 @@ describe('Tool Schema Validation Contract Tests', () => {
 
       try {
         // Valid request should succeed (when implemented)
-        const validResponse = await fetch(MCP_ENDPOINT, {
+        const validResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(validRequest),
@@ -88,7 +99,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         expect(validData.id).toBe(validRequest.id)
 
         // Invalid request should fail with schema validation error
-        const invalidResponse = await fetch(MCP_ENDPOINT, {
+        const invalidResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(invalidRequest),
@@ -143,7 +154,7 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
 
       try {
-        const validResponse = await fetch(MCP_ENDPOINT, {
+        const validResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(validRequest),
@@ -152,7 +163,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         const validData: ToolCallResponse = await validResponse.json()
         expect(validData.result || validData.error).toBeDefined()
 
-        const invalidResponse = await fetch(MCP_ENDPOINT, {
+        const invalidResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(missingRequiredRequest),
@@ -203,7 +214,7 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
 
       try {
-        const validResponse = await fetch(MCP_ENDPOINT, {
+        const validResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(validRequest),
@@ -212,7 +223,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         const validData: ToolCallResponse = await validResponse.json()
         expect(validData.result || validData.error).toBeDefined()
 
-        const invalidResponse = await fetch(MCP_ENDPOINT, {
+        const invalidResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(invalidLimitRequest),
@@ -264,7 +275,7 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
 
       try {
-        const validResponse = await fetch(MCP_ENDPOINT, {
+        const validResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(validRequest),
@@ -273,7 +284,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         const validData: ToolCallResponse = await validResponse.json()
         expect(validData.result || validData.error).toBeDefined()
 
-        const invalidResponse = await fetch(MCP_ENDPOINT, {
+        const invalidResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(invalidRequest),
@@ -322,7 +333,7 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
 
       try {
-        const validResponse = await fetch(MCP_ENDPOINT, {
+        const validResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(validRequest),
@@ -331,7 +342,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         const validData: ToolCallResponse = await validResponse.json()
         expect(validData.result || validData.error).toBeDefined()
 
-        const invalidResponse = await fetch(MCP_ENDPOINT, {
+        const invalidResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(invalidRequest),
@@ -376,7 +387,7 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
 
       try {
-        const validResponse = await fetch(MCP_ENDPOINT, {
+        const validResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(validRequest),
@@ -394,7 +405,7 @@ describe('Tool Schema Validation Contract Tests', () => {
           expect(validData.result).toBeDefined()
         }
 
-        const invalidResponse = await fetch(MCP_ENDPOINT, {
+        const invalidResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(invalidRequest),
@@ -446,7 +457,7 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
 
       try {
-        const validResponse = await fetch(MCP_ENDPOINT, {
+        const validResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(validRequest),
@@ -455,7 +466,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         const validData: ToolCallResponse = await validResponse.json()
         expect(validData.result || validData.error).toBeDefined()
 
-        const invalidResponse = await fetch(MCP_ENDPOINT, {
+        const invalidResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(invalidRequest),
@@ -505,7 +516,7 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
 
       try {
-        const validResponse = await fetch(MCP_ENDPOINT, {
+        const validResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(validRequest),
@@ -514,7 +525,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         const validData: ToolCallResponse = await validResponse.json()
         expect(validData.result || validData.error).toBeDefined()
 
-        const invalidResponse = await fetch(MCP_ENDPOINT, {
+        const invalidResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(invalidRequest),

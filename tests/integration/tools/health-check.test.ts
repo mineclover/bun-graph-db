@@ -7,6 +7,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { TestServerManager } from '../../fixtures/test-server-manager'
 
 interface McpToolCallRequest {
   jsonrpc: '2.0'
@@ -36,13 +37,22 @@ interface McpToolCallResponse {
 }
 
 describe('Health Check Tool Integration Tests', () => {
-  const MCP_ENDPOINT = 'http://localhost:4000/mcp'
-  const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
+  let mcpEndpoint: string
+  let graphqlEndpoint: string
 
   beforeAll(async () => {
+    console.log('Starting isolated test server for health check integration tests')
+
+    // Start isolated test server for this test suite
+    const serverInstance = await TestServerManager.startServerForSuite('health-check-integration')
+    graphqlEndpoint = serverInstance.url
+    mcpEndpoint = `${serverInstance.url.replace('/graphql', '/mcp')}`
+
+    console.log(`Test server started on ${graphqlEndpoint} (MCP: ${mcpEndpoint})`)
+
     // Verify GraphQL backend is available
     try {
-      const response = await fetch(GRAPHQL_ENDPOINT, {
+      const response = await fetch(graphqlEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -60,7 +70,8 @@ describe('Health Check Tool Integration Tests', () => {
   })
 
   afterAll(async () => {
-    // Cleanup if needed
+    // Clean up test server
+    await TestServerManager.stopServerForSuite('health-check-integration')
   })
 
   describe('End-to-End Health Check via MCP', () => {
@@ -76,7 +87,7 @@ describe('Health Check Tool Integration Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -146,7 +157,7 @@ describe('Health Check Tool Integration Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(request),
@@ -189,7 +200,7 @@ describe('Health Check Tool Integration Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(request),
@@ -225,7 +236,7 @@ describe('Health Check Tool Integration Tests', () => {
       try {
         const startTime = Date.now()
 
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(request),
@@ -266,7 +277,7 @@ describe('Health Check Tool Integration Tests', () => {
         const promises = Array.from({ length: 3 }, async (_, index) => {
           const requestWithId = { ...request, id: `test-health-consistency-${index}` }
 
-          const response = await fetch(MCP_ENDPOINT, {
+          const response = await fetch(mcpEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestWithId),
@@ -307,7 +318,7 @@ describe('Health Check Tool Integration Tests', () => {
     test('should return same data as direct GraphQL call', async () => {
       try {
         // Direct GraphQL call
-        const graphqlResponse = await fetch(GRAPHQL_ENDPOINT, {
+        const graphqlResponse = await fetch(graphqlEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -329,7 +340,7 @@ describe('Health Check Tool Integration Tests', () => {
           id: 'test-health-comparison',
         }
 
-        const mcpResponse = await fetch(MCP_ENDPOINT, {
+        const mcpResponse = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(mcpRequest),

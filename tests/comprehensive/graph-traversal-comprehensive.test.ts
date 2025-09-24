@@ -6,31 +6,35 @@
  * Scenarios: Simple graphs, complex networks, edge cases, performance
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
+import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
+import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
+import { DatabaseCleaner } from '../fixtures/database-cleaner'
+import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
 
 describe('Comprehensive Graph Traversal Test Suite', () => {
-  let container: any
-  let testDbFactory: TestDatabaseFactory
-  let isolationHelpers: TestIsolationHelpers
-  let nodeRepository: any
-  let relationRepository: any
+  let yoga: any
+  let container: DIContainer
+  let testEnvironment: TestEnvironment
+  let databaseCleaner: DatabaseCleaner
+  let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
+    testEnvironment = await TestDatabaseFactory.createTestEnvironment('graph-traversal', 'traversal')
+    process.env.DATABASE_PATH = testEnvironment.databasePath
     container = await ContainerBootstrap.createContainer()
-    testDbFactory = new TestDatabaseFactory()
-    isolationHelpers = new TestIsolationHelpers()
-
-    nodeRepository = container.get('INodeRepository')
-    relationRepository = container.get('IRelationRepository')
+    yoga = await createGraphQLYoga(container)
+    graphqlExecute = createGraphQLExecutor(yoga)
+    databaseCleaner = new DatabaseCleaner(container)
   })
 
   beforeEach(async () => {
-    await isolationHelpers.cleanDatabase()
+    await databaseCleaner.clearAllData()
   })
 
   afterAll(async () => {
-    await testDbFactory.cleanup()
+    await testEnvironment.cleanup()
   })
 
   describe('Basic Graph Traversal Operations', () => {
@@ -39,16 +43,34 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
 
     beforeEach(async () => {
       // Create test table
-      const table = await testDbFactory.createTestTable('traversal-test-table')
-      tableId = table.id
+      const tableResponse = await graphqlExecute(`
+        mutation {
+          createTable(input: {
+            identifier: "traversal-test-table"
+            description: "Graph Traversal Test Table"
+          }) {
+            table { id }
+          }
+        }
+      `)
+      tableId = tableResponse.data.createTable.table.id
+
+      // Clear nodeIds array
+      nodeIds.length = 0
 
       // Create nodes for basic graph
       for (let i = 1; i <= 6; i++) {
-        const node = await testDbFactory.createTestNode(tableId, {
-          title: `Node ${i}`,
-          content: `Content for node ${i}`,
-        })
-        nodeIds.push(node.id)
+        const nodeResponse = await graphqlExecute(`
+          mutation {
+            createNode(input: {
+              tableId: "${tableId}"
+              content: "Content for node ${i}"
+            }) {
+              node { id }
+            }
+          }
+        `)
+        nodeIds.push(nodeResponse.data.createNode.node.id)
       }
 
       // Create basic graph structure
@@ -67,35 +89,61 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       ]
 
       for (const rel of relations) {
-        await testDbFactory.createTestRelation(
-          nodeIds[rel.from],
-          nodeIds[rel.to],
-          rel.type,
-          tableId
-        )
+        await graphqlExecute(`
+          mutation {
+            createRelation(input: {
+              fromNodeId: "${nodeIds[rel.from]}"
+              toNodeId: "${nodeIds[rel.to]}"
+              relationshipType: "${rel.type}"
+              tableId: "${tableId}"
+            }) {
+              relation { id }
+            }
+          }
+        `)
       }
     })
 
     test('should find direct neighbors correctly', async () => {
       // Test outgoing neighbors of node 1
-      const outgoingNeighbors = await nodeRepository.getConnectedNodes(
-        nodeIds[0], // Node 1
-        { depth: 1, direction: 'OUTGOING' }
-      )
+      const outgoingQuery = await graphqlExecute(`
+        query {
+          getConnectedNodes(input: {
+            nodeId: "${nodeIds[0]}"
+            depth: 1
+            direction: OUTGOING
+          }) {
+            nodes {
+              id
+              content
+            }
+          }
+        }
+      `)
 
-      expect(outgoingNeighbors).toHaveLength(2) // Should find nodes 2 and 4
-      const neighborTitles = outgoingNeighbors.map((n: any) => n.title).sort()
-      expect(neighborTitles).toEqual(['Node 2', 'Node 4'])
+      expect(outgoingQuery.data.getConnectedNodes.nodes).toHaveLength(2) // Should find nodes 2 and 4
+      const neighborContents = outgoingQuery.data.getConnectedNodes.nodes.map((n: any) => n.content).sort()
+      expect(neighborContents).toEqual(['Content for node 2', 'Content for node 4'])
 
       // Test incoming neighbors of node 5
-      const incomingNeighbors = await nodeRepository.getConnectedNodes(
-        nodeIds[4], // Node 5
-        { depth: 1, direction: 'INCOMING' }
-      )
+      const incomingQuery = await graphqlExecute(`
+        query {
+          getConnectedNodes(input: {
+            nodeId: "${nodeIds[4]}"
+            depth: 1
+            direction: INCOMING
+          }) {
+            nodes {
+              id
+              content
+            }
+          }
+        }
+      `)
 
-      expect(incomingNeighbors).toHaveLength(2) // Should find nodes 2 and 4
-      const incomingTitles = incomingNeighbors.map((n: any) => n.title).sort()
-      expect(incomingTitles).toEqual(['Node 2', 'Node 4'])
+      expect(incomingQuery.data.getConnectedNodes.nodes).toHaveLength(2) // Should find nodes 2 and 4
+      const incomingContents = incomingQuery.data.getConnectedNodes.nodes.map((n: any) => n.content).sort()
+      expect(incomingContents).toEqual(['Content for node 2', 'Content for node 4'])
     })
 
     test('should perform breadth-first traversal with depth limits', async () => {

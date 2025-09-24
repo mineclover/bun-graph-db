@@ -7,6 +7,8 @@ import type {
   TablesArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
+import { UseCaseTokens } from '@/infrastructure/container/tokens/UseCaseTokens.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class TableQueries extends BaseResolver {
@@ -14,6 +16,7 @@ export class TableQueries extends BaseResolver {
 
   constructor(
     private readonly tableRepository: ITableRepository,
+    private readonly container: DIContainer,
     logger: ILogger
   ) {
     super()
@@ -100,8 +103,10 @@ export class TableQueries extends BaseResolver {
     args: {
       tableId?: string
       identifier?: string
+      includeDocs?: boolean
       includeRelationships?: boolean
       includeSampleNodes?: boolean
+      includeRelatedTemplates?: boolean
       includeUsageStats?: boolean
       sampleLimit?: number
     },
@@ -114,61 +119,20 @@ export class TableQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        // Find the table first
-        let table: any
-        if (args.tableId) {
-          table = await this.tableRepository.findById(args.tableId)
-        } else if (args.identifier) {
-          table = await this.tableRepository.findByIdentifier(args.identifier)
-        }
+        // Resolve the use case from container to avoid circular dependency
+        const getTableDocsUseCase = await this.container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE) as any
 
-        if (!table) {
-          return null
-        }
+        const result = await getTableDocsUseCase.execute({
+          tableId: args.tableId,
+          identifier: args.identifier,
+          includeDocs: args.includeDocs,
+          includeSampleNodes: args.includeSampleNodes,
+          includeRelatedTemplates: args.includeRelatedTemplates,
+          includeUsageStats: args.includeUsageStats,
+          sampleLimit: args.sampleLimit,
+        })
 
-        // For now, return a basic structure - this will be expanded
-        return {
-          table: table,
-          schema: {
-            totalAttributes: 0,
-            attributes: [],
-          },
-          sampleNodes: args.includeSampleNodes !== false ? [] : null,
-          relationships:
-            args.includeRelationships !== false
-              ? {
-                  incomingRelations: [],
-                  outgoingRelations: [],
-                  relatedTables: [],
-                }
-              : null,
-          usageStats:
-            args.includeUsageStats === true
-              ? {
-                  totalNodes: 0,
-                  recentlyCreatedNodes: 0,
-                  frequentlyAccessedAttributes: [],
-                  averageAttributeUsage: 0.0,
-                }
-              : null,
-          usageExamples: [
-            {
-              category: 'basic',
-              title: 'Create a new node',
-              description: `Add a new node to the ${table.identifier} table`,
-              exampleMutation: `mutation {
-  createNode(input: {
-    tableId: "${table.id}"
-    content: "Your content here"
-  }) {
-    success
-    node { id content }
-    errors { message }
-  }
-}`,
-            },
-          ],
-        }
+        return result.tableDocs
       },
       'tableDocumentation',
       { tableId: args.tableId, identifier: args.identifier }

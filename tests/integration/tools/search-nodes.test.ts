@@ -1,3 +1,4 @@
+import { TestServerManager } from '../../fixtures/test-server-manager'
 /**
  * T009: Integration test for searchNodes tool
  *
@@ -5,14 +6,24 @@
  * Requirements: <100ms response time, proper GraphQL operation execution
  */
 
-import { beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 
 describe('SearchNodes Tool Integration', () => {
-  const MCP_SERVER_URL = 'http://localhost:4000/mcp'
+  let mcpServerUrl: string
 
   beforeAll(async () => {
-    // Wait for MCP server to be ready
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    console.log('Starting isolated test server for search nodes integration tests')
+
+    // Start isolated test server for this test suite
+    const serverInstance = await TestServerManager.startServerForSuite('search-nodes-integration')
+    mcpServerUrl = `${serverInstance.url.replace('/graphql', '/mcp')}`
+
+    console.log(`Test server started on ${mcpServerUrl}`)
+  })
+
+  afterAll(async () => {
+    // Clean up test server
+    await TestServerManager.stopServerForSuite('search-nodes-integration')
   })
 
   test('should execute searchNodes tool through MCP protocol', async () => {
@@ -33,7 +44,7 @@ describe('SearchNodes Tool Integration', () => {
       id: 'test-search-nodes',
     }
 
-    const response = await fetch(MCP_SERVER_URL, {
+    const response = await fetch(mcpServerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(mcpRequest),
@@ -102,7 +113,7 @@ describe('SearchNodes Tool Integration', () => {
       id: 'test-search-nodes-table',
     }
 
-    const response = await fetch(MCP_SERVER_URL, {
+    const response = await fetch(mcpServerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(mcpRequest),
@@ -152,7 +163,7 @@ describe('SearchNodes Tool Integration', () => {
       id: 'test-search-nodes-empty',
     }
 
-    const response = await fetch(MCP_SERVER_URL, {
+    const response = await fetch(mcpServerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(mcpRequest),
@@ -194,7 +205,7 @@ describe('SearchNodes Tool Integration', () => {
       id: 'test-search-nodes-limit',
     }
 
-    const response = await fetch(MCP_SERVER_URL, {
+    const response = await fetch(mcpServerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(mcpRequest),
@@ -239,7 +250,7 @@ describe('SearchNodes Tool Integration', () => {
       id: 'test-schema-minimal',
     }
 
-    const response = await fetch(MCP_SERVER_URL, {
+    const response = await fetch(mcpServerUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(mcpRequest),
@@ -293,7 +304,7 @@ describe('SearchNodes Tool Integration', () => {
         id: `test-perf-${i}`,
       }
 
-      const response = await fetch(MCP_SERVER_URL, {
+      const response = await fetch(mcpServerUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mcpRequest),

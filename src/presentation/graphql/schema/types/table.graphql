@@ -90,8 +90,14 @@ type TableDocumentation {
   # Schema information
   schema: TableSchema!
 
+  # Documentation system integration
+  docs: TableDocsInfo
+
   # Sample data
   sampleNodes: [TableNode!]
+
+  # Related templates
+  relatedTemplates: [QueryTemplate!]
 
   # Relationship information
   relationships: TableRelationshipInfo
@@ -99,13 +105,16 @@ type TableDocumentation {
   # Usage statistics
   usageStats: TableUsageStats
 
-  # Generated usage examples
-  usageExamples: [TableUsageExample!]!
+  # Documentation information
+  documentation: TableDocumentationInfo
+
+  # Generated timestamp
+  generatedAt: DateTime!
 }
 
 type TableSchema {
-  totalAttributes: Int!
-  attributes: [AttributeDocumentation!]!
+  attributes: [Attribute!]!
+  attributeCount: Int!
 }
 
 type AttributeDocumentation {
@@ -141,4 +150,22 @@ type TableUsageExample {
   description: String!
   exampleQuery: String
   exampleMutation: String
+}
+
+# Documentation system types for table documentation
+type TableDocsInfo {
+  usage: Doc
+  guide: Doc
+  example: Doc
+  spec: Doc
+  general: Doc
+  allDocs: [Doc!]!
+  docCount: Int!
+}
+
+# Table documentation metadata
+type TableDocumentationInfo {
+  description: String!
+  usageExamples: [String!]!
+  bestPractices: [String!]!
 }

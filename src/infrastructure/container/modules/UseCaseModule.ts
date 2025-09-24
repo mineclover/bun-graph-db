@@ -81,6 +81,7 @@ export function registerUseCaseModule(container: DIContainer): void {
       const queryTemplateRepository = (await c.resolve(
         RepositoryTokens.QUERY_TEMPLATE_REPOSITORY
       )) as any
+      const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -93,6 +94,7 @@ export function registerUseCaseModule(container: DIContainer): void {
         attributeRepository,
         nodeRepository,
         queryTemplateRepository,
+        docRepository,
         simpleLogger
       )
     },
@@ -101,6 +103,7 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
+      RepositoryTokens.DOC_REPOSITORY,
     ]
   )
 

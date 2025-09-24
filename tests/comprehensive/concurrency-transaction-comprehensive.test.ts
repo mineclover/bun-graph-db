@@ -15,11 +15,12 @@
  * - Lock contention and performance
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import type { Container } from 'inversify'
-import { createContainer } from '../../src/infrastructure/container/Container'
-import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
-import { TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
+import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
+import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
+import { DatabaseCleaner } from '../fixtures/database-cleaner'
+import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
 
 interface ConcurrencyTestResult {
   operationId: string
@@ -84,32 +85,26 @@ class ConcurrencyTester {
 
 describe('Concurrency and Transaction Comprehensive Tests', () => {
   let yoga: any
-  let container: Container
-  let testDb: any
-  let isolationHelpers: TestIsolationHelpers
-
-  const graphqlExecute = async (query: string, variables?: any) => {
-    const response = await yoga.fetch('/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables }),
-    })
-    return await response.json()
-  }
+  let container: DIContainer
+  let testEnvironment: TestEnvironment
+  let databaseCleaner: DatabaseCleaner
+  let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
-    testDb = TestDatabaseFactory.createInMemoryDatabase()
-    container = createContainer(testDb.path)
-    yoga = createGraphQLYoga(container)
-    isolationHelpers = new TestIsolationHelpers(container)
+    testEnvironment = await TestDatabaseFactory.createTestEnvironment('concurrency-transaction', 'concurrency')
+    process.env.DATABASE_PATH = testEnvironment.databasePath
+    container = await ContainerBootstrap.createContainer()
+    yoga = await createGraphQLYoga(container)
+    graphqlExecute = createGraphQLExecutor(yoga)
+    databaseCleaner = new DatabaseCleaner(container)
   })
 
   beforeEach(async () => {
-    await isolationHelpers.clearAllData()
+    await databaseCleaner.clearAllData()
   })
 
   afterAll(async () => {
-    await testDb.cleanup()
+    await testEnvironment.cleanup()
   })
 
   describe('Concurrent Read/Write Operations', () => {

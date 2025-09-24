@@ -15,11 +15,12 @@
  * - Security headers and CORS
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import type { Container } from 'inversify'
-import { createContainer } from '../../src/infrastructure/container/Container'
-import { createGraphQLYoga } from '../../src/presentation/graphql/GraphQLServer'
-import { TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
+import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
+import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
+import { DatabaseCleaner } from '../fixtures/database-cleaner'
+import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
 
 interface SecurityTestCase {
   name: string
@@ -72,32 +73,26 @@ class SecurityTester {
 
 describe('Security and Validation Comprehensive Tests', () => {
   let yoga: any
-  let container: Container
-  let testDb: any
-  let isolationHelpers: TestIsolationHelpers
-
-  const graphqlExecute = async (query: string, variables?: any) => {
-    const response = await yoga.fetch('/graphql', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, variables }),
-    })
-    return await response.json()
-  }
+  let container: DIContainer
+  let testEnvironment: TestEnvironment
+  let databaseCleaner: DatabaseCleaner
+  let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
-    testDb = TestDatabaseFactory.createInMemoryDatabase()
-    container = createContainer(testDb.path)
-    yoga = createGraphQLYoga(container)
-    isolationHelpers = new TestIsolationHelpers(container)
+    testEnvironment = await TestDatabaseFactory.createTestEnvironment('security-validation', 'security')
+    process.env.DATABASE_PATH = testEnvironment.databasePath
+    container = await ContainerBootstrap.createContainer()
+    yoga = await createGraphQLYoga(container)
+    graphqlExecute = createGraphQLExecutor(yoga)
+    databaseCleaner = new DatabaseCleaner(container)
   })
 
   beforeEach(async () => {
-    await isolationHelpers.clearAllData()
+    await databaseCleaner.clearAllData()
   })
 
   afterAll(async () => {
-    await testDb.cleanup()
+    await testEnvironment.cleanup()
   })
 
   describe('Input Validation and Sanitization', () => {
@@ -109,7 +104,7 @@ describe('Security and Validation Comprehensive Tests', () => {
         mutation {
           createTable(input: {
             identifier: "security-test-table"
-            name: "Security Test Table"
+            description: "Security Test Table"
           }) {
             table { id }
           }
@@ -377,7 +372,7 @@ describe('Security and Validation Comprehensive Tests', () => {
           createAttribute(input: {
             tableId: "${tableId}"
             identifier: "test_number"
-            name: "Test Number"
+            description: "Test Number"
             attributeTypeId: "2"
           }) {
             attribute { id }
@@ -481,7 +476,7 @@ describe('Security and Validation Comprehensive Tests', () => {
         mutation {
           createTable(input: {
             identifier: "sql-injection-test"
-            name: "SQL Injection Test Table"
+            description: "SQL Injection Test Table"
           }) {
             table { id }
           }
@@ -553,7 +548,7 @@ describe('Security and Validation Comprehensive Tests', () => {
         mutation {
           createTemplate(input: {
             identifier: "sql-injection-template"
-            name: "SQL Injection Template Test"
+            description: "SQL Injection Template Test"
             query: "query TestQuery($search: String!) { healthCheck { status } }"
             variables: ["search"]
           }) {
@@ -632,7 +627,7 @@ describe('Security and Validation Comprehensive Tests', () => {
         },
         {
           name: 'System path injection',
-          query: `mutation { createTable(input: { identifier: "/etc/passwd", name: "hack" }) { table { id } } }`,
+          query: `mutation { createTable(input: { identifier: "/etc/passwd", description: "hack" }) { table { id } } }`,
         },
       ]
 
@@ -725,7 +720,7 @@ describe('Security and Validation Comprehensive Tests', () => {
         mutation CreateLargeNode($tableId: ID!, $content: String!) {
           createTable(input: {
             identifier: "large-payload-test"
-            name: "Large Payload Test"
+            description: "Large Payload Test"
           }) {
             table { id }
           }
@@ -759,7 +754,7 @@ describe('Security and Validation Comprehensive Tests', () => {
         mutation {
           createTable(input: {
             identifier: "json-security-test"
-            name: "JSON Security Test"
+            description: "JSON Security Test"
           }) {
             table { id }
           }
@@ -831,7 +826,7 @@ describe('Security and Validation Comprehensive Tests', () => {
         mutation {
           createTable(input: {
             identifier: "prototype-pollution-test"
-            name: "Prototype Pollution Test"
+            description: "Prototype Pollution Test"
           }) {
             table { id }
           }
@@ -884,7 +879,7 @@ describe('Security and Validation Comprehensive Tests', () => {
 
   describe('CORS and Security Headers', () => {
     test('should handle CORS preflight requests properly', async () => {
-      const preflightResponse = await yoga.fetch('/graphql', {
+      const preflightResponse = await yoga.fetch('http://localhost:4000/graphql', {
         method: 'OPTIONS',
         headers: {
           Origin: 'https://malicious-site.com',
@@ -905,7 +900,7 @@ describe('Security and Validation Comprehensive Tests', () => {
     })
 
     test('should set appropriate security headers', async () => {
-      const response = await yoga.fetch('/graphql', {
+      const response = await yoga.fetch('http://localhost:4000/graphql', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: 'query { healthCheck { status } }' }),

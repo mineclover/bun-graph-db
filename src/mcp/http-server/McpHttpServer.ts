@@ -448,15 +448,58 @@ export class McpHttpServer {
 
   private async handleExportTableWithNodes(
     id: string | number | undefined,
-    _args: any
+    args: any
   ): Promise<McpResponse> {
-    // Implementation for exportTableWithNodes
-    return this.createErrorMcpResponse(
-      id,
-      -32601,
-      'Method not found',
-      'exportTableWithNodes not implemented yet'
-    )
+    try {
+      const { tableId, flatFormat = true, outputPath = '' } = args
+
+      if (!tableId) {
+        return this.createErrorMcpResponse(
+          id,
+          -32602,
+          'Invalid params',
+          'tableId parameter is required'
+        )
+      }
+
+      // REST API 호출을 통해 table export 실행
+      const response = await this.restApiClient.callMcpTool('exportTableWithNodes', {
+        tableId,
+        flatFormat,
+        outputPath,
+      })
+
+      if (!response.success) {
+        return this.createErrorMcpResponse(
+          id,
+          -32603,
+          'Internal error',
+          response.error || 'Export table with nodes failed'
+        )
+      }
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: outputPath
+                ? `Table ${tableId} successfully exported to ${outputPath}. File size: ${response.data?.fileSize || 'unknown'} bytes.`
+                : `Table ${tableId} export completed successfully.`,
+            },
+          ],
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Failed to export table: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
   }
 
   private async handleSetNodeAttribute(

@@ -7,6 +7,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { TestServerManager } from '../fixtures/test-server-manager'
 
 // MCP Protocol JSON-RPC 2.0 types
 interface McpRequest {
@@ -28,16 +29,21 @@ interface McpResponse {
 }
 
 describe('MCP Protocol Compliance Contract Tests', () => {
-  const MCP_ENDPOINT = 'http://localhost:4000/mcp'
-  let _testPort: number
+  let mcpEndpoint: string
 
   beforeAll(async () => {
-    // Note: These tests are expected to FAIL initially as no MCP server exists yet
-    _testPort = 4000
+    console.log('Starting isolated test server for MCP protocol compliance tests')
+
+    // Start isolated test server for this test suite
+    const serverInstance = await TestServerManager.startServerForSuite('mcp-protocol')
+    mcpEndpoint = `${serverInstance.url.replace('/graphql', '/mcp')}`
+
+    console.log(`Test server started on ${mcpEndpoint}`)
   })
 
   afterAll(async () => {
-    // Cleanup if needed
+    // Clean up test server
+    await TestServerManager.stopServerForSuite('mcp-protocol')
   })
 
   describe('JSON-RPC 2.0 Protocol Structure', () => {
@@ -57,7 +63,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -100,7 +106,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -148,7 +154,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -192,7 +198,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -226,7 +232,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -258,7 +264,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(request),
@@ -286,7 +292,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(MCP_ENDPOINT, {
+        const response = await fetch(mcpEndpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(notification),

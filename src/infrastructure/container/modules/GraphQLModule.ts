@@ -56,7 +56,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new TableQueries(tableRepository, simpleLogger)
+      return new TableQueries(tableRepository, c, simpleLogger)
     },
     [RepositoryTokens.TABLE_REPOSITORY]
   )

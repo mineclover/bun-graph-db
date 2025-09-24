@@ -3,25 +3,31 @@ import type { AttributeDto } from './AttributeDto.js'
 import type { NodeDto } from './NodeDto.js'
 import type { TableDto } from './TableDto.js'
 
+export interface DocDto {
+  id: string
+  title: string
+  content: string
+  type: 'usage' | 'guide' | 'example' | 'spec' | 'general'
+  createdAt: string
+  updatedAt: string
+}
+
 export interface TableDocsDto {
   table: TableDto
   schema: {
     attributes: AttributeDto[]
     attributeCount: number
   }
-  sampleNodes?: NodeDto[]
+  docs?: {
+    usage?: DocDto
+    guide?: DocDto
+    example?: DocDto
+    spec?: DocDto
+    general?: DocDto
+    allDocs: DocDto[]
+    docCount: number
+  }
   relatedTemplates?: QueryTemplateDto[]
-  usageStats?: {
-    totalNodes: number
-    lastActivity: string | null
-    createdToday: number
-    updatedToday: number
-  }
-  documentation?: {
-    description: string
-    usageExamples: string[]
-    bestPractices: string[]
-  }
   generatedAt: string
 }
 
@@ -31,6 +37,7 @@ export interface GetTableDocsInput {
   includeSampleNodes?: boolean
   includeUsageStats?: boolean
   includeRelatedTemplates?: boolean
+  includeDocs?: boolean // Add docs collection option
   sampleLimit?: number
 }
 

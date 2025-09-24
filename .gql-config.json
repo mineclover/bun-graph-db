@@ -1,0 +1,19 @@
+{
+  "presets": {
+    "my-table-fixed": {
+      "templateId": "table-documentation-full",
+      "variables": {
+        "tableId": "1"
+      },
+      "description": "Preset for table-documentation-full created on 2025-09-24"
+    },
+    "my-table-both": {
+      "templateId": "table-documentation-full",
+      "variables": {
+        "identifier": "test-table",
+        "tableId": "1"
+      },
+      "description": "Preset for table-documentation-full created on 2025-09-24"
+    }
+  }
+}

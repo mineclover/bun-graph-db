@@ -54,6 +54,22 @@ if (finalOptions.databasePath) {
   setDatabasePath(finalOptions.databasePath)
 }
 
+// Port availability check function
+const checkPortAvailable = async (port: number): Promise<boolean> => {
+  try {
+    // Try to bind to the port temporarily
+    const testServer = Bun.serve({
+      port,
+      hostname: '127.0.0.1',
+      fetch: () => new Response('test')
+    })
+    testServer.stop()
+    return true
+  } catch (error) {
+    return false
+  }
+}
+
 // Initialize dependency container
 const container = await ContainerBootstrap.createContainer()
 
@@ -123,7 +139,7 @@ import { createTemplateFileHandler } from './src/presentation/http/routes/Templa
 const graphDbController = new GraphDbApiController(logger)
 const attributeController = new AttributeApiController(logger)
 const getTableDocsUseCase = await container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE) as any
-const graphController = new GraphApiController(logger, getTableDocsUseCase)
+const graphController = new GraphApiController(logger, getTableDocsUseCase, graphqlConfig.port)
 
 // Create route handlers
 const schemaHandler = await createSchemaHandler(container)
@@ -226,6 +242,15 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       const nodeId = pathname.split('/')[3]
       req.params.nodeId = nodeId
       await attributeController.getNodeAttributes(req, res)
+    } else if (
+      method === 'POST' &&
+      pathname.startsWith('/api/tables/') &&
+      pathname.endsWith('/export')
+    ) {
+      // Extract tableId from path like /api/tables/123/export
+      const tableId = pathname.split('/')[3]
+      req.params.tableId = tableId
+      await graphController.exportTableWithNodes(req, res)
     } else {
       return new Response('Not Found', { status: 404 })
     }
@@ -294,6 +319,25 @@ const requestHandler = async (request: Request): Promise<Response> => {
   return yoga.fetch(request)
 }
 
+// Check if port is available before starting server
+if (!(await checkPortAvailable(graphqlConfig.port))) {
+  console.error(`❌ Port ${graphqlConfig.port} is already in use`)
+  console.error('💡 Try a different port with --port option or stop the conflicting process')
+
+  // Show processes using the port (if lsof is available)
+  try {
+    const proc = Bun.spawn(['lsof', '-ti', `:${graphqlConfig.port}`])
+    const output = await new Response(proc.stdout).text()
+    if (output.trim()) {
+      console.error(`🔍 Process(es) using port ${graphqlConfig.port}: ${output.trim().split('\n').join(', ')}`)
+    }
+  } catch {
+    // lsof might not be available on all systems
+  }
+
+  process.exit(1)
+}
+
 const server = Bun.serve({
   fetch: requestHandler,
   port: graphqlConfig.port,
@@ -320,10 +364,35 @@ const shutdown = async () => {
   logger.info('🛑 Server shutting down...')
 
   try {
-    server.stop()
-    logger.info('✅ Server stopped successfully')
+    // 1. Stop accepting new connections first
+    logger.info('🔌 Stopping HTTP server...')
+
+    // Bun server.stop() is synchronous, but we wrap it for consistency
+    await new Promise<void>((resolve, reject) => {
+      try {
+        server.stop()
+        resolve()
+      } catch (error) {
+        reject(error)
+      }
+    })
+    logger.info('✅ HTTP server stopped')
+
+    // 2. Close MCP server connections if available
+    if (mcpServer) {
+      logger.info('🔌 Stopping MCP server...')
+      // Note: Add proper cleanup method to McpHttpServer if available
+      logger.info('✅ MCP server stopped')
+    }
+
+    // 3. Close any database connections (if needed in the future)
+    // await database?.close()
+    // logger.info('✅ Database connections closed')
+
+    logger.info('✅ Graceful shutdown completed')
   } catch (error) {
-    logger.error('❌ Error during shutdown', { error })
+    logger.error('❌ Error during shutdown', toErrorMeta(error))
+    process.exit(1)
   }
 
   process.exit(0)

@@ -1,0 +1,441 @@
+#!/usr/bin/env bun
+
+/**
+ * Bun Graph DB GraphQL CLI Utility
+ *
+ * Usage:
+ *   gql query "{ healthCheck { status } }"
+ *   gql template execute table-documentation-full --tableId=1
+ *   gql template execute table-documentation-full --identifier=test-table
+ *   gql template list
+ *   gql --help
+ */
+
+const DEFAULT_ENDPOINT = 'http://localhost:4000/graphql';
+const CONFIG_FILE = '.gql-config.json';
+
+interface ConfigFile {
+  endpoint?: string;
+  presets?: Record<string, {
+    templateId: string;
+    variables: Record<string, any>;
+    description?: string;
+  }>;
+  defaults?: Record<string, Record<string, any>>;
+}
+
+interface CLIOptions {
+  endpoint?: string;
+  help?: boolean;
+  variables?: Record<string, any>;
+  preset?: string;
+  savePreset?: string;
+}
+
+class GraphQLCLI {
+  private endpoint: string;
+
+  constructor(endpoint: string = DEFAULT_ENDPOINT) {
+    this.endpoint = endpoint;
+  }
+
+  async executeQuery(query: string, variables?: Record<string, any>): Promise<any> {
+    try {
+      const response = await fetch(this.endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          variables: variables || {},
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      throw new Error(`GraphQL request failed: ${error}`);
+    }
+  }
+
+  async executeMutation(mutation: string, variables?: Record<string, any>): Promise<any> {
+    return this.executeQuery(mutation, variables);
+  }
+
+  async executeTemplate(templateId: string, templateVars: Record<string, any> = {}): Promise<any> {
+    const mutation = `
+      mutation ExecuteTemplate($templateId: String!, $vars: JSON!) {
+        executeTemplateWithGraphQL(
+          templateIdentifier: $templateId,
+          variables: $vars
+        ) {
+          success
+          data
+          errors {
+            message
+          }
+        }
+      }
+    `;
+
+    const variables = {
+      templateId,
+      vars: templateVars,
+    };
+
+    return this.executeMutation(mutation, variables);
+  }
+
+  async listTemplates(): Promise<any> {
+    const query = `
+      query ListTemplates {
+        searchTemplates {
+          templates {
+            identifier
+            name
+            tags
+          }
+        }
+      }
+    `;
+
+    return this.executeQuery(query);
+  }
+
+  async getTemplateInfo(templateId: string): Promise<any> {
+    const query = `
+      query GetTemplateInfo {
+        searchTemplates {
+          templates {
+            identifier
+            name
+            query
+            tags
+          }
+        }
+      }
+    `;
+
+    const result = await this.executeQuery(query);
+
+    // Filter the template by identifier on the client side
+    if (result.data && result.data.searchTemplates && result.data.searchTemplates.templates) {
+      const filteredTemplates = result.data.searchTemplates.templates.filter(
+        (template: any) => template.identifier === templateId
+      );
+      return {
+        data: {
+          searchTemplates: {
+            templates: filteredTemplates
+          }
+        }
+      };
+    }
+
+    return result;
+  }
+
+  parseVariablesFromQuery(query: string): Array<{name: string, type: string, required: boolean}> {
+    const variableRegex = /\$(\w+):\s*(\w+)(!?)/g;
+    const variables: Array<{name: string, type: string, required: boolean}> = [];
+    let match;
+
+    while ((match = variableRegex.exec(query)) !== null) {
+      variables.push({
+        name: match[1],
+        type: match[2],
+        required: match[3] === '!'
+      });
+    }
+
+    return variables;
+  }
+
+  formatOutput(result: any, format: 'json' | 'pretty' = 'pretty'): string {
+    if (format === 'json') {
+      return JSON.stringify(result);
+    }
+
+    return JSON.stringify(result, null, 2);
+  }
+}
+
+// Config file operations
+async function loadConfig(): Promise<ConfigFile> {
+  try {
+    const file = Bun.file(CONFIG_FILE);
+    if (!(await file.exists())) return {};
+
+    const text = await file.text();
+    if (!text.trim()) return {};
+
+    return JSON.parse(text) as ConfigFile;
+  } catch {
+    return {};
+  }
+}
+
+async function saveConfig(config: ConfigFile): Promise<void> {
+  try {
+    await Bun.write(CONFIG_FILE, JSON.stringify(config, null, 2));
+  } catch (error) {
+    console.warn('Warning: Could not save config file:', error);
+  }
+}
+
+// Parse command line arguments
+function parseArgs(args: string[]): { command: string[], options: CLIOptions } {
+  const options: CLIOptions = {};
+  const command: string[] = [];
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+
+    if (arg.startsWith('--')) {
+      if (arg === '--help') {
+        options.help = true;
+      } else if (arg === '--endpoint') {
+        options.endpoint = args[++i];
+      } else if (arg === '--preset') {
+        options.preset = args[++i];
+      } else if (arg === '--save-preset') {
+        options.savePreset = args[++i];
+      } else if (arg.startsWith('--save-preset=')) {
+        options.savePreset = arg.split('=', 2)[1];
+      } else if (arg.startsWith('--preset=')) {
+        options.preset = arg.split('=', 2)[1];
+      } else if (arg.includes('=')) {
+        // Handle --key=value format for template variables
+        const [key, value] = arg.slice(2).split('=', 2);
+        if (!options.variables) options.variables = {};
+        options.variables[key] = value;
+      }
+    } else {
+      command.push(arg);
+    }
+  }
+
+  return { command, options };
+}
+
+function showHelp(): void {
+  console.log(`
+Bun Graph DB GraphQL CLI
+
+USAGE:
+  gql <command> [options]
+
+COMMANDS:
+  query <query>                     Execute a GraphQL query
+  mutation <mutation>               Execute a GraphQL mutation
+  template list                     List all available templates
+  template info <id>                Show template variable schema
+  template execute <id> [vars...]   Execute a template with variables
+  preset list                       List saved presets
+  preset run <name>                 Run a saved preset
+
+TEMPLATE EXAMPLES:
+  gql template list
+  gql template info table-documentation-full
+  gql template execute table-documentation-full --tableId=1
+  gql template execute table-documentation-full --identifier=test-table
+
+PRESET EXAMPLES:
+  gql template execute table-doc-full --tableId=1 --save-preset=my-table
+  gql preset run my-table
+  gql preset list
+
+QUERY EXAMPLES:
+  gql query "{ healthCheck { status } }"
+  gql query "{ tables { nodes { identifier } } }"
+
+OPTIONS:
+  --endpoint <url>       GraphQL endpoint (default: ${DEFAULT_ENDPOINT})
+  --preset <name>        Use saved preset
+  --save-preset <name>   Save current execution as preset
+  --help                 Show this help message
+
+VARIABLES:
+  Use --key=value format for template variables
+  Example: --tableId=1 --status=active
+`);
+}
+
+// Main execution
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const { command, options } = parseArgs(args);
+
+  if (options.help || command.length === 0) {
+    showHelp();
+    process.exit(0);
+  }
+
+  const config = await loadConfig();
+  const cli = new GraphQLCLI(options.endpoint || config.endpoint);
+
+  try {
+    let result: any;
+
+    const [action, subCommand, ...params] = command;
+
+    switch (action) {
+      case 'query':
+        if (!subCommand) {
+          console.error('Error: Query string required');
+          process.exit(1);
+        }
+        result = await cli.executeQuery(subCommand);
+        break;
+
+      case 'mutation':
+        if (!subCommand) {
+          console.error('Error: Mutation string required');
+          process.exit(1);
+        }
+        result = await cli.executeMutation(subCommand);
+        break;
+
+      case 'template':
+        switch (subCommand) {
+          case 'list':
+            result = await cli.listTemplates();
+            break;
+
+          case 'info':
+            if (!params[0]) {
+              console.error('Error: Template ID required');
+              process.exit(1);
+            }
+            const templateInfo = await cli.getTemplateInfo(params[0]);
+            if (templateInfo.data.searchTemplates.templates.length === 0) {
+              console.error(`Error: Template "${params[0]}" not found`);
+              process.exit(1);
+            }
+            const template = templateInfo.data.searchTemplates.templates[0];
+            const variables = cli.parseVariablesFromQuery(template.query);
+
+            console.log(`\nTemplate: ${template.name} (${template.identifier})`);
+            console.log(`Tags: ${template.tags.join(', ')}`);
+            console.log('\nVariables:');
+            variables.forEach(v => {
+              console.log(`  ${v.name}: ${v.type}${v.required ? ' (required)' : ' (optional)'}`);
+            });
+            console.log('\nUsage Examples:');
+            if (variables.length > 0) {
+              const exampleVars = variables.map(v => `--${v.name}=${v.type === 'String' ? 'example' : '1'}`).join(' ');
+              console.log(`  gql template execute ${template.identifier} ${exampleVars}`);
+            } else {
+              console.log(`  gql template execute ${template.identifier}`);
+            }
+            return;
+
+          case 'execute':
+            if (!params[0]) {
+              console.error('Error: Template ID required');
+              process.exit(1);
+            }
+
+            let executeVars = { ...options.variables || {} };
+
+            // Apply preset if specified
+            if (options.preset) {
+              if (config.presets && config.presets[options.preset]) {
+                const preset = config.presets[options.preset];
+                if (preset.templateId !== params[0]) {
+                  console.warn(`Warning: Preset "${options.preset}" is for template "${preset.templateId}", but executing "${params[0]}"`);
+                }
+                executeVars = { ...preset.variables, ...executeVars };
+              } else {
+                console.error(`Error: Preset "${options.preset}" not found`);
+                process.exit(1);
+              }
+            }
+
+            // Apply defaults from config
+            if (config.defaults && config.defaults[params[0]]) {
+              executeVars = { ...config.defaults[params[0]], ...executeVars };
+            }
+
+            result = await cli.executeTemplate(params[0], executeVars);
+
+            // Save as preset if requested
+            if (options.savePreset) {
+              console.log(`\nSaving preset "${options.savePreset}"...`);
+              if (!config.presets) config.presets = {};
+              config.presets[options.savePreset] = {
+                templateId: params[0],
+                variables: executeVars,
+                description: `Preset for ${params[0]} created on ${new Date().toISOString().split('T')[0]}`
+              };
+              await saveConfig(config);
+              console.log(`Preset "${options.savePreset}" saved successfully!\n`);
+            }
+            break;
+
+          default:
+            console.error('Error: Unknown template command. Use "list", "info", or "execute"');
+            process.exit(1);
+        }
+        break;
+
+      case 'preset':
+        switch (subCommand) {
+          case 'list':
+            if (!config.presets || Object.keys(config.presets).length === 0) {
+              console.log('No presets saved.');
+              return;
+            }
+            console.log('\nSaved Presets:');
+            Object.entries(config.presets).forEach(([name, preset]) => {
+              console.log(`  ${name}: ${preset.templateId}`);
+              if (preset.description) {
+                console.log(`    ${preset.description}`);
+              }
+              const varStr = Object.entries(preset.variables).map(([k, v]) => `${k}=${v}`).join(', ');
+              console.log(`    Variables: ${varStr || 'none'}`);
+            });
+            return;
+
+          case 'run':
+            if (!params[0]) {
+              console.error('Error: Preset name required');
+              process.exit(1);
+            }
+            if (!config.presets || !config.presets[params[0]]) {
+              console.error(`Error: Preset "${params[0]}" not found`);
+              process.exit(1);
+            }
+            const preset = config.presets[params[0]];
+            console.log(`Running preset "${params[0]}" (${preset.templateId})...\n`);
+            result = await cli.executeTemplate(preset.templateId, preset.variables);
+            break;
+
+          default:
+            console.error('Error: Unknown preset command. Use "list" or "run"');
+            process.exit(1);
+        }
+        break;
+
+      default:
+        console.error(`Error: Unknown command "${action}"`);
+        showHelp();
+        process.exit(1);
+    }
+
+    console.log(cli.formatOutput(result));
+  } catch (error) {
+    console.error('Error:', error);
+    process.exit(1);
+  }
+}
+
+// Run if called directly
+if (import.meta.main) {
+  main();
+}

@@ -5,6 +5,7 @@ export interface AttributeDto {
   id: string
   tableId: string
   identifier: string
+  name: string
   attributeTypeId: string
   description: string | null
   isRequired: boolean
@@ -18,6 +19,7 @@ export function fromEntity(attribute: Attribute): AttributeDto {
     id: attribute.getId(),
     tableId: attribute.getTableId(),
     identifier: attribute.getIdentifier(),
+    name: attribute.getName(),
     attributeTypeId: attribute.getAttributeTypeId(),
     description: attribute.getDescription(),
     isRequired: attribute.getIsRequired(),

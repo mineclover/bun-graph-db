@@ -1,0 +1,73 @@
+{
+  "tableDocumentation": {
+    "table": {
+      "id": "1",
+      "identifier": "test-table",
+      "description": "Test table for development",
+      "attributeCount": 1,
+      "tableNodeCount": 0
+    },
+    "docs": {
+      "usage": {
+        "id": "1",
+        "category": "usage",
+        "content": "This is a usage documentation for test table",
+        "isActive": true
+      },
+      "guide": {
+        "id": "2",
+        "category": "guide",
+        "content": "This is a guide documentation for test table",
+        "isActive": true
+      },
+      "example": null,
+      "spec": null,
+      "general": null,
+      "allDocs": [
+        {
+          "id": "2",
+          "category": "guide",
+          "content": "This is a guide documentation for test table",
+          "isActive": true
+        },
+        {
+          "id": "1",
+          "category": "usage",
+          "content": "This is a usage documentation for test table",
+          "isActive": true
+        }
+      ],
+      "docCount": 2
+    },
+    "schema": {
+      "attributeCount": 1,
+      "attributes": [
+        {
+          "id": "1",
+          "identifier": "test_attr",
+          "name": "test_attr",
+          "description": "Test attribute"
+        }
+      ]
+    },
+    "sampleNodes": [],
+    "relatedTemplates": [],
+    "usageStats": {
+      "totalNodes": 0
+    },
+    "documentation": {
+      "description": "Test table for development",
+      "usageExamples": [
+        "Basic node creation with required attributes",
+        "Query nodes with filtering by attribute values",
+        "Update node attributes with validation"
+      ],
+      "bestPractices": [
+        "Always validate required attributes before node creation",
+        "Use appropriate data types for attribute values",
+        "Consider indexing for frequently queried attributes"
+      ]
+    },
+    "generatedAt": "2025-09-24T05:52:55.595Z"
+  }
+}

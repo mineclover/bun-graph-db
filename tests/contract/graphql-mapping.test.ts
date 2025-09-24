@@ -6,18 +6,24 @@
  * Expected: All tests FAIL initially (no implementation)
  */
 
-import { beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { type GraphQLSchema, parse } from 'graphql'
 import toolsContract from '../../specs/005-graphql-mcp-graphql/contracts/graphql-tools.json'
+import { TestServerManager } from '../fixtures/test-server-manager'
 
 describe('GraphQL Operation Mapping Contract Tests', () => {
-  const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
   const tools = toolsContract.tools
   const _targetSchema: GraphQLSchema | null = null
+  let graphqlEndpoint: string
 
   beforeAll(async () => {
-    // Note: These tests are expected to FAIL initially as no MCP server exists yet
     console.log(`Testing GraphQL operations for ${tools.length} tools`)
+
+    // Start isolated test server for this test suite
+    const serverInstance = await TestServerManager.startServerForSuite('graphql-mapping')
+    graphqlEndpoint = serverInstance.url
+
+    console.log(`Test server started on ${graphqlEndpoint}`)
 
     try {
       // Attempt to fetch the current GraphQL schema from the server
@@ -45,7 +51,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
         }
       `
 
-      const response = await fetch(GRAPHQL_ENDPOINT, {
+      const response = await fetch(graphqlEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,6 +69,11 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
     } catch (_error) {
       console.log('Expected: GraphQL server may not be accessible yet')
     }
+  })
+
+  afterAll(async () => {
+    // Clean up test server
+    await TestServerManager.stopServerForSuite('graphql-mapping')
   })
 
   describe('GraphQL Query Syntax Validation', () => {
@@ -174,7 +185,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
       const query = tool?.graphqlOperation.query
 
       try {
-        const response = await fetch(GRAPHQL_ENDPOINT, {
+        const response = await fetch(graphqlEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -225,7 +236,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(GRAPHQL_ENDPOINT, {
+        const response = await fetch(graphqlEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -274,7 +285,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
       }
 
       try {
-        const response = await fetch(GRAPHQL_ENDPOINT, {
+        const response = await fetch(graphqlEndpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

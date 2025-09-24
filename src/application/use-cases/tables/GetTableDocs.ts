@@ -1,4 +1,5 @@
 import * as AttributeDto from '@/application/dtos/AttributeDto.js'
+import { DocDto } from '@/application/dtos/DocDto.js'
 import * as NodeDto from '@/application/dtos/NodeDto.js'
 import type {
   GetTableDocsInput,
@@ -11,6 +12,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { queryTemplateToDto } from '@/presentation/dto/QueryTemplateDto.js'
 
 export class GetTableDocsUseCase {
@@ -19,6 +21,7 @@ export class GetTableDocsUseCase {
     private readonly attributeRepository: IAttributeRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
+    private readonly docRepository: IDocRepository,
     private readonly logger: ILogger
   ) {}
 
@@ -45,15 +48,29 @@ export class GetTableDocsUseCase {
       const attributesResult = await this.attributeRepository.findByTableId(table.id)
       const attributeDtos = AttributeDto.fromEntities(attributesResult.data || [])
 
-      // Get sample nodes if requested
-      let sampleNodes: any[] | undefined
-      if (input.includeSampleNodes) {
-        const sampleLimit = input.sampleLimit || 3
-        const nodesResult = await this.nodeRepository.findByTableId(table.id, {
-          limit: sampleLimit,
-          offset: 0,
-        })
-        sampleNodes = NodeDto.fromEntities(nodesResult.data || [])
+      // Get docs if requested
+      let docs: any | undefined
+      if (input.includeDocs !== false) { // Include docs by default
+        const allDocs = await this.docRepository.findByTableIds([table.id])
+        const docDtos = DocDto.fromEntities(allDocs)
+        
+        // Organize docs by category (get active docs for each category)
+        const docsByCategory: Record<string, any> = {}
+        for (const doc of docDtos) {
+          if (doc.isActive) {
+            docsByCategory[doc.category.toLowerCase()] = doc
+          }
+        }
+
+        docs = {
+          usage: docsByCategory.usage || null,
+          guide: docsByCategory.guide || null,
+          example: docsByCategory.example || null,
+          spec: docsByCategory.spec || null,
+          general: docsByCategory.general || null,
+          allDocs: docDtos,
+          docCount: docDtos.length
+        }
       }
 
       // Get related templates if requested
@@ -66,49 +83,22 @@ export class GetTableDocsUseCase {
         relatedTemplates = templates.map((template) => queryTemplateToDto(template))
       }
 
-      // Get usage stats if requested
-      let usageStats: any | undefined
-      if (input.includeUsageStats) {
-        const totalNodesResult = await this.nodeRepository.findByTableId(table.id)
-        const totalNodes = totalNodesResult.totalCount || 0
-
-        usageStats = {
-          totalNodes,
-          lastActivity: table.updatedAt.toISOString(),
-          createdToday: 0, // Would need additional queries for this
-          updatedToday: 0, // Would need additional queries for this
-        }
-      }
-
-      // Build comprehensive table documentation
+      // Build final table documentation structure
       const tableDocs: TableDocsDto = {
         table: TableDto.fromEntity(table),
         schema: {
           attributes: attributeDtos,
           attributeCount: attributeDtos.length,
         },
-        sampleNodes,
+        docs,
         relatedTemplates,
-        usageStats,
-        documentation: {
-          description: table.description || 'No description available',
-          usageExamples: [
-            'Basic node creation with required attributes',
-            'Query nodes with filtering by attribute values',
-            'Update node attributes with validation',
-          ],
-          bestPractices: [
-            'Always validate required attributes before node creation',
-            'Use appropriate data types for attribute values',
-            'Consider indexing for frequently queried attributes',
-          ],
-        },
         generatedAt: new Date().toISOString(),
       }
 
       this.logger.info('GetTableDocs use case completed successfully', {
         tableId: table.id,
         attributeCount: attributeDtos.length,
+        docsCount: docs?.docCount || 0,
         templatesCount: relatedTemplates?.length || 0,
       })
 
