@@ -109,8 +109,8 @@ export class Attribute {
   }
 
   getName(): string {
-  return this.name || this.identifier
-}
+    return this.name || this.identifier
+  }
 
   getAttributeTypeId(): AttributeTypeId {
     return this.attributeTypeId

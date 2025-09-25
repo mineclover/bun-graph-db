@@ -532,10 +532,15 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         }
       `)
 
-      console.log('SetNodeAttribute result:', JSON.stringify(setResult.data.setNodeAttribute, null, 2))
+      console.log(
+        'SetNodeAttribute result:',
+        JSON.stringify(setResult.data.setNodeAttribute, null, 2)
+      )
       if (!setResult.data.setNodeAttribute.success) {
         console.log('SetNodeAttribute failed:', setResult.data.setNodeAttribute.errors)
-        throw new Error(`SetNodeAttribute failed: ${JSON.stringify(setResult.data.setNodeAttribute.errors)}`)
+        throw new Error(
+          `SetNodeAttribute failed: ${JSON.stringify(setResult.data.setNodeAttribute.errors)}`
+        )
       }
       expect(setResult.data.setNodeAttribute.success).toBe(true)
       expect(setResult.data.setNodeAttribute.nodeAttribute).toBeTruthy()

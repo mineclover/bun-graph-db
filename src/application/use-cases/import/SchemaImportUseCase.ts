@@ -394,6 +394,7 @@ export class SchemaImportUseCase {
           tableId,
           attrData.identifier,
           attributeType?.getId() || attrData.attributeType.id,
+          attrData.identifier, // name parameter
           attrData.description,
           attrData.isRequired
         )

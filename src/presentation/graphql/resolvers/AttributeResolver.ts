@@ -298,20 +298,13 @@ export class AttributeResolver extends BaseResolver {
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
     try {
-      console.log('DEBUG: createAttribute resolver called with input:', args.input)
       const result = await this.createAttributeUseCase.execute(args.input)
-      console.log('DEBUG: createAttributeUseCase returned:', {
-        hasAttribute: !!result.attribute,
-        attributeId: result.attribute?.id,
-        attributeName: result.attribute?.name,
-      })
       return {
         success: true,
         attribute: result.attribute,
         errors: [],
       }
     } catch (error) {
-      console.error('DEBUG: createAttribute resolver caught error:', error)
       this.logger.error('Failed to create attribute', { input: args.input, ...toErrorMeta(error) })
 
       if (error instanceof ValidationException) {
@@ -501,9 +494,7 @@ export class AttributeResolver extends BaseResolver {
   }
 
   // Field resolver for NodeAttribute formattedValue field
-  async nodeAttribute_formattedValue_field(
-    nodeAttribute: NodeAttributeDto
-  ): Promise<string> {
+  async nodeAttribute_formattedValue_field(nodeAttribute: NodeAttributeDto): Promise<string> {
     try {
       // For now, return the value as-is. This can be enhanced later with proper formatting
       // based on attribute type (date formatting, number formatting, etc.)

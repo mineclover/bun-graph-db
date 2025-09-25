@@ -229,7 +229,11 @@ export class AttributeFieldResolvers extends BaseResolver {
   }
 
   // Field resolver for NodeAttribute formattedValue field
-  async nodeAttribute_formattedValue_field(parent: any, _args?: any, _context?: GraphQLContext): Promise<string> {
+  async nodeAttribute_formattedValue_field(
+    parent: any,
+    _args?: any,
+    _context?: GraphQLContext
+  ): Promise<string> {
     try {
       this.logger.debug(`Resolving field: NodeAttribute.formattedValue`, {
         nodeAttributeId: parent.id,

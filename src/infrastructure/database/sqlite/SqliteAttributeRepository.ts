@@ -431,8 +431,9 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     const updatedAttribute = new Attribute(
       existing.getId(),
       existing.getTableId(),
-      existing.getAttributeTypeId(),
       updates.identifier ?? existing.getIdentifier(),
+      existing.getName(), // name parameter
+      existing.getAttributeTypeId(),
       updates.description ?? existing.getDescription(),
       updates.isRequired ?? existing.getIsRequired(),
       existing.getMetadata(), // No update available for this

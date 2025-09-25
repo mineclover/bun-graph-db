@@ -970,6 +970,7 @@ export class TablePackageService implements ITablePackageService {
           savedTable.id,
           attrData.identifier,
           newAttributeTypeId as any,
+          attrData.identifier, // name parameter
           attrData.description || undefined,
           attrData.isRequired,
           attrData.metadata || undefined

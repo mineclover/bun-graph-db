@@ -167,12 +167,13 @@ describe('Performance Optimization Engine', () => {
       // Should have phases for different types of operations
       const phaseNames = plan.phases.map((p) => p.name)
       expect(
-        phaseNames.some((name) =>
-          name.includes('indexed') ||
-          name.includes('comprehensive') ||
-          name.includes('relationship') ||
-          name.includes('complex') ||
-          name.includes('unified')
+        phaseNames.some(
+          (name) =>
+            name.includes('indexed') ||
+            name.includes('comprehensive') ||
+            name.includes('relationship') ||
+            name.includes('complex') ||
+            name.includes('unified')
         )
       ).toBe(true)
     })

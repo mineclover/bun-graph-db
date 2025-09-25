@@ -244,7 +244,7 @@ export class NodeMutations extends BaseResolver {
     return {
       success: mutationResult.success,
       nodeAttribute: mutationResult.data,
-      errors: mutationResult.errors || []
+      errors: mutationResult.errors || [],
     }
   }
 

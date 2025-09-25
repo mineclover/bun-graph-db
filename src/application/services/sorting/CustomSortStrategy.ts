@@ -401,7 +401,7 @@ export function registerBuiltInCustomSortFunction(
 // Export the built-in functions for testing
 export const BuiltInCustomSortFunctions = {
   registerAll: registerAllBuiltInCustomSortFunctions,
-  register: registerBuiltInCustomSortFunction
+  register: registerBuiltInCustomSortFunction,
 }
 
 // Auto-register built-in functions
