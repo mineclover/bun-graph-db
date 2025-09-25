@@ -38,90 +38,89 @@ export interface FileBasedValidationResult {
   readonly validatedPaths: readonly string[]
 }
 
-export class TestDatabaseFactory {
-  private static instances: Map<string, TestEnvironment> = new Map()
+// Module-level state for test database management
+const testInstances: Map<string, TestEnvironment> = new Map()
 
-  /**
-   * Create isolated database for test suite with enhanced TypeScript validation
-   * ENFORCES file-based SQLite for enhanced test isolation and migration compatibility
-   */
-  static async createTestEnvironment(
-    suiteName: string,
-    testType?: TestType,
-    _isolationLevel: 'basic' | 'enhanced' | 'complete' = 'enhanced'
-  ): Promise<TestEnvironment> {
-    // TypeScript validation
-    if (typeof suiteName !== 'string' || suiteName.trim().length === 0) {
-      throw new Error('Suite name must be a non-empty string')
-    }
-
-    // Check if already exists
-    if (TestDatabaseFactory.instances.has(suiteName)) {
-      await TestDatabaseFactory.cleanupTestEnvironment(suiteName)
-    }
-
-    // ENFORCE file-based databases - NO in-memory allowed
-    const uniqueName = `${suiteName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    const tempDir = '/tmp/bun-graph-db-tests'
-
-    // Validate path security
-    TestDatabaseFactory.validateSecurePath(tempDir)
-
-    const testDb = new TestDatabase({
-      name: uniqueName,
-      inMemory: false, // MANDATORY: file-based for proper isolation
-      tempDir,
-    })
-
-    await testDb.setup()
-
-    // Verify file-based enforcement
-    if (testDb.path === ':memory:' || testDb.path.includes(':memory:')) {
-      throw new Error(
-        `CRITICAL: In-memory database detected for ${suiteName}. File-based enforcement failed.`
-      )
-    }
-
-    // Initialize with app schema
-    await TestDatabaseFactory.initializeAppSchema(testDb.getConnection())
-
-    // Create enhanced database info
-    const databaseInfo: DatabasePath = {
-      path: testDb.path,
-      isFileBase: true,
-      isTemporary: true,
-    }
-
-    // Create isolation config
-    const isolationConfig: TestIsolationConfig = {
-      enforceFileBased: true,
-      tempDirectory: tempDir,
-      uniqueNaming: true,
-      cleanupOnExit: true,
-    }
-
-    const environment: TestEnvironment = {
-      database: testDb,
-      databasePath: testDb.path,
-      databaseInfo,
-      isolationConfig,
-      testType,
-      cleanup: async () => {
-        await testDb.teardown()
-        TestDatabaseFactory.instances.delete(suiteName)
-      },
-    }
-
-    TestDatabaseFactory.instances.set(suiteName, environment)
-    return environment
+/**
+ * Create isolated database for test suite with enhanced TypeScript validation
+ * ENFORCES file-based SQLite for enhanced test isolation and migration compatibility
+ */
+export async function createTestEnvironment(
+  suiteName: string,
+  testType?: TestType,
+  _isolationLevel: 'basic' | 'enhanced' | 'complete' = 'enhanced'
+): Promise<TestEnvironment> {
+  // TypeScript validation
+  if (typeof suiteName !== 'string' || suiteName.trim().length === 0) {
+    throw new Error('Suite name must be a non-empty string')
   }
 
-  /**
-   * Initialize database with application schema
-   */
-  private static async initializeAppSchema(db: Database): void {
-    // Create main application tables
-    db.exec(`
+  // Check if already exists
+  if (testInstances.has(suiteName)) {
+    await cleanupTestEnvironment(suiteName)
+  }
+
+  // ENFORCE file-based databases - NO in-memory allowed
+  const uniqueName = `${suiteName}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  const tempDir = '/tmp/bun-graph-db-tests'
+
+  // Validate path security
+  validateSecurePath(tempDir)
+
+  const testDb = new TestDatabase({
+    name: uniqueName,
+    inMemory: false, // MANDATORY: file-based for proper isolation
+    tempDir,
+  })
+
+  await testDb.setup()
+
+  // Verify file-based enforcement
+  if (testDb.path === ':memory:' || testDb.path.includes(':memory:')) {
+    throw new Error(
+      `CRITICAL: In-memory database detected for ${suiteName}. File-based enforcement failed.`
+    )
+  }
+
+  // Initialize with app schema
+  await initializeAppSchema(testDb.getConnection())
+
+  // Create enhanced database info
+  const databaseInfo: DatabasePath = {
+    path: testDb.path,
+    type: 'file',
+    isTemporary: true,
+  }
+
+  // Create isolation config
+  const isolationConfig: TestIsolationConfig = {
+    enableIsolation: true,
+    cleanupStrategy: 'immediate',
+    maxDatabaseAge: 3600000, // 1 hour
+  }
+
+  const environment: TestEnvironment = {
+    database: testDb,
+    databasePath: testDb.path,
+    databaseInfo,
+    isolationConfig,
+    testType,
+    cleanup: async () => {
+      await testDb.teardown()
+      testInstances.delete(suiteName)
+    },
+  }
+
+  testInstances.set(suiteName, environment)
+  return environment
+}
+
+/**
+ * Initialize database with application schema
+ */
+async function initializeAppSchema(db: Database): Promise<void> {
+  // Create main application tables
+  db.exec(`
       -- Tables table for metadata (matches production schema)
       CREATE TABLE IF NOT EXISTS tables (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -168,6 +167,7 @@ export class TestDatabaseFactory {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         table_id INTEGER NOT NULL,
         identifier TEXT NOT NULL,
+        name TEXT, -- Human-readable name (can be different from identifier)
         attribute_type_id INTEGER NOT NULL,
         description TEXT,
         is_required BOOLEAN NOT NULL DEFAULT FALSE,
@@ -270,6 +270,7 @@ export class TestDatabaseFactory {
         query_name TEXT, -- Extracted GraphQL operation name
         operation_type TEXT NOT NULL,
         input_schema TEXT, -- JSON schema for variables
+        variables_schema TEXT, -- JSON schema for variables (repository expects this field)
         default_variables TEXT, -- JSON default variable values
         applicable_tables TEXT, -- JSON array of applicable table names
         complexity_score INTEGER DEFAULT 1,
@@ -368,151 +369,148 @@ export class TestDatabaseFactory {
       CREATE INDEX IF NOT EXISTS idx_memory_stats_timestamp ON memory_stats(timestamp);
       CREATE INDEX IF NOT EXISTS idx_health_checks_timestamp ON health_checks(timestamp);
     `)
-  }
+}
 
-  /**
-   * Get existing test environment
-   */
-  static getTestEnvironment(suiteName: string): TestEnvironment | null {
-    return TestDatabaseFactory.instances.get(suiteName) || null
-  }
+/**
+ * Get existing test environment
+ */
+export function getTestEnvironment(suiteName: string): TestEnvironment | null {
+  return testInstances.get(suiteName) || null
+}
 
-  /**
-   * Cleanup specific test environment
-   */
-  static async cleanupTestEnvironment(suiteName: string): Promise<void> {
-    const env = TestDatabaseFactory.instances.get(suiteName)
-    if (env) {
-      await env.cleanup()
+/**
+ * Cleanup specific test environment
+ */
+export async function cleanupTestEnvironment(suiteName: string): Promise<void> {
+  const env = testInstances.get(suiteName)
+  if (env) {
+    await env.cleanup()
+  }
+}
+
+/**
+ * Cleanup all test environments
+ */
+export async function cleanupAll(): Promise<void> {
+  const cleanupPromises = Array.from(testInstances.values()).map((env) => env.cleanup())
+  await Promise.all(cleanupPromises)
+  testInstances.clear()
+}
+
+/**
+ * DEPRECATED: Create in-memory database for unit tests
+ * This method is deprecated in favor of file-based databases for better isolation
+ */
+export async function createInMemoryEnvironment(suiteName: string): Promise<TestEnvironment> {
+  console.warn(
+    `WARNING: createInMemoryEnvironment is deprecated for ${suiteName}. Use createTestEnvironment for file-based isolation.`
+  )
+
+  // Force file-based even for "in-memory" requests
+  return createTestEnvironment(`legacy-${suiteName}`)
+}
+
+/**
+ * Validates that all active databases are file-based with enhanced TypeScript validation
+ */
+export function validateFileBasedEnforcement(): FileBasedValidationResult {
+  const violations: string[] = []
+  const validatedPaths: string[] = []
+
+  for (const [suiteName, env] of testInstances.entries()) {
+    validatedPaths.push(env.databasePath)
+
+    // Check for in-memory database patterns
+    if (env.databasePath === ':memory:' || env.databasePath.includes(':memory:')) {
+      violations.push(`Suite "${suiteName}" using in-memory database: ${env.databasePath}`)
+    }
+
+    // Validate file-based requirements
+    if (env.databaseInfo.type !== 'file') {
+      violations.push(
+        `Suite "${suiteName}" database info indicates non-file-based: ${env.databasePath}`
+      )
+    }
+
+    // Validate isolation config
+    if (!env.isolationConfig.enableIsolation) {
+      violations.push(`Suite "${suiteName}" isolation config disables isolation`)
+    }
+
+    // Validate path structure for temporary files
+    if (env.databaseInfo.isTemporary && !env.databasePath.includes('/tmp/bun-graph-db-tests/')) {
+      violations.push(
+        `Suite "${suiteName}" temporary database not in expected directory: ${env.databasePath}`
+      )
     }
   }
 
-  /**
-   * Cleanup all test environments
-   */
-  static async cleanupAll(): Promise<void> {
-    const cleanupPromises = Array.from(TestDatabaseFactory.instances.values()).map((env) =>
-      env.cleanup()
-    )
-    await Promise.all(cleanupPromises)
-    TestDatabaseFactory.instances.clear()
+  return {
+    isValid: violations.length === 0,
+    violations: Object.freeze(violations),
+    enforcementLevel: 'strict',
+    validatedPaths: Object.freeze(validatedPaths),
+  }
+}
+
+/**
+ * Validate secure path to prevent directory traversal attacks
+ */
+function validateSecurePath(path: string): void {
+  // Check for directory traversal patterns
+  if (path.includes('..') || path.includes('~')) {
+    throw new Error(`Insecure path detected: ${path}`)
   }
 
-  /**
-   * DEPRECATED: Create in-memory database for unit tests
-   * This method is deprecated in favor of file-based databases for better isolation
-   */
-  static async createInMemoryEnvironment(suiteName: string): Promise<TestEnvironment> {
-    console.warn(
-      `WARNING: createInMemoryEnvironment is deprecated for ${suiteName}. Use createTestEnvironment for file-based isolation.`
-    )
-
-    // Force file-based even for "in-memory" requests
-    return TestDatabaseFactory.createTestEnvironment(`legacy-${suiteName}`)
+  // Ensure path is absolute for temp directories
+  if (path.startsWith('/tmp/') && !path.includes('..')) {
+    return // Valid temp path
   }
 
-  /**
-   * Validates that all active databases are file-based with enhanced TypeScript validation
-   */
-  static validateFileBasedEnforcement(): FileBasedValidationResult {
-    const violations: string[] = []
-    const validatedPaths: string[] = []
+  throw new Error(`Invalid database path: ${path}. Must be in /tmp/ directory.`)
+}
 
-    for (const [suiteName, env] of TestDatabaseFactory.instances.entries()) {
-      validatedPaths.push(env.databasePath)
+/**
+ * Create file-based environment for migration testing
+ * Enhanced method specifically for test migration system
+ */
+export async function createFileBasedEnvironment(
+  suiteName: string,
+  testType: TestType,
+  options: {
+    isolationLevel?: 'basic' | 'enhanced' | 'complete'
+    customTempDir?: string
+    metadata?: Record<string, unknown>
+  } = {}
+): Promise<TestEnvironment> {
+  const { isolationLevel = 'complete', customTempDir, metadata } = options
 
-      // Check for in-memory database patterns
-      if (env.databasePath === ':memory:' || env.databasePath.includes(':memory:')) {
-        violations.push(`Suite "${suiteName}" using in-memory database: ${env.databasePath}`)
-      }
-
-      // Validate file-based requirements
-      if (!env.databaseInfo.isFileBase) {
-        violations.push(
-          `Suite "${suiteName}" database info indicates non-file-based: ${env.databasePath}`
-        )
-      }
-
-      // Validate isolation config
-      if (!env.isolationConfig.enforceFileBased) {
-        violations.push(`Suite "${suiteName}" isolation config allows non-file-based databases`)
-      }
-
-      // Validate path structure for temporary files
-      if (env.databaseInfo.isTemporary && !env.databasePath.includes('/tmp/bun-graph-db-tests/')) {
-        violations.push(
-          `Suite "${suiteName}" temporary database not in expected directory: ${env.databasePath}`
-        )
-      }
-    }
-
-    return {
-      isValid: violations.length === 0,
-      violations: Object.freeze(violations),
-      enforcementLevel: 'strict',
-      validatedPaths: Object.freeze(validatedPaths),
-    }
+  // Use custom temp directory if provided (with validation)
+  if (customTempDir) {
+    validateSecurePath(customTempDir)
   }
 
-  /**
-   * Validate secure path to prevent directory traversal attacks
-   */
-  private static validateSecurePath(path: string): void {
-    // Check for directory traversal patterns
-    if (path.includes('..') || path.includes('~')) {
-      throw new Error(`Insecure path detected: ${path}`)
-    }
+  const env = await createTestEnvironment(suiteName, testType, isolationLevel)
 
-    // Ensure path is absolute for temp directories
-    if (path.startsWith('/tmp/') && !path.includes('..')) {
-      return // Valid temp path
-    }
-
-    throw new Error(`Invalid database path: ${path}. Must be in /tmp/ directory.`)
+  // Add metadata if provided
+  if (metadata) {
+    ;(env as any).metadata = metadata
   }
 
-  /**
-   * Create file-based environment for migration testing
-   * Enhanced method specifically for test migration system
-   */
-  static async createFileBasedEnvironment(
-    suiteName: string,
-    testType: TestType,
-    options: {
-      isolationLevel?: 'basic' | 'enhanced' | 'complete'
-      customTempDir?: string
-      metadata?: Record<string, unknown>
-    } = {}
-  ): Promise<TestEnvironment> {
-    const { isolationLevel = 'complete', customTempDir, metadata } = options
-
-    // Use custom temp directory if provided (with validation)
-    if (customTempDir) {
-      TestDatabaseFactory.validateSecurePath(customTempDir)
-    }
-
-    const env = await TestDatabaseFactory.createTestEnvironment(suiteName, testType, isolationLevel)
-
-    // Add metadata if provided
-    if (metadata) {
-      ;(env as any).metadata = metadata
-    }
-
-    return env
-  }
+  return env
 }
 
 // Global cleanup on process exit
 process.on('exit', () => {
-  TestDatabaseFactory.cleanupAll()
+  cleanupAll()
 })
 
 process.on('SIGINT', async () => {
-  await TestDatabaseFactory.cleanupAll()
+  await cleanupAll()
   process.exit(0)
 })
 
 process.on('SIGTERM', async () => {
-  await TestDatabaseFactory.cleanupAll()
+  await cleanupAll()
   process.exit(0)
 })

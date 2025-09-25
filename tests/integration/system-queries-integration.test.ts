@@ -4,7 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
+import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'system-queries-integration'
 let testContext: IsolatedTestContext
@@ -12,7 +12,7 @@ let testContext: IsolatedTestContext
 describe('System Queries - Integration Tests with Server Isolation', () => {
   beforeAll(async () => {
     console.log('🚀 Setting up integration test environment for system queries...')
-    testContext = await TestIsolationHelpers.setupIntegrationTest(SUITE_NAME)
+    testContext = await setupIntegrationTest(SUITE_NAME)
     console.log('✅ Integration test environment ready')
     console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
     console.log(`💾 Database: ${testContext.database?.databasePath}`)

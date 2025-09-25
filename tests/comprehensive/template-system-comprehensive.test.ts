@@ -7,38 +7,9 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import type { QueryTemplateDto } from '../../src/presentation/dto/QueryTemplateDto'
-import type {
-  ExportResult,
-  ImportResult,
-  StandardMutationResult,
-  TemplateResult,
-} from '../../src/presentation/graphql/types/StandardTypes'
-import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
+import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
 
 // Typed interfaces for template responses
-interface CreateTemplateResponse {
-  createTemplate: TemplateResult<QueryTemplateDto>
-}
-
-interface ExecuteTemplateResponse {
-  executeTemplateWithGraphQL: StandardMutationResult<any>
-}
-
-interface SearchTemplatesResponse {
-  searchTemplates: {
-    templates: QueryTemplateDto[]
-    totalCount: number
-  }
-}
-
-interface ExportTemplateResponse {
-  exportTemplate: ExportResult
-}
-
-interface ImportTemplateResponse {
-  importTemplate: ImportResult
-}
 
 const SUITE_NAME = 'template-system-comprehensive'
 let testContext: IsolatedTestContext
@@ -46,7 +17,7 @@ let testContext: IsolatedTestContext
 describe('Comprehensive Template System Test Suite', () => {
   beforeAll(async () => {
     console.log('🚀 Setting up comprehensive template system test environment...')
-    testContext = await TestIsolationHelpers.setupIntegrationTest(SUITE_NAME)
+    testContext = await setupIntegrationTest(SUITE_NAME)
     console.log('✅ Test environment ready')
     console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
     console.log(`💾 Database: ${testContext.database?.databasePath}`)

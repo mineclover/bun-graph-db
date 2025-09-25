@@ -9,7 +9,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { type GraphQLSchema, parse } from 'graphql'
 import toolsContract from '../../specs/005-graphql-mcp-graphql/contracts/graphql-tools.json'
-import { TestServerManager } from '../fixtures/test-server-manager'
+import { startServerForSuite, stopServerForSuite } from '../fixtures/test-server-manager'
 
 describe('GraphQL Operation Mapping Contract Tests', () => {
   const tools = toolsContract.tools
@@ -20,7 +20,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
     console.log(`Testing GraphQL operations for ${tools.length} tools`)
 
     // Start isolated test server for this test suite
-    const serverInstance = await TestServerManager.startServerForSuite('graphql-mapping')
+    const serverInstance = await startServerForSuite('graphql-mapping')
     graphqlEndpoint = serverInstance.url
 
     console.log(`Test server started on ${graphqlEndpoint}`)
@@ -73,7 +73,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
 
   afterAll(async () => {
     // Clean up test server
-    await TestServerManager.stopServerForSuite('graphql-mapping')
+    await stopServerForSuite('graphql-mapping')
   })
 
   describe('GraphQL Query Syntax Validation', () => {

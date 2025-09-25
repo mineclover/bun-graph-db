@@ -18,7 +18,10 @@ export class NodeQueries extends BaseResolver {
 
   constructor(
     private readonly nodeRepository: INodeRepository,
-    private readonly searchNodesUseCaseResolver: (() => Promise<SearchNodesUseCase | null>) | SearchNodesUseCase | null,
+    private readonly searchNodesUseCaseResolver:
+      | (() => Promise<SearchNodesUseCase | null>)
+      | SearchNodesUseCase
+      | null,
     logger: ILogger
   ) {
     super()
@@ -149,7 +152,7 @@ export class NodeQueries extends BaseResolver {
         // Transform GraphQL args to SearchNodesInput format
         // Prioritize the new 'query' field over legacy 'search' field
         const queryString = args.filter?.query || args.filter?.search
-        
+
         const searchInput = {
           tableId: args.filter?.tableId || '', // Provide default empty string if not provided
           query: queryString,

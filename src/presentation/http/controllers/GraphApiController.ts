@@ -1,13 +1,13 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
+import type { NodeId, TableId } from '@/core/types/CommonTypes.js'
+import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { TableId, NodeId } from '@/core/types/CommonTypes.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
-import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 import { ResponseHelper } from '../utils/responseHelpers.js'
 
 interface GraphQLResponse<T = any> {
@@ -35,7 +35,7 @@ class GraphQLClient {
       return result
     } catch (error) {
       return {
-        errors: [{ message: error instanceof Error ? error.message : 'GraphQL request failed' }]
+        errors: [{ message: error instanceof Error ? error.message : 'GraphQL request failed' }],
       }
     }
   }
@@ -48,7 +48,7 @@ export class GraphApiController {
   constructor(
     private readonly logger: ILogger,
     private readonly getTableDocsUseCase: GetTableDocsUseCase,
-    private readonly searchNodesUseCase: SearchNodesUseCase,
+    readonly _searchNodesUseCase: SearchNodesUseCase,
     private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase,
     private readonly tableRepository: ITableRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
@@ -124,8 +124,14 @@ export class GraphApiController {
       const result = await this.getTableDocsUseCase.execute({
         tableId: tableId as string,
         identifier: identifier as string,
-        includeSampleNodes: (typeof includeSampleNodes === 'string' ? includeSampleNodes === 'true' : !!includeSampleNodes),
-        includeUsageStats: (typeof includeUsageStats === 'string' ? includeUsageStats === 'true' : !!includeUsageStats),
+        includeSampleNodes:
+          typeof includeSampleNodes === 'string'
+            ? includeSampleNodes === 'true'
+            : !!includeSampleNodes,
+        includeUsageStats:
+          typeof includeUsageStats === 'string'
+            ? includeUsageStats === 'true'
+            : !!includeUsageStats,
         includeRelatedTemplates:
           includeRelatedTemplates === 'true' || includeRelatedTemplates === true,
         sampleLimit: parseInt(sampleLimit as string, 10) || 3,
@@ -205,7 +211,12 @@ export class GraphApiController {
 
       if (graphqlResult.errors) {
         this.logger.error('GraphQL export error:', { errors: graphqlResult.errors })
-        this.responseHelper.error(res, 500, `GraphQL error: ${graphqlResult.errors.map(e => e.message).join(', ')}`, 'Export table with nodes')
+        this.responseHelper.error(
+          res,
+          500,
+          `GraphQL error: ${graphqlResult.errors.map((e) => e.message).join(', ')}`,
+          'Export table with nodes'
+        )
         return
       }
 
@@ -218,8 +229,8 @@ export class GraphApiController {
       // 파일로 저장이 요청된 경우
       if (outputPath) {
         try {
-          const fs = await import('fs/promises')
-          const path = await import('path')
+          const fs = await import('node:fs/promises')
+          const path = await import('node:path')
 
           // 디렉토리 생성 (존재하지 않는 경우)
           const dir = path.dirname(outputPath)
@@ -265,7 +276,7 @@ export class GraphApiController {
         offset: 0,
       }
 
-      let relationsResult
+      let relationsResult: any
 
       if (sourceNodeId && targetNodeId) {
         // Search for specific relation between two nodes
@@ -308,7 +319,7 @@ export class GraphApiController {
       }
 
       const result = {
-        relations: (relationsResult.data || []).map((relation) => ({
+        relations: (relationsResult.data || []).map((relation: NodeRelation) => ({
           id: relation.getId(),
           sourceNodeId: relation.getSourceNodeId(),
           targetNodeId: relation.getTargetNodeId(),
@@ -352,11 +363,21 @@ export class GraphApiController {
       const searchInput = {
         tableId: tableId as string,
         sourceNodeIds: [nodeId as string],
-        relationFilters: relationTypesArray.length > 0 ? [{
-          relationTypes: relationTypesArray as string[],
-          direction: direction === 'INCOMING' ? RelationDirection.INCOMING : direction === 'OUTGOING' ? RelationDirection.OUTGOING : RelationDirection.BOTH,
-          depth: parseInt(depth as string, 10),
-        }] : undefined,
+        relationFilters:
+          relationTypesArray.length > 0
+            ? [
+                {
+                  relationTypes: relationTypesArray as string[],
+                  direction:
+                    direction === 'INCOMING'
+                      ? RelationDirection.INCOMING
+                      : direction === 'OUTGOING'
+                        ? RelationDirection.OUTGOING
+                        : RelationDirection.BOTH,
+                  depth: parseInt(depth as string, 10),
+                },
+              ]
+            : undefined,
         limit: 100, // Default limit for connected nodes
       }
 
@@ -402,20 +423,21 @@ export class GraphApiController {
       // Use SearchRelatedNodesUseCase with path queries to find shortest path
       const searchInput = {
         tableId: tableId as string,
-        pathQueries: [{
-          startNodeIds: [fromNodeId as string],
-          endNodeIds: [toNodeId as string],
-          maxDepth: parseInt(maxDepth as string, 10),
-        }],
+        pathQueries: [
+          {
+            startNodeIds: [fromNodeId as string],
+            endNodeIds: [toNodeId as string],
+            maxDepth: parseInt(maxDepth as string, 10),
+          },
+        ],
         limit: 1, // We only need one path result
       }
 
       const searchResult = await this.searchRelatedNodesUseCase.execute(searchInput)
 
       // Extract the path from the search result
-      const path = searchResult.paths && searchResult.paths.length > 0
-        ? searchResult.paths[0]
-        : null
+      const path =
+        searchResult.paths && searchResult.paths.length > 0 ? searchResult.paths[0] : null
 
       const result = {
         fromNodeId,
@@ -475,7 +497,7 @@ export class GraphApiController {
       }
 
       if (direction === 'BOTH' || direction === 'INCOMING') {
-        result.incomingRelations = incomingRelations.map((relation) => ({
+        result.incomingRelations = incomingRelations.map((relation: NodeRelation) => ({
           id: relation.getId(),
           sourceNodeId: relation.getSourceNodeId(),
           targetNodeId: relation.getTargetNodeId(),
@@ -486,7 +508,7 @@ export class GraphApiController {
       }
 
       if (direction === 'BOTH' || direction === 'OUTGOING') {
-        result.outgoingRelations = outgoingRelations.map((relation) => ({
+        result.outgoingRelations = outgoingRelations.map((relation: NodeRelation) => ({
           id: relation.getId(),
           sourceNodeId: relation.getSourceNodeId(),
           targetNodeId: relation.getTargetNodeId(),

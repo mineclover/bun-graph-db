@@ -1,11 +1,11 @@
 // File-based test migrated from: tests/fixtures/file-based-database-factory.ts
-import { TestDatabaseFactory } from '../fixtures/test-database-factory'
+import { createTestEnvironment } from '../fixtures/test-database-factory'
 
 describe('Migrated Test', () => {
   let testEnv: any
 
   beforeEach(async () => {
-    testEnv = await TestDatabaseFactory.createTestEnvironment('migrated-test')
+    testEnv = await createTestEnvironment('migrated-test')
   })
 
   afterEach(async () => {
@@ -14,6 +14,6 @@ describe('Migrated Test', () => {
 
   it('should use file-based database', () => {
     expect(testEnv.databasePath).not.toBe('file-based-db')
-    expect(testEnv.databaseInfo.isFileBase).toBe(true)
+    expect(testEnv.databaseInfo.type).toBe('file')
   })
 })

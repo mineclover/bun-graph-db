@@ -1,0 +1,439 @@
+# Enhanced Sorting Capabilities Demo
+# Comprehensive examples of the new sorting features including advanced sort options,
+# computed sorting, custom sort functions, and multi-criteria sorting
+
+# Example 1: Advanced Sort with Extended Options
+query AdvancedSortExample($tableId: ID!) {
+  searchNodesAdvanced(
+    filter: {
+      tableId: $tableId
+      search: "engineer"
+    }
+    pagination: { limit: 20, offset: 0 }
+    sort: {
+      advanced: [
+        {
+          field: "title"
+          direction: ASC
+          dataType: STRING
+          nullHandling: NULLS_LAST
+          caseSensitive: false
+          locale: "en-US"
+        }
+        {
+          field: "created_at"
+          direction: DESC
+          dataType: DATETIME
+          nullHandling: NULLS_FIRST
+        }
+      ]
+      optimization: {
+        enableCaching: true
+        cacheTTL: 600
+        analyzeComplexity: true
+        maxComplexity: 75
+      }
+    }
+  ) {
+    nodes {
+      id
+      title
+      content
+      createdAt
+      attributes {
+        attribute { identifier name }
+        value
+      }
+    }
+    totalCount
+    hasNextPage
+    sortMetadata {
+      strategy
+      executionTime
+      complexityScore
+      fromCache
+      indexUtilization
+      optimizationHints
+    }
+  }
+}
+
+# Example 2: Computed/Derived Sorting
+query ComputedSortExample($tableId: ID!, $searchTerms: [String!]!) {
+  searchNodesAdvanced(
+    filter: {
+      tableId: $tableId
+      query: "senior AND (engineer OR developer)"
+    }
+    sort: {
+      computed: [
+        {
+          field: "content"
+          direction: DESC
+          computationType: RELEVANCE_SCORE
+          computationParams: "{\"search_terms\": $searchTerms, \"boost_exact\": 2.5}"
+          weight: 0.7
+        }
+        {
+          field: "experience_years"
+          direction: DESC
+          computationType: AGGREGATE_FUNCTION
+          computationParams: "{\"function\": \"weighted_avg\", \"weights\": {\"senior\": 1.5}}"
+          weight: 0.3
+        }
+      ]
+      optimization: {
+        enableCaching: true
+        analyzeComplexity: true
+      }
+    }
+  ) {
+    nodes {
+      id
+      title
+      content
+      attributes {
+        attribute { identifier }
+        value
+      }
+    }
+    sortMetadata {
+      strategy
+      executionTime
+      complexityScore
+      optimizationHints
+    }
+  }
+}
+
+# Example 3: Custom Sort Functions
+query CustomSortExample($tableId: ID!) {
+  searchNodesAdvanced(
+    filter: { tableId: $tableId }
+    sort: {
+      custom: [
+        {
+          field: "filename"
+          direction: ASC
+          functionId: "natural-string"
+          priority: 80
+        }
+        {
+          field: "description"
+          direction: ASC
+          functionId: "length-sort"
+          parameters: "{\"secondary_sort\": \"asc\"}"
+          priority: 60
+        }
+        {
+          field: "content"
+          direction: DESC
+          functionId: "relevance-score"
+          parameters: "{\"search_terms\": [\"typescript\", \"react\"], \"boost_exact\": 2.0}"
+          priority: 70
+        }
+      ]
+    }
+  ) {
+    nodes {
+      id
+      title
+      content
+      createdAt
+    }
+    totalCount
+    sortMetadata {
+      strategy
+      executionTime
+      complexityScore
+      fromCache
+    }
+  }
+}
+
+# Example 4: Multi-Criteria Mixed Sorting
+query MultiCriteriaMixedSort($tableId: ID!) {
+  searchNodesAdvanced(
+    filter: {
+      tableId: $tableId
+      attributeFilters: [
+        { attributeId: "department", value: "Engineering", operator: EQUALS }
+      ]
+    }
+    sort: {
+      # High-priority exact matches
+      computed: [
+        {
+          field: "title"
+          direction: DESC
+          computationType: RELEVANCE_SCORE
+          computationParams: "{\"search_terms\": [\"senior\", \"lead\"], \"boost_exact\": 3.0}"
+          weight: 1.0
+        }
+      ]
+      # Natural string sorting for names
+      custom: [
+        {
+          field: "full_name"
+          direction: ASC
+          functionId: "natural-string"
+          priority: 70
+        }
+      ]
+      # Standard date sorting as tiebreaker
+      advanced: [
+        {
+          field: "hire_date"
+          direction: DESC
+          dataType: DATE
+          nullHandling: NULLS_LAST
+        }
+      ]
+      optimization: {
+        enableCaching: true
+        cacheTTL: 900
+        analyzeComplexity: true
+        maxComplexity: 80
+      }
+    }
+  ) {
+    nodes {
+      id
+      title
+      content
+      attributes {
+        attribute { identifier name }
+        value
+      }
+    }
+    sortMetadata {
+      strategy
+      executionTime
+      complexityScore
+      fromCache
+      indexUtilization
+      optimizationHints
+    }
+  }
+}
+
+# Example 5: Performance-Optimized Sorting
+query NodesWithDetailedSortingMetadata($tableId: ID!) {
+  nodesWithSorting(
+    filter: { tableId: $tableId }
+    pagination: { limit: 50, offset: 0 }
+    advancedSort: [
+      {
+        field: "priority_score"
+        direction: DESC
+        dataType: FLOAT
+        nullHandling: NULLS_LAST
+        indexHint: "idx_priority_score_desc"
+      }
+    ]
+    computedSort: [
+      {
+        field: "relevance"
+        direction: DESC
+        computationType: ML_PREDICTION
+        computationParams: "{\"model\": \"content_relevance_v2\", \"features\": [\"title_match\", \"content_length\"]}"
+        weight: 0.6
+      }
+    ]
+    customSort: [
+      {
+        field: "created_at"
+        direction: DESC
+        functionId: "temporal-boost"
+        parameters: "{\"decay_factor\": 0.95, \"time_unit\": \"days\"}"
+        priority: 50
+      }
+    ]
+  ) {
+    nodes {
+      id
+      title
+      content
+      createdAt
+      attributeCount
+      relationCount
+    }
+    totalCount
+    pagination {
+      offset
+      limit
+      hasNextPage
+      hasPreviousPage
+      totalPages
+    }
+    sortingMetadata {
+      strategy
+      executionTime
+      complexityScore
+      fromCache
+      indexUtilization
+      optimizationHints
+    }
+    recommendations
+    complexityAnalysis {
+      score
+      level
+      factors {
+        name
+        impact
+        description
+      }
+      estimatedCost
+      indexAnalysis {
+        utilization
+        availableIndexes
+        usedIndexes
+        recommendations
+      }
+    }
+  }
+}
+
+# Custom Sort Function Management Queries
+
+# Example 6: Discover Available Custom Sort Functions
+query CustomSortFunctions($dataType: SortDataType, $search: String) {
+  customSortFunctions(
+    dataType: $dataType
+    search: $search
+    tags: ["string", "natural"]
+  ) {
+    id
+    name
+    description
+    supportedDataTypes
+    priority
+    version
+    author
+    tags
+    parameters {
+      name
+      type
+      required
+      description
+      defaultValue
+      validation {
+        min
+        max
+        pattern
+        allowedValues
+      }
+    }
+    examples {
+      title
+      description
+      field
+      direction
+      parameters
+      expectedSql
+    }
+    createdAt
+    updatedAt
+  }
+}
+
+# Example 7: Get Specific Custom Sort Function Details
+query CustomSortFunctionDetails($functionId: String!) {
+  customSortFunction(functionId: $functionId) {
+    id
+    name
+    description
+    supportedDataTypes
+    priority
+    version
+    author
+    tags
+    parameters {
+      name
+      type
+      required
+      description
+      defaultValue
+      validation {
+        min
+        max
+        pattern
+        allowedValues
+      }
+    }
+    examples {
+      title
+      description
+      field
+      direction
+      parameters
+      expectedSql
+    }
+    createdAt
+    updatedAt
+  }
+}
+
+# Example 8: Search Custom Sort Functions
+query SearchCustomSortFunctions($query: String!) {
+  searchCustomSortFunctions(query: $query, limit: 10) {
+    id
+    name
+    description
+    supportedDataTypes
+    priority
+    tags
+    examples {
+      title
+      description
+      field
+      direction
+      expectedSql
+    }
+  }
+}
+
+# Example 9: Custom Sort Function Usage Statistics
+query CustomSortFunctionStats($functionId: String) {
+  customSortFunctionStats(functionId: $functionId) {
+    functionId
+    callCount
+    averageExecutionTime
+    lastUsed
+    errorCount
+    successRate
+  }
+}
+
+# Example Variables for Testing
+# Variables for AdvancedSortExample:
+# {
+#   "tableId": "your-table-id-here"
+# }
+
+# Variables for ComputedSortExample:
+# {
+#   "tableId": "your-table-id-here",
+#   "searchTerms": ["typescript", "react", "senior"]
+# }
+
+# Variables for CustomSortFunctions:
+# {
+#   "dataType": "STRING",
+#   "search": "natural"
+# }
+
+# Variables for CustomSortFunctionDetails:
+# {
+#   "functionId": "natural-string"
+# }
+
+# Variables for SearchCustomSortFunctions:
+# {
+#   "query": "string sorting"
+# }
+
+# Variables for CustomSortFunctionStats:
+# {
+#   "functionId": "natural-string"
+# }

@@ -31,6 +31,212 @@ input SortInput {
   direction: SortDirection!
 }
 
+# Enhanced sort inputs for comprehensive sorting capabilities
+
+"""
+Advanced sort input with extended options for fine-grained control
+Provides comprehensive sorting capabilities including data type awareness,
+null handling, case sensitivity, and locale-specific sorting
+"""
+input AdvancedSortInput {
+  "Field name to sort by"
+  field: String!
+
+  "Sort direction (ASC or DESC)"
+  direction: SortDirection!
+
+  "Data type hint for optimal sort strategy selection"
+  dataType: SortDataType
+
+  "How to handle null values in sorting"
+  nullHandling: NullHandling = NULLS_LAST
+
+  "Case sensitivity for text fields"
+  caseSensitive: Boolean = true
+
+  "Locale for locale-aware text sorting"
+  locale: String
+
+  "Index hint to optimize query performance"
+  indexHint: String
+}
+
+"""
+Computed/derived sort input for advanced analytical sorting
+Enables sorting by calculated values, aggregations, and relationships
+"""
+input ComputedSortInput {
+  "Field name to sort by"
+  field: String!
+
+  "Sort direction (ASC or DESC)"
+  direction: SortDirection!
+
+  "Type of computation to perform"
+  computationType: ComputationType!
+
+  "Parameters for the computation (JSON string)"
+  computationParams: String
+
+  "Weight for relevance scoring (0.0-1.0)"
+  weight: Float = 1.0
+
+  "Boost factor for specific conditions"
+  boost: Float = 1.0
+}
+
+"""
+Custom sort input for extensible sorting with user-defined functions
+Allows integration of custom sort functions from the registry
+"""
+input CustomSortInput {
+  "Field name to sort by"
+  field: String!
+
+  "Sort direction (ASC or DESC)"
+  direction: SortDirection!
+
+  "Custom sort function identifier from registry"
+  functionId: String!
+
+  "Parameters for the custom function (JSON string)"
+  parameters: String
+
+  "Priority for multi-criteria sorting"
+  priority: Int = 50
+}
+
+"""
+Multi-criteria sort input supporting different sort types
+Enables complex sorting scenarios with multiple criteria
+"""
+input MultiCriteriaSortInput {
+  "Advanced sort criteria"
+  advanced: [AdvancedSortInput!]
+
+  "Computed sort criteria"
+  computed: [ComputedSortInput!]
+
+  "Custom sort criteria"
+  custom: [CustomSortInput!]
+
+  "Performance optimization settings"
+  optimization: SortOptimizationInput
+}
+
+"""
+Sort optimization settings for performance tuning
+Controls caching, complexity analysis, and execution strategies
+"""
+input SortOptimizationInput {
+  "Enable result caching"
+  enableCaching: Boolean = true
+
+  "Cache TTL in seconds"
+  cacheTTL: Int = 900
+
+  "Enable complexity analysis"
+  analyzeComplexity: Boolean = true
+
+  "Maximum allowed complexity score (0-100)"
+  maxComplexity: Int = 80
+
+  "Force specific strategy by name"
+  forceStrategy: String
+}
+
+"""
+Data type enumeration for sort strategy selection
+Helps the system choose optimal sorting algorithms
+"""
+enum SortDataType {
+  STRING
+  TEXT
+  NUMBER
+  INTEGER
+  FLOAT
+  BOOLEAN
+  DATE
+  DATETIME
+  TIMESTAMP
+  JSON
+  UUID
+  EMAIL
+  URL
+  PHONE
+  IP_ADDRESS
+  CURRENCY
+}
+
+"""
+Null handling strategies for sorting
+Controls how null/empty values are positioned in results
+"""
+enum NullHandling {
+  "Null values appear first in sort order"
+  NULLS_FIRST
+
+  "Null values appear last in sort order"
+  NULLS_LAST
+
+  "Exclude null values from results"
+  NULLS_EXCLUDE
+
+  "Only return null values"
+  NULLS_ONLY
+}
+
+"""
+Computation types for derived sorting
+Defines how computed values are calculated
+"""
+enum ComputationType {
+  "Relevance scoring based on search terms"
+  RELEVANCE_SCORE
+
+  "Relationship strength/importance"
+  RELATIONSHIP_STRENGTH
+
+  "Aggregate functions (count, sum, avg)"
+  AGGREGATE_FUNCTION
+
+  "Custom formula calculation"
+  CUSTOM_FORMULA
+
+  "Machine learning prediction"
+  ML_PREDICTION
+
+  "Geographic distance calculation"
+  GEO_DISTANCE
+
+  "Time-based scoring (recency, age)"
+  TEMPORAL_SCORE
+}
+
+"""
+Sort result metadata for performance analysis
+Provides insights into sort execution and optimization
+"""
+type SortResultMetadata {
+  "Strategy used for sorting"
+  strategy: String!
+
+  "Execution time in milliseconds"
+  executionTime: Float!
+
+  "Complexity score (0-100)"
+  complexityScore: Int!
+
+  "Whether result was served from cache"
+  fromCache: Boolean!
+
+  "Index utilization percentage"
+  indexUtilization: Float!
+
+  "Recommendations for optimization"
+  optimizationHints: [String!]!
+}
+
 # Connection interface for pagination
 interface Connection {
   totalCount: Int!

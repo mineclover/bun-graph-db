@@ -52,11 +52,7 @@ export function sendHandleError(
   } satisfies ApiResponse)
 }
 
-export function sendValidationError(
-  res: Response,
-  message: string,
-  field?: string
-): void {
+export function sendValidationError(res: Response, message: string, field?: string): void {
   res.status(400).json({
     success: false,
     error: message,

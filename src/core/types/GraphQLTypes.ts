@@ -258,7 +258,7 @@ export interface SearchNodesArgs {
   filter?: {
     search?: string
     tableId?: string
-    query?: string  // New advanced query field
+    query?: string // New advanced query field
   }
   pagination?: {
     limit?: number

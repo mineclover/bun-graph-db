@@ -4,7 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
+import { type IsolatedTestContext, setupUnitTest } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'template-creation-isolated'
 let testContext: IsolatedTestContext
@@ -77,7 +77,7 @@ let templateService: MockTemplateService
 describe('Template Creation - Isolated Unit Tests', () => {
   beforeAll(async () => {
     console.log('🚀 Setting up unit test environment for template creation...')
-    testContext = await TestIsolationHelpers.setupUnitTest(SUITE_NAME)
+    testContext = await setupUnitTest(SUITE_NAME)
     templateService = new MockTemplateService(testContext.database!.database.getConnection())
     console.log('✅ Unit test environment ready')
   })

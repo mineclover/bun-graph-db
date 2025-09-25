@@ -138,7 +138,7 @@ export function printHelp(): void {
 Usage: bun index.ts [options]
 
 Options:
-  -p, --port <number>         Port number (default: 4000)
+  -p, --port <number>         Port number (default: 4141)
   -h, --host <string>         Host address (default: 0.0.0.0)
   -e, --env <environment>     Environment (development, production, test)
   -d, --database-path <path>  SQLite database file path (default: ./data/bun-graph-db.sqlite)
@@ -154,7 +154,7 @@ Environment Variables:
   CORS_ORIGIN                 CORS origins (comma-separated)
 
 Examples:
-  bun index.ts                              # Start with default settings (port 4000)
+  bun index.ts                              # Start with default settings (port 4141)
   bun index.ts --port 3000                  # Start on port 3000 (unified port)
   bun index.ts --host 127.0.0.1 -p 8080     # Custom host and port
   bun index.ts --env production              # Production environment

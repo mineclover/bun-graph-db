@@ -1,12 +1,21 @@
-import { SortStrategy, type SortResult, type SortContext } from '@/domain/value-objects/SortStrategy.js'
+import {
+  type SortContext,
+  type SortResult,
+  SortStrategy,
+} from '@/domain/value-objects/SortStrategy.js'
 
 export class NumericSortStrategy extends SortStrategy {
-  canHandle(field: string, dataType: string): boolean {
-    return dataType === 'number' || dataType === 'integer' || dataType === 'float' || dataType === 'decimal'
+  canHandle(_field: string, dataType: string): boolean {
+    return (
+      dataType === 'number' ||
+      dataType === 'integer' ||
+      dataType === 'float' ||
+      dataType === 'decimal'
+    )
   }
 
   buildSortClause(field: string, direction: 'asc' | 'desc', context: SortContext): SortResult {
-    const attribute = context.availableAttributes.find(attr => attr.identifier === field)
+    const attribute = context.availableAttributes.find((attr) => attr.identifier === field)
 
     if (!attribute) {
       throw new Error(`Attribute '${field}' not found for numeric sorting`)
@@ -16,12 +25,12 @@ export class NumericSortStrategy extends SortStrategy {
     if (field === 'created_at' || field === 'updated_at') {
       return {
         sqlClause: `${context.nodeAlias}.${field} ${direction.toUpperCase()}`,
-        parameters: []
+        parameters: [],
       }
     }
 
     // For custom attributes, we need to handle numeric conversion and null values
-    const nullHandling = direction === 'asc' ? 'NULLS LAST' : 'NULLS FIRST'
+    const _nullHandling = direction === 'asc' ? 'NULLS LAST' : 'NULLS FIRST'
 
     // Cast to REAL for SQLite numeric sorting with proper null handling
     const sqlClause = `
@@ -38,7 +47,7 @@ export class NumericSortStrategy extends SortStrategy {
 
     return {
       sqlClause,
-      parameters: []
+      parameters: [],
     }
   }
 
@@ -59,7 +68,7 @@ export class NumericSortStrategy extends SortStrategy {
    * Safely converts a string to number with fallback
    */
   static safeParseNumber(value: string, fallback: number = 0): number {
-    if (!this.isValidNumeric(value)) return fallback
+    if (!NumericSortStrategy.isValidNumeric(value)) return fallback
     return Number(value)
   }
 }

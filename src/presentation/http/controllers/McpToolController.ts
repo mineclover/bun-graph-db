@@ -1,8 +1,8 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 import { BulkTemplateImportTool } from '@/application/services/BulkTemplateImportTool.js'
 import { RestApiClient } from '@/application/services/RestApiClient.js'
+import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 
 /**
  * MCP Tool Controller - Bridge between MCP protocol and local services
@@ -35,7 +35,7 @@ export class McpToolController {
         generateNewIdentifier = false,
         dryRun = false,
         filter = [],
-        batchSize = 10
+        batchSize = 10,
       } = req.body
 
       this.logger.info('MCP Tool: bulk-import-templates called', {
@@ -43,7 +43,7 @@ export class McpToolController {
         generateNewIdentifier,
         dryRun,
         filterCount: filter.length,
-        batchSize
+        batchSize,
       })
 
       const result = await this.bulkImportTool.bulkImportTemplates({
@@ -51,22 +51,21 @@ export class McpToolController {
         generateNewIdentifier,
         dryRun,
         filter,
-        batchSize
+        batchSize,
       })
 
       res.json({
         success: true,
         data: result,
         tool: 'bulk-import-templates',
-        executedAt: new Date().toISOString()
+        executedAt: new Date().toISOString(),
       })
-
     } catch (error) {
       this.logger.error('MCP Tool: bulk-import-templates error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: getErrorMessage(error),
-        tool: 'bulk-import-templates'
+        tool: 'bulk-import-templates',
       })
     }
   }
@@ -74,7 +73,7 @@ export class McpToolController {
   /**
    * Handle list available templates MCP tool call
    */
-  async listAvailableTemplates(req: Request, res: Response): Promise<void> {
+  async listAvailableTemplates(_req: Request, res: Response): Promise<void> {
     try {
       this.logger.info('MCP Tool: list-available-templates called')
 
@@ -84,18 +83,17 @@ export class McpToolController {
         success: true,
         data: {
           templates: result,
-          count: result.length
+          count: result.length,
         },
         tool: 'list-available-templates',
-        executedAt: new Date().toISOString()
+        executedAt: new Date().toISOString(),
       })
-
     } catch (error) {
       this.logger.error('MCP Tool: list-available-templates error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: getErrorMessage(error),
-        tool: 'list-available-templates'
+        tool: 'list-available-templates',
       })
     }
   }
@@ -103,7 +101,7 @@ export class McpToolController {
   /**
    * Handle get import status MCP tool call
    */
-  async getImportStatus(req: Request, res: Response): Promise<void> {
+  async getImportStatus(_req: Request, res: Response): Promise<void> {
     try {
       this.logger.info('MCP Tool: get-import-status called')
 
@@ -113,15 +111,14 @@ export class McpToolController {
         success: true,
         data: result,
         tool: 'get-import-status',
-        executedAt: new Date().toISOString()
+        executedAt: new Date().toISOString(),
       })
-
     } catch (error) {
       this.logger.error('MCP Tool: get-import-status error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: getErrorMessage(error),
-        tool: 'get-import-status'
+        tool: 'get-import-status',
       })
     }
   }
@@ -138,7 +135,7 @@ export class McpToolController {
         res.status(400).json({
           success: false,
           error: 'toolName is required',
-          tool: 'unknown'
+          tool: 'unknown',
         })
         return
       }
@@ -167,17 +164,16 @@ export class McpToolController {
             availableTools: [
               'bulk-import-templates',
               'list-available-templates',
-              'get-import-status'
-            ]
+              'get-import-status',
+            ],
           })
       }
-
     } catch (error) {
       this.logger.error('MCP Tool: Generic call error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
         error: getErrorMessage(error),
-        tool: 'generic-mcp-call'
+        tool: 'generic-mcp-call',
       })
     }
   }
@@ -185,33 +181,35 @@ export class McpToolController {
   /**
    * List all available MCP tools
    */
-  async listMcpTools(req: Request, res: Response): Promise<void> {
+  async listMcpTools(_req: Request, res: Response): Promise<void> {
     try {
       const tools = [
         {
           name: 'bulk-import-templates',
-          description: 'Bulk import templates from exported-templates directory. Bridge between local file system and GraphQL operations.',
+          description:
+            'Bulk import templates from exported-templates directory. Bridge between local file system and GraphQL operations.',
           operationType: 'mutation',
           parameters: {
             overwriteExisting: 'boolean (default: false)',
             generateNewIdentifier: 'boolean (default: false)',
             dryRun: 'boolean (default: false)',
             filter: 'string[] (optional)',
-            batchSize: 'number (default: 10, max: 50)'
-          }
+            batchSize: 'number (default: 10, max: 50)',
+          },
         },
         {
           name: 'list-available-templates',
-          description: 'List all available template files in exported-templates directory with metadata.',
+          description:
+            'List all available template files in exported-templates directory with metadata.',
           operationType: 'query',
-          parameters: {}
+          parameters: {},
         },
         {
           name: 'get-import-status',
           description: 'Get status and summary of available templates for import.',
           operationType: 'query',
-          parameters: {}
-        }
+          parameters: {},
+        },
       ]
 
       res.json({
@@ -219,16 +217,15 @@ export class McpToolController {
         data: {
           tools,
           count: tools.length,
-          description: 'MCP Tools serve as bridges between GraphQL operations and local services'
+          description: 'MCP Tools serve as bridges between GraphQL operations and local services',
         },
-        executedAt: new Date().toISOString()
+        executedAt: new Date().toISOString(),
       })
-
     } catch (error) {
       this.logger.error('MCP Tool: List tools error:', toErrorMeta(error))
       res.status(500).json({
         success: false,
-        error: getErrorMessage(error)
+        error: getErrorMessage(error),
       })
     }
   }

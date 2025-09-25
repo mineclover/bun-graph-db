@@ -14,6 +14,10 @@ type NodeRelation implements Node {
   createdAt: DateTime!
   updatedAt: DateTime!
 
+  # Properties
+  properties: JSON
+  strength: Float
+
   # Relationships
   table: Table!
   sourceNode: TableNode!
@@ -39,6 +43,9 @@ input CreateRelationInput {
   sourceNodeId: ID!
   targetNodeId: ID!
   relationTypeId: ID!
+  properties: JSON
+  strength: Float
+  confidence: Float
 }
 
 input UpdateRelationInput {

@@ -7,7 +7,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { TestServerManager } from '../../fixtures/test-server-manager'
+import { startServerForSuite, stopServerForSuite } from '../../fixtures/test-server-manager'
 
 interface McpToolCallRequest {
   jsonrpc: '2.0'
@@ -15,23 +15,6 @@ interface McpToolCallRequest {
   params: {
     name: string
     arguments: Record<string, any>
-  }
-  id: string | number
-}
-
-interface McpToolCallResponse {
-  jsonrpc: '2.0'
-  result?: {
-    content: Array<{
-      type: 'text'
-      text: string
-    }>
-    isError?: boolean
-  }
-  error?: {
-    code: number
-    message: string
-    data?: any
   }
   id: string | number
 }
@@ -44,7 +27,7 @@ describe('Health Check Tool Integration Tests', () => {
     console.log('Starting isolated test server for health check integration tests')
 
     // Start isolated test server for this test suite
-    const serverInstance = await TestServerManager.startServerForSuite('health-check-integration')
+    const serverInstance = await startServerForSuite('health-check-integration')
     graphqlEndpoint = serverInstance.url
     mcpEndpoint = `${serverInstance.url.replace('/graphql', '/mcp')}`
 
@@ -71,7 +54,7 @@ describe('Health Check Tool Integration Tests', () => {
 
   afterAll(async () => {
     // Clean up test server
-    await TestServerManager.stopServerForSuite('health-check-integration')
+    await stopServerForSuite('health-check-integration')
   })
 
   describe('End-to-End Health Check via MCP', () => {

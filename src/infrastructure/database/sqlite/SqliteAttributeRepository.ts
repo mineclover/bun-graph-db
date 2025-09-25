@@ -18,6 +18,7 @@ interface AttributeRow {
   id: number
   table_id: number
   identifier: string
+  name: string | null
   attribute_type_id: number
   description: string | null
   is_required: boolean
@@ -48,14 +49,15 @@ export class SqliteAttributeRepository implements IAttributeRepository {
 
     if (attributeData.id === null || attributeData.id === 'null') {
       const query = `
-        INSERT INTO attributes (table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO attributes (table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `
 
       try {
         const result = this.db.run(query, [
           attributeData.table_id,
           attributeData.identifier,
+          attributeData.name,
           attributeData.attribute_type_id,
           attributeData.description,
           attributeData.is_required,
@@ -72,7 +74,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     } else {
       const query = `
         UPDATE attributes 
-        SET table_id = ?, identifier = ?, attribute_type_id = ?, description = ?, is_required = ?, metadata = ?, updated_at = ?
+        SET table_id = ?, identifier = ?, name = ?, attribute_type_id = ?, description = ?, is_required = ?, metadata = ?, updated_at = ?
         WHERE id = ?
       `
 
@@ -80,6 +82,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
         this.db.run(query, [
           attributeData.table_id,
           attributeData.identifier,
+          attributeData.name,
           attributeData.attribute_type_id,
           attributeData.description,
           attributeData.is_required,
@@ -95,7 +98,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
 
   async findById(id: AttributeId): Promise<Attribute | null> {
     const query = `
-      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
       WHERE id = ?
     `
@@ -113,7 +116,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     identifier: string
   ): Promise<Attribute | null> {
     const query = `
-      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
       WHERE table_id = ? AND identifier = ?
     `
@@ -133,7 +136,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
       WHERE table_id = ?
       ORDER BY created_at DESC
@@ -172,7 +175,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
       WHERE attribute_type_id = ?
       ORDER BY created_at DESC
@@ -210,7 +213,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
@@ -299,8 +302,8 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     if (attributes.length === 0) return
 
     const query = `
-      INSERT OR REPLACE INTO attributes (id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO attributes (id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
     try {
@@ -313,6 +316,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
             attributeData.id,
             attributeData.table_id,
             attributeData.identifier,
+            attributeData.name,
             attributeData.attribute_type_id,
             attributeData.description,
             attributeData.is_required,
@@ -332,7 +336,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
 
     const placeholders = ids.map(() => '?').join(',')
     const query = `
-      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
       WHERE id IN (${placeholders})
     `
@@ -347,7 +351,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
 
   async findRequiredByTableId(tableId: TableId): Promise<Attribute[]> {
     const query = `
-      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
       WHERE table_id = ? AND is_required = TRUE
       ORDER BY created_at ASC
@@ -384,18 +388,20 @@ export class SqliteAttributeRepository implements IAttributeRepository {
       id: row.id,
       table_id: row.table_id,
       identifier: row.identifier,
+      name: row.name, // Add name field debugging
       attribute_type_id: row.attribute_type_id,
       description: row.description,
       is_required: row.is_required,
       metadata: row.metadata,
       created_at: row.created_at,
-      updated_at: row.updated_at
+      updated_at: row.updated_at,
     })
 
     const attribute = Attribute.fromDatabase(
       row.id.toString(),
       row.table_id.toString(),
       row.identifier,
+      row.name, // Add name parameter
       row.attribute_type_id.toString(),
       row.description,
       row.is_required,
@@ -408,6 +414,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
       id: attribute.getId(),
       tableId: attribute.getTableId(),
       identifier: attribute.getIdentifier(),
+      name: attribute.getName(), // Add name debugging
       attributeTypeId: attribute.getAttributeTypeId(),
     })
 
@@ -462,7 +469,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
 
   async findByIdentifier(identifier: string): Promise<Attribute | null> {
     const query = `
-      SELECT id, table_id, identifier, attribute_type_id, description, is_required, metadata, created_at, updated_at
+      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
       WHERE identifier = ?
       LIMIT 1

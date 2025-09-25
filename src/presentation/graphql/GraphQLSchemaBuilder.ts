@@ -420,7 +420,8 @@ export class GraphQLSchemaBuilder {
       },
 
       NodeAttribute: {
-        attribute: (parent: GraphQLParent) => deps.attributeFieldResolvers.attribute(parent as any),
+        attribute: (parent: GraphQLParent) => deps.attributeFieldResolvers.nodeAttribute_attribute_field(parent as any),
+        formattedValue: (parent: GraphQLParent) => deps.attributeFieldResolvers.nodeAttribute_formattedValue_field(parent as any),
       },
 
       NodeRelation: {

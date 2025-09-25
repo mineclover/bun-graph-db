@@ -73,9 +73,15 @@ export function createApiRoutes(
   if (mcpToolController) {
     router.get('/mcp-tools', (req, res) => mcpToolController.listMcpTools(req, res))
     router.post('/mcp-tools/call', (req, res) => mcpToolController.callMcpTool(req, res))
-    router.post('/mcp-tools/bulk-import-templates', (req, res) => mcpToolController.bulkImportTemplates(req, res))
-    router.get('/mcp-tools/list-available-templates', (req, res) => mcpToolController.listAvailableTemplates(req, res))
-    router.get('/mcp-tools/import-status', (req, res) => mcpToolController.getImportStatus(req, res))
+    router.post('/mcp-tools/bulk-import-templates', (req, res) =>
+      mcpToolController.bulkImportTemplates(req, res)
+    )
+    router.get('/mcp-tools/list-available-templates', (req, res) =>
+      mcpToolController.listAvailableTemplates(req, res)
+    )
+    router.get('/mcp-tools/import-status', (req, res) =>
+      mcpToolController.getImportStatus(req, res)
+    )
   }
 
   return router

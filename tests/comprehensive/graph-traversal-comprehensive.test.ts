@@ -7,11 +7,11 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
-import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
-import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
 import { DatabaseCleaner } from '../fixtures/database-cleaner'
-import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
+import { createGraphQLExecutor, createGraphQLYoga } from '../fixtures/graphql-yoga-helper'
+import { createTestEnvironment, type TestEnvironment } from '../fixtures/test-database-factory'
 
 describe('Comprehensive Graph Traversal Test Suite', () => {
   let yoga: any
@@ -21,9 +21,9 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
   let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
-    testEnvironment = await TestDatabaseFactory.createTestEnvironment('graph-traversal', 'traversal')
+    testEnvironment = await createTestEnvironment('graph-traversal', 'traversal')
     process.env.DATABASE_PATH = testEnvironment.databasePath
-    container = await ContainerBootstrap.createContainer()
+    container = await createContainer()
     yoga = await createGraphQLYoga(container)
     graphqlExecute = createGraphQLExecutor(yoga)
     databaseCleaner = new DatabaseCleaner(container)
@@ -122,7 +122,9 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       `)
 
       expect(outgoingQuery.data.getConnectedNodes.nodes).toHaveLength(2) // Should find nodes 2 and 4
-      const neighborContents = outgoingQuery.data.getConnectedNodes.nodes.map((n: any) => n.content).sort()
+      const neighborContents = outgoingQuery.data.getConnectedNodes.nodes
+        .map((n: any) => n.content)
+        .sort()
       expect(neighborContents).toEqual(['Content for node 2', 'Content for node 4'])
 
       // Test incoming neighbors of node 5
@@ -142,7 +144,9 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       `)
 
       expect(incomingQuery.data.getConnectedNodes.nodes).toHaveLength(2) // Should find nodes 2 and 4
-      const incomingContents = incomingQuery.data.getConnectedNodes.nodes.map((n: any) => n.content).sort()
+      const incomingContents = incomingQuery.data.getConnectedNodes.nodes
+        .map((n: any) => n.content)
+        .sort()
       expect(incomingContents).toEqual(['Content for node 2', 'Content for node 4'])
     })
 
@@ -164,8 +168,8 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
 
       // Verify traversal order (BFS should visit all depth-1 nodes before depth-2)
       const visitOrder = bfsResult.map((n: any) => n.title)
-      const depth1Nodes = ['Node 2', 'Node 4']
-      const depth2Nodes = ['Node 3', 'Node 5']
+      const _depth1Nodes = ['Node 2', 'Node 4']
+      const _depth2Nodes = ['Node 3', 'Node 5']
 
       const lastDepth1Index = Math.max(visitOrder.indexOf('Node 2'), visitOrder.indexOf('Node 4'))
       const firstDepth2Index = Math.min(visitOrder.indexOf('Node 3'), visitOrder.indexOf('Node 5'))

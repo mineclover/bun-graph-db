@@ -8,7 +8,7 @@
  */
 
 import { spawn } from 'bun'
-import { TestIsolationHelpers } from './fixtures/test-isolation-helpers'
+import { cleanupAll } from './fixtures/test-isolation-helpers'
 
 interface TestSuite {
   name: string
@@ -333,7 +333,7 @@ Current Test Suites:
 
   if (args.includes('--cleanup')) {
     console.log('🧹 Cleaning up all test environments...')
-    await TestIsolationHelpers.cleanupAll()
+    await cleanupAll()
     console.log('✅ Cleanup completed')
     return
   }

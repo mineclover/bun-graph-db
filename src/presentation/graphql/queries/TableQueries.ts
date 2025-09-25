@@ -119,7 +119,9 @@ export class TableQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         // Resolve the use case from container to avoid circular dependency
-        const getTableDocsUseCase = await this.container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE) as any
+        const getTableDocsUseCase = (await this.container.resolve(
+          UseCaseTokens.GET_TABLE_DOCS_USE_CASE
+        )) as any
 
         const result = await getTableDocsUseCase.execute({
           tableId: args.tableId,

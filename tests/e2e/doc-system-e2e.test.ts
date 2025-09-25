@@ -4,7 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { type IsolatedTestContext, TestIsolationHelpers } from '../fixtures/test-isolation-helpers'
+import { type IsolatedTestContext, setupE2ETest } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'doc-system-e2e'
 let testContext: IsolatedTestContext
@@ -30,7 +30,7 @@ const TEST_SCENARIOS = {
 describe('Doc System - End-to-End Tests', () => {
   beforeAll(async () => {
     console.log('🌐 Setting up E2E test environment for doc system...')
-    testContext = await TestIsolationHelpers.setupE2ETest(SUITE_NAME, {
+    testContext = await setupE2ETest(SUITE_NAME, {
       seedData: true,
       mockExternalServices: false,
       enableLogging: true,

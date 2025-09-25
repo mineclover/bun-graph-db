@@ -154,12 +154,14 @@ export class AttributeResolver extends BaseResolver {
 
   // Mutation resolvers - Attribute Types
   async createAttributeType(args: { input: CreateAttributeTypeInput }): Promise<{
+    success: boolean
     attributeType: AttributeTypeDto | null
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
     try {
       const result = await this.createAttributeTypeUseCase.execute(args.input)
       return {
+        success: true,
         attributeType: result.attributeType,
         errors: [],
       }
@@ -171,6 +173,7 @@ export class AttributeResolver extends BaseResolver {
 
       if (error instanceof ValidationException) {
         return {
+          success: false,
           attributeType: null,
           errors: [
             {
@@ -184,6 +187,7 @@ export class AttributeResolver extends BaseResolver {
 
       if (error instanceof ConflictException) {
         return {
+          success: false,
           attributeType: null,
           errors: [
             {
@@ -196,6 +200,7 @@ export class AttributeResolver extends BaseResolver {
       }
 
       return {
+        success: false,
         attributeType: null,
         errors: [
           {
@@ -223,15 +228,14 @@ export class AttributeResolver extends BaseResolver {
         description: args.input.description,
         jsonType: args.input.jsonType,
         format: args.input.format,
-        validationSchema: args.input.validationSchema
-          ? args.input.validationSchema
-          : null,
-        defaultValue: args.input.defaultValue !== undefined
-          ? args.input.defaultValue
-          : null,
+        validationSchema: args.input.validationSchema ? args.input.validationSchema : null,
+        defaultValue: args.input.defaultValue !== undefined ? args.input.defaultValue : null,
       }
 
-      const updatedAttributeType = await this.attributeTypeRepository.update(args.id as AttributeTypeId, updates)
+      const updatedAttributeType = await this.attributeTypeRepository.update(
+        args.id as AttributeTypeId,
+        updates
+      )
 
       return {
         attributeType: attributeTypeFromEntity(updatedAttributeType),
@@ -289,20 +293,30 @@ export class AttributeResolver extends BaseResolver {
 
   // Mutation resolvers - Attributes
   async createAttribute(args: { input: CreateAttributeInput }): Promise<{
+    success: boolean
     attribute: AttributeDto | null
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
     try {
+      console.log('DEBUG: createAttribute resolver called with input:', args.input)
       const result = await this.createAttributeUseCase.execute(args.input)
+      console.log('DEBUG: createAttributeUseCase returned:', {
+        hasAttribute: !!result.attribute,
+        attributeId: result.attribute?.id,
+        attributeName: result.attribute?.name,
+      })
       return {
+        success: true,
         attribute: result.attribute,
         errors: [],
       }
     } catch (error) {
+      console.error('DEBUG: createAttribute resolver caught error:', error)
       this.logger.error('Failed to create attribute', { input: args.input, ...toErrorMeta(error) })
 
       if (error instanceof ValidationException) {
         return {
+          success: false,
           attribute: null,
           errors: [
             {
@@ -316,6 +330,7 @@ export class AttributeResolver extends BaseResolver {
 
       if (error instanceof NotFoundException) {
         return {
+          success: false,
           attribute: null,
           errors: [
             {
@@ -328,6 +343,7 @@ export class AttributeResolver extends BaseResolver {
 
       if (error instanceof ConflictException) {
         return {
+          success: false,
           attribute: null,
           errors: [
             {
@@ -340,6 +356,7 @@ export class AttributeResolver extends BaseResolver {
       }
 
       return {
+        success: false,
         attribute: null,
         errors: [
           {
@@ -480,6 +497,26 @@ export class AttributeResolver extends BaseResolver {
         ...toErrorMeta(error),
       })
       return null
+    }
+  }
+
+  // Field resolver for NodeAttribute formattedValue field
+  async nodeAttribute_formattedValue_field(
+    nodeAttribute: NodeAttributeDto
+  ): Promise<string> {
+    try {
+      // For now, return the value as-is. This can be enhanced later with proper formatting
+      // based on attribute type (date formatting, number formatting, etc.)
+      if (typeof nodeAttribute.value === 'string') {
+        return nodeAttribute.value
+      }
+      return String(nodeAttribute.value)
+    } catch (error) {
+      this.logger.error('Failed to resolve formattedValue field for NodeAttribute', {
+        nodeAttributeId: nodeAttribute.attributeId,
+        ...toErrorMeta(error),
+      })
+      return String(nodeAttribute.value || '')
     }
   }
 }

@@ -77,12 +77,16 @@ export function registerUseCaseModule(container: DIContainer): void {
     async (c) => {
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
-      const attributeTypeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)) as any
+      const attributeTypeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY
+      )) as any
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as any
       const queryTemplateRepository = (await c.resolve(
         RepositoryTokens.QUERY_TEMPLATE_REPOSITORY
       )) as any
-      const relationTypeRepository = (await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)) as any
+      const relationTypeRepository = (await c.resolve(
+        RepositoryTokens.RELATION_TYPE_REPOSITORY
+      )) as any
       const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {

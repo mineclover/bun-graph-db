@@ -38,9 +38,9 @@ function createMockRequest(overrides: Partial<Request> = {}): Request {
 
 function createMockResponse() {
   const res = {
-    status: mock((code: number) => res),
-    json: mock((data: any) => {}),
-    send: mock((data: any) => {}),
+    status: mock((_code: number) => res),
+    json: mock((_data: any) => {}),
+    send: mock((_data: any) => {}),
   } as unknown as Response
 
   return res
@@ -79,7 +79,7 @@ describe('GraphDbApiController Unit Tests', () => {
     test('should handle health check errors', async () => {
       // Create a controller that will throw an error
       const faultyController = new (class extends GraphDbApiController {
-        async healthCheck(req: any, res: any) {
+        async healthCheck(_req: any, res: any) {
           try {
             throw new Error('Database connection failed')
           } catch (error) {
@@ -234,7 +234,7 @@ describe('GraphDbApiController Unit Tests', () => {
     test('should handle internal server errors gracefully', async () => {
       // Create a controller method that throws an unexpected error
       const faultyController = new (class extends GraphDbApiController {
-        async systemStats(req: any, res: any) {
+        async systemStats(_req: any, res: any) {
           try {
             throw new Error('Unexpected database error')
           } catch (error) {

@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS attributes (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   table_id INTEGER NOT NULL,
   identifier TEXT NOT NULL,
+  name TEXT, -- Human-readable name (can be different from identifier)
   attribute_type_id INTEGER NOT NULL,
   description TEXT,
   is_required BOOLEAN NOT NULL DEFAULT FALSE,

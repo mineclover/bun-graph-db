@@ -5,11 +5,11 @@
  * Lifecycle: http://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle
  */
 
+import { readFile } from 'node:fs/promises'
 import Ajv from 'ajv'
-import { readFile } from 'fs/promises'
-import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
 import { McpToolRegistry } from '../../application/services/McpToolRegistry.ts'
 import { RestApiClient } from '../../application/services/RestApiClient.js'
+import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
 
 interface McpRequest {
   jsonrpc: '2.0'
@@ -564,7 +564,7 @@ export class McpHttpServer {
         overwriteExisting = false,
         generateNewIdentifier = false,
         dryRun = false,
-        batchSize = 10
+        batchSize = 10,
       } = args
 
       if (!Array.isArray(filePaths) || filePaths.length === 0) {
@@ -588,14 +588,18 @@ export class McpHttpServer {
       // Process files in parallel batches
       for (let i = 0; i < filePaths.length; i += batchSize) {
         const batch = filePaths.slice(i, i + batchSize)
-        console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filePaths.length / batchSize)}`)
+        console.log(
+          `📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filePaths.length / batchSize)}`
+        )
 
         const batchResults = await Promise.allSettled(
-          batch.map(filePath => this.importSingleTemplate(filePath, {
-            overwriteExisting,
-            generateNewIdentifier,
-            dryRun
-          }))
+          batch.map((filePath) =>
+            this.importSingleTemplate(filePath, {
+              overwriteExisting,
+              generateNewIdentifier,
+              dryRun,
+            })
+          )
         )
 
         for (const result of batchResults) {
@@ -609,14 +613,14 @@ export class McpHttpServer {
             results.push({
               identifier: 'unknown',
               success: false,
-              error: `Batch processing error: ${result.reason}`
+              error: `Batch processing error: ${result.reason}`,
             })
           }
         }
 
         // Small delay between batches
         if (i + batchSize < filePaths.length) {
-          await new Promise(resolve => setTimeout(resolve, 100))
+          await new Promise((resolve) => setTimeout(resolve, 100))
         }
       }
 
@@ -628,7 +632,7 @@ export class McpHttpServer {
         failed,
         skipped,
         results,
-        duration
+        duration,
       }
 
       console.log(`✅ Bulk import completed in ${duration}ms`)
@@ -641,11 +645,11 @@ export class McpHttpServer {
           content: [
             {
               type: 'text',
-              text: JSON.stringify(summary, null, 2)
-            }
+              text: JSON.stringify(summary, null, 2),
+            },
           ],
-          isError: false
-        }
+          isError: false,
+        },
       }
     } catch (error) {
       console.error('Bulk import error:', error)
@@ -664,7 +668,13 @@ export class McpHttpServer {
   private async importSingleTemplate(
     filePath: string,
     options: { overwriteExisting: boolean; generateNewIdentifier: boolean; dryRun: boolean }
-  ): Promise<{ identifier: string; success: boolean; error?: string; skipped?: boolean; reason?: string }> {
+  ): Promise<{
+    identifier: string
+    success: boolean
+    error?: string
+    skipped?: boolean
+    reason?: string
+  }> {
     try {
       // Extract identifier from filename for logging
       const filename = filePath.split('/').pop() || 'unknown'
@@ -674,7 +684,7 @@ export class McpHttpServer {
 
       // Read and parse the template file
       const fileContent = await readFile(filePath, 'utf-8')
-      let templateData
+      let templateData: any
 
       try {
         templateData = JSON.parse(fileContent)
@@ -682,7 +692,7 @@ export class McpHttpServer {
         return {
           identifier,
           success: false,
-          error: `JSON parse error: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`
+          error: `JSON parse error: ${parseError instanceof Error ? parseError.message : 'Invalid JSON'}`,
         }
       }
 
@@ -691,7 +701,7 @@ export class McpHttpServer {
         return {
           identifier,
           success: false,
-          error: 'Invalid template structure: missing template object'
+          error: 'Invalid template structure: missing template object',
         }
       }
 
@@ -701,7 +711,7 @@ export class McpHttpServer {
           identifier: templateData.template.identifier || identifier,
           success: true,
           skipped: true,
-          reason: 'Dry run - would have imported'
+          reason: 'Dry run - would have imported',
         }
       }
 
@@ -709,24 +719,23 @@ export class McpHttpServer {
       const importResult = await this.importTemplateViaGraphQL({
         jsonData: fileContent,
         overwriteExisting: options.overwriteExisting,
-        generateNewIdentifier: options.generateNewIdentifier
+        generateNewIdentifier: options.generateNewIdentifier,
       })
 
       if (importResult.success) {
         console.log(`✅ ${identifier}: imported successfully`)
         return {
           identifier: templateData.template.identifier || identifier,
-          success: true
+          success: true,
         }
       } else {
         console.log(`❌ ${identifier}: ${importResult.error}`)
         return {
           identifier: templateData.template.identifier || identifier,
           success: false,
-          error: importResult.error
+          error: importResult.error,
         }
       }
-
     } catch (error) {
       const identifier = filePath.split('/').pop()?.replace('.json', '') || 'unknown'
       console.log(`💥 ${identifier}: ${error instanceof Error ? error.message : 'Unknown error'}`)
@@ -734,7 +743,7 @@ export class McpHttpServer {
       return {
         identifier,
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
       }
     }
   }
@@ -747,16 +756,14 @@ export class McpHttpServer {
     _args: any
   ): Promise<McpResponse> {
     try {
-      const { readdir } = await import('fs/promises')
-      const { join } = await import('path')
+      const { readdir } = await import('node:fs/promises')
+      const { join } = await import('node:path')
       const templatesPath = join(process.cwd(), 'exported-templates')
 
       try {
         const files = await readdir(templatesPath)
-        const templateFiles = files.filter(file =>
-          file.endsWith('.json') &&
-          !file.startsWith('.') &&
-          file !== 'INDEX.json'
+        const templateFiles = files.filter(
+          (file) => file.endsWith('.json') && !file.startsWith('.') && file !== 'INDEX.json'
         )
 
         const templates = []
@@ -773,7 +780,7 @@ export class McpHttpServer {
                 identifier: templateData.template.identifier || '',
                 name: templateData.template.name || '',
                 description: templateData.template.description || '',
-                tags: templateData.template.tags || []
+                tags: templateData.template.tags || [],
               })
             }
           } catch (error) {
@@ -788,15 +795,19 @@ export class McpHttpServer {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify({
-                  templates,
-                  count: templates.length,
-                  directory: templatesPath
-                }, null, 2)
-              }
+                text: JSON.stringify(
+                  {
+                    templates,
+                    count: templates.length,
+                    directory: templatesPath,
+                  },
+                  null,
+                  2
+                ),
+              },
             ],
-            isError: false
-          }
+            isError: false,
+          },
         }
       } catch (error) {
         return this.createErrorMcpResponse(
@@ -824,8 +835,8 @@ export class McpHttpServer {
     _args: any
   ): Promise<McpResponse> {
     try {
-      const { readdir, stat } = await import('fs/promises')
-      const { join } = await import('path')
+      const { readdir, stat } = await import('node:fs/promises')
+      const { join } = await import('node:path')
       const templatesPath = join(process.cwd(), 'exported-templates')
 
       try {
@@ -835,17 +846,15 @@ export class McpHttpServer {
         }
 
         const files = await readdir(templatesPath)
-        const templateFiles = files.filter(file =>
-          file.endsWith('.json') &&
-          !file.startsWith('.') &&
-          file !== 'INDEX.json'
+        const templateFiles = files.filter(
+          (file) => file.endsWith('.json') && !file.startsWith('.') && file !== 'INDEX.json'
         )
 
         const status = {
           availableTemplates: templateFiles.length,
           templateFiles: templateFiles,
           directory: templatesPath,
-          estimatedImportTime: templateFiles.length * 100 // rough estimate: 100ms per template
+          estimatedImportTime: templateFiles.length * 100, // rough estimate: 100ms per template
         }
 
         return {
@@ -855,11 +864,11 @@ export class McpHttpServer {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(status, null, 2)
-              }
+                text: JSON.stringify(status, null, 2),
+              },
             ],
-            isError: false
-          }
+            isError: false,
+          },
         }
       } catch (error) {
         return this.createErrorMcpResponse(
@@ -965,156 +974,6 @@ export class McpHttpServer {
     )
   }
 
-  private transformParametersForGraphQL(toolName: string, params: any): any {
-    // Transform flat MCP parameters into GraphQL input objects
-    switch (toolName) {
-      case 'createTable':
-        return {
-          input: {
-            identifier: params.identifier,
-            description: params.description,
-          },
-        }
-
-      case 'createNode':
-        return {
-          input: {
-            tableId: params.tableId,
-            content: params.content,
-            attributes: params.metadata,
-          },
-        }
-
-      case 'createRelation':
-        return {
-          input: {
-            sourceNodeId: params.sourceNodeId,
-            targetNodeId: params.targetNodeId,
-            relationTypeId: params.relationTypeId,
-            tableId: params.tableId,
-          },
-        }
-
-      case 'createTemplate':
-        return {
-          input: {
-            identifier: params.identifier,
-            name: params.name,
-            query: params.query,
-            tags: params.tags,
-          },
-        }
-
-      case 'searchNodes':
-        return {
-          filter: {
-            tableId: params.tableId,
-            search: params.searchTerm,
-          },
-        }
-
-      case 'searchTemplates':
-        return {
-          filter: {
-            search: params.searchTerm,
-            tags: params.tags,
-          },
-        }
-
-      case 'searchTables':
-        return {
-          filter: {
-            search: params.searchTerm,
-          },
-        }
-
-      case 'getTables':
-        return {
-          filter: {
-            search: params.search,
-            hasNodes: params.hasNodes,
-          },
-          pagination: {
-            limit: params.limit || 50,
-            offset: params.offset || 0,
-          },
-          sort: params.sortBy
-            ? [
-                {
-                  field: params.sortBy,
-                  direction: (params.sortOrder || 'DESC').toUpperCase(),
-                },
-              ]
-            : undefined,
-        }
-
-      case 'getTableDocs':
-        // Handle both tableId and identifier parameters
-        if (params.tableId) {
-          return {
-            tableId: params.tableId,
-            includeSampleNodes: params.includeSampleNodes,
-            sampleLimit: params.sampleLimit,
-            includeUsageStats: params.includeUsageStats,
-          }
-        } else if (params.identifier) {
-          return {
-            identifier: params.identifier,
-            includeSampleNodes: params.includeSampleNodes,
-            sampleLimit: params.sampleLimit,
-            includeUsageStats: params.includeUsageStats,
-          }
-        } else {
-          throw new Error('Either tableId or identifier must be provided for getTableDocs')
-        }
-
-      case 'createAttribute':
-        return {
-          input: {
-            identifier: params.identifier,
-            name: params.name,
-            description: params.description,
-            attributeTypeId: params.attributeTypeId,
-            tableId: params.tableId,
-          },
-        }
-      case 'updateAttribute':
-        return {
-          id: params.attributeId,
-          input: {
-            name: params.name,
-            description: params.description,
-          },
-        }
-      case 'deleteAttribute':
-        return {
-          id: params.attributeId,
-        }
-      case 'importTemplate':
-        return {
-          jsonData: params.jsonData,
-          overwriteExisting: params.overwriteExisting || false,
-          generateNewIdentifier: params.generateNewIdentifier || false,
-        }
-      case 'searchRelations':
-        return {
-          filter: {
-            tableId: params.tableId,
-            sourceNodeId: params.sourceNodeId,
-            targetNodeId: params.targetNodeId,
-            relationTypeId: params.relationTypeId,
-          },
-          pagination: {
-            limit: params.limit || 20,
-            offset: params.offset || 0,
-          },
-        }
-      default:
-        // For tools that don't need transformation, return parameters as-is
-        return params
-    }
-  }
-
   /**
    * Import template via GraphQL instead of REST API
    */
@@ -1126,7 +985,7 @@ export class McpHttpServer {
     try {
       // Parse the exported template data
       const exportedData = JSON.parse(params.jsonData)
-      const templateData = exportedData.template
+      const _templateData = exportedData.template
 
       // Build the GraphQL mutation using the importTemplate mutation
       const mutation = `
@@ -1155,7 +1014,7 @@ export class McpHttpServer {
       const variables = {
         jsonData: params.jsonData,
         overwriteExisting: params.overwriteExisting || false,
-        generateNewIdentifier: params.generateNewIdentifier || false
+        generateNewIdentifier: params.generateNewIdentifier || false,
       }
 
       // Create GraphQL operation
@@ -1163,7 +1022,7 @@ export class McpHttpServer {
         operationName: 'ImportTemplate',
         query: mutation,
         variables,
-        operationType: 'mutation' as const
+        operationType: 'mutation' as const,
       }
 
       // Execute GraphQL mutation using the executor
@@ -1172,7 +1031,7 @@ export class McpHttpServer {
       if (result.errors && result.errors.length > 0) {
         return {
           success: false,
-          error: result.errors[0]?.message || 'GraphQL error'
+          error: result.errors[0]?.message || 'GraphQL error',
         }
       }
 
@@ -1182,14 +1041,13 @@ export class McpHttpServer {
       } else {
         return {
           success: false,
-          error: mutationResult?.errors?.[0]?.message || 'Template import failed'
+          error: mutationResult?.errors?.[0]?.message || 'Template import failed',
         }
       }
-
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       }
     }
   }

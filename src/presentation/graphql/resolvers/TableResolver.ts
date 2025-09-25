@@ -1,5 +1,11 @@
-import { type AttributeDto, fromEntities as attributeFromEntities } from '@/application/dtos/AttributeDto.js'
-import { type AttributeTypeDto, fromEntities as attributeTypeFromEntities } from '@/application/dtos/AttributeTypeDto.js'
+import {
+  type AttributeDto,
+  fromEntities as attributeFromEntities,
+} from '@/application/dtos/AttributeDto.js'
+import {
+  type AttributeTypeDto,
+  fromEntities as attributeTypeFromEntities,
+} from '@/application/dtos/AttributeTypeDto.js'
 import { type NodeDto, fromEntities as nodeFromEntities } from '@/application/dtos/NodeDto.js'
 import { type TableDto, fromEntity as tableFromEntity } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'

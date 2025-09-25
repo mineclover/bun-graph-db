@@ -3,9 +3,9 @@
  * Simple helper to clear database tables between test runs
  */
 
+import type { Database } from 'bun:sqlite'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
 import { DatabaseTokens } from '../../src/infrastructure/container/tokens/DatabaseTokens'
-import type { Database } from 'bun:sqlite'
 
 export class DatabaseCleaner {
   constructor(private container: DIContainer) {}
@@ -24,7 +24,7 @@ export class DatabaseCleaner {
       'attributes',
       'tables',
       'templates',
-      'docs'
+      'docs',
     ]
 
     // Use transaction to ensure atomicity

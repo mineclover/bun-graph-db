@@ -1,4 +1,4 @@
-import { TestServerManager } from '../../fixtures/test-server-manager'
+import { startServerForSuite, stopServerForSuite } from '../../fixtures/test-server-manager'
 /**
  * T009: Integration test for searchNodes tool
  *
@@ -15,7 +15,7 @@ describe('SearchNodes Tool Integration', () => {
     console.log('Starting isolated test server for search nodes integration tests')
 
     // Start isolated test server for this test suite
-    const serverInstance = await TestServerManager.startServerForSuite('search-nodes-integration')
+    const serverInstance = await startServerForSuite('search-nodes-integration')
     mcpServerUrl = `${serverInstance.url.replace('/graphql', '/mcp')}`
 
     console.log(`Test server started on ${mcpServerUrl}`)
@@ -23,7 +23,7 @@ describe('SearchNodes Tool Integration', () => {
 
   afterAll(async () => {
     // Clean up test server
-    await TestServerManager.stopServerForSuite('search-nodes-integration')
+    await stopServerForSuite('search-nodes-integration')
   })
 
   test('should execute searchNodes tool through MCP protocol', async () => {

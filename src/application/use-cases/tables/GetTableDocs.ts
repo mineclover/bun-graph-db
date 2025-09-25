@@ -1,6 +1,5 @@
 import * as AttributeDto from '@/application/dtos/AttributeDto.js'
 import { DocDto } from '@/application/dtos/DocDto.js'
-import * as NodeDto from '@/application/dtos/NodeDto.js'
 import type {
   GetTableDocsInput,
   GetTableDocsOutput,
@@ -10,18 +9,18 @@ import * as TableDto from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { queryTemplateToDto } from '@/presentation/dto/QueryTemplateDto.js'
 
 export class GetTableDocsUseCase {
   constructor(
     private readonly tableRepository: ITableRepository,
     private readonly attributeRepository: IAttributeRepository,
-    private readonly attributeTypeRepository: IAttributeTypeRepository,
+    readonly _attributeTypeRepository: IAttributeTypeRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
@@ -54,10 +53,11 @@ export class GetTableDocsUseCase {
 
       // Get docs if requested
       let docs: any | undefined
-      if (input.includeDocs !== false) { // Include docs by default
+      if (input.includeDocs !== false) {
+        // Include docs by default
         const allDocs = await this.docRepository.findByTableIds([table.id])
         const docDtos = DocDto.fromEntities(allDocs)
-        
+
         // Organize docs by category (get active docs for each category)
         const docsByCategory: Record<string, any> = {}
         for (const doc of docDtos) {
@@ -73,7 +73,7 @@ export class GetTableDocsUseCase {
           spec: docsByCategory.spec || null,
           general: docsByCategory.general || null,
           allDocs: docDtos,
-          docCount: docDtos.length
+          docCount: docDtos.length,
         }
       }
 
@@ -90,7 +90,12 @@ export class GetTableDocsUseCase {
       // Generate AI metadata if requested
       let aiMetadata: any | undefined
       if (input.includeAiMetadata) {
-        aiMetadata = await this.generateAiMetadata(table, attributeDtos, relatedTemplates, input.sampleLimit || 5)
+        aiMetadata = await this.generateAiMetadata(
+          table,
+          attributeDtos,
+          relatedTemplates,
+          input.sampleLimit || 5
+        )
       }
 
       // Build final table documentation structure
@@ -123,7 +128,12 @@ export class GetTableDocsUseCase {
     }
   }
 
-  private async generateAiMetadata(table: any, attributes: any[], relatedTemplates: any[] = [], sampleLimit: number = 5) {
+  private async generateAiMetadata(
+    table: any,
+    attributes: any[],
+    relatedTemplates: any[] = [],
+    sampleLimit: number = 5
+  ) {
     try {
       // Generate schema information
       const schemaInfo = await this.generateSchemaInfo(attributes)
@@ -137,12 +147,12 @@ export class GetTableDocsUseCase {
       return {
         schemaInfo,
         usagePatterns,
-        sampleData: sampleData.nodes.length > 0 ? sampleData : undefined
+        sampleData: sampleData.nodes.length > 0 ? sampleData : undefined,
       }
     } catch (error) {
       this.logger.warn('Failed to generate AI metadata', {
         tableId: table.id,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       })
       return undefined
     }
@@ -174,7 +184,7 @@ export class GetTableDocsUseCase {
     // Get available relationship types
     try {
       const relationTypes = await this.relationTypeRepository.findAll({ limit: 100, offset: 0 })
-      relationshipCapabilities.push(...(relationTypes.data || []).map(rt => rt.getIdentifier()))
+      relationshipCapabilities.push(...(relationTypes.data || []).map((rt) => rt.getIdentifier()))
     } catch (error) {
       this.logger.debug('Could not fetch relation types for AI metadata', { error })
     }
@@ -183,40 +193,42 @@ export class GetTableDocsUseCase {
       dataTypes,
       requiredFields,
       searchableFields,
-      relationshipCapabilities
+      relationshipCapabilities,
     }
   }
 
   private async generateUsagePatterns(templates: any[] = [], attributeCount: number) {
-    const commonQueries: { pattern: string, description: string, example: string }[] = []
-    const templateRecommendations: { templateId: string, useCase: string }[] = []
+    const commonQueries: { pattern: string; description: string; example: string }[] = []
+    const templateRecommendations: { templateId: string; useCase: string }[] = []
 
     // Generate common query patterns
     commonQueries.push({
-      pattern: "Basic node search",
-      description: "Search nodes by content or attributes",
-      example: "searchNodes(tableId: $tableId, searchQuery: { textSearch: \"keyword\", limit: 10 })"
+      pattern: 'Basic node search',
+      description: 'Search nodes by content or attributes',
+      example: 'searchNodes(tableId: $tableId, searchQuery: { textSearch: "keyword", limit: 10 })',
     })
 
     commonQueries.push({
-      pattern: "Create node with attributes",
-      description: "Create a new node and set its attributes",
-      example: "createNode(input: { tableId: $tableId, content: $content })"
+      pattern: 'Create node with attributes',
+      description: 'Create a new node and set its attributes',
+      example: 'createNode(input: { tableId: $tableId, content: $content })',
     })
 
     if (attributeCount > 0) {
       commonQueries.push({
-        pattern: "Filter by attributes",
-        description: "Search nodes with attribute-based filters",
-        example: "searchNodes(tableId: $tableId, searchQuery: { conditions: [{ filters: [{ field: $field, operator: \"equals\", value: $value }] }] })"
+        pattern: 'Filter by attributes',
+        description: 'Search nodes with attribute-based filters',
+        example:
+          'searchNodes(tableId: $tableId, searchQuery: { conditions: [{ filters: [{ field: $field, operator: "equals", value: $value }] }] })',
       })
     }
 
     // Process templates for recommendations
-    for (const template of templates.slice(0, 5)) { // Limit to top 5 templates
+    for (const template of templates.slice(0, 5)) {
+      // Limit to top 5 templates
       templateRecommendations.push({
         templateId: template.identifier,
-        useCase: this.inferTemplateUseCase(template)
+        useCase: this.inferTemplateUseCase(template),
       })
     }
 
@@ -232,7 +244,7 @@ export class GetTableDocsUseCase {
     return {
       commonQueries,
       templateRecommendations,
-      queryComplexity
+      queryComplexity,
     }
   }
 
@@ -241,18 +253,18 @@ export class GetTableDocsUseCase {
       const nodesResult = await this.nodeRepository.findByTableId(tableId)
       const nodes = (nodesResult.nodes || []).slice(0, sampleLimit)
 
-      const sampleNodes = nodes.map(node => ({
+      const sampleNodes = nodes.map((node) => ({
         id: node.getId(),
         content: node.getContent(),
-        attributes: {} // Attributes would need to be fetched separately
+        attributes: {}, // Attributes would need to be fetched separately
       }))
 
       // For now, relationships are not included as we'd need a more complex query
-      const relationships: Array<{ from: string, to: string, type: string }> = []
+      const relationships: Array<{ from: string; to: string; type: string }> = []
 
       return {
         nodes: sampleNodes,
-        relationships
+        relationships,
       }
     } catch (error) {
       this.logger.debug('Could not generate sample data for AI metadata', { tableId, error })

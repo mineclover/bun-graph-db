@@ -20,22 +20,6 @@ interface McpRequest {
   id: string | number
 }
 
-interface McpResponse {
-  jsonrpc: '2.0'
-  result?: any
-  error?: {
-    code: number
-    message: string
-    data?: any
-  }
-  id: string | number
-}
-
-interface McpToolCall {
-  name: string
-  arguments?: any
-}
-
 describe('MCP-to-REST API Proxy Integration Tests', () => {
   const TEST_PORT = 4260
   const MCP_ENDPOINT = `http://localhost:${TEST_PORT}/mcp`
@@ -47,7 +31,7 @@ describe('MCP-to-REST API Proxy Integration Tests', () => {
     try {
       const response = await fetch(`${REST_API_ENDPOINT}/health`)
       serverIsRunning = response.ok
-    } catch (error) {
+    } catch (_error) {
       console.warn('Test server not running, tests may fail')
       serverIsRunning = false
     }
@@ -539,7 +523,7 @@ describe('MCP-to-REST API Proxy Integration Tests', () => {
       const responses = await Promise.all(promises)
 
       // All requests should complete successfully
-      responses.forEach((response, index) => {
+      responses.forEach((response, _index) => {
         expect(response.status).toBe(200)
       })
 

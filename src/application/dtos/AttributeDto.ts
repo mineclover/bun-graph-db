@@ -25,7 +25,7 @@ export function fromEntity(attribute: Attribute): AttributeDto {
     id: attribute.getId(),
     tableId: attribute.getTableId(),
     identifier: attribute.getIdentifier(),
-    name: attribute.getName(),
+    name: attribute.getName(), // This already handles fallback to identifier
     attributeTypeId: attribute.getAttributeTypeId(),
     description: attribute.getDescription(),
     isRequired: attribute.getIsRequired(),
@@ -36,6 +36,7 @@ export function fromEntity(attribute: Attribute): AttributeDto {
 
   console.log('DEBUG: AttributeDto.fromEntity output:', {
     id: dto.id,
+    name: dto.name,
     attributeTypeId: dto.attributeTypeId,
     attributeTypeIdType: typeof dto.attributeTypeId,
   })
@@ -51,6 +52,7 @@ export function fromEntities(attributes: Attribute[]): AttributeDto[] {
 export interface CreateAttributeInput {
   tableId: string
   identifier: string
+  name?: string
   attributeTypeId: string
   description?: string
   isRequired?: boolean

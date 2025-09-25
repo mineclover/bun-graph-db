@@ -224,7 +224,7 @@ export class NodeMutations extends BaseResolver {
       'setNodeAttribute'
     )
 
-    return this.handleMutation(
+    const mutationResult = await this.handleMutation(
       async () => {
         const result = await this.nodeAttributeRepository.setNodeAttribute(
           args.input.nodeId,
@@ -232,11 +232,20 @@ export class NodeMutations extends BaseResolver {
           args.input.value
         )
 
-        return result
+        // Transform domain entity to DTO
+        const { nodeAttributeFromEntity } = await import('@/application/dtos/NodeDto.js')
+        return nodeAttributeFromEntity(result)
       },
       'setNodeAttribute',
       { input: args.input }
     )
+
+    // Transform handleMutation result to GraphQL schema format
+    return {
+      success: mutationResult.success,
+      nodeAttribute: mutationResult.data,
+      errors: mutationResult.errors || []
+    }
   }
 
   async removeNodeAttribute(

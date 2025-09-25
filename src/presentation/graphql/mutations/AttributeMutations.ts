@@ -161,11 +161,9 @@ export class AttributeMutations extends BaseResolver {
       [
         BaseResolver.validationRules.required('input', 'Create attribute input'),
         BaseResolver.validationRules.required('input.identifier', 'Identifier'),
-        BaseResolver.validationRules.required('input.name', 'Name'),
         BaseResolver.validationRules.required('input.attributeTypeId', 'Attribute type ID'),
         BaseResolver.validationRules.required('input.tableId', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('input.identifier', 'Identifier'),
-        BaseResolver.validationRules.nonEmpty('input.name', 'Name'),
         BaseResolver.validationRules.nonEmpty('input.attributeTypeId', 'Attribute type ID'),
         BaseResolver.validationRules.nonEmpty('input.tableId', 'Table ID'),
       ],
@@ -187,7 +185,7 @@ export class AttributeMutations extends BaseResolver {
       { input: args.input }
     ).then((mutationResult) => ({
       success: mutationResult.success,
-      attribute: mutationResult.data,
+      attribute: mutationResult.data?.attribute,
       errors: mutationResult.errors || [],
     }))
   }

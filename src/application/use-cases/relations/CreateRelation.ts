@@ -20,6 +20,7 @@ export interface CreateRelationInput {
   relationTypeId: string
   properties?: Record<string, any> | null
   strength?: number
+  confidence?: number
 }
 
 export interface CreateRelationOutput {
@@ -33,6 +34,7 @@ export interface CreateRelationOutput {
     relationTypeId: string
     properties: Record<string, any> | null
     strength: number
+    confidence?: number
     createdAt: string
     updatedAt: string
   }

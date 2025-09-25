@@ -155,7 +155,7 @@ export class AttributeFieldResolvers extends BaseResolver {
     }
   }
 
-  async attribute(parent: any, _args?: any, _context?: GraphQLContext) {
+  async nodeAttribute_attribute_field(parent: any, _args?: any, _context?: GraphQLContext) {
     try {
       this.logger.debug(`Resolving field: NodeAttribute.attribute`, {
         nodeAttributeId: parent.id,
@@ -225,6 +225,30 @@ export class AttributeFieldResolvers extends BaseResolver {
         attributeTypeId: 'error',
         tableId: 'error',
       }
+    }
+  }
+
+  // Field resolver for NodeAttribute formattedValue field
+  async nodeAttribute_formattedValue_field(parent: any, _args?: any, _context?: GraphQLContext): Promise<string> {
+    try {
+      this.logger.debug(`Resolving field: NodeAttribute.formattedValue`, {
+        nodeAttributeId: parent.id,
+        value: parent.value,
+      })
+
+      // For now, return the value as-is. This can be enhanced later with proper formatting
+      // based on attribute type (date formatting, number formatting, etc.)
+      if (typeof parent.value === 'string') {
+        return parent.value
+      }
+      return String(parent.value)
+    } catch (error) {
+      this.logger.error('Field resolution failed: NodeAttribute.formattedValue', {
+        error,
+        nodeAttributeId: parent.id,
+        value: parent.value,
+      })
+      return String(parent.value || '')
     }
   }
 }

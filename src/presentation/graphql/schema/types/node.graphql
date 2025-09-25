@@ -87,6 +87,7 @@ type TableNode implements Node {
 type NodeAttribute {
   id: ID!
   value: String!
+  formattedValue: String!
   attribute: Attribute!
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -97,6 +98,7 @@ input CreateNodeInput {
   content: String!
   tableId: ID!
   attributes: [NodeAttributeInput!]
+  metadata: JSON
 }
 
 input UpdateNodeInput {
@@ -266,6 +268,134 @@ type NodesConnection implements Connection {
   hasPreviousPage: Boolean!
 }
 
+# Enhanced connection types with sorting metadata
+
+"""
+Advanced nodes connection with sorting metadata
+Includes performance insights and optimization information
+"""
+type AdvancedNodesConnection implements Connection {
+  "Retrieved nodes matching the query"
+  nodes: [TableNode!]!
+
+  "Total count of nodes matching the filter (before pagination)"
+  totalCount: Int!
+
+  "Whether there are more pages available"
+  hasNextPage: Boolean!
+
+  "Whether there are previous pages available"
+  hasPreviousPage: Boolean!
+
+  "Metadata about the sort execution"
+  sortMetadata: SortResultMetadata
+}
+
+"""
+Nodes with sorting result including comprehensive metadata
+Provides detailed performance analysis and recommendations
+"""
+type NodesWithSortingResult {
+  "Retrieved nodes"
+  nodes: [TableNode!]!
+
+  "Total count matching the filter"
+  totalCount: Int!
+
+  "Pagination information"
+  pagination: PaginationInfo!
+
+  "Detailed sorting execution metadata"
+  sortingMetadata: [SortResultMetadata!]!
+
+  "Performance recommendations"
+  recommendations: [String!]!
+
+  "Query complexity analysis"
+  complexityAnalysis: ComplexityAnalysis
+}
+
+"""
+Pagination information for results
+"""
+type PaginationInfo {
+  "Current page offset"
+  offset: Int!
+
+  "Items per page limit"
+  limit: Int!
+
+  "Whether there are more pages"
+  hasNextPage: Boolean!
+
+  "Whether there are previous pages"
+  hasPreviousPage: Boolean!
+
+  "Total pages available"
+  totalPages: Int!
+}
+
+"""
+Query complexity analysis result
+"""
+type ComplexityAnalysis {
+  "Overall complexity score (0-100)"
+  score: Int!
+
+  "Complexity level classification"
+  level: ComplexityLevel!
+
+  "Factors contributing to complexity"
+  factors: [ComplexityFactor!]!
+
+  "Estimated execution cost"
+  estimatedCost: Float!
+
+  "Index utilization analysis"
+  indexAnalysis: IndexAnalysis
+}
+
+"""
+Complexity level classification
+"""
+enum ComplexityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  EXTREME
+}
+
+"""
+Individual complexity factor
+"""
+type ComplexityFactor {
+  "Factor name"
+  name: String!
+
+  "Impact on overall complexity (0-100)"
+  impact: Int!
+
+  "Description of the factor"
+  description: String!
+}
+
+"""
+Index utilization analysis
+"""
+type IndexAnalysis {
+  "Percentage of query that can use indexes"
+  utilization: Float!
+
+  "Available indexes that could be used"
+  availableIndexes: [String!]!
+
+  "Indexes actually used in execution"
+  usedIndexes: [String!]!
+
+  "Recommendations for new indexes"
+  recommendations: [String!]!
+}
+
 # Operation result types for nodes
 type CreateNodePayload implements OperationResult {
   success: Boolean!
@@ -301,4 +431,145 @@ type GraphPath {
   nodes: [TableNode!]!
   relations: [NodeRelation!]!
   distance: Int!
+}
+
+# Custom Sort Function Types
+
+"""
+Custom sort function definition
+Represents a user-defined sorting function with metadata and examples
+"""
+type CustomSortFunction {
+  "Unique identifier for the function"
+  id: String!
+
+  "Human-readable name"
+  name: String!
+
+  "Description of what the function does"
+  description: String!
+
+  "Data types this function can handle"
+  supportedDataTypes: [SortDataType!]!
+
+  "Priority for automatic selection (higher = preferred)"
+  priority: Int!
+
+  "Function version"
+  version: String!
+
+  "Optional author information"
+  author: String
+
+  "Tags for categorization and discovery"
+  tags: [String!]!
+
+  "Parameter definitions"
+  parameters: [CustomSortParameter!]!
+
+  "Usage examples"
+  examples: [CustomSortExample!]!
+
+  "Creation timestamp"
+  createdAt: DateTime!
+
+  "Last updated timestamp"
+  updatedAt: DateTime!
+}
+
+"""
+Parameter definition for custom sort functions
+"""
+type CustomSortParameter {
+  "Parameter name"
+  name: String!
+
+  "Parameter data type"
+  type: CustomSortParameterType!
+
+  "Whether parameter is required"
+  required: Boolean!
+
+  "Parameter description"
+  description: String!
+
+  "Default value (JSON string)"
+  defaultValue: String
+
+  "Validation rules"
+  validation: CustomSortParameterValidation
+}
+
+"""
+Parameter validation rules
+"""
+type CustomSortParameterValidation {
+  "Minimum value for numeric parameters"
+  min: Float
+
+  "Maximum value for numeric parameters"
+  max: Float
+
+  "Regex pattern for string validation"
+  pattern: String
+
+  "List of allowed values"
+  allowedValues: [String!]
+}
+
+"""
+Usage example for custom sort functions
+"""
+type CustomSortExample {
+  "Example title"
+  title: String!
+
+  "Example description"
+  description: String!
+
+  "Field name used in example"
+  field: String!
+
+  "Sort direction in example"
+  direction: SortDirection!
+
+  "Parameters used in example (JSON string)"
+  parameters: String
+
+  "Expected SQL output"
+  expectedSql: String!
+}
+
+"""
+Custom sort function usage statistics
+"""
+type CustomSortFunctionStats {
+  "Function identifier"
+  functionId: String!
+
+  "Total number of calls"
+  callCount: Int!
+
+  "Average execution time in milliseconds"
+  averageExecutionTime: Float!
+
+  "Last usage timestamp"
+  lastUsed: DateTime!
+
+  "Number of errors encountered"
+  errorCount: Int!
+
+  "Success rate percentage"
+  successRate: Float!
+}
+
+"""
+Parameter types for custom sort functions
+"""
+enum CustomSortParameterType {
+  STRING
+  NUMBER
+  BOOLEAN
+  ARRAY
+  OBJECT
 }

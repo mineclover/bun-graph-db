@@ -1,28 +1,17 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
-  ApiResponse,
-  ExecuteTemplateData,
   ExportTemplateData,
   HealthCheckData,
   ImportTemplateData,
-  NodeData,
-  RelationData,
-  SearchNodesData,
-  SearchTablesData,
-  SearchTemplatesData,
-  SystemStatsData,
-  TableData,
-  TemplateData,
 } from '../types/ApiResponseTypes.js'
-import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
-import { sendSuccess, sendHandleError, sendValidationError } from '../utils/responseHelpers.js'
+import { sendHandleError, sendSuccess, sendValidationError } from '../utils/responseHelpers.js'
 
 export class GraphDbApiController {
   constructor(private readonly logger: ILogger) {}
 
   // System Operations
-  async healthCheck(req: Request, res: Response): Promise<void> {
+  async healthCheck(_req: Request, res: Response): Promise<void> {
     try {
       const result: HealthCheckData = {
         status: 'OK',
@@ -36,7 +25,7 @@ export class GraphDbApiController {
     }
   }
 
-  async systemStats(req: Request, res: Response): Promise<void> {
+  async systemStats(_req: Request, res: Response): Promise<void> {
     try {
       const result = {
         memory: {
@@ -86,7 +75,7 @@ export class GraphDbApiController {
   async searchTables(req: Request, res: Response): Promise<void> {
     try {
       const searchTerm = (req.query.searchTerm as string) || ''
-      const limit = parseInt(req.query.limit as string) || 10
+      const limit = parseInt(req.query.limit as string, 10) || 10
 
       const result = {
         tables: [],
@@ -129,7 +118,7 @@ export class GraphDbApiController {
     try {
       const tableId = req.query.tableId as string
       const search = (req.query.search as string) || ''
-      const limit = parseInt(req.query.limit as string) || 10
+      const limit = parseInt(req.query.limit as string, 10) || 10
 
       if (!tableId) {
         sendValidationError(res, 'tableId is required')
@@ -281,7 +270,7 @@ export class GraphDbApiController {
 
   async importTemplate(req: Request, res: Response): Promise<void> {
     try {
-      const { jsonData, overwriteExisting, generateNewIdentifier } = req.body
+      const { jsonData, overwriteExisting } = req.body
 
       if (!jsonData) {
         sendValidationError(res, 'jsonData is required')

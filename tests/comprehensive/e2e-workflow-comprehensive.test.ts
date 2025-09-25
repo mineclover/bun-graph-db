@@ -16,11 +16,11 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
-import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
-import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
 import { DatabaseCleaner } from '../fixtures/database-cleaner'
-import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
+import { createGraphQLExecutor, createGraphQLYoga } from '../fixtures/graphql-yoga-helper'
+import { createTestEnvironment, type TestEnvironment } from '../fixtures/test-database-factory'
 
 interface WorkflowStep {
   name: string
@@ -76,9 +76,9 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
   let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
-    testEnvironment = await TestDatabaseFactory.createTestEnvironment('e2e-workflow', 'e2e')
+    testEnvironment = await createTestEnvironment('e2e-workflow', 'e2e')
     process.env.DATABASE_PATH = testEnvironment.databasePath
-    container = await ContainerBootstrap.createContainer()
+    container = await createContainer()
     yoga = await createGraphQLYoga(container)
     graphqlExecute = createGraphQLExecutor(yoga)
     databaseCleaner = new DatabaseCleaner(container)
@@ -759,7 +759,13 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
       workflow.addStep({
         name: 'Create Complex Network Relationships',
         action: async () => {
-          const relationshipTypes = ['FOLLOWS', 'FRIENDS', 'MENTIONS', 'COLLABORATES', 'INFLUENCES']
+          const _relationshipTypes = [
+            'FOLLOWS',
+            'FRIENDS',
+            'MENTIONS',
+            'COLLABORATES',
+            'INFLUENCES',
+          ]
           const relationships = []
 
           // Create various relationship patterns
@@ -1061,7 +1067,9 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(result.errors).toBeUndefined()
           expect(result.data.exportTablePackage.success).toBe(true)
           expect(result.data.exportTablePackage.package).toBeDefined()
-          expect(result.data.exportTablePackage.package.sourceTable.identifier).toBe('export-source-table')
+          expect(result.data.exportTablePackage.package.sourceTable.identifier).toBe(
+            'export-source-table'
+          )
           expect(result.data.exportTablePackage.errors).toHaveLength(0)
           exportData = result.data.exportTablePackage.package
         },
@@ -1371,8 +1379,11 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           // Verify we can access backup data and it's valid
           const backupValidation = {
             hasTable: backupData.sourceTable !== undefined,
-            hasNodes: backupData.package && backupData.package.dataset && backupData.package.dataset.nodes && backupData.package.dataset.nodes.length > 0,
-            nodeCount: backupData.package && backupData.package.dataset && backupData.package.dataset.nodes ? backupData.package.dataset.nodes.length : 0,
+            hasNodes:
+              backupData.package?.dataset?.nodes && backupData.package.dataset.nodes.length > 0,
+            nodeCount: backupData.package?.dataset?.nodes
+              ? backupData.package.dataset.nodes.length
+              : 0,
           }
 
           // Test that we could restore if needed (without actually doing it)
@@ -1396,7 +1407,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(backupValidation.hasNodes).toBe(true)
           expect(backupValidation.nodeCount).toBeGreaterThanOrEqual(5)
 
-          if (restoreCapability.data && restoreCapability.data.validateImportData) {
+          if (restoreCapability.data?.validateImportData) {
             expect(restoreCapability.data.validateImportData.valid).toBe(true)
           }
         },

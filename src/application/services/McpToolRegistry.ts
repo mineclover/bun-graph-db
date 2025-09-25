@@ -242,7 +242,8 @@ export class McpToolRegistry {
     // Register bulk template import tool - file path based with parallel processing
     const bulkImportTool: McpToolDefinition = {
       name: 'bulk-import-templates',
-      description: 'Bulk import templates using file paths with parallel processing. Bridge between local file system and GraphQL operations.',
+      description:
+        'Bulk import templates using file paths with parallel processing. Bridge between local file system and GraphQL operations.',
       operationType: 'mutation',
       inputSchema: {
         type: 'object',
@@ -252,36 +253,36 @@ export class McpToolRegistry {
             type: 'array',
             items: { type: 'string' },
             description: 'Array of absolute file paths to JSON template files to import',
-            minItems: 1
+            minItems: 1,
           },
           overwriteExisting: {
             type: 'boolean',
             description: 'Whether to overwrite existing templates with same identifier',
-            default: false
+            default: false,
           },
           generateNewIdentifier: {
             type: 'boolean',
             description: 'Whether to generate new identifier if conflict exists',
-            default: false
+            default: false,
           },
           dryRun: {
             type: 'boolean',
             description: 'Whether to perform dry run without actually importing',
-            default: false
+            default: false,
           },
           batchSize: {
             type: 'number',
             description: 'Number of templates to process in each parallel batch',
             default: 10,
             minimum: 1,
-            maximum: 50
-          }
-        }
+            maximum: 50,
+          },
+        },
       },
       graphqlOperation: {
         operationType: 'custom',
-        query: 'File path based parallel template import'
-      }
+        query: 'File path based parallel template import',
+      },
     }
 
     this.register(bulkImportTool)
@@ -289,16 +290,17 @@ export class McpToolRegistry {
     // Register list available templates tool
     const listTemplatesStatusTool: McpToolDefinition = {
       name: 'list-available-templates',
-      description: 'List all available template files in exported-templates directory with metadata.',
+      description:
+        'List all available template files in exported-templates directory with metadata.',
       operationType: 'query',
       inputSchema: {
         type: 'object',
-        properties: {}
+        properties: {},
       },
       graphqlOperation: {
         operationType: 'custom',
-        query: 'File system discovery for available templates'
-      }
+        query: 'File system discovery for available templates',
+      },
     }
 
     this.register(listTemplatesStatusTool)
@@ -310,12 +312,12 @@ export class McpToolRegistry {
       operationType: 'query',
       inputSchema: {
         type: 'object',
-        properties: {}
+        properties: {},
       },
       graphqlOperation: {
         operationType: 'custom',
-        query: 'Import status and estimation'
-      }
+        query: 'Import status and estimation',
+      },
     }
 
     this.register(importStatusTool)

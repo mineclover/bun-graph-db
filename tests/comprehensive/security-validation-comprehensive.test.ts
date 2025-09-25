@@ -16,11 +16,11 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
-import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
-import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
 import { DatabaseCleaner } from '../fixtures/database-cleaner'
-import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
+import { createGraphQLExecutor, createGraphQLYoga } from '../fixtures/graphql-yoga-helper'
+import { createTestEnvironment, type TestEnvironment } from '../fixtures/test-database-factory'
 
 interface SecurityTestCase {
   name: string
@@ -79,9 +79,9 @@ describe('Security and Validation Comprehensive Tests', () => {
   let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
-    testEnvironment = await TestDatabaseFactory.createTestEnvironment('security-validation', 'security')
+    testEnvironment = await createTestEnvironment('security-validation', 'security')
     process.env.DATABASE_PATH = testEnvironment.databasePath
-    container = await ContainerBootstrap.createContainer()
+    container = await createContainer()
     yoga = await createGraphQLYoga(container)
     graphqlExecute = createGraphQLExecutor(yoga)
     databaseCleaner = new DatabaseCleaner(container)
@@ -295,7 +295,7 @@ describe('Security and Validation Comprehensive Tests', () => {
       results.forEach((result) => {
         if (!result.hasErrors) {
           const nodeContent = result.result.data?.createNode?.node?.content
-          if (nodeContent && nodeContent.includes('<script>')) {
+          if (nodeContent?.includes('<script>')) {
             // Verify the script tag is properly escaped/sanitized
             expect(nodeContent).not.toMatch(/<script[^>]*>[^<]*<\/script>/i)
           }
@@ -544,7 +544,7 @@ describe('Security and Validation Comprehensive Tests', () => {
     })
 
     test('should prevent SQL injection in template parameters', async () => {
-      const templateResponse = await graphqlExecute(`
+      const _templateResponse = await graphqlExecute(`
         mutation {
           createTemplate(input: {
             identifier: "sql-injection-template"
@@ -691,7 +691,7 @@ describe('Security and Validation Comprehensive Tests', () => {
 
       const responses = await Promise.all(rapidRequests)
       const endTime = Date.now()
-      const duration = endTime - startTime
+      const _duration = endTime - startTime
 
       // All requests should complete
       expect(responses).toHaveLength(50)

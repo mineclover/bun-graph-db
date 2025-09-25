@@ -47,7 +47,7 @@ input UpdateAttributeTypeInput {
 # Input types for attribute operations
 input CreateAttributeInput {
   identifier: String!
-  name: String!
+  name: String
   description: String
   attributeTypeId: ID!
   tableId: ID!

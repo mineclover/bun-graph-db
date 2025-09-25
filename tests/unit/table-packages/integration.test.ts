@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { graphql } from 'graphql'
 import type { TablePackageFormat } from '@/core/types/TablePackage.js'
-import { ContainerBootstrap } from '@/infrastructure/container/ContainerBootstrap.js'
+import {
+  createTestContainer,
+  resetContainer,
+} from '@/infrastructure/container/ContainerBootstrap.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
 import type { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
 
@@ -11,7 +14,7 @@ describe('Table Package System Integration', () => {
 
   beforeEach(async () => {
     // Initialize the DI container and schema for testing
-    container = await ContainerBootstrap.createTestContainer()
+    container = await createTestContainer()
 
     const schemaBuilder = (await container.resolve(
       Symbol.for('GraphQLSchemaBuilder')
@@ -21,7 +24,7 @@ describe('Table Package System Integration', () => {
 
   afterEach(async () => {
     // Reset the container after tests
-    ContainerBootstrap.reset()
+    resetContainer()
   })
 
   describe('GraphQL Integration', () => {

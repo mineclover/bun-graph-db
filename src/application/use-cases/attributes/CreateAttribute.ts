@@ -71,11 +71,12 @@ export class CreateAttributeUseCase {
       // Convert input metadata object to JSON string for domain entity
       const metadataJson = input.metadata ? JSON.stringify(input.metadata) : undefined
 
-      // Create domain entity
+      // Create domain entity with name parameter
       const attribute = Attribute.create(
         input.tableId as TableId,
         input.identifier,
         input.attributeTypeId as AttributeTypeId,
+        input.name,
         input.description,
         input.isRequired || false,
         metadataJson
@@ -90,18 +91,32 @@ export class CreateAttributeUseCase {
         input.identifier
       )
       if (!savedAttribute) {
+        console.error('CRITICAL: Failed to retrieve saved attribute after creation:', {
+          tableId: input.tableId,
+          identifier: input.identifier,
+          inputName: input.name,
+        })
         throw new Error('Failed to retrieve saved attribute')
       }
 
-      this.logger.info('Attribute created successfully', {
+      console.log('DEBUG: Attribute created successfully:', {
         id: savedAttribute.getId(),
         identifier: savedAttribute.getIdentifier(),
+        name: savedAttribute.getName(),
         tableId: savedAttribute.getTableId(),
+      })
+
+      // Convert to DTO
+      const attributeDto = attributeFromEntity(savedAttribute)
+      console.log('DEBUG: Converted to DTO:', {
+        id: attributeDto.id,
+        identifier: attributeDto.identifier,
+        name: attributeDto.name,
       })
 
       // Return DTO
       return {
-        attribute: attributeFromEntity(savedAttribute),
+        attribute: attributeDto,
       }
     } catch (error) {
       this.logger.error('Failed to create attribute', {

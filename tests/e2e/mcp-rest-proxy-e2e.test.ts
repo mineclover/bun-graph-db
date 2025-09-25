@@ -20,13 +20,6 @@ interface McpRequest {
   id: string | number
 }
 
-interface McpResponse {
-  jsonrpc: '2.0'
-  result?: any
-  error?: any
-  id: string | number
-}
-
 describe('MCP-to-REST API Proxy E2E Tests', () => {
   const TEST_PORT = 4260
   const MCP_ENDPOINT = `http://localhost:${TEST_PORT}/mcp`
@@ -44,7 +37,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const response = await fetch(`${REST_API_ENDPOINT}/health`)
       serverIsRunning = response.ok
       console.log(`E2E Test Server Status: ${serverIsRunning ? 'Running' : 'Not Available'}`)
-    } catch (error) {
+    } catch (_error) {
       console.warn('E2E Test server not running, tests will be skipped')
       serverIsRunning = false
     }
@@ -500,7 +493,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       console.log('E2E Integration: Verifying data integrity...')
 
       // Perform the same operation through MCP and direct REST API
-      const timestamp = Date.now()
+      const _timestamp = Date.now()
 
       // Via MCP proxy
       const mcpResponse = await callMcpTool('systemStats', {})
@@ -558,7 +551,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
           const toolResponse = await callMcpTool(toolName, {})
           const toolResult = extractRestResponse(toolResponse)
           expect(toolResult).toBeDefined()
-        } catch (error) {
+        } catch (_error) {
           // Some tools may fail due to missing parameters, but should be accessible
           console.log(`Tool ${toolName} accessible (may have parameter errors)`)
         }

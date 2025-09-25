@@ -1,9 +1,18 @@
-import { SortStrategy, type SortResult, type SortContext } from '@/domain/value-objects/SortStrategy.js'
+import {
+  type SortContext,
+  type SortResult,
+  SortStrategy,
+} from '@/domain/value-objects/SortStrategy.js'
 
 export class DateTimeSortStrategy extends SortStrategy {
   canHandle(field: string, dataType: string): boolean {
-    return dataType === 'datetime' || dataType === 'date' || dataType === 'timestamp' ||
-           field === 'created_at' || field === 'updated_at'
+    return (
+      dataType === 'datetime' ||
+      dataType === 'date' ||
+      dataType === 'timestamp' ||
+      field === 'created_at' ||
+      field === 'updated_at'
+    )
   }
 
   buildSortClause(field: string, direction: 'asc' | 'desc', context: SortContext): SortResult {
@@ -11,11 +20,11 @@ export class DateTimeSortStrategy extends SortStrategy {
     if (field === 'created_at' || field === 'updated_at') {
       return {
         sqlClause: `${context.nodeAlias}.${field} ${direction.toUpperCase()}`,
-        parameters: []
+        parameters: [],
       }
     }
 
-    const attribute = context.availableAttributes.find(attr => attr.identifier === field)
+    const attribute = context.availableAttributes.find((attr) => attr.identifier === field)
 
     if (!attribute) {
       throw new Error(`Attribute '${field}' not found for datetime sorting`)
@@ -36,7 +45,7 @@ export class DateTimeSortStrategy extends SortStrategy {
 
     return {
       sqlClause,
-      parameters: []
+      parameters: [],
     }
   }
 
@@ -62,7 +71,7 @@ export class DateTimeSortStrategy extends SortStrategy {
    * Safely parses a string to ISO datetime string with fallback
    */
   static safeParseDateTime(value: string, fallback?: string): string {
-    if (!this.isValidDateTime(value)) {
+    if (!DateTimeSortStrategy.isValidDateTime(value)) {
       return fallback || new Date().toISOString()
     }
 
@@ -84,17 +93,20 @@ export class DateTimeSortStrategy extends SortStrategy {
     }
 
     // SQLite datetime format: YYYY-MM-DD HH:MM:SS
-    return date.toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '')
+    return date
+      .toISOString()
+      .replace('T', ' ')
+      .replace(/\.\d{3}Z$/, '')
   }
 
   /**
    * Converts various datetime formats to SQLite-compatible format
    */
   static normalizeDateTime(value: string): string {
-    if (!this.isValidDateTime(value)) {
+    if (!DateTimeSortStrategy.isValidDateTime(value)) {
       throw new Error(`Cannot normalize invalid datetime: ${value}`)
     }
 
-    return this.formatForSQLite(value)
+    return DateTimeSortStrategy.formatForSQLite(value)
   }
 }

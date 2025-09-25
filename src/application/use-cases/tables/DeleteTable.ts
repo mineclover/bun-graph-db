@@ -110,7 +110,10 @@ export class DeleteTableUseCase {
     return dependencies
   }
 
-  private async deleteCascadeData(tableId: TableId, dependencies: TableDependencyInfo): Promise<void> {
+  private async deleteCascadeData(
+    tableId: TableId,
+    dependencies: TableDependencyInfo
+  ): Promise<void> {
     this.logger.info('Starting cascade deletion process', {
       tableId,
       nodeCount: dependencies.nodeCount,
@@ -121,7 +124,10 @@ export class DeleteTableUseCase {
     // Delete in proper order to maintain referential integrity:
     // 1. Relations (referencing nodes)
     if (dependencies.relationCount > 0) {
-      this.logger.info('Deleting relations for table', { tableId, count: dependencies.relationCount })
+      this.logger.info('Deleting relations for table', {
+        tableId,
+        count: dependencies.relationCount,
+      })
       await this.relationRepository.deleteByTableId(tableId)
       this.logger.info('Relations deleted successfully', { tableId })
     }
@@ -138,7 +144,10 @@ export class DeleteTableUseCase {
 
     // 4. Attributes (referencing table)
     if (dependencies.attributeCount > 0) {
-      this.logger.info('Deleting attributes for table', { tableId, count: dependencies.attributeCount })
+      this.logger.info('Deleting attributes for table', {
+        tableId,
+        count: dependencies.attributeCount,
+      })
       await this.attributeRepository.deleteByTableId(tableId)
       this.logger.info('Attributes deleted successfully', { tableId })
     }

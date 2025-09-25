@@ -288,7 +288,13 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
       } else {
         const newNodeAttribute = NodeAttribute.create(nodeId, attributeId, value)
         await this.save(newNodeAttribute)
-        return newNodeAttribute
+
+        // After saving, fetch the saved entity with the database-assigned ID
+        const savedNodeAttribute = await this.findByNodeIdAndAttributeId(nodeId, attributeId)
+        if (!savedNodeAttribute) {
+          throw new DatabaseException('Failed to retrieve saved node attribute')
+        }
+        return savedNodeAttribute
       }
     } catch (error) {
       throw new DatabaseException(`Failed to set node attribute: ${error}`)

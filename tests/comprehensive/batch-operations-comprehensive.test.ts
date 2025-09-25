@@ -16,11 +16,11 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
-import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
-import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
 import { DatabaseCleaner } from '../fixtures/database-cleaner'
-import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
+import { createGraphQLExecutor, createGraphQLYoga } from '../fixtures/graphql-yoga-helper'
+import { createTestEnvironment, type TestEnvironment } from '../fixtures/test-database-factory'
 
 describe('Batch Operations Comprehensive Tests', () => {
   let yoga: any
@@ -30,9 +30,9 @@ describe('Batch Operations Comprehensive Tests', () => {
   let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
-    testEnvironment = await TestDatabaseFactory.createTestEnvironment('batch-operations', 'batch')
+    testEnvironment = await createTestEnvironment('batch-operations', 'batch')
     process.env.DATABASE_PATH = testEnvironment.databasePath
-    container = await ContainerBootstrap.createContainer()
+    container = await createContainer()
     yoga = await createGraphQLYoga(container)
     graphqlExecute = createGraphQLExecutor(yoga)
     databaseCleaner = new DatabaseCleaner(container)
@@ -91,7 +91,7 @@ describe('Batch Operations Comprehensive Tests', () => {
 
     test('should handle partial failures in batch table creation', async () => {
       // First create a table that will conflict
-      const conflictingTable = await graphqlExecute(`
+      const _conflictingTable = await graphqlExecute(`
         mutation {
           createTable(input: {
             identifier: "conflicting-table"
@@ -703,7 +703,7 @@ describe('Batch Operations Comprehensive Tests', () => {
       const responses = await Promise.all(concurrentOperations)
 
       // All operations should succeed
-      responses.forEach((response, index) => {
+      responses.forEach((response, _index) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.batchCreateNodes.success).toBe(true)
         expect(response.data.batchCreateNodes.totalCreated).toBe(20)

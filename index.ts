@@ -2,7 +2,7 @@ import { createYoga } from 'graphql-yoga'
 import type { ILogger } from './src/application/ports/ILogger'
 import { setDatabasePath } from './src/config/database'
 import { createGraphQLConfig } from './src/config/graphql'
-import { ContainerBootstrap } from './src/infrastructure/container/ContainerBootstrap'
+import { createContainer } from './src/infrastructure/container/ContainerBootstrap'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens'
 import { UseCaseTokens } from './src/infrastructure/container/tokens/UseCaseTokens'
 import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder'
@@ -61,17 +61,17 @@ const checkPortAvailable = async (port: number): Promise<boolean> => {
     const testServer = Bun.serve({
       port,
       hostname: '127.0.0.1',
-      fetch: () => new Response('test')
+      fetch: () => new Response('test'),
     })
     testServer.stop()
     return true
-  } catch (error) {
+  } catch (_error) {
     return false
   }
 }
 
 // Initialize dependency container
-const container = await ContainerBootstrap.createContainer()
+const container = await createContainer()
 
 // Build GraphQL schema with the new schema builder
 const schemaBuilder = new GraphQLSchemaBuilder(container)
@@ -126,6 +126,7 @@ const yoga = createYoga({
   landingPage: false,
 })
 
+import { RepositoryTokens } from './src/infrastructure/container/tokens/RepositoryTokens'
 import { McpHttpServer } from './src/mcp/http-server/McpHttpServer'
 import { AttributeApiController } from './src/presentation/http/controllers/AttributeApiController'
 import { GraphApiController } from './src/presentation/http/controllers/GraphApiController'
@@ -135,7 +136,6 @@ import { McpToolController } from './src/presentation/http/controllers/McpToolCo
 // Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes'
 import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes'
-import { RepositoryTokens } from './src/infrastructure/container/tokens/RepositoryTokens'
 
 // Resolve dependencies from container in parallel
 const [
@@ -146,8 +146,8 @@ const [
   searchNodesUseCase,
   searchRelatedNodesUseCase,
   tableRepository,
-  nodeRelationRepository
-] = await Promise.all([
+  nodeRelationRepository,
+] = (await Promise.all([
   container.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE),
   container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY),
   container.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY),
@@ -155,8 +155,8 @@ const [
   container.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE),
   container.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE),
   container.resolve(RepositoryTokens.TABLE_REPOSITORY),
-  container.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)
-]) as any[]
+  container.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY),
+])) as any[]
 
 // Create controllers
 const graphDbController = new GraphDbApiController(logger)
@@ -175,12 +175,12 @@ const graphController = new GraphApiController(
   nodeRelationRepository,
   graphqlConfig.port
 )
-const mcpToolController = new McpToolController(logger, graphqlConfig.port)
+const _mcpToolController = new McpToolController(logger, graphqlConfig.port)
 
 // Create route handlers in parallel
 const [schemaHandler, templateFileHandler] = await Promise.all([
   createSchemaHandler(container),
-  createTemplateFileHandler(container)
+  createTemplateFileHandler(container),
 ])
 
 // Create MCP HTTP server with REST API base URL
@@ -367,7 +367,9 @@ if (!(await checkPortAvailable(graphqlConfig.port))) {
     const proc = Bun.spawn(['lsof', '-ti', `:${graphqlConfig.port}`])
     const output = await new Response(proc.stdout).text()
     if (output.trim()) {
-      console.error(`🔍 Process(es) using port ${graphqlConfig.port}: ${output.trim().split('\n').join(', ')}`)
+      console.error(
+        `🔍 Process(es) using port ${graphqlConfig.port}: ${output.trim().split('\n').join(', ')}`
+      )
     }
   } catch {
     // lsof might not be available on all systems

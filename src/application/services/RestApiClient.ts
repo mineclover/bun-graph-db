@@ -73,7 +73,7 @@ export class RestApiClient {
   }
 
   private prepareRequest(
-    toolName: string,
+    _toolName: string,
     endpoint: string,
     params: any
   ): {

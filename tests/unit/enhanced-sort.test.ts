@@ -1,53 +1,57 @@
 import { describe, expect, test } from 'bun:test'
-import { SortStrategyFactory } from '@/application/services/sorting/SortStrategyFactory.js'
-import { NumericSortStrategy } from '@/application/services/sorting/NumericSortStrategy.js'
-import { DateTimeSortStrategy } from '@/application/services/sorting/DateTimeSortStrategy.js'
-import { TextSortStrategy } from '@/application/services/sorting/TextSortStrategy.js'
 import type { AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
+import { DateTimeSortStrategy } from '@/application/services/sorting/DateTimeSortStrategy.js'
+import { NumericSortStrategy } from '@/application/services/sorting/NumericSortStrategy.js'
+import {
+  buildMultiCriteriaSort,
+  getStrategy,
+  validateSortOptions,
+} from '@/application/services/sorting/SortStrategyFactory.js'
+import { TextSortStrategy } from '@/application/services/sorting/TextSortStrategy.js'
 
 describe('Enhanced Sort Functionality', () => {
   const mockAttributes: AttributeTypeInfo[] = [
     { identifier: 'age', dataType: 'number', name: 'Age' },
     { identifier: 'name', dataType: 'string', name: 'Name' },
     { identifier: 'created_date', dataType: 'datetime', name: 'Created Date' },
-    { identifier: 'score', dataType: 'decimal', name: 'Score' }
+    { identifier: 'score', dataType: 'decimal', name: 'Score' },
   ]
 
   describe('SortStrategyFactory', () => {
     test('should select NumericSortStrategy for numeric fields', () => {
-      const strategy = SortStrategyFactory.getStrategy('age', mockAttributes)
+      const strategy = getStrategy('age', mockAttributes)
       expect(strategy).toBeInstanceOf(NumericSortStrategy)
     })
 
     test('should select DateTimeSortStrategy for datetime fields', () => {
-      const strategy = SortStrategyFactory.getStrategy('created_date', mockAttributes)
+      const strategy = getStrategy('created_date', mockAttributes)
       expect(strategy).toBeInstanceOf(DateTimeSortStrategy)
     })
 
     test('should select TextSortStrategy for string fields', () => {
-      const strategy = SortStrategyFactory.getStrategy('name', mockAttributes)
+      const strategy = getStrategy('name', mockAttributes)
       expect(strategy).toBeInstanceOf(TextSortStrategy)
     })
 
     test('should select DateTimeSortStrategy for system date fields', () => {
-      const strategy = SortStrategyFactory.getStrategy('created_at', mockAttributes)
+      const strategy = getStrategy('created_at', mockAttributes)
       expect(strategy).toBeInstanceOf(DateTimeSortStrategy)
     })
 
     test('should build multi-criteria sort clauses', () => {
       const sortOptions = [
         { field: 'age', direction: 'desc' as const },
-        { field: 'name', direction: 'asc' as const }
+        { field: 'name', direction: 'asc' as const },
       ]
 
       const sortContext = {
         availableAttributes: mockAttributes,
         tableAlias: 'tables',
         nodeAlias: 'n',
-        attributeAlias: 'nav'
+        attributeAlias: 'nav',
       }
 
-      const result = SortStrategyFactory.buildMultiCriteriaSort(sortOptions, sortContext)
+      const result = buildMultiCriteriaSort(sortOptions, sortContext)
 
       expect(result.sqlClause).toContain('ORDER BY')
       expect(result.sortFields).toEqual(['age', 'name'])
@@ -58,10 +62,10 @@ describe('Enhanced Sort Functionality', () => {
       const sortOptions = [
         { field: 'age', direction: 'asc' as const },
         { field: 'invalid_field', direction: 'desc' as const },
-        { field: 'created_at', direction: 'asc' as const }
+        { field: 'created_at', direction: 'asc' as const },
       ]
 
-      const { valid, invalid } = SortStrategyFactory.validateSortOptions(sortOptions, mockAttributes)
+      const { valid, invalid } = validateSortOptions(sortOptions, mockAttributes)
 
       expect(valid).toHaveLength(2)
       expect(invalid).toHaveLength(1)

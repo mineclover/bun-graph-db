@@ -4,7 +4,11 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { GraphQLTestServerManager } from './fixtures/test-graphql-server'
+import {
+  createRequestHelper,
+  startServerForSuite,
+  stopServerForSuite,
+} from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'relation-queries-isolated'
 const TEST_TIMEOUT = 15000
@@ -17,12 +21,12 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
     console.log('🚀 Starting isolated GraphQL server for Relation Queries tests...')
 
     // Start isolated server with dedicated database
-    const server = await GraphQLTestServerManager.startServerForSuite(SUITE_NAME)
+    const server = await startServerForSuite(SUITE_NAME)
     console.log(`✅ Server started at: ${server.url}`)
     console.log(`📁 Database path: ${server.database.databasePath}`)
 
     // Create request helper
-    graphqlRequest = GraphQLTestServerManager.createRequestHelper(SUITE_NAME)
+    graphqlRequest = createRequestHelper(SUITE_NAME)
 
     // Verify server is working
     const healthCheck = await graphqlRequest(`
@@ -41,7 +45,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
 
   afterAll(async () => {
     console.log('🧹 Cleaning up isolated test environment...')
-    await GraphQLTestServerManager.stopServerForSuite(SUITE_NAME)
+    await stopServerForSuite(SUITE_NAME)
     console.log('✅ Cleanup completed')
   }, TEST_TIMEOUT)
 

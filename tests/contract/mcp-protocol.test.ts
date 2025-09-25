@@ -7,24 +7,13 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { TestServerManager } from '../fixtures/test-server-manager'
+import { startServerForSuite, stopServerForSuite } from '../fixtures/test-server-manager'
 
 // MCP Protocol JSON-RPC 2.0 types
 interface McpRequest {
   jsonrpc: '2.0'
   method: 'initialize' | 'notifications/initialized' | 'tools/list' | 'tools/call'
   params?: any
-  id: string | number
-}
-
-interface McpResponse {
-  jsonrpc: '2.0'
-  result?: any
-  error?: {
-    code: number
-    message: string
-    data?: any
-  }
   id: string | number
 }
 
@@ -35,7 +24,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
     console.log('Starting isolated test server for MCP protocol compliance tests')
 
     // Start isolated test server for this test suite
-    const serverInstance = await TestServerManager.startServerForSuite('mcp-protocol')
+    const serverInstance = await startServerForSuite('mcp-protocol')
     mcpEndpoint = `${serverInstance.url.replace('/graphql', '/mcp')}`
 
     console.log(`Test server started on ${mcpEndpoint}`)
@@ -43,7 +32,7 @@ describe('MCP Protocol Compliance Contract Tests', () => {
 
   afterAll(async () => {
     // Clean up test server
-    await TestServerManager.stopServerForSuite('mcp-protocol')
+    await stopServerForSuite('mcp-protocol')
   })
 
   describe('JSON-RPC 2.0 Protocol Structure', () => {

@@ -4,16 +4,12 @@ import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
-import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
-import { toErrorMeta } from '../utils/errorHelpers.js'
-import { ResponseHelper } from '../utils/responseHelpers.js'
 import type {
-  ApiResponse,
   AttributeData,
   NodeAttributeData,
-  NodeAttributesData,
   TableAttributesData,
 } from '../types/ApiResponseTypes.js'
+import { ResponseHelper } from '../utils/responseHelpers.js'
 
 export class AttributeApiController {
   private responseHelper: ResponseHelper
@@ -22,7 +18,7 @@ export class AttributeApiController {
     private readonly createAttributeUseCase: CreateAttributeUseCase,
     private readonly attributeRepository: IAttributeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
-    private readonly logger: ILogger
+    readonly logger: ILogger
   ) {
     this.responseHelper = new ResponseHelper(logger)
   }
@@ -32,7 +28,10 @@ export class AttributeApiController {
       const { input } = req.body
 
       if (!input || !input.nodeId || !input.attributeId || input.value === undefined) {
-        this.responseHelper.validationError(res, 'input with nodeId, attributeId, and value is required')
+        this.responseHelper.validationError(
+          res,
+          'input with nodeId, attributeId, and value is required'
+        )
         return
       }
 
@@ -185,7 +184,7 @@ export class AttributeApiController {
 
       const result: TableAttributesData = {
         tableId,
-        attributes: attributes.map(attr => ({
+        attributes: attributes.map((attr) => ({
           id: attr.getId(),
           identifier: attr.getIdentifier(),
           name: attr.getName() || attr.getIdentifier(),
@@ -216,7 +215,10 @@ export class AttributeApiController {
       )
 
       if (!nodeAttribute) {
-        this.responseHelper.notFound(res, `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`)
+        this.responseHelper.notFound(
+          res,
+          `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`
+        )
         return
       }
 
@@ -255,7 +257,10 @@ export class AttributeApiController {
       )
 
       if (!nodeAttribute) {
-        this.responseHelper.notFound(res, `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`)
+        this.responseHelper.notFound(
+          res,
+          `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`
+        )
         return
       }
 
@@ -289,7 +294,7 @@ export class AttributeApiController {
 
       const result = {
         nodeId,
-        attributes: nodeAttributes.map(nodeAttr => ({
+        attributes: nodeAttributes.map((nodeAttr) => ({
           id: nodeAttr.getId(),
           nodeId: nodeAttr.getNodeId(),
           attributeId: nodeAttr.getAttributeId(),

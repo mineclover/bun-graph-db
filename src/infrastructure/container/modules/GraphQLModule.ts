@@ -1,4 +1,5 @@
 import type { GraphQLSchema } from 'graphql'
+import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
@@ -7,7 +8,6 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import {
   AttributeFieldResolvers,
   DocFieldResolvers,

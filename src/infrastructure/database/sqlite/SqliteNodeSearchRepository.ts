@@ -1,12 +1,15 @@
 import type { Database } from 'bun:sqlite'
 import type { AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
+import {
+  buildMultiCriteriaSort,
+  type SortOption,
+} from '@/application/services/sorting/SortStrategyFactory.js'
 import type { INodeSearchRepository } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
 import type { SearchOperator, SearchQuery } from '@/domain/value-objects/SearchFilter.js'
-import { DatabaseException } from '@/shared/exceptions/DomainException.js'
-import { SortStrategyFactory, type SortOption } from '@/application/services/sorting/SortStrategyFactory.js'
 import type { SortContext } from '@/domain/value-objects/SortStrategy.js'
+import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
 interface NodeWithAttributesRow {
   node_id: string
@@ -152,19 +155,19 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     // Add enhanced sorting for data queries using SortStrategyFactory
     if (!isCountQuery) {
       if (searchQuery.sortBy && searchQuery.sortBy.length > 0) {
-        const sortOptions: SortOption[] = searchQuery.sortBy.map(sort => ({
+        const sortOptions: SortOption[] = searchQuery.sortBy.map((sort) => ({
           field: sort.field,
-          direction: sort.direction
+          direction: sort.direction,
         }))
 
         const sortContext: SortContext = {
           availableAttributes,
           tableAlias: 'tables',
           nodeAlias: 'n',
-          attributeAlias: 'nav'
+          attributeAlias: 'nav',
         }
 
-        const multiSortResult = SortStrategyFactory.buildMultiCriteriaSort(sortOptions, sortContext)
+        const multiSortResult = buildMultiCriteriaSort(sortOptions, sortContext)
 
         if (multiSortResult.sqlClause) {
           query += ` ${multiSortResult.sqlClause}`

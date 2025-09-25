@@ -1,9 +1,19 @@
-import { SortStrategy, type SortResult, type SortContext } from '@/domain/value-objects/SortStrategy.js'
+import {
+  type EnhancedSortOption,
+  type SortContext,
+  type SortResult,
+  SortStrategy,
+} from '@/domain/value-objects/SortStrategy.js'
 
 export class TextSortStrategy extends SortStrategy {
-  canHandle(field: string, dataType: string): boolean {
-    return dataType === 'string' || dataType === 'text' || dataType === 'varchar' ||
-           dataType === 'json' || !this.isNumericOrDate(dataType)
+  canHandle(_field: string, dataType: string): boolean {
+    return (
+      dataType === 'string' ||
+      dataType === 'text' ||
+      dataType === 'varchar' ||
+      dataType === 'json' ||
+      !this.isNumericOrDate(dataType)
+    )
   }
 
   private isNumericOrDate(dataType: string): boolean {
@@ -12,7 +22,7 @@ export class TextSortStrategy extends SortStrategy {
   }
 
   buildSortClause(field: string, direction: 'asc' | 'desc', context: SortContext): SortResult {
-    const attribute = context.availableAttributes.find(attr => attr.identifier === field)
+    const attribute = context.availableAttributes.find((attr) => attr.identifier === field)
 
     if (!attribute && !['created_at', 'updated_at', 'title', 'content'].includes(field)) {
       throw new Error(`Attribute '${field}' not found for text sorting`)
@@ -22,7 +32,7 @@ export class TextSortStrategy extends SortStrategy {
     if (['created_at', 'updated_at', 'title', 'content'].includes(field)) {
       return {
         sqlClause: `${context.nodeAlias}.${field} COLLATE NOCASE ${direction.toUpperCase()}`,
-        parameters: []
+        parameters: [],
       }
     }
 
@@ -41,12 +51,51 @@ export class TextSortStrategy extends SortStrategy {
 
     return {
       sqlClause,
-      parameters: []
+      parameters: [],
     }
   }
 
   getPriority(): number {
     return 50 // Medium priority, used as fallback for unknown types
+  }
+
+  override buildEnhancedSortClause(
+    sortOption: EnhancedSortOption,
+    context: SortContext
+  ): SortResult {
+    const field = sortOption.field
+    const direction = sortOption.direction
+    const attribute = context.availableAttributes.find((attr) => attr.identifier === field)
+
+    if (!attribute && !['created_at', 'updated_at', 'title', 'content'].includes(field)) {
+      throw new Error(`Attribute '${field}' not found for text sorting`)
+    }
+
+    // Handle system fields (node fields)
+    if (['created_at', 'updated_at', 'title', 'content'].includes(field)) {
+      const collation = sortOption.caseSensitive === true ? 'BINARY' : 'NOCASE'
+      return {
+        sqlClause: `${context.nodeAlias}.${field} COLLATE ${collation} ${direction.toUpperCase()}`,
+        parameters: [],
+      }
+    }
+
+    // For custom text attributes with enhanced options
+    const collation = sortOption.caseSensitive === true ? 'BINARY' : 'NOCASE'
+    const nullHandling = this.buildNullHandling(sortOption, context)
+
+    const sqlClause = `
+      ${nullHandling}
+      CASE
+        WHEN ${context.attributeAlias}.value IS NOT NULL AND ${context.attributeAlias}.value != ''
+        THEN ${context.attributeAlias}.value COLLATE ${collation}
+        ELSE ${direction === 'asc' ? "'ZZZZZ'" : "'AAAAA'"}
+      END ${direction.toUpperCase()}`
+
+    return {
+      sqlClause,
+      parameters: [],
+    }
   }
 
   /**
@@ -68,8 +117,8 @@ export class TextSortStrategy extends SortStrategy {
    * Performs case-insensitive comparison of two text values
    */
   static compareText(a: string, b: string, direction: 'asc' | 'desc' = 'asc'): number {
-    const normalizedA = this.normalizeText(a).toLowerCase()
-    const normalizedB = this.normalizeText(b).toLowerCase()
+    const normalizedA = TextSortStrategy.normalizeText(a).toLowerCase()
+    const normalizedB = TextSortStrategy.normalizeText(b).toLowerCase()
 
     if (normalizedA === normalizedB) return 0
 
@@ -88,7 +137,7 @@ export class TextSortStrategy extends SortStrategy {
     if (typeof Intl !== 'undefined' && Intl.Collator) {
       const collator = new Intl.Collator(undefined, {
         numeric: true,
-        sensitivity: 'base'
+        sensitivity: 'base',
       })
       const comparison = collator.compare(normalizedA, normalizedB)
       return direction === 'asc' ? comparison : -comparison

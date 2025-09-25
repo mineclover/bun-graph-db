@@ -16,11 +16,11 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
-import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
-import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
 import { DatabaseCleaner } from '../fixtures/database-cleaner'
-import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
+import { createGraphQLExecutor, createGraphQLYoga } from '../fixtures/graphql-yoga-helper'
+import { createTestEnvironment, type TestEnvironment } from '../fixtures/test-database-factory'
 
 interface PerformanceMetrics {
   startTime: number
@@ -71,9 +71,9 @@ describe('Performance and Stress Comprehensive Tests', () => {
   let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
-    testEnvironment = await TestDatabaseFactory.createTestEnvironment('performance-stress', 'performance')
+    testEnvironment = await createTestEnvironment('performance-stress', 'performance')
     process.env.DATABASE_PATH = testEnvironment.databasePath
-    container = await ContainerBootstrap.createContainer()
+    container = await createContainer()
     yoga = await createGraphQLYoga(container)
     graphqlExecute = createGraphQLExecutor(yoga)
     databaseCleaner = new DatabaseCleaner(container)
@@ -90,7 +90,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
 
   describe('Query Performance Benchmarks', () => {
     let tableId: string
-    let nodeIds: string[] = []
+    let _nodeIds: string[] = []
 
     beforeEach(async () => {
       // Create test table
@@ -143,7 +143,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       }))
 
       const response = await graphqlExecute(batchCreateQuery, { nodes })
-      nodeIds = response.data.batchCreateNodes.results.map((r: any) => r.node.id)
+      _nodeIds = response.data.batchCreateNodes.results.map((r: any) => r.node.id)
     })
 
     test('should execute simple queries efficiently', async () => {
@@ -261,7 +261,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       expect(metrics.operationsPerSecond).toBeGreaterThan(1.2) // > 1.2 queries per second
 
       // Verify pagination
-      responses.forEach((response, page) => {
+      responses.forEach((response, _page) => {
         expect(response.errors).toBeUndefined()
         expect(response.data.searchNodes.nodes).toHaveLength(100)
         expect(response.data.searchNodes.totalCount).toBe(1000)
@@ -431,7 +431,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       `
 
       // Create relationships in batches of 1,000
-      const relationshipBatches = Array.from({ length: 10 }, (_, batchIndex) => {
+      const relationshipBatches = Array.from({ length: 10 }, (_, _batchIndex) => {
         const relations = Array.from({ length: 1000 }, (_, relIndex) => {
           const fromIndex = Math.floor(Math.random() * 1000)
           let toIndex = Math.floor(Math.random() * 1000)

@@ -6,6 +6,7 @@ export class Attribute {
     private readonly id: AttributeId,
     private readonly tableId: TableId,
     private readonly identifier: string,
+    private readonly name: string | null,
     private readonly attributeTypeId: AttributeTypeId,
     private readonly description: string | null,
     private readonly isRequired: boolean,
@@ -21,6 +22,7 @@ export class Attribute {
     tableId: TableId,
     identifier: string,
     attributeTypeId: AttributeTypeId,
+    name?: string,
     description?: string,
     isRequired: boolean = false,
     metadata?: string
@@ -29,6 +31,7 @@ export class Attribute {
       null as any as AttributeId,
       tableId,
       identifier,
+      name || null,
       attributeTypeId,
       description || null,
       isRequired,
@@ -42,6 +45,7 @@ export class Attribute {
     id: string,
     tableId: string,
     identifier: string,
+    name: string | null,
     attributeTypeId: string,
     description: string | null,
     isRequired: boolean,
@@ -53,6 +57,7 @@ export class Attribute {
       id as AttributeId,
       tableId as TableId,
       identifier,
+      name,
       attributeTypeId as AttributeTypeId,
       description,
       isRequired,
@@ -104,8 +109,8 @@ export class Attribute {
   }
 
   getName(): string {
-    return this.identifier // Use identifier as name for now
-  }
+  return this.name || this.identifier
+}
 
   getAttributeTypeId(): AttributeTypeId {
     return this.attributeTypeId
@@ -145,6 +150,7 @@ export class Attribute {
       this.id,
       this.tableId,
       this.identifier,
+      this.name,
       this.attributeTypeId,
       description,
       this.isRequired,
@@ -159,6 +165,7 @@ export class Attribute {
       this.id,
       this.tableId,
       this.identifier,
+      this.name,
       this.attributeTypeId,
       this.description,
       isRequired,
@@ -181,6 +188,7 @@ export class Attribute {
       this.id,
       this.tableId,
       this.identifier,
+      this.name,
       this.attributeTypeId,
       this.description,
       this.isRequired,
@@ -194,6 +202,7 @@ export class Attribute {
     id: AttributeId | null
     table_id: TableId
     identifier: string
+    name: string | null
     attribute_type_id: AttributeTypeId
     description: string | null
     is_required: boolean
@@ -205,6 +214,7 @@ export class Attribute {
       id: this.id,
       table_id: this.tableId,
       identifier: this.identifier,
+      name: this.name,
       attribute_type_id: this.attributeTypeId,
       description: this.description,
       is_required: this.isRequired,

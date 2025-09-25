@@ -16,11 +16,11 @@
  */
 
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
-import { ContainerBootstrap } from '../../src/infrastructure/container/ContainerBootstrap'
-import { createGraphQLYoga, createGraphQLExecutor } from '../fixtures/graphql-yoga-helper'
 import { DatabaseCleaner } from '../fixtures/database-cleaner'
-import { TestDatabaseFactory, type TestEnvironment } from '../fixtures/test-database-factory'
+import { createGraphQLExecutor, createGraphQLYoga } from '../fixtures/graphql-yoga-helper'
+import { createTestEnvironment, type TestEnvironment } from '../fixtures/test-database-factory'
 
 interface ConcurrencyTestResult {
   operationId: string
@@ -91,9 +91,9 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
   let graphqlExecute: (query: string, variables?: any) => Promise<any>
 
   beforeAll(async () => {
-    testEnvironment = await TestDatabaseFactory.createTestEnvironment('concurrency-transaction', 'concurrency')
+    testEnvironment = await createTestEnvironment('concurrency-transaction', 'concurrency')
     process.env.DATABASE_PATH = testEnvironment.databasePath
-    container = await ContainerBootstrap.createContainer()
+    container = await createContainer()
     yoga = await createGraphQLYoga(container)
     graphqlExecute = createGraphQLExecutor(yoga)
     databaseCleaner = new DatabaseCleaner(container)
@@ -631,7 +631,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         })
       }
 
-      const results = await concurrencyTester.runConcurrently()
+      const _results = await concurrencyTester.runConcurrently()
 
       // Should handle contention gracefully
       expect(concurrencyTester.getSuccessRate()).toBeGreaterThan(0.8) // At least 80% success
@@ -728,7 +728,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         }
       }
 
-      const results = await concurrencyTester.runConcurrently()
+      const _results = await concurrencyTester.runConcurrently()
 
       // Verify data integrity after concurrent operations
       const integrityQuery = await graphqlExecute(`
@@ -909,7 +909,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         })
       }
 
-      const results = await concurrencyTester.runConcurrently()
+      const _results = await concurrencyTester.runConcurrently()
 
       // Should handle many connections without complete failure
       expect(concurrencyTester.getSuccessRate()).toBeGreaterThan(0.7) // At least 70% success

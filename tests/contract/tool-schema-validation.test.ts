@@ -8,7 +8,7 @@
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import toolsContract from '../../specs/005-graphql-mcp-graphql/contracts/graphql-tools.json'
-import { TestServerManager } from '../fixtures/test-server-manager'
+import { startServerForSuite, stopServerForSuite } from '../fixtures/test-server-manager'
 
 // MCP Tool Call types
 interface ToolCallRequest {
@@ -21,23 +21,6 @@ interface ToolCallRequest {
   id: string | number
 }
 
-interface ToolCallResponse {
-  jsonrpc: '2.0'
-  result?: {
-    content: Array<{
-      type: 'text'
-      text: string
-    }>
-    isError?: boolean
-  }
-  error?: {
-    code: number
-    message: string
-    data?: any
-  }
-  id: string | number
-}
-
 describe('Tool Schema Validation Contract Tests', () => {
   const tools = toolsContract.tools
   let mcpEndpoint: string
@@ -46,7 +29,7 @@ describe('Tool Schema Validation Contract Tests', () => {
     console.log(`Testing ${tools.length} tools from contract`)
 
     // Start isolated test server for this test suite
-    const serverInstance = await TestServerManager.startServerForSuite('tool-schema-validation')
+    const serverInstance = await startServerForSuite('tool-schema-validation')
     mcpEndpoint = `${serverInstance.url.replace('/graphql', '/mcp')}`
 
     console.log(`Test server started on ${mcpEndpoint}`)
@@ -54,7 +37,7 @@ describe('Tool Schema Validation Contract Tests', () => {
 
   afterAll(async () => {
     // Clean up test server
-    await TestServerManager.stopServerForSuite('tool-schema-validation')
+    await stopServerForSuite('tool-schema-validation')
   })
 
   describe('Tool Schema Compliance', () => {
