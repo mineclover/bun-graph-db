@@ -1,0 +1,231 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "MCP Table Server Protocol",
+    "version": "1.0.0",
+    "description": "JSON-RPC 2.0 over HTTP for table-specific MCP servers"
+  },
+  "paths": {
+    "/sub/{tableId}/mcp": {
+      "post": {
+        "summary": "MCP JSON-RPC endpoint for table-specific tools",
+        "parameters": [
+          {
+            "name": "tableId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9_-]+$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/McpRequest"
+              },
+              "examples": {
+                "toolsList": {
+                  "value": {
+                    "jsonrpc": "2.0",
+                    "method": "tools/list",
+                    "params": {},
+                    "id": "1"
+                  }
+                },
+                "toolsCall": {
+                  "value": {
+                    "jsonrpc": "2.0",
+                    "method": "tools/call",
+                    "params": {
+                      "name": "create_user",
+                      "arguments": {
+                        "name": "John Doe",
+                        "email": "john@example.com"
+                      }
+                    },
+                    "id": "2"
+                  }
+                },
+                "initialize": {
+                  "value": {
+                    "jsonrpc": "2.0",
+                    "method": "initialize",
+                    "params": {
+                      "protocolVersion": "0.1.0",
+                      "capabilities": {}
+                    },
+                    "id": "init"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "MCP JSON-RPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpResponse"
+                },
+                "examples": {
+                  "toolsListResponse": {
+                    "value": {
+                      "jsonrpc": "2.0",
+                      "result": {
+                        "tools": [
+                          {
+                            "name": "create_user",
+                            "description": "Create a new user in the system",
+                            "inputSchema": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string",
+                                  "description": "User's full name"
+                                },
+                                "email": {
+                                  "type": "string",
+                                  "format": "email",
+                                  "description": "User's email address"
+                                }
+                              },
+                              "required": ["name", "email"]
+                            }
+                          }
+                        ]
+                      },
+                      "id": "1"
+                    }
+                  },
+                  "toolsCallResponse": {
+                    "value": {
+                      "jsonrpc": "2.0",
+                      "result": {
+                        "content": [
+                          {
+                            "type": "text",
+                            "text": "User created successfully with ID: 123"
+                          }
+                        ]
+                      },
+                      "id": "2"
+                    }
+                  },
+                  "errorResponse": {
+                    "value": {
+                      "jsonrpc": "2.0",
+                      "error": {
+                        "code": -32601,
+                        "message": "Method not found"
+                      },
+                      "id": "invalid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Table not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/McpError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "McpRequest": {
+        "type": "object",
+        "required": ["jsonrpc", "method", "id"],
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "enum": ["2.0"]
+          },
+          "method": {
+            "type": "string",
+            "enum": ["initialize", "tools/list", "tools/call"]
+          },
+          "params": {
+            "type": "object"
+          },
+          "id": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"}
+            ]
+          }
+        }
+      },
+      "McpResponse": {
+        "type": "object",
+        "required": ["jsonrpc", "id"],
+        "properties": {
+          "jsonrpc": {
+            "type": "string",
+            "enum": ["2.0"]
+          },
+          "result": {
+            "type": "object"
+          },
+          "error": {
+            "$ref": "#/components/schemas/McpError"
+          },
+          "id": {
+            "oneOf": [
+              {"type": "string"},
+              {"type": "number"}
+            ]
+          }
+        }
+      },
+      "McpError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "JSON-RPC error codes"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object"
+          }
+        }
+      },
+      "McpTool": {
+        "type": "object",
+        "required": ["name", "description", "inputSchema"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_]+$"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "inputSchema": {
+            "type": "object",
+            "description": "JSON Schema defining tool parameters"
+          }
+        }
+      }
+    }
+  }
+}
