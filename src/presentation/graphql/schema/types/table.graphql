@@ -108,6 +108,9 @@ type TableDocumentation {
   # Documentation information
   documentation: TableDocumentationInfo
 
+  # AI-friendly metadata
+  aiMetadata: AIMetadata
+
   # Generated timestamp
   generatedAt: DateTime!
 }
@@ -168,4 +171,58 @@ type TableDocumentationInfo {
   description: String!
   usageExamples: [String!]!
   bestPractices: [String!]!
+}
+
+# AI-friendly metadata types
+type AIMetadata {
+  schemaInfo: AISchemaInfo!
+  usagePatterns: AIUsagePatterns!
+  sampleData: AISampleData
+}
+
+type AISchemaInfo {
+  dataTypes: JSON!
+  requiredFields: [String!]!
+  searchableFields: [String!]!
+  relationshipCapabilities: [String!]!
+}
+
+type AIUsagePatterns {
+  commonQueries: [AICommonQuery!]!
+  templateRecommendations: [AITemplateRecommendation!]!
+  queryComplexity: AIQueryComplexity!
+}
+
+type AICommonQuery {
+  pattern: String!
+  description: String!
+  example: String!
+}
+
+type AITemplateRecommendation {
+  templateId: String!
+  useCase: String!
+}
+
+type AISampleData {
+  nodes: [AISampleNode!]!
+  relationships: [AISampleRelationship!]!
+}
+
+type AISampleNode {
+  id: String!
+  content: String!
+  attributes: JSON!
+}
+
+type AISampleRelationship {
+  from: String!
+  to: String!
+  type: String!
+}
+
+enum AIQueryComplexity {
+  simple
+  moderate
+  complex
 }

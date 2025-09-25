@@ -19,5 +19,6 @@ extend type Query {
     includeRelationships: Boolean = true
     includeRelatedTemplates: Boolean = false
     includeUsageStats: Boolean = false
+    includeAiMetadata: Boolean = false
   ): TableDocumentation
 }

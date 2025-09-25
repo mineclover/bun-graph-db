@@ -14,14 +14,22 @@ import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class NodeQueries extends BaseResolver {
   protected logger: ILogger
+  private searchNodesUseCase: SearchNodesUseCase | null = null
 
   constructor(
     private readonly nodeRepository: INodeRepository,
-    private readonly searchNodesUseCase: SearchNodesUseCase | null,
+    private readonly searchNodesUseCaseResolver: (() => Promise<SearchNodesUseCase | null>) | SearchNodesUseCase | null,
     logger: ILogger
   ) {
     super()
     this.logger = logger
+    // Handle both direct instance and resolver function
+    if (typeof searchNodesUseCaseResolver === 'function') {
+      // Lazy load the use case when first needed
+      this.searchNodesUseCase = null
+    } else {
+      this.searchNodesUseCase = searchNodesUseCaseResolver
+    }
   }
 
   async node(_: GraphQLParent, args: NodeArgs, _context?: GraphQLContext) {
@@ -117,8 +125,12 @@ export class NodeQueries extends BaseResolver {
   async searchNodes(_: GraphQLParent, args: SearchNodesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        // Temporary fallback to basic findAll when SearchNodesUseCase is not available
-        // Search functionality disabled pending resolution of circular dependency issue
+        // Lazy load SearchNodesUseCase if needed
+        if (!this.searchNodesUseCase && typeof this.searchNodesUseCaseResolver === 'function') {
+          this.searchNodesUseCase = await this.searchNodesUseCaseResolver()
+        }
+
+        // Fallback to basic findAll when SearchNodesUseCase is not available
         if (!this.searchNodesUseCase) {
           this.logger.warn('SearchNodesUseCase not available, using basic node listing')
           const result = await this.nodeRepository.findAll(
@@ -135,9 +147,12 @@ export class NodeQueries extends BaseResolver {
         }
 
         // Transform GraphQL args to SearchNodesInput format
+        // Prioritize the new 'query' field over legacy 'search' field
+        const queryString = args.filter?.query || args.filter?.search
+        
         const searchInput = {
           tableId: args.filter?.tableId || '', // Provide default empty string if not provided
-          query: args.filter?.search,
+          query: queryString,
           limit: args.pagination?.limit,
           offset: args.pagination?.offset,
           sortBy: args.sort

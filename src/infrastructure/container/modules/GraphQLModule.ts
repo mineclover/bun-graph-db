@@ -7,6 +7,7 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import {
   AttributeFieldResolvers,
   DocFieldResolvers,
@@ -65,7 +66,15 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.NODE_QUERIES,
     async (c) => {
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
-      // Remove SearchNodesUseCase dependency to break circular reference
+      // Use lazy loading to resolve SearchNodesUseCase and break circular dependency
+      const searchNodesUseCaseResolver = async (): Promise<SearchNodesUseCase | null> => {
+        try {
+          return (await c.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE)) as SearchNodesUseCase
+        } catch (error) {
+          console.warn('[GraphQLModule] SearchNodesUseCase not available:', error)
+          return null
+        }
+      }
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -73,7 +82,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new NodeQueries(nodeRepository, null, simpleLogger)
+      return new NodeQueries(nodeRepository, searchNodesUseCaseResolver, simpleLogger)
     },
     [RepositoryTokens.NODE_REPOSITORY]
   )

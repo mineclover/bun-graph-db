@@ -77,10 +77,12 @@ export function registerUseCaseModule(container: DIContainer): void {
     async (c) => {
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
+      const attributeTypeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)) as any
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as any
       const queryTemplateRepository = (await c.resolve(
         RepositoryTokens.QUERY_TEMPLATE_REPOSITORY
       )) as any
+      const relationTypeRepository = (await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)) as any
       const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
@@ -92,8 +94,10 @@ export function registerUseCaseModule(container: DIContainer): void {
       return new GetTableDocsUseCase(
         tableRepository,
         attributeRepository,
+        attributeTypeRepository,
         nodeRepository,
         queryTemplateRepository,
+        relationTypeRepository,
         docRepository,
         simpleLogger
       )
@@ -101,8 +105,10 @@ export function registerUseCaseModule(container: DIContainer): void {
     [
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
       RepositoryTokens.DOC_REPOSITORY,
     ]
   )

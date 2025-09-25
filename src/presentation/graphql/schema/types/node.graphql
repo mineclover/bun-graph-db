@@ -138,6 +138,19 @@ input SearchNodesFilter {
   "Table ID to restrict search to specific node types"
   tableId: ID!
 
+  """
+  Advanced query string with natural language syntax support
+  Examples:
+  - Simple text: 'john' or 'engineer'
+  - Quoted phrases: '"senior engineer"'
+  - Attribute filters: 'age:25..35', 'name:john*', 'salary:>50000'
+  - Logical operators: 'age:>30 AND department:"Engineering"'
+  - Range queries: 'created_at:2023-01-01..2023-12-31'
+  - Wildcards: 'name:*smith', 'email:*@gmail.com'
+  - Comparisons: 'score:>=85', 'price:<100', 'rating:<=4'
+  """
+  query: String
+
   "Filter by node attribute values with various operators"
   attributeFilters: [AttributeFilter!]
 
@@ -178,27 +191,37 @@ input RelationFilter {
 """
 Operators for attribute value comparisons
 Supports text matching and numeric/date comparisons
+Enhanced to support all SearchQueryParser capabilities
 """
 enum FilterOperator {
   "Exact equality match"
   EQUALS
 
+  "Not equal to value"
+  NOT_EQUALS
+
   "Contains substring (case-insensitive)"
   CONTAINS
 
-  "String starts with value"
+  "String starts with value (supports wildcards like 'john*')"
   STARTS_WITH
 
-  "String ends with value"
+  "String ends with value (supports wildcards like '*smith')"
   ENDS_WITH
 
   "Numeric/date greater than"
   GREATER_THAN
 
+  "Numeric/date greater than or equal"
+  GREATER_THAN_OR_EQUAL
+
   "Numeric/date less than"
   LESS_THAN
 
-  "Value within range (requires min/max format)"
+  "Numeric/date less than or equal"
+  LESS_THAN_OR_EQUAL
+
+  "Value within range (supports syntax like '25..35' or date ranges)"
   RANGE
 
   "Value in list of options"

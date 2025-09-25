@@ -107,6 +107,7 @@ export class TableQueries extends BaseResolver {
       includeRelationships?: boolean
       includeRelatedTemplates?: boolean
       includeUsageStats?: boolean
+      includeAiMetadata?: boolean
     },
     _context?: GraphQLContext
   ) {
@@ -126,6 +127,7 @@ export class TableQueries extends BaseResolver {
           includeDocs: args.includeDocs,
           includeRelatedTemplates: args.includeRelatedTemplates,
           includeUsageStats: args.includeUsageStats,
+          includeAiMetadata: args.includeAiMetadata,
         })
 
         return result.tableDocs

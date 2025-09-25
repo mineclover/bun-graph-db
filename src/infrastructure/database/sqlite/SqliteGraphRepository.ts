@@ -318,7 +318,7 @@ export class SqliteGraphRepository implements IGraphRepository {
       FROM nodes n
       LEFT JOIN node_relations nr ON (n.id = nr.source_node_id OR n.id = nr.target_node_id)
       LEFT JOIN relation_types rt ON nr.relation_type_id = rt.id
-      LEFT JOIN node_attribute_values nav ON n.id = nav.node_id
+      LEFT JOIN node_attributes nav ON n.id = nav.node_id
       LEFT JOIN attributes a ON nav.attribute_id = a.id
       WHERE n.table_id = ?`
 
@@ -326,7 +326,7 @@ export class SqliteGraphRepository implements IGraphRepository {
     if (graphQuery.nodeFilters) {
       for (const [field, value] of Object.entries(graphQuery.nodeFilters)) {
         query += ` AND EXISTS (
-          SELECT 1 FROM node_attribute_values nav2
+          SELECT 1 FROM node_attributes nav2
           JOIN attributes a2 ON nav2.attribute_id = a2.id
           WHERE nav2.node_id = n.id AND a2.identifier = ? AND nav2.value = ?
         )`

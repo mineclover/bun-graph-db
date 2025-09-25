@@ -5,6 +5,8 @@ import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
 import type { SearchOperator, SearchQuery } from '@/domain/value-objects/SearchFilter.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { SortStrategyFactory, type SortOption } from '@/application/services/sorting/SortStrategyFactory.js'
+import type { SortContext } from '@/domain/value-objects/SortStrategy.js'
 
 interface NodeWithAttributesRow {
   node_id: string
@@ -123,7 +125,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
     query += `
       FROM nodes n
-      LEFT JOIN node_attribute_values nav ON n.id = nav.node_id
+      LEFT JOIN node_attributes nav ON n.id = nav.node_id
       LEFT JOIN attributes a ON nav.attribute_id = a.id
       LEFT JOIN attribute_types at ON a.attribute_type_id = at.id
       WHERE n.table_id = ?`
@@ -147,20 +149,30 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
       params.push(`%${searchQuery.textSearch}%`)
     }
 
-    // Add sorting for data queries
+    // Add enhanced sorting for data queries using SortStrategyFactory
     if (!isCountQuery) {
       if (searchQuery.sortBy && searchQuery.sortBy.length > 0) {
-        const sortClauses = searchQuery.sortBy.map((sort) => {
-          if (sort.field === 'created_at') {
-            return `n.created_at ${sort.direction.toUpperCase()}`
-          } else if (sort.field === 'updated_at') {
-            return `n.updated_at ${sort.direction.toUpperCase()}`
-          } else {
-            // For attribute-based sorting, we need a more complex query
-            return `nav.value ${sort.direction.toUpperCase()}`
-          }
-        })
-        query += ` ORDER BY ${sortClauses.join(', ')}`
+        const sortOptions: SortOption[] = searchQuery.sortBy.map(sort => ({
+          field: sort.field,
+          direction: sort.direction
+        }))
+
+        const sortContext: SortContext = {
+          availableAttributes,
+          tableAlias: 'tables',
+          nodeAlias: 'n',
+          attributeAlias: 'nav'
+        }
+
+        const multiSortResult = SortStrategyFactory.buildMultiCriteriaSort(sortOptions, sortContext)
+
+        if (multiSortResult.sqlClause) {
+          query += ` ${multiSortResult.sqlClause}`
+          params.push(...multiSortResult.parameters)
+        } else {
+          // Fallback to default sorting
+          query += ' ORDER BY n.created_at DESC'
+        }
       } else {
         query += ' ORDER BY n.created_at DESC'
       }
@@ -180,10 +192,10 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     availableAttributes: AttributeTypeInfo[],
     params: any[]
   ): string {
-    // Handle text search
+    // Handle text search - search both content and attribute values
     if (filter.field === '_text_search') {
-      params.push(`%${filter.value}%`)
-      return 'nav.value LIKE ?'
+      params.push(`%${filter.value}%`, `%${filter.value}%`)
+      return '(n.content LIKE ? OR nav.value LIKE ?)'
     }
 
     // Find attribute type
