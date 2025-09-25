@@ -8,13 +8,30 @@ describe('SystemQueries', () => {
   let mockLogger: Logger
 
   beforeEach(() => {
-    // Mock database
+    // Mock database with proper method structure
     mockDb = {
       filename: './test.db',
-      prepare: mock(() => ({
-        all: mock(() => []),
-        get: mock(() => ({ count: 0 })),
-      })),
+      prepare: mock((query: string) => {
+        // Return different mock results based on the query
+        if (query.includes("SELECT name FROM sqlite_master WHERE type='table'")) {
+          return {
+            all: mock(() => [{ name: 'test_table' }, { name: 'another_table' }]),
+          }
+        } else if (query.includes("SELECT name FROM sqlite_master WHERE type='index'")) {
+          return {
+            all: mock(() => [{ name: 'test_index' }, { name: 'another_index' }]),
+          }
+        } else if (query.includes('SELECT COUNT(*)')) {
+          return {
+            get: mock(() => ({ count: 42 })),
+          }
+        } else {
+          return {
+            all: mock(() => []),
+            get: mock(() => ({ count: 0 })),
+          }
+        }
+      }),
     }
 
     // Mock logger
@@ -104,13 +121,13 @@ describe('SystemQueries', () => {
     it('should return database statistics when DB is available', async () => {
       // Configure mock database to return sample data
       mockDb.prepare = mock((query: string) => {
-        if (query.includes('table')) {
+        if (query.includes("SELECT name FROM sqlite_master WHERE type='table'")) {
           return { all: () => [{ name: 'users' }, { name: 'posts' }] }
         }
-        if (query.includes('index')) {
+        if (query.includes("SELECT name FROM sqlite_master WHERE type='index'")) {
           return { all: () => [{ name: 'idx_users' }] }
         }
-        if (query.includes('COUNT')) {
+        if (query.includes('SELECT COUNT(*)')) {
           return { get: () => ({ count: 100 }) }
         }
         return { all: () => [], get: () => ({ count: 0 }) }
@@ -466,13 +483,13 @@ describe('SystemQueries', () => {
 
     it('should handle row counting errors per table', async () => {
       mockDb.prepare = mock((query: string) => {
-        if (query.includes('table')) {
+        if (query.includes("SELECT name FROM sqlite_master WHERE type='table'")) {
           return { all: () => [{ name: 'users' }, { name: 'bad_table' }] }
         }
-        if (query.includes('COUNT') && query.includes('bad_table')) {
+        if (query.includes('SELECT COUNT(*)') && query.includes('bad_table')) {
           throw new Error('Table corrupted')
         }
-        if (query.includes('COUNT')) {
+        if (query.includes('SELECT COUNT(*)')) {
           return { get: () => ({ count: 50 }) }
         }
         return { all: () => [] }

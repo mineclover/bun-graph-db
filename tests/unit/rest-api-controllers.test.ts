@@ -22,6 +22,58 @@ const mockLogger = {
   error: mock(() => {}),
 }
 
+// Mock global fetch for GraphQL queries
+global.fetch = mock(() =>
+  Promise.resolve({
+    ok: true,
+    json: () =>
+      Promise.resolve({
+        data: {
+          exportTable: {
+            metadata: {
+              exportedAt: '2024-01-01T00:00:00Z',
+              version: '1.0.0',
+              source: 'test',
+              options: '{}',
+              checksum: 'test-checksum',
+            },
+            tables: [
+              {
+                id: 'table-123',
+                identifier: 'test-table',
+                description: 'Test table',
+                nodes: [],
+                attributes: [],
+                statistics: {
+                  nodeCount: 0,
+                  attributeCount: 0,
+                  relationCount: 0,
+                },
+              },
+            ],
+            statistics: {
+              totalTables: 1,
+              totalNodes: 0,
+              totalRelations: 0,
+              totalAttributes: 0,
+              exportSize: 1024,
+            },
+          },
+        },
+      }),
+  })
+)
+
+// Mock node:fs/promises and node:path for file operations
+mock.module('node:fs/promises', () => ({
+  mkdir: mock(() => Promise.resolve()),
+  writeFile: mock(() => Promise.resolve()),
+}))
+
+mock.module('node:path', () => ({
+  dirname: mock(() => '/tmp'),
+}))
+
 // Mock Express Request/Response objects
 function createMockRequest(overrides: Partial<Request> = {}): Request {
   return {
@@ -262,12 +314,69 @@ describe('GraphDbApiController Unit Tests', () => {
   })
 })
 
+// Mock dependencies for AttributeApiController
+const mockCreateAttributeUseCase = {
+  execute: mock(() =>
+    Promise.resolve({
+      attribute: {
+        id: 'attr-123',
+        tableId: 'table-123',
+        identifier: 'test-attr',
+        name: 'Test Attribute',
+        attributeTypeId: '1',
+      },
+    })
+  ),
+}
+
+const mockAttributeRepository = {
+  findById: mock(() => Promise.resolve(null)),
+  findByTableIdAndIdentifier: mock(() => Promise.resolve(null)),
+  findByTableId: mock(() => Promise.resolve({ nodes: [], totalCount: 0 })),
+  save: mock(() => Promise.resolve()),
+  update: mock(() => Promise.resolve()),
+}
+
+const mockNodeAttributeRepository = {
+  setNodeAttribute: mock((nodeId: string, attributeId: string, value: string) =>
+    Promise.resolve({
+      getNodeId: () => nodeId || 'node-123',
+      getAttributeId: () => attributeId || 'attr-123',
+      getValue: () => value || 'test-value',
+    })
+  ),
+  findByNodeId: mock(() =>
+    Promise.resolve([
+      {
+        getId: () => 'nodeattr-123',
+        getNodeId: () => 'node-123',
+        getAttributeId: () => 'attr-123',
+        getValue: () => 'test-value',
+      },
+    ])
+  ),
+}
+
 describe('AttributeApiController Unit Tests', () => {
   let controller: AttributeApiController
 
   beforeEach(() => {
-    controller = new AttributeApiController(mockLogger)
+    controller = new AttributeApiController(
+      mockCreateAttributeUseCase as any,
+      mockAttributeRepository as any,
+      mockNodeAttributeRepository as any,
+      mockLogger as any
+    )
+    // Clear all mocks
+    mockLogger.debug.mockClear()
+    mockLogger.info.mockClear()
+    mockLogger.warn.mockClear()
     mockLogger.error.mockClear()
+    mockCreateAttributeUseCase.execute.mockClear()
+    mockAttributeRepository.findById.mockClear()
+    mockAttributeRepository.save.mockClear()
+    mockNodeAttributeRepository.setNodeAttribute.mockClear()
+    mockNodeAttributeRepository.findByNodeId.mockClear()
   })
 
   describe('createAttribute', () => {
@@ -276,7 +385,6 @@ describe('AttributeApiController Unit Tests', () => {
         body: {
           tableId: 'table-123',
           identifier: 'test-attr',
-          name: 'Test Attribute',
           attributeTypeId: '1',
         },
       })
@@ -284,13 +392,23 @@ describe('AttributeApiController Unit Tests', () => {
 
       await controller.createAttribute(req, res)
 
+      expect(mockCreateAttributeUseCase.execute).toHaveBeenCalledWith({
+        tableId: 'table-123',
+        identifier: 'test-attr',
+        attributeTypeId: '1',
+        description: undefined,
+        isRequired: false,
+        metadata: undefined,
+      })
+
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: expect.objectContaining({
-          id: expect.any(String),
+          id: 'attr-123',
           tableId: 'table-123',
           identifier: 'test-attr',
           name: 'Test Attribute',
+          attributeTypeId: '1',
         }),
       })
     })
@@ -309,7 +427,7 @@ describe('AttributeApiController Unit Tests', () => {
       expect(res.status).toHaveBeenCalledWith(400)
       expect(res.json).toHaveBeenCalledWith({
         success: false,
-        error: 'tableId, identifier, and name are required',
+        error: 'tableId and identifier are required',
       })
     })
   })
@@ -323,11 +441,19 @@ describe('AttributeApiController Unit Tests', () => {
 
       await controller.getNodeAttributes(req, res)
 
+      expect(mockNodeAttributeRepository.findByNodeId).toHaveBeenCalledWith('node-123')
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: expect.objectContaining({
           nodeId: 'node-123',
-          attributes: expect.any(Array),
+          attributes: [
+            {
+              id: 'nodeattr-123',
+              nodeId: 'node-123',
+              attributeId: 'attr-123',
+              value: 'test-value',
+            },
+          ],
         }),
       })
     })
@@ -391,12 +517,119 @@ describe('AttributeApiController Unit Tests', () => {
   })
 })
 
+// Mock dependencies for GraphApiController
+const mockGetTableDocsUseCase = {
+  execute: mock(() =>
+    Promise.resolve({
+      tableId: 'table-123',
+      tableDocs: {
+        table: {
+          id: 'table-123',
+          identifier: 'test-table',
+          description: 'Test table description',
+        },
+        nodes: [],
+        relationships: [],
+      },
+    })
+  ),
+}
+
+const mockSearchNodesUseCase = {
+  execute: mock(() =>
+    Promise.resolve({
+      nodes: [],
+      totalCount: 0,
+    })
+  ),
+}
+
+const mockSearchRelatedNodesUseCase = {
+  execute: mock(() =>
+    Promise.resolve({
+      nodes: [
+        {
+          id: 'node-456',
+          title: 'Connected Node',
+          content: 'Test connected node content',
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+          attributes: {},
+        },
+      ],
+      relations: [],
+      paths: [
+        {
+          path: ['node-123', 'node-456'],
+          length: 2,
+        },
+      ],
+      totalCount: 1,
+    })
+  ),
+}
+
+const mockTableRepository = {
+  findAll: mock(() =>
+    Promise.resolve({
+      data: [
+        {
+          id: 'table-1',
+          identifier: 'test-table',
+          description: 'Test Table',
+          createdAt: new Date('2024-01-01'),
+          updatedAt: new Date('2024-01-01'),
+        },
+      ],
+      total: 1,
+      hasMore: false,
+    })
+  ),
+  findById: mock(() => Promise.resolve(null)),
+}
+
+const mockNodeRelationRepository = {
+  findShortestPath: mock(() =>
+    Promise.resolve([
+      {
+        id: 'node-source',
+        title: 'Source Node',
+        content: 'Source node content',
+      },
+      {
+        id: 'node-target',
+        title: 'Target Node',
+        content: 'Target node content',
+      },
+    ])
+  ),
+  findConnectedNodes: mock(() => Promise.resolve([])),
+}
+
 describe('GraphApiController Unit Tests', () => {
   let controller: GraphApiController
 
   beforeEach(() => {
-    controller = new GraphApiController(mockLogger)
+    controller = new GraphApiController(
+      mockLogger as any,
+      mockGetTableDocsUseCase as any,
+      mockSearchNodesUseCase as any,
+      mockSearchRelatedNodesUseCase as any,
+      mockTableRepository as any,
+      mockNodeRelationRepository as any,
+      4000
+    )
+    // Clear all mocks
+    mockLogger.debug.mockClear()
+    mockLogger.info.mockClear()
+    mockLogger.warn.mockClear()
     mockLogger.error.mockClear()
+    mockGetTableDocsUseCase.execute.mockClear()
+    mockSearchNodesUseCase.execute.mockClear()
+    mockSearchRelatedNodesUseCase.execute.mockClear()
+    mockTableRepository.findAll.mockClear()
+    mockNodeRelationRepository.findShortestPath.mockClear()
+    mockNodeRelationRepository.findConnectedNodes.mockClear()
   })
 
   describe('getTables', () => {
@@ -417,10 +650,21 @@ describe('GraphApiController Unit Tests', () => {
       expect(res.json).toHaveBeenCalledWith({
         success: true,
         data: expect.objectContaining({
-          tables: expect.any(Array),
-          total: expect.any(Number),
+          tables: [
+            {
+              id: 'table-1',
+              identifier: 'test-table',
+              description: 'Test Table',
+              createdAt: expect.any(Date),
+              updatedAt: expect.any(Date),
+            },
+          ],
+          total: 1,
           limit: 50,
           offset: 10,
+          hasMore: false,
+          hasNextPage: false,
+          hasPreviousPage: true,
         }),
       })
     })
@@ -449,6 +693,7 @@ describe('GraphApiController Unit Tests', () => {
           depth: '2',
           direction: 'BOTH',
           relationTypes: 'CONNECTED',
+          tableId: 'table-123',
         },
       })
       const res = createMockResponse()
@@ -490,6 +735,7 @@ describe('GraphApiController Unit Tests', () => {
           fromNodeId: 'node-123',
           toNodeId: 'node-456',
           maxDepth: 10,
+          tableId: 'table-123',
         },
       })
       const res = createMockResponse()
@@ -546,7 +792,9 @@ describe('GraphApiController Unit Tests', () => {
           tableId: 'table-123',
           flatFormat: true,
           outputPath: '/tmp/export.json',
-          exportData: expect.any(Object),
+          fileSize: expect.any(Number),
+          metadata: expect.any(Object),
+          statistics: expect.any(Object),
         }),
       })
     })
@@ -573,8 +821,20 @@ describe('Controller Response Format Consistency', () => {
   test('all successful responses should follow consistent format', async () => {
     const controllers = [
       new GraphDbApiController(mockLogger),
-      new AttributeApiController(mockLogger),
-      new GraphApiController(mockLogger),
+      new AttributeApiController(
+        mockCreateAttributeUseCase as any,
+        mockAttributeRepository as any,
+        mockNodeAttributeRepository as any,
+        mockLogger as any
+      ),
+      new GraphApiController(
+        mockLogger as any,
+        mockGetTableDocsUseCase as any,
+        mockSearchNodesUseCase as any,
+        mockSearchRelatedNodesUseCase as any,
+        mockTableRepository as any,
+        mockNodeRelationRepository as any
+      ),
     ]
 
     // Test methods that should return consistent success format

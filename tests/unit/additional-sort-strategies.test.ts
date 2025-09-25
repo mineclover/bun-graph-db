@@ -1,11 +1,10 @@
 import { describe, expect, test } from 'bun:test'
-import { RelationshipSortStrategy } from '../../src/application/services/sorting/RelationshipSortStrategy.js'
 import { AggregateSortStrategy } from '../../src/application/services/sorting/AggregateSortStrategy.js'
+import { RelationshipSortStrategy } from '../../src/application/services/sorting/RelationshipSortStrategy.js'
 import { RelevanceSortStrategy } from '../../src/application/services/sorting/RelevanceSortStrategy.js'
 import {
   type EnhancedSortOption,
   type SortContext,
-  type SortResult,
   SortDirection,
 } from '../../src/domain/value-objects/SortStrategy.js'
 
@@ -29,7 +28,7 @@ describe('Additional Sort Strategies Tests', () => {
       const mockContext = {
         tableId: 'test-table',
         attributeMappings: new Map(),
-        searchTerms: []
+        searchTerms: [],
       }
 
       const result = strategy.buildSortClause('_connection_count', 'desc', mockContext)
@@ -67,11 +66,11 @@ describe('Additional Sort Strategies Tests', () => {
       const mockContext: SortContext = {
         availableAttributes: [
           { identifier: 'name', dataType: 'string' },
-          { identifier: 'age', dataType: 'number' }
+          { identifier: 'age', dataType: 'number' },
         ],
         tableAlias: 't',
         nodeAlias: 'n',
-        attributeAlias: 'na'
+        attributeAlias: 'na',
       }
 
       const result = strategy.buildSortClause('_count', 'desc', mockContext)
@@ -105,11 +104,11 @@ describe('Additional Sort Strategies Tests', () => {
       const mockContext: SortContext = {
         availableAttributes: [
           { identifier: 'name', dataType: 'string' },
-          { identifier: 'content', dataType: 'string' }
+          { identifier: 'content', dataType: 'string' },
         ],
         tableAlias: 't',
         nodeAlias: 'n',
-        attributeAlias: 'na'
+        attributeAlias: 'na',
       }
 
       const result = strategy.buildSortClause('_relevance', 'desc', mockContext)
@@ -123,11 +122,11 @@ describe('Additional Sort Strategies Tests', () => {
       const mockContext: SortContext = {
         availableAttributes: [
           { identifier: 'name', dataType: 'string' },
-          { identifier: 'content', dataType: 'string' }
+          { identifier: 'content', dataType: 'string' },
         ],
         tableAlias: 't',
         nodeAlias: 'n',
-        attributeAlias: 'na'
+        attributeAlias: 'na',
       }
 
       const sortOption: EnhancedSortOption = {
@@ -136,8 +135,8 @@ describe('Additional Sort Strategies Tests', () => {
         customComparator: JSON.stringify({
           algorithm: 'simple-match',
           searchTerms: ['test', 'search'],
-          weights: { content: 1.0, title: 1.5 }
-        })
+          weights: { content: 1.0, title: 1.5 },
+        }),
       }
 
       const result = strategy.buildEnhancedSortClause(sortOption, mockContext)

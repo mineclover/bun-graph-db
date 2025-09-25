@@ -6,6 +6,7 @@
 import type { YogaServerInstance } from 'graphql-yoga'
 import { createYoga } from 'graphql-yoga'
 import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
+import { McpHttpServer } from '../../src/mcp/http-server/McpHttpServer'
 import { GraphQLSchemaBuilder } from '../../src/presentation/graphql/GraphQLSchemaBuilder'
 import { createTestEnvironment, type TestEnvironment } from './test-database-factory'
 
@@ -15,6 +16,7 @@ export interface TestServerInstance {
   readonly suiteName: string
   readonly testEnvironment: TestEnvironment
   readonly server: YogaServerInstance<any, any>
+  readonly mcpServer: McpHttpServer
   readonly cleanup: () => Promise<void>
 }
 
@@ -59,9 +61,30 @@ export async function startServerForSuite(suiteName: string): Promise<TestServer
     graphiql: false, // Disable GraphiQL in tests
   })
 
+  // Create MCP HTTP server
+  const mcpServer = new McpHttpServer(
+    `http://127.0.0.1:${port}/graphql`,
+    `http://127.0.0.1:${port}/api`
+  )
+  await mcpServer.initialize()
+
+  // Combined request handler for both GraphQL and MCP
+  const requestHandler = async (request: Request): Promise<Response> => {
+    const url = new URL(request.url)
+    const pathname = url.pathname
+
+    // Handle MCP requests
+    if (pathname === '/mcp' && request.method === 'POST') {
+      return await mcpServer.handleRequest(request)
+    }
+
+    // Handle GraphQL requests
+    return yoga.fetch(request)
+  }
+
   // Start server
   const server = Bun.serve({
-    fetch: yoga.fetch,
+    fetch: requestHandler,
     port,
     hostname: '127.0.0.1',
   })
@@ -77,6 +100,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestServer
     suiteName,
     testEnvironment,
     server: yoga,
+    mcpServer,
     cleanup: async () => {
       server.stop()
       await testEnvironment.cleanup()
