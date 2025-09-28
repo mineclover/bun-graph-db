@@ -153,7 +153,7 @@ export const API_ENDPOINT_MAPPING = {
   'validate-template': 'POST /api/mcp-tools/validate-template',
   'search-templates': 'POST /api/mcp-tools/search-templates',
   'get-template-metadata': 'GET /api/mcp-tools/get-template-metadata',
-  'export-table-nodes': 'POST /api/mcp-tools/export-table-nodes',
+  'export-table-nodes': 'POST /api/mcp-tools/call',
   callMcpTool: 'POST /api/mcp-tools/call',
   listMcpTools: 'GET /api/mcp-tools',
 }

@@ -1,6 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
@@ -61,6 +62,7 @@ export class TableNodesExportUseCase {
     private readonly tableRepository: ITableRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly attributeRepository: IAttributeRepository,
+    private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly logger: ILogger
   ) {}
 
@@ -135,7 +137,9 @@ export class TableNodesExportUseCase {
           exportedData = this.exportToCSV(exportData, csvOptions)
           break
         case 'json':
-          exportedData = this.exportToJSON(exportData, options)
+          // JSON도 attributes가 개별 컬럼으로 펼쳐지도록 columns 형태로 출력
+          const jsonOptions = { ...options, attributeFormat: 'columns' as const }
+          exportedData = this.exportToJSON(exportData, jsonOptions)
           break
         case 'excel':
           exportedData = await this.exportToExcel(exportData, options)
@@ -255,10 +259,32 @@ export class TableNodesExportUseCase {
   }
 
   private async getNodeAttributes(nodeId: string): Promise<Record<string, any>> {
-    // This would need to be implemented in the repository layer
-    // For now, return empty object
-    // In a real implementation, you would query node_attributes table
-    return {}
+    try {
+      const nodeAttributesResult = await this.nodeAttributeRepository.findByNodeId(nodeId)
+      // The result IS the array, not wrapped in a data property
+      const nodeAttributes = Array.isArray(nodeAttributesResult) ? nodeAttributesResult : []
+
+      const attributeMap: Record<string, any> = {}
+
+      for (const nodeAttr of nodeAttributes) {
+        // Get the attribute ID and look up the attribute to get the identifier
+        const attributeId = nodeAttr.getAttributeId()
+        const attributeResult = await this.attributeRepository.findById(attributeId)
+
+        if (attributeResult) {
+          const attributeIdentifier = attributeResult.getIdentifier()
+          const value = nodeAttr.getValue()
+          attributeMap[attributeIdentifier] = value
+        } else {
+          this.logger.warn('Attribute not found for node attribute', { nodeId, attributeId })
+        }
+      }
+
+      return attributeMap
+    } catch (error) {
+      this.logger.warn('Failed to get node attributes', { nodeId, error: toErrorMeta(error) })
+      return {}
+    }
   }
 
   private exportToCSV(data: ExportedNodeData[], options: TableNodesExportOptions): string {
@@ -331,14 +357,26 @@ export class TableNodesExportUseCase {
   }
 
   private exportToJSON(data: ExportedNodeData[], options: TableNodesExportOptions): string {
-    // 속성을 key-value 배열 형태로 변환
-    const transformedNodes = data.map(node => ({
-      ...node,
-      attributes: Object.entries(node.attributes).map(([key, value]) => ({
-        key,
-        value
-      }))
-    }))
+    // attributeFormat에 따라 속성 처리 방식 결정
+    const transformedNodes = data.map(node => {
+      if (options.attributeFormat === 'columns') {
+        // columns 형태: 속성을 개별 필드로 펼쳐서 출력
+        const { attributes, ...nodeWithoutAttributes } = node
+        return {
+          ...nodeWithoutAttributes,
+          ...attributes  // 속성들을 개별 필드로 펼침
+        }
+      } else {
+        // nested 형태: 속성을 key-value 배열로 변환
+        return {
+          ...node,
+          attributes: Object.entries(node.attributes).map(([key, value]) => ({
+            key,
+            value
+          }))
+        }
+      }
+    })
 
     const exportObject = {
       nodes: transformedNodes,

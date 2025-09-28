@@ -678,8 +678,12 @@ export class McpToolController {
           saveToFile,
           outputDirectory,
           filename: finalFilename,
-          includeAttributes: true,
-          includeMetadata: true
+          includeAttributes: Array.isArray(includeAttributes) ? includeAttributes.length > 0 : true,
+          includeMetadata: true,
+          attributeFormat: "COLUMNS",
+          dateFormat: "ISO",
+          compression: false,
+          prettyPrint: true
         }
       }
 

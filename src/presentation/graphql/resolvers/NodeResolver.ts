@@ -28,6 +28,13 @@ interface CreateNodeInput {
   attributes?: Array<{ attributeId: string; value: unknown }>
 }
 
+interface CreatePersonNodeInput {
+  content: string
+  name: string
+  age: string
+  testName?: string
+}
+
 interface UpdateNodeInput {
   content?: string
   title?: string
@@ -281,6 +288,104 @@ export class NodeResolver extends BaseResolver {
     return {
       success: result.success,
       data: result.data,
+      errors: result.errors,
+    }
+  }
+
+  async createPersonNode(
+    args: { input: CreatePersonNodeInput },
+    _context?: GraphQLContext
+  ): Promise<{
+    success: boolean
+    node?: NodeDto | null
+    attributes: NodeAttributeDto[]
+    errors: Array<{ message: string; code: string; field?: string }>
+  }> {
+    this.validateArgs(
+      args.input as any,
+      [
+        BaseResolver.validationRules.required('content', 'Content'),
+        BaseResolver.validationRules.required('name', 'Name'),
+        BaseResolver.validationRules.required('age', 'Age'),
+        BaseResolver.validationRules.nonEmpty('content', 'Content'),
+        BaseResolver.validationRules.nonEmpty('name', 'Name'),
+        BaseResolver.validationRules.nonEmpty('age', 'Age'),
+      ],
+      'createPersonNode'
+    )
+
+    const result = await this.handleMutation(
+      async () => {
+        // Step 1: Create the node
+        const nodeResult = await this.createNodeUseCase.execute({
+          tableId: '267', // Table 267 is hardcoded for person nodes
+          content: args.input.content,
+          title: undefined,
+          description: undefined,
+          attributes: {},
+        })
+
+        if (!nodeResult.node) {
+          throw new Error('Failed to create node')
+        }
+
+        const createdNode = nodeResult.node
+        const nodeAttributeDtos: NodeAttributeDto[] = []
+
+        // Step 2: Set attributes based on input
+        const attributesToSet = []
+
+        // Always set name and age
+        attributesToSet.push({ identifier: 'name', value: args.input.name })
+        attributesToSet.push({ identifier: 'age', value: args.input.age })
+
+        // Optionally set testName if provided
+        if (args.input.testName) {
+          attributesToSet.push({ identifier: 'test_name', value: args.input.testName })
+        }
+
+        // Set each attribute
+        for (const attrToSet of attributesToSet) {
+          try {
+            // Find attribute by identifier
+            const attributes = await this.attributeRepository.findByTableId('267' as TableId)
+            const attribute = attributes.find(attr => attr.getIdentifier() === attrToSet.identifier)
+
+            if (attribute) {
+              // Create node attribute
+              const nodeAttribute = NodeAttribute.create(
+                createdNode.id as NodeId,
+                attribute.getId(),
+                attrToSet.value
+              )
+              await this.nodeAttributeRepository.save(nodeAttribute)
+
+              // Convert to DTO for response
+              const nodeAttrDto = nodeAttributeFromEntities([nodeAttribute])[0]
+              if (nodeAttrDto) {
+                nodeAttributeDtos.push(nodeAttrDto)
+              }
+            } else {
+              this.logger.warn(`Attribute '${attrToSet.identifier}' not found in table 267`)
+            }
+          } catch (error) {
+            this.logger.error(`Failed to set attribute '${attrToSet.identifier}'`, {
+              nodeId: createdNode.id,
+              error: toErrorMeta(error)
+            })
+          }
+        }
+
+        return { node: createdNode, attributes: nodeAttributeDtos }
+      },
+      'createPersonNode',
+      { input: args.input }
+    )
+
+    return {
+      success: result.success,
+      node: result.data?.node,
+      attributes: result.data?.attributes || [],
       errors: result.errors,
     }
   }

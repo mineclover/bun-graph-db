@@ -40,8 +40,17 @@ export class RestApiClient {
       }
 
       const response = await fetch(url, options)
-      const result = await response.json()
 
+      if (!response.ok) {
+        const text = await response.text()
+        console.error(`REST API ${method} ${endpoint} error - Status: ${response.status}, Body: ${text}`)
+        return {
+          success: false,
+          error: `HTTP ${response.status}: ${text}`,
+        } as ApiResponse<T>
+      }
+
+      const result = await response.json()
       return result as ApiResponse<T>
     } catch (error) {
       console.error(`REST API ${method} ${endpoint} error:`, error)
@@ -61,6 +70,15 @@ export class RestApiClient {
         success: false,
         error: `No REST API endpoint found for tool: ${toolName}`,
       }
+    }
+
+    // /api/mcp-tools/call 엔드포인트는 특별한 형식이 필요
+    if (endpoint.includes('/api/mcp-tools/call')) {
+      const callBody = {
+        toolName,
+        parameters: params
+      }
+      return this.makeRequest('POST', '/mcp-tools/call', callBody)
     }
 
     const { method, path, queryParams, body } = this.prepareRequest(toolName, endpoint, params)
