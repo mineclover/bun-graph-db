@@ -8,6 +8,16 @@ extend type Mutation {
 
   deleteNode(id: ID!): DeleteNodePayload!
 
+  # Universal node creation with automatic attribute mapping
+  createNodeWithAttributes(input: CreateNodeWithAttributesInput!): CreateNodeWithAttributesPayload!
+
+  # Specialized node creation
+  createPersonNode(input: CreatePersonNodeInput!): CreatePersonNodePayload!
+
   # Node attribute management
   setNodeAttribute(input: SetNodeAttributeInput!): SetNodeAttributePayload!
+
+  # Batch node attribute management
+  setNodeAttributes(input: SetNodeAttributesInput!): SetNodeAttributesPayload!
+  setNodeAttributesByIdentifier(input: SetNodeAttributesByIdentifierInput!): SetNodeAttributesByIdentifierPayload!
 }

@@ -313,6 +313,14 @@ export class GraphQLSchemaBuilder {
           deps.nodeMutations.removeNodeAttribute(_, args as any),
         updateNodeAttributeValue: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.nodeMutations.updateNodeAttributeValue(_, args as any),
+        createNodeWithAttributes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.createNodeWithAttributes(_, args as any),
+        createPersonNode: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.createPersonNode(_, args as any),
+        setNodeAttributes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.setNodeAttributes(_, args as any),
+        setNodeAttributesByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.nodeMutations.setNodeAttributesByIdentifier(_, args as any),
 
         // Relation mutations
         createRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>

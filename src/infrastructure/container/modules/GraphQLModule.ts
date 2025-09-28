@@ -241,6 +241,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY
       )) as any
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
+      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -253,6 +254,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         nodeRepository,
         nodeAttributeRepository,
         tableRepository,
+        attributeRepository,
         simpleLogger
       )
     },
@@ -260,6 +262,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
     ]
   )
 

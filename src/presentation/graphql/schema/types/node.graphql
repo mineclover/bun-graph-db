@@ -101,6 +101,26 @@ input CreateNodeInput {
   metadata: JSON
 }
 
+# Universal node creation with automatic attribute mapping
+input CreateNodeWithAttributesInput {
+  content: String!
+  tableId: ID!
+  attributesByIdentifier: [AttributeByIdentifierInput!]!
+}
+
+input AttributeByIdentifierInput {
+  identifier: String!
+  value: String!
+}
+
+# Table-specific input types for complete node creation
+input CreatePersonNodeInput {
+  content: String!
+  name: String!
+  age: String!
+  testName: String
+}
+
 input UpdateNodeInput {
   content: String
 }
@@ -114,6 +134,16 @@ input SetNodeAttributeInput {
   nodeId: ID!
   attributeId: ID!
   value: String!
+}
+
+input SetNodeAttributesInput {
+  nodeId: ID!
+  attributes: [NodeAttributeInput!]!
+}
+
+input SetNodeAttributesByIdentifierInput {
+  nodeId: ID!
+  attributesByIdentifier: [AttributeByIdentifierInput!]!
 }
 
 # Filter for nodes
@@ -417,6 +447,32 @@ type DeleteNodePayload implements OperationResult {
 type SetNodeAttributePayload implements OperationResult {
   success: Boolean!
   nodeAttribute: NodeAttribute
+  errors: [Error!]!
+}
+
+type SetNodeAttributesPayload implements OperationResult {
+  success: Boolean!
+  nodeAttributes: [NodeAttribute!]!
+  errors: [Error!]!
+}
+
+type SetNodeAttributesByIdentifierPayload implements OperationResult {
+  success: Boolean!
+  nodeAttributes: [NodeAttribute!]!
+  errors: [Error!]!
+}
+
+type CreateNodeWithAttributesPayload implements OperationResult {
+  success: Boolean!
+  node: TableNode
+  attributes: [NodeAttribute!]!
+  errors: [Error!]!
+}
+
+type CreatePersonNodePayload implements OperationResult {
+  success: Boolean!
+  node: TableNode
+  attributes: [NodeAttribute!]!
   errors: [Error!]!
 }
 
