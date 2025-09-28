@@ -61,6 +61,7 @@ export interface GraphQLDependencies {
   relationMutations: RelationMutations
   templateMutations: TemplateMutations
   docMutations: DocMutations
+  exportMutations: any
   tablePackageResolver: TablePackageResolver
 
   // Field resolvers
@@ -102,6 +103,7 @@ export class GraphQLSchemaBuilder {
       relationMutations: await this.container.resolve(GraphQLTokens.RELATION_MUTATIONS),
       templateMutations: await this.container.resolve(GraphQLTokens.TEMPLATE_MUTATIONS),
       docMutations: await this.container.resolve(GraphQLTokens.DOC_MUTATIONS),
+      exportMutations: await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS),
       tablePackageResolver: await this.container.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER),
 
       // Field resolvers
@@ -261,6 +263,14 @@ export class GraphQLSchemaBuilder {
           deps.tablePackageResolver.analyzeTableDependencies(_, args as any),
         getImportSession: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.tablePackageResolver.getImportSession(_, args as any),
+
+        // Export queries
+        getSupportedExportFormats: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.exportMutations.Query.getSupportedExportFormats(_, args as any),
+        validateExportOptions: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
+          deps.exportMutations.Query.validateExportOptions(_, args as any, context),
+        getExportHistory: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
+          deps.exportMutations.Query.getExportHistory(_, args as any, context),
       },
 
       Mutation: {
@@ -375,6 +385,12 @@ export class GraphQLSchemaBuilder {
           deps.tablePackageResolver.importTablePackage(_, args as any),
         batchImportTablePackages: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.tablePackageResolver.batchImportTablePackages(_, args as any),
+
+        // Export mutations
+        exportTableNodes: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
+          deps.exportMutations.Mutation.exportTableNodes(_, args as any, context),
+        exportMultipleTables: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
+          deps.exportMutations.Mutation.exportMultipleTables(_, args as any, context),
       },
 
       Subscription: {
@@ -391,6 +407,13 @@ export class GraphQLSchemaBuilder {
           deps.tableFieldResolvers.tableNodeCount(parent as any),
         attributeCount: (parent: GraphQLParent) =>
           deps.tableFieldResolvers.attributeCount(parent as any),
+        aiMetadata: (parent: GraphQLParent) =>
+          deps.tableFieldResolvers.aiMetadata(parent as any),
+        // Export field resolvers
+        exportNodes: (parent: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
+          deps.exportMutations.Table.exportNodes(parent as any, args as any, context),
+        exportPreview: (parent: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
+          deps.exportMutations.Table.exportPreview(parent as any, args as any, context),
       },
 
       Attribute: {

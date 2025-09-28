@@ -15,6 +15,9 @@ type Table implements Node {
   # Computed fields
   tableNodeCount: Int!
   attributeCount: Int!
+
+  # AI-friendly metadata
+  aiMetadata: AIMetadata
 }
 
 # Input types for table operations

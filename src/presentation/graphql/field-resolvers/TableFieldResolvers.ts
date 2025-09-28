@@ -3,6 +3,7 @@ import type { GraphQLContext, TableParent } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
 export class TableFieldResolvers extends BaseResolver {
@@ -12,6 +13,7 @@ export class TableFieldResolvers extends BaseResolver {
     private readonly attributeRepository: IAttributeRepository,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly nodeRepository: INodeRepository,
+    private readonly getTableDocsUseCase: GetTableDocsUseCase,
     logger: ILogger
   ) {
     super()
@@ -149,5 +151,31 @@ export class TableFieldResolvers extends BaseResolver {
       this.logger.warn('AttributeCount query failed, returning 0', { tableId: parent.id, error })
       return 0
     }
+  }
+
+  async aiMetadata(parent: TableParent, _args?: any, _context?: GraphQLContext) {
+    return this.handleFieldResolution(
+      async () => {
+        try {
+          const result = await this.getTableDocsUseCase.execute({
+            tableId: parent.id,
+            includeAiMetadata: true,
+            includeDocs: false,
+            includeRelatedTemplates: false
+          })
+
+          return result.tableDocs?.aiMetadata || null
+        } catch (error) {
+          this.logger.error('AIMetadata field resolution failed', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+            tableId: parent.id,
+          })
+          return null
+        }
+      },
+      'aiMetadata',
+      'Table',
+      { tableId: parent.id }
+    )
   }
 }

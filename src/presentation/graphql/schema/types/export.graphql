@@ -1,0 +1,105 @@
+# Export types and enums
+
+enum ExportFormat {
+  CSV
+  JSON
+  EXCEL
+  XML
+  YAML
+}
+
+enum AttributeFormat {
+  COLUMNS
+  NESTED
+  KEYVALUE
+}
+
+enum DateFormat {
+  ISO
+  TIMESTAMP
+  READABLE
+}
+
+# Input types for table nodes export
+input TableNodesExportInput {
+  tableId: ID!
+  format: ExportFormat!
+  includeAttributes: Boolean = true
+  includeMetadata: Boolean = true
+  attributeFormat: AttributeFormat = NESTED
+  dateFormat: DateFormat = ISO
+  limit: Int
+  offset: Int
+  compression: Boolean = false
+  prettyPrint: Boolean = true
+  saveToFile: Boolean = false
+  outputDirectory: String
+  filename: String
+}
+
+# Export metadata
+type ExportMetadata {
+  exportedAt: String!
+  tableId: ID!
+  tableIdentifier: String!
+  totalNodes: Int!
+  exportedNodes: Int!
+  format: String!
+  checksum: String
+  fileSize: String
+  filePath: String
+}
+
+# Table nodes export result
+type TableNodesExportResult {
+  success: Boolean!
+  format: String!
+  data: String
+  binaryData: String # Base64 encoded for binary formats
+  filePath: String
+  metadata: ExportMetadata!
+  errors: [String!]
+}
+
+# Extended table type with export capabilities
+extend type Table {
+  # Export all nodes in this table
+  exportNodes(input: TableNodesExportInput!): TableNodesExportResult!
+
+  # Get export preview (first 10 rows)
+  exportPreview(format: ExportFormat!): TableNodesExportResult!
+}
+
+# Export mutations
+extend type Mutation {
+  # Export table nodes in specified format
+  exportTableNodes(input: TableNodesExportInput!): TableNodesExportResult!
+
+  # Bulk export multiple tables
+  exportMultipleTables(
+    tableIds: [ID!]!
+    format: ExportFormat!
+    options: TableNodesExportInput
+  ): [TableNodesExportResult!]!
+}
+
+# Export queries for analytics and monitoring
+extend type Query {
+  # Get export history for a table
+  getExportHistory(tableId: ID!, limit: Int = 10): [ExportMetadata!]!
+
+  # Get supported export formats
+  getSupportedExportFormats: [ExportFormat!]!
+
+  # Validate export options before actual export
+  validateExportOptions(input: TableNodesExportInput!): ValidationResult!
+}
+
+# Validation result type
+type ValidationResult {
+  isValid: Boolean!
+  errors: [String!]!
+  warnings: [String!]!
+  estimatedFileSize: String
+  estimatedDuration: String
+}

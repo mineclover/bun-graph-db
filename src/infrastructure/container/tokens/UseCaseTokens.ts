@@ -24,6 +24,7 @@ export const UseCaseTokens = {
   // Import/Export use cases
   SCHEMA_EXPORT_USE_CASE: Symbol.for('SchemaExportUseCase'),
   SCHEMA_IMPORT_USE_CASE: Symbol.for('SchemaImportUseCase'),
+  TABLE_NODES_EXPORT_USE_CASE: Symbol.for('TableNodesExportUseCase'),
 
   // Query template use cases
   EXECUTE_QUERY_TEMPLATE_USE_CASE: Symbol.for('ExecuteQueryTemplateUseCase'),

@@ -136,6 +136,8 @@ import { McpToolController } from './src/presentation/http/controllers/McpToolCo
 // Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes'
 import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes'
+// Import table MCP routes
+import { createTableMcpMiddleware } from './src/presentation/mcp/routes/mcp-routes'
 
 // Resolve dependencies from container in parallel
 const [
@@ -189,6 +191,13 @@ const mcpServer = new McpHttpServer(
   `http://localhost:${graphqlConfig.port}/api`
 )
 await mcpServer.initialize()
+
+// Create table MCP middleware
+const tableMcpMiddleware = createTableMcpMiddleware({
+  graphqlEndpoint: `http://localhost:${graphqlConfig.port}/graphql`,
+  restApiBaseUrl: `http://localhost:${graphqlConfig.port}/api`,
+  logger
+})
 
 // Direct API route handler without Express
 const handleApiRequest = async (request: Request): Promise<Response> => {
@@ -289,6 +298,33 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       const tableId = pathname.split('/')[3]
       req.params.tableId = tableId
       await graphController.exportTableWithNodes(req, res)
+
+    // MCP Tool Operations (Bridge between GraphQL and local services)
+    } else if (method === 'GET' && pathname === '/api/mcp-tools') {
+      await _mcpToolController.listMcpTools(req, res)
+    } else if (method === 'POST' && pathname === '/api/mcp-tools/call') {
+      await _mcpToolController.callMcpTool(req, res)
+    } else if (method === 'POST' && pathname === '/api/mcp-tools/bulk-import-templates') {
+      await _mcpToolController.bulkImportTemplates(req, res)
+    } else if (method === 'GET' && pathname === '/api/mcp-tools/list-available-templates') {
+      await _mcpToolController.listAvailableTemplates(req, res)
+    } else if (method === 'GET' && pathname === '/api/mcp-tools/import-status') {
+      await _mcpToolController.getImportStatus(req, res)
+
+    // New template management tools
+    } else if (method === 'POST' && pathname === '/api/mcp-tools/create-template') {
+      await _mcpToolController.createTemplate(req, res)
+    } else if (method === 'PUT' && pathname === '/api/mcp-tools/update-template') {
+      await _mcpToolController.updateTemplate(req, res)
+    } else if (method === 'DELETE' && pathname === '/api/mcp-tools/delete-template') {
+      await _mcpToolController.deleteTemplate(req, res)
+    } else if (method === 'POST' && pathname === '/api/mcp-tools/validate-template') {
+      await _mcpToolController.validateTemplate(req, res)
+    } else if (method === 'POST' && pathname === '/api/mcp-tools/search-templates') {
+      await _mcpToolController.searchTemplates(req, res)
+    } else if (method === 'GET' && pathname === '/api/mcp-tools/get-template-metadata') {
+      await _mcpToolController.getTemplateMetadata(req, res)
+
     } else {
       return new Response('Not Found', { status: 404 })
     }
@@ -341,6 +377,12 @@ const requestHandler = async (request: Request): Promise<Response> => {
   const schemaResponse = await schemaHandler(request)
   if (schemaResponse) {
     return schemaResponse
+  }
+
+  // Handle table MCP requests - must come before general MCP handler
+  const tableMcpResponse = await tableMcpMiddleware(request)
+  if (tableMcpResponse) {
+    return tableMcpResponse
   }
 
   // Handle REST API requests

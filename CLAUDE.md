@@ -31,6 +31,7 @@ curl -X POST http://localhost:4141/graphql \
 2. **Explore Schema**: Open GraphQL Playground in your browser
 3. **Query Data**: Try the example queries in the API Reference section
 4. **Create Tables**: Use mutations to add your own data
+5. **Setup MCP**: Configure Claude MCP servers for AI integration (see MCP Setup section below)
 
 ## 🎯 Core Features
 
@@ -60,13 +61,17 @@ curl -X POST http://localhost:4141/graphql \
 - **JSON-RPC 2.0** protocol compliance
 - **Dual Interface**: Direct REST API + MCP proxy layer
 - **Parameter transformation** and routing
+- **Table-Specific MCP Endpoints**: `/sub/:tableId/mcp` with isolated tool sets
+- **Template-to-Tool Conversion**: Dynamic MCP tool generation from GraphQL templates
 
 ## 🏗️ Architecture
 
 ```
 📁 MCP-to-REST Architecture
 ├── 🔌 MCP Layer (JSON-RPC 2.0)
-│   ├── 27 MCP Tool Definitions
+│   ├── 27 MCP Tool Definitions (Global)
+│   ├── Table-Specific MCP Servers (/sub/:tableId/mcp)
+│   ├── Template-to-Tool Dynamic Conversion
 │   ├── Parameter Transformation
 │   ├── HTTP Server (port 4000/mcp)
 │   └── Proxy to REST API
@@ -151,6 +156,70 @@ The fundamental scenario involves:
 ### GraphQL Endpoints
 - **Development**: `http://localhost:4141/graphql`
 - **Playground**: `http://localhost:4141/graphql` (GET)
+
+### MCP Protocol Endpoints
+- **Global MCP Server**: `http://localhost:4141/mcp` (JSON-RPC 2.0)
+- **Table-Specific MCP**: `http://localhost:4141/sub/:tableId/mcp` (JSON-RPC 2.0)
+- **Server Discovery**: `GET http://localhost:4141/sub/:tableId/mcp` (Server info)
+
+**Table MCP Features**:
+- **Isolated Tool Sets**: Each table gets its own MCP server with table-specific tools
+- **Dynamic Tool Generation**: Templates are automatically converted to discoverable MCP tools
+- **Template Execution**: MCP clients can execute GraphQL templates as tools with parameters
+
+## 🔧 MCP Setup for Claude
+
+### Adding Root MCP Server (Global Template Management)
+```bash
+# CLI Command - Global template operations
+claude mcp add --transport http bun-graph-root http://localhost:4141/mcp
+
+# Or add to Claude configuration file
+{
+  "mcpServers": {
+    "bun-graph-root": {
+      "type": "http",
+      "url": "http://localhost:4141/mcp"
+    }
+  }
+}
+```
+
+### Adding Table-Specific MCP Servers
+```bash
+# Current test tables available:
+# Table 267: test-schema-discovery-2
+# Table 266: test-schema-discovery
+# Table 265: test-table-validation
+
+# CLI Commands - Table-specific operations
+claude mcp add --transport http test-schema-discovery-2 http://localhost:4141/sub/267/mcp
+claude mcp add --transport http test-table-validation http://localhost:4141/sub/265/mcp
+
+# Or add to Claude configuration file
+{
+  "mcpServers": {
+    "bun-graph-root": {
+      "type": "http",
+      "url": "http://localhost:4141/mcp"
+    },
+    "test-schema-discovery-2": {
+      "type": "http",
+      "url": "http://localhost:4141/sub/267/mcp"
+    },
+    "test-table-validation": {
+      "type": "http",
+      "url": "http://localhost:4141/sub/265/mcp"
+    }
+  }
+}
+```
+
+### MCP Server Features
+- **Root MCP**: Template creation, validation, search, metadata management
+- **Table MCP**: Table-specific queries, node operations, relationship management
+- **Dynamic Tools**: Templates automatically become available as MCP tools
+- **AI Integration**: Schema discovery and metadata-driven template generation
 
 ### Core Queries
 **Basic Operations**: Health check, system stats, template search, table listing

@@ -26,6 +26,7 @@ export const GraphQLTokens = {
   RELATION_MUTATIONS: Symbol.for('RelationMutations'),
   TEMPLATE_MUTATIONS: Symbol.for('TemplateMutations'),
   DOC_MUTATIONS: Symbol.for('DocMutations'),
+  EXPORT_MUTATIONS: Symbol.for('ExportMutations'),
   TABLE_PACKAGE_RESOLVER: Symbol.for('TablePackageResolver'),
 
   // Field resolvers

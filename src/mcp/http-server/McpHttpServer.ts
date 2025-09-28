@@ -386,6 +386,27 @@ export class McpHttpServer {
         case 'get-import-status':
           return await this.handleGetImportStatus(id, args)
 
+        case 'create-template':
+          return await this.handleCreateTemplate(id, args)
+
+        case 'update-template':
+          return await this.handleUpdateTemplate(id, args)
+
+        case 'delete-template':
+          return await this.handleDeleteTemplate(id, args)
+
+        case 'validate-template':
+          return await this.handleValidateTemplate(id, args)
+
+        case 'search-templates':
+          return await this.handleSearchTemplates(id, args)
+
+        case 'get-template-metadata':
+          return await this.handleGetTemplateMetadata(id, args)
+
+        case 'export-table-nodes':
+          return await this.handleExportTableNodes(id, args)
+
         default:
           return this.createErrorMcpResponse(
             id,
@@ -508,6 +529,77 @@ export class McpHttpServer {
         -32603,
         'Internal error',
         `Failed to export table: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+    }
+  }
+
+  private async handleExportTableNodes(
+    id: string | number | undefined,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      const { 
+        tableId, 
+        format = 'CSV', 
+        outputDirectory = './exports', 
+        filename,
+        includeAttributes = [],
+        limit = 1000,
+        saveToFile = true 
+      } = args
+
+      if (!tableId) {
+        return this.createErrorMcpResponse(
+          id,
+          -32602,
+          'Invalid params',
+          'tableId parameter is required'
+        )
+      }
+
+      // Call REST API to execute export with improved formatting
+      const response = await this.restApiClient.callMcpTool('export-table-nodes', {
+        tableId,
+        format,
+        outputDirectory,
+        filename,
+        includeAttributes,
+        limit,
+        saveToFile,
+      })
+
+      if (!response.success) {
+        return this.createErrorMcpResponse(
+          id,
+          -32603,
+          'Internal error',
+          response.error || 'Export table nodes failed'
+        )
+      }
+
+      const exportData = response.data
+      const formatDesc = format === 'CSV' ? 'CSV with column-based attributes' : 'JSON with key-value arrays'
+      
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: saveToFile && exportData?.filePath
+                ? `Table ${tableId} successfully exported as ${formatDesc} to ${exportData.filePath}`
+                : `Table ${tableId} export completed successfully as ${formatDesc}`,
+            },
+          ],
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Failed to export table nodes: ${error instanceof Error ? error.message : 'Unknown error'}`
       )
     }
   }
@@ -972,6 +1064,303 @@ export class McpHttpServer {
       origin.startsWith('http://localhost:') ||
       origin.startsWith('http://127.0.0.1:')
     )
+  }
+
+  /**
+   * Handle create template - proxy to REST API
+   */
+  private async handleCreateTemplate(
+    id: string | number | undefined,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      const {
+        identifier,
+        name,
+        query,
+        description = '',
+        tags = [],
+        targetTableId
+      } = args
+
+      if (!identifier || !name || !query) {
+        return this.createErrorMcpResponse(
+          id,
+          -32602,
+          'Invalid params',
+          'identifier, name, and query parameters are required'
+        )
+      }
+
+      // Proxy to REST API
+      const result = await this.restApiClient.callMcpTool('create-template', {
+        identifier,
+        name,
+        query,
+        description,
+        tags,
+        targetTableId,
+      })
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          isError: !result.success,
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Create template failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Handle update template - proxy to REST API
+   */
+  private async handleUpdateTemplate(
+    id: string | number | undefined,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      const { identifier, name, query, description, tags } = args
+
+      if (!identifier) {
+        return this.createErrorMcpResponse(
+          id,
+          -32602,
+          'Invalid params',
+          'identifier parameter is required'
+        )
+      }
+
+      // Proxy to REST API
+      const result = await this.restApiClient.callMcpTool('update-template', {
+        identifier,
+        name,
+        query,
+        description,
+        tags,
+      })
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          isError: !result.success,
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Update template failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Handle delete template - proxy to REST API
+   */
+  private async handleDeleteTemplate(
+    id: string | number | undefined,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      const { identifier, force = false } = args
+
+      if (!identifier) {
+        return this.createErrorMcpResponse(
+          id,
+          -32602,
+          'Invalid params',
+          'identifier parameter is required'
+        )
+      }
+
+      // Proxy to REST API
+      const result = await this.restApiClient.callMcpTool('delete-template', {
+        identifier,
+        force,
+      })
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          isError: !result.success,
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Delete template failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Handle validate template - proxy to REST API
+   */
+  private async handleValidateTemplate(
+    id: string | number | undefined,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      const { query, variables } = args
+
+      if (!query) {
+        return this.createErrorMcpResponse(
+          id,
+          -32602,
+          'Invalid params',
+          'query parameter is required'
+        )
+      }
+
+      // Proxy to REST API
+      const result = await this.restApiClient.callMcpTool('validate-template', {
+        query,
+        variables,
+      })
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          isError: !result.success,
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Validate template failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Handle search templates - proxy to REST API
+   */
+  private async handleSearchTemplates(
+    id: string | number | undefined,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      const { query, tags, tableId, operationType, limit = 50 } = args
+
+      // Proxy to REST API
+      const result = await this.restApiClient.callMcpTool('search-templates', {
+        query,
+        tags,
+        tableId,
+        operationType,
+        limit,
+      })
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          isError: false,
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Search templates failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Handle get template metadata - proxy to REST API
+   */
+  private async handleGetTemplateMetadata(
+    id: string | number | undefined,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      const { identifier, includeUsageStats = true, includeDependencies = true } = args
+
+      if (!identifier) {
+        return this.createErrorMcpResponse(
+          id,
+          -32602,
+          'Invalid params',
+          'identifier parameter is required'
+        )
+      }
+
+      // Proxy to REST API
+      const result = await this.restApiClient.callMcpTool('get-template-metadata', {
+        identifier,
+        includeUsageStats,
+        includeDependencies,
+      })
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          isError: !result.success,
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `Get template metadata failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
   }
 
   /**

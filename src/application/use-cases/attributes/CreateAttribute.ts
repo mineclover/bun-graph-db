@@ -9,6 +9,9 @@ import { Attribute } from '@/domain/entities/Attribute.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import { TableTemplateAutoGenerator } from '@/application/services/TableTemplateAutoGenerator.js'
 import {
   ConflictException,
   NotFoundException,
@@ -16,12 +19,21 @@ import {
 } from '@/shared/exceptions/DomainException.js'
 
 export class CreateAttributeUseCase {
+  private readonly templateAutoGenerator: TableTemplateAutoGenerator
+
   constructor(
     private readonly attributeRepository: IAttributeRepository,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly tableRepository: ITableRepository,
+    private readonly queryTemplateRepository: IQueryTemplateRepository,
     private readonly logger: ILogger
-  ) {}
+  ) {
+    this.templateAutoGenerator = new TableTemplateAutoGenerator(
+      this.queryTemplateRepository,
+      this.attributeRepository,
+      this.logger
+    )
+  }
 
   async execute(input: CreateAttributeInput): Promise<CreateAttributeOutput> {
     this.logger.info('Creating new attribute', {
@@ -113,6 +125,62 @@ export class CreateAttributeUseCase {
         identifier: attributeDto.identifier,
         name: attributeDto.name,
       })
+
+      // Auto-generate attribute-specific template
+      try {
+        const attributeWithType = {
+          id: savedAttribute.getId(),
+          identifier: savedAttribute.getIdentifier(),
+          name: savedAttribute.getName(),
+          description: savedAttribute.getDescription(),
+          required: savedAttribute.getIsRequired(),
+          attributeType: {
+            id: attributeType.getId(),
+            identifier: attributeType.getIdentifier(),
+            name: attributeType.getIdentifier(), // Use identifier as name since there's no getName() method
+            dataType: attributeType.getJsonType(), // Use getJsonType() instead of getDataType()
+            description: attributeType.getDescription()
+          }
+        }
+
+        const templates = await this.templateAutoGenerator.generateTemplatesForTable(
+          table.id,
+          table.identifier
+        )
+
+        // Find and create only the attribute-specific template
+        const attributeTemplate = templates.find(t =>
+          t.templateType === 'attribute' &&
+          t.identifier.includes(savedAttribute.getIdentifier())
+        )
+
+        if (attributeTemplate) {
+          const queryTemplate = QueryTemplate.create(
+            attributeTemplate.identifier,
+            attributeTemplate.name,
+            attributeTemplate.query,
+            attributeTemplate.tags,
+            {
+              description: attributeTemplate.description,
+              applicableTables: [table.identifier],
+              version: '1.0.0'
+            }
+          )
+          await this.queryTemplateRepository.create(queryTemplate)
+
+          this.logger.info('Auto-generated attribute template created', {
+            attributeId: savedAttribute.getId(),
+            templateIdentifier: attributeTemplate.identifier,
+          })
+        }
+      } catch (error) {
+        this.logger.warn('Failed to auto-generate attribute template, but attribute creation succeeded', {
+          attributeId: savedAttribute.getId(),
+          identifier: savedAttribute.getIdentifier(),
+          error: error instanceof Error ? error.message : String(error),
+        })
+        // Don't fail attribute creation if template generation fails
+      }
 
       // Return DTO
       return {

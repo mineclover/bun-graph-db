@@ -5,6 +5,7 @@ import { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
 import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
 import { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
 import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
+import { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
@@ -29,7 +30,9 @@ export function registerUseCaseModule(container: DIContainer): void {
   container.registerSingleton(
     UseCaseTokens.CREATE_TABLE_USE_CASE,
     async (c) => {
-      const repository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
+      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
+      const queryTemplateRepository = (await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)) as any
+      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -37,9 +40,14 @@ export function registerUseCaseModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new CreateTableUseCase(repository, simpleLogger)
+      return new CreateTableUseCase(
+        tableRepository,
+        queryTemplateRepository,
+        attributeRepository,
+        simpleLogger
+      )
     },
-    [RepositoryTokens.TABLE_REPOSITORY]
+    [RepositoryTokens.TABLE_REPOSITORY, RepositoryTokens.QUERY_TEMPLATE_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY]
   )
 
   container.registerSingleton(
@@ -149,10 +157,12 @@ export function registerUseCaseModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
+      const queryTemplateRepository = (await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)) as any
       return new CreateAttributeUseCase(
         attributeRepository,
         attributeTypeRepository,
         tableRepository,
+        queryTemplateRepository,
         simpleLogger
       )
     },
@@ -160,6 +170,7 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     ]
   )
 
@@ -385,6 +396,33 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.NODE_RELATION_REPOSITORY,
       RepositoryTokens.RELATION_TYPE_REPOSITORY,
+    ]
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.TABLE_NODES_EXPORT_USE_CASE,
+    async (c) => {
+      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
+      const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as any
+      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return new TableNodesExportUseCase(
+        tableRepository,
+        nodeRepository,
+        attributeRepository,
+        simpleLogger
+      )
+    },
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
     ]
   )
 

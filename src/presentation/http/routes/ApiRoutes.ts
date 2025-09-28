@@ -82,6 +82,31 @@ export function createApiRoutes(
     router.get('/mcp-tools/import-status', (req, res) =>
       mcpToolController.getImportStatus(req, res)
     )
+
+    // New template management tools
+    router.post('/mcp-tools/create-template', (req, res) =>
+      mcpToolController.createTemplate(req, res)
+    )
+    router.put('/mcp-tools/update-template', (req, res) =>
+      mcpToolController.updateTemplate(req, res)
+    )
+    router.delete('/mcp-tools/delete-template', (req, res) =>
+      mcpToolController.deleteTemplate(req, res)
+    )
+    router.post('/mcp-tools/validate-template', (req, res) =>
+      mcpToolController.validateTemplate(req, res)
+    )
+    router.post('/mcp-tools/search-templates', (req, res) =>
+      mcpToolController.searchTemplates(req, res)
+    )
+    router.get('/mcp-tools/get-template-metadata', (req, res) =>
+      mcpToolController.getTemplateMetadata(req, res)
+    )
+
+    // Table export tools
+    router.post('/mcp-tools/export-table-nodes', (req, res) =>
+      mcpToolController.exportTableNodes(req, res)
+    )
   }
 
   return router
@@ -122,6 +147,13 @@ export const API_ENDPOINT_MAPPING = {
   'bulk-import-templates': 'POST /api/mcp-tools/bulk-import-templates',
   'list-available-templates': 'GET /api/mcp-tools/list-available-templates',
   'get-import-status': 'GET /api/mcp-tools/import-status',
+  'create-template': 'POST /api/mcp-tools/create-template',
+  'update-template': 'PUT /api/mcp-tools/update-template',
+  'delete-template': 'DELETE /api/mcp-tools/delete-template',
+  'validate-template': 'POST /api/mcp-tools/validate-template',
+  'search-templates': 'POST /api/mcp-tools/search-templates',
+  'get-template-metadata': 'GET /api/mcp-tools/get-template-metadata',
+  'export-table-nodes': 'POST /api/mcp-tools/export-table-nodes',
   callMcpTool: 'POST /api/mcp-tools/call',
   listMcpTools: 'GET /api/mcp-tools',
 }

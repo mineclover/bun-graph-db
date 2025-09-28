@@ -392,6 +392,26 @@ export function registerGraphQLModule(container: DIContainer): void {
     ]
   )
 
+  container.registerSingleton(
+    GraphQLTokens.EXPORT_MUTATIONS,
+    async (c) => {
+      const tableNodesExportUseCase = (await c.resolve(UseCaseTokens.TABLE_NODES_EXPORT_USE_CASE)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      const { ExportMutations } = await import('@/presentation/graphql/mutations/ExportMutations.js')
+      const exportMutations = new ExportMutations(tableNodesExportUseCase, simpleLogger)
+
+      const { createExportResolvers } = await import('@/presentation/graphql/resolvers/ExportResolvers.js')
+      return createExportResolvers(exportMutations)
+    },
+    [UseCaseTokens.TABLE_NODES_EXPORT_USE_CASE]
+  )
+
   // Table Package Resolver
   container.registerSingleton(GraphQLTokens.TABLE_PACKAGE_RESOLVER, async (c) => {
     // Import the resolver class at runtime to avoid circular dependencies
@@ -428,6 +448,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY
       )) as IAttributeTypeRepository
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
+      const getTableDocsUseCase = (await c.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -439,6 +460,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         attributeRepository,
         attributeTypeRepository,
         nodeRepository,
+        getTableDocsUseCase,
         simpleLogger
       )
     },
@@ -446,6 +468,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       RepositoryTokens.NODE_REPOSITORY,
+      UseCaseTokens.GET_TABLE_DOCS_USE_CASE,
     ]
   )
 
@@ -645,6 +668,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const relationMutations = (await c.resolve(GraphQLTokens.RELATION_MUTATIONS)) as any
       const templateMutations = (await c.resolve(GraphQLTokens.TEMPLATE_MUTATIONS)) as any
       const docMutations = (await c.resolve(GraphQLTokens.DOC_MUTATIONS)) as any
+      const exportMutations = (await c.resolve(GraphQLTokens.EXPORT_MUTATIONS)) as any
       const tablePackageResolver = (await c.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER)) as any
 
       const tableFieldResolvers = (await c.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS)) as any
@@ -680,6 +704,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         relationMutations,
         templateMutations,
         docMutations,
+        exportMutations,
         tablePackageResolver,
         // Field resolvers
         tableFieldResolvers,
@@ -709,6 +734,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.RELATION_MUTATIONS,
       GraphQLTokens.TEMPLATE_MUTATIONS,
       GraphQLTokens.DOC_MUTATIONS,
+      GraphQLTokens.EXPORT_MUTATIONS,
       GraphQLTokens.TABLE_PACKAGE_RESOLVER,
       GraphQLTokens.TABLE_FIELD_RESOLVERS,
       GraphQLTokens.NODE_FIELD_RESOLVERS,

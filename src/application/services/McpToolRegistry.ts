@@ -322,6 +322,277 @@ export class McpToolRegistry {
 
     this.register(importStatusTool)
 
+    // Register create template tool (Global template creation)
+    const createTemplateTool: McpToolDefinition = {
+      name: 'create-template',
+      description: 'Create a new global GraphQL template with validation. For table-specific templates, use the table MCP server create-template tool.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        required: ['identifier', 'name', 'query'],
+        properties: {
+          identifier: {
+            type: 'string',
+            description: 'Unique identifier for the template',
+          },
+          name: {
+            type: 'string',
+            description: 'Human-readable name for the template',
+          },
+          query: {
+            type: 'string',
+            description: 'GraphQL query/mutation string',
+          },
+          description: {
+            type: 'string',
+            description: 'Description of what the template does',
+          },
+          tags: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Tags for categorizing the template',
+          },
+          targetTableId: {
+            type: 'string',
+            description: 'Optional table context for the template',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: 'Template creation with GraphQL validation',
+      },
+    }
+
+    this.register(createTemplateTool)
+
+    // Register update template tool
+    const updateTemplateTool: McpToolDefinition = {
+      name: 'update-template',
+      description: 'Update an existing template by identifier with validation.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        required: ['identifier'],
+        properties: {
+          identifier: {
+            type: 'string',
+            description: 'Template identifier to update',
+          },
+          name: {
+            type: 'string',
+            description: 'New name for the template',
+          },
+          query: {
+            type: 'string',
+            description: 'New GraphQL query/mutation string',
+          },
+          description: {
+            type: 'string',
+            description: 'New description of what the template does',
+          },
+          tags: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'New tags for categorizing the template',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: 'Template update with validation',
+      },
+    }
+
+    this.register(updateTemplateTool)
+
+    // Register delete template tool
+    const deleteTemplateTool: McpToolDefinition = {
+      name: 'delete-template',
+      description: 'Delete a template by identifier with dependency checking.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        required: ['identifier'],
+        properties: {
+          identifier: {
+            type: 'string',
+            description: 'Template identifier to delete',
+          },
+          force: {
+            type: 'boolean',
+            description: 'Force deletion even with dependencies',
+            default: false,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: 'Template deletion with dependency checking',
+      },
+    }
+
+    this.register(deleteTemplateTool)
+
+    // Register validate template tool
+    const validateTemplateTool: McpToolDefinition = {
+      name: 'validate-template',
+      description: 'Validate GraphQL template syntax and schema compliance.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        required: ['query'],
+        properties: {
+          query: {
+            type: 'string',
+            description: 'GraphQL query/mutation string to validate',
+          },
+          variables: {
+            type: 'object',
+            description: 'Optional variables to validate with the query',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: 'GraphQL syntax and schema validation',
+      },
+    }
+
+    this.register(validateTemplateTool)
+
+    // Register search templates tool
+    const searchTemplatesTool: McpToolDefinition = {
+      name: 'search-templates',
+      description: 'Advanced template search with filtering by name, tags, or description.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          query: {
+            type: 'string',
+            description: 'Search term for name or description',
+          },
+          tags: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Filter by tags',
+          },
+          tableId: {
+            type: 'string',
+            description: 'Filter by target table ID',
+          },
+          operationType: {
+            type: 'string',
+            enum: ['query', 'mutation'],
+            description: 'Filter by GraphQL operation type',
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum number of results',
+            default: 50,
+            minimum: 1,
+            maximum: 1000,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: 'Advanced template search with filtering',
+      },
+    }
+
+    this.register(searchTemplatesTool)
+
+    // Register get template metadata tool
+    const getTemplateMetadataTool: McpToolDefinition = {
+      name: 'get-template-metadata',
+      description: 'Get complete template information including usage statistics and dependencies.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        required: ['identifier'],
+        properties: {
+          identifier: {
+            type: 'string',
+            description: 'Template identifier to get metadata for',
+          },
+          includeUsageStats: {
+            type: 'boolean',
+            description: 'Include usage statistics',
+            default: true,
+          },
+          includeDependencies: {
+            type: 'boolean',
+            description: 'Include dependency information',
+            default: true,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: 'Complete template metadata access',
+      },
+    }
+
+    this.register(getTemplateMetadataTool)
+
+    // Register export table nodes tool
+    const exportTableNodesTool: McpToolDefinition = {
+      name: 'export-table-nodes',
+      description: 'Export table nodes to CSV or JSON with improved formatting. CSV uses column-based attributes, JSON uses key-value arrays.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        required: ['tableId'],
+        properties: {
+          tableId: {
+            type: 'string',
+            description: 'ID of the table to export nodes from',
+          },
+          format: {
+            type: 'string',
+            enum: ['CSV', 'JSON'],
+            description: 'Export format - CSV with column attributes or JSON with key-value arrays',
+            default: 'CSV',
+          },
+          outputDirectory: {
+            type: 'string',
+            description: 'Directory to save the exported file',
+            default: './exports',
+          },
+          filename: {
+            type: 'string',
+            description: 'Custom filename for the export (without extension)',
+          },
+          includeAttributes: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Specific attribute names to include in export (empty = all attributes)',
+            default: [],
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum number of nodes to export',
+            default: 1000,
+            minimum: 1,
+            maximum: 10000,
+          },
+          saveToFile: {
+            type: 'boolean',
+            description: 'Whether to save the export to a file',
+            default: true,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: 'Table nodes export with improved formatting',
+      },
+    }
+
+    this.register(exportTableNodesTool)
+
     console.log(`MCP Tool Registry: Registered ${this.getToolCount()} built-in tools`)
   }
 }
