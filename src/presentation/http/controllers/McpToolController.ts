@@ -520,6 +520,23 @@ export class McpToolController {
           req.body = parameters
           return this.exportTableNodes(req, res)
 
+        // System initialization tools
+        case 'initialize-system':
+          req.body = parameters
+          return this.initializeSystem(req, res)
+
+        case 'get-system-status':
+          req.body = parameters
+          return this.getSystemStatus(req, res)
+
+        case 'quick-reset':
+          req.body = parameters
+          return this.quickReset(req, res)
+
+        case 'setup-demo':
+          req.body = parameters
+          return this.setupDemo(req, res)
+
         default:
           res.status(404).json({
             success: false,
@@ -536,6 +553,10 @@ export class McpToolController {
               'search-templates',
               'get-template-metadata',
               'export-table-nodes',
+              'initialize-system',
+              'get-system-status',
+              'quick-reset',
+              'setup-demo',
             ],
           })
       }
@@ -717,6 +738,216 @@ export class McpToolController {
         success: false,
         error: getErrorMessage(error),
         tool: 'export-table-nodes',
+      })
+    }
+  }
+
+  /**
+   * Handle initialize system MCP tool call
+   */
+  async initializeSystem(req: Request, res: Response): Promise<void> {
+    try {
+      const { mode, options } = req.body
+
+      this.logger.info('MCP Tool: initialize-system called', { mode, options })
+
+      const mutation = `
+        mutation InitializeSystem($input: SystemInitializationInput!) {
+          initializeSystem(input: $input) {
+            success
+            result {
+              actions
+              timings
+              totalTime
+              summary {
+                tablesCount
+                templatesCount
+                nodesCount
+              }
+            }
+            errors {
+              message
+            }
+          }
+        }
+      `
+
+      const variables = {
+        input: { mode: mode.toUpperCase(), options }
+      }
+
+      const result = await this.executeGraphQL(mutation, variables)
+
+      res.json({
+        success: true,
+        data: result,
+        tool: 'initialize-system',
+        executedAt: new Date().toISOString(),
+      })
+    } catch (error) {
+      this.logger.error('MCP Tool: initialize-system error:', toErrorMeta(error))
+      res.status(500).json({
+        success: false,
+        error: getErrorMessage(error),
+        tool: 'initialize-system',
+      })
+    }
+  }
+
+  /**
+   * Handle get system status MCP tool call
+   */
+  async getSystemStatus(_req: Request, res: Response): Promise<void> {
+    try {
+      this.logger.info('MCP Tool: get-system-status called')
+
+      const query = `
+        query GetSystemStatus {
+          systemStatus {
+            database
+            summary {
+              tablesCount
+              templatesCount
+              nodesCount
+            }
+            lastInitialized
+          }
+        }
+      `
+
+      const result = await this.executeGraphQL(query)
+
+      res.json({
+        success: true,
+        data: result,
+        tool: 'get-system-status',
+        executedAt: new Date().toISOString(),
+      })
+    } catch (error) {
+      this.logger.error('MCP Tool: get-system-status error:', toErrorMeta(error))
+      res.status(500).json({
+        success: false,
+        error: getErrorMessage(error),
+        tool: 'get-system-status',
+      })
+    }
+  }
+
+  /**
+   * Handle quick reset MCP tool call
+   */
+  async quickReset(req: Request, res: Response): Promise<void> {
+    try {
+      const { preserveTableIds } = req.body
+
+      this.logger.info('MCP Tool: quick-reset called', { preserveTableIds })
+
+      const mutation = `
+        mutation QuickReset($input: SystemInitializationInput!) {
+          initializeSystem(input: $input) {
+            success
+            result {
+              actions
+              timings
+              totalTime
+              summary {
+                tablesCount
+                templatesCount
+                nodesCount
+              }
+            }
+            errors {
+              message
+            }
+          }
+        }
+      `
+
+      const variables = {
+        input: {
+          mode: 'QUICK',
+          options: {
+            resetDatabase: true,
+            resetTestData: true,
+            createSampleData: true,
+            preserveTableIds
+          }
+        }
+      }
+
+      const result = await this.executeGraphQL(mutation, variables)
+
+      res.json({
+        success: true,
+        data: result,
+        tool: 'quick-reset',
+        executedAt: new Date().toISOString(),
+      })
+    } catch (error) {
+      this.logger.error('MCP Tool: quick-reset error:', toErrorMeta(error))
+      res.status(500).json({
+        success: false,
+        error: getErrorMessage(error),
+        tool: 'quick-reset',
+      })
+    }
+  }
+
+  /**
+   * Handle setup demo MCP tool call
+   */
+  async setupDemo(req: Request, res: Response): Promise<void> {
+    try {
+      const { resetFirst = true } = req.body
+
+      this.logger.info('MCP Tool: setup-demo called', { resetFirst })
+
+      const mutation = `
+        mutation SetupDemo($input: SystemInitializationInput!) {
+          initializeSystem(input: $input) {
+            success
+            result {
+              actions
+              timings
+              totalTime
+              summary {
+                tablesCount
+                templatesCount
+                nodesCount
+              }
+            }
+            errors {
+              message
+            }
+          }
+        }
+      `
+
+      const variables = {
+        input: {
+          mode: 'DEMO',
+          options: {
+            resetDatabase: resetFirst,
+            createSampleData: true,
+            initMode: 'demo'
+          }
+        }
+      }
+
+      const result = await this.executeGraphQL(mutation, variables)
+
+      res.json({
+        success: true,
+        data: result,
+        tool: 'setup-demo',
+        executedAt: new Date().toISOString(),
+      })
+    } catch (error) {
+      this.logger.error('MCP Tool: setup-demo error:', toErrorMeta(error))
+      res.status(500).json({
+        success: false,
+        error: getErrorMessage(error),
+        tool: 'setup-demo',
       })
     }
   }

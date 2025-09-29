@@ -4,6 +4,9 @@ extend type Query {
   memoryStats: MemoryStats!
   healthCheck: HealthStatus!
   systemHealthCheck: SystemHealthStatus!
+
+  # System initialization status
+  systemStatus: SystemStatusResult!
 }
 
 type SystemStats {
@@ -75,4 +78,11 @@ type MemoryHealthStatus {
   status: String! # "healthy", "warning", "critical"
   percentage: Float!
   message: String
+}
+
+# System initialization status
+type SystemStatusResult {
+  database: Boolean!
+  summary: SystemSummary!
+  lastInitialized: String
 }

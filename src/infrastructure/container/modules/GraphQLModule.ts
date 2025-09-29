@@ -395,6 +395,16 @@ export function registerGraphQLModule(container: DIContainer): void {
     ]
   )
 
+  // System Resolver - Add SystemResolver for initialization mutations
+  container.registerSingleton(
+    GraphQLTokens.SYSTEM_RESOLVER,
+    async (c) => {
+      const { SystemResolver } = await import('@/presentation/graphql/resolvers/SystemResolver.js')
+      return new SystemResolver(c)
+    },
+    []
+  )
+
   container.registerSingleton(
     GraphQLTokens.EXPORT_MUTATIONS,
     async (c) => {
@@ -673,6 +683,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const docMutations = (await c.resolve(GraphQLTokens.DOC_MUTATIONS)) as any
       const exportMutations = (await c.resolve(GraphQLTokens.EXPORT_MUTATIONS)) as any
       const tablePackageResolver = (await c.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER)) as any
+      const systemResolver = (await c.resolve(GraphQLTokens.SYSTEM_RESOLVER)) as any
 
       const tableFieldResolvers = (await c.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS)) as any
       const nodeFieldResolvers = (await c.resolve(GraphQLTokens.NODE_FIELD_RESOLVERS)) as any
@@ -709,6 +720,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         docMutations,
         exportMutations,
         tablePackageResolver,
+        systemResolver,
         // Field resolvers
         tableFieldResolvers,
         nodeFieldResolvers,
@@ -739,6 +751,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.DOC_MUTATIONS,
       GraphQLTokens.EXPORT_MUTATIONS,
       GraphQLTokens.TABLE_PACKAGE_RESOLVER,
+      GraphQLTokens.SYSTEM_RESOLVER,
       GraphQLTokens.TABLE_FIELD_RESOLVERS,
       GraphQLTokens.NODE_FIELD_RESOLVERS,
       GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS,

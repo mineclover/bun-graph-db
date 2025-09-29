@@ -325,6 +325,16 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
     } else if (method === 'GET' && pathname === '/api/mcp-tools/get-template-metadata') {
       await _mcpToolController.getTemplateMetadata(req, res)
 
+    // System initialization tools
+    } else if (method === 'POST' && pathname === '/api/mcp-tools/initialize-system') {
+      await _mcpToolController.initializeSystem(req, res)
+    } else if (method === 'GET' && pathname === '/api/mcp-tools/get-system-status') {
+      await _mcpToolController.getSystemStatus(req, res)
+    } else if (method === 'POST' && pathname === '/api/mcp-tools/quick-reset') {
+      await _mcpToolController.quickReset(req, res)
+    } else if (method === 'POST' && pathname === '/api/mcp-tools/setup-demo') {
+      await _mcpToolController.setupDemo(req, res)
+
     } else {
       return new Response('Not Found', { status: 404 })
     }

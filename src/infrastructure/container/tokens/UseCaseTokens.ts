@@ -39,4 +39,7 @@ export const UseCaseTokens = {
 
   // Monitoring use cases
   SYSTEM_MONITORING_USE_CASE: Symbol.for('SystemMonitoringUseCase'),
+
+  // System use cases
+  SYSTEM_INITIALIZATION_USE_CASE: Symbol.for('SystemInitializationUseCase'),
 } as const

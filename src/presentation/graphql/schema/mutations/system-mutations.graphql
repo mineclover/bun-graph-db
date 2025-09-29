@@ -1,0 +1,94 @@
+# System initialization mutations
+
+extend type Mutation {
+  # System initialization
+  initializeSystem(input: SystemInitializationInput!): SystemInitializationPayload!
+}
+
+# Input types for system initialization
+input SystemInitializationInput {
+  "Initialization mode"
+  mode: SystemInitializationMode!
+
+  "Custom options for 'custom' mode"
+  options: CustomInitializationOptions
+}
+
+input CustomInitializationOptions {
+  "Reset database to clean state"
+  resetDatabase: Boolean
+
+  "Reset templates to baseline"
+  resetTemplates: Boolean
+
+  "Reset test data"
+  resetTestData: Boolean
+
+  "Create sample/demo data"
+  createSampleData: Boolean
+
+  "Reset performance metrics"
+  resetMetrics: Boolean
+
+  "Preserve specific table IDs (for testing)"
+  preserveTableIds: [Int!]
+
+  "Initialization mode"
+  initMode: SystemInitMode
+}
+
+enum SystemInitializationMode {
+  "Quick reset for development - reset DB, test data, create samples"
+  QUICK
+
+  "Full reset - complete clean slate"
+  FULL
+
+  "Demo setup - creates demo data for presentations"
+  DEMO
+
+  "Custom initialization with specific options"
+  CUSTOM
+}
+
+enum SystemInitMode {
+  DEVELOPMENT
+  TESTING
+  PRODUCTION
+  DEMO
+}
+
+# Result types
+type SystemInitializationPayload implements OperationResult {
+  success: Boolean!
+  result: SystemInitializationResult
+  errors: [Error!]!
+}
+
+type SystemInitializationResult {
+  "Actions performed during initialization"
+  actions: [String!]!
+
+  "Performance timings for each step"
+  timings: JSON!
+
+  "Summary statistics after initialization"
+  summary: SystemSummary!
+
+  "Total execution time in milliseconds"
+  totalTime: Int!
+}
+
+type SystemSummary {
+  "Number of tables in the system"
+  tablesCount: Int!
+
+  "Number of templates in the system"
+  templatesCount: Int!
+
+  "Number of nodes in the system"
+  nodesCount: Int!
+
+  "Number of attributes in the system"
+  attributesCount: Int!
+}

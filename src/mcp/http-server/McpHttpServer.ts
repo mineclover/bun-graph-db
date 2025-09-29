@@ -407,6 +407,13 @@ export class McpHttpServer {
         case 'export-table-nodes':
           return await this.handleExportTableNodes(id, args)
 
+        // System initialization tools - proxy to REST API
+        case 'initialize-system':
+        case 'get-system-status':
+        case 'quick-reset':
+        case 'setup-demo':
+          return await this.handleSystemInitializationTool(id, toolName, args)
+
         default:
           return this.createErrorMcpResponse(
             id,
@@ -1359,6 +1366,41 @@ export class McpHttpServer {
         -32603,
         'Internal error',
         `Get template metadata failed: ${error instanceof Error ? error.message : String(error)}`
+      )
+    }
+  }
+
+  /**
+   * Handle system initialization tools - proxy to REST API
+   */
+  private async handleSystemInitializationTool(
+    id: string | number | undefined,
+    toolName: string,
+    args: any
+  ): Promise<McpResponse> {
+    try {
+      // Proxy to REST API
+      const result = await this.restApiClient.callMcpTool(toolName, args)
+
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+          isError: !result.success,
+        },
+      }
+    } catch (error) {
+      return this.createErrorMcpResponse(
+        id,
+        -32603,
+        'Internal error',
+        `System initialization tool failed: ${error instanceof Error ? error.message : String(error)}`
       )
     }
   }

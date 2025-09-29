@@ -593,6 +593,216 @@ export class McpToolRegistry {
 
     this.register(exportTableNodesTool)
 
+    // ========== SYSTEM INITIALIZATION TOOLS ==========
+
+    // Register system initialization tool
+    const systemInitializationTool: McpToolDefinition = {
+      name: 'initialize-system',
+      description: 'Initialize or reset the system with various modes: quick reset for development, full reset, demo setup, or custom initialization.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        required: ['mode'],
+        properties: {
+          mode: {
+            type: 'string',
+            enum: ['quick', 'full', 'demo', 'custom'],
+            description: 'Initialization mode: quick (reset DB + test data + samples), full (complete clean slate), demo (demo data), custom (specific options)',
+          },
+          options: {
+            type: 'object',
+            description: 'Custom options for initialization (only used with custom mode)',
+            properties: {
+              resetDatabase: {
+                type: 'boolean',
+                description: 'Reset database to clean state',
+                default: false,
+              },
+              resetTemplates: {
+                type: 'boolean',
+                description: 'Reset templates to baseline',
+                default: false,
+              },
+              resetTestData: {
+                type: 'boolean',
+                description: 'Reset test data',
+                default: false,
+              },
+              createSampleData: {
+                type: 'boolean',
+                description: 'Create sample/demo data',
+                default: false,
+              },
+              resetMetrics: {
+                type: 'boolean',
+                description: 'Reset performance metrics',
+                default: false,
+              },
+              preserveTableIds: {
+                type: 'array',
+                items: { type: 'number' },
+                description: 'Preserve specific table IDs (for testing)',
+              },
+              initMode: {
+                type: 'string',
+                enum: ['development', 'testing', 'production', 'demo'],
+                description: 'Initialization environment mode',
+                default: 'development',
+              },
+            },
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation InitializeSystem($input: SystemInitializationInput!) {
+            initializeSystem(input: $input) {
+              success
+              result {
+                actions
+                timings
+                summary {
+                  tablesCount
+                  templatesCount
+                  nodesCount
+                  attributesCount
+                }
+                totalTime
+              }
+              errors {
+                message
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(systemInitializationTool)
+
+    // Register system status tool
+    const systemStatusTool: McpToolDefinition = {
+      name: 'get-system-status',
+      description: 'Get current system status including database state, table counts, and last initialization info.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        properties: {},
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: `
+          query GetSystemStatus {
+            systemStatus {
+              database
+              summary {
+                tablesCount
+                templatesCount
+                nodesCount
+                attributesCount
+              }
+              lastInitialized
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(systemStatusTool)
+
+    // Register quick reset tool
+    const quickResetTool: McpToolDefinition = {
+      name: 'quick-reset',
+      description: 'Quick development reset: reset database, test data, and create sample data. Ideal for development workflow.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          preserveTableIds: {
+            type: 'array',
+            items: { type: 'number' },
+            description: 'Preserve specific table IDs during reset',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation QuickReset($preserveTableIds: [Int!]) {
+            initializeSystem(input: {
+              mode: QUICK
+              options: {
+                preserveTableIds: $preserveTableIds
+              }
+            }) {
+              success
+              result {
+                actions
+                totalTime
+                summary {
+                  tablesCount
+                  templatesCount
+                  nodesCount
+                }
+              }
+              errors {
+                message
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(quickResetTool)
+
+    // Register demo setup tool
+    const demoSetupTool: McpToolDefinition = {
+      name: 'setup-demo',
+      description: 'Setup demo environment with sample data for presentations and demonstrations.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          resetFirst: {
+            type: 'boolean',
+            description: 'Reset database before creating demo data',
+            default: true,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation SetupDemo($resetFirst: Boolean) {
+            initializeSystem(input: {
+              mode: DEMO
+              options: {
+                resetDatabase: $resetFirst
+              }
+            }) {
+              success
+              result {
+                actions
+                totalTime
+                summary {
+                  tablesCount
+                  templatesCount
+                  nodesCount
+                }
+              }
+              errors {
+                message
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(demoSetupTool)
+
     console.log(`MCP Tool Registry: Registered ${this.getToolCount()} built-in tools`)
   }
 }

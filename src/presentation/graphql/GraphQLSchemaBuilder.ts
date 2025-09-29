@@ -63,6 +63,7 @@ export interface GraphQLDependencies {
   docMutations: DocMutations
   exportMutations: any
   tablePackageResolver: TablePackageResolver
+  systemResolver?: any
 
   // Field resolvers
   tableFieldResolvers: TableFieldResolvers
@@ -105,6 +106,9 @@ export class GraphQLSchemaBuilder {
       docMutations: await this.container.resolve(GraphQLTokens.DOC_MUTATIONS),
       exportMutations: await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS),
       tablePackageResolver: await this.container.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER),
+
+      // System resolver
+      systemResolver: await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER),
 
       // Field resolvers
       tableFieldResolvers: await this.container.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS),
@@ -249,6 +253,12 @@ export class GraphQLSchemaBuilder {
           deps.systemQueries?.memoryStats() || null,
         healthCheck: (_: GraphQLParent, _args: Record<string, unknown>) =>
           deps.systemQueries?.healthCheck() || null,
+        systemHealthCheck: (_: GraphQLParent, _args: Record<string, unknown>) =>
+          deps.systemQueries?.systemHealthCheck() || null,
+        
+        // System initialization queries
+        systemStatus: (_: GraphQLParent, _args: Record<string, unknown>) =>
+          deps.systemResolver?.systemStatus() || null,
 
         // Schema export queries
         exportTable: (_: GraphQLParent, args: Record<string, unknown>) =>
@@ -381,6 +391,10 @@ export class GraphQLSchemaBuilder {
           deps.docMutations.activateDoc(_, args as any),
         createDocVersion: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.docMutations.createDocVersion(_, args as any),
+
+        // System initialization mutations
+        initializeSystem: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.systemResolver?.initializeSystem(_, args as any) || null,
 
         // Schema import mutations
         importSchema: (_: GraphQLParent, args: Record<string, unknown>) =>

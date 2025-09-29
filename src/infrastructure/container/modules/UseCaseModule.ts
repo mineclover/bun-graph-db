@@ -8,6 +8,7 @@ import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExport
 import { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
+import { SystemInitializationUseCase } from '@/application/use-cases/system/SystemInitializationUseCase.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
@@ -570,6 +571,15 @@ export function registerUseCaseModule(container: DIContainer): void {
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
       return new SystemMonitoringUseCase(simpleLogger)
+    },
+    []
+  )
+
+  // System initialization use case
+  container.registerSingleton(
+    UseCaseTokens.SYSTEM_INITIALIZATION_USE_CASE,
+    async (c) => {
+      return new SystemInitializationUseCase(c)
     },
     []
   )

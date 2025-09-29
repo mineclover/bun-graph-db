@@ -4,7 +4,7 @@
 
 export const GraphQLTokens = {
   // GraphQL schema and resolvers
-  GRAPHQL_SCHEMA: Symbol.for('GraphQLSchema'),
+  GRAPHQL_SCHEMA: Symbol.for('GraphqlSchema'),
   GRAPHQL_SCHEMA_BUILDER: Symbol.for('GraphQLSchemaBuilder'),
   GRAPHQL_EXECUTOR: Symbol.for('GraphQLExecutor'),
 
@@ -28,6 +28,7 @@ export const GraphQLTokens = {
   DOC_MUTATIONS: Symbol.for('DocMutations'),
   EXPORT_MUTATIONS: Symbol.for('ExportMutations'),
   TABLE_PACKAGE_RESOLVER: Symbol.for('TablePackageResolver'),
+  SYSTEM_RESOLVER: Symbol.for('SystemResolver'),
 
   // Field resolvers
   TABLE_FIELD_RESOLVERS: Symbol.for('TableFieldResolvers'),

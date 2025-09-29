@@ -107,6 +107,20 @@ export function createApiRoutes(
     router.post('/mcp-tools/export-table-nodes', (req, res) =>
       mcpToolController.exportTableNodes(req, res)
     )
+
+    // System initialization tools
+    router.post('/mcp-tools/initialize-system', (req, res) =>
+      mcpToolController.initializeSystem(req, res)
+    )
+    router.get('/mcp-tools/get-system-status', (req, res) =>
+      mcpToolController.getSystemStatus(req, res)
+    )
+    router.post('/mcp-tools/quick-reset', (req, res) =>
+      mcpToolController.quickReset(req, res)
+    )
+    router.post('/mcp-tools/setup-demo', (req, res) =>
+      mcpToolController.setupDemo(req, res)
+    )
   }
 
   return router
@@ -156,4 +170,10 @@ export const API_ENDPOINT_MAPPING = {
   'export-table-nodes': 'POST /api/mcp-tools/call',
   callMcpTool: 'POST /api/mcp-tools/call',
   listMcpTools: 'GET /api/mcp-tools',
+
+  // System initialization tool endpoints
+  'initialize-system': 'POST /api/mcp-tools/initialize-system',
+  'get-system-status': 'GET /api/mcp-tools/get-system-status',
+  'quick-reset': 'POST /api/mcp-tools/quick-reset',
+  'setup-demo': 'POST /api/mcp-tools/setup-demo',
 }
