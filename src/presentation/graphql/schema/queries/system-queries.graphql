@@ -1,60 +1,10 @@
 extend type Query {
-  # System monitoring and statistics
-  systemStats: SystemStats!
-  memoryStats: MemoryStats!
+  # Essential system queries only
   healthCheck: HealthStatus!
-  systemHealthCheck: SystemHealthStatus!
-
-  # System initialization status
   systemStatus: SystemStatusResult!
 }
 
-type SystemStats {
-  memory: MemoryStats!
-  process: ProcessStats!
-  database: DatabaseStats!
-  timestamp: DateTime!
-  uptime: Int!
-}
-
-type MemoryStats {
-  used: Int!
-  free: Int!
-  total: Int!
-  percentage: Float!
-  heap: HeapStats!
-}
-
-type HeapStats {
-  used: Int!
-  total: Int!
-  external: Int!
-  arrayBuffers: Int!
-}
-
-type ProcessStats {
-  pid: Int!
-  cpu: Float!
-  version: String!
-  platform: String!
-  memoryDetails: ProcessMemoryDetails!
-}
-
-type ProcessMemoryDetails {
-  rss: Int! # Resident Set Size in MB
-  heapUsed: Int! # Used heap memory in MB
-  heapTotal: Int! # Total allocated heap in MB
-  external: Int! # External C++ objects memory in MB
-  arrayBuffers: Int! # ArrayBuffers memory in MB
-  heapEfficiency: Int! # Heap efficiency percentage
-  memoryPressure: String! # Memory pressure level: low/medium/high
-}
-
-type DatabaseStats {
-  connectionCount: Int!
-  queryCount: Int!
-  averageQueryTime: Float!
-}
+# Removed detailed system stats types - keeping only essential ones
 
 # Basic health status for simple health checks
 type HealthStatus {
@@ -65,14 +15,7 @@ type HealthStatus {
   memory: MemoryHealthStatus!
 }
 
-# Detailed system health status for comprehensive monitoring
-type SystemHealthStatus {
-  status: String!
-  timestamp: DateTime!
-  database: Boolean!
-  version: String!
-  memory: MemoryHealthStatus!
-}
+# Removed duplicate SystemHealthStatus type
 
 type MemoryHealthStatus {
   status: String! # "healthy", "warning", "critical"

@@ -15,57 +15,14 @@ extend type Query {
     sort: [SortInput!]
   ): NodesConnection!
 
-  # Enhanced node queries with advanced sorting capabilities
+  # Basic advanced search is sufficient - removed redundant variants
 
-  """
-  Advanced node search with comprehensive sorting options
-  Supports multi-criteria sorting with performance optimization
-  """
-  searchNodesAdvanced(
-    filter: SearchNodesFilter!
-    pagination: NodesPagination
-    sort: MultiCriteriaSortInput
-  ): AdvancedNodesConnection!
-
-  """
-  Get nodes with enhanced sorting and result metadata
-  Provides performance insights and optimization recommendations
-  """
-  nodesWithSorting(
-    filter: NodesFilter
-    pagination: NodesPagination
-    advancedSort: [AdvancedSortInput!]
-    computedSort: [ComputedSortInput!]
-    customSort: [CustomSortInput!]
-  ): NodesWithSortingResult!
-
-  # Custom sort function management queries
-
-  """
-  Get all available custom sort functions
-  Useful for discovering extensible sorting capabilities
-  """
+  # Essential custom sort function queries only
   customSortFunctions(
     dataType: SortDataType
     search: String
     tags: [String!]
   ): [CustomSortFunction!]!
 
-  """
-  Get detailed information about a specific custom sort function
-  Including usage examples and parameter definitions
-  """
   customSortFunction(functionId: String!): CustomSortFunction
-
-  """
-  Search custom sort functions by query
-  Supports fuzzy matching across name, description, and tags
-  """
-  searchCustomSortFunctions(query: String!, limit: Int = 10): [CustomSortFunction!]!
-
-  """
-  Get custom sort function usage statistics
-  Provides performance metrics and usage analytics
-  """
-  customSortFunctionStats(functionId: String): [CustomSortFunctionStats!]!
 }

@@ -160,6 +160,7 @@ export class GraphQLSchemaBuilder {
 
       // Root resolvers
       Query: {
+        _schema: () => null, // Required placeholder
         // Table queries
         table: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.tableQueries.table(_, args as any),
@@ -223,10 +224,6 @@ export class GraphQLSchemaBuilder {
         // Table dependency queries
         templatesByTable: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateQueries.templatesByTable(_, args as any),
-        templatesWithTableDependencies: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.templateQueries.templatesWithTableDependencies(_, args as any),
-        tableDependencyTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.templateQueries.tableDependencyTemplates(_, args as any),
         // Template execution (delegated to mutations)
         executeTemplate: (
           _: GraphQLParent,
@@ -246,17 +243,9 @@ export class GraphQLSchemaBuilder {
         searchDocs: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.docQueries.searchDocs(_, args as any),
 
-        // System monitoring queries
-        systemStats: (_: GraphQLParent, _args: Record<string, unknown>) =>
-          deps.systemQueries?.systemStats() || null,
-        memoryStats: (_: GraphQLParent, _args: Record<string, unknown>) =>
-          deps.systemQueries?.memoryStats() || null,
+        // Essential system queries only
         healthCheck: (_: GraphQLParent, _args: Record<string, unknown>) =>
           deps.systemQueries?.healthCheck() || null,
-        systemHealthCheck: (_: GraphQLParent, _args: Record<string, unknown>) =>
-          deps.systemQueries?.systemHealthCheck() || null,
-        
-        // System initialization queries
         systemStatus: (_: GraphQLParent, _args: Record<string, unknown>) =>
           deps.systemResolver?.systemStatus() || null,
 
@@ -284,7 +273,7 @@ export class GraphQLSchemaBuilder {
       },
 
       Mutation: {
-        _empty: () => null,
+        _schema: () => null, // Required placeholder
 
         // Table mutations
         createTable: (_: GraphQLParent, args: Record<string, unknown>) =>

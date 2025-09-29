@@ -9,17 +9,17 @@ scalar JSON
 # Root types - Query, Mutation, Subscription will be extended by domain schemas
 type Query {
   # Health check endpoint - defined in system-queries.graphql
-  _placeholder: String
+  _schema: String # Required placeholder for empty root type
 }
 
 type Mutation {
-  # Placeholder to extend in domain schemas
-  _empty: String
+  # Extended by domain schemas
+  _schema: String # Required placeholder for empty root type
 }
 
 type Subscription {
   # Real-time updates will be added by domain schemas
-  _placeholder: String
+  _schema: String # Required placeholder for empty root type
 }
 
 # Common error type

@@ -15,10 +15,8 @@ extend type Query {
   # Get popular templates
   getPopularTemplates(limit: Int = 10): [QueryTemplate!]!
 
-  # Table dependency queries
+  # Table dependency queries - consolidated
   templatesByTable(input: FindTemplatesByTableInput!): [QueryTemplate!]!
-  templatesWithTableDependencies: [QueryTemplate!]!
-  tableDependencyTemplates: [TableDependencyTemplateResult!]!
 
   # Execute template (also available as mutation)
   executeTemplate(input: ExecuteQueryTemplateInput!): ExecuteQueryTemplatePayload!
