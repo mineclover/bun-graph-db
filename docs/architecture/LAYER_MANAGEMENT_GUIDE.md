@@ -3,7 +3,7 @@
 ## 🗄️ Core Data Layer Management
 
 ### 📍 Location
-- `core/schema.sql` - SQLite 스키마 정의
+- `scripts/database/schema.sql` - SQLite 스키마 정의
 - `src/infrastructure/database/sqlite/` - Repository 구현
 
 ### 🎯 Management Principles
@@ -38,7 +38,7 @@ class SqliteTableRepository implements ITableRepository {
 #### 1. 새 테이블 추가
 ```bash
 # 1. 스키마 파일 수정
-vim core/schema.sql
+vim scripts/database/schema.sql
 
 # 2. 인터페이스 정의
 touch src/domain/repositories/INewEntityRepository.ts
