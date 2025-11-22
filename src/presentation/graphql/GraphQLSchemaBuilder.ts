@@ -65,6 +65,9 @@ export interface GraphQLDependencies {
   tablePackageResolver: TablePackageResolver
   systemResolver?: any
 
+  // Unified resolvers (Task 2.2 - Feature Flag Pattern)
+  nodeResolver?: any // Optional unified NodeResolver for progressive migration
+
   // Field resolvers
   tableFieldResolvers: TableFieldResolvers
   nodeFieldResolvers: NodeFieldResolvers
@@ -109,6 +112,9 @@ export class GraphQLSchemaBuilder {
 
       // System resolver
       systemResolver: await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER),
+
+      // Unified resolvers (Task 2.2 - Feature Flag Pattern)
+      nodeResolver: await this.container.resolve(GraphQLTokens.NODE_RESOLVER).catch(() => null),
 
       // Field resolvers
       tableFieldResolvers: await this.container.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS),
