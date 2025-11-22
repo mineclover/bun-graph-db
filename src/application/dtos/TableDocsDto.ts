@@ -1,4 +1,4 @@
-import type { QueryTemplateDto } from '@/presentation/dto/QueryTemplateDto.js'
+import type { QueryTemplateDto } from './QueryTemplateDto.js'
 import type { AttributeDto } from './AttributeDto.js'
 import type { TableDto } from './TableDto.js'
 
