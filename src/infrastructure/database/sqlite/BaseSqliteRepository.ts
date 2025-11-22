@@ -82,6 +82,10 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
         totalCount: total,
         hasNextPage: offset + limit < total,
         hasPreviousPage: offset > 0,
+        // Additional fields for compatibility with existing repositories
+        data: entities,
+        total,
+        hasMore: offset + limit < total,
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find all ${this.tableName}: ${error}`)
@@ -134,6 +138,39 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
       throw new DatabaseException(
         `Failed to find ${this.tableName} by ${this.identifierField}: ${error}`
       )
+    }
+  }
+
+  /**
+   * Count total entities
+   * Common implementation for all repositories
+   */
+  async count(): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM ${this.tableName}`
+
+    try {
+      const result = this.db.query<{ count: number }, []>(query).get()
+      return result?.count || 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to count ${this.tableName}: ${error}`)
+    }
+  }
+
+  /**
+   * Find entities by multiple IDs
+   * Common implementation for all repositories
+   */
+  async findByIds(ids: TId[]): Promise<TEntity[]> {
+    if (ids.length === 0) return []
+
+    const placeholders = ids.map(() => '?').join(',')
+    const query = `SELECT * FROM ${this.tableName} WHERE ${this.idField} IN (${placeholders})`
+
+    try {
+      const rows = this.db.query<any, string[]>(query).all(...ids)
+      return rows.map((row) => this.mapRowToEntity(row))
+    } catch (error) {
+      throw new DatabaseException(`Failed to find ${this.tableName} by ids: ${error}`)
     }
   }
 }

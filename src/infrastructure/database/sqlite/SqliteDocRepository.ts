@@ -8,6 +8,7 @@ import type {
   IDocRepository,
 } from '@/domain/repositories/IDocRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface DocRow {
   id: number
@@ -20,8 +21,20 @@ interface DocRow {
   updated_at: string
 }
 
-export class SqliteDocRepository implements IDocRepository {
-  constructor(private readonly db: Database) {}
+export class SqliteDocRepository
+  extends BaseSqliteRepository<Doc, DocId>
+  implements IDocRepository
+{
+  constructor(db: Database) {
+    super(db)
+  }
+
+  protected get tableName(): string {
+    return 'docs'
+  }
+
+  // Note: This repository doesn't have an 'identifier' field
+  // so exists() and findByIdentifier() methods from base class are not applicable
 
   async save(doc: Doc): Promise<void> {
     const docData = doc.toDatabase()
@@ -70,20 +83,7 @@ export class SqliteDocRepository implements IDocRepository {
     }
   }
 
-  async findById(id: DocId): Promise<Doc | null> {
-    const query = `
-      SELECT id, table_id, category, version, content, is_active, created_at, updated_at
-      FROM docs
-      WHERE id = ?
-    `
-
-    try {
-      const row = this.db.query<DocRow, [string]>(query).get(id)
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find doc by id: ${error}`)
-    }
-  }
+  // findById() - inherited from BaseSqliteRepository
 
   async findAll(options: DocSearchOptions = {}): Promise<PaginatedResult<Doc>> {
     const {
@@ -162,15 +162,7 @@ export class SqliteDocRepository implements IDocRepository {
     }
   }
 
-  async delete(id: DocId): Promise<void> {
-    const query = `DELETE FROM docs WHERE id = ?`
-
-    try {
-      this.db.run(query, [id])
-    } catch (error) {
-      throw new DatabaseException(`Failed to delete doc: ${error}`)
-    }
-  }
+  // delete() - inherited from BaseSqliteRepository
 
   async findByTableAndCategory(tableId: TableId, category: DocCategory): Promise<Doc[]> {
     const query = `
@@ -368,23 +360,7 @@ export class SqliteDocRepository implements IDocRepository {
     }
   }
 
-  async findByIds(ids: DocId[]): Promise<Doc[]> {
-    if (ids.length === 0) return []
-
-    const placeholders = ids.map(() => '?').join(',')
-    const query = `
-      SELECT id, table_id, category, version, content, is_active, created_at, updated_at
-      FROM docs
-      WHERE id IN (${placeholders})
-    `
-
-    try {
-      const rows = this.db.query<DocRow, string[]>(query).all(...ids)
-      return rows.map((row) => this.mapRowToEntity(row))
-    } catch (error) {
-      throw new DatabaseException(`Failed to find docs by ids: ${error}`)
-    }
-  }
+  // findByIds() - inherited from BaseSqliteRepository
 
   async findByTableIds(tableIds: TableId[]): Promise<Doc[]> {
     if (tableIds.length === 0) return []
@@ -405,7 +381,7 @@ export class SqliteDocRepository implements IDocRepository {
     }
   }
 
-  private mapRowToEntity(row: DocRow): Doc {
+  protected mapRowToEntity(row: DocRow): Doc {
     return Doc.fromDatabase(
       row.id.toString(),
       row.table_id.toString(),
