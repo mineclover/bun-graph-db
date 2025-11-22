@@ -88,8 +88,8 @@ bun run check  # format + lint + fix
 ```bash
 # 관련 문서 업데이트 확인
 # - PRIORITY_API_IMPLEMENTATION_STATUS.md
-# - DEVELOPMENT_ENVIRONMENT_GUIDE.md  
-# - scripts/README.md (필요 시)
+# - DEVELOPMENT_ENVIRONMENT_GUIDE.md
+# - docs/tooling/scripts.md (필요 시)
 ```
 
 ## 🔄 주요 작업 유형별 가이드
@@ -207,9 +207,9 @@ bun run scripts/validate-graphql-api-status.ts
 
 ### 필수 참조 문서
 - **DEVELOPMENT_ENVIRONMENT_GUIDE.md**: 개발 철학 및 Phase 전략
-- **PRIORITY_API_IMPLEMENTATION_STATUS.md**: 실시간 구현 상태  
+- **PRIORITY_API_IMPLEMENTATION_STATUS.md**: 실시간 구현 상태
 - **CLAUDE.md**: 프로젝트 구조 및 코딩 컨벤션
-- **scripts/README.md**: 모든 스크립트 사용법
+- **docs/tooling/scripts.md**: 모든 스크립트 사용법
 
 ### 핵심 도구
 ```bash

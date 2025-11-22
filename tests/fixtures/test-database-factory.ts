@@ -5,7 +5,7 @@
  */
 
 import type { Database } from 'bun:sqlite'
-import { TestDatabase } from '../system-queries/fixtures/test-database-setup'
+import { TestDatabase } from './system-queries/test-database-setup'
 
 // Local type definitions (previously from migration-tools)
 type DatabasePath = {
