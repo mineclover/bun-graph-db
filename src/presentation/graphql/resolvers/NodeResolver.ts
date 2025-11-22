@@ -10,9 +10,11 @@ import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
+import type { Attribute } from '@/domain/entities/Attribute.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
@@ -59,9 +61,10 @@ export class NodeResolver extends BaseResolver {
     private readonly createNodeUseCase: CreateNodeUseCase,
     private readonly searchNodesUseCase: SearchNodesUseCase,
     private readonly nodeRepository: INodeRepository,
-    private readonly nodeAttributeRepository: INodeAttributeRepository,
-    private readonly attributeRepository: IAttributeRepository,
     private readonly tableRepository: ITableRepository,
+    private readonly nodeAttributeRepository: INodeAttributeRepository,
+    private readonly nodeRelationRepository: INodeRelationRepository,
+    private readonly attributeRepository: IAttributeRepository,
     logger: ILogger
   ) {
     super()
@@ -349,7 +352,7 @@ export class NodeResolver extends BaseResolver {
           try {
             // Find attribute by identifier
             const attributes = await this.attributeRepository.findByTableId('267' as TableId)
-            const attribute = attributes.find(attr => attr.getIdentifier() === attrToSet.identifier)
+            const attribute = attributes.nodes.find((attr: Attribute) => attr.getIdentifier() === attrToSet.identifier)
 
             if (attribute) {
               // Create node attribute
@@ -602,5 +605,240 @@ export class NodeResolver extends BaseResolver {
       { nodeId: node.id }
     )
     return result ?? []
+  }
+
+  // Relation field resolvers
+  async outgoingRelations_field(node: NodeDto, _context?: GraphQLContext): Promise<any[]> {
+    const result = await this.handleFieldResolution(
+      async () => {
+        return await this.nodeRelationRepository.findBySourceNodeId(node.id as NodeId)
+      },
+      'outgoingRelations',
+      'Node',
+      { nodeId: node.id }
+    )
+    return result ?? []
+  }
+
+  async incomingRelations_field(node: NodeDto, _context?: GraphQLContext): Promise<any[]> {
+    const result = await this.handleFieldResolution(
+      async () => {
+        return await this.nodeRelationRepository.findByTargetNodeId(node.id as NodeId)
+      },
+      'incomingRelations',
+      'Node',
+      { nodeId: node.id }
+    )
+    return result ?? []
+  }
+
+  async relationCount_field(node: NodeDto, _context?: GraphQLContext): Promise<number> {
+    const result = await this.handleFieldResolution(
+      async () => {
+        const outgoingCount = await this.nodeRelationRepository.countBySourceNodeId(node.id as NodeId)
+        const incomingCount = await this.nodeRelationRepository.countByTargetNodeId(node.id as NodeId)
+        return outgoingCount + incomingCount
+      },
+      'relationCount',
+      'Node',
+      { nodeId: node.id }
+    )
+    return result ?? 0
+  }
+
+  // Graph traversal field resolvers
+  async connectedNodes_field(
+    node: NodeDto,
+    args?: {
+      depth?: number
+      direction?: 'OUTGOING' | 'INCOMING' | 'BOTH'
+      relationTypes?: string[]
+    },
+    _context?: GraphQLContext
+  ): Promise<any[]> {
+    this.logger.info('connectedNodes field resolver called', {
+      parentId: node.id,
+      args,
+    })
+
+    try {
+      const depth = args?.depth || 1
+      const direction = args?.direction || 'BOTH'
+      const relationTypes = args?.relationTypes
+
+      const visited = new Set<string>()
+      const result: any[] = []
+
+      await this._traverseGraph(node.id as NodeId, depth, direction, relationTypes, visited, result, 0)
+
+      // Extract just the nodes from the result objects
+      // Filter out the starting node itself and only return connected nodes
+      const connectedNodes = result
+        .filter((item) => item.node && item.node.getId() !== node.id)
+        .map((item) => item.node)
+        .filter((n) => n !== null)
+
+      this.logger.info('connectedNodes field resolver result', {
+        parentId: node.id,
+        resultLength: result.length,
+        connectedNodesLength: connectedNodes.length,
+      })
+
+      return connectedNodes
+    } catch (error) {
+      this.logger.error('Error in connectedNodes field resolver', {
+        error,
+        nodeId: node.id,
+        args,
+      })
+      // Always return empty array for GraphQL non-nullable field
+      this.logger.info('Returning empty array due to error')
+      return []
+    }
+  }
+
+  async shortestPath_field(
+    node: NodeDto,
+    args: { targetNodeId: string; maxDepth?: number },
+    _context?: GraphQLContext
+  ): Promise<any[]> {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('targetNodeId', 'Target Node ID'),
+        BaseResolver.validationRules.nonEmpty('targetNodeId', 'Target Node ID'),
+      ],
+      'shortestPath'
+    )
+
+    const result = await this.handleFieldResolution(
+      async () => {
+        const { targetNodeId, maxDepth = 6 } = args
+        const path = await this._findShortestPath(node.id as NodeId, targetNodeId as NodeId, maxDepth)
+
+        // Return just the nodes array
+        return path ? path.nodes : []
+      },
+      'shortestPath',
+      'Node',
+      { sourceNodeId: node.id, targetNodeId: args.targetNodeId }
+    )
+    return result ?? []
+  }
+
+  // Private helper methods for graph traversal
+  private async _traverseGraph(
+    nodeId: NodeId,
+    remainingDepth: number,
+    direction: 'OUTGOING' | 'INCOMING' | 'BOTH',
+    relationTypes: string[] | undefined,
+    visited: Set<string>,
+    result: any[],
+    currentDepth: number
+  ): Promise<void> {
+    if (remainingDepth <= 0 || visited.has(nodeId)) return
+
+    visited.add(nodeId)
+    const node = await this.nodeRepository.findById(nodeId)
+    if (!node) return
+
+    result.push({
+      node,
+      depth: currentDepth,
+      path: Array.from(visited),
+    })
+
+    // Get related relations
+    const relations: any[] = []
+
+    if (direction === 'OUTGOING' || direction === 'BOTH') {
+      const outgoing = await this.nodeRelationRepository.findBySourceNodeId(nodeId)
+      relations.push(...outgoing)
+    }
+
+    if (direction === 'INCOMING' || direction === 'BOTH') {
+      const incoming = await this.nodeRelationRepository.findByTargetNodeId(nodeId)
+      relations.push(...incoming)
+    }
+
+    // Filter by relationTypes if specified
+    const filteredRelations = relationTypes
+      ? relations.filter((rel) => relationTypes.includes(rel.getRelationTypeId()))
+      : relations
+
+    // Traverse next level
+    for (const relation of filteredRelations) {
+      const nextNodeId =
+        relation.getSourceNodeId() === nodeId
+          ? relation.getTargetNodeId()
+          : relation.getSourceNodeId()
+
+      if (nextNodeId) {
+        await this._traverseGraph(
+          nextNodeId as NodeId,
+          remainingDepth - 1,
+          direction,
+          relationTypes,
+          visited,
+          result,
+          currentDepth + 1
+        )
+      }
+    }
+  }
+
+  private async _findShortestPath(
+    sourceId: NodeId,
+    targetId: NodeId,
+    maxDepth: number
+  ): Promise<{ nodes: any[]; relations: any[]; distance: number } | null> {
+    const queue: Array<{ nodeId: NodeId; path: NodeId[]; relations: any[]; depth: number }> = [
+      { nodeId: sourceId, path: [sourceId], relations: [], depth: 0 },
+    ]
+    const visited = new Set<string>()
+
+    while (queue.length > 0) {
+      const current = queue.shift()!
+
+      if (current.nodeId === targetId) {
+        // Path found
+        const nodes = await Promise.all(current.path.map((id) => this.nodeRepository.findById(id)))
+        return {
+          nodes: nodes.filter((node) => node !== null),
+          relations: current.relations,
+          distance: current.depth,
+        }
+      }
+
+      if (current.depth >= maxDepth || visited.has(current.nodeId)) {
+        continue
+      }
+
+      visited.add(current.nodeId)
+
+      // Explore connected nodes
+      const outgoing = await this.nodeRelationRepository.findBySourceNodeId(current.nodeId)
+      const incoming = await this.nodeRelationRepository.findByTargetNodeId(current.nodeId)
+
+      const allRelations = [...outgoing, ...incoming]
+
+      for (const relation of allRelations) {
+        const nextNodeId =
+          relation.getSourceNodeId() === current.nodeId
+            ? relation.getTargetNodeId()
+            : relation.getSourceNodeId()
+
+        if (nextNodeId && !visited.has(nextNodeId) && !current.path.includes(nextNodeId as NodeId)) {
+          queue.push({
+            nodeId: nextNodeId as NodeId,
+            path: [...current.path, nextNodeId as NodeId],
+            relations: [...current.relations, relation],
+            depth: current.depth + 1,
+          })
+        }
+      }
+    }
+
+    return null // No path found
   }
 }

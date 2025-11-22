@@ -32,7 +32,6 @@
       "@/*": ["./src/*"],
       "~/*": ["./src/*"]
     },
-    "types": ["bun-types"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
