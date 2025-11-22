@@ -1,0 +1,2554 @@
+bun test v1.3.2 (b131639c)
+
+tests/graph-traversal-advanced.test.ts:
+🚀 Starting isolated GraphQL server for Graph Traversal tests...
+✅ Test database setup complete: /tmp/bun-graph-db-tests/graph-traversal-advanced-1763832074828-4svwzt6ts.sqlite
+✅ Server started at: http://localhost:5500/graphql
+📁 Database path: /tmp/bun-graph-db-tests/graph-traversal-advanced-1763832074828-4svwzt6ts.sqlite
+GraphQL Response Errors: [
+  {
+    "message": "Field \"title\" is not defined by type \"CreateNodeInput\".",
+    "locations": [
+      {
+        "line": 3,
+        "column": 68
+      }
+    ],
+    "extensions": {
+      "code": "GRAPHQL_VALIDATION_FAILED"
+    }
+  }
+]
+GraphQL Query: 
+      mutation {
+        createNode(input: { tableId: "59" content: "Alice Profile" title: "Alice" }) {
+          success
+          node { id }
+        }
+      }
+    
+GraphQL Variables: undefined
+GraphQL Response Errors: [
+  {
+    "message": "Field \"title\" is not defined by type \"CreateNodeInput\".",
+    "locations": [
+      {
+        "line": 3,
+        "column": 66
+      }
+    ],
+    "extensions": {
+      "code": "GRAPHQL_VALIDATION_FAILED"
+    }
+  }
+]
+GraphQL Query: 
+      mutation {
+        createNode(input: { tableId: "59" content: "Bob Profile" title: "Bob" }) {
+          success
+          node { id }
+        }
+      }
+    
+GraphQL Variables: undefined
+GraphQL Response Errors: [
+  {
+    "message": "Field \"title\" is not defined by type \"CreateNodeInput\".",
+    "locations": [
+      {
+        "line": 3,
+        "column": 70
+      }
+    ],
+    "extensions": {
+      "code": "GRAPHQL_VALIDATION_FAILED"
+    }
+  }
+]
+GraphQL Query: 
+      mutation {
+        createNode(input: { tableId: "59" content: "Charlie Profile" title: "Charlie" }) {
+          success
+          node { id }
+        }
+      }
+    
+GraphQL Variables: undefined
+GraphQL Response Errors: [
+  {
+    "message": "Field \"title\" is not defined by type \"CreateNodeInput\".",
+    "locations": [
+      {
+        "line": 3,
+        "column": 71
+      }
+    ],
+    "extensions": {
+      "code": "GRAPHQL_VALIDATION_FAILED"
+    }
+  }
+]
+GraphQL Query: 
+      mutation {
+        createNode(input: { tableId: "60" content: "Tech Corporation" title: "TechCorp" }) {
+          success
+          node { id }
+        }
+      }
+    
+GraphQL Variables: undefined
+137 |           node { id }
+138 |         }
+139 |       }
+140 |     `)
+141 | 
+142 |     const aliceId = createAlice.data.createNode.node.id
+                                      ^
+TypeError: undefined is not an object (evaluating 'createAlice.data.createNode')
+      at setupTestData (/home/user/bun-graph-db/tests/graph-traversal-advanced.test.ts:142:33)
+      at async <anonymous> (/home/user/bun-graph-db/tests/graph-traversal-advanced.test.ts:32:11)
+(fail) 🔍 Advanced Graph Traversal and Search Test Suite > (unnamed) [1902.83ms]
+🧹 Cleaning up isolated test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/graph-traversal-advanced-1763832074828-4svwzt6ts.sqlite
+✅ Cleanup completed
+
+tests/node-queries-isolated.test.ts:
+🚀 Starting isolated GraphQL server for Node Queries tests...
+✅ Test database setup complete: /tmp/bun-graph-db-tests/node-queries-isolated-1763832076753-0bfogun3w.sqlite
+✅ Server started at: http://localhost:5501/graphql
+📁 Database path: /tmp/bun-graph-db-tests/node-queries-isolated-1763832076753-0bfogun3w.sqlite
+✅ GraphQL server health check passed
+ℹ️ No nodes found, skipping node by ID test
+GraphQL Response Errors: [
+  {
+    "message": "Unexpected error.",
+    "locations": [
+      {
+        "line": 3,
+        "column": 11
+      }
+    ],
+    "path": [
+      "nodeByContent"
+    ],
+    "extensions": {
+      "code": "INTERNAL_SERVER_ERROR"
+    }
+  }
+]
+GraphQL Query: 
+        query GetNodeByContent($content: String!, $tableId: ID!) {
+          nodeByContent(content: $content, tableId: $tableId) {
+            id
+          }
+        }
+      
+GraphQL Variables: {
+  content: "",
+  tableId: "58",
+}
+GraphQL Request Failed: {
+  errors: [
+    {
+      message: "Variable \"$filter\" got invalid value { search: \"test\" }; Field \"tableId\" of required type \"ID!\" was not provided.",
+      locations: [
+        [Object ...]
+      ],
+    }
+  ],
+}
+🧹 Cleaning up isolated test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/node-queries-isolated-1763832076753-0bfogun3w.sqlite
+✅ Cleanup completed
+
+tests/node-mutations-isolated.test.ts:
+🚀 Starting isolated GraphQL server for Node Mutations tests...
+✅ Test database setup complete: /tmp/bun-graph-db-tests/node-mutations-isolated-1763832077695-9wbrrbcyt.sqlite
+✅ Server started at: http://localhost:5502/graphql
+📁 Database path: /tmp/bun-graph-db-tests/node-mutations-isolated-1763832077695-9wbrrbcyt.sqlite
+✅ GraphQL server health check passed
+✅ Created test table with ID: 59
+🔍 CreateNode result: {
+  "data": {
+    "createNode": {
+      "success": true,
+      "errors": [],
+      "node": {
+        "id": "1",
+        "content": "Test node content",
+        "createdAt": "2025-11-22T17:21:18.598Z",
+        "updatedAt": "2025-11-22T17:21:18.598Z",
+        "table": {
+          "id": "59"
+        }
+      }
+    }
+  }
+}
+✅ Created 10 nodes in 45ms
+🧹 Cleaning up isolated test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/node-mutations-isolated-1763832077695-9wbrrbcyt.sqlite
+✅ Cleanup completed
+
+tests/table-queries-isolated.test.ts:
+🚀 Starting isolated GraphQL server for Table Queries tests...
+✅ Test database setup complete: /tmp/bun-graph-db-tests/table-queries-isolated-1763832078804-hzgk08wxc.sqlite
+✅ Server started at: http://localhost:5503/graphql
+📁 Database path: /tmp/bun-graph-db-tests/table-queries-isolated-1763832078804-hzgk08wxc.sqlite
+✅ GraphQL server health check passed
+GraphQL Response Errors: [
+  {
+    "message": "Unexpected error.",
+    "locations": [
+      {
+        "line": 3,
+        "column": 11
+      }
+    ],
+    "path": [
+      "table"
+    ],
+    "extensions": {
+      "code": "INTERNAL_SERVER_ERROR"
+    }
+  }
+]
+GraphQL Query: 
+        query GetTable($id: ID!) {
+          table(id: $id) {
+            id
+          }
+        }
+      
+GraphQL Variables: {
+  id: "",
+}
+🧹 Cleaning up isolated test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/table-queries-isolated-1763832078804-hzgk08wxc.sqlite
+✅ Cleanup completed
+
+tests/relation-mutations-isolated.test.ts:
+🚀 Starting isolated GraphQL server for Relation Mutations tests...
+✅ Test database setup complete: /tmp/bun-graph-db-tests/relation-mutations-isolated-1763832079738-oqu215xvm.sqlite
+✅ Server started at: http://localhost:5504/graphql
+📁 Database path: /tmp/bun-graph-db-tests/relation-mutations-isolated-1763832079738-oqu215xvm.sqlite
+✅ GraphQL server health check passed
+🔍 CreateRelationType result: {
+  "data": {
+    "createRelationType": {
+      "success": true,
+      "errors": [],
+      "relationType": {
+        "id": "8",
+        "identifier": "test_1763832080601_79p8d0cdu",
+        "description": "A dependency relationship between nodes",
+        "createdAt": "2025-11-22T17:21:20.609Z",
+        "updatedAt": "2025-11-22T17:21:20.609Z",
+        "name": "Depends On"
+      }
+    }
+  }
+}
+✅ Created test data: table(59), relationType(10), sourceNode(1), targetNode(2)
+🔍 CreateRelation result: {
+  "data": {
+    "createRelation": {
+      "success": true,
+      "errors": [],
+      "relation": {
+        "id": "1",
+        "createdAt": "2025-11-22T17:21:20.679Z",
+        "updatedAt": "2025-11-22T17:21:20.679Z",
+        "table": {
+          "id": "59"
+        },
+        "sourceNode": {
+          "id": "1",
+          "content": "Source node for relations"
+        },
+        "targetNode": {
+          "id": "2",
+          "content": "Target node for relations"
+        },
+        "relationType": {
+          "id": "10",
+          "identifier": "test_1763832080653_zeyfta71l",
+          "name": "Test Relation"
+        }
+      }
+    }
+  }
+}
+🔍 Bulk relation 0 result: {
+  "data": {
+    "createRelation": {
+      "success": true,
+      "relation": {
+        "id": "4"
+      },
+      "errors": []
+    }
+  }
+}
+🔍 Bulk relation 1 result: {
+  "data": {
+    "createRelation": {
+      "success": true,
+      "relation": {
+        "id": "4"
+      },
+      "errors": []
+    }
+  }
+}
+🔍 Bulk relation 2 result: {
+  "data": {
+    "createRelation": {
+      "success": true,
+      "relation": {
+        "id": "4"
+      },
+      "errors": []
+    }
+  }
+}
+🔍 Bulk relation 3 result: {
+  "data": {
+    "createRelation": {
+      "success": true,
+      "relation": {
+        "id": "4"
+      },
+      "errors": []
+    }
+  }
+}
+🔍 Bulk relation 4 result: {
+  "data": {
+    "createRelation": {
+      "success": true,
+      "relation": {
+        "id": "4"
+      },
+      "errors": []
+    }
+  }
+}
+✅ Created 5 unique relations in 20ms
+🧹 Cleaning up isolated test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/relation-mutations-isolated-1763832079738-oqu215xvm.sqlite
+✅ Cleanup completed
+
+tests/relation-queries-isolated.test.ts:
+🚀 Starting isolated GraphQL server for Relation Queries tests...
+✅ Test database setup complete: /tmp/bun-graph-db-tests/relation-queries-isolated-1763832080903-nsbp87f4b.sqlite
+✅ Server started at: http://localhost:5505/graphql
+📁 Database path: /tmp/bun-graph-db-tests/relation-queries-isolated-1763832080903-nsbp87f4b.sqlite
+✅ GraphQL server health check passed
+ℹ️ No node relations found, skipping node relation by ID test
+GraphQL Request Failed: {
+  errors: [
+    {
+      message: "Variable \"$input\" got invalid value { direction: \"OUTGOING\" }; Field \"nodeId\" of required type \"ID!\" was not provided.",
+      locations: [
+        [Object ...]
+      ],
+    }
+  ],
+}
+🧹 Cleaning up isolated test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/relation-queries-isolated-1763832080903-nsbp87f4b.sqlite
+✅ Cleanup completed
+
+tests/unit/template-creation-isolated.test.ts:
+🚀 Setting up unit test environment for template creation...
+🧪 Setting up unit test environment: template-creation-isolated
+✅ Test database setup complete: /tmp/bun-graph-db-tests/template-creation-isolated-1763832081852-qolh7kuk8.sqlite
+✅ Unit test environment ready: template-creation-isolated
+✅ Unit test environment ready
+🧹 Cleaning up unit test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/template-creation-isolated-1763832081852-qolh7kuk8.sqlite
+✅ Unit test cleanup completed: template-creation-isolated
+✅ Cleanup completed
+
+tests/unit/system-queries.test.ts:
+Database stats error: Database connection closed
+Database stats error: Database connection closed
+Error message
+
+tests/unit/sort-caching.test.ts:
+Failed to build enhanced sort clause for field '_complex_operation': warn: Attribute '_complex_operation' not found for text sorting
+      at buildEnhancedSortClause (/home/user/bun-graph-db/src/application/services/sorting/TextSortStrategy.ts:71:17)
+      at buildEnhancedMultiCriteriaSort (/home/user/bun-graph-db/src/application/services/sorting/SortStrategyFactory.ts:244:20)
+      at executeHybridSort (/home/user/bun-graph-db/src/application/services/sorting/AdaptiveSortEngine.ts:248:11)
+      at buildOptimizedSort (/home/user/bun-graph-db/src/application/services/sorting/AdaptiveSortEngine.ts:78:22)
+      at buildOptimizedSort (/home/user/bun-graph-db/src/application/services/sorting/CachedSortEngine.ts:74:20)
+      at <anonymous> (/home/user/bun-graph-db/tests/unit/sort-caching.test.ts:486:35)
+
+
+tests/unit/ai-metadata.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'graphql' from '/home/user/bun-graph-db/src/infrastructure/ai-metadata/LegacyAIMetadataAdapter.ts'
+-------------------------------
+
+
+tests/unit/performance-optimization.test.ts:
+Failed to build enhanced sort clause for field 'unknown_field': warn: Attribute 'unknown_field' not found for text sorting
+      at buildEnhancedSortClause (/home/user/bun-graph-db/src/application/services/sorting/TextSortStrategy.ts:71:17)
+      at buildEnhancedMultiCriteriaSort (/home/user/bun-graph-db/src/application/services/sorting/SortStrategyFactory.ts:244:20)
+      at executeLazySort (/home/user/bun-graph-db/src/application/services/sorting/AdaptiveSortEngine.ts:271:20)
+      at buildOptimizedSort (/home/user/bun-graph-db/src/application/services/sorting/AdaptiveSortEngine.ts:78:22)
+      at <anonymous> (/home/user/bun-graph-db/tests/unit/performance-optimization.test.ts:190:22)
+
+
+tests/template-indexing/graphql-parsing.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'graphql' from '/home/user/bun-graph-db/src/core/utils/GraphQLParser.ts'
+-------------------------------
+
+
+tests/integration/mcp-rest-proxy.test.ts:
+66 |         method: 'POST',
+67 |         headers: { 'Content-Type': 'application/json' },
+68 |         body: JSON.stringify(request),
+69 |       })
+70 | 
+71 |       expect(response.status).toBe(200)
+                                   ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:71:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Protocol Compliance > should handle MCP initialize method [0.65ms]
+100 |         method: 'POST',
+101 |         headers: { 'Content-Type': 'application/json' },
+102 |         body: JSON.stringify(request),
+103 |       })
+104 | 
+105 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:105:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Protocol Compliance > should list all 27 MCP tools [0.41ms]
+212 |         method: 'POST',
+213 |         headers: { 'Content-Type': 'application/json' },
+214 |         body: JSON.stringify(request),
+215 |       })
+216 | 
+217 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:217:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Tool Execution via REST API Proxy > Health check should proxy to REST API health endpoint [0.47ms]
+212 |         method: 'POST',
+213 |         headers: { 'Content-Type': 'application/json' },
+214 |         body: JSON.stringify(request),
+215 |       })
+216 | 
+217 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:217:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Tool Execution via REST API Proxy > System stats should proxy to REST API stats endpoint [0.36ms]
+212 |         method: 'POST',
+213 |         headers: { 'Content-Type': 'application/json' },
+214 |         body: JSON.stringify(request),
+215 |       })
+216 | 
+217 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:217:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Tool Execution via REST API Proxy > Table creation should proxy to REST API tables endpoint [0.26ms]
+212 |         method: 'POST',
+213 |         headers: { 'Content-Type': 'application/json' },
+214 |         body: JSON.stringify(request),
+215 |       })
+216 | 
+217 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:217:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Tool Execution via REST API Proxy > Table search should proxy to REST API search endpoint [0.24ms]
+212 |         method: 'POST',
+213 |         headers: { 'Content-Type': 'application/json' },
+214 |         body: JSON.stringify(request),
+215 |       })
+216 | 
+217 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:217:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Tool Execution via REST API Proxy > Get tables should proxy to REST API tables endpoint [0.26ms]
+212 |         method: 'POST',
+213 |         headers: { 'Content-Type': 'application/json' },
+214 |         body: JSON.stringify(request),
+215 |       })
+216 | 
+217 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:217:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Tool Execution via REST API Proxy > Attribute creation should proxy to REST API attributes endpoint [0.23ms]
+257 |         method: 'POST',
+258 |         headers: { 'Content-Type': 'application/json' },
+259 |         body: JSON.stringify(request),
+260 |       })
+261 | 
+262 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:262:31)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP Tool Execution via REST API Proxy > should handle MCP tool errors gracefully [0.53ms]
+295 |         method: 'POST',
+296 |         headers: { 'Content-Type': 'application/json' },
+297 |         body: JSON.stringify(request),
+298 |       })
+299 | 
+300 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:300:31)
+(fail) MCP-to-REST API Proxy Integration Tests > Parameter Transformation > should transform GET request parameters to query parameters [0.42ms]
+331 |         method: 'POST',
+332 |         headers: { 'Content-Type': 'application/json' },
+333 |         body: JSON.stringify(request),
+334 |       })
+335 | 
+336 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:336:31)
+(fail) MCP-to-REST API Proxy Integration Tests > Parameter Transformation > should transform POST request parameters to request body [0.38ms]
+365 |         method: 'POST',
+366 |         headers: { 'Content-Type': 'application/json' },
+367 |         body: JSON.stringify(request),
+368 |       })
+369 | 
+370 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:370:31)
+(fail) MCP-to-REST API Proxy Integration Tests > Parameter Transformation > should handle path parameter substitution [0.56ms]
+403 |       })
+404 | 
+405 |       // Call REST API directly
+406 |       const directResponse = await fetch(`${REST_API_ENDPOINT}/health`)
+407 | 
+408 |       expect(mcpResponse.status).toBe(200)
+                                       ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:408:34)
+(fail) MCP-to-REST API Proxy Integration Tests > MCP vs Direct REST API Consistency > MCP proxy and direct REST API should return identical responses [0.45ms]
+430 |         method: 'POST',
+431 |         headers: { 'Content-Type': 'application/json' },
+432 |         body: '{"invalid": json}', // Malformed JSON
+433 |       })
+434 | 
+435 |       expect(response.status).toBe(400)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 400
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:435:31)
+(fail) MCP-to-REST API Proxy Integration Tests > Error Handling and Edge Cases > should handle malformed JSON in MCP requests [0.36ms]
+451 |         method: 'POST',
+452 |         headers: { 'Content-Type': 'application/json' },
+453 |         body: JSON.stringify(invalidRequest),
+454 |       })
+455 | 
+456 |       expect(response.status).toBe(400)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 400
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:456:31)
+(fail) MCP-to-REST API Proxy Integration Tests > Error Handling and Edge Cases > should handle missing required MCP fields [0.35ms]
+479 |         method: 'POST',
+480 |         headers: { 'Content-Type': 'application/json' },
+481 |         body: JSON.stringify(request),
+482 |       })
+483 | 
+484 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:484:31)
+(fail) MCP-to-REST API Proxy Integration Tests > Error Handling and Edge Cases > should handle invalid tool arguments gracefully [0.41ms]
+522 | 
+523 |       const responses = await Promise.all(promises)
+524 | 
+525 |       // All requests should complete successfully
+526 |       responses.forEach((response, _index) => {
+527 |         expect(response.status).toBe(200)
+                                      ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:527:33)
+      at forEach (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy.test.ts:526:17)
+(fail) MCP-to-REST API Proxy Integration Tests > Performance and Load > should handle concurrent MCP tool calls [0.65ms]
+
+tests/integration/server-independence-validation.test.ts:
+🚀 서버 독립적 환경 설정 시작...
+🚀 Setting up integration test environment: server-independence-test
+✅ Test database setup complete: /tmp/bun-graph-db-tests/server-independence-test-1763832082345-5kbce3bdb.sqlite
+✅ GraphQL server health check passed: http://localhost:5506/graphql
+✅ 환경 준비 완료:
+   - 서버 포트: 5506
+   - GraphQL: http://localhost:5506/graphql
+   - 데이터베이스: /tmp/bun-graph-db-tests/server-independence-test-1763832082345-5kbce3bdb.sqlite
+39 |     const graphqlResult = await testEnvironment.graphqlRequest!(
+40 |       'query { healthCheck { status database version } }'
+41 |     )
+42 | 
+43 |     expect(graphqlResult).toBeDefined()
+44 |     expect(graphqlResult.data?.healthCheck).toBeDefined()
+                                                 ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:44:45)
+(fail) 서버 독립적 테스트 아키텍처 검증 > 자동 서버 시작 및 GraphQL 접근 가능 확인 [0.62ms]
+52 |     // 시스템 통계 조회
+53 |     const statsResult = await testEnvironment.graphqlRequest!(
+54 |       'query { systemStats { memory { used total } process { pid } } }'
+55 |     )
+56 | 
+57 |     expect(statsResult.data?.systemStats).toBeDefined()
+                                               ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:57:43)
+(fail) 서버 독립적 테스트 아키텍처 검증 > 독립적 데이터베이스 환경 확인 [0.53ms]
+✅ 동적 포트 할당 성공: 5506
+ 97 |           description: '서버 독립성 테스트용 테이블',
+ 98 |         }
+ 99 |       }
+100 |     )
+101 | 
+102 |     expect(createResult.data?.createTable.success).toBe(true)
+                                    ^
+TypeError: undefined is not an object (evaluating 'createResult.data?.createTable.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:102:31)
+(fail) 서버 독립적 테스트 아키텍처 검증 > 테이블 생성 및 조회 워크플로우 [0.42ms]
+🧹 환경 정리 시작...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/server-independence-test-1763832082345-5kbce3bdb.sqlite
+✅ Integration test cleanup completed: server-independence-test
+✅ 환경 정리 완료
+🔄 자동 서버 관리 테스트 시작...
+🚀 Setting up integration test environment: auto-server-test
+✅ Test database setup complete: /tmp/bun-graph-db-tests/auto-server-test-1763832082383-shx9irktf.sqlite
+✅ GraphQL server health check passed: http://localhost:5507/graphql
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/auto-server-test-1763832082383-shx9irktf.sqlite
+✅ Integration test cleanup completed: auto-server-test
+132 |         // GraphQL 쿼리 실행
+133 |         const healthResult = await env.graphqlRequest!(
+134 |           'query { healthCheck { status } }'
+135 |         )
+136 | 
+137 |         expect(healthResult.data?.healthCheck.status).toBe('OK')
+                                        ^
+TypeError: undefined is not an object (evaluating 'healthResult.data?.healthCheck.status')
+      at /home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:137:35
+      at withAutoServer (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:359:18)
+      at /home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:202:21
+(fail) withAutoServer 패턴 검증 > 자동 서버 관리 패턴 동작 확인 [34.75ms]
+🔄 병렬 환경 테스트 시작...
+🚀 Setting up integration test environment: parallel-test-1
+✅ Test database setup complete: /tmp/bun-graph-db-tests/parallel-test-1-1763832082418-8cgc51yit.sqlite
+🚀 Setting up integration test environment: parallel-test-2
+✅ Test database setup complete: /tmp/bun-graph-db-tests/parallel-test-2-1763832082426-xy6syg30r.sqlite
+🚀 Setting up integration test environment: parallel-test-3
+✅ Test database setup complete: /tmp/bun-graph-db-tests/parallel-test-3-1763832082434-jc7qpwql1.sqlite
+✅ GraphQL server health check passed: http://localhost:5508/graphql
+✅ GraphQL server health check passed: http://localhost:5509/graphql
+✅ GraphQL server health check passed: http://localhost:5510/graphql
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/parallel-test-1-1763832082418-8cgc51yit.sqlite
+✅ Integration test cleanup completed: parallel-test-1
+152 | 
+153 |     // 3개의 독립적 환경을 동시에 실행
+154 |     const results = await Promise.all([
+155 |       withAutoServer(createIntegrationConfig('parallel-test-1'), async (env) => {
+156 |         const result = await env.graphqlRequest!('query { healthCheck { status } }')
+157 |         return { port: env.server!.port, status: result.data?.healthCheck.status }
+                                                                    ^
+TypeError: undefined is not an object (evaluating 'result.data?.healthCheck.status')
+      at /home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:157:63
+      at withAutoServer (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:359:18)
+      at /home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:154:35
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/parallel-test-2-1763832082426-xy6syg30r.sqlite
+✅ Integration test cleanup completed: parallel-test-2
+(fail) withAutoServer 패턴 검증 > 여러 독립적 환경 동시 실행 [88.33ms]
+🔄 에러 시나리오 테스트 시작...
+🚀 Setting up integration test environment: error-test
+✅ Test database setup complete: /tmp/bun-graph-db-tests/error-test-1763832082506-s7v2vuts5.sqlite
+✅ GraphQL server health check passed: http://localhost:5511/graphql
+📝 테스트 환경 포트 기록: 5511
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/parallel-test-3-1763832082434-jc7qpwql1.sqlite
+✅ Integration test cleanup completed: parallel-test-3
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/error-test-1763832082506-s7v2vuts5.sqlite
+✅ Integration test cleanup completed: error-test
+✅ 에러 상황에서도 환경 정리 보장됨 (포트: 5511)
+🚀 Setting up integration test environment: performance-test
+✅ Test database setup complete: /tmp/bun-graph-db-tests/performance-test-1763832082537-u8fg3szqi.sqlite
+✅ GraphQL server health check passed: http://localhost:5512/graphql
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/performance-test-1763832082537-u8fg3szqi.sqlite
+✅ Integration test cleanup completed: performance-test
+217 | 
+218 |     await withAutoServer(
+219 |       createIntegrationConfig('performance-test'),
+220 |       async (env) => {
+221 |         const healthResult = await env.graphqlRequest!('query { healthCheck { status } }')
+222 |         expect(healthResult.data?.healthCheck.status).toBe('OK')
+                                        ^
+TypeError: undefined is not an object (evaluating 'healthResult.data?.healthCheck.status')
+      at /home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:222:35
+      at withAutoServer (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:359:18)
+      at /home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:218:11
+(fail) 성능 및 안정성 검증 > 빠른 환경 생성 및 해제 [32.43ms]
+🔄 연속 환경 생성 테스트...
+🚀 Setting up integration test environment: stability-test-0
+✅ Test database setup complete: /tmp/bun-graph-db-tests/stability-test-0-1763832082569-0s8cq3hb4.sqlite
+✅ GraphQL server health check passed: http://localhost:5513/graphql
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/stability-test-0-1763832082569-0s8cq3hb4.sqlite
+✅ Integration test cleanup completed: stability-test-0
+235 |     for (let i = 0; i < 3; i++) {
+236 |       await withAutoServer(
+237 |         createIntegrationConfig(`stability-test-${i}`),
+238 |         async (env) => {
+239 |           const result = await env.graphqlRequest!('query { healthCheck { status } }')
+240 |           expect(result.data?.healthCheck.status).toBe('OK')
+                                    ^
+TypeError: undefined is not an object (evaluating 'result.data?.healthCheck.status')
+      at /home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:240:31
+      at withAutoServer (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:359:18)
+      at /home/user/bun-graph-db/tests/integration/server-independence-validation.test.ts:236:13
+(fail) 성능 및 안정성 검증 > 연속적인 환경 생성 안정성 [32.46ms]
+
+tests/integration/mcp-table-integration.test.ts:
+🧪 Starting MCP Table Integration Tests
+✅ Server is ready
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > Table MCP Route Integration > should handle GET request to table MCP endpoint [2.88ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > Table MCP Route Integration > should reject invalid table IDs [0.48ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > Table MCP Route Integration > should handle non-existent table ID [0.26ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > MCP Protocol Compliance > should handle initialize method [0.27ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > MCP Protocol Compliance > should handle tools/list method [0.23ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > MCP Protocol Compliance > should handle tools/call method [0.24ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > MCP Protocol Compliance > should handle invalid JSON-RPC requests [0.23ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > Table Isolation > should provide isolated tool sets for different tables [0.24ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > Error Handling > should handle method not allowed [0.38ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > Error Handling > should handle malformed route patterns [0.31ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > AIMetadata Integration > should include get-table-metadata tool in tools/list [0.24ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > AIMetadata Integration > should execute get-table-metadata tool successfully [0.22ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > AIMetadata Integration > should handle get-table-metadata tool with different parameters [0.18ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > AIMetadata Integration > should handle get-table-metadata tool validation errors [0.18ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > Performance and Concurrency > should handle concurrent requests to same table [0.27ms]
+59 |       body: JSON.stringify({ query: createTableQuery })
+60 |     })
+61 | 
+62 |     const result = await response.json()
+63 |     if (!result.data?.createTable?.success) {
+64 |       throw new Error(`Failed to create test table: ${JSON.stringify(result)}`)
+                     ^
+error: Failed to create test table: {"data":{"exportTable":{"metadata":{"exportedAt":"2024-01-01T00:00:00Z","version":"1.0.0","source":"test","options":"{}","checksum":"test-checksum"},"tables":[{"id":"table-123","identifier":"test-table","description":"Test table","nodes":[],"attributes":[],"statistics":{"nodeCount":0,"attributeCount":0,"relationCount":0}}],"statistics":{"totalTables":1,"totalNodes":0,"totalRelations":0,"totalAttributes":0,"exportSize":1024}}}}
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-table-integration.test.ts:64:17)
+(fail) MCP Table Integration Tests > Performance and Concurrency > should handle concurrent requests to different tables [0.26ms]
+
+tests/integration/ai-metadata-integration.test.ts:
+🚀 Setting up AIMetadata integration test environment...
+🚀 Setting up integration test environment: ai-metadata-integration
+✅ Test database setup complete: /tmp/bun-graph-db-tests/ai-metadata-integration-1763832084618-nw1ss4tjz.sqlite
+✅ GraphQL server health check passed: http://localhost:5514/graphql
+✅ Integration test environment ready: ai-metadata-integration (http://localhost:5514/graphql)
+✅ AIMetadata integration test environment ready
+🌐 GraphQL Server: http://localhost:5514/graphql
+💾 Database: /tmp/bun-graph-db-tests/ai-metadata-integration-1763832084618-nw1ss4tjz.sqlite
+51 |       `
+52 | 
+53 |       const result = await testContext.graphqlRequest!(query)
+54 | 
+55 |       expect(result.data).toBeDefined()
+56 |       expect(result.data.__type).toBeDefined()
+                                      ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:56:34)
+(fail) AIMetadata Integration Tests > GraphQL Schema Integration > should have AIMetadata types in GraphQL schema [0.55ms]
+81 |         }
+82 |       `
+83 | 
+84 |       const result = await testContext.graphqlRequest!(query)
+85 | 
+86 |       expect(result.data.__type).toBeDefined()
+                                      ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:86:34)
+(fail) AIMetadata Integration Tests > GraphQL Schema Integration > should have AISchemaInfo type definition [0.61ms]
+109 |         }
+110 |       `
+111 | 
+112 |       const result = await testContext.graphqlRequest!(query)
+113 | 
+114 |       expect(result.data.__type).toBeDefined()
+                                       ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:114:34)
+(fail) AIMetadata Integration Tests > GraphQL Schema Integration > should have AIUsagePatterns type definition [0.58ms]
+125 |     test('should create test data and retrieve AIMetadata', async () => {
+126 |       const db = testContext.database!.database.getConnection()
+127 | 
+128 |       // Create test table
+129 |       const tableId = `test-table-${Date.now()}`
+130 |       db.exec(`
+               ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:130:10)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:125:61)
+(fail) AIMetadata Integration Tests > End-to-End AIMetadata Retrieval > should create test data and retrieve AIMetadata [0.67ms]
+247 |       const result = await testContext.graphqlRequest!(query, {
+248 |         tableId: 'non-existent-table-id',
+249 |       })
+250 | 
+251 |       // Should return null for non-existent table without errors
+252 |       expect(result.data.table).toBeNull()
+                                      ^
+error: expect(received).toBeNull()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:252:33)
+(fail) AIMetadata Integration Tests > End-to-End AIMetadata Retrieval > should handle non-existent table gracefully [0.60ms]
+256 |     test('should support custom sample limits', async () => {
+257 |       const db = testContext.database!.database.getConnection()
+258 | 
+259 |       // Create table with multiple nodes
+260 |       const tableId = `sample-test-${Date.now()}`
+261 |       db.exec(`
+               ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:261:10)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:256:49)
+(fail) AIMetadata Integration Tests > End-to-End AIMetadata Retrieval > should support custom sample limits [0.56ms]
+303 |     test('should handle large tables efficiently', async () => {
+304 |       const db = testContext.database!.database.getConnection()
+305 |       const tableId = `large-table-${Date.now()}`
+306 | 
+307 |       // Create table with many attributes
+308 |       db.exec(`
+               ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:308:10)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:303:52)
+(fail) AIMetadata Integration Tests > Performance and Scalability > should handle large tables efficiently [0.58ms]
+357 |       // Create multiple test tables
+358 |       for (let i = 1; i <= 5; i++) {
+359 |         const tableId = `concurrent-table-${i}-${Date.now()}`
+360 |         tableIds.push(tableId)
+361 | 
+362 |         db.exec(`
+                 ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:362:12)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:353:58)
+(fail) AIMetadata Integration Tests > Performance and Scalability > should handle concurrent AIMetadata requests [0.61ms]
+407 | 
+408 |     test('should cache AIMetadata appropriately', async () => {
+409 |       const db = testContext.database!.database.getConnection()
+410 |       const tableId = `cache-test-${Date.now()}`
+411 | 
+412 |       db.exec(`
+               ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:412:10)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:408:51)
+(fail) AIMetadata Integration Tests > Performance and Scalability > should cache AIMetadata appropriately [0.55ms]
+449 |   describe('Data Quality and Validation', () => {
+450 |     test('should provide accurate schema information', async () => {
+451 |       const db = testContext.database!.database.getConnection()
+452 |       const tableId = `accuracy-test-${Date.now()}`
+453 | 
+454 |       db.exec(`
+               ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:454:10)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:450:56)
+(fail) AIMetadata Integration Tests > Data Quality and Validation > should provide accurate schema information [0.59ms]
+506 | 
+507 |     test('should handle various attribute types correctly', async () => {
+508 |       const db = testContext.database!.database.getConnection()
+509 |       const tableId = `types-test-${Date.now()}`
+510 | 
+511 |       db.exec(`
+               ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:511:10)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:507:61)
+(fail) AIMetadata Integration Tests > Data Quality and Validation > should handle various attribute types correctly [0.50ms]
+551 |   describe('Error Handling and Edge Cases', () => {
+552 |     test('should handle tables with no attributes', async () => {
+553 |       const db = testContext.database!.database.getConnection()
+554 |       const tableId = `empty-attrs-${Date.now()}`
+555 | 
+556 |       db.exec(`
+               ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:556:10)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:552:53)
+(fail) AIMetadata Integration Tests > Error Handling and Edge Cases > should handle tables with no attributes [0.48ms]
+585 | 
+586 |     test('should handle tables with no templates', async () => {
+587 |       const db = testContext.database!.database.getConnection()
+588 |       const tableId = `no-templates-${Date.now()}`
+589 | 
+590 |       db.exec(`
+               ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:590:10)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:586:52)
+(fail) AIMetadata Integration Tests > Error Handling and Edge Cases > should handle tables with no templates [0.44ms]
+632 |       `
+633 | 
+634 |       const result = await testContext.graphqlRequest!(query)
+635 | 
+636 |       // Should handle null ID gracefully
+637 |       expect(result.errors).toBeDefined()
+                                  ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/ai-metadata-integration.test.ts:637:29)
+(fail) AIMetadata Integration Tests > Error Handling and Edge Cases > should handle database connection issues gracefully [0.37ms]
+🧹 Cleaning up AIMetadata integration test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/ai-metadata-integration-1763832084618-nw1ss4tjz.sqlite
+✅ Integration test cleanup completed: ai-metadata-integration
+✅ Cleanup completed
+
+tests/integration/mcp-rest-proxy-improved.test.ts:
+🚀 Setting up integration test environment: mcp-rest-proxy-integration-improved
+✅ Test database setup complete: /tmp/bun-graph-db-tests/mcp-rest-proxy-integration-improved-1763832084661-q7tyk6ien.sqlite
+✅ GraphQL server health check passed: http://localhost:5515/graphql
+🚀 Integration Test Environment Ready:
+   - Server Port: 5515
+   - GraphQL: http://localhost:5515/graphql
+   - REST API: http://localhost:5515/api
+   - MCP: http://localhost:5515/mcp
+43 |   describe('MCP Protocol Compliance', () => {
+44 |     test('should handle MCP initialize method', async () => {
+45 |       const result = await mcpHelper.initialize()
+46 | 
+47 |       expect(result).toBeDefined()
+48 |       expect(result.jsonrpc).toBe('2.0')
+                                  ^
+error: expect(received).toBe(expected)
+
+Expected: "2.0"
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy-improved.test.ts:48:30)
+(fail) Improved MCP-to-REST API Proxy Integration Tests > MCP Protocol Compliance > should handle MCP initialize method [0.60ms]
+61 | 
+62 |     test('should list all 27 MCP tools', async () => {
+63 |       const result = await mcpHelper.listTools()
+64 | 
+65 |       expect(result).toBeDefined()
+66 |       expect(result.result).toBeDefined()
+                                 ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy-improved.test.ts:66:29)
+(fail) Improved MCP-to-REST API Proxy Integration Tests > MCP Protocol Compliance > should list all 27 MCP tools [0.72ms]
+   Testing System health check...
+   ✅ healthCheck working
+   Testing System statistics query...
+   ✅ systemStats working
+   Testing Get tables with limit...
+   ✅ getTables working
+   Testing Search templates...
+   ✅ searchTemplates working
+✅ GET parameter transformation working
+✅ POST parameter transformation working
+✅ Complex parameter handling working
+✅ MCP and REST API consistency verified
+✅ Data consistency maintained across access patterns
+✅ Malformed JSON rejected at network level
+✅ Invalid tool arguments handled gracefully
+🏎️ Testing concurrent MCP calls...
+🏁 Concurrent Results: 15 successful, 0 failed, 1ms total
+✅ Concurrent request handling verified
+📊 Testing performance under load...
+📈 Load Test Results: 20/20 successful, avg 0.00ms per request
+✅ Performance under load verified
+436 |         'Attribute Management': ['createAttribute', 'setNodeAttribute'],
+437 |         'Data Export': ['exportTableWithNodes', 'exportTemplate'],
+438 |       }
+439 | 
+440 |       const toolsResult = await mcpHelper.listTools()
+441 |       const availableTools = toolsResult.result.tools.map((tool: any) => tool.name)
+                                               ^
+TypeError: undefined is not an object (evaluating '(await mcpHelper.listTools()).result.tools')
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/mcp-rest-proxy-improved.test.ts:441:42)
+(fail) Improved MCP-to-REST API Proxy Integration Tests > Tool Category Coverage > should cover all major tool categories [0.73ms]
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/mcp-rest-proxy-integration-improved-1763832084661-q7tyk6ien.sqlite
+✅ Integration test cleanup completed: mcp-rest-proxy-integration-improved
+🚀 Setting up integration test environment: auto-integration-test
+✅ Test database setup complete: /tmp/bun-graph-db-tests/auto-integration-test-1763832084698-evheuwhha.sqlite
+✅ GraphQL server health check passed: http://localhost:5516/graphql
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/auto-integration-test-1763832084698-evheuwhha.sqlite
+✅ Integration test cleanup completed: auto-integration-test
+🚀 Setting up integration test environment: quick-test-0
+✅ Test database setup complete: /tmp/bun-graph-db-tests/quick-test-0-1763832084730-lkznwumxn.sqlite
+✅ GraphQL server health check passed: http://localhost:5517/graphql
+✅ Quick test 1 completed
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/quick-test-0-1763832084730-lkznwumxn.sqlite
+✅ Integration test cleanup completed: quick-test-0
+🚀 Setting up integration test environment: quick-test-1
+✅ Test database setup complete: /tmp/bun-graph-db-tests/quick-test-1-1763832084762-knteqgclp.sqlite
+✅ GraphQL server health check passed: http://localhost:5518/graphql
+✅ Quick test 2 completed
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/quick-test-1-1763832084762-knteqgclp.sqlite
+✅ Integration test cleanup completed: quick-test-1
+🚀 Setting up integration test environment: quick-test-2
+✅ Test database setup complete: /tmp/bun-graph-db-tests/quick-test-2-1763832084793-aluchh2f7.sqlite
+✅ GraphQL server health check passed: http://localhost:5519/graphql
+✅ Quick test 3 completed
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/quick-test-2-1763832084793-aluchh2f7.sqlite
+✅ Integration test cleanup completed: quick-test-2
+
+tests/integration/system-queries-integration.test.ts:
+🚀 Setting up integration test environment for system queries...
+🚀 Setting up integration test environment: system-queries-integration
+✅ Test database setup complete: /tmp/bun-graph-db-tests/system-queries-integration-1763832084825-upogagavf.sqlite
+✅ GraphQL server health check passed: http://localhost:5520/graphql
+✅ Integration test environment ready: system-queries-integration (http://localhost:5520/graphql)
+✅ Integration test environment ready
+🌐 GraphQL Server: http://localhost:5520/graphql
+💾 Database: /tmp/bun-graph-db-tests/system-queries-integration-1763832084825-upogagavf.sqlite
+42 |       `
+43 | 
+44 |       const result = await testContext.graphqlRequest!(query)
+45 | 
+46 |       expect(result.data).toBeDefined()
+47 |       expect(result.data.__schema).toBeDefined()
+                                        ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:47:36)
+(fail) System Queries - Integration Tests with Server Isolation > GraphQL Schema Introspection > should have system query types in schema [0.52ms]
+76 |       `
+77 | 
+78 |       const result = await testContext.graphqlRequest!(query)
+79 | 
+80 |       expect(result.data).toBeDefined()
+81 |       expect(result.data.__type).toBeDefined()
+                                      ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:81:34)
+(fail) System Queries - Integration Tests with Server Isolation > GraphQL Schema Introspection > should support GraphQL introspection queries [0.41ms]
+ 97 |       `
+ 98 | 
+ 99 |       const result = await testContext.graphqlRequest!(query)
+100 | 
+101 |       expect(result.data).toBeDefined()
+102 |       expect(result.data.__schema).toBeDefined()
+                                         ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:102:36)
+(fail) System Queries - Integration Tests with Server Isolation > Database Connection Through GraphQL > should connect to isolated database [0.41ms]
+140 |       `
+141 | 
+142 |       const result = await testContext.graphqlRequest!(query)
+143 | 
+144 |       expect(result.data).toBeDefined()
+145 |       expect(result.data.__schema).toBeDefined()
+                                         ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:145:36)
+(fail) System Queries - Integration Tests with Server Isolation > System Statistics Integration > should provide system information through GraphQL [0.34ms]
+156 |       `
+157 | 
+158 |       const result = await testContext.graphqlRequest!(query)
+159 | 
+160 |       // Should return errors for non-existent fields
+161 |       expect(result.errors).toBeDefined()
+                                  ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:161:29)
+(fail) System Queries - Integration Tests with Server Isolation > System Statistics Integration > should handle system query errors gracefully [0.49ms]
+185 |       const duration = performance.now() - startTime
+186 | 
+187 |       // All requests should succeed
+188 |       results.forEach((result) => {
+189 |         expect(result.data).toBeDefined()
+190 |         expect(result.data.__schema).toBeDefined()
+                                           ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:190:38)
+      at forEach (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:188:15)
+(fail) System Queries - Integration Tests with Server Isolation > Performance and Reliability > should handle multiple concurrent requests [0.62ms]
+225 |       // Test basic connectivity
+226 |       const query = `query { __typename }`
+227 | 
+228 |       const result = await testContext.graphqlRequest!(query)
+229 |       expect(result.data).toBeDefined()
+230 |       expect(result.data.__typename).toBe('Query')
+                                           ^
+error: expect(received).toBe(expected)
+
+Expected: "Query"
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:230:38)
+(fail) System Queries - Integration Tests with Server Isolation > Performance and Reliability > should handle server restart gracefully [0.46ms]
+267 |         }
+268 |       `
+269 | 
+270 |       const result = await testContext.graphqlRequest!(query)
+271 | 
+272 |       expect(result.errors).toBeDefined()
+                                  ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/integration/system-queries-integration.test.ts:272:29)
+(fail) System Queries - Integration Tests with Server Isolation > Error Handling and Edge Cases > should provide meaningful error messages [0.45ms]
+🧹 Cleaning up integration test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/system-queries-integration-1763832084825-upogagavf.sqlite
+✅ Integration test cleanup completed: system-queries-integration
+✅ Cleanup completed
+
+tests/unified-template-execution/subscription-template.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'graphql' from '/home/user/bun-graph-db/tests/unified-template-execution/subscription-template.test.ts'
+-------------------------------
+
+
+tests/e2e/mcp-rest-proxy-e2e-improved.test.ts:
+🚀 Setting up e2e test environment: mcp-rest-proxy-e2e-improved
+✅ Test database setup complete: /tmp/bun-graph-db-tests/mcp-rest-proxy-e2e-improved-1763832084865-tp9wprgbp.sqlite
+✅ GraphQL endpoint ready: http://localhost:5521/graphql
+✅ REST API endpoint ready: http://localhost:5521/api
+✅ MCP endpoint ready: http://localhost:5521/mcp
+323 |         (101, 'e2e-users', 'E2E Users Table', datetime('now'), datetime('now')),
+324 |         (102, 'e2e-projects', 'E2E Projects Table', datetime('now'), datetime('now'))
+325 |       `)
+326 | 
+327 |       // 테스트 노드 생성
+328 |       db.exec(`
+               ^
+SQLiteError: no such table: table_nodes
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at <anonymous> (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:328:10)
+      at transaction (bun:sqlite:402:27)
+      at seedTestData (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:343:6)
+      at seedTestData (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:313:30)
+      at setupE2ETest (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:294:18)
+(fail) Improved MCP-to-REST API Proxy E2E Tests > (unnamed) [20.06ms]
+34 |     console.log(`   - REST API: http://localhost:${testEnvironment.server!.port}/api`)
+35 |     console.log(`   - MCP: http://localhost:${testEnvironment.server!.port}/mcp`)
+36 |   }, 60000)
+37 | 
+38 |   afterAll(async () => {
+39 |     await testEnvironment.cleanup()
+               ^
+TypeError: undefined is not an object (evaluating 'testEnvironment.cleanup')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e-improved.test.ts:39:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e-improved.test.ts:38:12)
+(fail) Improved MCP-to-REST API Proxy E2E Tests > (unnamed) [0.37ms]
+🚀 Setting up e2e test environment: auto-server-example
+✅ Test database setup complete: /tmp/bun-graph-db-tests/auto-server-example-1763832084886-j6o5vsxl0.sqlite
+✅ GraphQL endpoint ready: http://localhost:5522/graphql
+✅ REST API endpoint ready: http://localhost:5522/api
+✅ MCP endpoint ready: http://localhost:5522/mcp
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/auto-server-example-1763832084886-j6o5vsxl0.sqlite
+✅ E2E test cleanup completed: auto-server-example
+411 |   test('should work with auto server management', async () => {
+412 |     await withAutoServer(
+413 |       createE2EConfig('auto-server-example'),
+414 |       async (env) => {
+415 |         const result = await env.mcpHelper!.callTool('healthCheck', {})
+416 |         expect(result.success).toBe(true)
+      ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: undefined
+
+      at toBe (unknown:1:1)
+      at /home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e-improved.test.ts:416:32
+      at withAutoServer (/home/user/bun-graph-db/tests/fixtures/unified-test-environment.ts:359:18)
+      at /home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e-improved.test.ts:412:11
+(fail) withAutoServer Pattern Example > should work with auto server management [36.60ms]
+🚀 Setting up e2e test environment: auto-1
+✅ Test database setup complete: /tmp/bun-graph-db-tests/auto-1-1763832084922-2y7skeykq.sqlite
+🚀 Setting up e2e test environment: auto-2
+✅ Test database setup complete: /tmp/bun-graph-db-tests/auto-2-1763832084933-29wr0rsr6.sqlite
+🚀 Setting up e2e test environment: auto-3
+✅ Test database setup complete: /tmp/bun-graph-db-tests/auto-3-1763832084945-k7ntftnb1.sqlite
+✅ GraphQL endpoint ready: http://localhost:5523/graphql
+✅ GraphQL endpoint ready: http://localhost:5524/graphql
+✅ GraphQL endpoint ready: http://localhost:5525/graphql
+✅ REST API endpoint ready: http://localhost:5523/api
+✅ REST API endpoint ready: http://localhost:5524/api
+✅ REST API endpoint ready: http://localhost:5525/api
+✅ MCP endpoint ready: http://localhost:5523/mcp
+✅ MCP endpoint ready: http://localhost:5524/mcp
+✅ MCP endpoint ready: http://localhost:5525/mcp
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/auto-3-1763832084945-k7ntftnb1.sqlite
+✅ E2E test cleanup completed: auto-3
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/auto-2-1763832084933-29wr0rsr6.sqlite
+✅ E2E test cleanup completed: auto-2
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/auto-1-1763832084922-2y7skeykq.sqlite
+✅ E2E test cleanup completed: auto-1
+434 |         return env.mcpHelper!.callTool('healthCheck', {})
+435 |       }),
+436 |     ])
+437 | 
+438 |     results.forEach((result) => {
+439 |       expect(result.success).toBe(true)
+                                   ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e-improved.test.ts:439:30)
+      at forEach (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e-improved.test.ts:438:13)
+(fail) withAutoServer Pattern Example > should handle multiple auto server instances [111.16ms]
+
+tests/e2e/mcp-rest-proxy-e2e.test.ts:
+E2E Test Server Status: Running
+E2E Step 1: Creating table...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:105:27)
+(fail) MCP-to-REST API Proxy E2E Tests > Complete Workflow: Table Management > should create table → add attributes → create nodes workflow [0.67ms]
+E2E Verification: Querying tables...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:150:28)
+(fail) MCP-to-REST API Proxy E2E Tests > Complete Workflow: Table Management > should query table information and verify data consistency [0.60ms]
+E2E Graph: Creating relation...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:185:30)
+(fail) MCP-to-REST API Proxy E2E Tests > Graph Operations Workflow > should create relations and test graph traversal [0.56ms]
+E2E Attributes: Setting node attribute...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:229:28)
+(fail) MCP-to-REST API Proxy E2E Tests > Graph Operations Workflow > should handle node attributes operations [0.42ms]
+E2E Template: Creating template...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:274:30)
+(fail) MCP-to-REST API Proxy E2E Tests > Template Operations Workflow > should create → execute → export template workflow [0.53ms]
+E2E Export: Exporting table data...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:325:28)
+(fail) MCP-to-REST API Proxy E2E Tests > Data Export and Import Workflow > should export table data and validate format [0.51ms]
+E2E Import: Importing template...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:365:28)
+(fail) MCP-to-REST API Proxy E2E Tests > Data Export and Import Workflow > should handle template import workflow [0.57ms]
+E2E Error: Testing invalid tool name...
+E2E Error: Testing invalid parameters...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:396:29)
+(fail) MCP-to-REST API Proxy E2E Tests > Error Handling and Recovery > should handle and recover from various error scenarios [0.76ms]
+E2E Performance: Testing concurrent requests...
+E2E Performance Results: 20 successful, 0 failed, 0ms total
+E2E Performance Testing completed
+E2E Performance: Testing large payloads...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:479:27)
+(fail) MCP-to-REST API Proxy E2E Tests > Performance and Stress Testing > should handle large data payloads [1.34ms]
+E2E Integration: Verifying data integrity...
+79 |     if (mcpResponse.error) {
+80 |       throw new Error(`MCP Error: ${JSON.stringify(mcpResponse.error)}`)
+81 |     }
+82 | 
+83 |     if (!mcpResponse.result?.content?.[0]?.text) {
+84 |       throw new Error('Invalid MCP response structure')
+                     ^
+error: Invalid MCP response structure
+      at extractRestResponse (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:84:17)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:500:25)
+(fail) MCP-to-REST API Proxy E2E Tests > Integration Verification > should verify MCP proxy maintains data integrity [0.47ms]
+E2E Integration: Verifying all tools accessible...
+533 |         headers: { 'Content-Type': 'application/json' },
+534 |         body: JSON.stringify(toolsRequest),
+535 |       })
+536 | 
+537 |       const toolsResponse: McpResponse = await response.json()
+538 |       expect(toolsResponse.result.tools.length).toBe(27)
+                                 ^
+TypeError: undefined is not an object (evaluating 'toolsResponse.result.tools')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/mcp-rest-proxy-e2e.test.ts:538:28)
+(fail) MCP-to-REST API Proxy E2E Tests > Integration Verification > should verify all 27 tools are accessible through proxy [0.51ms]
+E2E Test cleanup completed
+
+tests/e2e/ai-metadata-documentation.test.ts:
+🚀 Setting up AIMetadata documentation E2E test environment...
+🚀 Setting up integration test environment: ai-metadata-documentation-e2e
+✅ Test database setup complete: /tmp/bun-graph-db-tests/ai-metadata-documentation-e2e-1763832085051-6qq2nouay.sqlite
+✅ GraphQL server health check passed: http://localhost:5526/graphql
+✅ Integration test environment ready: ai-metadata-documentation-e2e (http://localhost:5526/graphql)
+✅ AIMetadata documentation E2E environment ready
+🌐 GraphQL Server: http://localhost:5526/graphql
+💾 Database: /tmp/bun-graph-db-tests/ai-metadata-documentation-e2e-1763832085051-6qq2nouay.sqlite
+35 |   async function setupComprehensiveTestData() {
+36 |     const db = testContext.database!.database.getConnection()
+37 | 
+38 |     // Create comprehensive test table with full metadata
+39 |     const tableId = 'comprehensive-test-table'
+40 |     db.exec(`
+            ^
+SQLiteError: table tables has no column named name
+      errno: 1,
+ byteOffset: -1,
+
+      at run (bun:sqlite:322:21)
+      at setupComprehensiveTestData (/home/user/bun-graph-db/tests/e2e/ai-metadata-documentation.test.ts:40:8)
+      at setupComprehensiveTestData (/home/user/bun-graph-db/tests/e2e/ai-metadata-documentation.test.ts:35:47)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/ai-metadata-documentation.test.ts:26:11)
+(fail) AIMetadata Documentation E2E Tests > (unnamed) [24.65ms]
+🧹 Cleaning up AIMetadata documentation E2E environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/ai-metadata-documentation-e2e-1763832085051-6qq2nouay.sqlite
+✅ Integration test cleanup completed: ai-metadata-documentation-e2e
+✅ E2E Cleanup completed
+
+tests/e2e/doc-system-e2e.test.ts:
+🌐 Setting up E2E test environment for doc system...
+🌐 Setting up E2E test environment: doc-system-e2e
+✅ Test database setup complete: /tmp/bun-graph-db-tests/doc-system-e2e-1763832085091-jso297od5.sqlite
+📊 Seed data loaded for: doc-system-e2e
+✅ E2E test environment ready: doc-system-e2e
+✅ E2E test environment ready
+🌐 GraphQL Server: http://localhost:5527/graphql
+💾 Database: /tmp/bun-graph-db-tests/doc-system-e2e-1763832085091-jso297od5.sqlite
+78 | 
+79 |       const createResult = await testContext.graphqlRequest!(createMutation, {
+80 |         input: { tableId, category, content: originalContent },
+81 |       })
+82 | 
+83 |       expect(createResult.data.createDoc.success).toBe(true)
+                                    ^
+TypeError: undefined is not an object (evaluating 'createResult.data.createDoc.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:83:32)
+(fail) Doc System - End-to-End Tests > Complete Documentation Workflow > should support full CRUD workflow for documentation [1.01ms]
+235 |       // Execute all operations concurrently
+236 |       const results = await Promise.all(operations)
+237 | 
+238 |       // Verify all operations succeeded
+239 |       results.forEach((result, index) => {
+240 |         if (!result.data.createDoc.success) {
+                               ^
+TypeError: undefined is not an object (evaluating 'result.data.createDoc.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:240:26)
+      at forEach (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:239:15)
+(fail) Doc System - End-to-End Tests > Complete Documentation Workflow > should handle multiple tables and categories [1.80ms]
+308 |       const filterResult = await testContext.graphqlRequest!(filterQuery, {
+309 |         tableId: '58',
+310 |         category: 'example',
+311 |       })
+312 | 
+313 |       expect(filterResult.data.getDocs.docs).toBeDefined()
+                                     ^
+TypeError: undefined is not an object (evaluating 'filterResult.data.getDocs.docs')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:313:32)
+(fail) Doc System - End-to-End Tests > Search and Discovery > should support filtering documentation by category [0.83ms]
+336 |       const result = await testContext.graphqlRequest!(query, {
+337 |         tableId: '58',
+338 |         pagination: { limit: 5, offset: 0 },
+339 |       })
+340 | 
+341 |       expect(result.data.getDocs).toBeDefined()
+                                        ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:341:35)
+(fail) Doc System - End-to-End Tests > Search and Discovery > should support filtering and pagination [0.37ms]
+371 |           content: 'Test content',
+372 |         },
+373 |       })
+374 | 
+375 |       // Should fail due to referential integrity
+376 |       expect(result.data.createDoc.success).toBe(false)
+                               ^
+TypeError: undefined is not an object (evaluating 'result.data.createDoc.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:376:26)
+(fail) Doc System - End-to-End Tests > Data Consistency and Integrity > should maintain referential integrity [0.39ms]
+411 | 
+412 |       const results = await Promise.all(operations)
+413 | 
+414 |       // All operations should succeed
+415 |       results.forEach((result, index) => {
+416 |         if (!result.data.createDoc.success) {
+                               ^
+TypeError: undefined is not an object (evaluating 'result.data.createDoc.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:416:26)
+      at forEach (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:415:15)
+(fail) Doc System - End-to-End Tests > Data Consistency and Integrity > should handle concurrent operations safely [0.59ms]
+478 | 
+479 |       const results = await Promise.all(operations)
+480 | 
+481 |       // Log any failures
+482 |       results.forEach((result, index) => {
+483 |         if (!result.data.createDoc.success) {
+                               ^
+TypeError: undefined is not an object (evaluating 'result.data.createDoc.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:483:26)
+      at forEach (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:482:15)
+(fail) Doc System - End-to-End Tests > Performance and Scalability > should handle large documentation sets efficiently [1.00ms]
+582 |           if (testCase.content === '') {
+583 |             // Empty content should fail
+584 |             expect(result.errors).toBeDefined()
+585 |           } else {
+586 |             // Others should succeed
+587 |             if (!result.data.createDoc.success) {
+                                   ^
+TypeError: undefined is not an object (evaluating 'result.data.createDoc.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:587:30)
+(fail) Doc System - End-to-End Tests > Error Recovery and Resilience > should recover from temporary failures [0.80ms]
+617 | 
+618 |       // Query for non-existent ID
+619 |       const result = await testContext.graphqlRequest!(query, { id: '99999' })
+620 | 
+621 |       // Should return null, not throw error
+622 |       expect(result.data.getDoc).toBeNull()
+                                       ^
+error: expect(received).toBeNull()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/e2e/doc-system-e2e.test.ts:622:34)
+(fail) Doc System - End-to-End Tests > Error Recovery and Resilience > should handle database connection issues gracefully [0.36ms]
+🧹 Cleaning up E2E test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/doc-system-e2e-1763832085091-jso297od5.sqlite
+✅ E2E test cleanup completed: doc-system-e2e
+✅ E2E cleanup completed
+
+tests/contract/table-isolation-contract.test.ts:
+48 |         method: 'POST',
+49 |         headers: { 'Content-Type': 'application/json' },
+50 |         body: JSON.stringify(toolsListRequest)
+51 |       })
+52 | 
+53 |       expect(response1.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/table-isolation-contract.test.ts:53:32)
+(fail) Table Isolation Contract Tests > Tool Set Isolation > should return different tool sets for different table endpoints [0.52ms]
+103 | 
+104 |       const responses1 = await Promise.all(requests1)
+105 |       const responses2 = await Promise.all(requests2)
+106 | 
+107 |       // All requests should succeed
+108 |       responses1.forEach(response => expect(response.status).toBe(200))
+                ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at forEach (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/table-isolation-contract.test.ts:108:18)
+(fail) Table Isolation Contract Tests > Tool Set Isolation > should maintain tool isolation across multiple requests [0.57ms]
+211 |         method: 'POST',
+212 |         headers: { 'Content-Type': 'application/json' },
+213 |         body: JSON.stringify(toolsListRequest)
+214 |       })
+215 | 
+216 |       expect(response.status).toBe(404)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 404
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/table-isolation-contract.test.ts:216:31)
+(fail) Table Isolation Contract Tests > Table Context Validation > should validate table existence before serving tools [0.38ms]
+239 |         method: 'POST',
+240 |         headers: { 'Content-Type': 'application/json' },
+241 |         body: JSON.stringify(initializeRequest)
+242 |       })
+243 | 
+244 |       expect(initResponse.status).toBe(200)
+                                        ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/table-isolation-contract.test.ts:244:35)
+(fail) Table Isolation Contract Tests > Table Context Validation > should maintain table context across MCP lifecycle [0.46ms]
+296 | 
+297 |       const responses = await Promise.all(concurrentRequests)
+298 | 
+299 |       // All requests should succeed independently
+300 |       responses.forEach((response, index) => {
+301 |         expect(response.status).toBe(200)
+                                      ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/table-isolation-contract.test.ts:301:33)
+      at forEach (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/table-isolation-contract.test.ts:300:17)
+(fail) Table Isolation Contract Tests > Concurrent Access Isolation > should handle concurrent requests to different tables independently [0.51ms]
+335 | 
+336 |       const responses = await Promise.all(requests)
+337 |       const successfulResponses = responses.filter(r => r.status === 200)
+338 | 
+339 |       // Most requests should succeed (allowing for some to fail under high load)
+340 |       expect(successfulResponses.length).toBeGreaterThan(numRequests * 0.8)
+                                               ^
+error: expect(received).toBeGreaterThan(expected)
+
+Expected: > 16
+Received: 0
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/table-isolation-contract.test.ts:340:42)
+(fail) Table Isolation Contract Tests > Concurrent Access Isolation > should maintain isolation under high concurrent load [0.61ms]
+
+tests/contract/mcp-route-validation.test.ts:
+51 |           headers: { 'Content-Type': 'application/json' },
+52 |           body: JSON.stringify(request)
+53 |         })
+54 | 
+55 |         // Should not fail due to invalid table ID format
+56 |         expect([200, 404].includes(response.status)).toBe(true)
+                                                          ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-route-validation.test.ts:56:54)
+(fail) MCP Route Contract Tests > Valid Table ID Route Acceptance > should accept valid alphanumeric table IDs [0.51ms]
+82 |           headers: { 'Content-Type': 'application/json' },
+83 |           body: JSON.stringify(request)
+84 |         })
+85 | 
+86 |         // Should not fail due to invalid table ID format
+87 |         expect([200, 404].includes(response.status)).toBe(true)
+                                                          ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-route-validation.test.ts:87:54)
+(fail) MCP Route Contract Tests > Valid Table ID Route Acceptance > should handle UUID format table IDs [0.37ms]
+141 |         method: 'POST',
+142 |         headers: { 'Content-Type': 'application/json' },
+143 |         body: JSON.stringify(request)
+144 |       })
+145 | 
+146 |       expect(response.status).toBe(404)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 404
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-route-validation.test.ts:146:31)
+(fail) MCP Route Contract Tests > Invalid Table ID Route Rejection > should return 404 for non-existent table IDs [0.36ms]
+179 |           headers: { 'Content-Type': 'application/json' },
+180 |           body: JSON.stringify(request)
+181 |         })
+182 | 
+183 |         // Should return 404 for pattern mismatches
+184 |         expect(response.status).toBe(404)
+                                      ^
+error: expect(received).toBe(expected)
+
+Expected: 404
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-route-validation.test.ts:184:33)
+(fail) MCP Route Contract Tests > Route Pattern Validation > should only match exact /sub/:tableId/mcp pattern [0.48ms]
+200 |         headers: { 'Content-Type': 'application/json' },
+201 |         body: JSON.stringify(request)
+202 |       })
+203 | 
+204 |       // Should handle URL decoding properly
+205 |       expect([200, 404].includes(response.status)).toBe(true)
+                                                         ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-route-validation.test.ts:205:52)
+(fail) MCP Route Contract Tests > Route Pattern Validation > should handle URL encoded table IDs properly [0.36ms]
+214 |         const response = await fetch(`${baseUrl}/sub/${validTableId}/mcp`, {
+215 |           method
+216 |         })
+217 | 
+218 |         // Should reject non-POST methods
+219 |         expect([405, 400].includes(response.status)).toBe(true)
+                                                           ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-route-validation.test.ts:219:54)
+(fail) MCP Route Contract Tests > HTTP Method Validation > should only accept POST requests for JSON-RPC [0.50ms]
+233 |         method: 'POST',
+234 |         body: JSON.stringify(request)
+235 |       })
+236 | 
+237 |       // May be lenient about content-type, but should still process
+238 |       expect([200, 400].includes(response.status)).toBe(true)
+                                                         ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-route-validation.test.ts:238:52)
+(fail) MCP Route Contract Tests > HTTP Method Validation > should require Content-Type header for POST requests [0.39ms]
+270 |           headers: { 'Content-Type': 'application/json' },
+271 |           body: JSON.stringify(request)
+272 |         })
+273 | 
+274 |         // Should safely reject malicious table IDs
+275 |         expect([400, 404].includes(response.status)).toBe(true)
+                                                           ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-route-validation.test.ts:275:54)
+(fail) MCP Route Contract Tests > Security Validation > should prevent path traversal attacks in table ID [0.51ms]
+
+tests/contract/graphql-mapping.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'graphql' from '/home/user/bun-graph-db/tests/contract/graphql-mapping.test.ts'
+-------------------------------
+
+
+tests/contract/mcp-protocol.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'graphql-yoga' from '/home/user/bun-graph-db/tests/fixtures/test-server-manager.ts'
+-------------------------------
+
+
+tests/contract/tool-schema-validation.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module '../../specs/005-graphql-mcp-graphql/contracts/graphql-tools.json' from '/home/user/bun-graph-db/tests/contract/tool-schema-validation.test.ts'
+-------------------------------
+
+
+tests/contract/mcp-protocol-compliance.test.ts:
+45 |         method: 'POST',
+46 |         headers: { 'Content-Type': 'application/json' },
+47 |         body: JSON.stringify(initializeRequest)
+48 |       })
+49 | 
+50 |       expect(response.status).toBe(200)
+                                   ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:50:31)
+(fail) MCP Protocol Contract Tests > JSON-RPC 2.0 Compliance > should handle initialize method with proper JSON-RPC format [0.52ms]
+73 |         method: 'POST',
+74 |         headers: { 'Content-Type': 'application/json' },
+75 |         body: JSON.stringify(toolsListRequest)
+76 |       })
+77 | 
+78 |       expect(response.status).toBe(200)
+                                   ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:78:31)
+(fail) MCP Protocol Contract Tests > JSON-RPC 2.0 Compliance > should handle tools/list method with proper JSON-RPC format [0.38ms]
+110 |         body: JSON.stringify(toolsListRequest)
+111 |       })
+112 | 
+113 |       const toolsResult = await response.json()
+114 | 
+115 |       if (toolsResult.result.tools.length > 0) {
+                            ^
+TypeError: undefined is not an object (evaluating 'toolsResult.result.tools')
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:115:23)
+(fail) MCP Protocol Contract Tests > JSON-RPC 2.0 Compliance > should handle tools/call method with proper JSON-RPC format [0.44ms]
+160 |       })
+161 | 
+162 |       const result = await response.json()
+163 | 
+164 |       // Validate JSON-RPC 2.0 error response format
+165 |       expect(result).toHaveProperty('jsonrpc', '2.0')
+                           ^
+error: expect(received).toHaveProperty(path, value)
+
+Expected path: "jsonrpc"
+
+Expected value: "2.0"
+
+Unable to find property
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:165:22)
+(fail) MCP Protocol Contract Tests > JSON-RPC 2.0 Compliance > should return proper JSON-RPC error for invalid request [0.36ms]
+186 |         method: 'POST',
+187 |         headers: { 'Content-Type': 'application/json' },
+188 |         body: JSON.stringify(request)
+189 |       })
+190 | 
+191 |       expect(response.status).toBe(200)
+                                    ^
+error: expect(received).toBe(expected)
+
+Expected: 200
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:191:31)
+(fail) MCP Protocol Contract Tests > HTTP Transport Compliance > should accept POST requests with proper content type [0.35ms]
+196 |       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
+197 |         method: 'GET'
+198 |       })
+199 | 
+200 |       // Should return method not allowed or handle according to MCP spec
+201 |       expect([405, 400].includes(response.status)).toBe(true)
+                                                         ^
+error: expect(received).toBe(expected)
+
+Expected: true
+Received: false
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:201:52)
+(fail) MCP Protocol Contract Tests > HTTP Transport Compliance > should reject GET requests to MCP endpoint [0.31ms]
+208 |         body: 'invalid json {'
+209 |       })
+210 | 
+211 |       const result = await response.json()
+212 | 
+213 |       expect(result).toHaveProperty('jsonrpc', '2.0')
+                           ^
+error: expect(received).toHaveProperty(path, value)
+
+Expected path: "jsonrpc"
+
+Expected value: "2.0"
+
+Unable to find property
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:213:22)
+(fail) MCP Protocol Contract Tests > HTTP Transport Compliance > should handle malformed JSON gracefully [0.34ms]
+234 |         headers: { 'Content-Type': 'application/json' },
+235 |         body: JSON.stringify(initializeRequest)
+236 |       })
+237 | 
+238 |       const result = await response.json()
+239 |       expect(result.result.protocolVersion).toBe('2025-06-18')
+                          ^
+TypeError: undefined is not an object (evaluating 'result.result.protocolVersion')
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:239:21)
+(fail) MCP Protocol Contract Tests > Protocol Version Negotiation > should handle supported protocol version correctly [0.34ms]
+256 |         headers: { 'Content-Type': 'application/json' },
+257 |         body: JSON.stringify(initializeRequest)
+258 |       })
+259 | 
+260 |       const result = await response.json()
+261 |       expect(result).toHaveProperty('error')
+                           ^
+error: expect(received).toHaveProperty(path)
+
+Expected path: "error"
+
+Unable to find property
+
+      at <anonymous> (/home/user/bun-graph-db/tests/contract/mcp-protocol-compliance.test.ts:261:22)
+(fail) MCP Protocol Contract Tests > Protocol Version Negotiation > should reject unsupported protocol version [0.40ms]
+
+tests/comprehensive/concurrency-transaction-comprehensive.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'graphql-yoga' from '/home/user/bun-graph-db/tests/fixtures/graphql-yoga-helper.ts'
+-------------------------------
+
+
+tests/comprehensive/security-validation-comprehensive.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+tests/comprehensive/template-system-comprehensive.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+181 |   })
+182 | 
+183 |   describe('Template Execution Engine', () => {
+184 |     let testTableId: string
+185 | 
+186 |     beforeEach(async () => {
+          ^
+ReferenceError: beforeEach is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:186:5)
+-------------------------------
+
+🚀 Setting up comprehensive template system test environment...
+🚀 Setting up integration test environment: template-system-comprehensive
+✅ Test database setup complete: /tmp/bun-graph-db-tests/template-system-comprehensive-1763832085204-tit0rswav.sqlite
+✅ GraphQL server health check passed: http://localhost:5528/graphql
+✅ Integration test environment ready: template-system-comprehensive (http://localhost:5528/graphql)
+✅ Test environment ready
+🌐 GraphQL Server: http://localhost:5528/graphql
+💾 Database: /tmp/bun-graph-db-tests/template-system-comprehensive-1763832085204-tit0rswav.sqlite
+70 |       }
+71 | 
+72 |       const result = await testContext.graphqlRequest!<CreateTemplateResponse>(mutation, variables)
+73 | 
+74 |       expect(result.errors).toBeUndefined()
+75 |       expect(result.data.createTemplate.success).toBe(true)
+                              ^
+TypeError: undefined is not an object (evaluating 'result.data.createTemplate.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:75:26)
+(fail) Comprehensive Template System Test Suite > Template Creation and Validation > should create basic template with validation [0.75ms]
+114 |         `,
+115 |         variables: ['tableId', 'searchTerm', 'limit'],
+116 |         tags: ['search', 'parameterized', 'nodes'],
+117 |       }
+118 | 
+119 |       const result = await createTemplateUseCase.execute(templateData)
+                                 ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:119:28)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:85:75)
+(fail) Comprehensive Template System Test Suite > Template Creation and Validation > should create parameterized template with variable validation [0.72ms]
+137 |         `,
+138 |         variables: [],
+139 |         tags: ['invalid'],
+140 |       }
+141 | 
+142 |       const result = await createTemplateUseCase.execute(invalidTemplateData)
+                                 ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:142:28)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:127:64)
+(fail) Comprehensive Template System Test Suite > Template Creation and Validation > should validate GraphQL syntax in template queries [0.34ms]
+158 |         variables: [],
+159 |         tags: ['test'],
+160 |       }
+161 | 
+162 |       // Create first template
+163 |       await createTemplateUseCase.execute(templateData)
+                  ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:163:13)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:153:58)
+(fail) Comprehensive Template System Test Suite > Template Creation and Validation > should handle duplicate template identifiers [0.37ms]
+454 |         `,
+455 |         variables: ['param'],
+456 |         tags: ['export', 'test'],
+457 |       }
+458 | 
+459 |       const createResult = await createTemplateUseCase.execute(templateData)
+                                       ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:459:34)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:442:57)
+(fail) Comprehensive Template System Test Suite > Template Import/Export System > should export single template with metadata [0.46ms]
+501 |           variables: ['id'],
+502 |           tags: ['imported', 'test'],
+503 |         },
+504 |       }
+505 | 
+506 |       const result = await importExportService.importTemplate(JSON.stringify(importData), {
+                                 ^
+ReferenceError: importExportService is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:506:28)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:482:52)
+(fail) Comprehensive Template System Test Suite > Template Import/Export System > should import template with validation [0.60ms]
+525 |         query: 'query { healthCheck { status } }',
+526 |         variables: [],
+527 |         tags: ['original'],
+528 |       }
+529 | 
+530 |       await createTemplateUseCase.execute(originalTemplate)
+                  ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:530:13)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:520:67)
+(fail) Comprehensive Template System Test Suite > Template Import/Export System > should handle import conflicts with overwrite options [0.48ms]
+592 |         },
+593 |       ]
+594 | 
+595 |       const templateIds = []
+596 |       for (const template of templates) {
+597 |         const result = await createTemplateUseCase.execute(template)
+                                   ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:597:30)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:569:52)
+(fail) Comprehensive Template System Test Suite > Template Import/Export System > should batch export multiple templates [0.59ms]
+620 |         variables: [],
+621 |         tags: ['versioned'],
+622 |         version: '1.0.0',
+623 |       }
+624 | 
+625 |       const v1Result = await createTemplateUseCase.execute(templateData)
+                                   ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:625:30)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:614:51)
+(fail) Comprehensive Template System Test Suite > Template Versioning and History > should track template version history [0.59ms]
+656 |         variables: [],
+657 |         tags: ['rollback'],
+658 |       }
+659 | 
+660 |       // Create and update template multiple times
+661 |       const v1Result = await createTemplateUseCase.execute(templateData)
+                                   ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:661:30)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:651:58)
+(fail) Comprehensive Template System Test Suite > Template Versioning and History > should rollback to previous template version [0.60ms]
+692 |         query: 'query { healthCheck { status timestamp } }',
+693 |         variables: [],
+694 |         tags: ['cached'],
+695 |       }
+696 | 
+697 |       await createTemplateUseCase.execute(templateData)
+                  ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:697:13)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:688:56)
+(fail) Comprehensive Template System Test Suite > Template Performance and Optimization > should cache frequently executed templates [0.41ms]
+743 |         `,
+744 |         variables: ['delay'],
+745 |         tags: ['concurrent'],
+746 |       }
+747 | 
+748 |       await createTemplateUseCase.execute(templateData)
+                  ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:748:13)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:726:58)
+(fail) Comprehensive Template System Test Suite > Template Performance and Optimization > should handle concurrent template executions [0.33ms]
+766 |     })
+767 | 
+768 |     test('should optimize large template collections', async () => {
+769 |       // Create many templates
+770 |       const templatePromises = Array.from({ length: 50 }, (_, i) =>
+771 |         createTemplateUseCase.execute({
+              ^
+ReferenceError: createTemplateUseCase is not defined
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:771:9)
+      at from (1:11)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:770:38)
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/template-system-comprehensive.test.ts:768:56)
+(fail) Comprehensive Template System Test Suite > Template Performance and Optimization > should optimize large template collections [0.63ms]
+🧹 Cleaning up comprehensive template system test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/template-system-comprehensive-1763832085204-tit0rswav.sqlite
+✅ Integration test cleanup completed: template-system-comprehensive
+✅ Cleanup completed
+
+tests/comprehensive/e2e-workflow-comprehensive.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+tests/comprehensive/graph-traversal-comprehensive.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+tests/comprehensive/batch-operations-comprehensive.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+tests/comprehensive/graphql-api-comprehensive.test.ts:
+🚀 Setting up comprehensive GraphQL API test environment...
+🚀 Setting up integration test environment: graphql-api-comprehensive
+✅ Test database setup complete: /tmp/bun-graph-db-tests/graphql-api-comprehensive-1763832085263-4zevkezcj.sqlite
+✅ GraphQL server health check passed: http://localhost:5529/graphql
+✅ Integration test environment ready: graphql-api-comprehensive (http://localhost:5529/graphql)
+✅ Test environment ready
+🌐 GraphQL Server: http://localhost:5529/graphql
+💾 Database: /tmp/bun-graph-db-tests/graphql-api-comprehensive-1763832085263-4zevkezcj.sqlite
+48 |       `
+49 | 
+50 |       const result = await testContext.graphqlRequest!<HealthCheckResponse>(query)
+51 | 
+52 |       expect(result.errors).toBeUndefined()
+53 |       expect(result.data.healthCheck).toMatchObject({
+                                           ^
+error: expect(received).toMatchObject(expected)
+
+Matcher error: received value must be a non-null object
+
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:53:39)
+(fail) Comprehensive GraphQL API Test Suite > System Health and Information Queries > should return comprehensive health check information [0.69ms]
+82 |       `
+83 | 
+84 |       const result = await testContext.graphqlRequest!<SystemStatsResponse>(query)
+85 | 
+86 |       expect(result.errors).toBeUndefined()
+87 |       expect(result.data.systemStats.memory).toMatchObject({
+                              ^
+TypeError: undefined is not an object (evaluating 'result.data.systemStats.memory')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:87:26)
+(fail) Comprehensive GraphQL API Test Suite > System Health and Information Queries > should return detailed system statistics [0.39ms]
+132 |       }
+133 | 
+134 |       const result = await testContext.graphqlRequest!(mutation, variables)
+135 | 
+136 |       expect(result.errors).toBeUndefined()
+137 |       expect(result.data.createTable.success).toBe(true)
+                               ^
+TypeError: undefined is not an object (evaluating 'result.data.createTable.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:137:26)
+(fail) Comprehensive GraphQL API Test Suite > Table Management Operations > should create table with comprehensive validation [0.68ms]
+163 |       await testContext.graphqlRequest!(mutation, variables)
+164 | 
+165 |       // Second creation (should fail)
+166 |       const result = await testContext.graphqlRequest!(mutation, variables)
+167 | 
+168 |       expect(result.data.createTable.success).toBe(false)
+                               ^
+TypeError: undefined is not an object (evaluating 'result.data.createTable.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:168:26)
+(fail) Comprehensive GraphQL API Test Suite > Table Management Operations > should handle table creation with duplicate identifier [0.62ms]
+211 |       }
+212 | 
+213 |       const result = await testContext.graphqlRequest!(query, variables)
+214 | 
+215 |       expect(result.errors).toBeUndefined()
+216 |       expect(result.data.searchTables.nodes.length).toBeGreaterThanOrEqual(2)
+                               ^
+TypeError: undefined is not an object (evaluating 'result.data.searchTables.nodes')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:216:26)
+(fail) Comprehensive GraphQL API Test Suite > Table Management Operations > should search tables with complex filters [0.53ms]
+232 |           createTable(input: { identifier: "node-test-table" }) {
+233 |             table { id }
+234 |           }
+235 |         }
+236 |       `)
+237 |       tableId = result.data.createTable.table.id
+                                  ^
+TypeError: undefined is not an object (evaluating '(await testContext.graphqlRequest(`
+        mutation {
+          createTable(input: { identifier: "node-test-table" }) {
+            table { id }
+          }
+        }
+      `)).data.createTable.table')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:237:29)
+(fail) Comprehensive GraphQL API Test Suite > Node Operations with Complex Scenarios > should create node with validation and metadata [0.40ms]
+418 |             table { id }
+419 |             errors { message }
+420 |           }
+421 |         }
+422 |       `)
+423 |       if (!result.data.createTable.success) {
+                             ^
+TypeError: undefined is not an object (evaluating 'result.data.createTable.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:423:24)
+(fail) Comprehensive GraphQL API Test Suite > Attribute Management > should create multiple attribute types [0.47ms]
+418 |             table { id }
+419 |             errors { message }
+420 |           }
+421 |         }
+422 |       `)
+423 |       if (!result.data.createTable.success) {
+                             ^
+TypeError: undefined is not an object (evaluating 'result.data.createTable.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:423:24)
+(fail) Comprehensive GraphQL API Test Suite > Attribute Management > should set and validate attribute values [0.33ms]
+560 |           createTable(input: { identifier: "relation-test-table" }) {
+561 |             table { id }
+562 |           }
+563 |         }
+564 |       `)
+565 |       tableId = tableResult.data.createTable.table.id
+                                       ^
+TypeError: undefined is not an object (evaluating '(await testContext.graphqlRequest(`
+        mutation {
+          createTable(input: { identifier: "relation-test-table" }) {
+            table { id }
+          }
+        }
+      `)).data.createTable.table')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:565:34)
+(fail) Comprehensive GraphQL API Test Suite > Relationship Operations > should create relationship with properties [0.46ms]
+858 |         }
+859 |       `
+860 | 
+861 |       const result = await testContext.graphqlRequest!(invalidQuery)
+862 | 
+863 |       expect(result.errors).toBeDefined()
+                                  ^
+error: expect(received).toBeDefined()
+
+Received: undefined
+
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:863:29)
+(fail) Comprehensive GraphQL API Test Suite > Error Handling and Edge Cases > should handle invalid GraphQL syntax gracefully [0.67ms]
+945 |             table { id }
+946 |             errors { message }
+947 |           }
+948 |         }
+949 |       `)
+950 |       expect(tableResult.data.createTable.success).toBe(true)
+                                    ^
+TypeError: undefined is not an object (evaluating 'tableResult.data.createTable.success')
+      at <anonymous> (/home/user/bun-graph-db/tests/comprehensive/graphql-api-comprehensive.test.ts:950:31)
+(fail) Comprehensive GraphQL API Test Suite > Error Handling and Edge Cases > should handle concurrent operations safely [0.59ms]
+🧹 Cleaning up comprehensive GraphQL API test environment...
+🧹 Cleaned up test database file: /tmp/bun-graph-db-tests/graphql-api-comprehensive-1763832085263-4zevkezcj.sqlite
+✅ Integration test cleanup completed: graphql-api-comprehensive
+✅ Cleanup completed
+
+tests/comprehensive/performance-stress-comprehensive.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+tests/system-queries/sql-coverage-integration.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module '@graphql-tools/load-files' from '/home/user/bun-graph-db/tests/system-queries/sql-coverage-test-framework.ts'
+-------------------------------
+
+
+tests/system-queries/api-coverage-analysis.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find module '@graphql-tools/load-files' from '/home/user/bun-graph-db/tests/system-queries/api-coverage-analysis.test.ts'
+-------------------------------
+
+
+tests/unit/table-packages/table-package-service.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'graphql' from '/home/user/bun-graph-db/src/domain/services/SchemaIntrospectionService.ts'
+-------------------------------
+
+
+tests/unit/table-packages/integration.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+error: Cannot find package 'graphql' from '/home/user/bun-graph-db/tests/unit/table-packages/integration.test.ts'
+-------------------------------
+
+
+tests/unit/table-packages/enhanced-services.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+tests/integration/tools/create-table.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+tests/integration/tools/search-nodes.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+tests/integration/tools/health-check.test.ts:
+
+# Unhandled error between tests
+-------------------------------
+-------------------------------
+
+
+ 286 pass
+ 6 skip
+ 158 fail
+ 21 errors
+ 1162 expect() calls
+Ran 450 tests across 51 files. [16.09s]
