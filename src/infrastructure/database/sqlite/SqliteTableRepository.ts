@@ -3,6 +3,7 @@ import type { PaginatedResult, TableId, TableSearchOptions } from '@/core/types/
 import { Table } from '@/domain/entities/Table.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface TableRow {
   id: number
@@ -12,8 +13,17 @@ interface TableRow {
   updated_at: string
 }
 
-export class SqliteTableRepository implements ITableRepository {
-  constructor(private readonly db: Database) {}
+export class SqliteTableRepository
+  extends BaseSqliteRepository<Table, TableId>
+  implements ITableRepository
+{
+  constructor(db: Database) {
+    super(db)
+  }
+
+  protected get tableName(): string {
+    return 'tables'
+  }
 
   async save(table: Table): Promise<Table> {
     const tableData = table.toDatabase()
@@ -71,34 +81,10 @@ export class SqliteTableRepository implements ITableRepository {
     }
   }
 
-  async findById(id: TableId): Promise<Table | null> {
-    const query = `
-      SELECT id, identifier, description, created_at, updated_at
-      FROM tables
-      WHERE id = ?
-    `
-
-    try {
-      const row = this.db.query<TableRow, [string]>(query).get(id)
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find table by id: ${error}`)
-    }
-  }
+  // findById() - inherited from BaseSqliteRepository
 
   async findByIdentifier(identifier: string): Promise<Table | null> {
-    const query = `
-      SELECT id, identifier, description, created_at, updated_at
-      FROM tables
-      WHERE identifier = ?
-    `
-
-    try {
-      const row = this.db.query<TableRow, [string]>(query).get(identifier)
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find table by identifier: ${error}`)
-    }
+    return this.findByIdentifierField(identifier)
   }
 
   async findAll(options: TableSearchOptions = {}): Promise<PaginatedResult<Table>> {
@@ -172,40 +158,11 @@ export class SqliteTableRepository implements ITableRepository {
     }
   }
 
-  async delete(id: TableId): Promise<void> {
-    const query = `DELETE FROM tables WHERE id = ?`
+  // delete() - inherited from BaseSqliteRepository
 
-    try {
-      const result = this.db.run(query, [id])
-      if (result.changes === 0) {
-        throw new DatabaseException(`Table with id ${id} not found`)
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to delete table: ${error}`)
-    }
-  }
+  // exists() - inherited from BaseSqliteRepository
 
-  async exists(identifier: string): Promise<boolean> {
-    const query = `SELECT 1 FROM tables WHERE identifier = ? LIMIT 1`
-
-    try {
-      const row = this.db.query<{ 1: number }, [string]>(query).get(identifier)
-      return row !== null
-    } catch (error) {
-      throw new DatabaseException(`Failed to check table existence: ${error}`)
-    }
-  }
-
-  async count(): Promise<number> {
-    const query = `SELECT COUNT(*) as count FROM tables`
-
-    try {
-      const result = this.db.query<{ count: number }, []>(query).get()
-      return result?.count || 0
-    } catch (error) {
-      throw new DatabaseException(`Failed to count tables: ${error}`)
-    }
-  }
+  // count() - inherited from BaseSqliteRepository
 
   async saveMany(tables: Table[]): Promise<void> {
     if (tables.length === 0) return
@@ -235,23 +192,7 @@ export class SqliteTableRepository implements ITableRepository {
     }
   }
 
-  async findByIds(ids: TableId[]): Promise<Table[]> {
-    if (ids.length === 0) return []
-
-    const placeholders = ids.map(() => '?').join(',')
-    const query = `
-      SELECT id, identifier, description, created_at, updated_at
-      FROM tables
-      WHERE id IN (${placeholders})
-    `
-
-    try {
-      const rows = this.db.query<TableRow, string[]>(query).all(...ids)
-      return rows.map((row) => this.mapRowToEntity(row))
-    } catch (error) {
-      throw new DatabaseException(`Failed to find tables by ids: ${error}`)
-    }
-  }
+  // findByIds() - inherited from BaseSqliteRepository
 
   async update(id: TableId, updates: Partial<Table>): Promise<Table> {
     try {
@@ -299,7 +240,7 @@ export class SqliteTableRepository implements ITableRepository {
     }
   }
 
-  private mapRowToEntity(row: TableRow): Table {
+  protected mapRowToEntity(row: TableRow): Table {
     return Table.fromDatabase(
       row.id.toString(),
       row.identifier,
