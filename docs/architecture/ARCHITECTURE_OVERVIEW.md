@@ -28,6 +28,9 @@ Bun Graph DB는 **SQLite 기반의 확장 가능한 그래프 데이터베이스
 **SQLite 기반의 고정된 테이블 구조**
 - **Tables**: `tables`, `nodes`, `attributes`, `relations`, `templates`
 - **Repository Pattern**: 각 엔티티별 CRUD 인터페이스
+  - **BaseSqliteRepository**: 공통 CRUD 로직을 제공하는 제네릭 베이스 클래스 (2025-11-22 도입)
+  - **Type-Safe Generics**: `BaseSqliteRepository<TEntity, TId>` 타입 안전성 보장
+  - **Code Reduction**: 9개 리포지토리에서 435줄 중복 코드 제거 (11.2% 감소)
 - **Transaction Management**: 데이터 일관성 보장
 - **Schema Evolution**: 안전한 스키마 변경 관리
 
