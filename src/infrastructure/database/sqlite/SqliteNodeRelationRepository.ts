@@ -10,6 +10,7 @@ import type {
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface NodeRelationRow {
   id: number
@@ -25,8 +26,20 @@ interface NodeRelationRow {
   updated_at: string
 }
 
-export class SqliteNodeRelationRepository implements INodeRelationRepository {
-  constructor(private readonly db: Database) {}
+export class SqliteNodeRelationRepository
+  extends BaseSqliteRepository<NodeRelation, NodeRelationId>
+  implements INodeRelationRepository
+{
+  constructor(db: Database) {
+    super(db)
+  }
+
+  protected get tableName(): string {
+    return 'node_relations'
+  }
+
+  // Note: This repository doesn't use 'identifier' field
+  // exists() and count() have custom signatures
 
   async save(nodeRelation: NodeRelation): Promise<void> {
     const data = nodeRelation.toDatabase()
@@ -65,22 +78,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     }
   }
 
-  async findById(id: NodeRelationId): Promise<NodeRelation | null> {
-    const query = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
-      FROM node_relations
-      WHERE id = ?
-    `
-
-    try {
-      const row = this.db.query<NodeRelationRow, [string]>(query).get(id)
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find node relation by id: ${error}`)
-    }
-  }
+  // findById() - inherited from BaseSqliteRepository
 
   async findByTableId(
     tableId: TableId,
@@ -418,18 +416,7 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     }
   }
 
-  async delete(id: NodeRelationId): Promise<void> {
-    const query = `DELETE FROM node_relations WHERE id = ?`
-
-    try {
-      const result = this.db.run(query, [id])
-      if (result.changes === 0) {
-        throw new DatabaseException(`NodeRelation with id ${id} not found`)
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to delete node relation: ${error}`)
-    }
-  }
+  // delete() - inherited from BaseSqliteRepository
 
   async deleteByTableId(tableId: TableId): Promise<void> {
     const query = `DELETE FROM node_relations WHERE table_id = ?`
@@ -622,39 +609,9 @@ export class SqliteNodeRelationRepository implements INodeRelationRepository {
     }
   }
 
-  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<NodeRelation>> {
-    const { limit = 10, offset = 0 } = options
+  // findAll() - inherited from BaseSqliteRepository
 
-    const dataQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
-      FROM node_relations
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `
-
-    const countQuery = `SELECT COUNT(*) as count FROM node_relations`
-
-    try {
-      const rows = this.db.query<NodeRelationRow, [number, number]>(dataQuery).all(limit, offset)
-      const countResult = this.db.query<{ count: number }, []>(countQuery).get()
-      const total = countResult?.count || 0
-
-      const nodeRelations = rows.map((row) => this.mapRowToEntity(row))
-
-      return {
-        nodes: nodeRelations,
-        totalCount: total,
-        hasNextPage: offset + limit < total,
-        hasPreviousPage: offset > 0,
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to find all node relations: ${error}`)
-    }
-  }
-
-  private mapRowToEntity(row: NodeRelationRow): NodeRelation {
+  protected mapRowToEntity(row: NodeRelationRow): NodeRelation {
     return NodeRelation.fromDatabase(
       row.id.toString(),
       row.table_id.toString(),

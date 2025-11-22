@@ -8,6 +8,7 @@ import type {
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface NodeAttributeRow {
   id: number
@@ -18,8 +19,20 @@ interface NodeAttributeRow {
   updated_at: string
 }
 
-export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
-  constructor(private readonly db: Database) {}
+export class SqliteNodeAttributeRepository
+  extends BaseSqliteRepository<NodeAttribute, string>
+  implements INodeAttributeRepository
+{
+  constructor(db: Database) {
+    super(db)
+  }
+
+  protected get tableName(): string {
+    return 'node_attributes'
+  }
+
+  // Note: This repository doesn't use 'identifier' field
+  // exists() uses (nodeId, attributeId) combination instead
 
   async save(nodeAttribute: NodeAttribute): Promise<void> {
     const data = nodeAttribute.toDatabase()
@@ -49,20 +62,7 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
     }
   }
 
-  async findById(id: string): Promise<NodeAttribute | null> {
-    const query = `
-      SELECT id, node_id, attribute_id, value, created_at, updated_at
-      FROM node_attributes
-      WHERE id = ?
-    `
-
-    try {
-      const row = this.db.query<NodeAttributeRow, [string]>(query).get(id)
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find node attribute by id: ${error}`)
-    }
-  }
+  // findById() - inherited from BaseSqliteRepository
 
   async findByNodeIdAndAttributeId(
     nodeId: NodeId,
@@ -162,18 +162,7 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
     }
   }
 
-  async delete(id: string): Promise<void> {
-    const query = `DELETE FROM node_attributes WHERE id = ?`
-
-    try {
-      const result = this.db.run(query, [id])
-      if (result.changes === 0) {
-        throw new DatabaseException(`NodeAttribute with id ${id} not found`)
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to delete node attribute: ${error}`)
-    }
-  }
+  // delete() - inherited from BaseSqliteRepository
 
   async deleteByNodeId(nodeId: NodeId): Promise<void> {
     const query = `DELETE FROM node_attributes WHERE node_id = ?`
@@ -301,7 +290,7 @@ export class SqliteNodeAttributeRepository implements INodeAttributeRepository {
     }
   }
 
-  private mapRowToEntity(row: NodeAttributeRow): NodeAttribute {
+  protected mapRowToEntity(row: NodeAttributeRow): NodeAttribute {
     return NodeAttribute.fromDatabase(
       row.id.toString(),
       row.node_id.toString(),
