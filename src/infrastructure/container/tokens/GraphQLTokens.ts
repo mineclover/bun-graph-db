@@ -8,6 +8,9 @@ export const GraphQLTokens = {
   GRAPHQL_SCHEMA_BUILDER: Symbol.for('GraphQLSchemaBuilder'),
   GRAPHQL_EXECUTOR: Symbol.for('GraphQLExecutor'),
 
+  // Consolidated resolvers (Task 2.2 - Progressive migration)
+  NODE_RESOLVER: Symbol.for('NodeResolver'),
+
   // Query resolvers
   TABLE_QUERIES: Symbol.for('TableQueries'),
   NODE_QUERIES: Symbol.for('NodeQueries'),
