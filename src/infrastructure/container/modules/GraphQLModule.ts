@@ -405,6 +405,51 @@ export function registerGraphQLModule(container: DIContainer): void {
     []
   )
 
+  // Node Resolver - Unified resolver with queries, mutations, and field resolvers
+  container.registerSingleton(
+    GraphQLTokens.NODE_RESOLVER,
+    async (c) => {
+      const { NodeResolver } = await import('@/presentation/graphql/resolvers/NodeResolver.js')
+
+      // Use lazy loading for use cases to break circular dependencies
+      const createNodeUseCase = await c.resolve(UseCaseTokens.CREATE_NODE_USE_CASE).catch(() => null) as any
+      const searchNodesUseCase = await c.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE).catch(() => null) as any
+
+      // Resolve repositories
+      const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
+      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
+      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)
+      const nodeRelationRepository = (await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)) as INodeRelationRepository
+      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
+
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[NodeResolver] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[NodeResolver] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[NodeResolver] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[NodeResolver] ${msg}`, data || ''),
+      }
+
+      return new NodeResolver(
+        createNodeUseCase,
+        searchNodesUseCase,
+        nodeRepository,
+        tableRepository,
+        nodeAttributeRepository,
+        nodeRelationRepository,
+        attributeRepository,
+        simpleLogger
+      )
+    },
+    [
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+    ]
+  )
+
   container.registerSingleton(
     GraphQLTokens.EXPORT_MUTATIONS,
     async (c) => {
