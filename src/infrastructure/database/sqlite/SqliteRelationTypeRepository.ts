@@ -1,12 +1,9 @@
 import type { Database } from 'bun:sqlite'
-import type {
-  PaginatedResult,
-  PaginationOptions,
-  RelationTypeId,
-} from '@/core/types/CommonTypes.js'
+import type { RelationTypeId } from '@/core/types/CommonTypes.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface RelationTypeRow {
   id: number
@@ -17,8 +14,17 @@ interface RelationTypeRow {
   updated_at: string
 }
 
-export class SqliteRelationTypeRepository implements IRelationTypeRepository {
-  constructor(private readonly db: Database) {}
+export class SqliteRelationTypeRepository
+  extends BaseSqliteRepository<RelationType, RelationTypeId>
+  implements IRelationTypeRepository
+{
+  constructor(db: Database) {
+    super(db)
+  }
+
+  protected get tableName(): string {
+    return 'relation_types'
+  }
 
   async save(relationType: RelationType): Promise<void> {
     const data = relationType.toDatabase()
@@ -48,65 +54,15 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
     }
   }
 
-  async findById(id: RelationTypeId): Promise<RelationType | null> {
-    const query = `
-      SELECT id, identifier, description, category, created_at, updated_at
-      FROM relation_types
-      WHERE id = ?
-    `
-
-    try {
-      const row = this.db.query<RelationTypeRow, [string]>(query).get(id)
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find relation type by id: ${error}`)
-    }
-  }
+  // findById() - inherited from BaseSqliteRepository
 
   async findByIdentifier(identifier: string): Promise<RelationType | null> {
-    const query = `
-      SELECT id, identifier, description, category, created_at, updated_at
-      FROM relation_types
-      WHERE identifier = ?
-    `
-
-    try {
-      const row = this.db.query<RelationTypeRow, [string]>(query).get(identifier)
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find relation type by identifier: ${error}`)
-    }
+    return this.findByIdentifierField(identifier)
   }
 
-  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<RelationType>> {
-    const { limit = 10, offset = 0 } = options
-
-    const dataQuery = `
-      SELECT id, identifier, description, category, created_at, updated_at
-      FROM relation_types
-      ORDER BY identifier ASC
-      LIMIT ? OFFSET ?
-    `
-
-    const countQuery = `SELECT COUNT(*) as count FROM relation_types`
-
-    try {
-      const rows = this.db.query<RelationTypeRow, [number, number]>(dataQuery).all(limit, offset)
-      const countResult = this.db.query<{ count: number }, []>(countQuery).get()
-      const total = countResult?.count || 0
-
-      const relationTypes = rows.map((row) => this.mapRowToEntity(row))
-
-      return {
-        nodes: relationTypes,
-        totalCount: total,
-        hasNextPage: offset + limit < total,
-        hasPreviousPage: offset > 0,
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to find all relation types: ${error}`)
-    }
-  }
+  // findAll() - inherited from BaseSqliteRepository
+  // Note: Base class uses 'created_at DESC' ordering, original used 'identifier ASC'
+  // If specific ordering is critical, this can be overridden
 
   async update(relationType: RelationType): Promise<void> {
     const data = relationType.toDatabase()
@@ -134,31 +90,11 @@ export class SqliteRelationTypeRepository implements IRelationTypeRepository {
     }
   }
 
-  async delete(id: RelationTypeId): Promise<void> {
-    const query = `DELETE FROM relation_types WHERE id = ?`
+  // delete() - inherited from BaseSqliteRepository
 
-    try {
-      const result = this.db.run(query, [id])
-      if (result.changes === 0) {
-        throw new DatabaseException(`RelationType with id ${id} not found`)
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to delete relation type: ${error}`)
-    }
-  }
+  // exists() - inherited from BaseSqliteRepository
 
-  async exists(identifier: string): Promise<boolean> {
-    const query = `SELECT 1 FROM relation_types WHERE identifier = ? LIMIT 1`
-
-    try {
-      const row = this.db.query<{ 1: number }, [string]>(query).get(identifier)
-      return row !== null
-    } catch (error) {
-      throw new DatabaseException(`Failed to check relation type existence: ${error}`)
-    }
-  }
-
-  private mapRowToEntity(row: RelationTypeRow): RelationType {
+  protected mapRowToEntity(row: RelationTypeRow): RelationType {
     return RelationType.fromDatabase(
       row.id.toString(),
       row.identifier,
