@@ -316,6 +316,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🔗 Related Documentation
 
+### User Guides
+- **[Getting Started (English)](docs/guides/GETTING_STARTED.md)** - Complete installation and usage guide
+- **[사용자 가이드 (한국어)](docs/guides/USER_GUIDE_KR.md)** - 완전한 설치 및 사용 가이드
+- **[Quick Reference](docs/guides/QUICK_REFERENCE.md)** - Essential commands and queries
+- **[All User Guides](docs/guides/README.md)** - Complete guide index
+
+### Technical Documentation
 - [Project Status](CLAUDE.md) - Current system status and recent updates
 - [Documentation Index](docs/README.md) - Complete documentation structure
 - [API Reference](docs/api/doc-api-reference.md) - GraphQL API documentation
