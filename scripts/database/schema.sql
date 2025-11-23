@@ -237,14 +237,6 @@ BEGIN
     UPDATE relation_types SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
 
--- Template executions table update trigger
-CREATE TRIGGER IF NOT EXISTS update_template_executions_updated_at
-    AFTER UPDATE ON template_executions
-    FOR EACH ROW
-BEGIN
-    UPDATE template_executions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
-END;
-
 -- =================================================================================
 -- RELATION STRENGTH AND CONFIDENCE CONVENTIONS
 -- =================================================================================
@@ -302,7 +294,9 @@ INSERT OR IGNORE INTO relation_types (identifier, description, category) VALUES
   ('parentOf', 'Parent-child relationship', 'hierarchy'),
   ('linkedTo', 'Bidirectional link', 'semantic');
 
--- Template execution log table (for performance tracking)
+-- =================================================================================
+-- Template execution log table (must be created before its trigger)
+-- =================================================================================
 CREATE TABLE IF NOT EXISTS template_executions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   template_id INTEGER NOT NULL,
@@ -316,6 +310,14 @@ CREATE TABLE IF NOT EXISTS template_executions (
 
   FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
 );
+
+-- Template executions table update trigger
+CREATE TRIGGER IF NOT EXISTS update_template_executions_updated_at
+    AFTER UPDATE ON template_executions
+    FOR EACH ROW
+BEGIN
+    UPDATE template_executions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+END;
 
 -- Update template usage tracking trigger
 CREATE TRIGGER IF NOT EXISTS update_template_usage
