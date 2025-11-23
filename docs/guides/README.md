@@ -35,9 +35,16 @@ Welcome to Bun Graph Database user documentation!
    - 데이터 분석 및 네트워크 탐색
    - **MCP 활용법을 배우려면 여기**
 
+5. **[MCP Test Coverage Report](./MCP_TEST_COVERAGE.md)** ⭐ NEW
+   - MCP 서버 테스트 커버리지 92%
+   - 27+ MCP 도구 기능 검증
+   - 수동 테스트 가이드
+   - 성능 메트릭 및 벤치마크
+   - **MCP 품질 보증 문서**
+
 ### Quick References
 
-5. **[Quick Reference Card](./QUICK_REFERENCE.md)**
+6. **[Quick Reference Card](./QUICK_REFERENCE.md)**
    - Essential commands at a glance
    - Common GraphQL queries
    - Troubleshooting shortcuts
@@ -309,6 +316,7 @@ mutation {
 - ✅ Created Quick Reference card
 - ✅ **Added MCP Setup Guide (Claude AI integration)** ⭐ NEW
 - ✅ **Added MCP Examples (13 real-world scenarios)** ⭐ NEW
+- ✅ **Added MCP Test Coverage Report (92% coverage)** ⭐ NEW
 - ✅ Fixed neighborsByRelationType (array parameter support)
 - ✅ Added relationAnalytics stub resolver
 - ✅ Achieved 100% test coverage
