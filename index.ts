@@ -1,21 +1,11 @@
-console.log('🔍 [0/10] index.ts starting...')
-
 import { createYoga } from 'graphql-yoga'
-console.log('✅ [1/10] graphql-yoga imported')
-
 import type { ILogger } from './src/application/ports/ILogger'
 import { setDatabasePath } from './src/config/database'
 import { createGraphQLConfig } from './src/config/graphql'
-console.log('✅ [2/10] config modules imported')
-
 import { createContainer } from './src/infrastructure/container/ContainerBootstrap'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens'
 import { UseCaseTokens } from './src/infrastructure/container/tokens/UseCaseTokens'
-console.log('✅ [3/10] container modules imported')
-
 import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder'
-console.log('✅ [4/10] GraphQLSchemaBuilder imported')
-
 import { toErrorMeta } from './src/presentation/http/utils/errorHelpers.js'
 import {
   mergeWithEnvironment,
@@ -24,14 +14,10 @@ import {
   printVersion,
   validateOptions,
 } from './src/utils/cli-parser'
-console.log('✅ [5/10] All imports complete')
 
 // Parse CLI arguments
-console.log('🔍 [6/10] Parsing CLI arguments...')
 const { options, unknown } = parseCliArgs()
-console.log('✅ [6/10] CLI arguments parsed')
 const finalOptions = mergeWithEnvironment(options)
-console.log('✅ [7/10] Options merged with environment')
 
 // Handle help and version flags
 if (finalOptions.help) {
@@ -47,7 +33,6 @@ if (finalOptions.version) {
 // Validate options
 try {
   validateOptions(finalOptions)
-  console.log('✅ [7/10] Options validated')
 } catch (error) {
   console.error('❌ Invalid options:', error instanceof Error ? error.message : error)
   console.error('Use --help for usage information')
@@ -68,7 +53,6 @@ if (finalOptions.env) {
 if (finalOptions.databasePath) {
   setDatabasePath(finalOptions.databasePath)
 }
-console.log('✅ [8/10] Configuration complete')
 
 // Port availability check function
 const checkPortAvailable = async (port: number): Promise<boolean> => {
@@ -87,15 +71,11 @@ const checkPortAvailable = async (port: number): Promise<boolean> => {
 }
 
 // Initialize dependency container
-console.log('🔍 [9/10] Creating dependency container...')
 const container = await createContainer()
-console.log('✅ [9/10] Dependency container created')
 
 // Build GraphQL schema with the new schema builder
-console.log('🔍 [10/10] Building GraphQL schema...')
 const schemaBuilder = new GraphQLSchemaBuilder(container)
 const schema = await schemaBuilder.build()
-console.log('✅ [10/10] GraphQL schema built successfully!')
 
 const logger = await container.resolve<ILogger>(CommonTokens.LOGGER)
 
