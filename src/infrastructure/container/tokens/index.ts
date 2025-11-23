@@ -1,4 +1,4 @@
-export { TablePackageTokens } from '../modules/TablePackageModule.js'
+export { TablePackageTokens } from './TablePackageTokens.js'
 export { CommonTokens } from './CommonTokens.js'
 export { DatabaseTokens } from './DatabaseTokens.js'
 export { GraphQLTokens } from './GraphQLTokens.js'
