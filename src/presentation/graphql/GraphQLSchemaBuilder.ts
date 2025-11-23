@@ -119,12 +119,13 @@ export class GraphQLSchemaBuilder {
       systemResolver: await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER),
 
       // Unified resolvers (Task 2.2 - Feature Flag Pattern)
-      nodeResolver: await this.container.resolve(GraphQLTokens.NODE_RESOLVER).catch(() => null),
-      tableResolver: await this.container.resolve(GraphQLTokens.TABLE_RESOLVER).catch(() => null),
-      docResolver: await this.container.resolve(GraphQLTokens.DOC_RESOLVER).catch(() => null),
-      attributeResolver: await this.container.resolve(GraphQLTokens.ATTRIBUTE_RESOLVER).catch(() => null),
-      relationResolver: await this.container.resolve(GraphQLTokens.RELATION_RESOLVER).catch(() => null),
-      queryTemplateResolver: await this.container.resolve(GraphQLTokens.QUERY_TEMPLATE_RESOLVER).catch(() => null),
+      // TEMP DISABLE ALL: Debugging server hang issue
+      nodeResolver: null, // await this.container.resolve(GraphQLTokens.NODE_RESOLVER).catch(() => null),
+      tableResolver: null, // await this.container.resolve(GraphQLTokens.TABLE_RESOLVER).catch(() => null),
+      docResolver: null, // await this.container.resolve(GraphQLTokens.DOC_RESOLVER).catch(() => null),
+      attributeResolver: null, // await this.container.resolve(GraphQLTokens.ATTRIBUTE_RESOLVER).catch(() => null),
+      relationResolver: null, // await this.container.resolve(GraphQLTokens.RELATION_RESOLVER).catch(() => null),
+      queryTemplateResolver: null, // await this.container.resolve(GraphQLTokens.QUERY_TEMPLATE_RESOLVER).catch(() => null),
 
       // Field resolvers
       tableFieldResolvers: await this.container.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS),
