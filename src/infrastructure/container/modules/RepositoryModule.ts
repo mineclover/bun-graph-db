@@ -1,3 +1,4 @@
+// Import only non-problematic repositories at top level
 import { SqliteAttributeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeRepository.js'
 import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeTypeRepository.js'
 import { SqliteDocRepository } from '@/infrastructure/database/sqlite/SqliteDocRepository.js'
@@ -6,9 +7,10 @@ import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
 import { SqliteNodeSearchRepository } from '@/infrastructure/database/sqlite/SqliteNodeSearchRepository.js'
-import { SqliteQueryTemplateRepository } from '@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js'
 import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
-import { SqliteTableRepository } from '@/infrastructure/database/sqlite/SqliteTableRepository.js'
+// NOTE: SqliteTableRepository and SqliteQueryTemplateRepository are imported dynamically in factories
+// to avoid module loading hang when imported together
+
 import type { DIContainer } from '../DIContainer.js'
 import { DatabaseTokens, RepositoryTokens } from '../tokens/index.js'
 
@@ -23,13 +25,15 @@ const createSimpleLogger = () => ({
 /**
  * Repository module - registers all repository implementations
  *
- * Registers factory functions that will create instances lazily when resolve() is called.
+ * Uses dynamic imports for SqliteTableRepository and SqliteQueryTemplateRepository
+ * to avoid Bun module loader hang when both are imported together at top level.
  */
 export function registerRepositoryModule(container: DIContainer): void {
-  // Table repository
+  // Table repository - DYNAMIC IMPORT to avoid module loading hang
   container.registerSingleton(
     RepositoryTokens.TABLE_REPOSITORY,
     async (c) => {
+      const { SqliteTableRepository } = await import('@/infrastructure/database/sqlite/SqliteTableRepository.js')
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteTableRepository(connection)
     },
@@ -96,10 +100,11 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Query template repository
+  // Query template repository - DYNAMIC IMPORT to avoid module loading hang
   container.registerSingleton(
     RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     async (c) => {
+      const { SqliteQueryTemplateRepository } = await import('@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js')
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteQueryTemplateRepository(connection, createSimpleLogger())
     },

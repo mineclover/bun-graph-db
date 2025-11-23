@@ -17,7 +17,8 @@ import {
   RelationTypeFieldResolvers,
   TableFieldResolvers,
 } from '@/presentation/graphql/field-resolvers/index.js'
-import { buildGraphQLSchema } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
+// NOTE: buildGraphQLSchema is imported dynamically in the GRAPHQL_SCHEMA factory
+// to avoid module loading hang with circular dependencies
 import {
   AttributeMutations,
   DocMutations,
@@ -935,6 +936,9 @@ export function registerGraphQLModule(container: DIContainer): void {
         GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS
       )) as any
       const docFieldResolvers = (await c.resolve(GraphQLTokens.DOC_FIELD_RESOLVERS)) as any
+
+      // Dynamic import to avoid module loading hang
+      const { buildGraphQLSchema } = await import('@/presentation/graphql/GraphQLSchemaBuilder.js')
 
       return buildGraphQLSchema({
         // Queries
