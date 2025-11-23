@@ -10,6 +10,11 @@ export const GraphQLTokens = {
 
   // Consolidated resolvers (Task 2.2 - Progressive migration)
   NODE_RESOLVER: Symbol.for('NodeResolver'),
+  TABLE_RESOLVER: Symbol.for('TableResolver'),
+  DOC_RESOLVER: Symbol.for('DocResolver'),
+  ATTRIBUTE_RESOLVER: Symbol.for('AttributeResolver'),
+  RELATION_RESOLVER: Symbol.for('RelationResolver'),
+  QUERY_TEMPLATE_RESOLVER: Symbol.for('QueryTemplateResolver'),
 
   // Query resolvers
   TABLE_QUERIES: Symbol.for('TableQueries'),
