@@ -90,33 +90,101 @@ export class GraphQLSchemaBuilder {
   constructor(private container: DIContainer) {}
 
   async build(): Promise<GraphQLSchema> {
+    console.log('🚀 [GraphQLSchemaBuilder] Starting schema build...')
     const deps = await this.resolveDependencies()
-    return this.buildSchema(deps)
+    console.log('✅ [GraphQLSchemaBuilder] Dependencies resolved, building schema...')
+    const schema = this.buildSchema(deps)
+    console.log('✅ [GraphQLSchemaBuilder] Schema built successfully!')
+    return schema
   }
 
   private async resolveDependencies(): Promise<GraphQLDependencies> {
+    console.log('🔍 [1/30] Starting dependency resolution...')
+
+    // Query resolvers
+    console.log('🔍 [2/30] Resolving tableQueries...')
+    const tableQueries = await this.container.resolve(GraphQLTokens.TABLE_QUERIES)
+    console.log('✅ [2/30] tableQueries resolved')
+
+    console.log('🔍 [3/30] Resolving nodeQueries...')
+    const nodeQueries = await this.container.resolve(GraphQLTokens.NODE_QUERIES)
+    console.log('✅ [3/30] nodeQueries resolved')
+
+    console.log('🔍 [4/30] Resolving attributeQueries...')
+    const attributeQueries = await this.container.resolve(GraphQLTokens.ATTRIBUTE_QUERIES)
+    console.log('✅ [4/30] attributeQueries resolved')
+
+    console.log('🔍 [5/30] Resolving relationQueries...')
+    const relationQueries = await this.container.resolve(GraphQLTokens.RELATION_QUERIES)
+    console.log('✅ [5/30] relationQueries resolved')
+
+    console.log('🔍 [6/30] Resolving templateQueries...')
+    const templateQueries = await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES)
+    console.log('✅ [6/30] templateQueries resolved')
+
+    console.log('🔍 [7/30] Resolving docQueries...')
+    const docQueries = await this.container.resolve(GraphQLTokens.DOC_QUERIES)
+    console.log('✅ [7/30] docQueries resolved')
+
+    console.log('🔍 [8/30] Resolving systemQueries...')
+    const systemQueries = await this.container.resolve(GraphQLTokens.SYSTEM_QUERIES)
+    console.log('✅ [8/30] systemQueries resolved')
+
+    // Mutation resolvers
+    console.log('🔍 [9/30] Resolving tableMutations...')
+    const tableMutations = await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS)
+    console.log('✅ [9/30] tableMutations resolved')
+
+    console.log('🔍 [10/30] Resolving nodeMutations...')
+    const nodeMutations = await this.container.resolve(GraphQLTokens.NODE_MUTATIONS)
+    console.log('✅ [10/30] nodeMutations resolved')
+
+    console.log('🔍 [11/30] Resolving attributeMutations...')
+    const attributeMutations = await this.container.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS)
+    console.log('✅ [11/30] attributeMutations resolved')
+
+    console.log('🔍 [12/30] Resolving relationMutations...')
+    const relationMutations = await this.container.resolve(GraphQLTokens.RELATION_MUTATIONS)
+    console.log('✅ [12/30] relationMutations resolved')
+
+    console.log('🔍 [13/30] Resolving templateMutations...')
+    const templateMutations = await this.container.resolve(GraphQLTokens.TEMPLATE_MUTATIONS)
+    console.log('✅ [13/30] templateMutations resolved')
+
+    console.log('🔍 [14/30] Resolving docMutations...')
+    const docMutations = await this.container.resolve(GraphQLTokens.DOC_MUTATIONS)
+    console.log('✅ [14/30] docMutations resolved')
+
+    console.log('🔍 [15/30] Resolving exportMutations...')
+    const exportMutations = await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS)
+    console.log('✅ [15/30] exportMutations resolved')
+
+    console.log('🔍 [16/30] Resolving tablePackageResolver...')
+    const tablePackageResolver = await this.container.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER)
+    console.log('✅ [16/30] tablePackageResolver resolved')
+
+    // System resolver
+    console.log('🔍 [17/30] Resolving systemResolver...')
+    const systemResolver = await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER)
+    console.log('✅ [17/30] systemResolver resolved')
+
     return {
-      // Query resolvers
-      tableQueries: await this.container.resolve(GraphQLTokens.TABLE_QUERIES),
-      nodeQueries: await this.container.resolve(GraphQLTokens.NODE_QUERIES),
-      attributeQueries: await this.container.resolve(GraphQLTokens.ATTRIBUTE_QUERIES),
-      relationQueries: await this.container.resolve(GraphQLTokens.RELATION_QUERIES),
-      templateQueries: await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES),
-      docQueries: await this.container.resolve(GraphQLTokens.DOC_QUERIES),
-      systemQueries: await this.container.resolve(GraphQLTokens.SYSTEM_QUERIES),
-
-      // Mutation resolvers
-      tableMutations: await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS),
-      nodeMutations: await this.container.resolve(GraphQLTokens.NODE_MUTATIONS),
-      attributeMutations: await this.container.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS),
-      relationMutations: await this.container.resolve(GraphQLTokens.RELATION_MUTATIONS),
-      templateMutations: await this.container.resolve(GraphQLTokens.TEMPLATE_MUTATIONS),
-      docMutations: await this.container.resolve(GraphQLTokens.DOC_MUTATIONS),
-      exportMutations: await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS),
-      tablePackageResolver: await this.container.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER),
-
-      // System resolver
-      systemResolver: await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER),
+      tableQueries,
+      nodeQueries,
+      attributeQueries,
+      relationQueries,
+      templateQueries,
+      docQueries,
+      systemQueries,
+      tableMutations,
+      nodeMutations,
+      attributeMutations,
+      relationMutations,
+      templateMutations,
+      docMutations,
+      exportMutations,
+      tablePackageResolver,
+      systemResolver,
 
       // Unified resolvers (Task 2.2 - Feature Flag Pattern)
       // TEMP DISABLE ALL: Debugging server hang issue
@@ -128,48 +196,75 @@ export class GraphQLSchemaBuilder {
       queryTemplateResolver: null, // await this.container.resolve(GraphQLTokens.QUERY_TEMPLATE_RESOLVER).catch(() => null),
 
       // Field resolvers
-      tableFieldResolvers: await this.container.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS),
-      nodeFieldResolvers: await this.container.resolve(GraphQLTokens.NODE_FIELD_RESOLVERS),
-      attributeFieldResolvers: await this.container.resolve(
-        GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS
-      ),
-      relationFieldResolvers: await this.container.resolve(GraphQLTokens.RELATION_FIELD_RESOLVERS),
-      relationTypeFieldResolvers: await this.container.resolve(
-        GraphQLTokens.RELATION_TYPE_FIELD_RESOLVERS
-      ),
-      queryTemplateFieldResolvers: await this.container.resolve(
-        GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS
-      ),
-      docFieldResolvers: await this.container.resolve(GraphQLTokens.DOC_FIELD_RESOLVERS),
+      tableFieldResolvers: await this.resolveWithLogging(GraphQLTokens.TABLE_FIELD_RESOLVERS, '18/30', 'tableFieldResolvers'),
+      nodeFieldResolvers: await this.resolveWithLogging(GraphQLTokens.NODE_FIELD_RESOLVERS, '19/30', 'nodeFieldResolvers'),
+      attributeFieldResolvers: await this.resolveWithLogging(GraphQLTokens.ATTRIBUTE_FIELD_RESOLVERS, '20/30', 'attributeFieldResolvers'),
+      relationFieldResolvers: await this.resolveWithLogging(GraphQLTokens.RELATION_FIELD_RESOLVERS, '21/30', 'relationFieldResolvers'),
+      relationTypeFieldResolvers: await this.resolveWithLogging(GraphQLTokens.RELATION_TYPE_FIELD_RESOLVERS, '22/30', 'relationTypeFieldResolvers'),
+      queryTemplateFieldResolvers: await this.resolveWithLogging(GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS, '23/30', 'queryTemplateFieldResolvers'),
+      docFieldResolvers: await this.resolveWithLogging(GraphQLTokens.DOC_FIELD_RESOLVERS, '24/30', 'docFieldResolvers'),
 
       // Schema resolvers
-      schemaResolvers: createSchemaResolvers({
-        tableRepository: await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY),
-        schemaExportUseCase: await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE),
-        schemaImportUseCase: await this.container.resolve(UseCaseTokens.SCHEMA_IMPORT_USE_CASE),
-        logger: {
-          info: (msg: string, data?: Record<string, unknown>) =>
-            console.log(`[INFO] ${msg}`, data || ''),
-          warn: (msg: string, data?: Record<string, unknown>) =>
-            console.warn(`[WARN] ${msg}`, data || ''),
-          error: (msg: string, data?: Record<string, unknown>) =>
-            console.error(`[ERROR] ${msg}`, data || ''),
-          debug: (msg: string, data?: Record<string, unknown>) =>
-            console.debug(`[DEBUG] ${msg}`, data || ''),
-        },
-      }),
+      schemaResolvers: await this.resolveSchemaResolvers(),
     }
   }
 
+  private async resolveWithLogging(token: symbol, step: string, name: string): Promise<any> {
+    console.log(`🔍 [${step}] Resolving ${name}...`)
+    const result = await this.container.resolve(token)
+    console.log(`✅ [${step}] ${name} resolved`)
+    return result
+  }
+
+  private async resolveSchemaResolvers(): Promise<any> {
+    console.log('🔍 [25/30] Resolving schemaResolvers...')
+    console.log('🔍 [26/30] Resolving tableRepository for schemaResolvers...')
+    const tableRepository = await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY)
+    console.log('✅ [26/30] tableRepository resolved')
+
+    console.log('🔍 [27/30] Resolving schemaExportUseCase...')
+    const schemaExportUseCase = await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE)
+    console.log('✅ [27/30] schemaExportUseCase resolved')
+
+    console.log('🔍 [28/30] Resolving schemaImportUseCase...')
+    const schemaImportUseCase = await this.container.resolve(UseCaseTokens.SCHEMA_IMPORT_USE_CASE)
+    console.log('✅ [28/30] schemaImportUseCase resolved')
+
+    console.log('🔍 [29/30] Creating schemaResolvers...')
+    const schemaResolvers = createSchemaResolvers({
+      tableRepository,
+      schemaExportUseCase,
+      schemaImportUseCase,
+      logger: {
+        info: (msg: string, data?: Record<string, unknown>) =>
+          console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: Record<string, unknown>) =>
+          console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: Record<string, unknown>) =>
+          console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: Record<string, unknown>) =>
+          console.debug(`[DEBUG] ${msg}`, data || ''),
+      },
+    })
+    console.log('✅ [29/30] schemaResolvers created')
+    console.log('✅ [30/30] All dependencies resolved!')
+    return schemaResolvers
+  }
+
   protected buildSchema(deps: GraphQLDependencies): GraphQLSchema {
+    console.log('📁 [buildSchema] Loading GraphQL schema files...')
     // Load GraphQL schema files from the new structure
     const typesArray = loadFilesSync(join(process.cwd(), 'src/presentation/graphql/schema'), {
       extensions: ['graphql'],
       recursive: true,
     })
+    console.log(`✅ [buildSchema] Loaded ${typesArray.length} schema files`)
 
+    console.log('🔗 [buildSchema] Merging type definitions...')
     const typeDefs = mergeTypeDefs(typesArray)
+    console.log('✅ [buildSchema] Type definitions merged')
 
+    console.log('🔧 [buildSchema] Creating resolvers object...')
     const resolvers = {
       // Custom scalars
       DateTime: DateTimeResolver,
