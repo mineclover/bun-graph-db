@@ -667,7 +667,7 @@ export function registerGraphQLModule(container: DIContainer): void {
     const { TablePackageResolver } = await import(
       '@/presentation/graphql/resolvers/TablePackageResolver.js'
     )
-    const { TablePackageTokens } = await import('./TablePackageModule.js')
+    const { TablePackageTokens } = await import('../tokens/TablePackageTokens.js')
 
     const tablePackageService = await c.resolve(TablePackageTokens.TABLE_PACKAGE_SERVICE)
 
