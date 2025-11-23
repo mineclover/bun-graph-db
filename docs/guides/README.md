@@ -20,9 +20,24 @@ Welcome to Bun Graph Database user documentation!
    - 문제 해결 팁
    - **시스템을 처음 사용하는 경우 여기서 시작하세요**
 
+### MCP Integration (Claude AI)
+
+3. **[MCP Setup Guide (한국어)](./MCP_SETUP_GUIDE.md)** ⭐ NEW
+   - Claude AI와 데이터베이스 연결
+   - MCP 서버 설정 방법
+   - 자연어로 데이터베이스 조작
+   - 문제 해결 및 고급 설정
+   - **Claude를 사용하려면 여기서 시작**
+
+4. **[MCP Examples (한국어)](./MCP_EXAMPLES.md)** ⭐ NEW
+   - 실전 사용 예제 13개
+   - 복합 시나리오 및 패턴
+   - 데이터 분석 및 네트워크 탐색
+   - **MCP 활용법을 배우려면 여기**
+
 ### Quick References
 
-3. **[Quick Reference Card](./QUICK_REFERENCE.md)**
+5. **[Quick Reference Card](./QUICK_REFERENCE.md)**
    - Essential commands at a glance
    - Common GraphQL queries
    - Troubleshooting shortcuts
@@ -275,12 +290,14 @@ mutation {
 2. Create and use templates
 3. Add attributes to tables
 4. Use search functionality
+5. **Set up MCP with Claude AI** ⭐ NEW
 
 ### Advanced
-1. Integrate with MCP protocol
+1. **Use MCP for natural language queries** ⭐ NEW
 2. Build complex graph networks
 3. Optimize queries for performance
 4. Export/import table schemas
+5. **Automate workflows with Claude** ⭐ NEW
 
 ---
 
@@ -290,6 +307,8 @@ mutation {
 - ✅ Added comprehensive Korean user guide
 - ✅ Updated Getting Started guide
 - ✅ Created Quick Reference card
+- ✅ **Added MCP Setup Guide (Claude AI integration)** ⭐ NEW
+- ✅ **Added MCP Examples (13 real-world scenarios)** ⭐ NEW
 - ✅ Fixed neighborsByRelationType (array parameter support)
 - ✅ Added relationAnalytics stub resolver
 - ✅ Achieved 100% test coverage
