@@ -22,6 +22,8 @@ const createSimpleLogger = () => ({
 
 /**
  * Repository module - registers all repository implementations
+ *
+ * Registers factory functions that will create instances lazily when resolve() is called.
  */
 export function registerRepositoryModule(container: DIContainer): void {
   // Table repository
@@ -34,7 +36,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Attribute type repository (removed logger dependency to break circular reference)
+  // Attribute type repository
   container.registerSingleton(
     RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
     async (c) => {
@@ -44,7 +46,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Attribute repository (removed logger dependency to break circular reference)
+  // Attribute repository
   container.registerSingleton(
     RepositoryTokens.ATTRIBUTE_REPOSITORY,
     async (c) => {
@@ -54,7 +56,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node repository (removed logger dependency to break circular reference)
+  // Node repository
   container.registerSingleton(
     RepositoryTokens.NODE_REPOSITORY,
     async (c) => {
@@ -64,7 +66,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node attribute repository (removed logger dependency to break circular reference)
+  // Node attribute repository
   container.registerSingleton(
     RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
     async (c) => {
@@ -74,7 +76,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node relation repository (removed logger dependency to break circular reference)
+  // Node relation repository
   container.registerSingleton(
     RepositoryTokens.NODE_RELATION_REPOSITORY,
     async (c) => {
@@ -84,7 +86,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Relation type repository (removed logger dependency to break circular reference)
+  // Relation type repository
   container.registerSingleton(
     RepositoryTokens.RELATION_TYPE_REPOSITORY,
     async (c) => {
@@ -94,7 +96,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Query template repository (removed logger dependency to break circular reference)
+  // Query template repository
   container.registerSingleton(
     RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     async (c) => {
@@ -104,7 +106,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node search repository (removed logger dependency to break circular reference)
+  // Node search repository
   container.registerSingleton(
     RepositoryTokens.NODE_SEARCH_REPOSITORY,
     async (c) => {
@@ -114,7 +116,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Graph repository (removed logger dependency to break circular reference)
+  // Graph repository
   container.registerSingleton(
     RepositoryTokens.GRAPH_REPOSITORY,
     async (c) => {
