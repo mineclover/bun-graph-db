@@ -184,7 +184,8 @@ export class SqliteNodeAttributeRepository
     }
   }
 
-  async exists(nodeId: NodeId, attributeId: AttributeId): Promise<boolean> {
+  // Note: This exists method has a different signature than the base class
+  async existsByNodeAndAttribute(nodeId: NodeId, attributeId: AttributeId): Promise<boolean> {
     const query = `SELECT 1 FROM node_attributes WHERE node_id = ? AND attribute_id = ? LIMIT 1`
 
     try {

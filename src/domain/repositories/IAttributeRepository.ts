@@ -42,10 +42,10 @@ export interface IAttributeRepository
   // - save, delete, count, saveMany, findByIds, update from IFullRepository
   // - findByParentId (as findByTableId), countByParentId (as countByTableId),
   //   deleteByParentId (as deleteByTableId) from ITableScopedRepository
-  // - exists from IFullRepository (but needs override for signature compatibility)
+  // - exists from IFullRepository (uses identifier parameter)
 
-  // Override exists to match current signature (tableId, identifier)
-  exists(tableId: TableId, identifier: string): Promise<boolean>
+  // Table-scoped existence check (more specific than base exists)
+  existsByTableIdAndIdentifier(tableId: TableId, identifier: string): Promise<boolean>
 
   // Rename aliases for clarity (these map to ITableScopedRepository methods)
   findByTableId(tableId: TableId, options?: PaginationOptions): Promise<PaginatedResult<Attribute>>

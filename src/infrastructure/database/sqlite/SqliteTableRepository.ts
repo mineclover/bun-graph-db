@@ -87,7 +87,7 @@ export class SqliteTableRepository
     return this.findByIdentifierField(identifier)
   }
 
-  async findAll(options: TableSearchOptions = {}): Promise<PaginatedResult<Table>> {
+  override async findAll(options: TableSearchOptions = {}): Promise<PaginatedResult<Table>> {
     const {
       limit = 10,
       offset = 0,
@@ -248,5 +248,19 @@ export class SqliteTableRepository
       new Date(row.created_at),
       new Date(row.updated_at)
     )
+  }
+
+  // IRepositoryWithBatchOperations method implementation
+  async deleteMany(ids: string[]): Promise<void> {
+    if (ids.length === 0) return
+
+    const placeholders = ids.map(() => '?').join(', ')
+    const query = `DELETE FROM tables WHERE id IN (${placeholders})`
+
+    try {
+      this.db.run(query, ids)
+    } catch (error) {
+      throw new DatabaseException(`Failed to delete multiple tables: ${error}`)
+    }
   }
 }

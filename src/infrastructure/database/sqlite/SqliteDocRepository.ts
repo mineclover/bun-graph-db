@@ -85,7 +85,7 @@ export class SqliteDocRepository
 
   // findById() - inherited from BaseSqliteRepository
 
-  async findAll(options: DocSearchOptions = {}): Promise<PaginatedResult<Doc>> {
+  override async findAll(options: DocSearchOptions = {}): Promise<PaginatedResult<Doc>> {
     const {
       limit = 10,
       offset = 0,
@@ -301,7 +301,9 @@ export class SqliteDocRepository
     }
   }
 
-  async exists(tableId: TableId, category: DocCategory, version: number): Promise<boolean> {
+  // Note: This exists method has a different signature than the base class
+  // but is needed for doc-specific existence checks
+  async existsByTableIdCategoryVersion(tableId: TableId, category: DocCategory, version: number): Promise<boolean> {
     const query = `
       SELECT COUNT(*) as count
       FROM docs
@@ -318,7 +320,7 @@ export class SqliteDocRepository
     }
   }
 
-  async count(tableId?: TableId): Promise<number> {
+  override async count(tableId?: TableId): Promise<number> {
     let query = 'SELECT COUNT(*) as count FROM docs'
     const params: any[] = []
 

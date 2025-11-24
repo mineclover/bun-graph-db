@@ -448,15 +448,16 @@ export class SqliteNodeRelationRepository
     }
   }
 
-  async exists(
+  // Note: This exists method has a different signature than the base class
+  async existsBySourceTargetAndType(
     sourceExternalId: string,
     targetExternalId: string,
     tableId: TableId,
     relationTypeId: RelationTypeId
   ): Promise<boolean> {
     const query = `
-      SELECT 1 FROM node_relations 
-      WHERE source_external_id = ? AND target_external_id = ? 
+      SELECT 1 FROM node_relations
+      WHERE source_external_id = ? AND target_external_id = ?
         AND table_id = ? AND relation_type_id = ?
       LIMIT 1
     `
@@ -471,7 +472,7 @@ export class SqliteNodeRelationRepository
     }
   }
 
-  async count(tableId?: TableId, relationTypeId?: RelationTypeId): Promise<number> {
+  override async count(tableId?: TableId, relationTypeId?: RelationTypeId): Promise<number> {
     let query = `SELECT COUNT(*) as count FROM node_relations`
     const params: string[] = []
 

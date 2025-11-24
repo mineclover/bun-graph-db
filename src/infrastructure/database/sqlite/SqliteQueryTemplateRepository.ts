@@ -431,7 +431,17 @@ export class SqliteQueryTemplateRepository
     }
   }
 
-  // delete() - inherited from BaseSqliteRepository
+  // Override delete to match IQueryTemplateRepository signature
+  override async delete(id: string): Promise<boolean> {
+    const query = `DELETE FROM query_templates WHERE id = ?`
+
+    try {
+      const result = this.db.run(query, [id])
+      return result.changes > 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to delete query template: ${error}`)
+    }
+  }
 
   async incrementUsage(id: string): Promise<void> {
     try {
