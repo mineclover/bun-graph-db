@@ -62,8 +62,10 @@ export function createTestAttribute(
     tableId as TableId,
     identifier,
     name,
-    null,
     attributeTypeId as any,
+    null, // description
+    false, // isRequired
+    null, // metadata
     new Date(),
     new Date()
   )
