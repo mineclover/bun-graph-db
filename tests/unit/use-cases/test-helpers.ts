@@ -5,8 +5,9 @@ import { Table } from '@/domain/entities/Table.js'
 import { Node } from '@/domain/entities/Node.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
+import { AttributeType } from '@/domain/entities/AttributeType.js'
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
-import type { TableId, NodeId, RelationTypeId, AttributeId } from '@/core/types/CommonTypes.js'
+import type { TableId, NodeId, RelationTypeId, AttributeId, AttributeTypeId } from '@/core/types/CommonTypes.js'
 
 export function createTestTable(
   id: string = 'table-1',
@@ -66,6 +67,27 @@ export function createTestAttribute(
     null, // description
     false, // isRequired
     null, // metadata
+    new Date(),
+    new Date()
+  )
+}
+
+export function createTestAttributeType(
+  id: string = 'attr-type-1',
+  identifier: string = 'string',
+  jsonType: string = 'string',
+  description?: string
+): AttributeType {
+  return AttributeType.fromDatabase(
+    id as AttributeTypeId,
+    identifier,
+    jsonType,
+    null, // format
+    description || null,
+    null, // validationSchema
+    null, // referenceConfig
+    null, // defaultValue
+    null, // examples
     new Date(),
     new Date()
   )
