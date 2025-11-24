@@ -201,7 +201,7 @@ export class TemplateMutations extends BaseResolver {
           throw new Error('Template ID is null')
         }
 
-        await this.queryTemplateRepository.delete(templateId)
+        await this.queryTemplateRepository.deleteById(templateId)
 
         return true
       },

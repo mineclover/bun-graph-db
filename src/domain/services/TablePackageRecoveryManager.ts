@@ -224,7 +224,7 @@ export class TablePackageRecoveryManager {
       for (const templateId of session.rollbackInfo.templatesCreated) {
         operations.push(async () => {
           try {
-            await this.queryTemplateRepository.delete(templateId)
+            await this.queryTemplateRepository.deleteById(templateId)
             rollbackResult.rollbackSummary.templates++
             this.logger.debug('Rolled back template', { templateId })
           } catch (error) {

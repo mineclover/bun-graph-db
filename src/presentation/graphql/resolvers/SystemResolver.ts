@@ -21,6 +21,13 @@ interface SystemInitializationInput {
 }
 
 export class SystemResolver extends BaseResolver {
+  protected logger = {
+    info: (msg: string, data?: Record<string, unknown>) => console.log(`[INFO] ${msg}`, data || ''),
+    warn: (msg: string, data?: Record<string, unknown>) => console.warn(`[WARN] ${msg}`, data || ''),
+    error: (msg: string, data?: Record<string, unknown>) => console.error(`[ERROR] ${msg}`, data || ''),
+    debug: (msg: string, data?: Record<string, unknown>) => console.debug(`[DEBUG] ${msg}`, data || ''),
+  }
+
   private systemInitializationUseCase: SystemInitializationUseCase
 
   constructor(container: DIContainer) {
@@ -62,7 +69,12 @@ export class SystemResolver extends BaseResolver {
         errors: result.errors.map(error => ({ message: error }))
       }
     } catch (error) {
-      return this.handleError(error, 'Failed to initialize system')
+      this.logger.error('Failed to initialize system', { error })
+      return {
+        success: false,
+        result: null,
+        errors: [this.mapToGraphQLError(error, 'initializeSystem')]
+      }
     }
   }
 
@@ -84,7 +96,8 @@ export class SystemResolver extends BaseResolver {
         lastInitialized: status.lastInitialized
       }
     } catch (error) {
-      return this.handleError(error, 'Failed to get system status')
+      this.logger.error('Failed to get system status', { error })
+      throw this.mapToGraphQLError(error, 'systemStatus')
     }
   }
 }

@@ -29,9 +29,9 @@ export class ExportMutations extends BaseResolver {
 
       const input: TableNodesExportInput = {
         ...args.input,
-        format: args.input.format.toLowerCase(),
-        attributeFormat: args.input.attributeFormat?.toLowerCase() || 'nested',
-        dateFormat: args.input.dateFormat?.toLowerCase() || 'iso',
+        format: args.input.format.toLowerCase() as 'json' | 'csv' | 'excel' | 'xml' | 'yaml',
+        attributeFormat: (args.input.attributeFormat?.toLowerCase() || 'nested') as 'columns' | 'nested' | 'keyvalue' | undefined,
+        dateFormat: (args.input.dateFormat?.toLowerCase() || 'iso') as 'iso' | 'timestamp' | 'readable' | undefined,
       }
 
       const options = {
@@ -110,7 +110,7 @@ export class ExportMutations extends BaseResolver {
       const results: TableNodesExportOutput[] = []
 
       const defaultOptions = {
-        format: args.format.toLowerCase(),
+        format: args.format.toLowerCase() as 'json' | 'csv' | 'excel' | 'xml' | 'yaml',
         includeAttributes: args.options?.includeAttributes ?? true,
         includeMetadata: args.options?.includeMetadata ?? true,
         attributeFormat: (args.options?.attributeFormat?.toLowerCase() || 'nested') as any,
@@ -184,9 +184,9 @@ export class ExportMutations extends BaseResolver {
     try {
       const input: TableNodesExportInput = {
         ...args.input,
-        format: args.input.format.toLowerCase(),
-        attributeFormat: args.input.attributeFormat?.toLowerCase() || 'nested',
-        dateFormat: args.input.dateFormat?.toLowerCase() || 'iso',
+        format: args.input.format.toLowerCase() as 'json' | 'csv' | 'excel' | 'xml' | 'yaml',
+        attributeFormat: (args.input.attributeFormat?.toLowerCase() || 'nested') as 'columns' | 'nested' | 'keyvalue' | undefined,
+        dateFormat: (args.input.dateFormat?.toLowerCase() || 'iso') as 'iso' | 'timestamp' | 'readable' | undefined,
       }
 
       const errors = validateExportInput(input)

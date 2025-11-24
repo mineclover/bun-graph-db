@@ -121,7 +121,9 @@ export class SystemInitializationService {
 
     } catch (error) {
       result.errors.push(`Initialization failed: ${error instanceof Error ? error.message : String(error)}`)
-      this.logger.error('❌ System initialization failed', error)
+      this.logger.error('❌ System initialization failed', {
+        error: error instanceof Error ? error.message : String(error)
+      })
     }
 
     return result
@@ -385,7 +387,9 @@ export class SystemInitializationService {
       const attributes = database.prepare('SELECT COUNT(*) as count FROM attributes').get() as { count: number }
       summary.attributesCount = attributes.count
     } catch (error) {
-      this.logger.error('Error collecting summary statistics', error)
+      this.logger.error('Error collecting summary statistics', {
+        error: error instanceof Error ? error.message : String(error)
+      })
     }
 
     return summary

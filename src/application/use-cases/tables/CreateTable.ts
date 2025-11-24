@@ -43,7 +43,13 @@ export class CreateTableUseCase {
       const table = Table.create(input.identifier, input.description)
 
       // Save to repository and get the saved table with generated ID
-      const savedTable = await this.tableRepository.save(table)
+      const savedTableResult = await this.tableRepository.save(table)
+
+      // Ensure we have a valid table (save should always return the table for new entities)
+      if (!savedTableResult) {
+        throw new Error('Table save returned void unexpectedly')
+      }
+      const savedTable = savedTableResult
 
       this.logger.info('Table created successfully', {
         id: savedTable.id,

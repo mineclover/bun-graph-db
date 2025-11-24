@@ -467,7 +467,7 @@ export class QueryTemplateResolver extends BaseResolver {
         })
       }
 
-      await this.queryTemplateRepository.delete(id)
+      await this.queryTemplateRepository.deleteById(id)
       return true
     } catch (error) {
       this.logger.error('Failed to delete template', { id, ...toErrorMeta(error) })

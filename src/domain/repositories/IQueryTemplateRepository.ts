@@ -48,7 +48,7 @@ export interface IQueryTemplateRepository {
   findTemplatesWithTableDependencies(): Promise<QueryTemplate[]>
   create(template: QueryTemplate): Promise<QueryTemplate>
   update(id: string, updates: QueryTemplateUpdateData): Promise<QueryTemplate>
-  delete(id: string): Promise<boolean>
+  deleteById(id: string): Promise<boolean>
   incrementUsage(id: string): Promise<void>
   updateExecutionStats(id: string, executionTimeMs: number): Promise<void>
   findPopular(limit?: number): Promise<QueryTemplate[]>

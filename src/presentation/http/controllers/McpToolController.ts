@@ -653,11 +653,12 @@ export class McpToolController {
       } = req.body
 
       if (!tableId) {
-        return res.status(400).json({
+        res.status(400).json({
           success: false,
           error: 'tableId is required',
           tool: 'export-table-nodes'
         })
+        return
       }
 
       this.logger.info('MCP Tool: export-table-nodes called', {

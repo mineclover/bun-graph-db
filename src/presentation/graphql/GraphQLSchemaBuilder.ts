@@ -98,39 +98,39 @@ export class GraphQLSchemaBuilder {
   private async resolveDependencies(): Promise<GraphQLDependencies> {
 
     // Query resolvers
-    const tableQueries = await this.container.resolve(GraphQLTokens.TABLE_QUERIES)
+    const tableQueries = await this.container.resolve(GraphQLTokens.TABLE_QUERIES) as TableQueries
 
-    const nodeQueries = await this.container.resolve(GraphQLTokens.NODE_QUERIES)
+    const nodeQueries = await this.container.resolve(GraphQLTokens.NODE_QUERIES) as NodeQueries
 
-    const attributeQueries = await this.container.resolve(GraphQLTokens.ATTRIBUTE_QUERIES)
+    const attributeQueries = await this.container.resolve(GraphQLTokens.ATTRIBUTE_QUERIES) as AttributeQueries
 
-    const relationQueries = await this.container.resolve(GraphQLTokens.RELATION_QUERIES)
+    const relationQueries = await this.container.resolve(GraphQLTokens.RELATION_QUERIES) as RelationQueries
 
-    const templateQueries = await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES)
+    const templateQueries = await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES) as TemplateQueries
 
-    const docQueries = await this.container.resolve(GraphQLTokens.DOC_QUERIES)
+    const docQueries = await this.container.resolve(GraphQLTokens.DOC_QUERIES) as DocQueries
 
-    const systemQueries = await this.container.resolve(GraphQLTokens.SYSTEM_QUERIES)
+    const systemQueries = await this.container.resolve(GraphQLTokens.SYSTEM_QUERIES) as SystemQueries | undefined
 
     // Mutation resolvers
-    const tableMutations = await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS)
+    const tableMutations = await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS) as TableMutations
 
-    const nodeMutations = await this.container.resolve(GraphQLTokens.NODE_MUTATIONS)
+    const nodeMutations = await this.container.resolve(GraphQLTokens.NODE_MUTATIONS) as NodeMutations
 
-    const attributeMutations = await this.container.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS)
+    const attributeMutations = await this.container.resolve(GraphQLTokens.ATTRIBUTE_MUTATIONS) as AttributeMutations
 
-    const relationMutations = await this.container.resolve(GraphQLTokens.RELATION_MUTATIONS)
+    const relationMutations = await this.container.resolve(GraphQLTokens.RELATION_MUTATIONS) as RelationMutations
 
-    const templateMutations = await this.container.resolve(GraphQLTokens.TEMPLATE_MUTATIONS)
+    const templateMutations = await this.container.resolve(GraphQLTokens.TEMPLATE_MUTATIONS) as TemplateMutations
 
-    const docMutations = await this.container.resolve(GraphQLTokens.DOC_MUTATIONS)
+    const docMutations = await this.container.resolve(GraphQLTokens.DOC_MUTATIONS) as DocMutations
 
-    const exportMutations = await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS)
+    const exportMutations = await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS) as any
 
-    const tablePackageResolver = await this.container.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER)
+    const tablePackageResolver = await this.container.resolve(GraphQLTokens.TABLE_PACKAGE_RESOLVER) as TablePackageResolver
 
     // System resolver
-    const systemResolver = await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER)
+    const systemResolver = await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER) as any
 
     return {
       tableQueries,
@@ -174,11 +174,11 @@ export class GraphQLSchemaBuilder {
   }
 
   private async resolveSchemaResolvers(): Promise<any> {
-    const tableRepository = await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY)
+    const tableRepository = await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY) as any
 
-    const schemaExportUseCase = await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE)
+    const schemaExportUseCase = await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE) as any
 
-    const schemaImportUseCase = await this.container.resolve(UseCaseTokens.SCHEMA_IMPORT_USE_CASE)
+    const schemaImportUseCase = await this.container.resolve(UseCaseTokens.SCHEMA_IMPORT_USE_CASE) as any
 
     const schemaResolvers = createSchemaResolvers({
       tableRepository,

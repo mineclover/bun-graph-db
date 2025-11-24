@@ -188,7 +188,7 @@ export class TemplateImportExportService {
 
       if (existingTemplate && options.overwriteExisting) {
         // 업데이트 로직 (현재는 삭제 후 재생성)
-        await this.templateRepository.delete(existingTemplate.getId()!)
+        await this.templateRepository.deleteById(existingTemplate.getId()!)
         createdTemplate = await this.templateRepository.create(finalTemplate)
       } else {
         createdTemplate = await this.templateRepository.create(finalTemplate)
