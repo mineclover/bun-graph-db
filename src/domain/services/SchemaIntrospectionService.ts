@@ -14,7 +14,8 @@ import type { GraphQLError, GraphQLSchema, IntrospectionQuery } from 'graphql'
 import { introspectionFromSchema, parse, validate, validateSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
-import { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
+// NOTE: GraphQLSchemaBuilder is imported dynamically in getCurrentSchema() to avoid circular dependency:
+// TablePackageModule → TablePackageService → SchemaIntrospectionService → GraphQLSchemaBuilder → resolvers → container
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export interface SchemaAnalysisResult {
@@ -115,6 +116,8 @@ export class SchemaIntrospectionService {
     }
 
     try {
+      // Dynamic import to avoid circular dependency at module loading time
+      const { GraphQLSchemaBuilder } = await import('@/presentation/graphql/GraphQLSchemaBuilder.js')
       const schemaBuilder = new GraphQLSchemaBuilder(this.container)
       this.cachedSchema = await schemaBuilder.build()
       this.cacheTimestamp = now

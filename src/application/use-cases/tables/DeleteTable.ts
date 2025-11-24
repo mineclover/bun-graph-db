@@ -72,8 +72,8 @@ export class DeleteTableUseCase {
     // Check dependencies
     const dependencies = await this.checkTableDependencies(id)
 
-    // If table has data and force is not set, throw error with dependency info
-    if (dependencies.hasData && !force) {
+    // If table has data and neither force nor cascadeDelete is set, throw error with dependency info
+    if (dependencies.hasData && !force && !cascadeDelete) {
       this.logger.warn('Table deletion blocked due to existing data', {
         tableId: id,
         dependencies,

@@ -8,6 +8,7 @@ import type {
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
+import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface QueryTemplateRow {
   id: number
@@ -31,80 +32,26 @@ interface QueryTemplateRow {
   updated_at: string
 }
 
-export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
+export class SqliteQueryTemplateRepository
+  extends BaseSqliteRepository<QueryTemplate, string>
+  implements IQueryTemplateRepository
+{
   constructor(
-    private readonly db: Database,
+    db: Database,
     private readonly logger: ILogger
-  ) {}
-
-  async findById(id: string): Promise<QueryTemplate | null> {
-    try {
-      const query = `
-        SELECT * FROM templates WHERE id = ?
-      `
-      const row = this.db.query<QueryTemplateRow, [string]>(query).get(id)
-
-      if (!row) return null
-
-      return QueryTemplate.fromDatabase(
-        String(row.id),
-        row.identifier,
-        row.name,
-        row.description,
-        row.query_text,
-        row.query_name,
-        row.operation_type || 'query',
-        row.variables_schema,
-        row.default_variables,
-        row.applicable_tables,
-        row.operation_type || 'query', // Pass operation_type as templateType for compatibility
-        row.complexity_score || 0,
-        row.usage_count || 0,
-        row.last_used_at,
-        row.avg_execution_time_ms,
-        row.version || '1.0',
-        Boolean(row.is_active),
-        row.tags,
-        row.created_at,
-        row.updated_at
-      )
-    } catch (error) {
-      this.logger.error('Failed to find template by id', { id, ...toErrorMeta(error) })
-      throw new DomainException('Failed to find template', { code: 'DATABASE_ERROR' })
-    }
+  ) {
+    super(db)
   }
+
+  protected get tableName(): string {
+    return 'templates'
+  }
+
+  // findById() - inherited from BaseSqliteRepository
 
   async findByIdentifier(identifier: string): Promise<QueryTemplate | null> {
     try {
-      const query = `
-        SELECT * FROM templates WHERE identifier = ?
-      `
-      const row = this.db.query<QueryTemplateRow, [string]>(query).get(identifier)
-
-      if (!row) return null
-
-      return QueryTemplate.fromDatabase(
-        String(row.id),
-        row.identifier,
-        row.name,
-        row.description,
-        row.query_text,
-        row.query_name,
-        row.operation_type || 'query',
-        row.variables_schema,
-        row.default_variables,
-        row.applicable_tables,
-        row.operation_type || 'query', // Pass operation_type as templateType for compatibility
-        row.complexity_score || 0,
-        row.usage_count || 0,
-        row.last_used_at,
-        row.avg_execution_time_ms,
-        row.version || '1.0',
-        Boolean(row.is_active),
-        row.tags,
-        row.created_at,
-        row.updated_at
-      )
+      return await this.findByIdentifierField(identifier)
     } catch (error) {
       this.logger.error('Failed to find template by identifier', {
         identifier,
@@ -484,16 +431,7 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
     }
   }
 
-  async delete(id: string): Promise<boolean> {
-    try {
-      const query = `DELETE FROM templates WHERE id = ?`
-      const result = this.db.run(query, [id])
-      return result.changes > 0
-    } catch (error) {
-      this.logger.error('Failed to delete template', { id, ...toErrorMeta(error) })
-      throw new DomainException('Failed to delete template', { code: 'DATABASE_ERROR' })
-    }
-  }
+  // delete() - inherited from BaseSqliteRepository
 
   async incrementUsage(id: string): Promise<void> {
     try {
@@ -735,5 +673,30 @@ export class SqliteQueryTemplateRepository implements IQueryTemplateRepository {
       complexity_score: 'complexity_score',
     }
     return mappings[field] || 'usage_count'
+  }
+
+  protected mapRowToEntity(row: QueryTemplateRow): QueryTemplate {
+    return QueryTemplate.fromDatabase(
+      String(row.id),
+      row.identifier,
+      row.name,
+      row.description,
+      row.query_text,
+      row.query_name,
+      row.operation_type || 'query',
+      row.variables_schema,
+      row.default_variables,
+      row.applicable_tables,
+      row.operation_type || 'query', // Pass operation_type as templateType for compatibility
+      row.complexity_score || 0,
+      row.usage_count || 0,
+      row.last_used_at,
+      row.avg_execution_time_ms,
+      row.version || '1.0',
+      Boolean(row.is_active),
+      row.tags,
+      row.created_at,
+      row.updated_at
+    )
   }
 }

@@ -17,7 +17,7 @@ import type {
   SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
-import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
+import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export interface ExportTemplatesRequest {
   filter?: {

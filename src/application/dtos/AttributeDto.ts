@@ -1,17 +1,19 @@
 import type { Attribute } from '@/domain/entities/Attribute.js'
+import type {
+  BaseEntityDto,
+  WithIdentifier,
+  WithDescription,
+  WithMetadata,
+  GetManyInput,
+  DeleteOutput,
+} from '@/core/types/UseCaseTypes.js'
 
 // Data Transfer Object for Attribute entity
-export interface AttributeDto {
-  id: string
+export interface AttributeDto extends BaseEntityDto, WithIdentifier, WithDescription, WithMetadata<object> {
   tableId: string
-  identifier: string
   name: string
   attributeTypeId: string
-  description: string | null
   isRequired: boolean
-  metadata: object | null
-  createdAt: string
-  updatedAt: string
 }
 
 export function fromEntity(attribute: Attribute): AttributeDto {
@@ -21,7 +23,7 @@ export function fromEntity(attribute: Attribute): AttributeDto {
     attributeTypeIdType: typeof attribute.getAttributeTypeId(),
   })
 
-  const dto = {
+  const dto: AttributeDto = {
     id: attribute.getId(),
     tableId: attribute.getTableId(),
     identifier: attribute.getIdentifier(),
@@ -65,15 +67,14 @@ export interface UpdateAttributeInput {
   metadata?: object | null
 }
 
-export interface GetAttributesInput {
-  limit?: number
-  offset?: number
+// Use generic GetManyInput with attribute-specific filters
+export interface GetAttributesInput extends GetManyInput<{
   tableId?: string
   attributeTypeId?: string
   requiredOnly?: boolean
-}
+}> {}
 
-// Output DTOs for operations
+// Output DTOs for operations - using standard patterns
 export interface CreateAttributeOutput {
   attribute: AttributeDto
 }
@@ -92,6 +93,6 @@ export interface UpdateAttributeOutput {
   attribute: AttributeDto
 }
 
-export interface DeleteAttributeOutput {
-  success: boolean
-}
+// Use generic DeleteOutput
+export type DeleteAttributeOutput = DeleteOutput
+

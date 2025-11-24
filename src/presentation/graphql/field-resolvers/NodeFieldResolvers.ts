@@ -3,6 +3,7 @@ import type { GraphQLContext, NodeParent } from '@/core/types/GraphQLTypes.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
@@ -14,6 +15,7 @@ export class NodeFieldResolvers extends BaseResolver {
     private readonly tableRepository: ITableRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
+    private readonly relationTypeRepository: IRelationTypeRepository,
     logger: ILogger
   ) {
     super()
@@ -170,34 +172,56 @@ export class NodeFieldResolvers extends BaseResolver {
 
   async neighborsByRelationType(
     parent: NodeParent,
-    args: { relationTypeId: string },
+    args: { relationTypes: string[]; direction?: 'OUTGOING' | 'INCOMING' | 'BOTH' },
     _context?: GraphQLContext
   ) {
     this.validateArgs(
       args,
       [
-        BaseResolver.validationRules.required('relationTypeId', 'Relation Type ID'),
-        BaseResolver.validationRules.nonEmpty('relationTypeId', 'Relation Type ID'),
+        BaseResolver.validationRules.required('relationTypes', 'Relation Types'),
+        BaseResolver.validationRules.nonEmpty('relationTypes', 'Relation Types'),
       ],
       'neighborsByRelationType'
     )
 
+    const direction = args.direction || 'BOTH'
+
     return this.handleFieldResolution(
       async () => {
-        const outgoing = await this.nodeRelationRepository.findBySourceNodeIdAndRelationType(
-          parent.id,
-          args.relationTypeId
-        )
-        const incoming = await this.nodeRelationRepository.findByTargetNodeIdAndRelationType(
-          parent.id,
-          args.relationTypeId
-        )
+        const neighborIds: string[] = []
 
-        const neighborIds = [
-          ...outgoing.map((rel) => rel.getTargetNodeId()).filter((id): id is string => id !== null),
-          ...incoming.map((rel) => rel.getSourceNodeId()).filter((id): id is string => id !== null),
-        ]
+        // For each relation type, find neighbors
+        for (const relationTypeIdentifier of args.relationTypes) {
+          // Get relation type by identifier
+          const relationType = await this.relationTypeRepository.findByIdentifier(relationTypeIdentifier)
+          if (!relationType) continue
 
+          const relationTypeId = relationType.getId()
+
+          // Get outgoing relations
+          if (direction === 'OUTGOING' || direction === 'BOTH') {
+            const outgoing = await this.nodeRelationRepository.findBySourceNodeIdAndRelationType(
+              parent.id,
+              relationTypeId
+            )
+            neighborIds.push(
+              ...outgoing.map((rel) => rel.getTargetNodeId()).filter((id): id is string => id !== null)
+            )
+          }
+
+          // Get incoming relations
+          if (direction === 'INCOMING' || direction === 'BOTH') {
+            const incoming = await this.nodeRelationRepository.findByTargetNodeIdAndRelationType(
+              parent.id,
+              relationTypeId
+            )
+            neighborIds.push(
+              ...incoming.map((rel) => rel.getSourceNodeId()).filter((id): id is string => id !== null)
+            )
+          }
+        }
+
+        // Get unique neighbor IDs and fetch nodes
         const uniqueNeighborIds = [...new Set(neighborIds)]
         const neighbors = await Promise.all(
           uniqueNeighborIds.map((id) => this.nodeRepository.findById(id))
@@ -207,7 +231,7 @@ export class NodeFieldResolvers extends BaseResolver {
       },
       'neighborsByRelationType',
       'Node',
-      { nodeId: parent.id, relationTypeId: args.relationTypeId }
+      { nodeId: parent.id, relationTypes: args.relationTypes, direction }
     )
   }
 

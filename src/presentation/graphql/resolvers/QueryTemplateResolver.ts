@@ -15,7 +15,7 @@ import {
   type SearchTemplatesInput,
   type TableDependencyTemplateResult,
   type UpdateQueryTemplateInput,
-} from '@/presentation/dto/QueryTemplateDto.js'
+} from '@/application/dtos/QueryTemplateDto.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 

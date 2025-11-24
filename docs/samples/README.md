@@ -1,64 +1,96 @@
-# 시나리오 및 사용 사례 문서
+# Demo Code
 
-이 디렉토리에는 bun-graph-db 시스템의 실제 사용 시나리오와 예제들이 포함되어 있습니다.
+## Overview
 
-## 📋 사용 시나리오
+**실제 서버를 대상으로 하는 데모 코드 디렉토리**
 
-### 1. **테스트 관리 시나리오** (`test-management-scenarios.md`)
-- **목적**: 다중 구현체 테스트 추적 및 의존성 관리
-- **특징**: Jest, Playwright, Postman 등 다양한 테스트 프레임워크 통합 관리
-- **활용**: CI/CD 파이프라인, 품질 게이트, 테스트 안정성 모니터링
+이 디렉토리는 실제 실행 중인 GraphQL 서버에 요청을 보내어 템플릿 쿼리 기능을 시연하는 코드들을 포함합니다.
 
-### 2. **메모리 통합 시나리오** (`memory-integration-scenarios.md`)
-- **목적**: 세션 기반 메모리 관리 및 데이터 지속성
-- **특징**: 대화형 시스템, 컨텍스트 유지, 학습 데이터 축적
-- **활용**: AI 어시스턴트, 챗봇, 개인화 시스템
+## Structure
 
-### 3. **프롬프트 관리 시나리오** (`prompt-management-scenarios.md`)
-- **목적**: AI 프롬프트 템플릿 체계적 관리
-- **특징**: 버전 관리, 성능 추적, A/B 테스팅
-- **활용**: AI 서비스, 자동화 시스템, 프롬프트 엔지니어링
-
-### 4. **테이블 분리 시나리오** (`table-separation-scenarios.md`)
-- **목적**: 데이터 도메인별 논리적 분리 및 관계 관리
-- **특징**: 다중 테이블 설계, 관계형 데이터 모델링
-- **활용**: 복잡한 데이터 구조, 마이크로서비스 아키텍처
-
-## 🔧 템플릿 실행 패턴
-
-### 5. **템플릿 실행 패턴** (`template-execution-patterns.md`)
-- **목적**: ExecuteTemplateWithGraphQL 엔진 사용 가이드
-- **특징**: 실용적인 GraphQL 템플릿 실행 예제
-- **패턴**: 데이터 입력, 관계 관리, 복잡한 워크플로우
-
-## 🚀 시작하기
-
-각 시나리오 문서는 다음 구조를 따릅니다:
-
-1. **시나리오 개요**: 목적과 주요 특징
-2. **데이터 모델**: 테이블 구조 및 스키마 설계
-3. **실제 예제**: 구체적인 사용 사례와 코드
-4. **활용 패턴**: 실제 적용 방법과 모범 사례
-
-## 🛠️ 실습 환경
-
-이 시나리오들을 실습하려면:
-
-```bash
-# 개발 서버 시작
-bun run dev
-
-# GraphQL Playground 접속
-# http://localhost:4000/graphql
+```
+demo/
+├── template-queries/           # 템플릿 쿼리 실행 데모
+│   ├── basic-demo.ts          # 기본 CRUD 데모
+│   ├── import-export-demo.ts  # Import/Export 기능 데모
+│   ├── file-import-export-demo.ts # 파일 기반 Import/Export 데모
+│   ├── advanced-demo.ts       # 고급 기능 데모  
+│   └── performance-demo.ts    # 성능 측정 데모
+├── exported-templates/         # Export된 JSON 파일들 저장소
+├── fixtures/                  # 데모용 데이터
+│   ├── demo-templates.ts      # 데모용 템플릿들
+│   └── demo-queries.ts        # 데모용 쿼리들
+├── utils/                     # 데모 유틸리티
+│   ├── graphql-client.ts      # GraphQL 클라이언트
+│   └── demo-runner.ts         # 데모 실행 도구
+├── run-demo.ts               # 통합 데모 실행기
+└── README.md                 # 이 파일
 ```
 
-## 📚 관련 문서
+## Usage
 
-- **API 참조**: `docs/api/doc-api-reference.md`
-- **개발 가이드**: `docs/development/`
-- **아키텍처**: `docs/architecture/`
-- **템플릿 시스템**: `docs/templates/`
+### 기본 실행
+```bash
+# 기본 서버 주소 (http://localhost:4000)
+bun run demo
 
----
+# 사용자 지정 서버 주소
+bun run demo --server http://localhost:3000
+bun run demo --server https://api.example.com/graphql
 
-**마지막 업데이트**: 2025-01-19
+# 특정 데모 실행
+bun run demo:basic
+bun run demo:import-export
+bun run demo:file-import-export
+bun run demo:cleanup-files
+bun run demo:advanced  
+bun run demo:performance
+```
+
+### 서버 주소 설정
+- 환경변수: `GRAPHQL_SERVER=http://localhost:4000`
+- 파라미터: `--server <URL>`
+- 기본값: `http://localhost:4000`
+
+## Demo Categories
+
+### 1. Basic Demo (`basic-demo.ts`)
+- 템플릿 생성/조회/업데이트/삭제
+- GraphQL 쿼리 실행
+- 기본적인 CRUD 작업 시연
+
+### 2. Import/Export Demo (`import-export-demo.ts`) 
+- 템플릿 JSON Export/Import 기능
+- ID 및 식별자 기반 내보내기
+- 중복 처리 옵션 (덮어쓰기/새 식별자)
+- 통계 정보 포함/제외 옵션
+- **실행**: `bun run demo:import-export`
+- **문서**: [완전한 사용 가이드](../docs/TEMPLATE_IMPORT_EXPORT.md)
+
+### 3. File Import/Export Demo (`file-import-export-demo.ts`) ⭐ **NEW**
+- **실제 파일 시스템**을 사용한 Import/Export 테스트
+- JSON 파일 저장 및 불러오기
+- 배치 Export/Import 기능
+- 백업 및 복원 시나리오 시뮬레이션
+- 파일 유효성 검사 및 메타데이터 관리
+- **실행**: `bun run demo:file-import-export`
+- **정리**: `bun run demo:cleanup-files`
+- **저장 위치**: `demo/exported-templates/`
+
+### 4. Advanced Demo (`advanced-demo.ts`) 
+- 복잡한 템플릿 검색
+- 필터링 및 정렬
+- 성능 통계 확인
+- 변수 스키마 검증
+
+### 5. Performance Demo (`performance-demo.ts`)
+- 대용량 템플릿 처리
+- 실행 시간 측정
+- 성능 메트릭 수집
+- 쿼리 최적화 시연
+
+## Safety Notes
+
+- 모든 데모는 읽기 전용 또는 임시 데이터를 사용합니다
+- 프로덕션 서버에 대한 실행 시 주의하세요
+- 데모 실행 전 서버 연결을 확인하세요

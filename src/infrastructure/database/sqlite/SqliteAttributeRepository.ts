@@ -13,6 +13,7 @@ import type {
   IAttributeRepository,
 } from '@/domain/repositories/IAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface AttributeRow {
   id: number
@@ -41,8 +42,17 @@ interface AttributeTypeRow {
   updated_at: string
 }
 
-export class SqliteAttributeRepository implements IAttributeRepository {
-  constructor(private readonly db: Database) {}
+export class SqliteAttributeRepository
+  extends BaseSqliteRepository<Attribute, AttributeId>
+  implements IAttributeRepository
+{
+  constructor(db: Database) {
+    super(db)
+  }
+
+  protected get tableName(): string {
+    return 'attributes'
+  }
 
   async save(attribute: Attribute): Promise<void> {
     const attributeData = attribute.toDatabase()
@@ -96,20 +106,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     }
   }
 
-  async findById(id: AttributeId): Promise<Attribute | null> {
-    const query = `
-      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
-      FROM attributes
-      WHERE id = ?
-    `
-
-    try {
-      const row = this.db.query<AttributeRow, [string]>(query).get(id)
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find attribute by id: ${error}`)
-    }
-  }
+  // findById() - inherited from BaseSqliteRepository
 
   async findByTableIdAndIdentifier(
     tableId: TableId,
@@ -209,51 +206,9 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     }
   }
 
-  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<Attribute>> {
-    const { limit = 10, offset = 0 } = options
+  // findAll() - inherited from BaseSqliteRepository
 
-    const dataQuery = `
-      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
-      FROM attributes
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `
-
-    const countQuery = `SELECT COUNT(*) as count FROM attributes`
-
-    try {
-      const rows = this.db.query<AttributeRow, [number, number]>(dataQuery).all(limit, offset)
-      const countResult = this.db.query<{ count: number }, []>(countQuery).get()
-      const total = countResult?.count || 0
-
-      const attributes = rows.map((row) => this.mapRowToEntity(row))
-
-      return {
-        nodes: attributes,
-        totalCount: total,
-        hasNextPage: offset + limit < total,
-        hasPreviousPage: offset > 0,
-        data: attributes,
-        total,
-        hasMore: offset + limit < total,
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to find all attributes: ${error}`)
-    }
-  }
-
-  async delete(id: AttributeId): Promise<void> {
-    const query = `DELETE FROM attributes WHERE id = ?`
-
-    try {
-      const result = this.db.run(query, [id])
-      if (result.changes === 0) {
-        throw new DatabaseException(`Attribute with id ${id} not found`)
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to delete attribute: ${error}`)
-    }
-  }
+  // delete() - inherited from BaseSqliteRepository
 
   async deleteByTableId(tableId: TableId): Promise<void> {
     const query = `DELETE FROM attributes WHERE table_id = ?`
@@ -276,16 +231,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     }
   }
 
-  async count(): Promise<number> {
-    const query = `SELECT COUNT(*) as count FROM attributes`
-
-    try {
-      const result = this.db.query<{ count: number }, []>(query).get()
-      return result?.count || 0
-    } catch (error) {
-      throw new DatabaseException(`Failed to count attributes: ${error}`)
-    }
-  }
+  // count() - inherited from BaseSqliteRepository
 
   async countByTableId(tableId: TableId): Promise<number> {
     const query = `SELECT COUNT(*) as count FROM attributes WHERE table_id = ?`
@@ -331,23 +277,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     }
   }
 
-  async findByIds(ids: AttributeId[]): Promise<Attribute[]> {
-    if (ids.length === 0) return []
-
-    const placeholders = ids.map(() => '?').join(',')
-    const query = `
-      SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
-      FROM attributes
-      WHERE id IN (${placeholders})
-    `
-
-    try {
-      const rows = this.db.query<AttributeRow, string[]>(query).all(...ids)
-      return rows.map((row) => this.mapRowToEntity(row))
-    } catch (error) {
-      throw new DatabaseException(`Failed to find attributes by ids: ${error}`)
-    }
-  }
+  // findByIds() - inherited from BaseSqliteRepository
 
   async findRequiredByTableId(tableId: TableId): Promise<Attribute[]> {
     const query = `
@@ -383,7 +313,7 @@ export class SqliteAttributeRepository implements IAttributeRepository {
     }
   }
 
-  private mapRowToEntity(row: AttributeRow): Attribute {
+  protected mapRowToEntity(row: AttributeRow): Attribute {
     console.log('DEBUG: mapRowToEntity row data:', {
       id: row.id,
       table_id: row.table_id,

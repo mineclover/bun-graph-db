@@ -1,11 +1,6 @@
 import { TablePackageService } from '@/domain/services/TablePackageService.js'
 import type { DIContainer } from '../DIContainer.js'
-import { CommonTokens, RepositoryTokens } from '../tokens/index.js'
-
-// Define tokens for table package services
-export const TablePackageTokens = {
-  TABLE_PACKAGE_SERVICE: Symbol('TABLE_PACKAGE_SERVICE'),
-} as const
+import { CommonTokens, RepositoryTokens, TablePackageTokens } from '../tokens/index.js'
 
 /**
  * Table Package module - registers table export/import services

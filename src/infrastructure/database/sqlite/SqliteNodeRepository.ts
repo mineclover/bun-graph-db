@@ -8,6 +8,7 @@ import type {
 import { Node } from '@/domain/entities/Node.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface NodeRow {
   id: number
@@ -19,8 +20,20 @@ interface NodeRow {
   updated_at: string
 }
 
-export class SqliteNodeRepository implements INodeRepository {
-  constructor(private readonly db: Database) {}
+export class SqliteNodeRepository
+  extends BaseSqliteRepository<Node, NodeId>
+  implements INodeRepository
+{
+  constructor(db: Database) {
+    super(db)
+  }
+
+  protected get tableName(): string {
+    return 'nodes'
+  }
+
+  // Note: This repository doesn't use 'identifier' field for exists()
+  // Instead uses (tableId, content) combination
 
   async save(node: Node): Promise<void> {
     const nodeData = node.toDatabase()
@@ -68,20 +81,7 @@ export class SqliteNodeRepository implements INodeRepository {
     }
   }
 
-  async findById(id: NodeId): Promise<Node | null> {
-    const query = `
-      SELECT id, table_id, content, title, description, created_at, updated_at
-      FROM nodes
-      WHERE id = ?
-    `
-
-    try {
-      const row = this.db.query<NodeRow, [number]>(query).get(Number(id))
-      return row ? this.mapRowToEntity(row) : null
-    } catch (error) {
-      throw new DatabaseException(`Failed to find node by id: ${error}`)
-    }
-  }
+  // findById() - inherited from BaseSqliteRepository
 
   async findByTableIdAndContent(tableId: TableId, content: string): Promise<Node | null> {
     const query = `
@@ -170,18 +170,7 @@ export class SqliteNodeRepository implements INodeRepository {
     }
   }
 
-  async delete(id: NodeId): Promise<void> {
-    const query = `DELETE FROM nodes WHERE id = ?`
-
-    try {
-      const result = this.db.run(query, [id])
-      if (result.changes === 0) {
-        throw new DatabaseException(`Node with id ${id} not found`)
-      }
-    } catch (error) {
-      throw new DatabaseException(`Failed to delete node: ${error}`)
-    }
-  }
+  // delete() - inherited from BaseSqliteRepository
 
   async deleteByTableId(tableId: TableId): Promise<void> {
     const query = `DELETE FROM nodes WHERE table_id = ?`
@@ -204,16 +193,7 @@ export class SqliteNodeRepository implements INodeRepository {
     }
   }
 
-  async count(): Promise<number> {
-    const query = `SELECT COUNT(*) as count FROM nodes`
-
-    try {
-      const result = this.db.query<{ count: number }, []>(query).get()
-      return result?.count || 0
-    } catch (error) {
-      throw new DatabaseException(`Failed to count nodes: ${error}`)
-    }
-  }
+  // count() - inherited from BaseSqliteRepository
 
   async countByTableId(tableId: TableId): Promise<number> {
     const query = `SELECT COUNT(*) as count FROM nodes WHERE table_id = ?`
@@ -256,23 +236,7 @@ export class SqliteNodeRepository implements INodeRepository {
     }
   }
 
-  async findByIds(ids: NodeId[]): Promise<Node[]> {
-    if (ids.length === 0) return []
-
-    const placeholders = ids.map(() => '?').join(',')
-    const query = `
-      SELECT id, table_id, content, title, description, created_at, updated_at
-      FROM nodes
-      WHERE id IN (${placeholders})
-    `
-
-    try {
-      const rows = this.db.query<NodeRow, string[]>(query).all(...ids)
-      return rows.map((row) => this.mapRowToEntity(row))
-    } catch (error) {
-      throw new DatabaseException(`Failed to find nodes by ids: ${error}`)
-    }
-  }
+  // findByIds() - inherited from BaseSqliteRepository
 
   async searchByContent(
     tableId: TableId,
@@ -383,7 +347,7 @@ export class SqliteNodeRepository implements INodeRepository {
     }
   }
 
-  private mapRowToEntity(row: NodeRow): Node {
+  protected mapRowToEntity(row: NodeRow): Node {
     return Node.fromDatabase(
       row.id.toString(),
       row.table_id.toString(),

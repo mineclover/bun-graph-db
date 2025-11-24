@@ -1,15 +1,17 @@
 import type { Node } from '@/domain/entities/Node.js'
 import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
+import type {
+  BaseEntityDto,
+  WithDescription,
+  GetManyInput,
+  DeleteOutput,
+} from '@/core/types/UseCaseTypes.js'
 
 // Data Transfer Object for Node entity
-export interface NodeDto {
-  id: string
+export interface NodeDto extends BaseEntityDto, WithDescription {
   tableId: string
   content: string
   title: string | null
-  description: string | null
-  createdAt: string
-  updatedAt: string
   attributes?: Record<string, any> // Will be populated with node attribute values
 }
 
@@ -46,14 +48,13 @@ export interface UpdateNodeInput {
   attributes?: Record<string, any>
 }
 
-export interface GetNodesInput {
-  limit?: number
-  offset?: number
+// Use generic GetManyInput with node-specific filters
+export interface GetNodesInput extends GetManyInput<{
   tableId?: string
   search?: string
-}
+}> {}
 
-// Output DTOs for operations
+// Output DTOs for operations - using standard patterns
 export interface CreateNodeOutput {
   node: NodeDto
 }
@@ -72,18 +73,14 @@ export interface UpdateNodeOutput {
   node: NodeDto
 }
 
-export interface DeleteNodeOutput {
-  success: boolean
-}
+// Use generic DeleteOutput
+export type DeleteNodeOutput = DeleteOutput
 
 // NodeAttribute DTO
-export interface NodeAttributeDto {
-  id: string | null
+export interface NodeAttributeDto extends BaseEntityDto {
   nodeId: string
   attributeId: string
   value: any
-  createdAt: string
-  updatedAt: string
 }
 
 export function nodeAttributeFromEntity(nodeAttribute: NodeAttribute): NodeAttributeDto {

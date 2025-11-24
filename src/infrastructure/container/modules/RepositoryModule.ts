@@ -1,3 +1,4 @@
+// Import only non-problematic repositories at top level
 import { SqliteAttributeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeRepository.js'
 import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/SqliteAttributeTypeRepository.js'
 import { SqliteDocRepository } from '@/infrastructure/database/sqlite/SqliteDocRepository.js'
@@ -6,9 +7,10 @@ import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
 import { SqliteNodeSearchRepository } from '@/infrastructure/database/sqlite/SqliteNodeSearchRepository.js'
-import { SqliteQueryTemplateRepository } from '@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js'
 import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
-import { SqliteTableRepository } from '@/infrastructure/database/sqlite/SqliteTableRepository.js'
+// NOTE: SqliteTableRepository and SqliteQueryTemplateRepository are imported dynamically in factories
+// to avoid module loading hang when imported together
+
 import type { DIContainer } from '../DIContainer.js'
 import { DatabaseTokens, RepositoryTokens } from '../tokens/index.js'
 
@@ -22,19 +24,23 @@ const createSimpleLogger = () => ({
 
 /**
  * Repository module - registers all repository implementations
+ *
+ * Uses dynamic imports for SqliteTableRepository and SqliteQueryTemplateRepository
+ * to avoid Bun module loader hang when both are imported together at top level.
  */
 export function registerRepositoryModule(container: DIContainer): void {
-  // Table repository
+  // Table repository - DYNAMIC IMPORT to avoid module loading hang
   container.registerSingleton(
     RepositoryTokens.TABLE_REPOSITORY,
     async (c) => {
+      const { SqliteTableRepository } = await import('@/infrastructure/database/sqlite/SqliteTableRepository.js')
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteTableRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Attribute type repository (removed logger dependency to break circular reference)
+  // Attribute type repository
   container.registerSingleton(
     RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
     async (c) => {
@@ -44,7 +50,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Attribute repository (removed logger dependency to break circular reference)
+  // Attribute repository
   container.registerSingleton(
     RepositoryTokens.ATTRIBUTE_REPOSITORY,
     async (c) => {
@@ -54,7 +60,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node repository (removed logger dependency to break circular reference)
+  // Node repository
   container.registerSingleton(
     RepositoryTokens.NODE_REPOSITORY,
     async (c) => {
@@ -64,7 +70,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node attribute repository (removed logger dependency to break circular reference)
+  // Node attribute repository
   container.registerSingleton(
     RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
     async (c) => {
@@ -74,7 +80,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node relation repository (removed logger dependency to break circular reference)
+  // Node relation repository
   container.registerSingleton(
     RepositoryTokens.NODE_RELATION_REPOSITORY,
     async (c) => {
@@ -84,7 +90,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Relation type repository (removed logger dependency to break circular reference)
+  // Relation type repository
   container.registerSingleton(
     RepositoryTokens.RELATION_TYPE_REPOSITORY,
     async (c) => {
@@ -94,17 +100,18 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Query template repository (removed logger dependency to break circular reference)
+  // Query template repository - DYNAMIC IMPORT to avoid module loading hang
   container.registerSingleton(
     RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     async (c) => {
+      const { SqliteQueryTemplateRepository } = await import('@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js')
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteQueryTemplateRepository(connection, createSimpleLogger())
     },
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Node search repository (removed logger dependency to break circular reference)
+  // Node search repository
   container.registerSingleton(
     RepositoryTokens.NODE_SEARCH_REPOSITORY,
     async (c) => {
@@ -114,7 +121,7 @@ export function registerRepositoryModule(container: DIContainer): void {
     [DatabaseTokens.DATABASE_CONNECTION]
   )
 
-  // Graph repository (removed logger dependency to break circular reference)
+  // Graph repository
   container.registerSingleton(
     RepositoryTokens.GRAPH_REPOSITORY,
     async (c) => {

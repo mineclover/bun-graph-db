@@ -10,6 +10,9 @@ import {
 
 /**
  * Container Bootstrap - Sets up the entire DI container
+ *
+ * Uses static imports and lazy resolution through DIContainer.
+ * Actual instances are only created when resolve() is called.
  */
 let containerInstance: DIContainer | undefined
 
@@ -24,6 +27,7 @@ export async function createContainer(): Promise<DIContainer> {
   const container = new DIContainer()
 
   // Register modules in dependency order
+  // These only register factory functions, not create instances
   registerCoreModule(container)
   registerDatabaseModule(container)
   registerRepositoryModule(container)
@@ -58,7 +62,6 @@ export function resetContainer(): void {
 export async function createTestContainer(): Promise<DIContainer> {
   const container = new DIContainer()
 
-  // Register core module with test configuration
   registerCoreModule(container)
 
   // Override database provider to use mock

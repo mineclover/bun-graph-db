@@ -144,7 +144,7 @@ describe('Relation Types', () => {
 The following files have been updated to use camelCase:
 
 1. **Schema Files**:
-   - `core/schema.sql` - Default relation types
+   - `scripts/database/schema.sql` - Default relation types
    - `tests/fixtures/test-database-factory.ts` - Test fixtures
 
 2. **Script Files**:

@@ -1,13 +1,14 @@
 import type { Table } from '@/domain/entities/Table.js'
+import type {
+  BaseEntityDto,
+  WithIdentifier,
+  WithDescription,
+  GetManyInput,
+  DeleteOutput,
+} from '@/core/types/UseCaseTypes.js'
 
 // Data Transfer Object for Table entity
-export interface TableDto {
-  id: string
-  identifier: string
-  description: string | null
-  createdAt: string
-  updatedAt: string
-}
+export interface TableDto extends BaseEntityDto, WithIdentifier, WithDescription {}
 
 export function fromEntity(table: Table): TableDto {
   return {
@@ -33,12 +34,10 @@ export interface UpdateTableInput {
   description?: string | null
 }
 
-export interface GetTablesInput {
-  limit?: number
-  offset?: number
-}
+// Use generic GetManyInput for pagination
+export type GetTablesInput = GetManyInput
 
-// Output DTOs for operations
+// Output DTOs for operations - using standard patterns
 export interface CreateTableOutput {
   table: TableDto
 }
@@ -57,6 +56,5 @@ export interface UpdateTableOutput {
   table: TableDto
 }
 
-export interface DeleteTableOutput {
-  success: boolean
-}
+// Use generic DeleteOutput
+export type DeleteTableOutput = DeleteOutput

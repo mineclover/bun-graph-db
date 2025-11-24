@@ -14,7 +14,7 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import { queryTemplateToDto } from '@/presentation/dto/QueryTemplateDto.js'
+import { queryTemplateToDto } from '@/application/dtos/QueryTemplateDto.js'
 import { LegacyAIMetadataAdapter } from '@/infrastructure/ai-metadata/LegacyAIMetadataAdapter.js'
 
 export class GetTableDocsUseCase {

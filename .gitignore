@@ -45,3 +45,7 @@ cleanup-plan-*.json
 *.sqlite-journal
 *.sqlite-shm
 *.sqlite-wal
+
+# Generated and temporary directories
+tmp/
+exported-templates/
