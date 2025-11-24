@@ -1,9 +1,13 @@
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { RelationType } from '@/domain/entities/RelationType.js'
+import type {
+  BaseEntityDto,
+  WithIdentifier,
+  WithDescription,
+} from '@/core/types/UseCaseTypes.js'
 
 // Data Transfer Object for NodeRelation entity
-export interface NodeRelationDto {
-  id: string
+export interface NodeRelationDto extends BaseEntityDto {
   tableId: string
   sourceNodeId: string | null
   sourceExternalId: string
@@ -13,8 +17,6 @@ export interface NodeRelationDto {
   properties: Record<string, any> | null
   strength: number
   confidence: number
-  createdAt: string
-  updatedAt: string
 }
 
 export function nodeRelationFromEntity(nodeRelation: NodeRelation): NodeRelationDto {
@@ -39,13 +41,8 @@ export function nodeRelationFromEntities(nodeRelations: NodeRelation[]): NodeRel
 }
 
 // Data Transfer Object for RelationType entity
-export interface RelationTypeDto {
-  id: string
-  identifier: string
-  description: string | null
+export interface RelationTypeDto extends BaseEntityDto, WithIdentifier, WithDescription {
   category: string | null
-  createdAt: string
-  updatedAt: string
 }
 
 export function relationTypeFromEntity(relationType: RelationType): RelationTypeDto {
