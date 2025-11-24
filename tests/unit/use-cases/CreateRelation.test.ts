@@ -241,8 +241,9 @@ describe('CreateRelationUseCase', () => {
         .mockResolvedValueOnce(sourceNode)
         .mockResolvedValueOnce(null)
 
-      await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow('Target node with id \'non-existent-node\' not found')
+      const promise = useCase.execute(input)
+      await expect(promise).rejects.toThrow(NotFoundException)
+      await expect(promise).rejects.toThrow('Target node with id \'non-existent-node\' not found')
     })
 
     it('should throw ValidationException when source and target are the same internal node', async () => {
@@ -322,8 +323,9 @@ describe('CreateRelationUseCase', () => {
         .mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [existingRelation])
 
-      await expect(useCase.execute(input)).rejects.toThrow(ConflictException)
-      await expect(useCase.execute(input)).rejects.toThrow('Relation of type \'depends-on\' already exists between \'node:node-1\' and \'node:node-2\'')
+      const promise = useCase.execute(input)
+      await expect(promise).rejects.toThrow(ConflictException)
+      await expect(promise).rejects.toThrow('Relation of type \'depends-on\' already exists between \'node:node-1\' and \'node:node-2\'')
     })
 
     it('should throw ConflictException when external relation already exists', async () => {
@@ -366,15 +368,15 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      const createdRelation = createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
-
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
       mockNodeRepository.findById = mock()
         .mockResolvedValueOnce(sourceNode)
         .mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
-      mockNodeRelationRepository.findByExternalIds = mock(async () => createdRelation)
+      mockNodeRelationRepository.findByExternalIds = mock(async () =>
+        createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1', null, 80)
+      )
 
       const result = await useCase.execute(input)
 
@@ -399,22 +401,22 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const createdRelation = createTestNodeRelation(
-        'relation-1',
-        'table-1',
-        null,
-        'external-source',
-        null,
-        'external-target',
-        'rel-type-1',
-        { key: 'value' }
-      )
-
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
       mockNodeRepository.findByTableIdAndContent = mock(async () => null)
       mockNodeRelationRepository.exists = mock(async () => false)
-      mockNodeRelationRepository.findByExternalIds = mock(async () => createdRelation)
+      mockNodeRelationRepository.findByExternalIds = mock(async () =>
+        createTestNodeRelation(
+          'relation-1',
+          'table-1',
+          null,
+          'external-source',
+          null,
+          'external-target',
+          'rel-type-1',
+          { key: 'value' }
+        )
+      )
 
       const result = await useCase.execute(input)
 
@@ -441,15 +443,15 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node Content')
 
-      const createdRelation = createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
-
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
       mockNodeRepository.findByTableIdAndContent = mock()
         .mockResolvedValueOnce(sourceNode)
         .mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
-      mockNodeRelationRepository.findByExternalIds = mock(async () => createdRelation)
+      mockNodeRelationRepository.findByExternalIds = mock(async () =>
+        createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
+      )
 
       const result = await useCase.execute(input)
 
@@ -542,15 +544,15 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      const createdRelation = createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
-
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
       mockNodeRepository.findById = mock()
         .mockResolvedValueOnce(sourceNode)
         .mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
-      mockNodeRelationRepository.findByExternalIds = mock(async () => createdRelation)
+      mockNodeRelationRepository.findByExternalIds = mock(async () =>
+        createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
+      )
 
       await useCase.execute(input)
 

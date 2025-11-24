@@ -90,9 +90,8 @@ export function createTestNodeRelation(
     targetNodeId as NodeId | null,
     targetExternalId,
     relationTypeId as RelationTypeId,
-    properties,
+    properties ? JSON.stringify(properties) : null,
     strength,
-    50, // confidence
     new Date(),
     new Date()
   )
