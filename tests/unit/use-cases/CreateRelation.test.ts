@@ -190,8 +190,7 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'non-existent-rel-type',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => null)
@@ -210,11 +209,9 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -232,14 +229,11 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const sourceNode = Node.create('table-1' as any, 'Source Node')
-      ;(sourceNode as any).id = 'node-1'
+      const sourceNode = createTestNode('node-1', 'table-1', 'Source Node')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -259,14 +253,11 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const node = Node.create('table-1' as any, 'Test Node')
-      ;(node as any).id = 'node-1'
+      const node = createTestNode('node-1', 'table-1', 'Test Node')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -284,11 +275,9 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -308,29 +297,23 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
-      ;(relationType as any).identifier = 'depends-on'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const sourceNode = Node.create('table-1' as any, 'Source Node')
-      ;(sourceNode as any).id = 'node-1'
+      const sourceNode = createTestNode('node-1', 'table-1', 'Source Node')
 
-      const targetNode = Node.create('table-1' as any, 'Target Node')
-      ;(targetNode as any).id = 'node-2'
+      const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      const existingRelation = NodeRelation.create(
-        'table-1' as any,
-        'node-1' as any,
+      const existingRelation = createTestNodeRelation(
+        'relation-existing',
+        'table-1',
+        'node-1',
         'internal',
-        'node-2' as any,
+        'node-2',
         'internal',
-        'rel-type-1' as any
+        'rel-type-1'
       )
-      ;(existingRelation as any).targetNodeId = 'node-2'
-      ;(existingRelation as any).tableId = 'table-1'
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -351,12 +334,9 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
-      ;(relationType as any).identifier = 'depends-on'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -378,29 +358,15 @@ describe('CreateRelationUseCase', () => {
         strength: 80,
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const sourceNode = Node.create('table-1' as any, 'Source Node')
-      ;(sourceNode as any).id = 'node-1'
+      const sourceNode = createTestNode('node-1', 'table-1', 'Source Node')
 
-      const targetNode = Node.create('table-1' as any, 'Target Node')
-      ;(targetNode as any).id = 'node-2'
+      const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      const createdRelation = NodeRelation.create(
-        'table-1' as any,
-        'node-1' as any,
-        'internal',
-        'node-2' as any,
-        'internal',
-        'rel-type-1' as any,
-        null,
-        80
-      )
-      ;(createdRelation as any).id = 'relation-1'
+      const createdRelation = createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -429,22 +395,20 @@ describe('CreateRelationUseCase', () => {
         properties: { key: 'value' },
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const createdRelation = NodeRelation.create(
-        'table-1' as any,
+      const createdRelation = createTestNodeRelation(
+        'relation-1',
+        'table-1',
         null,
         'external-source',
         null,
         'external-target',
-        'rel-type-1' as any,
+        'rel-type-1',
         { key: 'value' }
       )
-      ;(createdRelation as any).id = 'relation-1'
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -469,29 +433,15 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const sourceNode = Node.create('table-1' as any, 'Source Node Content')
-      ;(sourceNode as any).id = 'node-1'
+      const sourceNode = createTestNode('node-1', 'table-1', 'Source Node Content')
 
-      const targetNode = Node.create('table-1' as any, 'Target Node Content')
-      ;(targetNode as any).id = 'node-2'
+      const targetNode = createTestNode('node-2', 'table-1', 'Target Node Content')
 
-      const createdRelation = NodeRelation.create(
-        'table-1' as any,
-        'node-1' as any,
-        'internal',
-        'node-2' as any,
-        'internal',
-        'rel-type-1' as any
-      )
-      ;(createdRelation as any).id = 'relation-1'
-      ;(createdRelation as any).targetNodeId = 'node-2'
-      ;(createdRelation as any).tableId = 'table-1'
+      const createdRelation = createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -520,17 +470,13 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const sourceNode = Node.create('table-1' as any, 'Source Node')
-      ;(sourceNode as any).id = 'node-1'
+      const sourceNode = createTestNode('node-1', 'table-1', 'Source Node')
 
-      const targetNode = Node.create('table-1' as any, 'Target Node')
-      ;(targetNode as any).id = 'node-2'
+      const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
       const saveError = new Error('Database connection failed')
 
@@ -559,17 +505,13 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const sourceNode = Node.create('table-1' as any, 'Source Node')
-      ;(sourceNode as any).id = 'node-1'
+      const sourceNode = createTestNode('node-1', 'table-1', 'Source Node')
 
-      const targetNode = Node.create('table-1' as any, 'Target Node')
-      ;(targetNode as any).id = 'node-2'
+      const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
@@ -592,27 +534,15 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      const table = Table.create('test-table', 'Test Table')
-      ;(table as any).id = 'table-1'
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      const relationType = RelationType.create('depends-on', 'Depends On')
-      ;(relationType as any).id = 'rel-type-1'
+      const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      const sourceNode = Node.create('table-1' as any, 'Source Node')
-      ;(sourceNode as any).id = 'node-1'
+      const sourceNode = createTestNode('node-1', 'table-1', 'Source Node')
 
-      const targetNode = Node.create('table-1' as any, 'Target Node')
-      ;(targetNode as any).id = 'node-2'
+      const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      const createdRelation = NodeRelation.create(
-        'table-1' as any,
-        'node-1' as any,
-        'internal',
-        'node-2' as any,
-        'internal',
-        'rel-type-1' as any
-      )
-      ;(createdRelation as any).id = 'relation-1'
+      const createdRelation = createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockRelationTypeRepository.findById = mock(async () => relationType as any)
