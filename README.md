@@ -2,6 +2,8 @@
 
 **Production-ready GraphQL-based Graph Database** with TypeScript/Bun runtime, AI integration, and template management.
 
+**🎯 처음 시작하시나요?** [**GETTING_STARTED.md**](GETTING_STARTED.md) - 5분 안에 그래프 DB 만들기
+
 [![System Health](https://img.shields.io/badge/System%20Health-✅%20Verified-brightgreen)](./CLAUDE.md)
 [![Test Coverage](https://img.shields.io/badge/Tests-310/310%20Passing-brightgreen)](#testing)
 [![Documentation](https://img.shields.io/badge/Docs-Complete-blue)](./docs/README.md)
