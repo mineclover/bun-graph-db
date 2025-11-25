@@ -17,7 +17,10 @@ bun install
 bun run dev
 
 # Test GraphQL API
-curl -X POST http://localhost:4000/graphql -H "Content-Type: application/json" -d '{"query": "query { healthCheck { status database version } }"}'
+curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" -d '{"query": "query { healthCheck { status database version } }"}'
+
+# Expected response:
+# {"data":{"healthCheck":{"status":"OK","database":true,"version":"1.0.0"}}}
 ```
 
 ## 🎯 Key Features
