@@ -1,403 +1,404 @@
-# 🚀 Bun Graph Database
+# 🚀 관계형 데이터 저장소
 
-**Production-ready GraphQL-based Graph Database System** with TypeScript/Bun runtime and AI integration capabilities.
+**프로덕션 준비 완료 그래프 기반 데이터 시스템**으로 AI 통합 기능을 포함합니다.
+
+> 💡 **용어 설명**: [GLOSSARY.md](GLOSSARY.md)에서 모든 용어를 자세히 확인하세요.
 
 [![System Health](https://img.shields.io/badge/System%20Health-✅%20Verified-brightgreen)](#system-status)
 [![Test Coverage](https://img.shields.io/badge/Test%20Coverage-100%25-brightgreen)](#testing)
-[![MCP Architecture](https://img.shields.io/badge/MCP%20Integration-✅%20Complete-brightgreen)](#mcp-architecture)
+[![AI Integration](https://img.shields.io/badge/AI%20Integration-✅%20Complete-brightgreen)](#ai-architecture)
 
-## ⚡ Quick Start
+## ⚡ 빠른 시작
 
-### Installation & Setup
+### 설치 & 설정
 ```bash
-# Install dependencies
+# 의존성 설치
 bun install
 
-# Initialize database schema
+# 저장소 스키마 초기화
 bun run scripts/init-database.ts
 
-# Start server
+# 서버 시작
 bun run dev
 ```
 
-**Server Endpoints:**
-- GraphQL API: `http://localhost:4141/graphql`
-- GraphQL Playground: `http://localhost:4141/graphql` (browser)
-- MCP Global Server: `http://localhost:4141/mcp`
-- Table-Specific MCP: `http://localhost:4141/sub/:tableId/mcp`
+**서버 엔드포인트:**
+- 쿼리 인터페이스: `http://localhost:4141/graphql`
+- 쿼리 탐색기: `http://localhost:4141/graphql` (브라우저)
+- AI 전역 서버: `http://localhost:4141/mcp`
+- 테이블별 AI 서버: `http://localhost:4141/sub/:tableId/mcp`
 
-### First Steps
-1. **Verify Setup**: Check health endpoint to confirm server is running
-2. **Explore Schema**: Open GraphQL Playground in browser
-3. **Create Your First Table**: Use GraphQL mutations for data modeling
-4. **Try Templates**: Execute parameterized queries
-5. **Setup MCP**: Configure Claude AI integration (optional)
-
----
-
-## 🎯 Core Concepts
-
-### System Architecture
-
-The system follows a **layered hexagonal architecture** with clear separation of concerns:
-
-#### **1. MCP Integration Layer** (AI Interface)
-- **Purpose**: Enable AI assistants (like Claude) to interact with the database
-- **Dual Interface**: Global operations + Table-specific operations
-- **Protocol**: JSON-RPC 2.0 over HTTP
-- **Dynamic Tools**: GraphQL templates automatically become MCP tools
-
-#### **2. GraphQL API Layer** (Primary Interface)
-- **Purpose**: Type-safe, flexible API for all database operations
-- **Schema-First Design**: Strong typing and introspection
-- **Real-time Capabilities**: Subscriptions for live updates
-- **Query Language**: Declarative data fetching
-
-#### **3. Core Business Logic**
-- **Use Cases**: Orchestrate domain operations
-- **Domain Services**: Complex business logic
-- **Template Engine**: Parameterized query execution
-- **Validation**: Input validation and business rules
-
-#### **4. Domain Layer** (Business Entities)
-- **Entities**: Node, Table, Relation, Attribute, Template
-- **Repository Interfaces**: Data access contracts
-- **Value Objects**: Immutable domain concepts
-- **Domain Events**: Business-significant occurrences
-
-#### **5. Infrastructure Layer** (Technical Implementation)
-- **SQLite Storage**: File-based persistence
-- **Dependency Injection**: Service composition
-- **Repository Implementations**: Data access logic
-- **External Integrations**: AI systems, monitoring
+### 첫 단계
+1. **설정 확인**: 헬스 엔드포인트로 서버 작동 확인
+2. **스키마 탐색**: 브라우저에서 쿼리 탐색기 열기
+3. **첫 테이블 만들기**: 쿼리 인터페이스 변경 작업으로 데이터 모델링
+4. **템플릿 시도**: 매개변수화된 쿼리 실행
+5. **AI 통합 설정**: Claude AI 연동 (선택사항)
 
 ---
 
-## 📊 Core Features
+## 🎯 핵심 개념
 
-### Graph Database Engine
-**Concept**: Store and traverse interconnected data efficiently
+### 시스템 아키텍처
 
-- **Node-Based Storage**: Entities with flexible attributes
-- **Typed Relationships**: Connections with semantic meaning
-- **Traversal Algorithms**: Find paths, neighbors, subgraphs
-- **Quality Metrics**: Confidence scoring and relationship strength
-- **Schema Evolution**: Dynamic attribute management
+시스템은 **계층화된 헥사고날 아키텍처**를 따르며 관심사를 명확히 분리합니다:
 
-### Template System
-**Concept**: Reusable, parameterized operations with version control
+#### **1. AI 통합 계층** (AI 인터페이스)
+- **목적**: AI 어시스턴트(Claude 등)가 저장소와 상호작용
+- **이중 인터페이스**: 전역 작업 + 테이블별 작업
+- **통신 방식**: HTTP 기반 요청/응답
+- **동적 도구**: 템플릿이 자동으로 AI 도구로 변환
 
-- **Query Abstraction**: Named, versioned GraphQL operations
-- **Parameter Binding**: Dynamic value substitution
-- **Usage Analytics**: Track execution patterns
-- **AI Integration**: Templates become AI-accessible tools
-- **Version Management**: Track changes over time
+#### **2. 쿼리 인터페이스 계층** (주 인터페이스)
+- **목적**: 모든 저장소 작업을 위한 타입 안전하고 유연한 인터페이스
+- **스키마 우선 설계**: 강력한 타이핑과 내부 검사
+- **실시간 기능**: 라이브 업데이트를 위한 구독
+- **쿼리 언어**: 선언적 데이터 가져오기
 
-### Batch Operations
-**Concept**: Efficient mass data operations with transaction safety
+#### **3. 핵심 비즈니스 로직**
+- **유스케이스**: 도메인 작업 오케스트레이션
+- **도메인 서비스**: 복잡한 비즈니스 로직
+- **템플릿 엔진**: 매개변수화된 쿼리 실행
+- **검증**: 입력 검증 및 비즈니스 규칙
 
-- **Bulk Processing**: Handle thousands of records
-- **Schema Validation**: Ensure data consistency
-- **Progress Monitoring**: Track operation completion
-- **Transaction Safety**: Atomic operations with rollback
-- **Error Handling**: Graceful failure with detailed reporting
+#### **4. 도메인 계층** (비즈니스 엔티티)
+- **엔티티**: 노드, 테이블, 관계, 속성, 템플릿
+- **리포지토리 인터페이스**: 데이터 접근 계약
+- **값 객체**: 불변 도메인 개념
+- **도메인 이벤트**: 비즈니스 중요 발생
 
-### MCP Architecture
-**Concept**: Bridge between AI assistants and database operations
+#### **5. 인프라 계층** (기술적 구현)
+- **파일 기반 저장소**: 파일 기반 영속성
+- **의존성 주입**: 서비스 구성
+- **리포지토리 구현**: 데이터 접근 로직
+- **외부 통합**: AI 시스템, 모니터링
 
-**What is MCP?**
-- Model Context Protocol - standard for AI tool integration
-- Allows AI assistants to discover and use database capabilities
-- JSON-RPC 2.0 protocol for request/response communication
+---
 
-**Architecture Layers:**
+## 📊 핵심 기능
+
+### 그래프 저장소 엔진
+**개념**: 연결된 데이터를 효율적으로 저장하고 탐색
+
+- **노드 기반 저장**: 유연한 속성을 가진 엔티티
+- **타입이 지정된 관계**: 의미가 있는 연결
+- **탐색 알고리즘**: 경로, 이웃, 하위 그래프 찾기
+- **품질 지표**: 신뢰도 점수와 관계 강도
+- **스키마 진화**: 동적 속성 관리
+
+### 템플릿 시스템
+**개념**: 버전 관리가 있는 재사용 가능한 매개변수화된 작업
+
+- **쿼리 추상화**: 이름이 지정되고 버전이 관리되는 작업
+- **매개변수 바인딩**: 동적 값 대체
+- **사용 분석**: 실행 패턴 추적
+- **AI 통합**: 템플릿이 AI 접근 가능한 도구가 됨
+- **버전 관리**: 시간 경과에 따른 변경 추적
+
+### 일괄 작업
+**개념**: 트랜잭션 안전성을 갖춘 효율적인 대량 데이터 작업
+
+- **대량 처리**: 수천 개의 레코드 처리
+- **스키마 검증**: 데이터 일관성 보장
+- **진행 모니터링**: 작업 완료 추적
+- **트랜잭션 안전성**: 롤백이 가능한 원자적 작업
+- **오류 처리**: 상세한 보고와 함께 우아한 실패
+
+### AI 통합 구조
+**개념**: AI 어시스턴트와 저장소 작업 간의 브리지
+
+**AI 통합이란?**
+- AI 도구 통합을 위한 표준
+- AI 어시스턴트가 저장소 기능을 발견하고 사용할 수 있게 함
+- 요청/응답 통신을 위한 프로토콜
+
+**아키텍처 계층:**
 ```
 ┌─────────────────────────────────────────┐
-│   AI Assistant (Claude)                 │
-│   - Discovers available tools            │
-│   - Executes database operations         │
+│   AI 어시스턴트 (Claude)                 │
+│   - 사용 가능한 도구 발견                 │
+│   - 저장소 작업 실행                     │
 └─────────────────┬───────────────────────┘
-                  │ MCP Protocol
+                  │ 통신 프로토콜
 ┌─────────────────▼───────────────────────┐
-│   MCP Layer (Translation)               │
-│   - 27 global tools                     │
-│   - Table-specific tool isolation       │
-│   - Parameter transformation            │
+│   AI 통합 계층 (변환)                    │
+│   - 27개 전역 도구                       │
+│   - 테이블별 도구 격리                   │
+│   - 매개변수 변환                        │
 └─────────────────┬───────────────────────┘
-                  │ Internal API
+                  │ 내부 인터페이스
 ┌─────────────────▼───────────────────────┐
-│   GraphQL/REST API                      │
-│   - Executes actual operations          │
-│   - Returns structured results          │
+│   쿼리 인터페이스                        │
+│   - 실제 작업 실행                       │
+│   - 구조화된 결과 반환                   │
 └─────────────────────────────────────────┘
 ```
 
-**Two-Level MCP System:**
+**2단계 AI 통합 시스템:**
 
-1. **Global MCP Server** (`/mcp`)
-   - Template management operations
-   - Cross-table queries
-   - System administration
-   - Schema discovery
+1. **전역 AI 서버** (`/mcp`)
+   - 템플릿 관리 작업
+   - 테이블 간 쿼리
+   - 시스템 관리
+   - 스키마 탐색
 
-2. **Table-Specific MCP** (`/sub/:tableId/mcp`)
-   - Isolated tool sets per table
-   - Table-specific queries
-   - Template-to-tool conversion
-   - Scoped operations
-
----
-
-## 🏗️ Data Model
-
-### Tables
-**Concept**: Schemas that define entity types
-
-- Define attribute structures
-- Support schema evolution
-- Enable data validation
-- Provide organizational boundaries
-
-### Nodes
-**Concept**: Individual entities/records
-
-- Belong to specific tables
-- Have flexible attributes
-- Can be interconnected
-- Support full-text search
-
-### Relations
-**Concept**: Typed connections between nodes
-
-- Directed relationships (source → target)
-- Semantic typing (knows, contains, depends_on)
-- Metadata support
-- Traversal optimization
-
-### Attributes
-**Concept**: Properties of nodes
-
-- Strongly typed (string, number, boolean, date, json, etc.)
-- Optional or required
-- Default values
-- Validation rules
-
-### Templates
-**Concept**: Reusable query patterns
-
-- Named GraphQL operations
-- Variable parameters
-- Version tracking
-- Usage statistics
-- Automatic AI tool generation
+2. **테이블별 AI 통합** (`/sub/:tableId/mcp`)
+   - 테이블별 격리된 도구 세트
+   - 테이블별 쿼리
+   - 템플릿-도구 변환
+   - 범위가 지정된 작업
 
 ---
 
-## 🔧 Development
+## 🏗️ 데이터 모델
 
-### Project Structure
+### 테이블
+**개념**: 엔티티 타입을 정의하는 스키마
+
+- 속성 구조 정의
+- 스키마 진화 지원
+- 데이터 검증 활성화
+- 조직 경계 제공
+
+### 노드
+**개념**: 개별 엔티티/레코드
+
+- 특정 테이블에 속함
+- 유연한 속성 보유
+- 상호 연결 가능
+- 전체 텍스트 검색 지원
+
+### 관계
+**개념**: 노드 간의 타입이 지정된 연결
+
+- 방향성 관계 (소스 → 타겟)
+- 의미론적 타이핑 (알고있음, 포함, 의존)
+- 메타데이터 지원
+- 탐색 최적화
+
+### 속성
+**개념**: 노드의 속성
+
+- 강타입 (문자열, 숫자, 참/거짓, 날짜, JSON 등)
+- 선택적 또는 필수
+- 기본값
+- 검증 규칙
+
+### 템플릿
+**개념**: 재사용 가능한 쿼리 패턴
+
+- 이름이 지정된 작업
+- 변수 매개변수
+- 버전 추적
+- 사용 통계
+- 자동 AI 도구 생성
+
+---
+
+## 🔧 개발
+
+### 프로젝트 구조
 ```
 src/
-├── application/          # Use cases & orchestration
-├── domain/              # Business entities & interfaces
-├── infrastructure/      # Technical implementations
-├── presentation/        # API layers (GraphQL, MCP, REST)
-└── shared/             # Cross-cutting concerns
+├── application/          # 유스케이스 & 오케스트레이션
+├── domain/              # 비즈니스 엔티티 & 인터페이스
+├── infrastructure/      # 기술적 구현
+├── presentation/        # 인터페이스 계층
+└── shared/             # 교차 관심사
 
 tests/
-├── unit/               # Isolated component tests
-├── integration/        # Multi-component tests
-└── fixtures/           # Test data & helpers
+├── unit/               # 격리된 컴포넌트 테스트
+├── integration/        # 다중 컴포넌트 테스트
+└── fixtures/           # 테스트 데이터 & 헬퍼
 ```
 
-### Testing Philosophy
-- **310+ Use Case Tests**: Business logic validation
-- **Integration Tests**: API endpoint verification
-- **Isolation**: Mock external dependencies
-- **Coverage**: 100% of critical paths
+### 테스팅 철학
+- **310+ 유스케이스 테스트**: 비즈니스 로직 검증
+- **통합 테스트**: 인터페이스 엔드포인트 검증
+- **격리**: 외부 의존성 모킹
+- **커버리지**: 중요 경로 100%
 
-### Development Commands
+### 개발 명령어
 ```bash
-bun run dev              # Start development server
-bun test                 # Run all tests
-bun run typecheck        # Type validation
-bun run check           # Format + lint + fix
+bun run dev              # 개발 서버 시작
+bun test                 # 모든 테스트 실행
+bun run typecheck        # 타입 검증
+bun run check           # 포맷 + 린트 + 수정
 ```
 
 ---
 
-## 🎯 Common Workflows
+## 🎯 일반 워크플로우
 
-### Creating a Data Model
-1. **Define Table**: Create schema with identifier
-2. **Add Attributes**: Define properties and types
-3. **Create Template**: Build parameterized insert query
-4. **Execute Template**: Populate data with variables
+### 데이터 모델 만들기
+1. **테이블 정의**: 식별자로 스키마 생성
+2. **속성 추가**: 속성과 타입 정의
+3. **템플릿 만들기**: 매개변수화된 삽입 쿼리 구축
+4. **템플릿 실행**: 변수로 데이터 채우기
 
-### Querying Graph Data
-1. **Search Nodes**: Find entities by attributes
-2. **Traverse Relations**: Follow connections
-3. **Find Paths**: Discover routes between nodes
-4. **Aggregate Data**: Analyze patterns
+### 그래프 데이터 쿼리하기
+1. **노드 검색**: 속성으로 엔티티 찾기
+2. **관계 탐색**: 연결 따라가기
+3. **경로 찾기**: 노드 간 경로 발견
+4. **데이터 집계**: 패턴 분석
 
-### AI Integration Workflow
-1. **Configure MCP**: Add server to Claude
-2. **Discover Tools**: AI explores capabilities
-3. **Execute Operations**: AI uses tools
-4. **Get Results**: Structured data returned
+### AI 통합 워크플로우
+1. **AI 통합 구성**: Claude에 서버 추가
+2. **도구 탐색**: AI가 기능 탐색
+3. **작업 실행**: AI가 도구 사용
+4. **결과 받기**: 구조화된 데이터 반환
 
 ---
 
-## 🔌 MCP Setup for Claude
+## 🔌 Claude를 위한 AI 통합 설정
 
-### Global Template Management
-Configure root server for cross-table operations:
+### 전역 템플릿 관리
+테이블 간 작업을 위한 루트 서버 구성:
 
 ```bash
-# CLI Command
-claude mcp add --transport http bun-graph-root http://localhost:4141/mcp
+# CLI 명령
+claude mcp add --transport http graph-root http://localhost:4141/mcp
 ```
 
-**Capabilities:**
-- Create and manage templates
-- Search across tables
-- Execute global queries
-- System administration
+**기능:**
+- 템플릿 생성 및 관리
+- 테이블 간 검색
+- 전역 쿼리 실행
+- 시스템 관리
 
-### Table-Specific Operations
-Configure per-table servers for isolated operations:
+### 테이블별 작업
+격리된 작업을 위한 테이블별 서버 구성:
 
 ```bash
-# Example: Add specific table
+# 예시: 특정 테이블 추가
 claude mcp add --transport http my-table http://localhost:4141/sub/my-table-id/mcp
 ```
 
-**Capabilities:**
-- Table-scoped queries
-- Node operations
-- Relationship management
-- Template execution
+**기능:**
+- 테이블 범위 쿼리
+- 노드 작업
+- 관계 관리
+- 템플릿 실행
 
-**Benefits of Table Isolation:**
-- **Security**: Operations limited to one table
-- **Organization**: Clear tool separation
-- **Performance**: Focused capability sets
-- **Flexibility**: Per-table customization
-
----
-
-## 📚 Documentation Structure
-
-### For Users
-- **[Quick Start Guide](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)**: Get running fast
-- **[API Reference](docs/api/doc-api-reference.md)**: Complete GraphQL schema
-- **[Template Guide](docs/templates/template-system-guide.md)**: Create reusable queries
-- **[MCP Setup](docs/guides/MCP_SETUP_GUIDE.md)**: AI assistant integration
-
-### For Developers
-- **[Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md)**: System design
-- **[Development Guide](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)**: Contributing & setup
-- **[Testing Strategy](docs/development/TESTING.md)**: Quality assurance
-- **[Repository Patterns](docs/architecture/ARCHITECTURE_OVERVIEW.md)**: Data access
-
-### For AI Integration
-- **[MCP Architecture](docs/mcp/MCP_SYSTEM_ARCHITECTURE.md)**: Protocol implementation
-- **[Tool Generation](docs/architecture/MCP_TEMPLATE_ARCHITECTURE.md)**: Template-to-tool conversion
-- **[Schema Discovery](docs/guides/MCP_EXAMPLES.md)**: Dynamic capability exposure
-- **[Usage Examples](docs/samples/template-execution-patterns.md)**: Common patterns
+**테이블 격리의 이점:**
+- **보안**: 작업이 하나의 테이블로 제한됨
+- **조직화**: 명확한 도구 분리
+- **성능**: 집중된 기능 세트
+- **유연성**: 테이블별 맞춤 설정
 
 ---
 
-## 📊 System Status
+## 📚 문서 구조
 
-### Current Metrics
+### 사용자용
+- **[빠른 시작 가이드](GETTING_STARTED.md)**: 빠르게 시작하기
+- **[용어집](GLOSSARY.md)**: 모든 용어 상세 설명
+- **[인터페이스 레퍼런스](docs/api/doc-api-reference.md)**: 전체 스키마
+- **[템플릿 가이드](docs/templates/template-system-guide.md)**: 재사용 쿼리 만들기
+- **[AI 통합 설정](docs/guides/MCP_SETUP_GUIDE.md)**: AI 어시스턴트 통합
+
+### 개발자용
+- **[아키텍처 개요](docs/architecture/ARCHITECTURE_OVERVIEW.md)**: 시스템 설계
+- **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)**: 기여 & 설정
+- **[테스팅 전략](docs/development/TESTING.md)**: 품질 보증
+- **[리포지토리 패턴](docs/architecture/ARCHITECTURE_OVERVIEW.md)**: 데이터 접근
+
+### AI 통합용
+- **[AI 통합 아키텍처](docs/mcp/MCP_SYSTEM_ARCHITECTURE.md)**: 프로토콜 구현
+- **[도구 생성](docs/architecture/MCP_TEMPLATE_ARCHITECTURE.md)**: 템플릿-도구 변환
+- **[스키마 탐색](docs/guides/MCP_EXAMPLES.md)**: 동적 기능 노출
+- **[사용 예제](docs/samples/template-execution-patterns.md)**: 일반 패턴
+
+---
+
+## 📊 시스템 상태
+
+### 현재 지표
 ```
-✅ Core Features: Fully Operational
-├── GraphQL API: All endpoints working
-├── Template System: Creation & execution verified
-├── Batch Operations: Mass processing functional
-├── Graph Traversal: All algorithms working
-├── MCP Integration: Protocol compliant
-└── Type Safety: 0 TypeScript errors
+✅ 핵심 기능: 완전 작동
+├── 쿼리 인터페이스: 모든 엔드포인트 작동
+├── 템플릿 시스템: 생성 & 실행 검증됨
+├── 일괄 작업: 대량 처리 기능
+├── 그래프 탐색: 모든 알고리즘 작동
+├── AI 통합: 프로토콜 준수
+└── 타입 안전성: 0개 오류
 
-✅ Test Coverage: 310/310 passing (100%)
-✅ Database Schema: 11 tables operational
-✅ Server Response: <1ms health check
+✅ 테스트 커버리지: 310/310 통과 (100%)
+✅ 저장소 스키마: 11개 테이블 작동
+✅ 서버 응답: <1ms 헬스 체크
 ```
 
-### Known Limitations
-- SQLite file-based storage (single-writer)
-- No horizontal scaling (single process)
-- File-based backups only
-- In-process transaction management
+### 알려진 제한사항
+- 파일 기반 저장소 (단일 작성자)
+- 수평 확장 없음 (단일 프로세스)
+- 파일 기반 백업만
+- 인프로세스 트랜잭션 관리
 
 ---
 
-## 🚀 Next Steps
+## 🚀 다음 단계
 
-### For New Users
-1. Review Quick Start section
-2. Explore GraphQL Playground
-3. Try example queries (see API Reference)
-4. Create your first table
+### 새 사용자를 위해
+1. 빠른 시작 섹션 검토
+2. 쿼리 탐색기 탐색
+3. 예제 쿼리 시도 (인터페이스 레퍼런스 참조)
+4. 첫 테이블 만들기
 
-### For Developers
-1. Read Architecture Overview
-2. Run test suite
-3. Review code structure
-4. Check contribution guidelines
+### 개발자를 위해
+1. 아키텍처 개요 읽기
+2. 테스트 스위트 실행
+3. 코드 구조 검토
+4. 기여 가이드라인 확인
 
-### For AI Integration
-1. Setup MCP servers
-2. Test tool discovery
-3. Execute sample operations
-4. Review integration patterns
-
----
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-**Server Won't Start**
-- Check port 4141 availability
-- Verify database initialization
-- Review server logs
-
-**GraphQL Errors**
-- Use GraphQL Playground for schema exploration
-- Verify query syntax
-- Check field availability in schema
-
-**Database Issues**
-- Initialize with `bun run scripts/init-database.ts`
-- Check `./data/` directory permissions
-- Delete and reinitialize if corrupted
-
-### Getting Help
-- Check server logs for detailed errors
-- Use GraphQL Playground at `http://localhost:4141/graphql`
-- Review documentation in `docs/` directory
+### AI 통합을 위해
+1. AI 통합 서버 설정
+2. 도구 탐색 테스트
+3. 샘플 작업 실행
+4. 통합 패턴 검토
 
 ---
 
-## 📖 Key Concepts
+## 🔧 문제 해결
 
-- **Hexagonal Architecture**: Ports & Adapters pattern
-- **Domain-Driven Design**: Business logic organization
-- **Repository Pattern**: Data access abstraction
-- **Dependency Injection**: Service composition
-- **Template Engine**: Query parameterization
-- **MCP Protocol**: AI tool integration standard
+### 일반적인 문제
+
+**서버가 시작되지 않음**
+- 포트 4141 사용 가능 여부 확인
+- 저장소 초기화 확인
+- 서버 로그 검토
+
+**쿼리 인터페이스 오류**
+- 쿼리 탐색기에서 스키마 확인
+- 쿼리 문법 검증
+- 스키마에서 필드 사용 가능 여부 확인
+
+**저장소 문제**
+- `bun run scripts/init-database.ts`로 초기화
+- `./data/` 디렉토리 권한 확인
+- 손상된 경우 삭제 후 재초기화
+
+### 도움 받기
+- 상세한 오류는 서버 로그 확인
+- `http://localhost:4141/graphql`에서 쿼리 탐색기 사용
+- `docs/` 디렉토리의 문서 검토
 
 ---
 
-## 📄 License
+## 📖 핵심 개념
 
-MIT License - see [LICENSE](LICENSE) file for details.
+- **헥사고날 아키텍처**: 포트 & 어댑터 패턴
+- **도메인 주도 설계**: 비즈니스 로직 조직화
+- **리포지토리 패턴**: 데이터 접근 추상화
+- **의존성 주입**: 서비스 구성
+- **템플릿 엔진**: 쿼리 매개변수화
+- **AI 통합 프로토콜**: AI 도구 통합 표준
 
 ---
 
-**Built with ❤️ using [Bun](https://bun.sh/), TypeScript, and GraphQL**
+## 📄 라이선스
 
-*Last updated: 2025-01-25*
+MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일 참조
+
+---
+
+**마지막 업데이트**: 2025-11-25

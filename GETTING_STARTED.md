@@ -1,10 +1,14 @@
-# 🎯 시작하기 - 5분 안에 그래프 DB 만들기
+# 🎯 시작하기 - 5분 만에 배우는 그래프 데이터 저장소
 
-**Bun Graph Database**는 관계형 데이터를 쉽게 저장하고 탐색할 수 있는 GraphQL 기반 그래프 데이터베이스입니다.
+**관계형 데이터 저장소**로 연결된 정보를 쉽게 저장하고 탐색할 수 있습니다.
+
+> 💡 **용어가 궁금하신가요?** [용어집(GLOSSARY.md)](GLOSSARY.md)에서 모든 용어를 자세히 설명합니다.
+
+---
 
 ## 📚 핵심 개념 (3가지만 알면 됩니다)
 
-### 1. 테이블 (Table) = 데이터 종류
+### 1. 테이블 = 데이터 종류
 **무엇인가요?** 엑셀 시트처럼 데이터를 구분하는 틀입니다.
 
 **예시**:
@@ -12,7 +16,7 @@
 - `프로젝트` 테이블: 할 일, 작업 목록
 - `노트` 테이블: 메모, 지식 정리
 
-**실제 사용**:
+**만들기**:
 ```graphql
 # "노트" 테이블 만들기
 mutation {
@@ -26,21 +30,21 @@ mutation {
 }
 ```
 
-### 2. 노드 (Node) = 실제 데이터
+### 2. 노드 = 실제 데이터
 **무엇인가요?** 테이블 안의 실제 데이터 항목입니다.
 
 **예시**:
 - `사람` 테이블 안의 "홍길동", "김철수"
-- `프로젝트` 테이블 안의 "그래프DB 학습", "블로그 작성"
-- `노트` 테이블 안의 "GraphQL 정리", "Bun 사용법"
+- `프로젝트` 테이블 안의 "웹사이트 개발", "블로그 작성"
+- `노트` 테이블 안의 "그래프 이해하기", "시스템 설계"
 
-**실제 사용**:
+**만들기**:
 ```graphql
 # 노트 하나 만들기
 mutation {
   createNode(input: {
-    tableId: "1"  # 위에서 만든 노트 테이블 ID
-    content: "GraphQL은 쿼리 언어입니다"
+    tableId: "1"
+    content: "관계를 쉽게 표현할 수 있는 데이터 구조입니다"
   }) {
     success
     node { id content }
@@ -48,17 +52,17 @@ mutation {
 }
 ```
 
-### 3. 관계 (Relation) = 연결
+### 3. 관계 = 연결
 **무엇인가요?** 노드와 노드를 연결하는 선입니다.
 
 **예시**:
 - "홍길동" → 알고 있는 → "김철수"
-- "블로그 작성" → 의존 → "그래프DB 학습"
-- "GraphQL 정리" → 참조 → "Bun 사용법"
+- "블로그 작성" → 의존 → "웹사이트 개발"
+- "시스템 설계" → 참조 → "그래프 이해하기"
 
-**실제 사용**:
+**만들기**:
 ```graphql
-# 관계 타입 먼저 정의
+# 관계 유형 먼저 정의
 mutation {
   createRelationType(input: {
     identifier: "references"
@@ -70,9 +74,9 @@ mutation {
 mutation {
   createRelation(input: {
     tableId: "1"
-    sourceNodeId: "1"  # GraphQL 정리 노트
-    targetNodeId: "2"  # Bun 사용법 노트
-    relationTypeId: "1"  # 위에서 만든 참조 관계
+    sourceNodeId: "1"
+    targetNodeId: "2"
+    relationTypeId: "1"
   }) { success }
 }
 ```
@@ -83,9 +87,12 @@ mutation {
 
 ### 1단계: 서버 시작 (30초)
 ```bash
-bun install              # 처음 한 번만
-bun run scripts/init-database.ts  # 처음 한 번만
-bun run dev              # 서버 시작
+# 설치 (처음 한 번만)
+bun install
+bun run scripts/init-database.ts
+
+# 서버 시작
+bun run dev
 ```
 
 브라우저에서 `http://localhost:4141/graphql` 열기 ✅
@@ -112,7 +119,7 @@ mutation {
 mutation {
   createNode(input: {
     tableId: "1"
-    content: "GraphQL - 쿼리 언어로 필요한 데이터만 요청 가능"
+    content: "쿼리 언어로 필요한 데이터만 요청 가능"
   }) {
     success
     node { id content }
@@ -123,7 +130,7 @@ mutation {
 mutation {
   createNode(input: {
     tableId: "1"
-    content: "Bun - 빠른 JavaScript 런타임"
+    content: "빠른 자바스크립트 실행 환경"
   }) {
     success
     node { id content }
@@ -134,7 +141,7 @@ mutation {
 mutation {
   createNode(input: {
     tableId: "1"
-    content: "그래프 DB - 관계 중심 데이터베이스"
+    content: "관계 중심 데이터 저장소"
   }) {
     success
     node { id content }
@@ -144,11 +151,11 @@ mutation {
 
 ### 4단계: 노트 검색 (1분)
 ```graphql
-# "GraphQL" 포함된 노트 찾기
+# "쿼리" 포함된 노트 찾기
 query {
   searchNodes(filter: {
     tableId: "1"
-    search: "GraphQL"
+    search: "쿼리"
   }) {
     nodes { id content }
     totalCount
@@ -160,7 +167,7 @@ query {
 
 ### 5단계: 노트 간 연결 (30초)
 ```graphql
-# 관계 타입 만들기
+# 관계 유형 만들기
 mutation {
   createRelationType(input: {
     identifier: "related_to"
@@ -168,12 +175,12 @@ mutation {
   }) { success relationType { id } }
 }
 
-# "GraphQL" 노트와 "그래프 DB" 노트 연결
+# 첫 번째 노트와 세 번째 노트 연결
 mutation {
   createRelation(input: {
     tableId: "1"
-    sourceNodeId: "1"  # GraphQL 노트
-    targetNodeId: "3"  # 그래프 DB 노트
+    sourceNodeId: "1"
+    targetNodeId: "3"
     relationTypeId: "1"
   }) { success }
 }
@@ -181,7 +188,7 @@ mutation {
 
 ### 6단계: 연결된 노트 찾기 (30초)
 ```graphql
-# GraphQL 노트와 연결된 모든 노트 보기
+# 첫 번째 노트와 연결된 모든 노트 보기
 query {
   node(id: "1") {
     content
@@ -192,7 +199,7 @@ query {
 }
 ```
 
-결과: "그래프 DB" 노트 발견! ✅
+결과: 세 번째 노트 발견! ✅
 
 ---
 
@@ -201,7 +208,7 @@ query {
 ### 예시 1: 개인 위키
 ```
 테이블: 문서, 태그
-노드: "Python 기초", "웹 개발", "프로그래밍" 태그
+노드: "파이썬 기초", "웹 개발", "프로그래밍" 태그
 관계: 문서 → has_tag → 태그
 ```
 
@@ -226,12 +233,12 @@ query {
 ### 1. 강력한 검색
 ```graphql
 # 텍스트 검색
-searchNodes(filter: { search: "GraphQL" })
+searchNodes(filter: { search: "관계" })
 
 # 여러 조건 검색
 searchNodes(filter: {
   tableId: "1"
-  search: "데이터베이스"
+  search: "데이터"
 })
 ```
 
@@ -270,7 +277,7 @@ mutation {
 mutation {
   executeTemplateWithGraphQL(
     templateIdentifier: "search_by_keyword"
-    variables: { keyword: "GraphQL" }
+    variables: { keyword: "관계" }
   ) { success data }
 }
 ```
@@ -279,10 +286,10 @@ mutation {
 
 ## 🤖 AI 통합 (Claude)
 
-### MCP로 Claude에 연결
+### Claude에 연결하기
 ```bash
-# 전역 MCP (모든 테이블)
-claude mcp add --transport http bun-graph-root http://localhost:4141/mcp
+# 전역 도구 (모든 테이블)
+claude mcp add --transport http graph-global http://localhost:4141/mcp
 
 # 특정 테이블만
 claude mcp add --transport http notes http://localhost:4141/sub/1/mcp
@@ -301,16 +308,16 @@ claude mcp add --transport http notes http://localhost:4141/sub/1/mcp
 ### Q: SQL과 뭐가 다른가요?
 **A**: 관계를 쉽게 탐색할 수 있습니다.
 - SQL: JOIN 복잡, 깊은 관계 어려움
-- Graph DB: 연결된 데이터 바로 찾기
+- 그래프 저장소: 연결된 데이터 바로 찾기
 
 ### Q: NoSQL과 뭐가 다른가요?
 **A**: 구조화된 관계를 유지합니다.
 - NoSQL: 관계 관리 어려움
-- Graph DB: 관계가 1급 시민
+- 그래프 저장소: 관계가 핵심 기능
 
 ### Q: 얼마나 빠른가요?
 **A**: 모든 작업 **<25ms** (테스트 완료)
-- 단순 쿼리: <10ms
+- 단순 조회: <10ms
 - 그래프 탐색: <15ms
 - 검색: <20ms
 
@@ -327,10 +334,11 @@ claude mcp add --transport http notes http://localhost:4141/sub/1/mcp
 ## 🎓 다음 단계
 
 ### 더 배우기
-1. **[API 레퍼런스](docs/api/doc-api-reference.md)** - 모든 GraphQL 작업
-2. **[템플릿 가이드](docs/templates/template-system-guide.md)** - 재사용 쿼리
-3. **[MCP 설정](docs/guides/MCP_SETUP_GUIDE.md)** - AI 통합
-4. **[아키텍처](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 시스템 구조
+1. **[용어집](GLOSSARY.md)** - 모든 용어 상세 설명
+2. **[인터페이스 레퍼런스](docs/api/doc-api-reference.md)** - 모든 작업
+3. **[템플릿 가이드](docs/templates/template-system-guide.md)** - 재사용 쿼리
+4. **[AI 통합 가이드](docs/guides/MCP_SETUP_GUIDE.md)** - Claude 연동
+5. **[시스템 구조](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 전체 설계
 
 ### 실전 예제
 - **[사용 사례 테스트](claudedocs/USE_CASE_TEST_RESULTS.md)** - 실제 시나리오 26개
@@ -359,6 +367,5 @@ bun run dev
 
 ---
 
-**만든이**: Bun + TypeScript + GraphQL
 **라이선스**: MIT
 **문서 업데이트**: 2025-11-25
