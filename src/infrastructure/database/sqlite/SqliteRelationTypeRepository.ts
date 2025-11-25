@@ -104,4 +104,42 @@ export class SqliteRelationTypeRepository
       new Date(row.updated_at)
     )
   }
+
+  // IRepositoryWithBatchOperations method implementations
+  async saveMany(relationTypes: RelationType[]): Promise<void> {
+    if (relationTypes.length === 0) return
+
+    const query = `
+      INSERT INTO relation_types (identifier, description, category, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+    `
+
+    try {
+      for (const relationType of relationTypes) {
+        const data = relationType.toDatabase()
+        this.db.run(query, [
+          data.identifier,
+          data.description,
+          data.category,
+          data.created_at,
+          data.updated_at,
+        ])
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to save multiple relation types: ${error}`)
+    }
+  }
+
+  async deleteMany(ids: RelationTypeId[]): Promise<void> {
+    if (ids.length === 0) return
+
+    const placeholders = ids.map(() => '?').join(', ')
+    const query = `DELETE FROM relation_types WHERE id IN (${placeholders})`
+
+    try {
+      this.db.run(query, ids)
+    } catch (error) {
+      throw new DatabaseException(`Failed to delete multiple relation types: ${error}`)
+    }
+  }
 }

@@ -137,7 +137,7 @@ export class SqliteNodeRepository
     }
   }
 
-  async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<Node>> {
+  override async findAll(options: PaginationOptions = {}): Promise<PaginatedResult<Node>> {
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
@@ -182,7 +182,8 @@ export class SqliteNodeRepository
     }
   }
 
-  async exists(tableId: TableId, content: string): Promise<boolean> {
+  // Note: This exists method has a different signature than the base class
+  async existsByTableIdAndContent(tableId: TableId, content: string): Promise<boolean> {
     const query = `SELECT 1 FROM nodes WHERE table_id = ? AND content = ? LIMIT 1`
 
     try {

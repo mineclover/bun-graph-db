@@ -220,7 +220,7 @@ export class SqliteAttributeRepository
     }
   }
 
-  async exists(tableId: TableId, identifier: string): Promise<boolean> {
+  async existsByTableIdAndIdentifier(tableId: TableId, identifier: string): Promise<boolean> {
     const query = `SELECT 1 FROM attributes WHERE table_id = ? AND identifier = ? LIMIT 1`
 
     try {
@@ -428,5 +428,35 @@ export class SqliteAttributeRepository
       new Date(row.created_at),
       new Date(row.updated_at)
     )
+  }
+
+  // ITableScopedRepository method implementations (aliases for table-specific methods)
+  async findByParentId(
+    parentId: TableId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<Attribute>> {
+    return this.findByTableId(parentId, options)
+  }
+
+  async countByParentId(parentId: TableId): Promise<number> {
+    return this.countByTableId(parentId)
+  }
+
+  async deleteByParentId(parentId: TableId): Promise<void> {
+    return this.deleteByTableId(parentId)
+  }
+
+  // IRepositoryWithBatchOperations method implementation
+  async deleteMany(ids: AttributeId[]): Promise<void> {
+    if (ids.length === 0) return
+
+    const placeholders = ids.map(() => '?').join(', ')
+    const query = `DELETE FROM attributes WHERE id IN (${placeholders})`
+
+    try {
+      this.db.run(query, ids)
+    } catch (error) {
+      throw new DatabaseException(`Failed to delete multiple attributes: ${error}`)
+    }
   }
 }

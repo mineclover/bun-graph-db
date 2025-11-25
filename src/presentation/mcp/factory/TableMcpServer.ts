@@ -122,7 +122,7 @@ export class TableMcpServer {
   private addAiMetadataTool(): void {
     const aiMetadataTool: McpToolDefinition = {
       name: `get-table-metadata-${this.tableId}`,
-      description: `Get AI-friendly metadata for table ${this.tableId}, including schema info, usage patterns, and sample data`,
+      description: `[테이블 정보 조회] Get comprehensive metadata for table ${this.tableId}: schema structure (data types, required fields), usage patterns (common queries, templates), and sample data. Perfect for understanding table capabilities and AI-assisted queries.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -200,7 +200,7 @@ export class TableMcpServer {
       // 1. Discover search operations tool
       const discoverSearchOperationsTool: McpToolDefinition = {
         name: `discover-search-operations-${this.tableId}`,
-        description: `Discover all available SearchNodes operation variations for table ${this.tableId}`,
+        description: `[검색 기능 탐색] Discover all possible ways to search nodes in table ${this.tableId}. Shows available search operations, field options, and query variations. Use this to learn what search capabilities are available.`,
         inputSchema: {
           type: 'object',
           properties: {
@@ -218,7 +218,7 @@ export class TableMcpServer {
       // 2. Discover filter options tool
       const discoverFilterOptionsTool: McpToolDefinition = {
         name: `discover-filter-options-${this.tableId}`,
-        description: `Discover all available SearchNodesFilter options for table ${this.tableId}`,
+        description: `[필터 옵션 조회] List all filter options for searching nodes in table ${this.tableId}. Shows available operators (EQUALS, CONTAINS, GREATER_THAN, etc.), attribute filters, and relationship filters. Essential for building advanced queries.`,
         inputSchema: {
           type: 'object',
           properties: {},
@@ -230,7 +230,7 @@ export class TableMcpServer {
       // 3. Generate search examples tool
       const generateSearchExamplesTool: McpToolDefinition = {
         name: `generate-search-examples-${this.tableId}`,
-        description: `Generate comprehensive search examples for table ${this.tableId}`,
+        description: `[검색 예제 생성] Generate ready-to-use search query examples for table ${this.tableId}. Includes basic text search, attribute filtering, relationship queries, and complex multi-condition searches. Copy-paste ready examples.`,
         inputSchema: {
           type: 'object',
           properties: {},
@@ -334,7 +334,7 @@ export class TableMcpServer {
     // 1. Get table attributes
     const getAttributesTool: McpToolDefinition = {
       name: `get-table-${this.tableId}-attributes`,
-      description: `Get all attributes for table ${this.tableId}`,
+      description: `[속성 목록 조회] Get complete list of attributes (columns/fields) defined for table ${this.tableId}. Shows attribute names, types (string, number, date, etc.), descriptions, and whether they're required. Essential for understanding table structure.`,
       inputSchema: {
         type: 'object',
         properties: {},
@@ -371,7 +371,7 @@ export class TableMcpServer {
     // 2. Create attribute - Fixed: removed unused $tableId variable
     const createAttributeTool: McpToolDefinition = {
       name: `create-table-${this.tableId}-attribute`,
-      description: `Create a new attribute for table ${this.tableId}`,
+      description: `[속성 생성] Create a new attribute (field) for table ${this.tableId}. Define name, type (string/number/date/etc.), description, and whether it's required. Like adding a new column to your data structure.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -425,7 +425,7 @@ export class TableMcpServer {
     // 3. Update attribute
     const updateAttributeTool: McpToolDefinition = {
       name: `update-table-${this.tableId}-attribute`,
-      description: `Update an existing attribute for table ${this.tableId}`,
+      description: `[속성 수정] Update an existing attribute in table ${this.tableId}. Change its name, description, or whether it's required. Use this to refine your data schema.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -474,7 +474,7 @@ export class TableMcpServer {
     // 4. Delete attribute
     const deleteAttributeTool: McpToolDefinition = {
       name: `delete-table-${this.tableId}-attribute`,
-      description: `Delete an attribute from table ${this.tableId}`,
+      description: `[속성 삭제] Remove an attribute from table ${this.tableId}. Warning: This will remove the attribute definition, but existing node data may need cleanup.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -505,7 +505,7 @@ export class TableMcpServer {
     // 5. Get table templates
     const getTemplatesTool: McpToolDefinition = {
       name: `get-table-${this.tableId}-templates`,
-      description: `Get all templates associated with table ${this.tableId}`,
+      description: `[템플릿 목록] Get all reusable query templates tagged for table ${this.tableId}. Templates are pre-built GraphQL queries you can execute with different parameters. Great for common operations.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -557,7 +557,7 @@ export class TableMcpServer {
     // 6. Create table-specific template
     const createTemplateTool: McpToolDefinition = {
       name: `create-table-${this.tableId}-template`,
-      description: `Create a new template specifically for table ${this.tableId}. This template will be tagged with table:${this.tableId} for easy discovery.`,
+      description: `[템플릿 생성] Create a reusable query template for table ${this.tableId}. Save frequently-used GraphQL queries as templates with parameters. Automatically tagged with 'table:${this.tableId}' for organization.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -613,7 +613,7 @@ export class TableMcpServer {
     // 7. Search table-specific templates (permission filtered) - FIXED: removed unsupported query field
     const searchTableTemplatesTool: McpToolDefinition = {
       name: `search-table-${this.tableId}-templates`,
-      description: `Search and list templates available for table ${this.tableId}. Only shows templates tagged with table:${this.tableId} or global templates.`,
+      description: `[템플릿 검색] Search for templates available to use with table ${this.tableId}. Shows table-specific templates (tagged 'table:${this.tableId}') and global templates. Find the right template for your task.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -670,7 +670,7 @@ export class TableMcpServer {
     // 8. Execute table-specific template
     const executeTableTemplateTool: McpToolDefinition = {
       name: `execute-table-${this.tableId}-template`,
-      description: `Execute a template that is available for table ${this.tableId}. Only templates tagged with table:${this.tableId} or global templates can be executed.`,
+      description: `[템플릿 실행] Execute a saved template on table ${this.tableId} with your parameters. Provide the template identifier and variable values. Fast way to run complex queries.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -709,7 +709,7 @@ export class TableMcpServer {
     // 9. Update template
     const updateTemplateTool: McpToolDefinition = {
       name: `update-table-${this.tableId}-template`,
-      description: `Update a template associated with table ${this.tableId}`,
+      description: `[템플릿 수정] Update an existing template for table ${this.tableId}. Change name, description, query, or tags. Useful for refining your reusable queries.`,
       inputSchema: {
         type: 'object',
         properties: {
@@ -1279,10 +1279,11 @@ export class TableMcpServer {
   /**
    * Override server info to include table context
    */
-  getServerInfo(): { name: string; version: string } {
+  getServerInfo(): { name: string; version: string; description: string } {
     return {
-      name: `Bun Graph DB MCP Server - Table ${this.tableId}`,
-      version: '1.0.0'
+      name: `Bun Graph Database - Table ${this.tableId} MCP`,
+      version: '1.0.0',
+      description: `Table-specific MCP server for '${this.tableId}'. Provides isolated access to table schema, nodes, relationships, and query templates. Includes ${this.tableTools.size} specialized tools.`
     }
   }
 

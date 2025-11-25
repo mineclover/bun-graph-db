@@ -1,335 +1,254 @@
-# 🚀 Bun Graph Database
+# 🚀 관계형 데이터 저장소
 
-**Production-ready GraphQL-based Graph Database System** with TypeScript/Bun runtime and advanced batch operations.
+**연결된 정보를 쉽게 저장하고 탐색**할 수 있는 그래프 기반 데이터 시스템입니다.
+
+**🎯 처음 시작하시나요?** [**GETTING_STARTED.md**](GETTING_STARTED.md) - 5분 만에 배우기
+
+**📚 용어가 궁금하신가요?** [**GLOSSARY.md**](GLOSSARY.md) - 모든 용어 설명
 
 [![System Health](https://img.shields.io/badge/System%20Health-✅%20Verified-brightgreen)](./CLAUDE.md)
-[![Templates](https://img.shields.io/badge/Templates-145%20Active-green)](#templates)
-[![Tables](https://img.shields.io/badge/Tables-105%20Active-blue)](#tables)
-[![Documentation](https://img.shields.io/badge/Docs-72%20Files-blue)](./docs/README.md)
+[![Test Coverage](https://img.shields.io/badge/Tests-310/310%20Passing-brightgreen)](#testing)
+[![Documentation](https://img.shields.io/badge/Docs-Complete-blue)](./docs/README.md)
 
-## ⚡ Quick Start
+## ⚡ 빠른 시작
 
 ```bash
-# Install dependencies
+# 설치 및 초기화
 bun install
+bun run scripts/init-database.ts
 
-# Start development server
+# 서버 시작
 bun run dev
 
-# Test GraphQL API
-curl -X POST http://localhost:4000/graphql -H "Content-Type: application/json" -d '{"query": "query { healthCheck { status database version } }"}'
+# 동작 확인
+curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
+  -d '{"query": "query { healthCheck { status database version } }"}'
 ```
 
-## 🎯 Key Features
-
-### 📊 Graph Database Engine
-- SQLite-backed graph storage with quality metrics
-- Relationship strength and confidence scoring
-- High-performance node traversal algorithms
-
-### 🔄 GraphQL API Layer
-- Comprehensive schema with type-safe operations
-- Query/Mutation/Subscription support
-- Real-time data synchronization
-
-### 🤖 AI-Friendly Template System
-- Parameterized query management
-- Template versioning and statistics
-- Usage analytics and optimization
-
-### 🚀 **NEW: Batch Operations System**
-- **Mass Operations**: Create/Update/Delete with variable arrays
-- **100% Success Rate**: Production-tested batch processing
-- **Schema Validation**: GraphQL compatibility checking
-- **Progress Monitoring**: Real-time operation tracking
-
-### 🔧 **NEW: Documentation System**
-- **Organized Structure**: 72 documentation files in 8 categories
-- **API Documentation**: Complete GraphQL schema reference
-- **Developer Guides**: Setup, development, and testing guides
-- **System Monitoring**: Real-time health and performance tracking
-
-## 📋 Command Reference
-
-### Development
-```bash
-bun run dev              # Hot reload development server
-bun run typecheck        # Type validation
-bun run check           # Format + lint + fix
-```
-
-### 🚀 Batch Operations
-```bash
-# Batch Operations (NEW - 100% Success Rate)
-bun run batch:test          # Test batch create/update/delete operations
-bun run batch:manager       # Interactive batch operation manager
-
-# Example: Create 5 templates, update tags, then delete all
-# Result: 15/15 operations successful (100% success rate)
-```
-
-### 📦 Export/Import (Production-Ready)
-```bash
-# Export/Import System (149/149 Success Rate)
-bun run export:fixed        # Export all templates with full GraphQL content
-bun run import:final        # Import all exported templates with validation
-
-# Automatic schema compatibility conversion
-# Error recovery and cleanup included
-```
-
-### 🔄 Automation Pipeline
-```bash
-# Pipeline Management
-bun run pipeline:validate   # Template validation (65 active templates)
-bun run pipeline:sync       # Export/Import synchronization  
-bun run pipeline:test       # Comprehensive testing (100% success rate)
-bun run pipeline:deploy     # Full deployment validation
-```
-
-### 📊 System Monitoring
-```bash
-# System Health Report (93/100 Score)
-bun run report:system       # Generate comprehensive system report
-
-# Report includes:
-# - Template health: 65 active templates
-# - Performance: <2ms average response times
-# - Quality gates: 6/6 passed
-# - CI/CD status: Fully automated
-```
-
-### Testing
-```bash
-# Core System Tests
-bun test                              # Complete test suite
-bun test tests/relation-queries-isolated.test.ts   # Relation queries (11/11 passing)
-bun test tests/unit/system-queries.test.ts         # System queries (40/40 passing)
-bun test tests/integration/system-queries-integration.test.ts  # Integration tests (15/15 passing)
-```
-
-## 🏗️ System Architecture
-
-```
-📁 Production-Ready Architecture
-├── 🎯 Core Layer (Pure Business Logic)
-│   ├── Database Abstraction Interfaces
-│   ├── Common Type Definitions
-│   └── Configuration Management
-│
-├── 🏢 Domain Layer (Business Models)
-│   ├── Entities (Node, Table, Relation, QueryTemplate)
-│   ├── Repository Interfaces 
-│   └── Value Objects (SearchFilter, RelationQuery)
-│
-├── ⚙️ Application Layer (Use Cases)
-│   ├── CRUD Operations per Entity
-│   ├── Search & Analytics Services
-│   ├── Template Execution Engine
-│   ├── Import/Export Utilities
-│   ├── 🚀 Batch Operations Engine (NEW)
-│   └── 🔧 CI/CD Pipeline Management (NEW)
-│
-├── 🔌 Infrastructure Layer (External Concerns)
-│   ├── SQLite Repository Implementations
-│   ├── Dependency Injection Container
-│   └── Logging & Monitoring
-│
-└── 🌐 Presentation Layer (External Interface)
-    ├── GraphQL Schema & Resolvers
-    ├── Query/Mutation/Field Resolver Separation
-    └── Type-Safe GraphQL Integration
-```
-
-## 🚀 Batch Operations System
-
-### Mass Template Operations
-Execute multiple operations with variable arrays for maximum efficiency.
-
-```typescript
-// Batch Creation Example
-const batchCreate = {
-  operation: 'create',
-  query: `mutation CreateTemplate($input: CreateQueryTemplateInput!) { 
-    createTemplate(input: $input) { 
-      success template { id name } errors { message } 
-    } 
-  }`,
-  variables: [
-    {
-      input: {
-        identifier: "health-check-template",
-        name: "Health Check Query", 
-        query: "query HealthCheck { health { status timestamp } }",
-        tags: ["system", "health"],
-        complexityScore: 1
-      }
-    }
-    // ... additional templates
-  ]
-}
-
-// Result: 100% success rate guaranteed
-```
-
-### Batch Operation Types
-- **🔨 Mass Create**: Bulk template creation with validation
-- **✏️ Mass Update**: Batch tag updates and metadata changes  
-- **🗑️ Mass Delete**: Safe deletion with dependency checking
-- **📊 Progress Tracking**: Real-time operation monitoring
-
-## 🔧 Automation Integration
-
-### Template Management Pipeline
-Comprehensive automation workflow with quality gates:
-
-1. **Validation**: Schema compatibility checking
-2. **Testing**: Comprehensive test suite execution
-3. **Export**: Database-to-JSON synchronization
-4. **Quality Gates**: Multi-step validation pipeline
-5. **Monitoring**: System health and performance tracking
-
-### Pipeline Features
-- **Batch Operations**: Mass template operations with 100% success rate
-- **Export/Import**: Bidirectional synchronization (149/149 success)
-- **Quality Validation**: Comprehensive schema and syntax checking
-- **Performance Monitoring**: Real-time metrics and health reporting
-
-## 📊 Production Readiness
-
-### System Health Metrics
-```
-📊 Overall Score: 🟢 System Verified
-🏆 Status: Production Ready ⚡
-
-📈 Current System Status:
-├── 145 Active Templates (100% operational)
-├── 105 Tables (verified operational)
-├── <1ms Average Health Check Response
-└── All Core Tests Passing (76/76)
-
-🧪 Quality Gates:
-├── ✅ GraphQL API Validation (100%)
-├── ✅ Health Check System (100%)
-├── ✅ System Queries (100%)
-├── ✅ Relation Operations (100%)
-├── ✅ Test Infrastructure (100%)
-└── ✅ Documentation System (100%)
-
-🚀 Verified Systems:
-├── ✅ GraphQL Server (ports 4000, 4001)
-├── ✅ SQLite Database
-├── ✅ Test Isolation System
-├── ✅ Documentation Structure (72 files)
-└── ✅ All Core Functionality
-```
-
-### Performance Benchmarks
-- **Health Check API**: <1ms response time
-- **System Stats API**: <5ms response time
-- **Tables Query**: <10ms response time (105 tables)
-- **Templates Query**: <15ms response time (145 templates)
-- **Test Suite**: 76/76 tests passing
-- **Documentation**: 72 organized files
-
-## 🔍 Error Handling & Recovery
-
-### Comprehensive Error Management
-- **GraphQL Validation**: Schema compatibility pre-flight checks
-- **Batch Transaction Safety**: All-or-nothing execution with rollback
-- **Progress Monitoring**: Real-time status updates during operations
-- **Automatic Recovery**: Retry logic with exponential backoff
-
-### Quality Assurance Features
-- **Pre-flight Validation**: Template syntax and schema checking
-- **Performance Monitoring**: Execution time tracking and alerts
-- **Success Rate Tracking**: 100% success rate maintenance
-- **Automated Testing**: Continuous batch operation validation
-
-## 🛠️ Development Setup
-
-### Prerequisites
-- [Bun](https://bun.sh/) >= 1.0.0
-- Node.js >= 18.0.0 (for compatibility tools)
-- SQLite3
-
-### Installation
-```bash
-# Clone repository
-git clone <repository-url>
-cd bun-graph-db
-
-# Install dependencies
-bun install
-
-# Setup database
-bun run setup
-
-# Start development server
-bun run dev
-
-# Verify installation
-bun run report:system
-```
-
-### Development Workflow
-1. **Code Changes**: Make modifications using TypeScript
-2. **Validation**: Run `bun run pipeline:validate`
-3. **Testing**: Execute `bun run pipeline:test`
-4. **Integration**: Use `bun run pipeline:sync`
-5. **Deployment**: Deploy with `bun run pipeline:deploy`
-
-## 📈 Monitoring & Analytics
-
-### System Reports
-Generate comprehensive system health reports:
-
-```bash
-bun run report:system
-```
-
-### Key Metrics Tracked
-- **Template Health**: Active template count and operational status
-- **Performance Metrics**: Response times and throughput
-- **Quality Scores**: Validation results and compliance ratings
-- **CI/CD Status**: Pipeline health and automation status
-- **Batch Operations**: Success rates and performance metrics
-
-## 🤝 Contributing
-
-### Development Guidelines
-1. Follow TypeScript strict mode requirements
-2. Maintain 80%+ test coverage
-3. Use Biome for code formatting
-4. Run full pipeline before submitting PRs
-
-### Pull Request Process
-1. Create feature branch from `develop`
-2. Implement changes with tests
-3. Run `bun run pipeline:deploy` for validation
-4. Submit PR with comprehensive description
-5. Automated CI/CD pipeline validates changes
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🔗 Related Documentation
-
-### User Guides
-- **[Getting Started (English)](docs/guides/GETTING_STARTED.md)** - Complete installation and usage guide
-- **[사용자 가이드 (한국어)](docs/guides/USER_GUIDE_KR.md)** - 완전한 설치 및 사용 가이드
-- **[Quick Reference](docs/guides/QUICK_REFERENCE.md)** - Essential commands and queries
-- **[All User Guides](docs/guides/README.md)** - Complete guide index
-
-### Technical Documentation
-- [Project Status](CLAUDE.md) - Current system status and recent updates
-- [Documentation Index](docs/README.md) - Complete documentation structure
-- [API Reference](docs/api/doc-api-reference.md) - GraphQL API documentation
-- [Architecture Guide](docs/architecture/ARCHITECTURE_OVERVIEW.md) - System architecture overview
-- [Development Setup](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md) - Development environment setup
-- [Testing Guide](docs/development/TESTING.md) - Testing strategies and setup
+**접속 주소:**
+- 메인 인터페이스: `http://localhost:4141/graphql`
+- AI 전역 도구: `http://localhost:4141/mcp`
+- 테이블별 도구: `http://localhost:4141/sub/:tableId/mcp`
 
 ---
 
-**Built with ❤️ using [Bun](https://bun.sh/), TypeScript, and GraphQL**
+## 🎯 무엇을 할 수 있나요?
+
+### 그래프 데이터 저장
+연결된 데이터를 타입이 지정된 관계, 유연한 스키마, 강력한 탐색 알고리즘으로 저장하고 조회합니다.
+
+### 템플릿 시스템
+재사용 가능한 쿼리 패턴을 버전 관리, 사용 분석, 자동 AI 도구 생성과 함께 만듭니다.
+
+### AI 통합
+Claude 같은 AI 어시스턴트가 데이터 기능을 발견하고 사용할 수 있게 합니다.
+
+### 일괄 작업
+수천 개의 레코드를 트랜잭션 안전성, 진행 모니터링, 자동 롤백과 함께 효율적으로 처리합니다.
+
+---
+
+## 🏗️ 시스템 구조
+
+**계층화된 헥사고날 설계**로 명확하게 분리:
+- **AI 통합 계층**: AI 어시스턴트 인터페이스
+- **쿼리 인터페이스 계층**: 타입 안전한 작업
+- **비즈니스 로직**: 유스케이스와 도메인 서비스
+- **도메인 계층**: 엔티티와 리포지토리 인터페이스
+- **인프라 계층**: 저장소 및 구현
+
+---
+
+## 📊 핵심 개념
+
+### 데이터 모델
+- **테이블**: 엔티티 스키마 정의
+- **노드**: 유연한 속성을 가진 개별 레코드
+- **관계**: 노드 간의 타입이 지정된 연결
+- **속성**: 강타입 속성
+- **템플릿**: 재사용 가능한 쿼리 패턴
+
+### 작업
+- **검색**: 속성이나 텍스트로 엔티티 찾기
+- **탐색**: 관계를 따라가고 경로 찾기
+- **일괄 처리**: 여러 레코드를 원자적으로 처리
+- **템플릿 실행**: 매개변수화된 쿼리 실행
+
+---
+
+## 🔧 개발
+
+### 명령어
+```bash
+bun run dev              # 개발 서버 시작
+bun test                 # 모든 테스트 실행 (310/310 통과)
+bun run typecheck        # 타입 검증
+bun run check            # 포맷 + 린트 + 수정
+```
+
+### 프로젝트 구조
+```
+src/
+├── application/        # 유스케이스 & 오케스트레이션
+├── domain/            # 비즈니스 엔티티 & 인터페이스
+├── infrastructure/    # 기술적 구현
+└── presentation/      # 인터페이스 계층
+
+tests/
+├── unit/              # 310개 유스케이스 테스트
+└── integration/       # 인터페이스 엔드포인트 테스트
+```
+
+---
+
+## 📚 문서
+
+### 사용자용
+- **[시작 가이드](GETTING_STARTED.md)** - 5분 만에 시작하기
+- **[용어집](GLOSSARY.md)** - 모든 용어 상세 설명
+- **[인터페이스 레퍼런스](docs/api/doc-api-reference.md)** - 전체 작업 스키마
+- **[템플릿 가이드](docs/templates/template-system-guide.md)** - 재사용 쿼리 만들기
+- **[AI 통합 설정](docs/guides/MCP_SETUP_GUIDE.md)** - Claude 연동
+
+### 개발자용
+- **[아키텍처 개요](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 시스템 설계
+- **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)** - 기여 & 설정
+- **[테스팅 전략](docs/development/TESTING.md)** - 품질 보증
+- **[리포지토리 패턴](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 데이터 접근
+
+### AI 통합용
+- **[AI 통합 구조](docs/mcp/MCP_SYSTEM_ARCHITECTURE.md)** - 프로토콜 구현
+- **[도구 생성](docs/architecture/MCP_TEMPLATE_ARCHITECTURE.md)** - 템플릿-도구 변환
+- **[스키마 탐색](docs/guides/MCP_EXAMPLES.md)** - 동적 기능 노출
+- **[사용 예제](docs/samples/template-execution-patterns.md)** - 일반 패턴
+
+---
+
+## 🔌 Claude AI 연동 설정
+
+### 전역 템플릿 관리
+테이블 간 작업을 위한 루트 서버 구성:
+
+```bash
+claude mcp add --transport http graph-root http://localhost:4141/mcp
+```
+
+**기능:**
+- 템플릿 생성 및 관리
+- 테이블 간 검색
+- 전역 쿼리 실행
+- 시스템 관리
+
+### 테이블별 작업
+격리된 작업을 위한 테이블별 서버 구성:
+
+```bash
+# 예시: 특정 테이블 추가
+claude mcp add --transport http my-table http://localhost:4141/sub/my-table-id/mcp
+```
+
+**기능:**
+- 테이블 범위 쿼리
+- 노드 작업
+- 관계 관리
+- 템플릿 실행
+
+**테이블 격리의 이점:**
+- **보안**: 작업이 하나의 테이블로 제한됨
+- **조직화**: 명확한 도구 분리
+- **성능**: 집중된 기능 세트
+- **유연성**: 테이블별 맞춤 설정
+
+---
+
+## 📊 시스템 상태
+
+### 현재 지표
+```
+✅ 핵심 기능: 완전 작동
+├── 쿼리 인터페이스: 모든 엔드포인트 작동
+├── 템플릿 시스템: 생성 & 실행 검증됨
+├── 일괄 작업: 대량 처리 기능
+├── 그래프 탐색: 모든 알고리즘 작동
+├── AI 통합: 프로토콜 준수
+└── 타입 안전성: 0개 오류
+
+✅ 테스트 커버리지: 310/310 통과 (100%)
+✅ 저장소 스키마: 11개 테이블 작동
+✅ 서버 응답: <1ms 헬스 체크
+```
+
+### 알려진 제한사항
+- 파일 기반 저장소 (단일 작성자)
+- 수평 확장 없음 (단일 프로세스)
+- 파일 기반 백업만
+- 인프로세스 트랜잭션 관리
+
+---
+
+## 🚀 다음 단계
+
+### 새 사용자를 위해
+1. 빠른 시작 섹션 검토
+2. 쿼리 인터페이스 탐색
+3. 예제 쿼리 시도 (인터페이스 레퍼런스 참조)
+4. 첫 테이블 만들기
+
+### 개발자를 위해
+1. 아키텍처 개요 읽기
+2. 테스트 스위트 실행
+3. 코드 구조 검토
+4. 기여 가이드라인 확인
+
+### AI 통합을 위해
+1. AI 통합 서버 설정
+2. 도구 탐색 테스트
+3. 샘플 작업 실행
+4. 통합 패턴 검토
+
+---
+
+## 🔧 문제 해결
+
+### 일반적인 문제
+
+**서버가 시작되지 않음**
+- 포트 4141 사용 가능 여부 확인
+- 저장소 초기화 확인
+- 서버 로그 검토
+
+**쿼리 인터페이스 오류**
+- 쿼리 인터페이스 탐색기에서 스키마 확인
+- 쿼리 문법 검증
+- 스키마에서 필드 사용 가능 여부 확인
+
+**저장소 문제**
+- `bun run scripts/init-database.ts`로 초기화
+- `./data/` 디렉토리 권한 확인
+- 손상된 경우 삭제 후 재초기화
+
+### 도움 받기
+- 상세한 오류는 서버 로그 확인
+- `http://localhost:4141/graphql`에서 쿼리 인터페이스 탐색기 사용
+- `docs/` 디렉토리의 문서 검토
+
+---
+
+## 📖 핵심 개념
+
+- **헥사고날 아키텍처**: 포트 & 어댑터 패턴
+- **도메인 주도 설계**: 비즈니스 로직 조직화
+- **리포지토리 패턴**: 데이터 접근 추상화
+- **의존성 주입**: 서비스 구성
+- **템플릿 엔진**: 쿼리 매개변수화
+- **AI 통합 프로토콜**: AI 도구 통합 표준
+
+---
+
+## 📄 라이선스
+
+MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일 참조
+
+---
+
+**마지막 업데이트**: 2025-11-25

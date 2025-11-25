@@ -59,8 +59,9 @@ export class McpHttpServer {
 
   // Server info
   private serverInfo = {
-    name: 'Bun Graph DB MCP Server',
+    name: 'Bun Graph Database - MCP Server',
     version: '1.0.0',
+    description: 'GraphQL-based graph database with AI integration. Manage tables, nodes, relationships, and execute graph queries via Model Context Protocol.',
   }
 
   constructor(graphqlEndpoint: string, restApiBaseUrl?: string) {

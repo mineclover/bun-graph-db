@@ -35,25 +35,56 @@ describe('CreateTableUseCase', () => {
       update: mock(async (table: Table) => table),
       delete: mock(async () => {}),
       findAll: mock(async () => ({ data: [], metadata: {} })),
+      count: mock(async () => 0),
+      exists: mock(async () => false),
+      saveMany: mock(async () => {}),
+      findByIds: mock(async () => []),
+      deleteMany: mock(async () => {}),
     } as any
 
     mockQueryTemplateRepository = {
-      save: mock(async (template: any) => template),
-      create: mock(async (template: any) => template),
       findById: mock(async () => null),
       findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      update: mock(async (template: any) => template),
-      delete: mock(async () => {}),
+      search: mock(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
+      searchByQueryName: mock(async () => []),
+      searchByOperationType: mock(async () => []),
+      findByApplicableTable: mock(async () => []),
+      findTemplatesWithTableDependencies: mock(async () => []),
+      create: mock(async (template: any) => template),
+      update: mock(async (id: string, updates: any) => ({} as any)),
+      deleteById: mock(async () => true),
+      incrementUsage: mock(async () => {}),
+      updateExecutionStats: mock(async () => {}),
+      findPopular: mock(async () => []),
+      updateStatus: mock(async () => ({} as any)),
     } as any
 
     mockAttributeRepository = {
-      findById: mock(async () => null),
-      findByTableId: mock(async () => ({ data: [], metadata: {} })),
+      // IFullRepository methods
       save: mock(async (attr: any) => attr),
-      update: mock(async (attr: any) => attr),
-      delete: mock(async () => {}),
+      findById: mock(async () => null),
+      findByIdentifier: mock(async () => null),
       findAll: mock(async () => ({ data: [], metadata: {} })),
+      delete: mock(async () => {}),
+      count: mock(async () => 0),
+      exists: mock(async () => false),
+      saveMany: mock(async () => {}),
+      findByIds: mock(async () => []),
+      update: mock(async (attr: any) => attr),
+      deleteMany: mock(async () => {}),
+      // ITableScopedRepository methods
+      findByParentId: mock(async () => ({ data: [], metadata: {} })),
+      countByParentId: mock(async () => 0),
+      deleteByParentId: mock(async () => {}),
+      // Attribute-specific methods
+      findByTableId: mock(async () => ({ data: [], metadata: {} })),
+      countByTableId: mock(async () => 0),
+      deleteByTableId: mock(async () => {}),
+      findByTableIdAndIdentifier: mock(async () => null),
+      findByAttributeTypeId: mock(async () => ({ data: [], metadata: {} })),
+      findRequiredByTableId: mock(async () => []),
+      getAttributeTypeForAttribute: mock(async () => null),
+      existsByTableIdAndIdentifier: mock(async () => false),
     } as any
 
     useCase = new CreateTableUseCase(

@@ -85,7 +85,7 @@ export interface NodeAttributeDto extends BaseEntityDto {
 
 export function nodeAttributeFromEntity(nodeAttribute: NodeAttribute): NodeAttributeDto {
   return {
-    id: nodeAttribute.getId(),
+    id: nodeAttribute.getId() || '',
     nodeId: nodeAttribute.getNodeId(),
     attributeId: nodeAttribute.getAttributeId(),
     value: nodeAttribute.getParsedValue(),

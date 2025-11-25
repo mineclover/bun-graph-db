@@ -320,8 +320,12 @@ export class SchemaImportUseCase {
         table = existingTable
         // Update table properties if needed
       } else {
-        table = Table.create(tableData.identifier, tableData.description)
-        table = await this.tableRepository.save(table)
+        const newTable = Table.create(tableData.identifier, tableData.description)
+        const savedTable = await this.tableRepository.save(newTable)
+        if (!savedTable) {
+          throw new Error('Table save returned void unexpectedly')
+        }
+        table = savedTable
       }
 
       result.statistics.tablesImported++

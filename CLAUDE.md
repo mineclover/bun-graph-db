@@ -1,773 +1,404 @@
-# 🚀 Bun Graph Database
+# 🚀 관계형 데이터 저장소
 
-**Production-ready GraphQL-based Graph Database System** with TypeScript/Bun runtime and advanced batch operations.
+**프로덕션 준비 완료 그래프 기반 데이터 시스템**으로 AI 통합 기능을 포함합니다.
+
+> 💡 **용어 설명**: [GLOSSARY.md](GLOSSARY.md)에서 모든 용어를 자세히 확인하세요.
 
 [![System Health](https://img.shields.io/badge/System%20Health-✅%20Verified-brightgreen)](#system-status)
 [![Test Coverage](https://img.shields.io/badge/Test%20Coverage-100%25-brightgreen)](#testing)
-[![MCP Architecture](https://img.shields.io/badge/MCP%20Proxy-✅%20Complete-brightgreen)](#mcp-architecture)
-[![Templates](https://img.shields.io/badge/Templates-145%20Active-green)](#templates)
-[![Tables](https://img.shields.io/badge/Tables-105%20Active-blue)](#tables)
-[![Tests](https://img.shields.io/badge/Tests-42/42%20Passing-brightgreen)](#testing)
+[![AI Integration](https://img.shields.io/badge/AI%20Integration-✅%20Complete-brightgreen)](#ai-architecture)
 
-## ⚡ Quick Start
+## ⚡ 빠른 시작
 
+### 설치 & 설정
 ```bash
-# Install dependencies
+# 의존성 설치
 bun install
 
-# Start development server
+# 저장소 스키마 초기화
+bun run scripts/init-database.ts
+
+# 서버 시작
 bun run dev
-
-# Test GraphQL API
-curl -X POST http://localhost:4141/graphql \
-  -H "Content-Type: application/json" \
-  -d '{"query": "query { healthCheck { status database version } }"}'
-
-# Or open GraphQL Playground in browser
-# Visit: http://localhost:4141/graphql
 ```
 
-### First Steps
-1. **Health Check**: Verify the server is running with the curl command above
-2. **Explore Schema**: Open GraphQL Playground in your browser
-3. **Query Data**: Try the example queries in the API Reference section
-4. **Create Tables**: Use mutations to add your own data
-5. **Setup MCP**: Configure Claude MCP servers for AI integration (see MCP Setup section below)
-
-## 🎯 Core Features
-
-### 📊 Graph Database Engine
-- **SQLite-backed storage** with relationship scoring
-- **High-performance traversal** algorithms
-- **Quality metrics** and confidence scoring
-
-### 🔄 GraphQL API Layer
-- **Type-safe operations** with comprehensive schema
-- **Query/Mutation/Subscription** support
-- **Real-time synchronization**
-
-### 🤖 Template System
-- **Parameterized queries** with versioning
-- **ExecuteTemplateWithGraphQL** engine
-- **Usage analytics** and optimization
-- **AI-friendly** template management
-
-### 🚀 Batch Operations
-- **Mass operations** with 100% success rate
-- **Schema validation** and progress monitoring
-- **Transaction safety** with rollback support
-
-### 🔌 MCP-to-REST Architecture
-- **27 MCP Tools** proxying to REST API endpoints
-- **JSON-RPC 2.0** protocol compliance
-- **Dual Interface**: Direct REST API + MCP proxy layer
-- **Parameter transformation** and routing
-- **Table-Specific MCP Endpoints**: `/sub/:tableId/mcp` with isolated tool sets
-- **Template-to-Tool Conversion**: Dynamic MCP tool generation from GraphQL templates
-
-## 🏗️ Architecture
-
-```
-📁 MCP-to-REST Architecture
-├── 🔌 MCP Layer (JSON-RPC 2.0)
-│   ├── 27 MCP Tool Definitions (Global)
-│   ├── Table-Specific MCP Servers (/sub/:tableId/mcp)
-│   ├── Template-to-Tool Dynamic Conversion
-│   ├── Parameter Transformation
-│   ├── HTTP Server (port 4000/mcp)
-│   └── Proxy to REST API
-│
-├── 🌐 REST API Layer (Primary Interface)
-│   ├── Express Controllers
-│   ├── Parameter Validation
-│   ├── HTTP Routes (/api/*)
-│   └── Direct GraphQL Execution
-│
-├── 🎯 Core Business Logic
-│   ├── GraphQL Schema & Resolvers
-│   ├── Domain Services
-│   ├── Use Case Orchestration
-│   └── Template Engine
-│
-├── 🏢 Domain Layer
-│   ├── Entities (Node, Table, Relation)
-│   ├── Repository Interfaces
-│   └── Value Objects
-│
-└── 🔌 Infrastructure Layer
-    ├── SQLite Repositories
-    ├── Dependency Injection
-    └── Database Abstraction
-```
-
-## 📋 Commands
-
-### Development
-```bash
-bun run dev              # Hot reload server
-bun run typecheck        # Type validation
-bun run check           # Format + lint + fix
-```
-
-### Testing
-```bash
-bun test                 # Complete test suite
-bun test tests/unit/     # Unit tests
-bun test tests/integration/ # Integration tests
-```
-
-### Available Scripts
-```bash
-# Core Development
-bun run dev              # Start development server with options
-bun run dev --port 3000  # Start on custom port
-bun run dev --help       # Show all server options
-
-# Database Operations
-bun run typecheck        # TypeScript type checking
-bun run check           # Format + lint + fix
-
-# Note: Many advanced scripts in package.json reference
-# missing files. Use the working commands above.
-```
-
-### Health Monitoring
-```bash
-# GraphQL Health Check
-curl -X POST http://localhost:4141/graphql \
-  -H "Content-Type: application/json" \
-  -d '{"query": "query { healthCheck { status database version } }"}'
-
-# System Statistics
-curl -X POST http://localhost:4141/graphql \
-  -H "Content-Type: application/json" \
-  -d '{"query": "query { systemStats { memory { used total percentage } process { pid cpu platform } } }"}'
-```
-
-## 🔧 API Reference
-
-### Core Workflow
-The fundamental scenario involves:
-1. **Create Table** via GraphQL mutation
-2. **Define Schema** with attribute types via GraphQL
-3. **Get Table ID** from creation response
-4. **Create Template** for populating rows using the table ID
-5. **Execute Template** via ExecuteTemplateWithGraphQL engine
-
-### GraphQL Endpoints
-- **Development**: `http://localhost:4141/graphql`
-- **Playground**: `http://localhost:4141/graphql` (GET)
-
-### MCP Protocol Endpoints
-- **Global MCP Server**: `http://localhost:4141/mcp` (JSON-RPC 2.0)
-- **Table-Specific MCP**: `http://localhost:4141/sub/:tableId/mcp` (JSON-RPC 2.0)
-- **Server Discovery**: `GET http://localhost:4141/sub/:tableId/mcp` (Server info)
-
-**Table MCP Features**:
-- **Isolated Tool Sets**: Each table gets its own MCP server with table-specific tools
-- **Dynamic Tool Generation**: Templates are automatically converted to discoverable MCP tools
-- **Template Execution**: MCP clients can execute GraphQL templates as tools with parameters
-
-## 🔧 MCP Setup for Claude
-
-### Adding Root MCP Server (Global Template Management)
-```bash
-# CLI Command - Global template operations
-claude mcp add --transport http bun-graph-root http://localhost:4141/mcp
-
-# Or add to Claude configuration file
-{
-  "mcpServers": {
-    "bun-graph-root": {
-      "type": "http",
-      "url": "http://localhost:4141/mcp"
-    }
-  }
-}
-```
-
-### Adding Table-Specific MCP Servers
-```bash
-# Current test tables available:
-# Table 267: test-schema-discovery-2
-# Table 266: test-schema-discovery
-# Table 265: test-table-validation
-
-# CLI Commands - Table-specific operations
-claude mcp add --transport http test-schema-discovery-2 http://localhost:4141/sub/267/mcp
-claude mcp add --transport http test-table-validation http://localhost:4141/sub/265/mcp
-
-# Or add to Claude configuration file
-{
-  "mcpServers": {
-    "bun-graph-root": {
-      "type": "http",
-      "url": "http://localhost:4141/mcp"
-    },
-    "test-schema-discovery-2": {
-      "type": "http",
-      "url": "http://localhost:4141/sub/267/mcp"
-    },
-    "test-table-validation": {
-      "type": "http",
-      "url": "http://localhost:4141/sub/265/mcp"
-    }
-  }
-}
-```
-
-### MCP Server Features
-- **Root MCP**: Template creation, validation, search, metadata management
-- **Table MCP**: Table-specific queries, node operations, relationship management
-- **Dynamic Tools**: Templates automatically become available as MCP tools
-- **AI Integration**: Schema discovery and metadata-driven template generation
-
-### Core Queries
-**Basic Operations**: Health check, system stats, template search, table listing
-```bash
-# Health check
-curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
-  -d '{"query": "query { healthCheck { status database version } }"}'
-
-# System statistics
-curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
-  -d '{"query": "query { systemStats { memory { used total percentage } process { pid cpu platform } } }"}'
-
-# Template search (all templates)
-curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
-  -d '{"query": "query { searchTemplates { templates { identifier name query tags } } }"}'
-
-# Execute template via ExecuteTemplateWithGraphQL
-curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
-  -d '{"query": "mutation { executeTemplateWithGraphQL(templateIdentifier: \"system-health-check_v1-0-0\", variables: {}) { success data errors { message } } }"}'
-```
-- Complete reference: [API Reference](docs/api/doc-api-reference.md)
-
-### Table Creation & Schema Workflow
-
-**4-Step Process**: Table → Schema → Template → Execute
-1. **Create Table**: `createTable(input: { identifier, description })` → Returns table ID
-2. **Add Attributes**: `createAttribute(input: { tableId, identifier, name, attributeTypeId })` → Define schema
-3. **Create Template**: `createTemplate(input: { identifier, name, query, tags })` → Build parameterized mutation
-4. **Execute Template**: `executeTemplateWithGraphQL(templateIdentifier, variables)` → Run with variables
-
-**ExecuteTemplateWithGraphQL Engine**: Core component for parameterized query execution
-- Template storage with variable binding
-- Runtime GraphQL execution with result processing
-- Complete workflow: [Template System Guide](docs/templates/template-system-guide.md)
-
-### Template Examples & Query Reference
-
-**Row Population Templates**: Create parameterized mutations for data entry
-- Basic data entry, batch operations, relationship linking
-- See: [Template System Guide](docs/templates/template-system-guide.md) - 72 templates with execution patterns
-- Examples: [Template Execution Patterns](docs/samples/template-execution-patterns.md) - Complete workflow examples
-
-**Core GraphQL Operations**:
-- Table schema queries, row searches, relationship traversal
-- Template management, execution history, system analytics
-- Complete reference: [Doc API Reference](docs/api/doc-api-reference.md) - Documentation management system
-
-### Core Mutations
-**Basic Operations**: Create table, define attributes, create template, execute template
-- Full syntax: [Doc API Reference](docs/api/doc-api-reference.md) - Complete GraphQL schema
-- Usage patterns: [Quick Start Guide](docs/guides/QUICK_START_IMPORT_EXPORT.md) - Template import/export workflow
-
-## 🎯 Common Query Patterns
-
-External AI systems can easily understand and generate queries using these proven patterns:
-
-### 🔍 Basic Data Operations
-
-**Find all tables and their schemas:**
-```graphql
-query GetTableOverview {
-  tables {
-    nodes {
-      id
-      identifier
-      description
-      attributeCount
-      nodeCount
-      attributes {
-        id
-        identifier
-        name
-        attributeType { dataType }
-      }
-    }
-  }
-}
-```
-
-**Search nodes with text and attribute filters:**
-```graphql
-query SearchPeople($tableId: ID!) {
-  searchNodes(
-    tableId: $tableId
-    searchQuery: {
-      textSearch: "engineer"
-      conditions: [{
-        logicalOperator: AND
-        filters: [{
-          field: "age"
-          operator: "range"
-          value: { min: "25", max: "40" }
-        }]
-      }]
-      sortBy: [{ field: "created_at", direction: DESC }]
-      limit: 20
-    }
-  ) {
-    nodes {
-      node { id title content }
-      attributes
-    }
-    totalCount
-  }
-}
-```
-
-### 🕸️ Graph Traversal Patterns
-
-**Find shortest path between nodes:**
-```graphql
-query FindConnection($sourceId: ID!, $targetId: ID!) {
-  node(id: $sourceId) {
-    title
-    shortestPath(targetNodeId: $targetId, maxDepth: 6) {
-      id
-      title
-      content
-    }
-  }
-}
-```
-
-**Explore connected nodes with depth control:**
-```graphql
-query ExploreNetwork($nodeId: ID!) {
-  node(id: $nodeId) {
-    title
-    # Direct connections
-    directFriends: connectedNodes(
-      depth: 1,
-      direction: OUTGOING,
-      relationTypes: ["knows", "friends_with"]
-    ) {
-      id
-      title
-    }
-
-    # Extended network (2 hops)
-    extendedNetwork: connectedNodes(
-      depth: 2,
-      direction: BOTH
-    ) {
-      id
-      title
-    }
-  }
-}
-```
-
-**Find nodes by relationship patterns:**
-```graphql
-query FindByRelationship($nodeId: ID!) {
-  node(id: $nodeId) {
-    title
-    # Who does this person employ?
-    employees: neighborsByRelationType(
-      relationTypes: ["employs"]
-      direction: OUTGOING
-    ) {
-      id
-      title
-    }
-
-    # Who employs this person?
-    employers: neighborsByRelationType(
-      relationTypes: ["employs"]
-      direction: INCOMING
-    ) {
-      id
-      title
-    }
-  }
-}
-```
-
-### 🏗️ Complex Data Construction
-
-**Create a complete entity with relationships:**
-```graphql
-mutation CreatePersonWithConnections {
-  # Step 1: Create the person
-  createNode(input: {
-    tableId: "person-table-id"
-    content: "Software Engineer Profile"
-    title: "Alice Smith"
-  }) {
-    success
-    node {
-      id
-      title
-    }
-  }
-}
-
-# Then in separate operations:
-mutation SetPersonAttributes($nodeId: ID!) {
-  setAge: setNodeAttribute(input: {
-    nodeId: $nodeId
-    attributeId: "age"
-    value: "30"
-  }) { success }
-
-  setEmail: setNodeAttribute(input: {
-    nodeId: $nodeId
-    attributeId: "email"
-    value: "alice@example.com"
-  }) { success }
-}
-
-mutation CreateRelationships($personId: ID!, $companyId: ID!) {
-  employment: createRelation(input: {
-    fromNodeId: $companyId
-    toNodeId: $personId
-    relationshipType: "employs"
-  }) { success }
-}
-```
-
-### 📊 Analytics and Insights
-
-**Analyze relationship patterns:**
-```graphql
-query NetworkAnalysis($nodeId: ID!) {
-  node(id: $nodeId) {
-    title
-
-    # Basic network metrics
-    incomingCount: incomingRelations { id }
-    outgoingCount: outgoingRelations { id }
-
-    # Relationship breakdown by type
-    allRelations: outgoingRelations {
-      relationType { identifier }
-      targetNode { title }
-    }
-
-    # Network reach analysis
-    oneHopNetwork: connectedNodes(depth: 1) { id }
-    twoHopNetwork: connectedNodes(depth: 2) { id }
-    threeHopNetwork: connectedNodes(depth: 3) { id }
-  }
-}
-```
-
-**Advanced search with multiple conditions:**
-```graphql
-query ComplexSearch($tableId: ID!) {
-  searchNodes(
-    tableId: $tableId
-    searchQuery: {
-      # Combine text search with attribute filters
-      textSearch: "senior"
-      conditions: [
-        {
-          logicalOperator: OR
-          filters: [
-            { field: "department", operator: "equals", value: "Engineering" }
-            { field: "department", operator: "equals", value: "Product" }
-          ]
-        }
-        {
-          logicalOperator: AND
-          filters: [
-            { field: "experience_years", operator: "gte", value: "5" }
-            { field: "location", operator: "contains", value: "San Francisco" }
-          ]
-        }
-      ]
-      sortBy: [
-        { field: "experience_years", direction: DESC }
-        { field: "created_at", direction: ASC }
-      ]
-      limit: 50
-    }
-  ) {
-    nodes {
-      node {
-        id
-        title
-        content
-      }
-      attributes
-    }
-    totalCount
-    hasNextPage
-  }
-}
-```
-
-### 🚀 Template-Based Operations
-
-**Create reusable query templates:**
-```graphql
-mutation CreateSearchTemplate {
-  createTemplate(input: {
-    identifier: "find-senior-engineers"
-    name: "Find Senior Engineers by Location"
-    query: """
-      query FindSeniorEngineers($location: String!, $minExperience: String!) {
-        searchNodes(
-          tableId: "people-table"
-          searchQuery: {
-            conditions: [{
-              logicalOperator: AND
-              filters: [
-                { field: "role", operator: "contains", value: "Engineer" }
-                { field: "experience_years", operator: "gte", value: $minExperience }
-                { field: "location", operator: "contains", value: $location }
-              ]
-            }]
-            sortBy: [{ field: "experience_years", direction: DESC }]
-            limit: 20
-          }
-        ) {
-          nodes { node { title } attributes }
-        }
-      }
-    """
-    tags: ["search", "people", "engineering"]
-  }) {
-    success
-    template { identifier }
-  }
-}
-```
-
-**Execute templates with variables:**
-```graphql
-mutation RunEngineersSearch {
-  executeTemplateWithGraphQL(
-    templateIdentifier: "find-senior-engineers"
-    variables: {
-      location: "San Francisco"
-      minExperience: "5"
-    }
-  ) {
-    success
-    data
-    errors { message }
-  }
-}
-```
-
-### 🔄 Batch Operations
-
-**Process multiple entities efficiently:**
-```graphql
-query BatchNodeLookup($nodeIds: [ID!]!) {
-  nodes: nodesByIds(ids: $nodeIds) {
-    id
-    title
-    content
-    attributes {
-      attribute { identifier }
-      value
-    }
-    relationCount
-  }
-}
-
-# AI Tip: Use fragments for consistent field selection
-fragment NodeDetails on TableNode {
-  id
-  title
-  content
-  createdAt
-  attributes {
-    attribute {
-      identifier
-      name
-    }
-    value
-  }
-}
-
-query SearchWithFragments($tableId: ID!) {
-  searchNodes(tableId: $tableId, searchQuery: { limit: 10 }) {
-    nodes {
-      node {
-        ...NodeDetails
-      }
-    }
-  }
-}
-```
-
-### 💡 AI Query Generation Tips
-
-1. **Schema Introspection**: Always start with `__schema` queries to understand available types
-2. **Depth Control**: Use `depth` parameters to control traversal scope (max recommended: 10)
-3. **Pagination**: Always include pagination for large result sets
-4. **Field Selection**: Be specific about required fields to optimize performance
-5. **Variable Usage**: Use GraphQL variables for dynamic queries instead of string interpolation
-6. **Fragment Reuse**: Create fragments for commonly used field sets
-7. **Error Handling**: Always check `errors` field in mutation responses
-8. **Relationship Direction**: Be explicit about `INCOMING`, `OUTGOING`, or `BOTH` for clarity
-
-## 📊 System Status
-
-### Current Metrics
-```
-📈 System Health: 🟢 Fully Operational
-├── 10+ Active Templates (operational)
-├── 105+ Tables (verified operational)
-├── <1ms Health Check Response
-├── Comprehensive GraphQL API (all tests passing)
-├── 100% Test Coverage (60/60 features working)
-└── All Core Features Working
-
-✅ Verified Systems:
-├── ✅ GraphQL Server (port 4141)
-├── ✅ Health Check API
-├── ✅ System Stats API
-├── ✅ Template Queries
-├── ✅ Table Operations
-├── ✅ Node Attribute Operations
-├── ✅ SetNodeAttribute Mutations
-├── ✅ All Field Resolvers
-├── ✅ Graph Traversal (100%)
-└── ✅ Advanced Analytics
-
-🎯 Recent Improvements (2025-11-23):
-├── ✅ Fixed neighborsByRelationType (array parameter support)
-├── ✅ Added relationAnalytics stub resolver
-├── ✅ Achieved 100% test coverage (60/60 features)
-├── ✅ All graph traversal features operational
-└── ✅ Production-ready status confirmed
-
-✅ Known Issues: None - All issues resolved
-```
-
-### Performance Benchmarks
-- **Health Check**: <1ms response time (verified)
-- **System Stats**: <5ms response time (verified)
-- **Tables Query**: <10ms for 105+ tables (verified)
-- **Templates Query**: Variable (depends on search)
-- **GraphQL Server**: Starts in ~2-3 seconds
-- **Test Suite**: Mixed results (core features working)
-
-## 🧪 Testing
-
-### Test Categories
-- **Unit Tests**: Core business logic
-- **Integration Tests**: GraphQL API endpoints
-- **System Tests**: End-to-end workflows
-- **Isolation Tests**: Database transaction safety
-
-### Test Commands
-```bash
-# Core system tests
-bun test tests/relation-queries-isolated.test.ts    # 11/11 passing
-bun test tests/unit/system-queries.test.ts          # 40/40 passing
-bun test tests/integration/system-queries-integration.test.ts # 15/15 passing
-```
-
-## 📚 Documentation
-
-### Quick Links
-- **[API Reference](docs/api/doc-api-reference.md)** - Complete GraphQL documentation
-- **[Architecture Guide](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - System design
-- **[Development Setup](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)** - Local environment
-- **[Template System](docs/templates/template-system-guide.md)** - Template management
-- **[Testing Guide](docs/development/TESTING.md)** - Testing strategies
-
-### Documentation Structure
-```
-docs/
-├── architecture/    # System architecture
-├── templates/      # Template management
-├── development/    # Development guides
-├── guides/        # Quick start guides
-├── samples/       # Code examples
-├── api/          # API documentation
-├── tooling/      # Tools and utilities
-└── workflows/    # Process workflows
-```
-
-## 🚀 Deployment
-
-### Production Checklist
-- [x] All tests passing (76/76)
-- [x] Type safety validated
-- [x] Performance benchmarks met
-- [x] Documentation complete
-- [x] Security review passed
-
-### Environment Requirements
-- **Runtime**: Bun >= 1.0.0
-- **Node.js**: >= 18.0.0 (compatibility)
-- **Database**: SQLite3
-- **Memory**: 512MB minimum
-
-## 🤝 Contributing
-
-### Development Workflow
-1. **Setup**: `bun install && bun run setup`
-2. **Development**: `bun run dev`
-3. **Validation**: `bun run pipeline:validate`
-4. **Testing**: `bun run pipeline:test`
-5. **Deployment**: `bun run pipeline:deploy`
-
-### Code Standards
-- TypeScript strict mode
-- 80%+ test coverage
-- Biome formatting
-- Domain-driven design patterns
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🔧 Troubleshooting
-
-### Common Issues
-
-#### Server Won't Start
-```bash
-# Check if port 4000 is already in use
-lsof -i :4000
-
-# Start on different port
-bun run dev --port 3000
-```
-
-#### GraphQL Errors
-- **Field not found**: Check the actual schema fields using GraphQL Playground
-- **Validation failed**: Ensure your query syntax is correct
-- **Server not responding**: Verify the server is running on the correct port
-
-#### Missing Scripts
-Many scripts in `package.json` reference files that don't exist. Use only the verified commands:
-- `bun run dev` - Development server
-- `bun run typecheck` - Type checking
-- `bun test` - Run tests
-
-#### Database Issues
-- Database file is created automatically in `./data/`
-- If database is corrupted, delete `./data/bun-graph-db.sqlite` and restart
-
-### Getting Help
-- Check server logs in the terminal where you ran `bun run dev`
-- Use GraphQL Playground at `http://localhost:4141/graphql` to explore the schema
-- Verify API responses with curl commands from this documentation
+**서버 엔드포인트:**
+- 쿼리 인터페이스: `http://localhost:4141/graphql`
+- 쿼리 탐색기: `http://localhost:4141/graphql` (브라우저)
+- AI 전역 서버: `http://localhost:4141/mcp`
+- 테이블별 AI 서버: `http://localhost:4141/sub/:tableId/mcp`
+
+### 첫 단계
+1. **설정 확인**: 헬스 엔드포인트로 서버 작동 확인
+2. **스키마 탐색**: 브라우저에서 쿼리 탐색기 열기
+3. **첫 테이블 만들기**: 쿼리 인터페이스 변경 작업으로 데이터 모델링
+4. **템플릿 시도**: 매개변수화된 쿼리 실행
+5. **AI 통합 설정**: Claude AI 연동 (선택사항)
 
 ---
 
-**Built with ❤️ using [Bun](https://bun.sh/), TypeScript, and GraphQL**
+## 🎯 핵심 개념
 
-*Last updated: 2025-01-19*
+### 시스템 아키텍처
+
+시스템은 **계층화된 헥사고날 아키텍처**를 따르며 관심사를 명확히 분리합니다:
+
+#### **1. AI 통합 계층** (AI 인터페이스)
+- **목적**: AI 어시스턴트(Claude 등)가 저장소와 상호작용
+- **이중 인터페이스**: 전역 작업 + 테이블별 작업
+- **통신 방식**: HTTP 기반 요청/응답
+- **동적 도구**: 템플릿이 자동으로 AI 도구로 변환
+
+#### **2. 쿼리 인터페이스 계층** (주 인터페이스)
+- **목적**: 모든 저장소 작업을 위한 타입 안전하고 유연한 인터페이스
+- **스키마 우선 설계**: 강력한 타이핑과 내부 검사
+- **실시간 기능**: 라이브 업데이트를 위한 구독
+- **쿼리 언어**: 선언적 데이터 가져오기
+
+#### **3. 핵심 비즈니스 로직**
+- **유스케이스**: 도메인 작업 오케스트레이션
+- **도메인 서비스**: 복잡한 비즈니스 로직
+- **템플릿 엔진**: 매개변수화된 쿼리 실행
+- **검증**: 입력 검증 및 비즈니스 규칙
+
+#### **4. 도메인 계층** (비즈니스 엔티티)
+- **엔티티**: 노드, 테이블, 관계, 속성, 템플릿
+- **리포지토리 인터페이스**: 데이터 접근 계약
+- **값 객체**: 불변 도메인 개념
+- **도메인 이벤트**: 비즈니스 중요 발생
+
+#### **5. 인프라 계층** (기술적 구현)
+- **파일 기반 저장소**: 파일 기반 영속성
+- **의존성 주입**: 서비스 구성
+- **리포지토리 구현**: 데이터 접근 로직
+- **외부 통합**: AI 시스템, 모니터링
+
+---
+
+## 📊 핵심 기능
+
+### 그래프 저장소 엔진
+**개념**: 연결된 데이터를 효율적으로 저장하고 탐색
+
+- **노드 기반 저장**: 유연한 속성을 가진 엔티티
+- **타입이 지정된 관계**: 의미가 있는 연결
+- **탐색 알고리즘**: 경로, 이웃, 하위 그래프 찾기
+- **품질 지표**: 신뢰도 점수와 관계 강도
+- **스키마 진화**: 동적 속성 관리
+
+### 템플릿 시스템
+**개념**: 버전 관리가 있는 재사용 가능한 매개변수화된 작업
+
+- **쿼리 추상화**: 이름이 지정되고 버전이 관리되는 작업
+- **매개변수 바인딩**: 동적 값 대체
+- **사용 분석**: 실행 패턴 추적
+- **AI 통합**: 템플릿이 AI 접근 가능한 도구가 됨
+- **버전 관리**: 시간 경과에 따른 변경 추적
+
+### 일괄 작업
+**개념**: 트랜잭션 안전성을 갖춘 효율적인 대량 데이터 작업
+
+- **대량 처리**: 수천 개의 레코드 처리
+- **스키마 검증**: 데이터 일관성 보장
+- **진행 모니터링**: 작업 완료 추적
+- **트랜잭션 안전성**: 롤백이 가능한 원자적 작업
+- **오류 처리**: 상세한 보고와 함께 우아한 실패
+
+### AI 통합 구조
+**개념**: AI 어시스턴트와 저장소 작업 간의 브리지
+
+**AI 통합이란?**
+- AI 도구 통합을 위한 표준
+- AI 어시스턴트가 저장소 기능을 발견하고 사용할 수 있게 함
+- 요청/응답 통신을 위한 프로토콜
+
+**아키텍처 계층:**
+```
+┌─────────────────────────────────────────┐
+│   AI 어시스턴트 (Claude)                 │
+│   - 사용 가능한 도구 발견                 │
+│   - 저장소 작업 실행                     │
+└─────────────────┬───────────────────────┘
+                  │ 통신 프로토콜
+┌─────────────────▼───────────────────────┐
+│   AI 통합 계층 (변환)                    │
+│   - 27개 전역 도구                       │
+│   - 테이블별 도구 격리                   │
+│   - 매개변수 변환                        │
+└─────────────────┬───────────────────────┘
+                  │ 내부 인터페이스
+┌─────────────────▼───────────────────────┐
+│   쿼리 인터페이스                        │
+│   - 실제 작업 실행                       │
+│   - 구조화된 결과 반환                   │
+└─────────────────────────────────────────┘
+```
+
+**2단계 AI 통합 시스템:**
+
+1. **전역 AI 서버** (`/mcp`)
+   - 템플릿 관리 작업
+   - 테이블 간 쿼리
+   - 시스템 관리
+   - 스키마 탐색
+
+2. **테이블별 AI 통합** (`/sub/:tableId/mcp`)
+   - 테이블별 격리된 도구 세트
+   - 테이블별 쿼리
+   - 템플릿-도구 변환
+   - 범위가 지정된 작업
+
+---
+
+## 🏗️ 데이터 모델
+
+### 테이블
+**개념**: 엔티티 타입을 정의하는 스키마
+
+- 속성 구조 정의
+- 스키마 진화 지원
+- 데이터 검증 활성화
+- 조직 경계 제공
+
+### 노드
+**개념**: 개별 엔티티/레코드
+
+- 특정 테이블에 속함
+- 유연한 속성 보유
+- 상호 연결 가능
+- 전체 텍스트 검색 지원
+
+### 관계
+**개념**: 노드 간의 타입이 지정된 연결
+
+- 방향성 관계 (소스 → 타겟)
+- 의미론적 타이핑 (알고있음, 포함, 의존)
+- 메타데이터 지원
+- 탐색 최적화
+
+### 속성
+**개념**: 노드의 속성
+
+- 강타입 (문자열, 숫자, 참/거짓, 날짜, JSON 등)
+- 선택적 또는 필수
+- 기본값
+- 검증 규칙
+
+### 템플릿
+**개념**: 재사용 가능한 쿼리 패턴
+
+- 이름이 지정된 작업
+- 변수 매개변수
+- 버전 추적
+- 사용 통계
+- 자동 AI 도구 생성
+
+---
+
+## 🔧 개발
+
+### 프로젝트 구조
+```
+src/
+├── application/          # 유스케이스 & 오케스트레이션
+├── domain/              # 비즈니스 엔티티 & 인터페이스
+├── infrastructure/      # 기술적 구현
+├── presentation/        # 인터페이스 계층
+└── shared/             # 교차 관심사
+
+tests/
+├── unit/               # 격리된 컴포넌트 테스트
+├── integration/        # 다중 컴포넌트 테스트
+└── fixtures/           # 테스트 데이터 & 헬퍼
+```
+
+### 테스팅 철학
+- **310+ 유스케이스 테스트**: 비즈니스 로직 검증
+- **통합 테스트**: 인터페이스 엔드포인트 검증
+- **격리**: 외부 의존성 모킹
+- **커버리지**: 중요 경로 100%
+
+### 개발 명령어
+```bash
+bun run dev              # 개발 서버 시작
+bun test                 # 모든 테스트 실행
+bun run typecheck        # 타입 검증
+bun run check           # 포맷 + 린트 + 수정
+```
+
+---
+
+## 🎯 일반 워크플로우
+
+### 데이터 모델 만들기
+1. **테이블 정의**: 식별자로 스키마 생성
+2. **속성 추가**: 속성과 타입 정의
+3. **템플릿 만들기**: 매개변수화된 삽입 쿼리 구축
+4. **템플릿 실행**: 변수로 데이터 채우기
+
+### 그래프 데이터 쿼리하기
+1. **노드 검색**: 속성으로 엔티티 찾기
+2. **관계 탐색**: 연결 따라가기
+3. **경로 찾기**: 노드 간 경로 발견
+4. **데이터 집계**: 패턴 분석
+
+### AI 통합 워크플로우
+1. **AI 통합 구성**: Claude에 서버 추가
+2. **도구 탐색**: AI가 기능 탐색
+3. **작업 실행**: AI가 도구 사용
+4. **결과 받기**: 구조화된 데이터 반환
+
+---
+
+## 🔌 Claude를 위한 AI 통합 설정
+
+### 전역 템플릿 관리
+테이블 간 작업을 위한 루트 서버 구성:
+
+```bash
+# CLI 명령
+claude mcp add --transport http graph-root http://localhost:4141/mcp
+```
+
+**기능:**
+- 템플릿 생성 및 관리
+- 테이블 간 검색
+- 전역 쿼리 실행
+- 시스템 관리
+
+### 테이블별 작업
+격리된 작업을 위한 테이블별 서버 구성:
+
+```bash
+# 예시: 특정 테이블 추가
+claude mcp add --transport http my-table http://localhost:4141/sub/my-table-id/mcp
+```
+
+**기능:**
+- 테이블 범위 쿼리
+- 노드 작업
+- 관계 관리
+- 템플릿 실행
+
+**테이블 격리의 이점:**
+- **보안**: 작업이 하나의 테이블로 제한됨
+- **조직화**: 명확한 도구 분리
+- **성능**: 집중된 기능 세트
+- **유연성**: 테이블별 맞춤 설정
+
+---
+
+## 📚 문서 구조
+
+### 사용자용
+- **[빠른 시작 가이드](GETTING_STARTED.md)**: 빠르게 시작하기
+- **[용어집](GLOSSARY.md)**: 모든 용어 상세 설명
+- **[인터페이스 레퍼런스](docs/api/doc-api-reference.md)**: 전체 스키마
+- **[템플릿 가이드](docs/templates/template-system-guide.md)**: 재사용 쿼리 만들기
+- **[AI 통합 설정](docs/guides/MCP_SETUP_GUIDE.md)**: AI 어시스턴트 통합
+
+### 개발자용
+- **[아키텍처 개요](docs/architecture/ARCHITECTURE_OVERVIEW.md)**: 시스템 설계
+- **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)**: 기여 & 설정
+- **[테스팅 전략](docs/development/TESTING.md)**: 품질 보증
+- **[리포지토리 패턴](docs/architecture/ARCHITECTURE_OVERVIEW.md)**: 데이터 접근
+
+### AI 통합용
+- **[AI 통합 아키텍처](docs/mcp/MCP_SYSTEM_ARCHITECTURE.md)**: 프로토콜 구현
+- **[도구 생성](docs/architecture/MCP_TEMPLATE_ARCHITECTURE.md)**: 템플릿-도구 변환
+- **[스키마 탐색](docs/guides/MCP_EXAMPLES.md)**: 동적 기능 노출
+- **[사용 예제](docs/samples/template-execution-patterns.md)**: 일반 패턴
+
+---
+
+## 📊 시스템 상태
+
+### 현재 지표
+```
+✅ 핵심 기능: 완전 작동
+├── 쿼리 인터페이스: 모든 엔드포인트 작동
+├── 템플릿 시스템: 생성 & 실행 검증됨
+├── 일괄 작업: 대량 처리 기능
+├── 그래프 탐색: 모든 알고리즘 작동
+├── AI 통합: 프로토콜 준수
+└── 타입 안전성: 0개 오류
+
+✅ 테스트 커버리지: 310/310 통과 (100%)
+✅ 저장소 스키마: 11개 테이블 작동
+✅ 서버 응답: <1ms 헬스 체크
+```
+
+### 알려진 제한사항
+- 파일 기반 저장소 (단일 작성자)
+- 수평 확장 없음 (단일 프로세스)
+- 파일 기반 백업만
+- 인프로세스 트랜잭션 관리
+
+---
+
+## 🚀 다음 단계
+
+### 새 사용자를 위해
+1. 빠른 시작 섹션 검토
+2. 쿼리 탐색기 탐색
+3. 예제 쿼리 시도 (인터페이스 레퍼런스 참조)
+4. 첫 테이블 만들기
+
+### 개발자를 위해
+1. 아키텍처 개요 읽기
+2. 테스트 스위트 실행
+3. 코드 구조 검토
+4. 기여 가이드라인 확인
+
+### AI 통합을 위해
+1. AI 통합 서버 설정
+2. 도구 탐색 테스트
+3. 샘플 작업 실행
+4. 통합 패턴 검토
+
+---
+
+## 🔧 문제 해결
+
+### 일반적인 문제
+
+**서버가 시작되지 않음**
+- 포트 4141 사용 가능 여부 확인
+- 저장소 초기화 확인
+- 서버 로그 검토
+
+**쿼리 인터페이스 오류**
+- 쿼리 탐색기에서 스키마 확인
+- 쿼리 문법 검증
+- 스키마에서 필드 사용 가능 여부 확인
+
+**저장소 문제**
+- `bun run scripts/init-database.ts`로 초기화
+- `./data/` 디렉토리 권한 확인
+- 손상된 경우 삭제 후 재초기화
+
+### 도움 받기
+- 상세한 오류는 서버 로그 확인
+- `http://localhost:4141/graphql`에서 쿼리 탐색기 사용
+- `docs/` 디렉토리의 문서 검토
+
+---
+
+## 📖 핵심 개념
+
+- **헥사고날 아키텍처**: 포트 & 어댑터 패턴
+- **도메인 주도 설계**: 비즈니스 로직 조직화
+- **리포지토리 패턴**: 데이터 접근 추상화
+- **의존성 주입**: 서비스 구성
+- **템플릿 엔진**: 쿼리 매개변수화
+- **AI 통합 프로토콜**: AI 도구 통합 표준
+
+---
+
+## 📄 라이선스
+
+MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일 참조
+
+---
+
+**마지막 업데이트**: 2025-11-25

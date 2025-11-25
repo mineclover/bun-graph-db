@@ -75,7 +75,7 @@ export class DeleteQueryTemplate {
       }
 
       // Perform actual deletion
-      const deletionSuccess = await this.queryTemplateRepository.delete(request.id)
+      const deletionSuccess = await this.queryTemplateRepository.deleteById(request.id)
 
       if (!deletionSuccess) {
         return {

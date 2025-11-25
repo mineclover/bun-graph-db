@@ -268,7 +268,11 @@ export class TableResolver extends BaseResolver {
       }
 
       // Save updated table
-      const savedTable = await this.tableRepository.save(table)
+      const savedTableResult = await this.tableRepository.save(table)
+      if (!savedTableResult) {
+        throw new Error('Table save returned void unexpectedly')
+      }
+      const savedTable = savedTableResult
 
       return {
         table: tableFromEntity(savedTable),

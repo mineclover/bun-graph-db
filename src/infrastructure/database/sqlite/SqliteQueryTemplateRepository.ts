@@ -7,7 +7,7 @@ import type {
   SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
-import { DomainException } from '@/shared/exceptions/DomainException.js'
+import { DomainException, DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface QueryTemplateRow {
@@ -431,7 +431,17 @@ export class SqliteQueryTemplateRepository
     }
   }
 
-  // delete() - inherited from BaseSqliteRepository
+  // Implement deleteById to match IQueryTemplateRepository signature (returns boolean instead of void)
+  async deleteById(id: string): Promise<boolean> {
+    const query = `DELETE FROM query_templates WHERE id = ?`
+
+    try {
+      const result = this.db.run(query, [id])
+      return result.changes > 0
+    } catch (error) {
+      throw new DatabaseException(`Failed to delete query template: ${error}`)
+    }
+  }
 
   async incrementUsage(id: string): Promise<void> {
     try {

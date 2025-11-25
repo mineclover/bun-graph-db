@@ -466,7 +466,7 @@ export class TablePackageService implements ITablePackageService {
     try {
       // Delete created templates
       for (const templateId of session.rollbackInfo.templatesCreated) {
-        await this.queryTemplateRepository.delete(templateId)
+        await this.queryTemplateRepository.deleteById(templateId)
       }
 
       // Delete created nodes (cascade will handle relations)
@@ -951,7 +951,11 @@ export class TablePackageService implements ITablePackageService {
     // Create the table
     const Table = (await import('../entities/Table.js')).Table
     const table = Table.create(resolvedIdentifier, schema.table.description || undefined)
-    const savedTable = await this.tableRepository.save(table)
+    const savedTableResult = await this.tableRepository.save(table)
+    if (!savedTableResult) {
+      throw new Error('Table save returned void unexpectedly')
+    }
+    const savedTable = savedTableResult
 
     // Create attributes
     for (const attrData of schema.attributes) {

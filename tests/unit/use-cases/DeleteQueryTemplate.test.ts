@@ -60,7 +60,7 @@ describe('DeleteQueryTemplate', () => {
       findByIdentifier: mock(async () => null),
       findAll: mock(async () => []),
       update: mock(async () => createTestTemplate()),
-      delete: mock(async () => true),
+      deleteById: mock(async () => true),
       search: mock(async () => ({ templates: [], total: 0 })),
       activate: mock(async () => {}),
       deactivate: mock(async () => {}),
@@ -142,7 +142,7 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(result.errors.length).toBe(0)
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
 
     it('should allow deletion when template has usage count = 0', async () => {
@@ -157,7 +157,7 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(result.errors.length).toBe(0)
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
   })
 
@@ -175,7 +175,7 @@ describe('DeleteQueryTemplate', () => {
       expect(result.success).toBe(true)
       expect(mockQueryTemplateRepository.updateStatus).toHaveBeenCalledWith('template-1', false)
       expect(mockLogger.info).toHaveBeenCalledWith('Template deactivated before deletion', expect.any(Object))
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
 
     it('should not deactivate inactive template', async () => {
@@ -190,7 +190,7 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(mockQueryTemplateRepository.updateStatus).not.toHaveBeenCalled()
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
 
     it('should warn when deleting active template without force', async () => {
@@ -224,7 +224,7 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(mockQueryTemplateRepository.updateStatus).toHaveBeenCalledWith('template-1', false)
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
   })
 
@@ -241,7 +241,7 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(result.errors.length).toBe(0)
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
       expect(mockLogger.info).toHaveBeenCalledWith('Query template deleted successfully', expect.any(Object))
     })
 
@@ -258,7 +258,7 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(result.errors.length).toBe(0)
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
 
     it('should delete active template', async () => {
@@ -274,7 +274,7 @@ describe('DeleteQueryTemplate', () => {
       expect(result.success).toBe(true)
       expect(result.errors.length).toBe(0)
       expect(mockQueryTemplateRepository.updateStatus).toHaveBeenCalledWith('template-1', false)
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
 
     it('should delete inactive template', async () => {
@@ -289,7 +289,7 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(result.errors.length).toBe(0)
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledWith('template-1')
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
   })
 
@@ -297,7 +297,7 @@ describe('DeleteQueryTemplate', () => {
     it('should return error response when delete operation fails', async () => {
       const template = createTestTemplate('template-1', 'test-template', 0, false)
       mockQueryTemplateRepository.findById = mock(async () => template)
-      mockQueryTemplateRepository.delete = mock(async () => false)
+      mockQueryTemplateRepository.deleteById = mock(async () => false)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -314,7 +314,7 @@ describe('DeleteQueryTemplate', () => {
     it('should throw ValidationException when repository throws error', async () => {
       const template = createTestTemplate('template-1', 'test-template', 0, false)
       mockQueryTemplateRepository.findById = mock(async () => template)
-      mockQueryTemplateRepository.delete = mock(async () => {
+      mockQueryTemplateRepository.deleteById = mock(async () => {
         throw new Error('Database connection failed')
       })
 
@@ -436,7 +436,7 @@ describe('DeleteQueryTemplate', () => {
       const result3 = await useCase.execute({ id: 'template-3' })
       expect(result3.success).toBe(true)
 
-      expect(mockQueryTemplateRepository.delete).toHaveBeenCalledTimes(3)
+      expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledTimes(3)
     })
 
     it('should handle force flag explicitly set to false', async () => {
