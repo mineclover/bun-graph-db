@@ -1,5 +1,5 @@
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
@@ -307,9 +307,11 @@ export class TableNodesExportUseCase {
       if (options.attributeFormat === 'columns') {
         // Add each attribute as a separate column
         const allAttributeKeys = new Set<string>()
-        data.forEach((node) => {
-          Object.keys(node.attributes).forEach((key) => allAttributeKeys.add(key))
-        })
+        for (const node of data) {
+          for (const key of Object.keys(node.attributes)) {
+            allAttributeKeys.add(key)
+          }
+        }
         headers.push(...Array.from(allAttributeKeys))
       } else {
         headers.push('attributes')
@@ -318,8 +320,19 @@ export class TableNodesExportUseCase {
 
     rows.push(headers.join(','))
 
+    // Collect all attribute keys once for column format
+    const allAttributeKeys = new Set<string>()
+    if (options.includeAttributes && options.attributeFormat === 'columns') {
+      for (const node of data) {
+        for (const key of Object.keys(node.attributes)) {
+          allAttributeKeys.add(key)
+        }
+      }
+    }
+    const attributeKeyArray = Array.from(allAttributeKeys)
+
     // Add data rows
-    data.forEach((node) => {
+    for (const node of data) {
       const row: string[] = []
 
       // Basic fields
@@ -338,24 +351,20 @@ export class TableNodesExportUseCase {
       // Attributes
       if (options.includeAttributes) {
         if (options.attributeFormat === 'columns') {
-          const allAttributeKeys = new Set<string>()
-          data.forEach((n) => {
-            Object.keys(n.attributes).forEach((key) => allAttributeKeys.add(key))
-          })
-          Array.from(allAttributeKeys).forEach((key) => {
+          for (const key of attributeKeyArray) {
             row.push(this.escapeCsvValue(node.attributes[key] || ''))
-          })
+          }
         } else {
           row.push(this.escapeCsvValue(JSON.stringify(node.attributes)))
         }
       }
 
       rows.push(row.join(','))
-    })
+    }
 
     // Add UTF-8 BOM for proper encoding
     const csvContent = rows.join('\n')
-    return '\uFEFF' + csvContent
+    return `\uFEFF${csvContent}`
   }
 
   private exportToJSON(data: ExportedNodeData[], options: TableNodesExportOptions): string {
