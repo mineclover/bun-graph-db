@@ -800,6 +800,712 @@ export class McpSchemaValidator {
 /**
  * Utility functions for schema operations
  */
+
+/**
+ * Standardized validation error codes
+ * Format: {category}_{specific_error}
+ */
+export enum ValidationErrorCode {
+  // Schema structure errors (SCHEMA_*)
+  SCHEMA_INVALID = 'SCHEMA_INVALID',
+  SCHEMA_TYPE_INVALID = 'SCHEMA_TYPE_INVALID',
+
+  // Data structure errors (DATA_*)
+  DATA_NULL_OR_UNDEFINED = 'DATA_NULL_OR_UNDEFINED',
+  DATA_NOT_OBJECT = 'DATA_NOT_OBJECT',
+
+  // Type errors (TYPE_*)
+  TYPE_MISMATCH = 'TYPE_MISMATCH',
+  TYPE_STRING_EXPECTED = 'TYPE_STRING_EXPECTED',
+  TYPE_NUMBER_EXPECTED = 'TYPE_NUMBER_EXPECTED',
+  TYPE_INTEGER_EXPECTED = 'TYPE_INTEGER_EXPECTED',
+  TYPE_BOOLEAN_EXPECTED = 'TYPE_BOOLEAN_EXPECTED',
+  TYPE_ARRAY_EXPECTED = 'TYPE_ARRAY_EXPECTED',
+  TYPE_OBJECT_EXPECTED = 'TYPE_OBJECT_EXPECTED',
+  TYPE_NULL_EXPECTED = 'TYPE_NULL_EXPECTED',
+
+  // Constraint errors (CONSTRAINT_*)
+  CONSTRAINT_REQUIRED = 'CONSTRAINT_REQUIRED',
+  CONSTRAINT_ENUM = 'CONSTRAINT_ENUM',
+  CONSTRAINT_MIN_LENGTH = 'CONSTRAINT_MIN_LENGTH',
+  CONSTRAINT_MAX_LENGTH = 'CONSTRAINT_MAX_LENGTH',
+  CONSTRAINT_PATTERN = 'CONSTRAINT_PATTERN',
+  CONSTRAINT_FORMAT = 'CONSTRAINT_FORMAT',
+  CONSTRAINT_MINIMUM = 'CONSTRAINT_MINIMUM',
+  CONSTRAINT_MAXIMUM = 'CONSTRAINT_MAXIMUM',
+  CONSTRAINT_EXCLUSIVE_MINIMUM = 'CONSTRAINT_EXCLUSIVE_MINIMUM',
+  CONSTRAINT_EXCLUSIVE_MAXIMUM = 'CONSTRAINT_EXCLUSIVE_MAXIMUM',
+  CONSTRAINT_MULTIPLE_OF = 'CONSTRAINT_MULTIPLE_OF',
+  CONSTRAINT_MIN_ITEMS = 'CONSTRAINT_MIN_ITEMS',
+  CONSTRAINT_MAX_ITEMS = 'CONSTRAINT_MAX_ITEMS',
+  CONSTRAINT_UNIQUE_ITEMS = 'CONSTRAINT_UNIQUE_ITEMS',
+  CONSTRAINT_ADDITIONAL_PROPERTIES = 'CONSTRAINT_ADDITIONAL_PROPERTIES',
+}
+
+/**
+ * Runtime data validation error
+ */
+export interface DataValidationError {
+  /** Error code for programmatic handling */
+  code: ValidationErrorCode
+  /** JSON path to the error location (e.g., $.name) */
+  path: string
+  /** Human-readable error message */
+  message: string
+  /** Actual value that caused the error */
+  value?: any
+  /** Expected value or type */
+  expected?: string
+  /** Constraint that was violated (legacy, use code instead) */
+  constraint?: string
+}
+
+/**
+ * Runtime data validation result
+ */
+export interface DataValidationResult {
+  valid: boolean
+  errors: DataValidationError[]
+  coercedData?: Record<string, any>
+}
+
+/**
+ * Runtime data validator - validates actual data against JSON Schema
+ */
+export class McpDataValidator {
+  /**
+   * Validate data against MCP inputSchema
+   */
+  static validate(data: any, schema: any): DataValidationResult {
+    const errors: DataValidationError[] = []
+
+    // Check if schema is valid first
+    if (!schema || typeof schema !== 'object') {
+      errors.push({
+        code: ValidationErrorCode.SCHEMA_INVALID,
+        path: '$schema',
+        message: 'Invalid schema provided: schema must be a non-null object',
+        expected: 'object'
+      })
+      return { valid: false, errors }
+    }
+
+    // Root must be object
+    if (schema.type !== 'object') {
+      errors.push({
+        code: ValidationErrorCode.SCHEMA_TYPE_INVALID,
+        path: '$schema.type',
+        message: `Invalid schema type: expected "object" but got "${schema.type || 'undefined'}"`,
+        value: schema.type,
+        expected: 'object'
+      })
+      return { valid: false, errors }
+    }
+
+    // Data must be object (or undefined/null for optional)
+    if (data === null || data === undefined) {
+      // Check if there are required fields
+      if (schema.required && schema.required.length > 0) {
+        errors.push({
+          code: ValidationErrorCode.DATA_NULL_OR_UNDEFINED,
+          path: '$',
+          message: 'Data is required but received null or undefined',
+          value: data,
+          expected: 'object with required fields'
+        })
+        return { valid: false, errors }
+      }
+      return { valid: true, errors: [], coercedData: {} }
+    }
+
+    if (typeof data !== 'object' || Array.isArray(data)) {
+      errors.push({
+        code: ValidationErrorCode.DATA_NOT_OBJECT,
+        path: '$',
+        message: `Data must be an object, received ${Array.isArray(data) ? 'array' : typeof data}`,
+        value: typeof data,
+        expected: 'object'
+      })
+      return { valid: false, errors }
+    }
+
+    const coercedData: Record<string, any> = {}
+
+    // Validate required fields
+    if (schema.required && Array.isArray(schema.required)) {
+      for (const field of schema.required) {
+        if (!(field in data) || data[field] === undefined) {
+          errors.push({
+            code: ValidationErrorCode.CONSTRAINT_REQUIRED,
+            path: `$.${field}`,
+            message: `Required field "${field}" is missing`,
+            expected: 'value',
+            constraint: 'required'
+          })
+        }
+      }
+    }
+
+    // Validate each property
+    if (schema.properties && typeof schema.properties === 'object') {
+      for (const [propName, propSchema] of Object.entries(schema.properties)) {
+        const value = data[propName]
+
+        // Skip undefined optional fields
+        if (value === undefined) {
+          // Apply default if available
+          if ((propSchema as any).default !== undefined) {
+            coercedData[propName] = (propSchema as any).default
+          }
+          continue
+        }
+
+        const propResult = this.validateProperty(value, propSchema as any, `$.${propName}`)
+        errors.push(...propResult.errors)
+
+        if (propResult.coercedValue !== undefined) {
+          coercedData[propName] = propResult.coercedValue
+        } else {
+          coercedData[propName] = value
+        }
+      }
+    }
+
+    // Check for extra properties if additionalProperties is false
+    if (schema.additionalProperties === false && schema.properties) {
+      const allowedKeys = new Set(Object.keys(schema.properties))
+      for (const key of Object.keys(data)) {
+        if (!allowedKeys.has(key)) {
+          errors.push({
+            code: ValidationErrorCode.CONSTRAINT_ADDITIONAL_PROPERTIES,
+            path: `$.${key}`,
+            message: `Additional property "${key}" is not allowed by schema`,
+            value: key,
+            expected: `one of: ${Array.from(allowedKeys).join(', ')}`,
+            constraint: 'additionalProperties'
+          })
+        }
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      coercedData: errors.length === 0 ? coercedData : undefined
+    }
+  }
+
+  /**
+   * Validate individual property value
+   */
+  private static validateProperty(
+    value: any,
+    schema: any,
+    path: string
+  ): { errors: DataValidationError[]; coercedValue?: any } {
+    const errors: DataValidationError[] = []
+    let coercedValue: any = value
+
+    if (!schema || typeof schema !== 'object') {
+      return { errors, coercedValue }
+    }
+
+    const expectedType = schema.type
+
+    // Type validation with coercion
+    const typeResult = this.validateType(value, expectedType, path)
+    errors.push(...typeResult.errors)
+    if (typeResult.coercedValue !== undefined) {
+      coercedValue = typeResult.coercedValue
+    }
+
+    // If type is wrong, skip further validation
+    if (typeResult.errors.length > 0) {
+      return { errors, coercedValue }
+    }
+
+    // Enum validation
+    if (schema.enum && Array.isArray(schema.enum)) {
+      if (!schema.enum.includes(coercedValue)) {
+        errors.push({
+          code: ValidationErrorCode.CONSTRAINT_ENUM,
+          path,
+          message: `Value must be one of the allowed values: [${schema.enum.join(', ')}]`,
+          value: coercedValue,
+          expected: schema.enum.join(' | '),
+          constraint: 'enum'
+        })
+      }
+    }
+
+    // Type-specific constraint validation
+    switch (expectedType) {
+      case 'string':
+        errors.push(...this.validateStringConstraints(coercedValue, schema, path))
+        break
+      case 'number':
+      case 'integer':
+        errors.push(...this.validateNumericConstraints(coercedValue, schema, path))
+        break
+      case 'array':
+        errors.push(...this.validateArrayConstraints(coercedValue, schema, path))
+        break
+      case 'object':
+        if (schema.properties) {
+          const nestedResult = this.validate(coercedValue, schema)
+          errors.push(...nestedResult.errors.map(e => ({
+            ...e,
+            path: e.path.replace('$', path)
+          })))
+        }
+        break
+    }
+
+    return { errors, coercedValue }
+  }
+
+  /**
+   * Validate and coerce type
+   */
+  private static validateType(
+    value: any,
+    expectedType: string,
+    path: string
+  ): { errors: DataValidationError[]; coercedValue?: any } {
+    const errors: DataValidationError[] = []
+    let coercedValue = value
+
+    switch (expectedType) {
+      case 'string':
+        if (typeof value !== 'string') {
+          // Try coercion
+          if (value === null || value === undefined) {
+            errors.push({
+              code: ValidationErrorCode.TYPE_STRING_EXPECTED,
+              path,
+              message: `Type mismatch: expected string but received ${value === null ? 'null' : 'undefined'}`,
+              value,
+              expected: 'string'
+            })
+          } else if (typeof value === 'number' || typeof value === 'boolean') {
+            coercedValue = String(value)
+          } else {
+            errors.push({
+              code: ValidationErrorCode.TYPE_STRING_EXPECTED,
+              path,
+              message: `Type mismatch: expected string but received ${typeof value}`,
+              value,
+              expected: 'string'
+            })
+          }
+        }
+        break
+
+      case 'number':
+        if (typeof value !== 'number') {
+          if (typeof value === 'string') {
+            const num = parseFloat(value)
+            if (!isNaN(num)) {
+              coercedValue = num
+            } else {
+              errors.push({
+                code: ValidationErrorCode.TYPE_NUMBER_EXPECTED,
+                path,
+                message: `Type mismatch: expected number but received non-numeric string "${value}"`,
+                value,
+                expected: 'number'
+              })
+            }
+          } else {
+            errors.push({
+              code: ValidationErrorCode.TYPE_NUMBER_EXPECTED,
+              path,
+              message: `Type mismatch: expected number but received ${typeof value}`,
+              value,
+              expected: 'number'
+            })
+          }
+        }
+        break
+
+      case 'integer':
+        if (typeof value !== 'number' || !Number.isInteger(value)) {
+          if (typeof value === 'string') {
+            const num = parseInt(value, 10)
+            if (!isNaN(num) && String(num) === value.trim()) {
+              coercedValue = num
+            } else {
+              errors.push({
+                code: ValidationErrorCode.TYPE_INTEGER_EXPECTED,
+                path,
+                message: `Type mismatch: expected integer but received "${value}"`,
+                value,
+                expected: 'integer'
+              })
+            }
+          } else if (typeof value === 'number' && !Number.isInteger(value)) {
+            errors.push({
+              code: ValidationErrorCode.TYPE_INTEGER_EXPECTED,
+              path,
+              message: `Type mismatch: expected integer but received float ${value}`,
+              value,
+              expected: 'integer'
+            })
+          } else {
+            errors.push({
+              code: ValidationErrorCode.TYPE_INTEGER_EXPECTED,
+              path,
+              message: `Type mismatch: expected integer but received ${typeof value}`,
+              value,
+              expected: 'integer'
+            })
+          }
+        }
+        break
+
+      case 'boolean':
+        if (typeof value !== 'boolean') {
+          if (value === 'true' || value === 1) {
+            coercedValue = true
+          } else if (value === 'false' || value === 0) {
+            coercedValue = false
+          } else {
+            errors.push({
+              code: ValidationErrorCode.TYPE_BOOLEAN_EXPECTED,
+              path,
+              message: `Type mismatch: expected boolean but received ${typeof value} (value: ${JSON.stringify(value)})`,
+              value,
+              expected: 'boolean'
+            })
+          }
+        }
+        break
+
+      case 'array':
+        if (!Array.isArray(value)) {
+          errors.push({
+            code: ValidationErrorCode.TYPE_ARRAY_EXPECTED,
+            path,
+            message: `Type mismatch: expected array but received ${typeof value}`,
+            value,
+            expected: 'array'
+          })
+        }
+        break
+
+      case 'object':
+        if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+          errors.push({
+            code: ValidationErrorCode.TYPE_OBJECT_EXPECTED,
+            path,
+            message: `Type mismatch: expected object but received ${Array.isArray(value) ? 'array' : value === null ? 'null' : typeof value}`,
+            value,
+            expected: 'object'
+          })
+        }
+        break
+
+      case 'null':
+        if (value !== null) {
+          errors.push({
+            code: ValidationErrorCode.TYPE_NULL_EXPECTED,
+            path,
+            message: `Type mismatch: expected null but received ${typeof value}`,
+            value,
+            expected: 'null'
+          })
+        }
+        break
+    }
+
+    return { errors, coercedValue }
+  }
+
+  /**
+   * Validate string constraints
+   */
+  private static validateStringConstraints(
+    value: string,
+    schema: any,
+    path: string
+  ): DataValidationError[] {
+    const errors: DataValidationError[] = []
+
+    if (schema.minLength !== undefined && value.length < schema.minLength) {
+      errors.push({
+        code: ValidationErrorCode.CONSTRAINT_MIN_LENGTH,
+        path,
+        message: `String length violation: length ${value.length} is less than minimum ${schema.minLength}`,
+        value,
+        expected: `minLength: ${schema.minLength}`,
+        constraint: 'minLength'
+      })
+    }
+
+    if (schema.maxLength !== undefined && value.length > schema.maxLength) {
+      errors.push({
+        code: ValidationErrorCode.CONSTRAINT_MAX_LENGTH,
+        path,
+        message: `String length violation: length ${value.length} exceeds maximum ${schema.maxLength}`,
+        value,
+        expected: `maxLength: ${schema.maxLength}`,
+        constraint: 'maxLength'
+      })
+    }
+
+    if (schema.pattern !== undefined) {
+      try {
+        const regex = new RegExp(schema.pattern)
+        if (!regex.test(value)) {
+          errors.push({
+            code: ValidationErrorCode.CONSTRAINT_PATTERN,
+            path,
+            message: `Pattern violation: string does not match regex pattern "${schema.pattern}"`,
+            value,
+            expected: `pattern: ${schema.pattern}`,
+            constraint: 'pattern'
+          })
+        }
+      } catch {
+        // Invalid regex, skip validation
+      }
+    }
+
+    if (schema.format !== undefined) {
+      const formatError = this.validateFormat(value, schema.format, path)
+      if (formatError) {
+        errors.push(formatError)
+      }
+    }
+
+    return errors
+  }
+
+  /**
+   * Validate numeric constraints
+   */
+  private static validateNumericConstraints(
+    value: number,
+    schema: any,
+    path: string
+  ): DataValidationError[] {
+    const errors: DataValidationError[] = []
+
+    if (schema.minimum !== undefined) {
+      if (schema.exclusiveMinimum === true) {
+        if (value <= schema.minimum) {
+          errors.push({
+            code: ValidationErrorCode.CONSTRAINT_EXCLUSIVE_MINIMUM,
+            path,
+            message: `Numeric constraint violation: value ${value} must be greater than ${schema.minimum} (exclusive)`,
+            value,
+            expected: `> ${schema.minimum}`,
+            constraint: 'exclusiveMinimum'
+          })
+        }
+      } else {
+        if (value < schema.minimum) {
+          errors.push({
+            code: ValidationErrorCode.CONSTRAINT_MINIMUM,
+            path,
+            message: `Numeric constraint violation: value ${value} is less than minimum ${schema.minimum}`,
+            value,
+            expected: `>= ${schema.minimum}`,
+            constraint: 'minimum'
+          })
+        }
+      }
+    }
+
+    if (schema.maximum !== undefined) {
+      if (schema.exclusiveMaximum === true) {
+        if (value >= schema.maximum) {
+          errors.push({
+            code: ValidationErrorCode.CONSTRAINT_EXCLUSIVE_MAXIMUM,
+            path,
+            message: `Numeric constraint violation: value ${value} must be less than ${schema.maximum} (exclusive)`,
+            value,
+            expected: `< ${schema.maximum}`,
+            constraint: 'exclusiveMaximum'
+          })
+        }
+      } else {
+        if (value > schema.maximum) {
+          errors.push({
+            code: ValidationErrorCode.CONSTRAINT_MAXIMUM,
+            path,
+            message: `Numeric constraint violation: value ${value} exceeds maximum ${schema.maximum}`,
+            value,
+            expected: `<= ${schema.maximum}`,
+            constraint: 'maximum'
+          })
+        }
+      }
+    }
+
+    if (schema.multipleOf !== undefined && schema.multipleOf > 0) {
+      if (value % schema.multipleOf !== 0) {
+        errors.push({
+          code: ValidationErrorCode.CONSTRAINT_MULTIPLE_OF,
+          path,
+          message: `Numeric constraint violation: value ${value} is not a multiple of ${schema.multipleOf}`,
+          value,
+          expected: `multiple of ${schema.multipleOf}`,
+          constraint: 'multipleOf'
+        })
+      }
+    }
+
+    return errors
+  }
+
+  /**
+   * Validate array constraints
+   */
+  private static validateArrayConstraints(
+    value: any[],
+    schema: any,
+    path: string
+  ): DataValidationError[] {
+    const errors: DataValidationError[] = []
+
+    if (schema.minItems !== undefined && value.length < schema.minItems) {
+      errors.push({
+        code: ValidationErrorCode.CONSTRAINT_MIN_ITEMS,
+        path,
+        message: `Array constraint violation: length ${value.length} is less than minimum ${schema.minItems}`,
+        value: value.length,
+        expected: `minItems: ${schema.minItems}`,
+        constraint: 'minItems'
+      })
+    }
+
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) {
+      errors.push({
+        code: ValidationErrorCode.CONSTRAINT_MAX_ITEMS,
+        path,
+        message: `Array constraint violation: length ${value.length} exceeds maximum ${schema.maxItems}`,
+        value: value.length,
+        expected: `maxItems: ${schema.maxItems}`,
+        constraint: 'maxItems'
+      })
+    }
+
+    if (schema.uniqueItems === true) {
+      const seen = new Set()
+      const duplicates: any[] = []
+      for (const item of value) {
+        const key = JSON.stringify(item)
+        if (seen.has(key)) {
+          duplicates.push(item)
+        }
+        seen.add(key)
+      }
+      if (duplicates.length > 0) {
+        errors.push({
+          code: ValidationErrorCode.CONSTRAINT_UNIQUE_ITEMS,
+          path,
+          message: `Array constraint violation: contains ${duplicates.length} duplicate item(s)`,
+          value: duplicates,
+          expected: 'all unique items',
+          constraint: 'uniqueItems'
+        })
+      }
+    }
+
+    // Validate each item against items schema
+    if (schema.items) {
+      value.forEach((item, index) => {
+        const itemResult = this.validateProperty(item, schema.items, `${path}[${index}]`)
+        errors.push(...itemResult.errors)
+      })
+    }
+
+    return errors
+  }
+
+  /**
+   * Validate string format
+   */
+  private static validateFormat(
+    value: string,
+    format: string,
+    path: string
+  ): DataValidationError | null {
+    const formatValidators: Record<string, { regex: RegExp | ((v: string) => boolean); example: string }> = {
+      'date': { regex: /^\d{4}-\d{2}-\d{2}$/, example: '2024-01-15' },
+      'date-time': { regex: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/, example: '2024-01-15T10:30:00Z' },
+      'time': { regex: /^\d{2}:\d{2}:\d{2}(\.\d+)?$/, example: '10:30:00' },
+      'email': { regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, example: 'user@example.com' },
+      'uri': { regex: /^[a-zA-Z][a-zA-Z0-9+.-]*:/, example: 'https://example.com' },
+      'uuid': { regex: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, example: '550e8400-e29b-41d4-a716-446655440000' },
+      'hostname': { regex: /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/, example: 'example.com' },
+      'ipv4': { regex: /^(\d{1,3}\.){3}\d{1,3}$/, example: '192.168.1.1' },
+      'ipv6': {
+        regex: (v: string) => {
+          // Simplified IPv6 validation
+          const parts = v.split(':')
+          return parts.length <= 8 && parts.every(p => /^[0-9a-f]{0,4}$/i.test(p))
+        },
+        example: '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
+      }
+    }
+
+    const validatorEntry = formatValidators[format]
+    if (!validatorEntry) {
+      return null // Unknown format, skip validation
+    }
+
+    const { regex: validator, example } = validatorEntry
+    const isValid = typeof validator === 'function' ? validator(value) : validator.test(value)
+
+    if (!isValid) {
+      return {
+        code: ValidationErrorCode.CONSTRAINT_FORMAT,
+        path,
+        message: `Format violation: string does not match "${format}" format (example: ${example})`,
+        value,
+        expected: `${format} format (e.g., ${example})`,
+        constraint: 'format'
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * Format validation result as human-readable string
+   */
+  static formatValidationResult(result: DataValidationResult): string {
+    const lines: string[] = []
+
+    if (result.valid) {
+      lines.push('✅ Data is valid')
+    } else {
+      lines.push(`❌ Data validation failed (${result.errors.length} error${result.errors.length > 1 ? 's' : ''})`)
+    }
+
+    if (result.errors.length > 0) {
+      lines.push('\nErrors:')
+      result.errors.forEach((err, index) => {
+        lines.push(`  ${index + 1}. [${err.code}] ${err.path}`)
+        lines.push(`     Message: ${err.message}`)
+        if (err.value !== undefined) lines.push(`     Received: ${JSON.stringify(err.value)}`)
+        if (err.expected) lines.push(`     Expected: ${err.expected}`)
+      })
+    }
+
+    return lines.join('\n')
+  }
+
+  /**
+   * Quick validation check (returns boolean)
+   */
+  static isValid(data: any, schema: any): boolean {
+    return this.validate(data, schema).valid
+  }
+}
+
 export const SchemaUtils = {
   /**
    * Check if a schema is compatible with MCP requirements

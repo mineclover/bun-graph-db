@@ -250,3 +250,43 @@ type ValidateInputSchemaPayload implements OperationResult {
   validation: SchemaValidationResult!
   errors: [Error!]!
 }
+
+# Runtime Data Validation Types (validates actual data against JSON Schema)
+type DataValidationError {
+  "Standardized error code for programmatic handling (e.g., CONSTRAINT_MIN_LENGTH, TYPE_STRING_EXPECTED)"
+  code: String!
+  "JSON path to the error location (e.g., $.status)"
+  path: String!
+  "Human-readable error message"
+  message: String!
+  "Actual value that caused the error"
+  value: JSON
+  "Expected value or type"
+  expected: String
+  "Constraint that was violated (legacy, use code instead)"
+  constraint: String
+}
+
+type DataValidationResult {
+  "Whether the data is valid according to the schema"
+  valid: Boolean!
+  "List of validation errors"
+  errors: [DataValidationError!]!
+  "Coerced data (with type conversions applied)"
+  coercedData: JSON
+  "Human-readable formatted result"
+  formattedResult: String!
+}
+
+input ValidateDataInput {
+  "Data to validate"
+  data: JSON!
+  "JSON Schema to validate against"
+  schema: JSON!
+}
+
+type ValidateDataPayload implements OperationResult {
+  success: Boolean!
+  validation: DataValidationResult!
+  errors: [Error!]!
+}

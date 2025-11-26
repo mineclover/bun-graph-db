@@ -588,6 +588,94 @@ query ValidateMySchema {
 | required fields exist | required 필드가 properties에 존재 | Warning |
 | Property description | AI 이해를 위한 설명 권장 | Warning |
 
+#### 런타임 데이터 검증 API
+
+MCP 도구 실행 전, 입력 데이터가 inputSchema에 맞는지 검증할 수 있습니다:
+
+```graphql
+query ValidateMyData {
+  validateData(input: {
+    data: {
+      status: "pending"
+      limit: 50
+    }
+    schema: {
+      type: "object"
+      properties: {
+        status: {
+          type: "string"
+          enum: ["pending", "in_progress", "completed"]
+        }
+        limit: {
+          type: "integer"
+          minimum: 1
+          maximum: 1000
+        }
+      }
+      required: ["status"]
+    }
+  }) {
+    success
+    validation {
+      valid
+      errors { code path message value expected }
+      coercedData
+      formattedResult
+    }
+  }
+}
+```
+
+**성공 응답 예시:**
+```json
+{
+  "success": true,
+  "validation": {
+    "valid": true,
+    "errors": [],
+    "coercedData": { "status": "pending", "limit": 50 },
+    "formattedResult": "✅ Data validation passed"
+  }
+}
+```
+
+**실패 응답 예시:**
+```json
+{
+  "success": false,
+  "validation": {
+    "valid": false,
+    "errors": [
+      {
+        "code": "CONSTRAINT_ENUM",
+        "path": "$.status",
+        "message": "Value must be one of: pending, in_progress, completed",
+        "value": "invalid_status",
+        "expected": "enum: pending, in_progress, completed"
+      }
+    ],
+    "coercedData": null,
+    "formattedResult": "❌ Data validation failed\n\nErrors:\n  • $.status [CONSTRAINT_ENUM]: Value must be one of: ..."
+  }
+}
+```
+
+**데이터 검증 항목:**
+
+| 검증 유형 | 에러 코드 | 설명 |
+|----------|----------|------|
+| 필수 필드 | `CONSTRAINT_REQUIRED` | required 배열에 있는 필드 누락 |
+| 타입 검증 | `TYPE_STRING_EXPECTED`, `TYPE_NUMBER_EXPECTED` 등 | 타입 불일치 |
+| enum 검증 | `CONSTRAINT_ENUM` | 허용되지 않은 값 |
+| 문자열 길이 | `CONSTRAINT_MIN_LENGTH`, `CONSTRAINT_MAX_LENGTH` | 길이 제약 위반 |
+| 숫자 범위 | `CONSTRAINT_MINIMUM`, `CONSTRAINT_MAXIMUM` | 범위 제약 위반 |
+| 패턴 검증 | `CONSTRAINT_PATTERN` | 정규식 불일치 |
+| 포맷 검증 | `CONSTRAINT_FORMAT` | date, email, uri 등 형식 불일치 |
+
+**타입 강제 변환(Coercion):**
+- 문자열 "123" → 숫자 123 (number/integer 타입일 경우)
+- 문자열 "true"/"false" → boolean true/false
+
 #### MCP 스펙 참조
 
 - [MCP Specification 2025-06-18](https://modelcontextprotocol.io/specification/2025-06-18/server/tools)

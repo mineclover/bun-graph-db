@@ -27,4 +27,11 @@ extend type Query {
   Returns detailed errors and warnings.
   """
   validateInputSchema(input: ValidateInputSchemaInput!): ValidateInputSchemaPayload!
+
+  """
+  Validate runtime data against a JSON Schema.
+  Performs type checking with coercion, constraint validation, and format validation.
+  Returns coerced data if valid, or detailed errors if invalid.
+  """
+  validateData(input: ValidateDataInput!): ValidateDataPayload!
 }

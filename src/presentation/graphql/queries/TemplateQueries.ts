@@ -3,7 +3,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
-import { McpSchemaValidator } from '@/presentation/mcp/schema/SchemaMapper.js'
+import { McpSchemaValidator, McpDataValidator } from '@/presentation/mcp/schema/SchemaMapper.js'
 
 export class TemplateQueries extends BaseResolver {
   protected logger: ILogger
@@ -243,6 +243,40 @@ export class TemplateQueries extends BaseResolver {
       },
       'validateInputSchema',
       { schemaType: typeof args.input?.schema }
+    )
+  }
+
+  /**
+   * Validate runtime data against a JSON Schema
+   */
+  async validateData(
+    _: GraphQLParent,
+    args: { input: { data: any; schema: any } },
+    _context?: GraphQLContext
+  ) {
+    return this.handleQuery(
+      async () => {
+        const { data, schema } = args.input
+
+        // Validate the data against the schema
+        const validationResult = McpDataValidator.validate(data, schema)
+        const formattedResult = McpDataValidator.formatValidationResult(validationResult)
+
+        return {
+          success: validationResult.valid,
+          validation: {
+            valid: validationResult.valid,
+            errors: validationResult.errors,
+            coercedData: validationResult.coercedData,
+            formattedResult,
+          },
+          errors: validationResult.valid
+            ? []
+            : [{ message: `Data validation failed with ${validationResult.errors.length} error(s)` }],
+        }
+      },
+      'validateData',
+      { dataType: typeof args.input?.data, schemaType: typeof args.input?.schema }
     )
   }
 }

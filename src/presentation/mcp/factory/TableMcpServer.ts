@@ -8,7 +8,7 @@
  */
 
 import { McpHttpServer } from '../../../mcp/http-server/McpHttpServer'
-import { SchemaMapper } from '../schema/SchemaMapper'
+import { SchemaMapper, McpSchemaValidator, McpDataValidator } from '../schema/SchemaMapper'
 import type { McpToolDefinition } from '../../../application/services/McpToolRegistry'
 import { SchemaDiscoveryService } from '../../../infrastructure/ai-metadata/SchemaDiscoveryService'
 
@@ -90,6 +90,9 @@ export class TableMcpServer {
     try {
       // Add aiMetadata tool first
       this.addAiMetadataTool()
+
+      // Add validation tools
+      this.addValidationTools()
 
       // Add schema discovery tools
       this.addSchemaDiscoveryTools()
@@ -187,6 +190,54 @@ export class TableMcpServer {
     }
 
     this.tableTools.set(aiMetadataTool.name, aiMetadataTool)
+  }
+
+  /**
+   * Add validation tools for this table
+   */
+  private addValidationTools(): void {
+    // 1. Validate inputSchema tool
+    const validateInputSchemaTool: McpToolDefinition = {
+      name: `validate-input-schema-${this.tableId}`,
+      description: `[inputSchema 검증] Validate JSON Schema for MCP tool inputSchema compatibility. Checks compliance with MCP spec (JSON Schema Draft-07, type: object required). Returns detailed errors and warnings. Use before creating templates with inputSchema.`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          schema: {
+            type: 'object',
+            description: 'JSON Schema to validate for MCP compatibility'
+          }
+        },
+        required: ['schema']
+      },
+      operationType: 'query'
+    }
+
+    // 2. Validate data against schema tool
+    const validateDataTool: McpToolDefinition = {
+      name: `validate-data-${this.tableId}`,
+      description: `[데이터 검증] Validate runtime data against a JSON Schema. Performs type checking with coercion, constraint validation, and format validation. Returns coerced data if valid, or detailed errors with standardized error codes (TYPE_*, CONSTRAINT_*) if invalid.`,
+      inputSchema: {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'object',
+            description: 'Data to validate'
+          },
+          schema: {
+            type: 'object',
+            description: 'JSON Schema to validate against'
+          }
+        },
+        required: ['data', 'schema']
+      },
+      operationType: 'query'
+    }
+
+    this.tableTools.set(validateInputSchemaTool.name, validateInputSchemaTool)
+    this.tableTools.set(validateDataTool.name, validateDataTool)
+
+    console.log(`Added 2 validation tools for table ${this.tableId}`)
   }
 
   /**
@@ -1021,6 +1072,14 @@ export class TableMcpServer {
         return this.executeAiMetadataQuery(variables)
       }
 
+      // Special handling for validation tools
+      if (templateIdentifier === `validate-input-schema-${this.tableId}`) {
+        return this.executeValidationTool('validateInputSchema', variables)
+      }
+      if (templateIdentifier === `validate-data-${this.tableId}`) {
+        return this.executeValidationTool('validateData', variables)
+      }
+
       // Special handling for schema discovery tools
       if (templateIdentifier === `discover-search-operations-${this.tableId}`) {
         return this.executeSchemaDiscoveryTool('discoverSearchOperations', variables)
@@ -1164,6 +1223,75 @@ export class TableMcpServer {
       return {
         success: true,
         data: result.data?.table || null
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        data: null
+      }
+    }
+  }
+
+  /**
+   * Execute validation tool
+   */
+  private executeValidationTool(method: string, variables: any): any {
+    try {
+      let result: any
+
+      switch (method) {
+        case 'validateInputSchema': {
+          const { schema } = variables
+          if (!schema) {
+            return {
+              success: false,
+              error: 'schema is required',
+              data: null
+            }
+          }
+          const validationResult = McpSchemaValidator.validateMcpInputSchema(schema)
+          const formattedResult = McpSchemaValidator.formatValidationResult(validationResult)
+          result = {
+            valid: validationResult.valid,
+            errors: validationResult.errors,
+            warnings: validationResult.warnings,
+            formattedResult
+          }
+          break
+        }
+
+        case 'validateData': {
+          const { data, schema } = variables
+          if (!data || !schema) {
+            return {
+              success: false,
+              error: 'data and schema are required',
+              data: null
+            }
+          }
+          const validationResult = McpDataValidator.validate(data, schema)
+          const formattedResult = McpDataValidator.formatValidationResult(validationResult)
+          result = {
+            valid: validationResult.valid,
+            errors: validationResult.errors,
+            coercedData: validationResult.coercedData,
+            formattedResult
+          }
+          break
+        }
+
+        default:
+          return {
+            success: false,
+            error: `Unknown validation method: ${method}`,
+            data: null
+          }
+      }
+
+      return {
+        success: true,
+        data: result
       }
     } catch (error) {
       return {

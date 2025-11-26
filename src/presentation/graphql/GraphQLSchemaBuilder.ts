@@ -321,6 +321,10 @@ export class GraphQLSchemaBuilder {
         validateInputSchema: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.templateQueries.validateInputSchema(_, args as any),
 
+        // Runtime data validation
+        validateData: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateQueries.validateData(_, args as any),
+
         // Doc queries
         getDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.docResolver?.getDoc(_, args as any) || deps.docQueries.getDoc(_, args as any),
