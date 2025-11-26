@@ -10,6 +10,7 @@ import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { refreshMcpCacheForTemplate } from '@/presentation/mcp/factory/TableMcpServerFactory.js'
 
 export class TemplateMutations extends BaseResolver {
   protected logger: ILogger
@@ -70,6 +71,13 @@ export class TemplateMutations extends BaseResolver {
         templateId: result.getId(),
         identifier: result.getIdentifier(),
       })
+
+      // Refresh MCP cache for affected tables
+      const tags = args.input.tags || ['general']
+      const cacheResult = await refreshMcpCacheForTemplate(tags)
+      if (cacheResult.refreshed.length > 0) {
+        this.logger.info('MCP cache refreshed for tables', { refreshed: cacheResult.refreshed })
+      }
 
       return {
         success: true,
@@ -152,6 +160,13 @@ export class TemplateMutations extends BaseResolver {
         identifier: updatedTemplate.getIdentifier(),
       })
 
+      // Refresh MCP cache for affected tables (use updated tags or existing)
+      const tags = args.input.tags || updatedTemplate.getTags() || []
+      const cacheResult = await refreshMcpCacheForTemplate(tags)
+      if (cacheResult.refreshed.length > 0) {
+        this.logger.info('MCP cache refreshed for tables after template update', { refreshed: cacheResult.refreshed })
+      }
+
       return {
         success: true,
         template: updatedTemplate,
@@ -195,6 +210,9 @@ export class TemplateMutations extends BaseResolver {
           throw new Error('Template not found')
         }
 
+        // Get tags before deletion for cache refresh
+        const tags = existingTemplate.getTags() || []
+
         // Use the actual database ID for deletion
         const templateId = existingTemplate.getId()
         if (!templateId) {
@@ -202,6 +220,12 @@ export class TemplateMutations extends BaseResolver {
         }
 
         await this.queryTemplateRepository.deleteById(templateId)
+
+        // Refresh MCP cache for affected tables after deletion
+        const cacheResult = await refreshMcpCacheForTemplate(tags)
+        if (cacheResult.refreshed.length > 0) {
+          this.logger.info('MCP cache refreshed for tables after template deletion', { refreshed: cacheResult.refreshed })
+        }
 
         return true
       },
@@ -729,6 +753,13 @@ export class TemplateMutations extends BaseResolver {
         templateId: updatedTemplate.getId(),
         identifier: updatedTemplate.getIdentifier(),
       })
+
+      // Refresh MCP cache for affected tables
+      const tags = updatedTemplate.getTags() || []
+      const cacheResult = await refreshMcpCacheForTemplate(tags)
+      if (cacheResult.refreshed.length > 0) {
+        this.logger.info('MCP cache refreshed for tables after query update', { refreshed: cacheResult.refreshed })
+      }
 
       return {
         success: true,

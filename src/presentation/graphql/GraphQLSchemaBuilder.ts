@@ -317,6 +317,10 @@ export class GraphQLSchemaBuilder {
           context: GraphQLContext
         ) => deps.queryTemplateResolver?.executeTemplate(_, args as any, context) || deps.templateMutations.executeTemplate(_, args as any, context),
 
+        // InputSchema validation
+        validateInputSchema: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.templateQueries.validateInputSchema(_, args as any),
+
         // Doc queries
         getDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.docResolver?.getDoc(_, args as any) || deps.docQueries.getDoc(_, args as any),
@@ -508,6 +512,8 @@ export class GraphQLSchemaBuilder {
           deps.tableResolver?.attributeCount_field(parent as any) || deps.tableFieldResolvers.attributeCount(parent as any),
         aiMetadata: (parent: GraphQLParent) =>
           deps.tableResolver?.aiMetadata_field(parent as any) || deps.tableFieldResolvers.aiMetadata(parent as any),
+        mcpCommand: (parent: GraphQLParent) =>
+          deps.tableFieldResolvers.mcpCommand(parent as any),
         // Export field resolvers
         exportNodes: (parent: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
           deps.exportMutations.Table.exportNodes(parent as any, args as any, context),

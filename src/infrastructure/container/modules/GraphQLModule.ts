@@ -83,9 +83,13 @@ export function registerGraphQLModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      return new NodeQueries(nodeRepository, searchNodesUseCaseResolver, simpleLogger)
+      // Resolve attributeRepository for identifier-based filtering
+      const attributeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_REPOSITORY
+      )) as IAttributeRepository
+      return new NodeQueries(nodeRepository, searchNodesUseCaseResolver, simpleLogger, attributeRepository)
     },
-    [RepositoryTokens.NODE_REPOSITORY]
+    [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY]
   )
 
   container.registerSingleton(

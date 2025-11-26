@@ -3,6 +3,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
+import { McpSchemaValidator } from '@/presentation/mcp/schema/SchemaMapper.js'
 
 export class TemplateQueries extends BaseResolver {
   protected logger: ILogger
@@ -209,5 +210,39 @@ export class TemplateQueries extends BaseResolver {
 
   setSchema(schema: GraphQLSchema) {
     ;(this as any).schema = schema
+  }
+
+  /**
+   * Validate JSON Schema for MCP inputSchema compatibility
+   */
+  async validateInputSchema(
+    _: GraphQLParent,
+    args: { input: { schema: any } },
+    _context?: GraphQLContext
+  ) {
+    return this.handleQuery(
+      async () => {
+        const { schema } = args.input
+
+        // Validate the schema
+        const validationResult = McpSchemaValidator.validateMcpInputSchema(schema)
+        const formattedResult = McpSchemaValidator.formatValidationResult(validationResult)
+
+        return {
+          success: validationResult.valid,
+          validation: {
+            valid: validationResult.valid,
+            errors: validationResult.errors,
+            warnings: validationResult.warnings,
+            formattedResult,
+          },
+          errors: validationResult.valid
+            ? []
+            : [{ message: `Schema validation failed with ${validationResult.errors.length} error(s)` }],
+        }
+      },
+      'validateInputSchema',
+      { schemaType: typeof args.input?.schema }
+    )
   }
 }

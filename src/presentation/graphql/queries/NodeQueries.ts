@@ -9,12 +9,21 @@ import type {
   SearchNodesArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+
+interface AttributeFilter {
+  attributeId?: string
+  identifier?: string
+  value: string
+  operator?: string
+}
 
 export class NodeQueries extends BaseResolver {
   protected logger: ILogger
   private searchNodesUseCase: SearchNodesUseCase | null = null
+  private attributeRepository: IAttributeRepository | null = null
 
   constructor(
     private readonly nodeRepository: INodeRepository,
@@ -22,10 +31,12 @@ export class NodeQueries extends BaseResolver {
       | (() => Promise<SearchNodesUseCase | null>)
       | SearchNodesUseCase
       | null,
-    logger: ILogger
+    logger: ILogger,
+    attributeRepository?: IAttributeRepository
   ) {
     super()
     this.logger = logger
+    this.attributeRepository = attributeRepository || null
     // Handle both direct instance and resolver function
     if (typeof searchNodesUseCaseResolver === 'function') {
       // Lazy load the use case when first needed
@@ -33,6 +44,74 @@ export class NodeQueries extends BaseResolver {
     } else {
       this.searchNodesUseCase = searchNodesUseCaseResolver
     }
+  }
+
+  /**
+   * Convert attributeFilters to query string format
+   * Supports both attributeId and identifier
+   */
+  private async buildQueryFromFilters(
+    tableId: string,
+    attributeFilters: AttributeFilter[],
+    existingQuery?: string
+  ): Promise<string> {
+    const queryParts: string[] = existingQuery ? [existingQuery] : []
+
+    for (const filter of attributeFilters) {
+      let attrIdentifier = filter.identifier
+
+      // If identifier not provided but attributeId is, we need to look up the identifier
+      if (!attrIdentifier && filter.attributeId && this.attributeRepository) {
+        try {
+          const attr = await this.attributeRepository.findById(filter.attributeId)
+          attrIdentifier = attr?.getIdentifier()
+        } catch {
+          this.logger.warn('Failed to resolve attribute identifier', { attributeId: filter.attributeId })
+        }
+      }
+
+      if (!attrIdentifier) {
+        this.logger.warn('AttributeFilter missing both identifier and valid attributeId', { filter })
+        continue
+      }
+
+      // Build query part based on operator
+      const operator = filter.operator || 'EQUALS'
+      let queryPart: string
+
+      switch (operator) {
+        case 'EQUALS':
+          queryPart = `${attrIdentifier}:"${filter.value}"`
+          break
+        case 'CONTAINS':
+          queryPart = `${attrIdentifier}:*${filter.value}*`
+          break
+        case 'STARTS_WITH':
+          queryPart = `${attrIdentifier}:${filter.value}*`
+          break
+        case 'ENDS_WITH':
+          queryPart = `${attrIdentifier}:*${filter.value}`
+          break
+        case 'GREATER_THAN':
+          queryPart = `${attrIdentifier}:>${filter.value}`
+          break
+        case 'GREATER_THAN_OR_EQUAL':
+          queryPart = `${attrIdentifier}:>=${filter.value}`
+          break
+        case 'LESS_THAN':
+          queryPart = `${attrIdentifier}:<${filter.value}`
+          break
+        case 'LESS_THAN_OR_EQUAL':
+          queryPart = `${attrIdentifier}:<=${filter.value}`
+          break
+        default:
+          queryPart = `${attrIdentifier}:"${filter.value}"`
+      }
+
+      queryParts.push(queryPart)
+    }
+
+    return queryParts.join(' AND ')
   }
 
   async node(_: GraphQLParent, args: NodeArgs, _context?: GraphQLContext) {
@@ -151,7 +230,17 @@ export class NodeQueries extends BaseResolver {
 
         // Transform GraphQL args to SearchNodesInput format
         // Prioritize the new 'query' field over legacy 'search' field
-        const queryString = args.filter?.query || args.filter?.search
+        let queryString = args.filter?.query || args.filter?.search
+
+        // Handle attributeFilters - convert to query string format
+        if (args.filter?.attributeFilters && args.filter.attributeFilters.length > 0) {
+          const tableId = args.filter?.tableId || ''
+          queryString = await this.buildQueryFromFilters(
+            tableId,
+            args.filter.attributeFilters as AttributeFilter[],
+            queryString
+          )
+        }
 
         const searchInput = {
           tableId: args.filter?.tableId || '', // Provide default empty string if not provided

@@ -254,11 +254,20 @@ export interface NodeByContentArgs {
   tableId?: string
 }
 
+// AttributeFilter input for searchNodes
+export interface AttributeFilterInput {
+  attributeId?: string
+  identifier?: string
+  value: string
+  operator?: string
+}
+
 export interface SearchNodesArgs {
   filter?: {
     search?: string
     tableId?: string
     query?: string // New advanced query field
+    attributeFilters?: AttributeFilterInput[] // Attribute-based filtering
   }
   pagination?: {
     limit?: number

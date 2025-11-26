@@ -376,6 +376,428 @@ export class SchemaMappingError extends Error {
 }
 
 /**
+ * Validation error with detailed information
+ */
+export interface SchemaValidationError {
+  path: string
+  message: string
+  value?: any
+  expected?: string
+}
+
+/**
+ * Validation result with errors
+ */
+export interface SchemaValidationResult {
+  valid: boolean
+  errors: SchemaValidationError[]
+  warnings: SchemaValidationError[]
+}
+
+/**
+ * MCP-specific schema validator (JSON Schema Draft-07 compliant)
+ */
+export class McpSchemaValidator {
+  private static readonly VALID_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null']
+  private static readonly VALID_FORMATS = ['date', 'date-time', 'time', 'email', 'uri', 'uuid', 'hostname', 'ipv4', 'ipv6', 'regex']
+
+  /**
+   * Validate inputSchema for MCP tool compatibility
+   * MCP requires type: "object" at the root level
+   */
+  static validateMcpInputSchema(schema: any): SchemaValidationResult {
+    const errors: SchemaValidationError[] = []
+    const warnings: SchemaValidationError[] = []
+
+    // Check if schema exists
+    if (!schema || typeof schema !== 'object') {
+      errors.push({
+        path: '$',
+        message: 'Schema must be a non-null object',
+        value: schema,
+        expected: 'object'
+      })
+      return { valid: false, errors, warnings }
+    }
+
+    // MCP requires root type to be "object"
+    if (schema.type !== 'object') {
+      errors.push({
+        path: '$.type',
+        message: 'MCP inputSchema must have type "object" at root level',
+        value: schema.type,
+        expected: 'object'
+      })
+    }
+
+    // Validate properties object
+    if (schema.properties !== undefined) {
+      if (typeof schema.properties !== 'object' || schema.properties === null) {
+        errors.push({
+          path: '$.properties',
+          message: 'properties must be an object',
+          value: typeof schema.properties,
+          expected: 'object'
+        })
+      } else {
+        // Validate each property
+        for (const [propName, propSchema] of Object.entries(schema.properties)) {
+          this.validatePropertySchema(propSchema, `$.properties.${propName}`, errors, warnings)
+        }
+      }
+    }
+
+    // Validate required array
+    if (schema.required !== undefined) {
+      if (!Array.isArray(schema.required)) {
+        errors.push({
+          path: '$.required',
+          message: 'required must be an array of strings',
+          value: typeof schema.required,
+          expected: 'array'
+        })
+      } else {
+        // Check all required items are strings
+        schema.required.forEach((item: any, index: number) => {
+          if (typeof item !== 'string') {
+            errors.push({
+              path: `$.required[${index}]`,
+              message: 'required array items must be strings',
+              value: typeof item,
+              expected: 'string'
+            })
+          }
+        })
+
+        // Check required fields exist in properties
+        if (schema.properties) {
+          schema.required.forEach((field: string) => {
+            if (!(field in schema.properties)) {
+              warnings.push({
+                path: `$.required`,
+                message: `Required field "${field}" not found in properties`,
+                value: field,
+                expected: 'defined property'
+              })
+            }
+          })
+        }
+      }
+    }
+
+    return {
+      valid: errors.length === 0,
+      errors,
+      warnings
+    }
+  }
+
+  /**
+   * Validate individual property schema
+   */
+  private static validatePropertySchema(
+    schema: any,
+    path: string,
+    errors: SchemaValidationError[],
+    warnings: SchemaValidationError[]
+  ): void {
+    if (!schema || typeof schema !== 'object') {
+      errors.push({
+        path,
+        message: 'Property schema must be an object',
+        value: typeof schema,
+        expected: 'object'
+      })
+      return
+    }
+
+    // Validate type
+    if (!schema.type) {
+      errors.push({
+        path: `${path}.type`,
+        message: 'Property must have a type',
+        expected: this.VALID_TYPES.join(' | ')
+      })
+    } else if (!this.VALID_TYPES.includes(schema.type)) {
+      errors.push({
+        path: `${path}.type`,
+        message: `Invalid type "${schema.type}"`,
+        value: schema.type,
+        expected: this.VALID_TYPES.join(' | ')
+      })
+    }
+
+    // Validate description (recommended)
+    if (!schema.description) {
+      warnings.push({
+        path: `${path}.description`,
+        message: 'Property should have a description for better AI understanding'
+      })
+    } else if (typeof schema.description !== 'string') {
+      errors.push({
+        path: `${path}.description`,
+        message: 'description must be a string',
+        value: typeof schema.description,
+        expected: 'string'
+      })
+    }
+
+    // Validate format if present
+    if (schema.format !== undefined) {
+      if (typeof schema.format !== 'string') {
+        errors.push({
+          path: `${path}.format`,
+          message: 'format must be a string',
+          value: typeof schema.format,
+          expected: 'string'
+        })
+      } else if (!this.VALID_FORMATS.includes(schema.format)) {
+        warnings.push({
+          path: `${path}.format`,
+          message: `Non-standard format "${schema.format}"`,
+          value: schema.format,
+          expected: this.VALID_FORMATS.join(' | ')
+        })
+      }
+    }
+
+    // Validate enum if present
+    if (schema.enum !== undefined) {
+      if (!Array.isArray(schema.enum)) {
+        errors.push({
+          path: `${path}.enum`,
+          message: 'enum must be an array',
+          value: typeof schema.enum,
+          expected: 'array'
+        })
+      } else if (schema.enum.length === 0) {
+        errors.push({
+          path: `${path}.enum`,
+          message: 'enum array must not be empty'
+        })
+      }
+    }
+
+    // Validate numeric constraints
+    if (schema.type === 'number' || schema.type === 'integer') {
+      this.validateNumericConstraints(schema, path, errors)
+    }
+
+    // Validate string constraints
+    if (schema.type === 'string') {
+      this.validateStringConstraints(schema, path, errors)
+    }
+
+    // Validate array items
+    if (schema.type === 'array') {
+      if (schema.items) {
+        this.validatePropertySchema(schema.items, `${path}.items`, errors, warnings)
+      } else {
+        warnings.push({
+          path: `${path}.items`,
+          message: 'Array type should define items schema'
+        })
+      }
+    }
+
+    // Validate nested object properties
+    if (schema.type === 'object' && schema.properties) {
+      for (const [propName, propSchema] of Object.entries(schema.properties)) {
+        this.validatePropertySchema(propSchema, `${path}.properties.${propName}`, errors, warnings)
+      }
+    }
+  }
+
+  /**
+   * Validate numeric constraints
+   */
+  private static validateNumericConstraints(
+    schema: any,
+    path: string,
+    errors: SchemaValidationError[]
+  ): void {
+    if (schema.minimum !== undefined && typeof schema.minimum !== 'number') {
+      errors.push({
+        path: `${path}.minimum`,
+        message: 'minimum must be a number',
+        value: typeof schema.minimum,
+        expected: 'number'
+      })
+    }
+
+    if (schema.maximum !== undefined && typeof schema.maximum !== 'number') {
+      errors.push({
+        path: `${path}.maximum`,
+        message: 'maximum must be a number',
+        value: typeof schema.maximum,
+        expected: 'number'
+      })
+    }
+
+    // Check minimum <= maximum
+    if (typeof schema.minimum === 'number' && typeof schema.maximum === 'number') {
+      if (schema.minimum > schema.maximum) {
+        errors.push({
+          path: `${path}`,
+          message: 'minimum cannot be greater than maximum',
+          value: `min: ${schema.minimum}, max: ${schema.maximum}`
+        })
+      }
+    }
+  }
+
+  /**
+   * Validate string constraints
+   */
+  private static validateStringConstraints(
+    schema: any,
+    path: string,
+    errors: SchemaValidationError[]
+  ): void {
+    if (schema.minLength !== undefined) {
+      if (typeof schema.minLength !== 'number' || schema.minLength < 0) {
+        errors.push({
+          path: `${path}.minLength`,
+          message: 'minLength must be a non-negative number',
+          value: schema.minLength,
+          expected: 'number >= 0'
+        })
+      }
+    }
+
+    if (schema.maxLength !== undefined) {
+      if (typeof schema.maxLength !== 'number' || schema.maxLength < 0) {
+        errors.push({
+          path: `${path}.maxLength`,
+          message: 'maxLength must be a non-negative number',
+          value: schema.maxLength,
+          expected: 'number >= 0'
+        })
+      }
+    }
+
+    // Check minLength <= maxLength
+    if (typeof schema.minLength === 'number' && typeof schema.maxLength === 'number') {
+      if (schema.minLength > schema.maxLength) {
+        errors.push({
+          path: `${path}`,
+          message: 'minLength cannot be greater than maxLength',
+          value: `min: ${schema.minLength}, max: ${schema.maxLength}`
+        })
+      }
+    }
+
+    // Validate pattern if present
+    if (schema.pattern !== undefined) {
+      if (typeof schema.pattern !== 'string') {
+        errors.push({
+          path: `${path}.pattern`,
+          message: 'pattern must be a string',
+          value: typeof schema.pattern,
+          expected: 'string'
+        })
+      } else {
+        try {
+          new RegExp(schema.pattern)
+        } catch {
+          errors.push({
+            path: `${path}.pattern`,
+            message: 'pattern is not a valid regular expression',
+            value: schema.pattern
+          })
+        }
+      }
+    }
+  }
+
+  /**
+   * Format validation result as human-readable string
+   */
+  static formatValidationResult(result: SchemaValidationResult): string {
+    const lines: string[] = []
+
+    if (result.valid) {
+      lines.push('✅ Schema is valid for MCP')
+    } else {
+      lines.push('❌ Schema validation failed')
+    }
+
+    if (result.errors.length > 0) {
+      lines.push('\nErrors:')
+      result.errors.forEach(err => {
+        lines.push(`  • ${err.path}: ${err.message}`)
+        if (err.value !== undefined) lines.push(`    Got: ${JSON.stringify(err.value)}`)
+        if (err.expected) lines.push(`    Expected: ${err.expected}`)
+      })
+    }
+
+    if (result.warnings.length > 0) {
+      lines.push('\nWarnings:')
+      result.warnings.forEach(warn => {
+        lines.push(`  ⚠ ${warn.path}: ${warn.message}`)
+      })
+    }
+
+    return lines.join('\n')
+  }
+
+  /**
+   * Quick validation check (returns boolean)
+   */
+  static isValid(schema: any): boolean {
+    return this.validateMcpInputSchema(schema).valid
+  }
+
+  /**
+   * Create a valid empty MCP inputSchema
+   */
+  static createEmptySchema(): McpInputSchema {
+    return {
+      type: 'object',
+      properties: {},
+      required: []
+    }
+  }
+
+  /**
+   * Create schema from simple field definitions
+   */
+  static createSchemaFromFields(fields: Array<{
+    name: string
+    type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object'
+    description?: string
+    required?: boolean
+    enum?: any[]
+    default?: any
+  }>): McpInputSchema {
+    const properties: Record<string, JsonSchema> = {}
+    const required: string[] = []
+
+    fields.forEach(field => {
+      const prop: JsonSchema = {
+        type: field.type,
+        description: field.description || `${field.name} parameter`
+      }
+
+      if (field.enum) prop.enum = field.enum
+      if (field.default !== undefined) prop.default = field.default
+
+      properties[field.name] = prop
+
+      if (field.required) {
+        required.push(field.name)
+      }
+    })
+
+    return {
+      type: 'object',
+      properties,
+      required
+    }
+  }
+}
+
+/**
  * Utility functions for schema operations
  */
 export const SchemaUtils = {

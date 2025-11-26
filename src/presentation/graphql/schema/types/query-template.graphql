@@ -216,3 +216,37 @@ type TableDependencyTemplateResult {
   templates: [QueryTemplate!]!
   totalCount: Int!
 }
+
+# MCP InputSchema Validation Types
+type SchemaValidationError {
+  "JSON path to the error location (e.g., $.properties.status)"
+  path: String!
+  "Human-readable error message"
+  message: String!
+  "Actual value that caused the error"
+  value: JSON
+  "Expected value or type"
+  expected: String
+}
+
+type SchemaValidationResult {
+  "Whether the schema is valid for MCP"
+  valid: Boolean!
+  "List of validation errors (blocking issues)"
+  errors: [SchemaValidationError!]!
+  "List of validation warnings (recommendations)"
+  warnings: [SchemaValidationError!]!
+  "Human-readable formatted result"
+  formattedResult: String!
+}
+
+input ValidateInputSchemaInput {
+  "JSON Schema to validate for MCP compatibility"
+  schema: JSON!
+}
+
+type ValidateInputSchemaPayload implements OperationResult {
+  success: Boolean!
+  validation: SchemaValidationResult!
+  errors: [Error!]!
+}

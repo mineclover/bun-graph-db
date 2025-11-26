@@ -178,4 +178,12 @@ export class TableFieldResolvers extends BaseResolver {
       { tableId: parent.id }
     )
   }
+
+  async mcpCommand(parent: TableParent, _args?: any, _context?: GraphQLContext): Promise<string> {
+    // Generate Claude Code MCP add command for this table
+    const identifier = parent.identifier
+    // Convert identifier to kebab-case for the MCP server name
+    const serverName = identifier.replace(/_/g, '-')
+    return `claude mcp add --transport http ${serverName} http://localhost:4141/sub/${identifier}/mcp`
+  }
 }

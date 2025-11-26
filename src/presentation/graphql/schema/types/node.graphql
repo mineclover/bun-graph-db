@@ -193,10 +193,14 @@ input SearchNodesFilter {
 """
 Filter nodes by attribute values with flexible operators
 Supports text matching, numeric comparisons, and range queries
+Use either attributeId (numeric ID) or identifier (string name) to specify the attribute
 """
 input AttributeFilter {
-  "Attribute identifier to filter on"
-  attributeId: ID!
+  "Attribute ID to filter on (use this OR identifier)"
+  attributeId: ID
+
+  "Attribute identifier/name to filter on (use this OR attributeId)"
+  identifier: String
 
   "Value to compare against (string representation)"
   value: String!

@@ -173,17 +173,24 @@ Claude Desktop에서:
 
 Claude가 연결된 MCP 서버 목록을 표시합니다.
 
-### 방법 2: Claude CLI
+### 방법 2: Claude Code CLI (권장)
 
 ```bash
-# 글로벌 MCP 서버 추가
-claude mcp add --transport http bun-graph-root http://localhost:4141/mcp
+# 전역 MCP 서버 추가 (템플릿 관리, 시스템 작업)
+claude mcp add --transport http graph-root http://localhost:4141/mcp
 
 # 테이블별 MCP 서버 추가
-claude mcp add --transport http my-users-table http://localhost:4141/sub/1/mcp
+claude mcp add --transport http users-table http://localhost:4141/sub/users/mcp
+claude mcp add --transport http projects-table http://localhost:4141/sub/projects/mcp
 
-# 연결 확인
+# MCP 서버 목록 확인
 claude mcp list
+
+# MCP 서버 상세 정보 확인
+claude mcp get graph-root
+
+# MCP 서버 제거
+claude mcp remove graph-root
 ```
 
 ### 방법 3: Claude Code (VS Code)
@@ -569,6 +576,7 @@ const allowedTools = [
 ## 다음 단계
 
 ### 학습 자료
+- **[템플릿 기반 MCP 확장 가이드](./TEMPLATE_MCP_EXTENSION_GUIDE.md)** - 코드 수정 없이 MCP 도구 확장
 - **[MCP System Architecture](../mcp/MCP_SYSTEM_ARCHITECTURE.md)** - 기술적 세부사항
 - **[MCP API Reference](../api/MCP_API_REFERENCE.md)** - API 문서
 - **[GraphQL API Guide](./GETTING_STARTED.md)** - GraphQL 사용법

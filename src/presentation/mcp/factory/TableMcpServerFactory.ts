@@ -18,6 +18,11 @@ interface TableValidationResult {
 }
 
 /**
+ * Singleton instance for global access
+ */
+let globalFactoryInstance: TableMcpServerFactory | null = null
+
+/**
  * Factory for creating and managing table-specific MCP servers
  */
 export class TableMcpServerFactory {
@@ -34,6 +39,16 @@ export class TableMcpServerFactory {
     this.graphqlEndpoint = graphqlEndpoint
     this.restApiBaseUrl = restApiBaseUrl
     this.logger = logger
+
+    // Set as global instance
+    globalFactoryInstance = this
+  }
+
+  /**
+   * Get the global factory instance
+   */
+  static getInstance(): TableMcpServerFactory | null {
+    return globalFactoryInstance
   }
 
   /**
@@ -347,4 +362,70 @@ export class TableMcpServerFactory {
 
     return { healthy, unhealthy }
   }
+
+  /**
+   * Refresh MCP servers for tables affected by template changes
+   * Extracts table IDs from template tags (format: "table:tableId")
+   */
+  async refreshServersForTemplateTags(tags: string[]): Promise<{
+    refreshed: string[]
+    failed: Array<{ tableId: string; error: string }>
+  }> {
+    const refreshed: string[] = []
+    const failed: Array<{ tableId: string; error: string }> = []
+
+    // Extract table IDs from tags (format: "table:tableId")
+    const tableIds = tags
+      .filter(tag => tag.startsWith('table:'))
+      .map(tag => tag.replace('table:', ''))
+      .filter(id => id.length > 0)
+
+    if (tableIds.length === 0) {
+      this.logger?.debug('No table tags found in template, skipping cache refresh')
+      return { refreshed, failed }
+    }
+
+    this.logger?.info(`Refreshing MCP servers for ${tableIds.length} tables: ${tableIds.join(', ')}`)
+
+    for (const tableId of tableIds) {
+      try {
+        // Only refresh if the server is already cached
+        if (this.servers.has(tableId)) {
+          const server = await this.refreshServerForTable(tableId)
+          if (server) {
+            refreshed.push(tableId)
+            this.logger?.info(`Successfully refreshed MCP server cache for table ${tableId}`)
+          } else {
+            failed.push({ tableId, error: 'Server refresh returned null' })
+          }
+        } else {
+          this.logger?.debug(`Table ${tableId} not cached, skipping refresh`)
+        }
+      } catch (error) {
+        failed.push({
+          tableId,
+          error: error instanceof Error ? error.message : 'Unknown error during refresh'
+        })
+        this.logger?.error(`Failed to refresh MCP server for table ${tableId}:`, { error })
+      }
+    }
+
+    return { refreshed, failed }
+  }
+}
+
+/**
+ * Utility function to refresh MCP server cache for template changes
+ * Can be called from any part of the application without direct factory access
+ */
+export async function refreshMcpCacheForTemplate(tags: string[]): Promise<{
+  refreshed: string[]
+  failed: Array<{ tableId: string; error: string }>
+}> {
+  const factory = TableMcpServerFactory.getInstance()
+  if (!factory) {
+    console.warn('[MCP Cache] No factory instance available, skipping cache refresh')
+    return { refreshed: [], failed: [] }
+  }
+  return factory.refreshServersForTemplateTags(tags)
 }

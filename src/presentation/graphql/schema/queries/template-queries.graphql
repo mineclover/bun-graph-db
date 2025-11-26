@@ -20,4 +20,11 @@ extend type Query {
 
   # Execute template (also available as mutation)
   executeTemplate(input: ExecuteQueryTemplateInput!): ExecuteQueryTemplatePayload!
+
+  """
+  Validate JSON Schema for MCP tool inputSchema compatibility.
+  Checks compliance with MCP spec (JSON Schema Draft-07, type: object required).
+  Returns detailed errors and warnings.
+  """
+  validateInputSchema(input: ValidateInputSchemaInput!): ValidateInputSchemaPayload!
 }

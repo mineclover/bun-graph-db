@@ -250,37 +250,41 @@ bun run check           # 포맷 + 린트 + 수정
 
 ---
 
-## 🔌 Claude를 위한 AI 통합 설정
+## 🔌 Claude Code MCP 설정
 
-### 전역 템플릿 관리
-테이블 간 작업을 위한 루트 서버 구성:
+### Claude Code CLI 명령어
 
 ```bash
-# CLI 명령
+# 전역 MCP 서버 추가 (템플릿 관리, 시스템 작업)
 claude mcp add --transport http graph-root http://localhost:4141/mcp
+
+# 테이블별 MCP 서버 추가
+claude mcp add --transport http users-table http://localhost:4141/sub/users/mcp
+claude mcp add --transport http projects-table http://localhost:4141/sub/projects/mcp
+
+# MCP 서버 목록 확인
+claude mcp list
+
+# MCP 서버 제거
+claude mcp remove graph-root
+
+# MCP 서버 상세 정보
+claude mcp get graph-root
 ```
 
-**기능:**
+### 전역 서버 (`/mcp`)
 - 템플릿 생성 및 관리
 - 테이블 간 검색
 - 전역 쿼리 실행
 - 시스템 관리
 
-### 테이블별 작업
-격리된 작업을 위한 테이블별 서버 구성:
-
-```bash
-# 예시: 특정 테이블 추가
-claude mcp add --transport http my-table http://localhost:4141/sub/my-table-id/mcp
-```
-
-**기능:**
+### 테이블별 서버 (`/sub/:tableId/mcp`)
 - 테이블 범위 쿼리
-- 노드 작업
+- 노드 CRUD 작업
 - 관계 관리
 - 템플릿 실행
 
-**테이블 격리의 이점:**
+### 테이블 격리의 이점
 - **보안**: 작업이 하나의 테이블로 제한됨
 - **조직화**: 명확한 도구 분리
 - **성능**: 집중된 기능 세트

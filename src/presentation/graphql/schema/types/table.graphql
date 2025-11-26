@@ -18,6 +18,9 @@ type Table implements Node {
 
   # AI-friendly metadata
   aiMetadata: AIMetadata
+
+  # MCP setup command for Claude Code integration
+  mcpCommand: String!
 }
 
 # Input types for table operations
