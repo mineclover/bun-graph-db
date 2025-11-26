@@ -33,6 +33,7 @@ import type {
 import type {
   AttributeQueries,
   DocQueries,
+  JsonExportQueries,
   NodeQueries,
   RelationQueries,
   SystemQueries,
@@ -52,6 +53,7 @@ export interface GraphQLDependencies {
   templateQueries: TemplateQueries
   docQueries: DocQueries
   systemQueries?: SystemQueries
+  jsonExportQueries?: { JsonExportQueries: typeof JsonExportQueries; jsonExportService: any; logger: any }
   // enhancedAttributeQueries?: any
 
   // Mutation resolvers
@@ -112,6 +114,8 @@ export class GraphQLSchemaBuilder {
 
     const systemQueries = await this.container.resolve(GraphQLTokens.SYSTEM_QUERIES) as SystemQueries | undefined
 
+    const jsonExportQueries = await this.container.resolve(GraphQLTokens.JSON_EXPORT_QUERIES).catch(() => null) as any
+
     // Mutation resolvers
     const tableMutations = await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS) as TableMutations
 
@@ -140,6 +144,7 @@ export class GraphQLSchemaBuilder {
       templateQueries,
       docQueries,
       systemQueries,
+      jsonExportQueries,
       tableMutations,
       nodeMutations,
       attributeMutations,
@@ -364,6 +369,15 @@ export class GraphQLSchemaBuilder {
           deps.exportMutations.Query.validateExportOptions(_, args as any, context),
         getExportHistory: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
           deps.exportMutations.Query.getExportHistory(_, args as any, context),
+
+        // JSON Export queries
+        exportTableJson: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext, info: any) => {
+          if (!deps.jsonExportQueries) {
+            throw new Error('JsonExportQueries not available')
+          }
+          const { JsonExportQueries, jsonExportService, logger } = deps.jsonExportQueries
+          return JsonExportQueries.exportTableJson(_, args as any, { jsonExportService, logger }, info)
+        },
       },
 
       Mutation: {

@@ -27,6 +27,16 @@ bun-graph-db GraphQL API의 쿼리, 뮤테이션, 구독에 대한 종합 가이
 - **데이터 변경 추적**: 노드 변경, 템플릿 실행 스트림
 - **시스템 헬스**: 헬스 상태 실시간 모니터링
 
+### [📤 JSON Export API](./JSON_EXPORT_API.md)
+- **Flat JSON Export**: 간단한 배열 형태 내보내기
+- **HFI Protocol Export**: 그래프 시각화 호환 형식
+- **Patch Types**: 형식별 수정 타입 정의
+
+### [⚡ Performance Monitor API](./PERFORMANCE_MONITOR_API.md)
+- **Operation Timing**: 작업 시간 측정
+- **Aggregated Metrics**: 통계 및 백분위수 (P50, P95, P99)
+- **Slow Operation Detection**: 느린 작업 감지
+
 ## 🚀 빠른 시작
 
 ### GraphQL Playground 접속
@@ -288,4 +298,4 @@ QueryTemplate M:N Table (via applicableTables)
 - **스키마 확인**: `http://localhost:4000/schema`
 - **실시간 테스트**: `http://localhost:4000/graphql`
 
-*최종 업데이트: 2025-09-15*
+*최종 업데이트: 2025-11-27*

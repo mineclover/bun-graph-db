@@ -11,4 +11,7 @@ export const CommonTokens = {
 
   // Application services
   SEARCH_QUERY_PARSER: Symbol.for('SearchQueryParser'),
+
+  // Domain services
+  JSON_EXPORT_SERVICE: Symbol.for('JsonExportService'),
 } as const

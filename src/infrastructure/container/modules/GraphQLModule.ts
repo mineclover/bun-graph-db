@@ -31,6 +31,7 @@ import {
   AttributeQueries,
   DocQueries,
   EnhancedAttributeQueries,
+  JsonExportQueries,
   NodeQueries,
   RelationQueries,
   SystemQueries,
@@ -38,7 +39,7 @@ import {
   TemplateQueries,
 } from '@/presentation/graphql/queries/index.js'
 import type { DIContainer } from '../DIContainer.js'
-import { GraphQLTokens, RepositoryTokens, UseCaseTokens } from '../tokens/index.js'
+import { CommonTokens, GraphQLTokens, RepositoryTokens, UseCaseTokens } from '../tokens/index.js'
 
 /**
  * GraphQL module - registers GraphQL resolvers and schema
@@ -203,6 +204,54 @@ export function registerGraphQLModule(container: DIContainer): void {
       return new EnhancedAttributeQueries(attributeTypeRepository, simpleLogger)
     },
     [RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY]
+  )
+
+  // JsonExportService registration
+  container.registerSingleton(
+    CommonTokens.JSON_EXPORT_SERVICE,
+    async (c) => {
+      const { JsonExportService } = await import('@/domain/services/JsonExportService.js')
+      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as ITableRepository
+      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as INodeRepository
+      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as IAttributeRepository
+      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
+      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as INodeRelationRepository
+      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as IRelationTypeRepository
+
+      return new JsonExportService(
+        tableRepository,
+        nodeRepository,
+        attributeRepository,
+        nodeAttributeRepository,
+        nodeRelationRepository,
+        relationTypeRepository
+      )
+    },
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
+    ]
+  )
+
+  // JsonExportQueries registration
+  container.registerSingleton(
+    GraphQLTokens.JSON_EXPORT_QUERIES,
+    async (c) => {
+      const jsonExportService = await c.resolve(CommonTokens.JSON_EXPORT_SERVICE) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[WARN] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
+      }
+      return { JsonExportQueries, jsonExportService, logger: simpleLogger }
+    },
+    [CommonTokens.JSON_EXPORT_SERVICE]
   )
 
   // Mutation resolvers
@@ -918,6 +967,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const templateQueries = (await c.resolve(GraphQLTokens.TEMPLATE_QUERIES)) as any
       const docQueries = (await c.resolve(GraphQLTokens.DOC_QUERIES)) as any
       const systemQueries = (await c.resolve(GraphQLTokens.SYSTEM_QUERIES)) as any
+      const jsonExportQueries = (await c.resolve(GraphQLTokens.JSON_EXPORT_QUERIES).catch(() => null)) as any
       // const enhancedAttributeQueries = (await c.resolve(GraphQLTokens.ENHANCED_ATTRIBUTE_QUERIES)) as any
 
       const tableMutations = (await c.resolve(GraphQLTokens.TABLE_MUTATIONS)) as any
@@ -958,6 +1008,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         templateQueries,
         docQueries,
         systemQueries,
+        jsonExportQueries,
         // enhancedAttributeQueries,
         // Mutations
         tableMutations,

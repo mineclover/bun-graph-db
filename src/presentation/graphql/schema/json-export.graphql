@@ -1,0 +1,149 @@
+# JSON Export type definitions
+# Supports Flat JSON and HFI Protocol formats
+
+# Export format enum
+enum JsonExportFormat {
+  FLAT
+  HFI
+}
+
+# Export options
+input JsonExportOptions {
+  """Export format: FLAT for simple array, HFI for full graph protocol"""
+  format: JsonExportFormat! = FLAT
+  """Include relations as branches (HFI only)"""
+  includeRelations: Boolean = true
+  """Include node positions (HFI only)"""
+  includePositions: Boolean = false
+  """Include visual themes (HFI only)"""
+  includeThemes: Boolean = false
+  """Include state connections (HFI only)"""
+  includeStateConnections: Boolean = false
+  """Pretty print JSON output"""
+  prettyPrint: Boolean = true
+  """Filter by specific node IDs"""
+  nodeIds: [String!]
+  """Filter by tags"""
+  tags: [String!]
+}
+
+# Flat JSON node structure
+type FlatJsonNode {
+  id: String!
+  title: String!
+  content: String
+  """Dynamic attributes as key-value pairs"""
+  attributes: JSON
+}
+
+# Flat JSON export result
+type FlatJsonExport {
+  version: String!
+  exportedAt: String!
+  table: FlatJsonTableInfo!
+  nodes: [FlatJsonNode!]!
+}
+
+type FlatJsonTableInfo {
+  id: String!
+  identifier: String!
+  description: String
+}
+
+# HFI Protocol types
+type HFIBranchMetadata {
+  case: String!
+  label: String
+  description: String
+  next: JSON
+  color: String
+  condition: JSON
+  meta: JSON
+}
+
+type HFIPayloadField {
+  key: String!
+  type: String!
+  value: JSON!
+  default: JSON
+  required: Boolean
+  enum: [JSON!]
+  min: Float
+  max: Float
+  step: Float
+  pattern: String
+  widget: String
+  direction: String
+  stateFrom: JSON
+}
+
+type HFIFlowNode {
+  id: String!
+  type: String!
+  target: String!
+  title: String!
+  position: JSON
+  flowContext: String
+  category: String
+  tags: [String!]
+  style: JSON
+  branches: [HFIBranchMetadata!]
+  payload: [HFIPayloadField!]!
+  description: String
+}
+
+type HFIFlowEdge {
+  id: String!
+  label: String
+  animated: Boolean
+  style: JSON
+}
+
+type HFIStateConnection {
+  from: String!
+  fromField: String!
+  to: String!
+  toField: String!
+}
+
+type HFIProtocolMetadata {
+  createdAt: String
+  updatedAt: String
+  author: String
+  description: String
+  version: String
+  tags: [String!]
+  sourceTable: JSON
+}
+
+type HFIProtocolExport {
+  protocol: String!
+  context: String!
+  nodes: [HFIFlowNode!]!
+  edges: [HFIFlowEdge!]!
+  stateConnections: [HFIStateConnection!]
+  viewport: JSON
+  themes: JSON
+  metadata: HFIProtocolMetadata
+}
+
+# Union type for export result data
+union JsonExportData = FlatJsonExport | HFIProtocolExport
+
+# JSON export result
+type JsonExportResult {
+  success: Boolean!
+  format: JsonExportFormat!
+  """Raw JSON string output"""
+  json: String
+  """Parsed data (use json field for actual export)"""
+  data: JSON
+  nodeCount: Int!
+  errors: [String!]!
+  warnings: [String!]!
+}
+
+extend type Query {
+  """Export table data to JSON format (Flat or HFI Protocol)"""
+  exportTableJson(tableId: String!, options: JsonExportOptions): JsonExportResult!
+}
