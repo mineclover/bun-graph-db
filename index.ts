@@ -196,7 +196,7 @@ await mcpServer.initialize()
 const tableMcpMiddleware = createTableMcpMiddleware({
   graphqlEndpoint: `http://localhost:${graphqlConfig.port}/graphql`,
   restApiBaseUrl: `http://localhost:${graphqlConfig.port}/api`,
-  logger
+  logger,
 })
 
 // Direct API route handler without Express
@@ -299,7 +299,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       req.params.tableId = tableId
       await graphController.exportTableWithNodes(req, res)
 
-    // MCP Tool Operations (Bridge between GraphQL and local services)
+      // MCP Tool Operations (Bridge between GraphQL and local services)
     } else if (method === 'GET' && pathname === '/api/mcp-tools') {
       await _mcpToolController.listMcpTools(req, res)
     } else if (method === 'POST' && pathname === '/api/mcp-tools/call') {
@@ -311,7 +311,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
     } else if (method === 'GET' && pathname === '/api/mcp-tools/import-status') {
       await _mcpToolController.getImportStatus(req, res)
 
-    // New template management tools
+      // New template management tools
     } else if (method === 'POST' && pathname === '/api/mcp-tools/create-template') {
       await _mcpToolController.createTemplate(req, res)
     } else if (method === 'PUT' && pathname === '/api/mcp-tools/update-template') {
@@ -325,7 +325,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
     } else if (method === 'GET' && pathname === '/api/mcp-tools/get-template-metadata') {
       await _mcpToolController.getTemplateMetadata(req, res)
 
-    // System initialization tools
+      // System initialization tools
     } else if (method === 'POST' && pathname === '/api/mcp-tools/initialize-system') {
       await _mcpToolController.initializeSystem(req, res)
     } else if (method === 'GET' && pathname === '/api/mcp-tools/get-system-status') {
@@ -334,7 +334,6 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       await _mcpToolController.quickReset(req, res)
     } else if (method === 'POST' && pathname === '/api/mcp-tools/setup-demo') {
       await _mcpToolController.setupDemo(req, res)
-
     } else {
       return new Response('Not Found', { status: 404 })
     }

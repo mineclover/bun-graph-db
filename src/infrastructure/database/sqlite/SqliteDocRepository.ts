@@ -303,7 +303,11 @@ export class SqliteDocRepository
 
   // Note: This exists method has a different signature than the base class
   // but is needed for doc-specific existence checks
-  async existsByTableIdCategoryVersion(tableId: TableId, category: DocCategory, version: number): Promise<boolean> {
+  async existsByTableIdCategoryVersion(
+    tableId: TableId,
+    category: DocCategory,
+    version: number
+  ): Promise<boolean> {
     const query = `
       SELECT COUNT(*) as count
       FROM docs

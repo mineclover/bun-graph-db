@@ -4,7 +4,11 @@
  */
 
 import type { DIContainer } from '../../../infrastructure/container/DIContainer'
-import { SystemInitializationService, type InitializationOptions, type InitializationResult } from '../../services/SystemInitializationService'
+import {
+  type InitializationOptions,
+  type InitializationResult,
+  SystemInitializationService,
+} from '../../services/SystemInitializationService'
 
 export interface SystemInitializationRequest {
   mode: 'quick' | 'full' | 'demo' | 'custom'
@@ -32,7 +36,7 @@ export class SystemInitializationUseCase {
       case 'demo':
         return this.initializationService.demoSetup()
 
-      case 'custom':
+      case 'custom': {
         if (!request.options) {
           throw new Error('Custom mode requires options to be specified')
         }
@@ -44,10 +48,11 @@ export class SystemInitializationUseCase {
           createSampleData: false,
           resetMetrics: false,
           mode: 'development',
-          ...request.options
+          ...request.options,
         }
 
         return this.initializationService.initialize(fullOptions)
+      }
 
       default:
         throw new Error(`Unknown initialization mode: ${request.mode}`)

@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   UpdateQueryTemplate,
   type UpdateQueryTemplateRequest,
 } from '@/application/use-cases/query-templates/UpdateQueryTemplate.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 // Helper function to create test QueryTemplate
@@ -120,7 +120,9 @@ describe('UpdateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(request)).rejects.toThrow('Template type must be query, mutation, or subscription')
+      await expect(useCase.execute(request)).rejects.toThrow(
+        'Template type must be query, mutation, or subscription'
+      )
     })
 
     it('should throw ValidationException when complexityScore is less than 1', async () => {
@@ -133,7 +135,9 @@ describe('UpdateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(request)).rejects.toThrow('Complexity score must be between 1 and 10')
+      await expect(useCase.execute(request)).rejects.toThrow(
+        'Complexity score must be between 1 and 10'
+      )
     })
 
     it('should throw ValidationException when complexityScore is greater than 10', async () => {
@@ -146,7 +150,9 @@ describe('UpdateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(request)).rejects.toThrow('Complexity score must be between 1 and 10')
+      await expect(useCase.execute(request)).rejects.toThrow(
+        'Complexity score must be between 1 and 10'
+      )
     })
 
     it('should throw ValidationException when tags array is empty', async () => {
@@ -213,9 +219,12 @@ describe('UpdateQueryTemplate', () => {
       expect(result.success).toBe(true)
       expect(result.template).toBeDefined()
       expect(result.errors.length).toBe(0)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        name: 'Updated Name',
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          name: 'Updated Name',
+        })
+      )
     })
 
     it('should update description only', async () => {
@@ -231,9 +240,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        description: 'New description',
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          description: 'New description',
+        })
+      )
     })
 
     it('should update queryText only', async () => {
@@ -249,9 +261,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        queryText: 'query { newQuery }',
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          queryText: 'query { newQuery }',
+        })
+      )
     })
 
     it('should update inputSchema only', async () => {
@@ -272,9 +287,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        inputSchema: expect.any(Object),
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          inputSchema: expect.any(Object),
+        })
+      )
     })
 
     it('should update defaultVariables only', async () => {
@@ -290,9 +308,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        defaultVariables: { limit: 10, offset: 0 },
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          defaultVariables: { limit: 10, offset: 0 },
+        })
+      )
     })
 
     it('should update applicableTables only', async () => {
@@ -308,9 +329,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        applicableTables: ['users', 'products'],
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          applicableTables: ['users', 'products'],
+        })
+      )
     })
 
     it('should update templateType only', async () => {
@@ -326,9 +350,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        templateType: 'mutation',
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          templateType: 'mutation',
+        })
+      )
     })
 
     it('should update complexityScore only', async () => {
@@ -344,9 +371,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        complexityScore: 8,
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          complexityScore: 8,
+        })
+      )
     })
 
     it('should update version only', async () => {
@@ -362,9 +392,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        version: '2.0.0',
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          version: '2.0.0',
+        })
+      )
     })
 
     it('should update isActive only', async () => {
@@ -380,9 +413,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        isActive: false,
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          isActive: false,
+        })
+      )
     })
 
     it('should update tags only', async () => {
@@ -398,9 +434,12 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        tags: ['updated', 'new-tags'],
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          tags: ['updated', 'new-tags'],
+        })
+      )
     })
 
     it('should update multiple fields together', async () => {
@@ -419,12 +458,15 @@ describe('UpdateQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith('template-1', expect.objectContaining({
-        name: 'Multi-Update Template',
-        description: 'Updated with multiple fields',
-        complexityScore: 7,
-        tags: ['multi', 'update'],
-      }))
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          name: 'Multi-Update Template',
+          description: 'Updated with multiple fields',
+          complexityScore: 7,
+          tags: ['multi', 'update'],
+        })
+      )
     })
   })
 
@@ -493,7 +535,10 @@ describe('UpdateQueryTemplate', () => {
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
       await expect(useCase.execute(request)).rejects.toThrow('Failed to update query template')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to update query template', expect.any(Object))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to update query template',
+        expect.any(Object)
+      )
     })
   })
 
@@ -512,13 +557,19 @@ describe('UpdateQueryTemplate', () => {
 
       await useCase.execute(request)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Updating query template', expect.objectContaining({
-        id: 'template-123',
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Query template updated successfully', expect.objectContaining({
-        id: 'template-123',
-        identifier: 'test-identifier',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Updating query template',
+        expect.objectContaining({
+          id: 'template-123',
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Query template updated successfully',
+        expect.objectContaining({
+          id: 'template-123',
+          identifier: 'test-identifier',
+        })
+      )
     })
   })
 

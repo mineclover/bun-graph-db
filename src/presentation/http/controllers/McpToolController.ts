@@ -149,7 +149,7 @@ export class McpToolController {
       `
 
       const variables = {
-        input: { identifier, name, query, description, tags, targetTableId }
+        input: { identifier, name, query, description, tags, targetTableId },
       }
 
       const result = await this.executeGraphQL(mutation, variables)
@@ -196,7 +196,7 @@ export class McpToolController {
       `
 
       const variables = {
-        input: { identifier, name, query, description, tags }
+        input: { identifier, name, query, description, tags },
       }
 
       const result = await this.executeGraphQL(mutation, variables)
@@ -238,7 +238,7 @@ export class McpToolController {
       `
 
       const variables = {
-        input: { identifier, force }
+        input: { identifier, force },
       }
 
       const result = await this.executeGraphQL(mutation, variables)
@@ -281,8 +281,8 @@ export class McpToolController {
             parsedQuery: {
               operationType: 'query',
               operationName: query.match(/query\s+(\w+)/)?.[1] || 'unnamed',
-              fieldCount: (query.match(/\w+\s*\{/g) || []).length
-            }
+              fieldCount: (query.match(/\w+\s*\{/g) || []).length,
+            },
           }
         } else if (query.trim().toLowerCase().startsWith('mutation')) {
           // For mutations, validate basic syntax
@@ -292,8 +292,8 @@ export class McpToolController {
             parsedQuery: {
               operationType: 'mutation',
               operationName: query.match(/mutation\s+(\w+)/)?.[1] || 'unnamed',
-              fieldCount: (query.match(/\w+\s*\{/g) || []).length
-            }
+              fieldCount: (query.match(/\w+\s*\{/g) || []).length,
+            },
           }
         } else {
           throw new Error('Query must start with "query" or "mutation"')
@@ -302,7 +302,7 @@ export class McpToolController {
         validationResult = {
           isValid: false,
           errors: [getErrorMessage(syntaxError)],
-          parsedQuery: null
+          parsedQuery: null,
         }
       }
 
@@ -329,7 +329,13 @@ export class McpToolController {
     try {
       const { query, tags, tableId, operationType, limit = 50 } = req.body
 
-      this.logger.info('MCP Tool: search-templates called', { query, tags, tableId, operationType, limit })
+      this.logger.info('MCP Tool: search-templates called', {
+        query,
+        tags,
+        tableId,
+        operationType,
+        limit,
+      })
 
       const searchQuery = `
         query SearchTemplates($filter: QueryTemplatesFilter, $pagination: PaginationInput) {
@@ -353,9 +359,9 @@ export class McpToolController {
           identifierContains: query,
           nameContains: query,
           tags: tags,
-          operationType: operationType
+          operationType: operationType,
         },
-        pagination: { limit: limit || 50 }
+        pagination: { limit: limit || 50 },
       }
 
       const result = await this.executeGraphQL(searchQuery, variables)
@@ -383,7 +389,11 @@ export class McpToolController {
     try {
       const { identifier, includeUsageStats = true, includeDependencies = true } = req.body
 
-      this.logger.info('MCP Tool: get-template-metadata called', { identifier, includeUsageStats, includeDependencies })
+      this.logger.info('MCP Tool: get-template-metadata called', {
+        identifier,
+        includeUsageStats,
+        includeDependencies,
+      })
 
       const metadataQuery = `
         query GetTemplateMetadata($identifier: String!, $includeUsageStats: Boolean!, $includeDependencies: Boolean!) {
@@ -414,7 +424,7 @@ export class McpToolController {
       const variables = {
         identifier,
         includeUsageStats,
-        includeDependencies
+        includeDependencies,
       }
 
       const result = await this.executeGraphQL(metadataQuery, variables)
@@ -446,8 +456,8 @@ export class McpToolController {
       },
       body: JSON.stringify({
         query,
-        variables
-      })
+        variables,
+      }),
     })
 
     const result = await response.json()
@@ -604,12 +614,14 @@ export class McpToolController {
         },
         {
           name: 'export-table-nodes',
-          description: 'Export table nodes to CSV or JSON with improved formatting. CSV uses column-based attributes, JSON uses key-value arrays.',
+          description:
+            'Export table nodes to CSV or JSON with improved formatting. CSV uses column-based attributes, JSON uses key-value arrays.',
           operationType: 'mutation',
           parameters: {
             tableId: 'string (required) - ID of the table to export nodes from',
             format: 'string (default: CSV) - Export format: CSV or JSON',
-            outputDirectory: 'string (default: {project_root}/exports) - Directory to save the exported file',
+            outputDirectory:
+              'string (default: {project_root}/exports) - Directory to save the exported file',
             filename: 'string (optional) - Custom filename for the export',
             includeAttributes: 'array (default: []) - Specific attribute names to include',
             limit: 'number (default: 1000) - Maximum number of nodes to export',
@@ -649,14 +661,14 @@ export class McpToolController {
         filename,
         includeAttributes = [],
         limit = 1000,
-        saveToFile = true
+        saveToFile = true,
       } = req.body
 
       if (!tableId) {
         res.status(400).json({
           success: false,
           error: 'tableId is required',
-          tool: 'export-table-nodes'
+          tool: 'export-table-nodes',
         })
         return
       }
@@ -667,11 +679,13 @@ export class McpToolController {
         outputDirectory,
         includeAttributes,
         limit,
-        saveToFile
+        saveToFile,
       })
 
       // Generate filename with timestamp if not provided
-      const finalFilename = filename || `table_${tableId}_export_${new Date().toISOString().replace(/[:.]/g, '-')}.${format.toLowerCase()}`
+      const finalFilename =
+        filename ||
+        `table_${tableId}_export_${new Date().toISOString().replace(/[:.]/g, '-')}.${format.toLowerCase()}`
 
       // Prepare GraphQL mutation
       const query = `
@@ -702,11 +716,11 @@ export class McpToolController {
           filename: finalFilename,
           includeAttributes: Array.isArray(includeAttributes) ? includeAttributes.length > 0 : true,
           includeMetadata: true,
-          attributeFormat: "COLUMNS",
-          dateFormat: "ISO",
+          attributeFormat: 'COLUMNS',
+          dateFormat: 'ISO',
           compression: false,
-          prettyPrint: true
-        }
+          prettyPrint: true,
+        },
       }
 
       // Execute GraphQL mutation
@@ -715,7 +729,9 @@ export class McpToolController {
       const exportResult = result.exportTableNodes
 
       if (!exportResult.success) {
-        throw new Error(`Export failed: ${exportResult.errors ? exportResult.errors.join(', ') : 'Unknown error'}`)
+        throw new Error(
+          `Export failed: ${exportResult.errors ? exportResult.errors.join(', ') : 'Unknown error'}`
+        )
       }
 
       res.json({
@@ -728,7 +744,7 @@ export class McpToolController {
           totalNodes: exportResult.metadata?.totalNodes,
           exportedAt: exportResult.metadata?.exportedAt,
           outputDirectory,
-          filename: finalFilename
+          filename: finalFilename,
         },
         tool: 'export-table-nodes',
         executedAt: new Date().toISOString(),
@@ -774,7 +790,7 @@ export class McpToolController {
       `
 
       const variables = {
-        input: { mode: mode.toUpperCase(), options }
+        input: { mode: mode.toUpperCase(), options },
       }
 
       const result = await this.executeGraphQL(mutation, variables)
@@ -871,9 +887,9 @@ export class McpToolController {
             resetDatabase: true,
             resetTestData: true,
             createSampleData: true,
-            preserveTableIds
-          }
-        }
+            preserveTableIds,
+          },
+        },
       }
 
       const result = await this.executeGraphQL(mutation, variables)
@@ -930,9 +946,9 @@ export class McpToolController {
           options: {
             resetDatabase: resetFirst,
             createSampleData: true,
-            initMode: 'demo'
-          }
-        }
+            initMode: 'demo',
+          },
+        },
       }
 
       const result = await this.executeGraphQL(mutation, variables)

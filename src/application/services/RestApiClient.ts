@@ -43,7 +43,9 @@ export class RestApiClient {
 
       if (!response.ok) {
         const text = await response.text()
-        console.error(`REST API ${method} ${endpoint} error - Status: ${response.status}, Body: ${text}`)
+        console.error(
+          `REST API ${method} ${endpoint} error - Status: ${response.status}, Body: ${text}`
+        )
         return {
           success: false,
           error: `HTTP ${response.status}: ${text}`,
@@ -76,7 +78,7 @@ export class RestApiClient {
     if (endpoint.includes('/api/mcp-tools/call')) {
       const callBody = {
         toolName,
-        parameters: params
+        parameters: params,
       }
       return this.makeRequest('POST', '/mcp-tools/call', callBody)
     }

@@ -5,6 +5,18 @@
  * using SQLite VACUUM INTO command and file operations
  */
 
+import { createHash } from 'node:crypto'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  unlinkSync,
+} from 'node:fs'
+import { join } from 'node:path'
+import { gunzipSync, gzipSync } from 'bun'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { getDatabasePath } from '@/config/database.js'
 import type { IDatabaseConnection } from '@/core/database/interfaces/IDatabaseConnection.js'
@@ -19,11 +31,6 @@ import type {
   SQLiteRestoreResult,
 } from '@/core/types/DatabaseBackup.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
-import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync } from 'node:fs'
-import { copyFileSync } from 'node:fs'
-import { join } from 'node:path'
-import { gzipSync, gunzipSync } from 'bun'
 
 export class SQLiteBackupService {
   private readonly backupDir = './backups/database'
@@ -48,7 +55,11 @@ export class SQLiteBackupService {
       this.logger.info('Starting database backup', { options })
 
       // Generate backup path
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0]
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/[:.]/g, '-')
+        .replace('T', '_')
+        .split('.')[0]
       const defaultPath = join(this.backupDir, `db_${timestamp}.sqlite`)
       const outputPath = options.outputPath || defaultPath
 

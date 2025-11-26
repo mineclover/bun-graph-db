@@ -1,11 +1,20 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { SearchNodesUseCase, type SearchNodesInput, type INodeSearchRepository } from '@/application/use-cases/nodes/SearchNodes.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
-import { createTestTable, createTestNode, createTestAttribute, createTestAttributeType } from './test-helpers.js'
+import {
+  type INodeSearchRepository,
+  type SearchNodesInput,
+  SearchNodesUseCase,
+} from '@/application/use-cases/nodes/SearchNodes.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import {
+  createTestAttribute,
+  createTestAttributeType,
+  createTestNode,
+  createTestTable,
+} from './test-helpers.js'
 
 describe('SearchNodesUseCase', () => {
   let useCase: SearchNodesUseCase
@@ -128,7 +137,9 @@ describe('SearchNodesUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow("Table with id 'non-existent-table' not found")
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Table with id 'non-existent-table' not found"
+      )
     })
   })
 
@@ -308,10 +319,13 @@ describe('SearchNodesUseCase', () => {
       })
 
       await expect(useCase.execute(input)).rejects.toThrow('Database connection failed')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to search nodes', expect.objectContaining({
-        input,
-        error: 'Database connection failed',
-      }))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to search nodes',
+        expect.objectContaining({
+          input,
+          error: 'Database connection failed',
+        })
+      )
     })
   })
 })

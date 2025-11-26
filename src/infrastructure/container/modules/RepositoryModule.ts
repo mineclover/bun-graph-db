@@ -33,7 +33,9 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.TABLE_REPOSITORY,
     async (c) => {
-      const { SqliteTableRepository } = await import('@/infrastructure/database/sqlite/SqliteTableRepository.js')
+      const { SqliteTableRepository } = await import(
+        '@/infrastructure/database/sqlite/SqliteTableRepository.js'
+      )
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteTableRepository(connection)
     },
@@ -104,7 +106,9 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     async (c) => {
-      const { SqliteQueryTemplateRepository } = await import('@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js')
+      const { SqliteQueryTemplateRepository } = await import(
+        '@/infrastructure/database/sqlite/SqliteQueryTemplateRepository.js'
+      )
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteQueryTemplateRepository(connection, createSimpleLogger())
     },

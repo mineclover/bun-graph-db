@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { CreateQueryTemplate, type CreateQueryTemplateRequest } from '@/application/use-cases/query-templates/CreateQueryTemplate.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import {
+  CreateQueryTemplate,
+  type CreateQueryTemplateRequest,
+} from '@/application/use-cases/query-templates/CreateQueryTemplate.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 describe('CreateQueryTemplate', () => {
@@ -34,10 +37,7 @@ describe('CreateQueryTemplate', () => {
       updateExecutionStats: mock(async () => {}),
     } as any
 
-    useCase = new CreateQueryTemplate(
-      mockQueryTemplateRepository,
-      mockLogger
-    )
+    useCase = new CreateQueryTemplate(mockQueryTemplateRepository, mockLogger)
   })
 
   describe('Input Validation', () => {
@@ -50,7 +50,9 @@ describe('CreateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(DomainException)
-      await expect(useCase.execute(request)).rejects.toThrow('Query template identifier cannot be empty')
+      await expect(useCase.execute(request)).rejects.toThrow(
+        'Query template identifier cannot be empty'
+      )
     })
 
     it('should throw DomainException when identifier contains uppercase letters', async () => {
@@ -62,7 +64,9 @@ describe('CreateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(DomainException)
-      await expect(useCase.execute(request)).rejects.toThrow('Query template identifier must contain only lowercase letters')
+      await expect(useCase.execute(request)).rejects.toThrow(
+        'Query template identifier must contain only lowercase letters'
+      )
     })
 
     it('should throw DomainException when identifier contains invalid characters', async () => {
@@ -74,7 +78,9 @@ describe('CreateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(DomainException)
-      await expect(useCase.execute(request)).rejects.toThrow('Query template identifier must contain only lowercase letters')
+      await expect(useCase.execute(request)).rejects.toThrow(
+        'Query template identifier must contain only lowercase letters'
+      )
     })
 
     it('should throw error when queryText is empty or invalid GraphQL', async () => {
@@ -114,7 +120,9 @@ describe('CreateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(DomainException)
-      await expect(useCase.execute(request)).rejects.toThrow('Complexity score must be between 1 and 10')
+      await expect(useCase.execute(request)).rejects.toThrow(
+        'Complexity score must be between 1 and 10'
+      )
     })
   })
 
@@ -134,10 +142,13 @@ describe('CreateQueryTemplate', () => {
       expect(result.getQueryText()).toBe('query GetUsers { users { id name } }')
       expect(result.getTags()).toEqual(['users', 'simple'])
       expect(mockQueryTemplateRepository.create).toHaveBeenCalled()
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating query template', expect.objectContaining({
-        identifier: 'simple-query',
-        name: 'Simple Query',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Creating query template',
+        expect.objectContaining({
+          identifier: 'simple-query',
+          name: 'Simple Query',
+        })
+      )
     })
 
     it('should create query template with description', async () => {
@@ -183,7 +194,8 @@ describe('CreateQueryTemplate', () => {
       const request: CreateQueryTemplateRequest = {
         identifier: 'users-paginated',
         name: 'Get Users Paginated',
-        queryText: 'query GetUsers($limit: Int, $offset: Int) { users(limit: $limit, offset: $offset) { id } }',
+        queryText:
+          'query GetUsers($limit: Int, $offset: Int) { users(limit: $limit, offset: $offset) { id } }',
         tags: ['users', 'pagination'],
         defaultVariables: {
           limit: 10,
@@ -368,9 +380,12 @@ describe('CreateQueryTemplate', () => {
       })
 
       await expect(useCase.execute(request)).rejects.toThrow('Database connection failed')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create query template', expect.objectContaining({
-        error: 'Database connection failed',
-      }))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to create query template',
+        expect.objectContaining({
+          error: 'Database connection failed',
+        })
+      )
     })
   })
 
@@ -385,13 +400,19 @@ describe('CreateQueryTemplate', () => {
 
       const result = await useCase.execute(request)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating query template', expect.objectContaining({
-        identifier: 'logged-template',
-        name: 'Logged Template',
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Query template created successfully', expect.objectContaining({
-        identifier: 'logged-template',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Creating query template',
+        expect.objectContaining({
+          identifier: 'logged-template',
+          name: 'Logged Template',
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Query template created successfully',
+        expect.objectContaining({
+          identifier: 'logged-template',
+        })
+      )
     })
   })
 

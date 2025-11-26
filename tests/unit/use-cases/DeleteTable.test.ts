@@ -1,10 +1,14 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { DeleteTableUseCase, type DeleteTableInput, type TableDependencyInfo } from '@/application/use-cases/tables/DeleteTable.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import {
+  type DeleteTableInput,
+  DeleteTableUseCase,
+  type TableDependencyInfo,
+} from '@/application/use-cases/tables/DeleteTable.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { createTestTable } from './test-helpers.js'
 
 describe('DeleteTableUseCase', () => {
@@ -93,7 +97,9 @@ describe('DeleteTableUseCase', () => {
 
       mockTableRepository.findById = mock(async () => null)
 
-      await expect(useCase.execute(input)).rejects.toThrow('Table with ID non-existent-table not found')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        'Table with ID non-existent-table not found'
+      )
     })
   })
 
@@ -165,10 +171,13 @@ describe('DeleteTableUseCase', () => {
 
       expect(result.hasData).toBe(false)
       expect(mockTableRepository.delete).toHaveBeenCalledWith('table-1')
-      expect(mockLogger.info).toHaveBeenCalledWith('Table deletion completed successfully', expect.objectContaining({
-        tableId: 'table-1',
-        tableName: 'test-table',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Table deletion completed successfully',
+        expect.objectContaining({
+          tableId: 'table-1',
+          tableName: 'test-table',
+        })
+      )
     })
   })
 
@@ -276,12 +285,18 @@ describe('DeleteTableUseCase', () => {
 
       await useCase.execute(input)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Starting table deletion process', expect.objectContaining({
-        tableId: 'table-1',
-        force: false,
-        cascadeDelete: false,
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Table deletion completed successfully', expect.any(Object))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Starting table deletion process',
+        expect.objectContaining({
+          tableId: 'table-1',
+          force: false,
+          cascadeDelete: false,
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Table deletion completed successfully',
+        expect.any(Object)
+      )
     })
 
     it('should log warning when deletion is blocked', async () => {
@@ -298,7 +313,10 @@ describe('DeleteTableUseCase', () => {
 
       await expect(useCase.execute(input)).rejects.toThrow()
 
-      expect(mockLogger.warn).toHaveBeenCalledWith('Table deletion blocked due to existing data', expect.any(Object))
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Table deletion blocked due to existing data',
+        expect.any(Object)
+      )
     })
   })
 })

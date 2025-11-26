@@ -1,11 +1,11 @@
-import type { Table } from '@/domain/entities/Table.js'
 import type {
   BaseEntityDto,
-  WithIdentifier,
-  WithDescription,
-  GetManyInput,
   DeleteOutput,
+  GetManyInput,
+  WithDescription,
+  WithIdentifier,
 } from '@/core/types/UseCaseTypes.js'
+import type { Table } from '@/domain/entities/Table.js'
 
 // Data Transfer Object for Table entity
 export interface TableDto extends BaseEntityDto, WithIdentifier, WithDescription {}

@@ -3,68 +3,62 @@
  * Integration point for all AI metadata enhancement components
  */
 
-export { GraphQLSchemaIntrospector } from './GraphQLSchemaIntrospector';
 export type {
-  SchemaIntrospectionResult,
-  QueryFieldDefinition,
-  MutationFieldDefinition,
+  AttributeInfo,
+  CommonQuery,
+  EnhancedAIMetadata,
+  ParameterDefinition,
+  TableAttribute,
+  TableAttributeProvider,
+  TemplateRecommendation,
+} from './EnhancedAIMetadataGenerator'
+export { EnhancedAIMetadataGenerator } from './EnhancedAIMetadataGenerator'
+export type {
   ArgumentDefinition,
-  TypeInfo,
-  TypeDefinition,
+  EnumValueDefinition,
   FieldDefinition,
   InputFieldDefinition,
-  EnumValueDefinition,
-  QueryPattern
-} from './GraphQLSchemaIntrospector';
-
-export { EnhancedAIMetadataGenerator } from './EnhancedAIMetadataGenerator';
+  MutationFieldDefinition,
+  QueryFieldDefinition,
+  QueryPattern,
+  SchemaIntrospectionResult,
+  TypeDefinition,
+  TypeInfo,
+} from './GraphQLSchemaIntrospector'
+export { GraphQLSchemaIntrospector } from './GraphQLSchemaIntrospector'
+export { LegacyAIMetadataAdapter } from './LegacyAIMetadataAdapter'
 export type {
-  EnhancedAIMetadata,
-  CommonQuery,
-  TemplateRecommendation,
-  ParameterDefinition,
-  AttributeInfo,
-  TableAttributeProvider,
-  TableAttribute
-} from './EnhancedAIMetadataGenerator';
-
-export { TemplateValidator } from './TemplateValidator';
-export type {
-  TemplateDefinition,
-  ValidationResult,
-  ValidationError,
-  Correction,
-  CorrectedTemplate,
-  AITemplateRequest,
-  ValidatedTemplate
-} from './TemplateValidator';
-
-export { SchemaSyncPipeline } from './SchemaSyncPipeline';
-export type {
-  SyncResult,
-  SchemaDriftAnalysis,
-  DriftIssue,
-  ValidationReport,
-  AITemplateValidationResult,
-  SchemaCompliantTemplateResult,
-  SyncStatus
-} from './SchemaSyncPipeline';
-
-export { SchemaDriftMonitor, SchemaDriftMonitorFactory } from './SchemaDriftMonitor';
-export type {
-  DriftDetectionResult,
   DriftAnalysis,
+  DriftCallback,
+  DriftDetectionResult,
   MonitoringStatus,
-  DriftCallback
-} from './SchemaDriftMonitor';
-
-export { WorkingExampleGenerator } from './WorkingExampleGenerator';
+} from './SchemaDriftMonitor'
+export { SchemaDriftMonitor, SchemaDriftMonitorFactory } from './SchemaDriftMonitor'
 export type {
-  WorkingExample,
-  TemplateCollection,
-  ExecutionTestResult,
+  AITemplateValidationResult,
+  DriftIssue,
+  SchemaCompliantTemplateResult,
+  SchemaDriftAnalysis,
+  SyncResult,
+  SyncStatus,
+  ValidationReport,
+} from './SchemaSyncPipeline'
+export { SchemaSyncPipeline } from './SchemaSyncPipeline'
+export type {
+  AITemplateRequest,
+  CorrectedTemplate,
+  Correction,
+  TemplateDefinition,
+  ValidatedTemplate,
+  ValidationError,
+  ValidationResult,
+} from './TemplateValidator'
+export { TemplateValidator } from './TemplateValidator'
+export type {
   BatchTestResult,
-  ExampleDocumentation
-} from './WorkingExampleGenerator';
-
-export { LegacyAIMetadataAdapter } from './LegacyAIMetadataAdapter';
+  ExampleDocumentation,
+  ExecutionTestResult,
+  TemplateCollection,
+  WorkingExample,
+} from './WorkingExampleGenerator'
+export { WorkingExampleGenerator } from './WorkingExampleGenerator'

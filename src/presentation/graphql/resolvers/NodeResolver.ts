@@ -352,7 +352,9 @@ export class NodeResolver extends BaseResolver {
           try {
             // Find attribute by identifier
             const attributes = await this.attributeRepository.findByTableId('267' as TableId)
-            const attribute = attributes.nodes.find((attr: Attribute) => attr.getIdentifier() === attrToSet.identifier)
+            const attribute = attributes.nodes.find(
+              (attr: Attribute) => attr.getIdentifier() === attrToSet.identifier
+            )
 
             if (attribute) {
               // Create node attribute
@@ -374,7 +376,7 @@ export class NodeResolver extends BaseResolver {
           } catch (error) {
             this.logger.error(`Failed to set attribute '${attrToSet.identifier}'`, {
               nodeId: createdNode.id,
-              error: toErrorMeta(error)
+              error: toErrorMeta(error),
             })
           }
         }
@@ -635,8 +637,12 @@ export class NodeResolver extends BaseResolver {
   async relationCount_field(node: NodeDto, _context?: GraphQLContext): Promise<number> {
     const result = await this.handleFieldResolution(
       async () => {
-        const outgoingCount = await this.nodeRelationRepository.countBySourceNodeId(node.id as NodeId)
-        const incomingCount = await this.nodeRelationRepository.countByTargetNodeId(node.id as NodeId)
+        const outgoingCount = await this.nodeRelationRepository.countBySourceNodeId(
+          node.id as NodeId
+        )
+        const incomingCount = await this.nodeRelationRepository.countByTargetNodeId(
+          node.id as NodeId
+        )
         return outgoingCount + incomingCount
       },
       'relationCount',
@@ -669,7 +675,15 @@ export class NodeResolver extends BaseResolver {
       const visited = new Set<string>()
       const result: any[] = []
 
-      await this._traverseGraph(node.id as NodeId, depth, direction, relationTypes, visited, result, 0)
+      await this._traverseGraph(
+        node.id as NodeId,
+        depth,
+        direction,
+        relationTypes,
+        visited,
+        result,
+        0
+      )
 
       // Extract just the nodes from the result objects
       // Filter out the starting node itself and only return connected nodes
@@ -714,7 +728,11 @@ export class NodeResolver extends BaseResolver {
     const result = await this.handleFieldResolution(
       async () => {
         const { targetNodeId, maxDepth = 6 } = args
-        const path = await this._findShortestPath(node.id as NodeId, targetNodeId as NodeId, maxDepth)
+        const path = await this._findShortestPath(
+          node.id as NodeId,
+          targetNodeId as NodeId,
+          maxDepth
+        )
 
         // Return just the nodes array
         return path ? path.nodes : []
@@ -828,7 +846,11 @@ export class NodeResolver extends BaseResolver {
             ? relation.getTargetNodeId()
             : relation.getSourceNodeId()
 
-        if (nextNodeId && !visited.has(nextNodeId) && !current.path.includes(nextNodeId as NodeId)) {
+        if (
+          nextNodeId &&
+          !visited.has(nextNodeId) &&
+          !current.path.includes(nextNodeId as NodeId)
+        ) {
           queue.push({
             nodeId: nextNodeId as NodeId,
             path: [...current.path, nextNodeId as NodeId],

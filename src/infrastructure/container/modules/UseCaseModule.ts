@@ -8,7 +8,6 @@ import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExport
 import { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
-import { SystemInitializationUseCase } from '@/application/use-cases/system/SystemInitializationUseCase.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
@@ -17,6 +16,7 @@ import { ExecuteTemplateWithSubscriptionUseCase } from '@/application/use-cases/
 import { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
 import { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
+import { SystemInitializationUseCase } from '@/application/use-cases/system/SystemInitializationUseCase.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import { DeleteTableUseCase } from '@/application/use-cases/tables/DeleteTable.js'
 import { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
@@ -32,7 +32,9 @@ export function registerUseCaseModule(container: DIContainer): void {
     UseCaseTokens.CREATE_TABLE_USE_CASE,
     async (c) => {
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
-      const queryTemplateRepository = (await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)) as any
+      const queryTemplateRepository = (await c.resolve(
+        RepositoryTokens.QUERY_TEMPLATE_REPOSITORY
+      )) as any
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
@@ -48,7 +50,11 @@ export function registerUseCaseModule(container: DIContainer): void {
         simpleLogger
       )
     },
-    [RepositoryTokens.TABLE_REPOSITORY, RepositoryTokens.QUERY_TEMPLATE_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY]
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+    ]
   )
 
   container.registerSingleton(
@@ -158,7 +164,9 @@ export function registerUseCaseModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      const queryTemplateRepository = (await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)) as any
+      const queryTemplateRepository = (await c.resolve(
+        RepositoryTokens.QUERY_TEMPLATE_REPOSITORY
+      )) as any
       return new CreateAttributeUseCase(
         attributeRepository,
         attributeTypeRepository,
@@ -406,7 +414,9 @@ export function registerUseCaseModule(container: DIContainer): void {
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as any
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as any
-      const nodeAttributeRepository = (await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY)) as any
+      const nodeAttributeRepository = (await c.resolve(
+        RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY
+      )) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),

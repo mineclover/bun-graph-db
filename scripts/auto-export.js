@@ -6,7 +6,7 @@
  * Usage: node scripts/auto-export.js [tableId] [format] [outputDir]
  */
 
-import http from 'http';
+import http from 'node:http'
 
 // Default configuration
 const DEFAULT_CONFIG = {
@@ -15,11 +15,11 @@ const DEFAULT_CONFIG = {
   tableId: '267',
   format: 'CSV',
   outputDir: './exports',
-  limit: 100
-};
+  limit: 100,
+}
 
 // Available export formats
-const FORMATS = ['CSV', 'JSON', 'EXCEL', 'XML', 'YAML'];
+const FORMATS = ['CSV', 'JSON', 'EXCEL', 'XML', 'YAML']
 
 /**
  * Make GraphQL request to export table nodes
@@ -41,7 +41,7 @@ async function exportTableNodes(config) {
         errors
       }
     }
-  `;
+  `
 
   const variables = {
     input: {
@@ -50,14 +50,14 @@ async function exportTableNodes(config) {
       limit: config.limit,
       saveToFile: true,
       outputDirectory: config.outputDir,
-      filename: `auto_export_table_${config.tableId}_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.${config.format.toLowerCase()}`
-    }
-  };
+      filename: `auto_export_table_${config.tableId}_${new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-')}.${config.format.toLowerCase()}`,
+    },
+  }
 
   const postData = JSON.stringify({
     query: query,
-    variables: variables
-  });
+    variables: variables,
+  })
 
   const options = {
     hostname: config.host,
@@ -66,89 +66,96 @@ async function exportTableNodes(config) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': Buffer.byteLength(postData)
-    }
-  };
+      'Content-Length': Buffer.byteLength(postData),
+    },
+  }
 
   return new Promise((resolve, reject) => {
     const req = http.request(options, (res) => {
-      let data = '';
+      let data = ''
 
       res.on('data', (chunk) => {
-        data += chunk;
-      });
+        data += chunk
+      })
 
       res.on('end', () => {
         try {
-          const response = JSON.parse(data);
-          resolve(response);
+          const response = JSON.parse(data)
+          resolve(response)
         } catch (error) {
-          reject(new Error(`Failed to parse response: ${error.message}`));
+          reject(new Error(`Failed to parse response: ${error.message}`))
         }
-      });
-    });
+      })
+    })
 
     req.on('error', (error) => {
-      reject(new Error(`Request failed: ${error.message}`));
-    });
+      reject(new Error(`Request failed: ${error.message}`))
+    })
 
-    req.write(postData);
-    req.end();
-  });
+    req.write(postData)
+    req.end()
+  })
 }
 
 /**
  * Main execution function
  */
 async function main() {
-  const args = process.argv.slice(2);
+  const args = process.argv.slice(2)
 
   const config = {
     ...DEFAULT_CONFIG,
     tableId: args[0] || DEFAULT_CONFIG.tableId,
     format: (args[1] || DEFAULT_CONFIG.format).toUpperCase(),
-    outputDir: args[2] || DEFAULT_CONFIG.outputDir
-  };
+    outputDir: args[2] || DEFAULT_CONFIG.outputDir,
+  }
 
   // Validate format
   if (!FORMATS.includes(config.format)) {
-    console.error(`❌ Error: Invalid format '${config.format}'. Available formats: ${FORMATS.join(', ')}`);
-    process.exit(1);
+    console.error(
+      `❌ Error: Invalid format '${config.format}'. Available formats: ${FORMATS.join(', ')}`
+    )
+    process.exit(1)
   }
 
-  console.log(`🚀 Starting automatic export...`);
-  console.log(`📊 Table ID: ${config.tableId}`);
-  console.log(`📄 Format: ${config.format}`);
-  console.log(`📁 Output Directory: ${config.outputDir}`);
-  console.log('');
+  console.log(`🚀 Starting automatic export...`)
+  console.log(`📊 Table ID: ${config.tableId}`)
+  console.log(`📄 Format: ${config.format}`)
+  console.log(`📁 Output Directory: ${config.outputDir}`)
+  console.log('')
 
   try {
-    const response = await exportTableNodes(config);
+    const response = await exportTableNodes(config)
 
     if (response.errors && response.errors.length > 0) {
-      console.error('❌ GraphQL errors:');
-      response.errors.forEach(error => console.error(`  - ${error.message}`));
-      process.exit(1);
+      console.error('❌ GraphQL errors:')
+      for (const error of response.errors) {
+        console.error(`  - ${error.message}`)
+      }
+      process.exit(1)
     }
 
-    const result = response.data.exportTableNodes;
+    const result = response.data.exportTableNodes
 
     if (result.success) {
-      console.log('✅ Export completed successfully!');
-      console.log(`📁 File saved to: ${result.filePath}`);
-      console.log(`📊 Exported ${result.metadata.exportedNodes} of ${result.metadata.totalNodes} nodes`);
-      console.log(`🕒 Export time: ${result.metadata.exportedAt}`);
+      console.log('✅ Export completed successfully!')
+      console.log(`📁 File saved to: ${result.filePath}`)
+      console.log(
+        `📊 Exported ${result.metadata.exportedNodes} of ${result.metadata.totalNodes} nodes`
+      )
+      console.log(`🕒 Export time: ${result.metadata.exportedAt}`)
     } else {
-      console.error('❌ Export failed:');
+      console.error('❌ Export failed:')
       if (result.errors && result.errors.length > 0) {
-        result.errors.forEach(error => console.error(`  - ${error}`));
+        for (const error of result.errors) {
+          console.error(`  - ${error}`)
+        }
       }
-      process.exit(1);
+      process.exit(1)
     }
-
   } catch (error) {
-    console.error(`❌ Export failed: ${error.message}`);
-    process.exit(1);
+    console.error(`❌ Export failed: ${error.message}`)
+    process.exit(1)
   }
 }
 
@@ -172,16 +179,16 @@ Examples:
   node scripts/auto-export.js 265 EXCEL              # Export table 265 as Excel
 
 Available formats: ${FORMATS.join(', ')}
-`);
-  process.exit(0);
+`)
+  process.exit(0)
 }
 
 // Run the script
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
-    console.error(`❌ Unexpected error: ${error.message}`);
-    process.exit(1);
-  });
+  main().catch((error) => {
+    console.error(`❌ Unexpected error: ${error.message}`)
+    process.exit(1)
+  })
 }
 
-export { exportTableNodes };
+export { exportTableNodes }

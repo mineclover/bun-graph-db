@@ -1,13 +1,25 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { CreateRelationUseCase, type CreateRelationInput } from '@/application/use-cases/relations/CreateRelation.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { NodeRelation } from '@/domain/entities/NodeRelation.js'
-import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
-import { createTestTable, createTestNode, createTestRelationType, createTestNodeRelation } from './test-helpers.js'
+import {
+  type CreateRelationInput,
+  CreateRelationUseCase,
+} from '@/application/use-cases/relations/CreateRelation.js'
+import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
+import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
+import {
+  createTestNode,
+  createTestNodeRelation,
+  createTestRelationType,
+  createTestTable,
+} from './test-helpers.js'
 
 describe('CreateRelationUseCase', () => {
   let useCase: CreateRelationUseCase
@@ -111,7 +123,9 @@ describe('CreateRelationUseCase', () => {
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow('Either source node ID or source external ID is required')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        'Either source node ID or source external ID is required'
+      )
     })
 
     it('should throw ValidationException when both targetNodeId and targetExternalId are missing', async () => {
@@ -124,7 +138,9 @@ describe('CreateRelationUseCase', () => {
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow('Either target node ID or target external ID is required')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        'Either target node ID or target external ID is required'
+      )
     })
 
     it('should throw ValidationException when strength is not an integer', async () => {
@@ -137,7 +153,9 @@ describe('CreateRelationUseCase', () => {
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 100')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        'Strength must be an integer between 0 and 100'
+      )
     })
 
     it('should throw ValidationException when strength is negative', async () => {
@@ -150,7 +168,9 @@ describe('CreateRelationUseCase', () => {
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 100')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        'Strength must be an integer between 0 and 100'
+      )
     })
 
     it('should throw ValidationException when strength is greater than 100', async () => {
@@ -163,7 +183,9 @@ describe('CreateRelationUseCase', () => {
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 100')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        'Strength must be an integer between 0 and 100'
+      )
     })
   })
 
@@ -179,7 +201,9 @@ describe('CreateRelationUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow('Table with id \'non-existent-table\' not found')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Table with id 'non-existent-table' not found"
+      )
     })
 
     it('should throw NotFoundException when relation type does not exist', async () => {
@@ -196,7 +220,9 @@ describe('CreateRelationUseCase', () => {
       mockRelationTypeRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow('RelationType with id \'non-existent-rel-type\' not found')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "RelationType with id 'non-existent-rel-type' not found"
+      )
     })
   })
 
@@ -218,7 +244,9 @@ describe('CreateRelationUseCase', () => {
       mockNodeRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow('Source node with id \'non-existent-node\' not found')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Source node with id 'non-existent-node' not found"
+      )
     })
 
     it('should throw NotFoundException when target node does not exist', async () => {
@@ -243,7 +271,7 @@ describe('CreateRelationUseCase', () => {
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(NotFoundException)
-      await expect(promise).rejects.toThrow('Target node with id \'non-existent-node\' not found')
+      await expect(promise).rejects.toThrow("Target node with id 'non-existent-node' not found")
     })
 
     it('should throw ValidationException when source and target are the same internal node', async () => {
@@ -321,11 +349,15 @@ describe('CreateRelationUseCase', () => {
       mockNodeRepository.findById = mock()
         .mockResolvedValueOnce(sourceNode)
         .mockResolvedValueOnce(targetNode)
-      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [existingRelation])
+      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [
+        existingRelation,
+      ])
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
-      await expect(promise).rejects.toThrow('Relation of type \'depends-on\' already exists between \'node:node-1\' and \'node:node-2\'')
+      await expect(promise).rejects.toThrow(
+        "Relation of type 'depends-on' already exists between 'node:node-1' and 'node:node-2'"
+      )
     })
 
     it('should throw ConflictException when external relation already exists', async () => {
@@ -346,7 +378,9 @@ describe('CreateRelationUseCase', () => {
       mockNodeRelationRepository.exists = mock(async () => true)
 
       await expect(useCase.execute(input)).rejects.toThrow(ConflictException)
-      await expect(useCase.execute(input)).rejects.toThrow('Relation of type \'depends-on\' already exists between \'external-source\' and \'external-target\'')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Relation of type 'depends-on' already exists between 'external-source' and 'external-target'"
+      )
     })
   })
 
@@ -375,7 +409,17 @@ describe('CreateRelationUseCase', () => {
         .mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
       mockNodeRelationRepository.findByExternalIds = mock(async () =>
-        createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1', null, 80)
+        createTestNodeRelation(
+          'relation-1',
+          'table-1',
+          'node-1',
+          'internal',
+          'node-2',
+          'internal',
+          'rel-type-1',
+          null,
+          80
+        )
       )
 
       const result = await useCase.execute(input)
@@ -450,7 +494,15 @@ describe('CreateRelationUseCase', () => {
         .mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
       mockNodeRelationRepository.findByExternalIds = mock(async () =>
-        createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
+        createTestNodeRelation(
+          'relation-1',
+          'table-1',
+          'node-1',
+          'internal',
+          'node-2',
+          'internal',
+          'rel-type-1'
+        )
       )
 
       const result = await useCase.execute(input)
@@ -493,10 +545,13 @@ describe('CreateRelationUseCase', () => {
       })
 
       await expect(useCase.execute(input)).rejects.toThrow('Database connection failed')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create node relation', expect.objectContaining({
-        input,
-        error: 'Database connection failed',
-      }))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to create node relation',
+        expect.objectContaining({
+          input,
+          error: 'Database connection failed',
+        })
+      )
     })
 
     it('should throw error when saved relation cannot be retrieved', async () => {
@@ -551,20 +606,34 @@ describe('CreateRelationUseCase', () => {
         .mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
       mockNodeRelationRepository.findByExternalIds = mock(async () =>
-        createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1')
+        createTestNodeRelation(
+          'relation-1',
+          'table-1',
+          'node-1',
+          'internal',
+          'node-2',
+          'internal',
+          'rel-type-1'
+        )
       )
 
       await useCase.execute(input)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating new node relation', expect.objectContaining({
-        tableId: 'table-1',
-        sourceNodeId: 'node-1',
-        targetNodeId: 'node-2',
-        relationTypeId: 'rel-type-1',
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Node relation created successfully', expect.objectContaining({
-        id: 'relation-1',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Creating new node relation',
+        expect.objectContaining({
+          tableId: 'table-1',
+          sourceNodeId: 'node-1',
+          targetNodeId: 'node-2',
+          relationTypeId: 'rel-type-1',
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Node relation created successfully',
+        expect.objectContaining({
+          id: 'relation-1',
+        })
+      )
     })
   })
 })

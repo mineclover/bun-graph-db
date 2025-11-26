@@ -88,7 +88,12 @@ export function registerGraphQLModule(container: DIContainer): void {
       const attributeRepository = (await c.resolve(
         RepositoryTokens.ATTRIBUTE_REPOSITORY
       )) as IAttributeRepository
-      return new NodeQueries(nodeRepository, searchNodesUseCaseResolver, simpleLogger, attributeRepository)
+      return new NodeQueries(
+        nodeRepository,
+        searchNodesUseCaseResolver,
+        simpleLogger,
+        attributeRepository
+      )
     },
     [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY]
   )
@@ -211,12 +216,22 @@ export function registerGraphQLModule(container: DIContainer): void {
     CommonTokens.JSON_EXPORT_SERVICE,
     async (c) => {
       const { JsonExportService } = await import('@/domain/services/JsonExportService.js')
-      const tableRepository = await c.resolve(RepositoryTokens.TABLE_REPOSITORY) as ITableRepository
-      const nodeRepository = await c.resolve(RepositoryTokens.NODE_REPOSITORY) as INodeRepository
-      const attributeRepository = await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY) as IAttributeRepository
-      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
-      const nodeRelationRepository = await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY) as INodeRelationRepository
-      const relationTypeRepository = await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY) as IRelationTypeRepository
+      const tableRepository = (await c.resolve(
+        RepositoryTokens.TABLE_REPOSITORY
+      )) as ITableRepository
+      const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
+      const attributeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_REPOSITORY
+      )) as IAttributeRepository
+      const nodeAttributeRepository = (await c.resolve(
+        RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY
+      )) as any
+      const nodeRelationRepository = (await c.resolve(
+        RepositoryTokens.NODE_RELATION_REPOSITORY
+      )) as INodeRelationRepository
+      const relationTypeRepository = (await c.resolve(
+        RepositoryTokens.RELATION_TYPE_REPOSITORY
+      )) as IRelationTypeRepository
 
       return new JsonExportService(
         tableRepository,
@@ -241,7 +256,7 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.JSON_EXPORT_QUERIES,
     async (c) => {
-      const jsonExportService = await c.resolve(CommonTokens.JSON_EXPORT_SERVICE) as any
+      const jsonExportService = (await c.resolve(CommonTokens.JSON_EXPORT_SERVICE)) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -466,15 +481,27 @@ export function registerGraphQLModule(container: DIContainer): void {
       const { NodeResolver } = await import('@/presentation/graphql/resolvers/NodeResolver.js')
 
       // Use lazy loading for use cases to break circular dependencies
-      const createNodeUseCase = await c.resolve(UseCaseTokens.CREATE_NODE_USE_CASE).catch(() => null) as any
-      const searchNodesUseCase = await c.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE).catch(() => null) as any
+      const createNodeUseCase = (await c
+        .resolve(UseCaseTokens.CREATE_NODE_USE_CASE)
+        .catch(() => null)) as any
+      const searchNodesUseCase = (await c
+        .resolve(UseCaseTokens.SEARCH_NODES_USE_CASE)
+        .catch(() => null)) as any
 
       // Resolve repositories
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
-      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
-      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
-      const nodeRelationRepository = (await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)) as INodeRelationRepository
-      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
+      const tableRepository = (await c.resolve(
+        RepositoryTokens.TABLE_REPOSITORY
+      )) as ITableRepository
+      const nodeAttributeRepository = (await c.resolve(
+        RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY
+      )) as any
+      const nodeRelationRepository = (await c.resolve(
+        RepositoryTokens.NODE_RELATION_REPOSITORY
+      )) as INodeRelationRepository
+      const attributeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_REPOSITORY
+      )) as IAttributeRepository
 
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
@@ -511,13 +538,21 @@ export function registerGraphQLModule(container: DIContainer): void {
       const { TableResolver } = await import('@/presentation/graphql/resolvers/TableResolver.js')
 
       // Use lazy loading for use cases to break circular dependencies
-      const createTableUseCase = await c.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE).catch(() => null) as any
+      const createTableUseCase = (await c
+        .resolve(UseCaseTokens.CREATE_TABLE_USE_CASE)
+        .catch(() => null)) as any
 
       // Resolve repositories
-      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
+      const tableRepository = (await c.resolve(
+        RepositoryTokens.TABLE_REPOSITORY
+      )) as ITableRepository
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
-      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
-      const attributeTypeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)) as IAttributeTypeRepository
+      const attributeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_REPOSITORY
+      )) as IAttributeRepository
+      const attributeTypeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY
+      )) as IAttributeTypeRepository
 
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
@@ -551,10 +586,18 @@ export function registerGraphQLModule(container: DIContainer): void {
       const { DocResolver } = await import('@/presentation/graphql/resolvers/DocResolver.js')
 
       // Use lazy loading for use cases to break circular dependencies
-      const createDocUseCase = await c.resolve(UseCaseTokens.CREATE_DOC_USE_CASE).catch(() => null) as any
-      const updateDocUseCase = await c.resolve(UseCaseTokens.UPDATE_DOC_USE_CASE).catch(() => null) as any
-      const deleteDocUseCase = await c.resolve(UseCaseTokens.DELETE_DOC_USE_CASE).catch(() => null) as any
-      const activateDocUseCase = await c.resolve(UseCaseTokens.ACTIVATE_DOC_USE_CASE).catch(() => null) as any
+      const createDocUseCase = (await c
+        .resolve(UseCaseTokens.CREATE_DOC_USE_CASE)
+        .catch(() => null)) as any
+      const updateDocUseCase = (await c
+        .resolve(UseCaseTokens.UPDATE_DOC_USE_CASE)
+        .catch(() => null)) as any
+      const deleteDocUseCase = (await c
+        .resolve(UseCaseTokens.DELETE_DOC_USE_CASE)
+        .catch(() => null)) as any
+      const activateDocUseCase = (await c
+        .resolve(UseCaseTokens.ACTIVATE_DOC_USE_CASE)
+        .catch(() => null)) as any
 
       // Resolve repositories
       const docRepository = (await c.resolve(RepositoryTokens.DOC_REPOSITORY)) as IDocRepository
@@ -583,16 +626,28 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.ATTRIBUTE_RESOLVER,
     async (c) => {
-      const { AttributeResolver } = await import('@/presentation/graphql/resolvers/AttributeResolver.js')
+      const { AttributeResolver } = await import(
+        '@/presentation/graphql/resolvers/AttributeResolver.js'
+      )
 
       // Use lazy loading for use cases to break circular dependencies
-      const createAttributeTypeUseCase = await c.resolve(UseCaseTokens.CREATE_ATTRIBUTE_TYPE_USE_CASE).catch(() => null) as any
-      const createAttributeUseCase = await c.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE).catch(() => null) as any
+      const createAttributeTypeUseCase = (await c
+        .resolve(UseCaseTokens.CREATE_ATTRIBUTE_TYPE_USE_CASE)
+        .catch(() => null)) as any
+      const createAttributeUseCase = (await c
+        .resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE)
+        .catch(() => null)) as any
 
       // Resolve repositories
-      const attributeTypeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)) as IAttributeTypeRepository
-      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
-      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
+      const attributeTypeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY
+      )) as IAttributeTypeRepository
+      const attributeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_REPOSITORY
+      )) as IAttributeRepository
+      const tableRepository = (await c.resolve(
+        RepositoryTokens.TABLE_REPOSITORY
+      )) as ITableRepository
 
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
@@ -622,19 +677,35 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.RELATION_RESOLVER,
     async (c) => {
-      const { RelationResolver } = await import('@/presentation/graphql/resolvers/RelationResolver.js')
+      const { RelationResolver } = await import(
+        '@/presentation/graphql/resolvers/RelationResolver.js'
+      )
 
       // Use lazy loading for use cases to break circular dependencies
-      const createRelationUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_USE_CASE).catch(() => null) as any
-      const createRelationTypeUseCase = await c.resolve(UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE).catch(() => null) as any
-      const searchRelatedNodesUseCase = await c.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE).catch(() => null) as any
+      const createRelationUseCase = (await c
+        .resolve(UseCaseTokens.CREATE_RELATION_USE_CASE)
+        .catch(() => null)) as any
+      const createRelationTypeUseCase = (await c
+        .resolve(UseCaseTokens.CREATE_RELATION_TYPE_USE_CASE)
+        .catch(() => null)) as any
+      const searchRelatedNodesUseCase = (await c
+        .resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE)
+        .catch(() => null)) as any
 
       // Resolve repositories
-      const nodeRelationRepository = (await c.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY)) as INodeRelationRepository
-      const relationTypeRepository = (await c.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY)) as IRelationTypeRepository
+      const nodeRelationRepository = (await c.resolve(
+        RepositoryTokens.NODE_RELATION_REPOSITORY
+      )) as INodeRelationRepository
+      const relationTypeRepository = (await c.resolve(
+        RepositoryTokens.RELATION_TYPE_REPOSITORY
+      )) as IRelationTypeRepository
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
-      const nodeAttributeRepository = await c.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY) as any
-      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
+      const nodeAttributeRepository = (await c.resolve(
+        RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY
+      )) as any
+      const tableRepository = (await c.resolve(
+        RepositoryTokens.TABLE_REPOSITORY
+      )) as ITableRepository
 
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
@@ -669,27 +740,31 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.QUERY_TEMPLATE_RESOLVER,
     async (c) => {
-      const { QueryTemplateResolver } = await import('@/presentation/graphql/resolvers/QueryTemplateResolver.js')
+      const { QueryTemplateResolver } = await import(
+        '@/presentation/graphql/resolvers/QueryTemplateResolver.js'
+      )
 
       // Resolve repositories
-      const queryTemplateRepository = (await c.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY)) as IQueryTemplateRepository
+      const queryTemplateRepository = (await c.resolve(
+        RepositoryTokens.QUERY_TEMPLATE_REPOSITORY
+      )) as IQueryTemplateRepository
 
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
-        info: (msg: string, data?: any) => console.log(`[QueryTemplateResolver] ${msg}`, data || ''),
-        warn: (msg: string, data?: any) => console.warn(`[QueryTemplateResolver] ${msg}`, data || ''),
-        error: (msg: string, data?: any) => console.error(`[QueryTemplateResolver] ${msg}`, data || ''),
-        debug: (msg: string, data?: any) => console.debug(`[QueryTemplateResolver] ${msg}`, data || ''),
+        info: (msg: string, data?: any) =>
+          console.log(`[QueryTemplateResolver] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) =>
+          console.warn(`[QueryTemplateResolver] ${msg}`, data || ''),
+        error: (msg: string, data?: any) =>
+          console.error(`[QueryTemplateResolver] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) =>
+          console.debug(`[QueryTemplateResolver] ${msg}`, data || ''),
       }
 
       // Schema will be set later via setSchema() method to avoid circular dependency
       const emptySchema = null as any
 
-      return new QueryTemplateResolver(
-        queryTemplateRepository,
-        simpleLogger,
-        emptySchema
-      )
+      return new QueryTemplateResolver(queryTemplateRepository, simpleLogger, emptySchema)
     },
     [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY]
   )
@@ -697,7 +772,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.EXPORT_MUTATIONS,
     async (c) => {
-      const tableNodesExportUseCase = (await c.resolve(UseCaseTokens.TABLE_NODES_EXPORT_USE_CASE)) as any
+      const tableNodesExportUseCase = (await c.resolve(
+        UseCaseTokens.TABLE_NODES_EXPORT_USE_CASE
+      )) as any
       // Use simple console logger to avoid circular dependency
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[INFO] ${msg}`, data || ''),
@@ -705,10 +782,14 @@ export function registerGraphQLModule(container: DIContainer): void {
         error: (msg: string, data?: any) => console.error(`[ERROR] ${msg}`, data || ''),
         debug: (msg: string, data?: any) => console.debug(`[DEBUG] ${msg}`, data || ''),
       }
-      const { ExportMutations } = await import('@/presentation/graphql/mutations/ExportMutations.js')
+      const { ExportMutations } = await import(
+        '@/presentation/graphql/mutations/ExportMutations.js'
+      )
       const exportMutations = new ExportMutations(tableNodesExportUseCase, simpleLogger)
 
-      const { createExportResolvers } = await import('@/presentation/graphql/resolvers/ExportResolvers.js')
+      const { createExportResolvers } = await import(
+        '@/presentation/graphql/resolvers/ExportResolvers.js'
+      )
       return createExportResolvers(exportMutations)
     },
     [UseCaseTokens.TABLE_NODES_EXPORT_USE_CASE]
@@ -967,7 +1048,9 @@ export function registerGraphQLModule(container: DIContainer): void {
       const templateQueries = (await c.resolve(GraphQLTokens.TEMPLATE_QUERIES)) as any
       const docQueries = (await c.resolve(GraphQLTokens.DOC_QUERIES)) as any
       const systemQueries = (await c.resolve(GraphQLTokens.SYSTEM_QUERIES)) as any
-      const jsonExportQueries = (await c.resolve(GraphQLTokens.JSON_EXPORT_QUERIES).catch(() => null)) as any
+      const jsonExportQueries = (await c
+        .resolve(GraphQLTokens.JSON_EXPORT_QUERIES)
+        .catch(() => null)) as any
       // const enhancedAttributeQueries = (await c.resolve(GraphQLTokens.ENHANCED_ATTRIBUTE_QUERIES)) as any
 
       const tableMutations = (await c.resolve(GraphQLTokens.TABLE_MUTATIONS)) as any

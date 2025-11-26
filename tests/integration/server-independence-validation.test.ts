@@ -5,10 +5,10 @@
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import {
-  UnifiedTestEnvironmentManager,
   createIntegrationConfig,
-  withAutoServer,
   type UnifiedTestEnvironment,
+  UnifiedTestEnvironmentManager,
+  withAutoServer,
 } from '../fixtures/unified-test-environment'
 
 describe('서버 독립적 테스트 아키텍처 검증', () => {
@@ -95,7 +95,7 @@ describe('서버 독립적 테스트 아키텍처 검증', () => {
         input: {
           identifier: tableIdentifier,
           description: '서버 독립성 테스트용 테이블',
-        }
+        },
       }
     )
 
@@ -130,9 +130,7 @@ describe('withAutoServer 패턴 검증', () => {
         expect(env.graphqlRequest).toBeDefined()
 
         // GraphQL 쿼리 실행
-        const healthResult = await env.graphqlRequest!(
-          'query { healthCheck { status } }'
-        )
+        const healthResult = await env.graphqlRequest!('query { healthCheck { status } }')
 
         expect(healthResult.data?.healthCheck.status).toBe('OK')
 
@@ -174,7 +172,7 @@ describe('withAutoServer 패턴 검증', () => {
     })
 
     // 모든 포트가 서로 달라야 함 (독립성 확인)
-    const ports = results.map(r => r.port)
+    const ports = results.map((r) => r.port)
     const uniquePorts = new Set(ports)
     expect(uniquePorts.size).toBe(results.length)
 
@@ -187,16 +185,13 @@ describe('withAutoServer 패턴 검증', () => {
     let environmentPort: number | undefined
 
     try {
-      await withAutoServer(
-        createIntegrationConfig('error-test'),
-        async (env) => {
-          environmentPort = env.server!.port
-          console.log(`📝 테스트 환경 포트 기록: ${environmentPort}`)
+      await withAutoServer(createIntegrationConfig('error-test'), async (env) => {
+        environmentPort = env.server!.port
+        console.log(`📝 테스트 환경 포트 기록: ${environmentPort}`)
 
-          // 의도적으로 에러 발생
-          throw new Error('의도적 테스트 에러')
-        }
-      )
+        // 의도적으로 에러 발생
+        throw new Error('의도적 테스트 에러')
+      })
     } catch (error) {
       // 에러가 예상대로 발생해야 함
       expect(error).toBeDefined()
@@ -215,13 +210,10 @@ describe('성능 및 안정성 검증', () => {
   test('빠른 환경 생성 및 해제', async () => {
     const startTime = Date.now()
 
-    await withAutoServer(
-      createIntegrationConfig('performance-test'),
-      async (env) => {
-        const healthResult = await env.graphqlRequest!('query { healthCheck { status } }')
-        expect(healthResult.data?.healthCheck.status).toBe('OK')
-      }
-    )
+    await withAutoServer(createIntegrationConfig('performance-test'), async (env) => {
+      const healthResult = await env.graphqlRequest!('query { healthCheck { status } }')
+      expect(healthResult.data?.healthCheck.status).toBe('OK')
+    })
 
     const duration = Date.now() - startTime
     expect(duration).toBeLessThan(5000) // 5초 이내 완료
@@ -233,14 +225,11 @@ describe('성능 및 안정성 검증', () => {
     console.log('🔄 연속 환경 생성 테스트...')
 
     for (let i = 0; i < 3; i++) {
-      await withAutoServer(
-        createIntegrationConfig(`stability-test-${i}`),
-        async (env) => {
-          const result = await env.graphqlRequest!('query { healthCheck { status } }')
-          expect(result.data?.healthCheck.status).toBe('OK')
-          console.log(`✅ 연속 테스트 ${i + 1}: 포트 ${env.server!.port}`)
-        }
-      )
+      await withAutoServer(createIntegrationConfig(`stability-test-${i}`), async (env) => {
+        const result = await env.graphqlRequest!('query { healthCheck { status } }')
+        expect(result.data?.healthCheck.status).toBe('OK')
+        console.log(`✅ 연속 테스트 ${i + 1}: 포트 ${env.server!.port}`)
+      })
     }
 
     console.log('✅ 연속적인 환경 생성 안정성 확인')

@@ -63,8 +63,8 @@ export class SystemInitializationService {
         tablesCount: 0,
         templatesCount: 0,
         nodesCount: 0,
-        attributesCount: 0
-      }
+        attributesCount: 0,
+      },
     }
 
     try {
@@ -118,11 +118,12 @@ export class SystemInitializationService {
 
       result.success = true
       this.logger.info(`✅ System initialization completed in ${result.timings.total}ms`)
-
     } catch (error) {
-      result.errors.push(`Initialization failed: ${error instanceof Error ? error.message : String(error)}`)
+      result.errors.push(
+        `Initialization failed: ${error instanceof Error ? error.message : String(error)}`
+      )
       this.logger.error('❌ System initialization failed', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
     }
 
@@ -139,7 +140,7 @@ export class SystemInitializationService {
       resetTestData: true,
       createSampleData: true,
       resetMetrics: true,
-      mode: 'development'
+      mode: 'development',
     })
   }
 
@@ -153,7 +154,7 @@ export class SystemInitializationService {
       resetTestData: true,
       createSampleData: false,
       resetMetrics: true,
-      mode: 'development'
+      mode: 'development',
     })
   }
 
@@ -167,7 +168,7 @@ export class SystemInitializationService {
       resetTestData: false,
       createSampleData: true,
       resetMetrics: true,
-      mode: 'demo'
+      mode: 'demo',
     })
   }
 
@@ -178,13 +179,7 @@ export class SystemInitializationService {
     this.logger.info('🗃️ Resetting database...')
 
     // Tables to clear in dependency order (referencing tables first)
-    const tablesToClear = [
-      'node_attributes',
-      'node_relations',
-      'nodes',
-      'attributes',
-      'docs'
-    ]
+    const tablesToClear = ['node_attributes', 'node_relations', 'nodes', 'attributes', 'docs']
 
     // Conditionally clear tables based on preserve options
     const additionalTables = ['tables', 'templates']
@@ -193,7 +188,9 @@ export class SystemInitializationService {
       // Clear dependent tables first
       for (const table of tablesToClear) {
         try {
-          const count = database.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number }
+          const count = database.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as {
+            count: number
+          }
           if (count.count > 0) {
             database.exec(`DELETE FROM ${table}`)
             this.logger.debug(`Cleared ${count.count} records from ${table}`)
@@ -214,7 +211,9 @@ export class SystemInitializationService {
             query = `DELETE FROM ${table} WHERE id NOT IN (${preserveIds})`
           }
 
-          const count = database.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as { count: number }
+          const count = database.prepare(`SELECT COUNT(*) as count FROM ${table}`).get() as {
+            count: number
+          }
           if (count.count > 0) {
             database.exec(query)
             this.logger.debug(`Processed ${table} table`)
@@ -225,7 +224,9 @@ export class SystemInitializationService {
       }
 
       // Reset auto-increment sequences
-      database.exec(`UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('tables', 'nodes', 'attributes', 'templates')`)
+      database.exec(
+        `UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('tables', 'nodes', 'attributes', 'templates')`
+      )
     })()
   }
 
@@ -236,14 +237,12 @@ export class SystemInitializationService {
     this.logger.info('📄 Resetting templates...')
 
     // Keep only essential system templates
-    const essentialTemplates = [
-      'system-health-check_v1-0-0',
-      'test-template-001'
-    ]
+    const essentialTemplates = ['system-health-check_v1-0-0', 'test-template-001']
 
     if (essentialTemplates.length > 0) {
       const templatePlaceholders = essentialTemplates.map(() => '?').join(',')
-      database.prepare(`DELETE FROM templates WHERE identifier NOT IN (${templatePlaceholders})`)
+      database
+        .prepare(`DELETE FROM templates WHERE identifier NOT IN (${templatePlaceholders})`)
         .run(...essentialTemplates)
     } else {
       database.exec('DELETE FROM templates')
@@ -260,7 +259,8 @@ export class SystemInitializationService {
     const testTablePrefixes = ['test-', 'mcp_', 'auto-', 'simple_test']
 
     for (const prefix of testTablePrefixes) {
-      database.prepare(`DELETE FROM tables WHERE identifier LIKE ? OR identifier = ?`)
+      database
+        .prepare(`DELETE FROM tables WHERE identifier LIKE ? OR identifier = ?`)
         .run(`${prefix}%`, prefix)
     }
   }
@@ -268,64 +268,81 @@ export class SystemInitializationService {
   /**
    * Create sample data for development/demo
    */
-  private async createSampleData(database: Database, options: InitializationOptions): Promise<void> {
+  private async createSampleData(
+    database: Database,
+    options: InitializationOptions
+  ): Promise<void> {
     this.logger.info('🎭 Creating sample data...')
 
     // Create sample table
-    const result = database.prepare(`
+    const result = database
+      .prepare(`
       INSERT INTO tables (identifier, description)
       VALUES (?, ?)
-    `).run('sample-people', 'Sample people table for demonstration')
+    `)
+      .run('sample-people', 'Sample people table for demonstration')
 
     const tableId = result.lastInsertRowid as number
 
     // Create sample attributes
-    const nameAttrResult = database.prepare(`
+    const nameAttrResult = database
+      .prepare(`
       INSERT INTO attributes (table_id, identifier, name, attribute_type_id)
       VALUES (?, ?, ?, ?)
-    `).run(tableId, 'name', 'Full Name', 1) // string type
+    `)
+      .run(tableId, 'name', 'Full Name', 1) // string type
 
-    const ageAttrResult = database.prepare(`
+    const ageAttrResult = database
+      .prepare(`
       INSERT INTO attributes (table_id, identifier, name, attribute_type_id)
       VALUES (?, ?, ?, ?)
-    `).run(tableId, 'age', 'Age', 3) // integer type
+    `)
+      .run(tableId, 'age', 'Age', 3) // integer type
 
     // Create sample nodes
     const samplePeople = [
       { content: 'Alice Johnson - Software Engineer', name: 'Alice Johnson', age: '28' },
       { content: 'Bob Smith - Product Manager', name: 'Bob Smith', age: '35' },
-      { content: 'Carol Davis - Designer', name: 'Carol Davis', age: '31' }
+      { content: 'Carol Davis - Designer', name: 'Carol Davis', age: '31' },
     ]
 
     for (const person of samplePeople) {
-      const nodeResult = database.prepare(`
+      const nodeResult = database
+        .prepare(`
         INSERT INTO nodes (table_id, content, title)
         VALUES (?, ?, ?)
-      `).run(tableId, person.content, person.name)
+      `)
+        .run(tableId, person.content, person.name)
 
       const nodeId = nodeResult.lastInsertRowid as number
 
       // Add name attribute
-      database.prepare(`
+      database
+        .prepare(`
         INSERT INTO node_attributes (node_id, attribute_id, value)
         VALUES (?, ?, ?)
-      `).run(nodeId, nameAttrResult.lastInsertRowid, person.name)
+      `)
+        .run(nodeId, nameAttrResult.lastInsertRowid, person.name)
 
       // Add age attribute
-      database.prepare(`
+      database
+        .prepare(`
         INSERT INTO node_attributes (node_id, attribute_id, value)
         VALUES (?, ?, ?)
-      `).run(nodeId, ageAttrResult.lastInsertRowid, person.age)
+      `)
+        .run(nodeId, ageAttrResult.lastInsertRowid, person.age)
     }
 
     // Create sample template
-    database.prepare(`
+    database
+      .prepare(`
       INSERT INTO templates (identifier, name, query_text, operation_type)
       VALUES (?, ?, ?, ?)
-    `).run(
-      'sample-people-search',
-      'Search Sample People',
-      `query SearchSamplePeople($search: String) {
+    `)
+      .run(
+        'sample-people-search',
+        'Search Sample People',
+        `query SearchSamplePeople($search: String) {
         searchNodes(filter: { tableId: "${tableId}", search: $search }) {
           nodes {
             node { id title content }
@@ -334,8 +351,8 @@ export class SystemInitializationService {
           totalCount
         }
       }`,
-      'query'
-    )
+        'query'
+      )
   }
 
   /**
@@ -371,24 +388,32 @@ export class SystemInitializationService {
       tablesCount: 0,
       templatesCount: 0,
       nodesCount: 0,
-      attributesCount: 0
+      attributesCount: 0,
     }
 
     try {
-      const tables = database.prepare('SELECT COUNT(*) as count FROM tables').get() as { count: number }
+      const tables = database.prepare('SELECT COUNT(*) as count FROM tables').get() as {
+        count: number
+      }
       summary.tablesCount = tables.count
 
-      const templates = database.prepare('SELECT COUNT(*) as count FROM templates').get() as { count: number }
+      const templates = database.prepare('SELECT COUNT(*) as count FROM templates').get() as {
+        count: number
+      }
       summary.templatesCount = templates.count
 
-      const nodes = database.prepare('SELECT COUNT(*) as count FROM nodes').get() as { count: number }
+      const nodes = database.prepare('SELECT COUNT(*) as count FROM nodes').get() as {
+        count: number
+      }
       summary.nodesCount = nodes.count
 
-      const attributes = database.prepare('SELECT COUNT(*) as count FROM attributes').get() as { count: number }
+      const attributes = database.prepare('SELECT COUNT(*) as count FROM attributes').get() as {
+        count: number
+      }
       summary.attributesCount = attributes.count
     } catch (error) {
       this.logger.error('Error collecting summary statistics', {
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       })
     }
 
@@ -408,22 +433,28 @@ export class SystemInitializationService {
     try {
       const database = await this.container.resolve<Database>(DatabaseTokens.DATABASE_CONNECTION)
 
-      const tables = database.prepare('SELECT COUNT(*) as count FROM tables').get() as { count: number }
-      const templates = database.prepare('SELECT COUNT(*) as count FROM templates').get() as { count: number }
-      const nodes = database.prepare('SELECT COUNT(*) as count FROM nodes').get() as { count: number }
+      const tables = database.prepare('SELECT COUNT(*) as count FROM tables').get() as {
+        count: number
+      }
+      const templates = database.prepare('SELECT COUNT(*) as count FROM templates').get() as {
+        count: number
+      }
+      const nodes = database.prepare('SELECT COUNT(*) as count FROM nodes').get() as {
+        count: number
+      }
 
       return {
         database: true,
         tablesCount: tables.count,
         templatesCount: templates.count,
-        nodesCount: nodes.count
+        nodesCount: nodes.count,
       }
     } catch (error) {
       return {
         database: false,
         tablesCount: 0,
         templatesCount: 0,
-        nodesCount: 0
+        nodesCount: 0,
       }
     }
   }

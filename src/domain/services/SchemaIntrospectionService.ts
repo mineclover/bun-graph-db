@@ -117,7 +117,9 @@ export class SchemaIntrospectionService {
 
     try {
       // Dynamic import to avoid circular dependency at module loading time
-      const { GraphQLSchemaBuilder } = await import('@/presentation/graphql/GraphQLSchemaBuilder.js')
+      const { GraphQLSchemaBuilder } = await import(
+        '@/presentation/graphql/GraphQLSchemaBuilder.js'
+      )
       const schemaBuilder = new GraphQLSchemaBuilder(this.container)
       this.cachedSchema = await schemaBuilder.build()
       this.cacheTimestamp = now

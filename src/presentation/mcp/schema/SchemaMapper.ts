@@ -79,7 +79,7 @@ export class SchemaMapper {
     BLOB: { type: 'string', description: 'Binary data (base64 encoded)', format: 'base64' },
 
     // UUID type
-    UUID: { type: 'string', description: 'UUID value', format: 'uuid' }
+    UUID: { type: 'string', description: 'UUID value', format: 'uuid' },
   }
 
   /**
@@ -93,19 +93,19 @@ export class SchemaMapper {
     const normalizedType = sqliteType.trim().toUpperCase()
 
     // Extract base type from complex definitions like "VARCHAR(255)" or "INTEGER NOT NULL"
-    const baseType = this.extractBaseType(normalizedType)
+    const baseType = SchemaMapper.extractBaseType(normalizedType)
 
     // Get base schema from type mappings
-    const baseSchema = this.TYPE_MAPPINGS[baseType] || {
+    const baseSchema = SchemaMapper.TYPE_MAPPINGS[baseType] || {
       type: 'string',
-      description: 'Unknown type (treated as string)'
+      description: 'Unknown type (treated as string)',
     }
 
     // Clone the base schema to avoid mutations
     const schema: JsonSchema = { ...baseSchema }
 
     // Apply constraints and modifiers
-    this.applyConstraints(schema, normalizedType)
+    SchemaMapper.applyConstraints(schema, normalizedType)
 
     return schema
   }
@@ -141,7 +141,7 @@ export class SchemaMapper {
     // Handle DEFAULT values
     const defaultMatch = normalizedType.match(/DEFAULT\s+(.+?)(?:\s|$)/)
     if (defaultMatch && defaultMatch[1]) {
-      const defaultValue = this.parseDefaultValue(defaultMatch[1], schema.type)
+      const defaultValue = SchemaMapper.parseDefaultValue(defaultMatch[1], schema.type)
       if (defaultValue !== null) {
         schema.default = defaultValue
       }
@@ -199,9 +199,10 @@ export class SchemaMapper {
     switch (schemaType) {
       case 'string':
         return cleanDefault
-      case 'number':
+      case 'number': {
         const numValue = parseFloat(cleanDefault)
         return isNaN(numValue) ? null : numValue
+      }
       case 'boolean':
         return cleanDefault.toLowerCase() === 'true' || cleanDefault === '1'
       default:
@@ -216,9 +217,9 @@ export class SchemaMapper {
     const properties: Record<string, JsonSchema> = {}
     const required: string[] = []
 
-    parameters.forEach(param => {
+    parameters.forEach((param) => {
       try {
-        const jsonSchema = this.mapSqliteTypeToJsonSchema(param.type)
+        const jsonSchema = SchemaMapper.mapSqliteTypeToJsonSchema(param.type)
 
         // Override description if provided in parameter
         if (param.description) {
@@ -240,7 +241,7 @@ export class SchemaMapper {
         // Fallback to string type
         properties[param.name] = {
           type: 'string',
-          description: param.description || 'Parameter value'
+          description: param.description || 'Parameter value',
         }
         if (param.required) {
           required.push(param.name)
@@ -252,7 +253,7 @@ export class SchemaMapper {
       type: 'object',
       properties,
       required,
-      additionalProperties: false
+      additionalProperties: false,
     }
   }
 
@@ -281,7 +282,10 @@ export class SchemaMapper {
     }
 
     // Validate additionalProperties if present
-    if (schema.additionalProperties !== undefined && typeof schema.additionalProperties !== 'boolean') {
+    if (
+      schema.additionalProperties !== undefined &&
+      typeof schema.additionalProperties !== 'boolean'
+    ) {
       return false
     }
 
@@ -293,7 +297,7 @@ export class SchemaMapper {
 
       // Recursively validate nested properties
       for (const prop of Object.values(schema.properties)) {
-        if (!this.validateJsonSchema(prop)) {
+        if (!SchemaMapper.validateJsonSchema(prop)) {
           return false
         }
       }
@@ -333,18 +337,18 @@ export class SchemaMapper {
 
     // If template has parameters array, use that
     if (template.parameters && Array.isArray(template.parameters)) {
-      mcpInputSchema = this.mapTemplateParameterToMcpSchema(template.parameters)
+      mcpInputSchema = SchemaMapper.mapTemplateParameterToMcpSchema(template.parameters)
     }
     // If template has inputSchema, try to convert or use as-is
     else if (template.inputSchema) {
-      if (this.validateJsonSchema(template.inputSchema)) {
+      if (SchemaMapper.validateJsonSchema(template.inputSchema)) {
         mcpInputSchema = template.inputSchema as McpInputSchema
       } else {
         console.warn(`Invalid inputSchema for template ${template.identifier}, using empty schema`)
         mcpInputSchema = {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         }
       }
     }
@@ -353,14 +357,14 @@ export class SchemaMapper {
       mcpInputSchema = {
         type: 'object',
         properties: {},
-        required: []
+        required: [],
       }
     }
 
     return {
       name: template.identifier,
       description: template.description || template.name || 'Template execution tool',
-      inputSchema: mcpInputSchema
+      inputSchema: mcpInputSchema,
     }
   }
 }
@@ -369,7 +373,10 @@ export class SchemaMapper {
  * Error handling for schema mapping
  */
 export class SchemaMappingError extends Error {
-  constructor(message: string, public readonly originalType?: string) {
+  constructor(
+    message: string,
+    public readonly originalType?: string
+  ) {
     super(message)
     this.name = 'SchemaMappingError'
   }
@@ -398,8 +405,27 @@ export interface SchemaValidationResult {
  * MCP-specific schema validator (JSON Schema Draft-07 compliant)
  */
 export class McpSchemaValidator {
-  private static readonly VALID_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null']
-  private static readonly VALID_FORMATS = ['date', 'date-time', 'time', 'email', 'uri', 'uuid', 'hostname', 'ipv4', 'ipv6', 'regex']
+  private static readonly VALID_TYPES = [
+    'string',
+    'number',
+    'integer',
+    'boolean',
+    'object',
+    'array',
+    'null',
+  ]
+  private static readonly VALID_FORMATS = [
+    'date',
+    'date-time',
+    'time',
+    'email',
+    'uri',
+    'uuid',
+    'hostname',
+    'ipv4',
+    'ipv6',
+    'regex',
+  ]
 
   /**
    * Validate inputSchema for MCP tool compatibility
@@ -415,7 +441,7 @@ export class McpSchemaValidator {
         path: '$',
         message: 'Schema must be a non-null object',
         value: schema,
-        expected: 'object'
+        expected: 'object',
       })
       return { valid: false, errors, warnings }
     }
@@ -426,7 +452,7 @@ export class McpSchemaValidator {
         path: '$.type',
         message: 'MCP inputSchema must have type "object" at root level',
         value: schema.type,
-        expected: 'object'
+        expected: 'object',
       })
     }
 
@@ -437,12 +463,17 @@ export class McpSchemaValidator {
           path: '$.properties',
           message: 'properties must be an object',
           value: typeof schema.properties,
-          expected: 'object'
+          expected: 'object',
         })
       } else {
         // Validate each property
         for (const [propName, propSchema] of Object.entries(schema.properties)) {
-          this.validatePropertySchema(propSchema, `$.properties.${propName}`, errors, warnings)
+          McpSchemaValidator.validatePropertySchema(
+            propSchema,
+            `$.properties.${propName}`,
+            errors,
+            warnings
+          )
         }
       }
     }
@@ -454,7 +485,7 @@ export class McpSchemaValidator {
           path: '$.required',
           message: 'required must be an array of strings',
           value: typeof schema.required,
-          expected: 'array'
+          expected: 'array',
         })
       } else {
         // Check all required items are strings
@@ -464,7 +495,7 @@ export class McpSchemaValidator {
               path: `$.required[${index}]`,
               message: 'required array items must be strings',
               value: typeof item,
-              expected: 'string'
+              expected: 'string',
             })
           }
         })
@@ -477,7 +508,7 @@ export class McpSchemaValidator {
                 path: `$.required`,
                 message: `Required field "${field}" not found in properties`,
                 value: field,
-                expected: 'defined property'
+                expected: 'defined property',
               })
             }
           })
@@ -488,7 +519,7 @@ export class McpSchemaValidator {
     return {
       valid: errors.length === 0,
       errors,
-      warnings
+      warnings,
     }
   }
 
@@ -506,7 +537,7 @@ export class McpSchemaValidator {
         path,
         message: 'Property schema must be an object',
         value: typeof schema,
-        expected: 'object'
+        expected: 'object',
       })
       return
     }
@@ -516,14 +547,14 @@ export class McpSchemaValidator {
       errors.push({
         path: `${path}.type`,
         message: 'Property must have a type',
-        expected: this.VALID_TYPES.join(' | ')
+        expected: McpSchemaValidator.VALID_TYPES.join(' | '),
       })
-    } else if (!this.VALID_TYPES.includes(schema.type)) {
+    } else if (!McpSchemaValidator.VALID_TYPES.includes(schema.type)) {
       errors.push({
         path: `${path}.type`,
         message: `Invalid type "${schema.type}"`,
         value: schema.type,
-        expected: this.VALID_TYPES.join(' | ')
+        expected: McpSchemaValidator.VALID_TYPES.join(' | '),
       })
     }
 
@@ -531,14 +562,14 @@ export class McpSchemaValidator {
     if (!schema.description) {
       warnings.push({
         path: `${path}.description`,
-        message: 'Property should have a description for better AI understanding'
+        message: 'Property should have a description for better AI understanding',
       })
     } else if (typeof schema.description !== 'string') {
       errors.push({
         path: `${path}.description`,
         message: 'description must be a string',
         value: typeof schema.description,
-        expected: 'string'
+        expected: 'string',
       })
     }
 
@@ -549,14 +580,14 @@ export class McpSchemaValidator {
           path: `${path}.format`,
           message: 'format must be a string',
           value: typeof schema.format,
-          expected: 'string'
+          expected: 'string',
         })
-      } else if (!this.VALID_FORMATS.includes(schema.format)) {
+      } else if (!McpSchemaValidator.VALID_FORMATS.includes(schema.format)) {
         warnings.push({
           path: `${path}.format`,
           message: `Non-standard format "${schema.format}"`,
           value: schema.format,
-          expected: this.VALID_FORMATS.join(' | ')
+          expected: McpSchemaValidator.VALID_FORMATS.join(' | '),
         })
       }
     }
@@ -568,34 +599,34 @@ export class McpSchemaValidator {
           path: `${path}.enum`,
           message: 'enum must be an array',
           value: typeof schema.enum,
-          expected: 'array'
+          expected: 'array',
         })
       } else if (schema.enum.length === 0) {
         errors.push({
           path: `${path}.enum`,
-          message: 'enum array must not be empty'
+          message: 'enum array must not be empty',
         })
       }
     }
 
     // Validate numeric constraints
     if (schema.type === 'number' || schema.type === 'integer') {
-      this.validateNumericConstraints(schema, path, errors)
+      McpSchemaValidator.validateNumericConstraints(schema, path, errors)
     }
 
     // Validate string constraints
     if (schema.type === 'string') {
-      this.validateStringConstraints(schema, path, errors)
+      McpSchemaValidator.validateStringConstraints(schema, path, errors)
     }
 
     // Validate array items
     if (schema.type === 'array') {
       if (schema.items) {
-        this.validatePropertySchema(schema.items, `${path}.items`, errors, warnings)
+        McpSchemaValidator.validatePropertySchema(schema.items, `${path}.items`, errors, warnings)
       } else {
         warnings.push({
           path: `${path}.items`,
-          message: 'Array type should define items schema'
+          message: 'Array type should define items schema',
         })
       }
     }
@@ -603,7 +634,12 @@ export class McpSchemaValidator {
     // Validate nested object properties
     if (schema.type === 'object' && schema.properties) {
       for (const [propName, propSchema] of Object.entries(schema.properties)) {
-        this.validatePropertySchema(propSchema, `${path}.properties.${propName}`, errors, warnings)
+        McpSchemaValidator.validatePropertySchema(
+          propSchema,
+          `${path}.properties.${propName}`,
+          errors,
+          warnings
+        )
       }
     }
   }
@@ -621,7 +657,7 @@ export class McpSchemaValidator {
         path: `${path}.minimum`,
         message: 'minimum must be a number',
         value: typeof schema.minimum,
-        expected: 'number'
+        expected: 'number',
       })
     }
 
@@ -630,7 +666,7 @@ export class McpSchemaValidator {
         path: `${path}.maximum`,
         message: 'maximum must be a number',
         value: typeof schema.maximum,
-        expected: 'number'
+        expected: 'number',
       })
     }
 
@@ -640,7 +676,7 @@ export class McpSchemaValidator {
         errors.push({
           path: `${path}`,
           message: 'minimum cannot be greater than maximum',
-          value: `min: ${schema.minimum}, max: ${schema.maximum}`
+          value: `min: ${schema.minimum}, max: ${schema.maximum}`,
         })
       }
     }
@@ -660,7 +696,7 @@ export class McpSchemaValidator {
           path: `${path}.minLength`,
           message: 'minLength must be a non-negative number',
           value: schema.minLength,
-          expected: 'number >= 0'
+          expected: 'number >= 0',
         })
       }
     }
@@ -671,7 +707,7 @@ export class McpSchemaValidator {
           path: `${path}.maxLength`,
           message: 'maxLength must be a non-negative number',
           value: schema.maxLength,
-          expected: 'number >= 0'
+          expected: 'number >= 0',
         })
       }
     }
@@ -682,7 +718,7 @@ export class McpSchemaValidator {
         errors.push({
           path: `${path}`,
           message: 'minLength cannot be greater than maxLength',
-          value: `min: ${schema.minLength}, max: ${schema.maxLength}`
+          value: `min: ${schema.minLength}, max: ${schema.maxLength}`,
         })
       }
     }
@@ -694,7 +730,7 @@ export class McpSchemaValidator {
           path: `${path}.pattern`,
           message: 'pattern must be a string',
           value: typeof schema.pattern,
-          expected: 'string'
+          expected: 'string',
         })
       } else {
         try {
@@ -703,7 +739,7 @@ export class McpSchemaValidator {
           errors.push({
             path: `${path}.pattern`,
             message: 'pattern is not a valid regular expression',
-            value: schema.pattern
+            value: schema.pattern,
           })
         }
       }
@@ -724,7 +760,7 @@ export class McpSchemaValidator {
 
     if (result.errors.length > 0) {
       lines.push('\nErrors:')
-      result.errors.forEach(err => {
+      result.errors.forEach((err) => {
         lines.push(`  • ${err.path}: ${err.message}`)
         if (err.value !== undefined) lines.push(`    Got: ${JSON.stringify(err.value)}`)
         if (err.expected) lines.push(`    Expected: ${err.expected}`)
@@ -733,7 +769,7 @@ export class McpSchemaValidator {
 
     if (result.warnings.length > 0) {
       lines.push('\nWarnings:')
-      result.warnings.forEach(warn => {
+      result.warnings.forEach((warn) => {
         lines.push(`  ⚠ ${warn.path}: ${warn.message}`)
       })
     }
@@ -745,7 +781,7 @@ export class McpSchemaValidator {
    * Quick validation check (returns boolean)
    */
   static isValid(schema: any): boolean {
-    return this.validateMcpInputSchema(schema).valid
+    return McpSchemaValidator.validateMcpInputSchema(schema).valid
   }
 
   /**
@@ -755,28 +791,30 @@ export class McpSchemaValidator {
     return {
       type: 'object',
       properties: {},
-      required: []
+      required: [],
     }
   }
 
   /**
    * Create schema from simple field definitions
    */
-  static createSchemaFromFields(fields: Array<{
-    name: string
-    type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object'
-    description?: string
-    required?: boolean
-    enum?: any[]
-    default?: any
-  }>): McpInputSchema {
+  static createSchemaFromFields(
+    fields: Array<{
+      name: string
+      type: 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object'
+      description?: string
+      required?: boolean
+      enum?: any[]
+      default?: any
+    }>
+  ): McpInputSchema {
     const properties: Record<string, JsonSchema> = {}
     const required: string[] = []
 
-    fields.forEach(field => {
+    fields.forEach((field) => {
       const prop: JsonSchema = {
         type: field.type,
-        description: field.description || `${field.name} parameter`
+        description: field.description || `${field.name} parameter`,
       }
 
       if (field.enum) prop.enum = field.enum
@@ -792,7 +830,7 @@ export class McpSchemaValidator {
     return {
       type: 'object',
       properties,
-      required
+      required,
     }
   }
 }
@@ -885,7 +923,7 @@ export class McpDataValidator {
         code: ValidationErrorCode.SCHEMA_INVALID,
         path: '$schema',
         message: 'Invalid schema provided: schema must be a non-null object',
-        expected: 'object'
+        expected: 'object',
       })
       return { valid: false, errors }
     }
@@ -897,7 +935,7 @@ export class McpDataValidator {
         path: '$schema.type',
         message: `Invalid schema type: expected "object" but got "${schema.type || 'undefined'}"`,
         value: schema.type,
-        expected: 'object'
+        expected: 'object',
       })
       return { valid: false, errors }
     }
@@ -911,7 +949,7 @@ export class McpDataValidator {
           path: '$',
           message: 'Data is required but received null or undefined',
           value: data,
-          expected: 'object with required fields'
+          expected: 'object with required fields',
         })
         return { valid: false, errors }
       }
@@ -924,7 +962,7 @@ export class McpDataValidator {
         path: '$',
         message: `Data must be an object, received ${Array.isArray(data) ? 'array' : typeof data}`,
         value: typeof data,
-        expected: 'object'
+        expected: 'object',
       })
       return { valid: false, errors }
     }
@@ -940,7 +978,7 @@ export class McpDataValidator {
             path: `$.${field}`,
             message: `Required field "${field}" is missing`,
             expected: 'value',
-            constraint: 'required'
+            constraint: 'required',
           })
         }
       }
@@ -960,7 +998,11 @@ export class McpDataValidator {
           continue
         }
 
-        const propResult = this.validateProperty(value, propSchema as any, `$.${propName}`)
+        const propResult = McpDataValidator.validateProperty(
+          value,
+          propSchema as any,
+          `$.${propName}`
+        )
         errors.push(...propResult.errors)
 
         if (propResult.coercedValue !== undefined) {
@@ -982,7 +1024,7 @@ export class McpDataValidator {
             message: `Additional property "${key}" is not allowed by schema`,
             value: key,
             expected: `one of: ${Array.from(allowedKeys).join(', ')}`,
-            constraint: 'additionalProperties'
+            constraint: 'additionalProperties',
           })
         }
       }
@@ -991,7 +1033,7 @@ export class McpDataValidator {
     return {
       valid: errors.length === 0,
       errors,
-      coercedData: errors.length === 0 ? coercedData : undefined
+      coercedData: errors.length === 0 ? coercedData : undefined,
     }
   }
 
@@ -1013,7 +1055,7 @@ export class McpDataValidator {
     const expectedType = schema.type
 
     // Type validation with coercion
-    const typeResult = this.validateType(value, expectedType, path)
+    const typeResult = McpDataValidator.validateType(value, expectedType, path)
     errors.push(...typeResult.errors)
     if (typeResult.coercedValue !== undefined) {
       coercedValue = typeResult.coercedValue
@@ -1033,7 +1075,7 @@ export class McpDataValidator {
           message: `Value must be one of the allowed values: [${schema.enum.join(', ')}]`,
           value: coercedValue,
           expected: schema.enum.join(' | '),
-          constraint: 'enum'
+          constraint: 'enum',
         })
       }
     }
@@ -1041,22 +1083,24 @@ export class McpDataValidator {
     // Type-specific constraint validation
     switch (expectedType) {
       case 'string':
-        errors.push(...this.validateStringConstraints(coercedValue, schema, path))
+        errors.push(...McpDataValidator.validateStringConstraints(coercedValue, schema, path))
         break
       case 'number':
       case 'integer':
-        errors.push(...this.validateNumericConstraints(coercedValue, schema, path))
+        errors.push(...McpDataValidator.validateNumericConstraints(coercedValue, schema, path))
         break
       case 'array':
-        errors.push(...this.validateArrayConstraints(coercedValue, schema, path))
+        errors.push(...McpDataValidator.validateArrayConstraints(coercedValue, schema, path))
         break
       case 'object':
         if (schema.properties) {
-          const nestedResult = this.validate(coercedValue, schema)
-          errors.push(...nestedResult.errors.map(e => ({
-            ...e,
-            path: e.path.replace('$', path)
-          })))
+          const nestedResult = McpDataValidator.validate(coercedValue, schema)
+          errors.push(
+            ...nestedResult.errors.map((e) => ({
+              ...e,
+              path: e.path.replace('$', path),
+            }))
+          )
         }
         break
     }
@@ -1085,7 +1129,7 @@ export class McpDataValidator {
               path,
               message: `Type mismatch: expected string but received ${value === null ? 'null' : 'undefined'}`,
               value,
-              expected: 'string'
+              expected: 'string',
             })
           } else if (typeof value === 'number' || typeof value === 'boolean') {
             coercedValue = String(value)
@@ -1095,7 +1139,7 @@ export class McpDataValidator {
               path,
               message: `Type mismatch: expected string but received ${typeof value}`,
               value,
-              expected: 'string'
+              expected: 'string',
             })
           }
         }
@@ -1113,7 +1157,7 @@ export class McpDataValidator {
                 path,
                 message: `Type mismatch: expected number but received non-numeric string "${value}"`,
                 value,
-                expected: 'number'
+                expected: 'number',
               })
             }
           } else {
@@ -1122,7 +1166,7 @@ export class McpDataValidator {
               path,
               message: `Type mismatch: expected number but received ${typeof value}`,
               value,
-              expected: 'number'
+              expected: 'number',
             })
           }
         }
@@ -1140,7 +1184,7 @@ export class McpDataValidator {
                 path,
                 message: `Type mismatch: expected integer but received "${value}"`,
                 value,
-                expected: 'integer'
+                expected: 'integer',
               })
             }
           } else if (typeof value === 'number' && !Number.isInteger(value)) {
@@ -1149,7 +1193,7 @@ export class McpDataValidator {
               path,
               message: `Type mismatch: expected integer but received float ${value}`,
               value,
-              expected: 'integer'
+              expected: 'integer',
             })
           } else {
             errors.push({
@@ -1157,7 +1201,7 @@ export class McpDataValidator {
               path,
               message: `Type mismatch: expected integer but received ${typeof value}`,
               value,
-              expected: 'integer'
+              expected: 'integer',
             })
           }
         }
@@ -1175,7 +1219,7 @@ export class McpDataValidator {
               path,
               message: `Type mismatch: expected boolean but received ${typeof value} (value: ${JSON.stringify(value)})`,
               value,
-              expected: 'boolean'
+              expected: 'boolean',
             })
           }
         }
@@ -1188,7 +1232,7 @@ export class McpDataValidator {
             path,
             message: `Type mismatch: expected array but received ${typeof value}`,
             value,
-            expected: 'array'
+            expected: 'array',
           })
         }
         break
@@ -1200,7 +1244,7 @@ export class McpDataValidator {
             path,
             message: `Type mismatch: expected object but received ${Array.isArray(value) ? 'array' : value === null ? 'null' : typeof value}`,
             value,
-            expected: 'object'
+            expected: 'object',
           })
         }
         break
@@ -1212,7 +1256,7 @@ export class McpDataValidator {
             path,
             message: `Type mismatch: expected null but received ${typeof value}`,
             value,
-            expected: 'null'
+            expected: 'null',
           })
         }
         break
@@ -1238,7 +1282,7 @@ export class McpDataValidator {
         message: `String length violation: length ${value.length} is less than minimum ${schema.minLength}`,
         value,
         expected: `minLength: ${schema.minLength}`,
-        constraint: 'minLength'
+        constraint: 'minLength',
       })
     }
 
@@ -1249,7 +1293,7 @@ export class McpDataValidator {
         message: `String length violation: length ${value.length} exceeds maximum ${schema.maxLength}`,
         value,
         expected: `maxLength: ${schema.maxLength}`,
-        constraint: 'maxLength'
+        constraint: 'maxLength',
       })
     }
 
@@ -1263,7 +1307,7 @@ export class McpDataValidator {
             message: `Pattern violation: string does not match regex pattern "${schema.pattern}"`,
             value,
             expected: `pattern: ${schema.pattern}`,
-            constraint: 'pattern'
+            constraint: 'pattern',
           })
         }
       } catch {
@@ -1272,7 +1316,7 @@ export class McpDataValidator {
     }
 
     if (schema.format !== undefined) {
-      const formatError = this.validateFormat(value, schema.format, path)
+      const formatError = McpDataValidator.validateFormat(value, schema.format, path)
       if (formatError) {
         errors.push(formatError)
       }
@@ -1300,7 +1344,7 @@ export class McpDataValidator {
             message: `Numeric constraint violation: value ${value} must be greater than ${schema.minimum} (exclusive)`,
             value,
             expected: `> ${schema.minimum}`,
-            constraint: 'exclusiveMinimum'
+            constraint: 'exclusiveMinimum',
           })
         }
       } else {
@@ -1311,7 +1355,7 @@ export class McpDataValidator {
             message: `Numeric constraint violation: value ${value} is less than minimum ${schema.minimum}`,
             value,
             expected: `>= ${schema.minimum}`,
-            constraint: 'minimum'
+            constraint: 'minimum',
           })
         }
       }
@@ -1326,7 +1370,7 @@ export class McpDataValidator {
             message: `Numeric constraint violation: value ${value} must be less than ${schema.maximum} (exclusive)`,
             value,
             expected: `< ${schema.maximum}`,
-            constraint: 'exclusiveMaximum'
+            constraint: 'exclusiveMaximum',
           })
         }
       } else {
@@ -1337,7 +1381,7 @@ export class McpDataValidator {
             message: `Numeric constraint violation: value ${value} exceeds maximum ${schema.maximum}`,
             value,
             expected: `<= ${schema.maximum}`,
-            constraint: 'maximum'
+            constraint: 'maximum',
           })
         }
       }
@@ -1351,7 +1395,7 @@ export class McpDataValidator {
           message: `Numeric constraint violation: value ${value} is not a multiple of ${schema.multipleOf}`,
           value,
           expected: `multiple of ${schema.multipleOf}`,
-          constraint: 'multipleOf'
+          constraint: 'multipleOf',
         })
       }
     }
@@ -1376,7 +1420,7 @@ export class McpDataValidator {
         message: `Array constraint violation: length ${value.length} is less than minimum ${schema.minItems}`,
         value: value.length,
         expected: `minItems: ${schema.minItems}`,
-        constraint: 'minItems'
+        constraint: 'minItems',
       })
     }
 
@@ -1387,7 +1431,7 @@ export class McpDataValidator {
         message: `Array constraint violation: length ${value.length} exceeds maximum ${schema.maxItems}`,
         value: value.length,
         expected: `maxItems: ${schema.maxItems}`,
-        constraint: 'maxItems'
+        constraint: 'maxItems',
       })
     }
 
@@ -1408,7 +1452,7 @@ export class McpDataValidator {
           message: `Array constraint violation: contains ${duplicates.length} duplicate item(s)`,
           value: duplicates,
           expected: 'all unique items',
-          constraint: 'uniqueItems'
+          constraint: 'uniqueItems',
         })
       }
     }
@@ -1416,7 +1460,11 @@ export class McpDataValidator {
     // Validate each item against items schema
     if (schema.items) {
       value.forEach((item, index) => {
-        const itemResult = this.validateProperty(item, schema.items, `${path}[${index}]`)
+        const itemResult = McpDataValidator.validateProperty(
+          item,
+          schema.items,
+          `${path}[${index}]`
+        )
         errors.push(...itemResult.errors)
       })
     }
@@ -1432,23 +1480,36 @@ export class McpDataValidator {
     format: string,
     path: string
   ): DataValidationError | null {
-    const formatValidators: Record<string, { regex: RegExp | ((v: string) => boolean); example: string }> = {
-      'date': { regex: /^\d{4}-\d{2}-\d{2}$/, example: '2024-01-15' },
-      'date-time': { regex: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/, example: '2024-01-15T10:30:00Z' },
-      'time': { regex: /^\d{2}:\d{2}:\d{2}(\.\d+)?$/, example: '10:30:00' },
-      'email': { regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, example: 'user@example.com' },
-      'uri': { regex: /^[a-zA-Z][a-zA-Z0-9+.-]*:/, example: 'https://example.com' },
-      'uuid': { regex: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, example: '550e8400-e29b-41d4-a716-446655440000' },
-      'hostname': { regex: /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/, example: 'example.com' },
-      'ipv4': { regex: /^(\d{1,3}\.){3}\d{1,3}$/, example: '192.168.1.1' },
-      'ipv6': {
+    const formatValidators: Record<
+      string,
+      { regex: RegExp | ((v: string) => boolean); example: string }
+    > = {
+      date: { regex: /^\d{4}-\d{2}-\d{2}$/, example: '2024-01-15' },
+      'date-time': {
+        regex: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/,
+        example: '2024-01-15T10:30:00Z',
+      },
+      time: { regex: /^\d{2}:\d{2}:\d{2}(\.\d+)?$/, example: '10:30:00' },
+      email: { regex: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, example: 'user@example.com' },
+      uri: { regex: /^[a-zA-Z][a-zA-Z0-9+.-]*:/, example: 'https://example.com' },
+      uuid: {
+        regex: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+        example: '550e8400-e29b-41d4-a716-446655440000',
+      },
+      hostname: {
+        regex:
+          /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/,
+        example: 'example.com',
+      },
+      ipv4: { regex: /^(\d{1,3}\.){3}\d{1,3}$/, example: '192.168.1.1' },
+      ipv6: {
         regex: (v: string) => {
           // Simplified IPv6 validation
           const parts = v.split(':')
-          return parts.length <= 8 && parts.every(p => /^[0-9a-f]{0,4}$/i.test(p))
+          return parts.length <= 8 && parts.every((p) => /^[0-9a-f]{0,4}$/i.test(p))
         },
-        example: '2001:0db8:85a3:0000:0000:8a2e:0370:7334'
-      }
+        example: '2001:0db8:85a3:0000:0000:8a2e:0370:7334',
+      },
     }
 
     const validatorEntry = formatValidators[format]
@@ -1466,7 +1527,7 @@ export class McpDataValidator {
         message: `Format violation: string does not match "${format}" format (example: ${example})`,
         value,
         expected: `${format} format (e.g., ${example})`,
-        constraint: 'format'
+        constraint: 'format',
       }
     }
 
@@ -1482,7 +1543,9 @@ export class McpDataValidator {
     if (result.valid) {
       lines.push('✅ Data is valid')
     } else {
-      lines.push(`❌ Data validation failed (${result.errors.length} error${result.errors.length > 1 ? 's' : ''})`)
+      lines.push(
+        `❌ Data validation failed (${result.errors.length} error${result.errors.length > 1 ? 's' : ''})`
+      )
     }
 
     if (result.errors.length > 0) {
@@ -1502,7 +1565,7 @@ export class McpDataValidator {
    * Quick validation check (returns boolean)
    */
   static isValid(data: any, schema: any): boolean {
-    return this.validate(data, schema).valid
+    return McpDataValidator.validate(data, schema).valid
   }
 }
 
@@ -1511,9 +1574,11 @@ export const SchemaUtils = {
    * Check if a schema is compatible with MCP requirements
    */
   isCompatibleWithMcp(schema: any): boolean {
-    return SchemaMapper.validateJsonSchema(schema) &&
-           schema.type === 'object' &&
-           typeof schema.properties === 'object'
+    return (
+      SchemaMapper.validateJsonSchema(schema) &&
+      schema.type === 'object' &&
+      typeof schema.properties === 'object'
+    )
   },
 
   /**
@@ -1524,10 +1589,10 @@ export const SchemaUtils = {
       type: 'object',
       description: 'Merged schema',
       properties: {},
-      required: []
+      required: [],
     }
 
-    schemas.forEach(schema => {
+    schemas.forEach((schema) => {
       if (schema.type === 'object' && schema.properties) {
         Object.assign(merged.properties!, schema.properties)
 
@@ -1556,7 +1621,7 @@ export const SchemaUtils = {
     const requirements = {
       requiredFields: schema.required || [],
       optionalFields: [] as string[],
-      fieldTypes: {} as Record<string, string>
+      fieldTypes: {} as Record<string, string>,
     }
 
     if (schema.properties) {
@@ -1570,5 +1635,5 @@ export const SchemaUtils = {
     }
 
     return requirements
-  }
+  },
 }

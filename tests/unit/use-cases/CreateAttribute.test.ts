@@ -1,13 +1,17 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { CreateAttributeInput } from '@/application/dtos/AttributeDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
-import { createTestTable, createTestAttribute, createTestAttributeType } from './test-helpers.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
+import { createTestAttribute, createTestAttributeType, createTestTable } from './test-helpers.js'
 
 describe('CreateAttributeUseCase', () => {
   let useCase: CreateAttributeUseCase
@@ -66,7 +70,7 @@ describe('CreateAttributeUseCase', () => {
       count: mock(async () => 0),
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
-      update: mock(async (id, updates) => ({} as any)),
+      update: mock(async (id, updates) => ({}) as any),
     } as any
 
     mockTableRepository = {
@@ -86,18 +90,23 @@ describe('CreateAttributeUseCase', () => {
     mockQueryTemplateRepository = {
       findById: mock(async () => null),
       findByIdentifier: mock(async () => null),
-      search: mock(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
+      search: mock(async () => ({
+        items: [],
+        total: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      })),
       searchByQueryName: mock(async () => []),
       searchByOperationType: mock(async () => []),
       findByApplicableTable: mock(async () => []),
       findTemplatesWithTableDependencies: mock(async () => []),
       create: mock(async (template) => template),
-      update: mock(async (id, updates) => ({} as any)),
+      update: mock(async (id, updates) => ({}) as any),
       deleteById: mock(async () => true),
       incrementUsage: mock(async () => {}),
       updateExecutionStats: mock(async () => {}),
       findPopular: mock(async () => []),
-      updateStatus: mock(async () => ({} as any)),
+      updateStatus: mock(async () => ({}) as any),
     } as any
 
     useCase = new CreateAttributeUseCase(
@@ -155,7 +164,9 @@ describe('CreateAttributeUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow('Table with id \'non-existent-table\' not found')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Table with id 'non-existent-table' not found"
+      )
     })
 
     it('should throw NotFoundException when attribute type does not exist', async () => {
@@ -171,7 +182,9 @@ describe('CreateAttributeUseCase', () => {
       mockAttributeTypeRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow('Attribute type with id \'non-existent-type\' not found')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Attribute type with id 'non-existent-type' not found"
+      )
     })
   })
 
@@ -185,16 +198,24 @@ describe('CreateAttributeUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
-      const existingAttribute = createTestAttribute('attr-1', 'table-1', 'existing_attr', 'Existing Attribute', 'attr-type-1')
+      const existingAttribute = createTestAttribute(
+        'attr-1',
+        'table-1',
+        'existing_attr',
+        'Existing Attribute',
+        'attr-type-1'
+      )
 
       mockTableRepository.findById = mock(async () => table as any)
       mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
-      mockAttributeRepository.findByTableIdAndIdentifier = mock()
-        .mockResolvedValueOnce(existingAttribute)
+      mockAttributeRepository.findByTableIdAndIdentifier =
+        mock().mockResolvedValueOnce(existingAttribute)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
-      await expect(promise).rejects.toThrow('Attribute with identifier \'existing_attr\' already exists for table \'test-table\'')
+      await expect(promise).rejects.toThrow(
+        "Attribute with identifier 'existing_attr' already exists for table 'test-table'"
+      )
     })
   })
 
@@ -210,7 +231,13 @@ describe('CreateAttributeUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
-      const createdAttribute = createTestAttribute('attr-1', 'table-1', 'test_attr', 'Test Attribute', 'attr-type-1')
+      const createdAttribute = createTestAttribute(
+        'attr-1',
+        'table-1',
+        'test_attr',
+        'Test Attribute',
+        'attr-type-1'
+      )
 
       mockTableRepository.findById = mock(async () => table as any)
       mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
@@ -224,10 +251,13 @@ describe('CreateAttributeUseCase', () => {
       expect(result.attribute.identifier).toBe('test_attr')
       expect(result.attribute.name).toBe('Test Attribute')
       expect(mockAttributeRepository.save).toHaveBeenCalled()
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating new attribute', expect.objectContaining({
-        identifier: input.identifier,
-        tableId: input.tableId,
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Creating new attribute',
+        expect.objectContaining({
+          identifier: input.identifier,
+          tableId: input.tableId,
+        })
+      )
     })
 
     it('should create an attribute with isRequired flag', async () => {
@@ -241,7 +271,13 @@ describe('CreateAttributeUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
-      const createdAttribute = createTestAttribute('attr-1', 'table-1', 'required_attr', 'Required Attribute', 'attr-type-1')
+      const createdAttribute = createTestAttribute(
+        'attr-1',
+        'table-1',
+        'required_attr',
+        'Required Attribute',
+        'attr-type-1'
+      )
 
       mockTableRepository.findById = mock(async () => table as any)
       mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
@@ -267,7 +303,13 @@ describe('CreateAttributeUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
-      const createdAttribute = createTestAttribute('attr-1', 'table-1', 'meta_attr', 'Metadata Attribute', 'attr-type-1')
+      const createdAttribute = createTestAttribute(
+        'attr-1',
+        'table-1',
+        'meta_attr',
+        'Metadata Attribute',
+        'attr-type-1'
+      )
 
       mockTableRepository.findById = mock(async () => table as any)
       mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
@@ -303,11 +345,14 @@ describe('CreateAttributeUseCase', () => {
       })
 
       await expect(useCase.execute(input)).rejects.toThrow('Database connection failed')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create attribute', expect.objectContaining({
-        identifier: input.identifier,
-        tableId: input.tableId,
-        error: 'Database connection failed',
-      }))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to create attribute',
+        expect.objectContaining({
+          identifier: input.identifier,
+          tableId: input.tableId,
+          error: 'Database connection failed',
+        })
+      )
     })
 
     it('should throw error when saved attribute cannot be retrieved', async () => {

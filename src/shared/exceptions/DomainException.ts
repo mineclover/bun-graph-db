@@ -30,7 +30,7 @@ export enum ErrorCode {
   FORBIDDEN = 'FORBIDDEN',
 
   /** Internal server error (500) */
-  INTERNAL_ERROR = 'INTERNAL_ERROR'
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
 }
 
 export abstract class BaseException extends Error {

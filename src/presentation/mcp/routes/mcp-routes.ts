@@ -41,7 +41,7 @@ export class McpRoutes {
     const pathname = url.pathname
 
     // Extract table ID from path pattern /sub/:tableId/mcp
-    const pathMatch = pathname.match(/^\/sub\/([^\/]+)\/mcp\/?$/)
+    const pathMatch = pathname.match(/^\/sub\/([^/]+)\/mcp\/?$/)
     if (!pathMatch) {
       return this.createErrorResponse(
         null,
@@ -69,12 +69,7 @@ export class McpRoutes {
       // Validate table ID format
       const tableValidation = this.validateTableId(tableId)
       if (!tableValidation.valid) {
-        return this.createErrorResponse(
-          null,
-          400,
-          'Invalid table ID',
-          tableValidation.error
-        )
+        return this.createErrorResponse(null, 400, 'Invalid table ID', tableValidation.error)
       }
 
       // Get or create MCP server for this table
@@ -95,7 +90,6 @@ export class McpRoutes {
 
       // Handle POST requests (JSON-RPC)
       return await this.handlePostRequest(request, mcpServer, tableId)
-
     } catch (error) {
       this.logger?.error(`MCP request error for table ${tableId}:`, { error })
       return this.createErrorResponse(
@@ -117,19 +111,19 @@ export class McpRoutes {
       protocolVersion: '2025-06-18',
       capabilities: {
         tools: {},
-        logging: {}
+        logging: {},
       },
       tableId,
       toolCount: mcpServer.getTableToolsCount(),
-      initialized: mcpServer.isTableInitialized()
+      initialized: mcpServer.isTableInitialized(),
     }
 
     return new Response(JSON.stringify(serverInfo), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache'
-      }
+        'Cache-Control': 'no-cache',
+      },
     })
   }
 
@@ -168,12 +162,7 @@ export class McpRoutes {
       try {
         jsonRpcRequest = JSON.parse(body)
       } catch (parseError) {
-        return this.createErrorResponse(
-          null,
-          -32700,
-          'Parse error',
-          'Invalid JSON in request body'
-        )
+        return this.createErrorResponse(null, -32700, 'Parse error', 'Invalid JSON in request body')
       }
 
       // Validate JSON-RPC format
@@ -193,12 +182,11 @@ export class McpRoutes {
       const mcpRequest = new Request(request.url, {
         method: 'POST',
         headers: request.headers,
-        body: body
+        body: body,
       })
 
       // Delegate to the table-specific MCP server
       return await mcpServer.handleRequest(mcpRequest)
-
     } catch (error) {
       this.logger?.error(`Error processing POST request for table ${tableId}:`, { error })
       return this.createErrorResponse(
@@ -246,7 +234,7 @@ export class McpRoutes {
       'eval(',
       'function(',
       'setTimeout(',
-      'setInterval('
+      'setInterval(',
     ]
 
     const lowerTableId = trimmed.toLowerCase()
@@ -261,7 +249,7 @@ export class McpRoutes {
     if (!validFormat) {
       return {
         valid: false,
-        error: 'Table ID can only contain letters, numbers, hyphens, and underscores'
+        error: 'Table ID can only contain letters, numbers, hyphens, and underscores',
       }
     }
 
@@ -306,25 +294,25 @@ export class McpRoutes {
         error: {
           code,
           message,
-          ...(data && { data })
-        }
+          ...(data && { data }),
+        },
       }
 
       return new Response(JSON.stringify(errorResponse), {
         status: status,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       })
     }
 
     // Create standard HTTP error response for HTTP errors
     const errorResponse = {
       error: message,
-      ...(data && { details: data })
+      ...(data && { details: data }),
     }
 
     return new Response(JSON.stringify(errorResponse), {
       status,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 'Content-Type': 'application/json' },
     })
   }
 
@@ -391,7 +379,7 @@ export function createTableMcpMiddleware(config: McpRouteConfig) {
     const pathname = url.pathname
 
     // Check if this is a table MCP request
-    if (pathname.match(/^\/sub\/[^\/]+\/mcp\/?$/)) {
+    if (pathname.match(/^\/sub\/[^/]+\/mcp\/?$/)) {
       return await mcpRoutes.handleTableMcpRequest(request)
     }
 

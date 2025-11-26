@@ -2,13 +2,13 @@
  * Performance Monitor Unit Tests
  */
 
-import { describe, expect, test, beforeEach, mock } from 'bun:test'
+import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import {
-  PerformanceMonitor,
-  getPerformanceMonitor,
-  resetPerformanceMonitor,
-  type PerformanceMetric,
   type AggregatedMetrics,
+  getPerformanceMonitor,
+  type PerformanceMetric,
+  PerformanceMonitor,
+  resetPerformanceMonitor,
 } from '@/core/utils/PerformanceMonitor.js'
 
 describe('PerformanceMonitor', () => {
@@ -86,11 +86,7 @@ describe('PerformanceMonitor', () => {
     })
 
     test('should pass metadata to metric', async () => {
-      await monitor.measure(
-        'metadata-async',
-        async () => 'done',
-        { tableId: 'table-1' }
-      )
+      await monitor.measure('metadata-async', async () => 'done', { tableId: 'table-1' })
 
       const metrics = monitor.getRecentMetrics('metadata-async')
       expect(metrics[0].metadata).toEqual({ tableId: 'table-1' })

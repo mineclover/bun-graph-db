@@ -5,10 +5,10 @@
 
 import { createTestEnvironment, type TestEnvironment } from './test-database-factory'
 import {
+  createRequestHelper,
   startServerForSuite,
   stopServerForSuite,
   type TestGraphQLServer,
-  createRequestHelper,
 } from './test-graphql-server'
 
 export interface TestConfig {
@@ -166,22 +166,22 @@ export class TestPortManager {
   private static currentPort = 5500
 
   static allocatePort(): number {
-    while (this.usedPorts.has(this.currentPort)) {
-      this.currentPort++
-      if (this.currentPort > 5999) {
+    while (TestPortManager.usedPorts.has(TestPortManager.currentPort)) {
+      TestPortManager.currentPort++
+      if (TestPortManager.currentPort > 5999) {
         throw new Error('Test port range exhausted (5500-5999). Too many concurrent test servers.')
       }
     }
 
-    const port = this.currentPort
-    this.usedPorts.add(port)
-    this.currentPort++
+    const port = TestPortManager.currentPort
+    TestPortManager.usedPorts.add(port)
+    TestPortManager.currentPort++
 
     return port
   }
 
   static releasePort(port: number): void {
-    this.usedPorts.delete(port)
+    TestPortManager.usedPorts.delete(port)
   }
 
   static async checkPortAvailable(port: number): Promise<boolean> {
@@ -197,8 +197,8 @@ export class TestPortManager {
   }
 
   static reset(): void {
-    this.usedPorts.clear()
-    this.currentPort = 5500
+    TestPortManager.usedPorts.clear()
+    TestPortManager.currentPort = 5500
   }
 }
 
@@ -283,7 +283,6 @@ export class UnifiedTestEnvironmentManager {
       // MCP 헬스체크
       await mcpHelper.initialize()
       console.log(`✅ MCP endpoint ready: ${baseUrl}/mcp`)
-
     } catch (error) {
       console.error(`❌ E2E server health check failed: ${error}`)
       throw error

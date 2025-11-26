@@ -10,11 +10,7 @@
       "reuseScore": 4.5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "table",
-        "create",
-        "schema"
-      ]
+      "tags": ["table", "create", "schema"]
     },
     {
       "identifier": "get-table-detailed-statistics",
@@ -24,9 +20,7 @@
       "reuseScore": 5.5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "search-templates-advanced",
@@ -36,9 +30,7 @@
       "reuseScore": 5.5,
       "priority": "high",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "test-get-table",
@@ -48,9 +40,7 @@
       "reuseScore": 5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "test-search-nodes",
@@ -60,9 +50,7 @@
       "reuseScore": 5,
       "priority": "low",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "list-tables-with-pagination",
@@ -72,9 +60,7 @@
       "reuseScore": 5,
       "priority": "high",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "test-create-node",
@@ -84,9 +70,7 @@
       "reuseScore": 4.5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "test-get-node",
@@ -96,9 +80,7 @@
       "reuseScore": 5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "get-table-attributes-by-id",
@@ -108,9 +90,7 @@
       "reuseScore": 5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "list-all-attribute-types",
@@ -120,9 +100,7 @@
       "reuseScore": 5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "create-attribute-with-type",
@@ -132,9 +110,7 @@
       "reuseScore": 4,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "get-table-schema",
@@ -144,9 +120,7 @@
       "reuseScore": 4.5,
       "priority": "high",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "list-nodes-by-table",
@@ -156,9 +130,7 @@
       "reuseScore": 5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "template-create-new-template",
@@ -168,9 +140,7 @@
       "reuseScore": 4.5,
       "priority": "medium",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "execute-template-with-graphql",
@@ -180,9 +150,7 @@
       "reuseScore": 4.5,
       "priority": "low",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     },
     {
       "identifier": "create-template-basic",
@@ -192,11 +160,7 @@
       "reuseScore": 4.5,
       "priority": "high",
       "status": "active",
-      "tags": [
-        "basic",
-        "create",
-        "management"
-      ]
+      "tags": ["basic", "create", "management"]
     },
     {
       "identifier": "execute-template-with-variables",
@@ -206,11 +170,7 @@
       "reuseScore": 4.5,
       "priority": "high",
       "status": "active",
-      "tags": [
-        "basic",
-        "execute",
-        "management"
-      ]
+      "tags": ["basic", "execute", "management"]
     },
     {
       "identifier": "delete-template-by-id",
@@ -220,9 +180,7 @@
       "reuseScore": 4.5,
       "priority": "low",
       "status": "active",
-      "tags": [
-        "general"
-      ]
+      "tags": ["general"]
     }
   ],
   "categories": {
@@ -262,17 +220,12 @@
     "Node Operations": {
       "description": "Templates for node management and relationships",
       "priority": 7,
-      "templates": [
-        "test-get-node"
-      ]
+      "templates": ["test-get-node"]
     },
     "Template Management": {
       "description": "Templates for managing and executing other templates",
       "priority": 10,
-      "templates": [
-        "execute-template-with-graphql",
-        "execute-template-with-variables"
-      ]
+      "templates": ["execute-template-with-graphql", "execute-template-with-variables"]
     }
   }
 }

@@ -141,7 +141,7 @@ export type EntityName<T extends string> = T extends `${infer Name}Dto` ? Name :
  */
 export type OutputTypeName<
   TOperation extends string,
-  TEntity extends string
+  TEntity extends string,
 > = `${TOperation}${TEntity}Output`
 
 /**
@@ -272,7 +272,7 @@ export type OmitEntityFields<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'>
  */
 export type ToCreateInput<
   TDto,
-  TRequired extends keyof OmitEntityFields<TDto> = never
+  TRequired extends keyof OmitEntityFields<TDto> = never,
 > = RequireFields<OmitEntityFields<TDto>, TRequired>
 
 /**

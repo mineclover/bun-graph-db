@@ -9,21 +9,37 @@ enum JsonExportFormat {
 
 # Export options
 input JsonExportOptions {
-  """Export format: FLAT for simple array, HFI for full graph protocol"""
+  """
+  Export format: FLAT for simple array, HFI for full graph protocol
+  """
   format: JsonExportFormat! = FLAT
-  """Include relations as branches (HFI only)"""
+  """
+  Include relations as branches (HFI only)
+  """
   includeRelations: Boolean = true
-  """Include node positions (HFI only)"""
+  """
+  Include node positions (HFI only)
+  """
   includePositions: Boolean = false
-  """Include visual themes (HFI only)"""
+  """
+  Include visual themes (HFI only)
+  """
   includeThemes: Boolean = false
-  """Include state connections (HFI only)"""
+  """
+  Include state connections (HFI only)
+  """
   includeStateConnections: Boolean = false
-  """Pretty print JSON output"""
+  """
+  Pretty print JSON output
+  """
   prettyPrint: Boolean = true
-  """Filter by specific node IDs"""
+  """
+  Filter by specific node IDs
+  """
   nodeIds: [String!]
-  """Filter by tags"""
+  """
+  Filter by tags
+  """
   tags: [String!]
 }
 
@@ -32,7 +48,9 @@ type FlatJsonNode {
   id: String!
   title: String!
   content: String
-  """Dynamic attributes as key-value pairs"""
+  """
+  Dynamic attributes as key-value pairs
+  """
   attributes: JSON
 }
 
@@ -134,9 +152,13 @@ union JsonExportData = FlatJsonExport | HFIProtocolExport
 type JsonExportResult {
   success: Boolean!
   format: JsonExportFormat!
-  """Raw JSON string output"""
+  """
+  Raw JSON string output
+  """
   json: String
-  """Parsed data (use json field for actual export)"""
+  """
+  Parsed data (use json field for actual export)
+  """
   data: JSON
   nodeCount: Int!
   errors: [String!]!
@@ -144,6 +166,8 @@ type JsonExportResult {
 }
 
 extend type Query {
-  """Export table data to JSON format (Flat or HFI Protocol)"""
+  """
+  Export table data to JSON format (Flat or HFI Protocol)
+  """
   exportTableJson(tableId: String!, options: JsonExportOptions): JsonExportResult!
 }

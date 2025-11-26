@@ -130,15 +130,17 @@ export interface IFullRepository<TEntity, TId, TUpdateData = Partial<TEntity>>
  * @typeParam TId - The child entity's ID type
  * @typeParam TParentId - The parent entity's ID type
  */
-export interface IChildRepository<TEntity, TId, TParentId>
-  extends IBaseRepository<TEntity, TId> {
+export interface IChildRepository<TEntity, TId, TParentId> extends IBaseRepository<TEntity, TId> {
   /**
    * Find all child entities belonging to a parent
    * @param parentId - The parent entity's ID
    * @param options - Pagination options
    * @returns Paginated result of child entities
    */
-  findByParentId(parentId: TParentId, options?: PaginationOptions): Promise<PaginatedResult<TEntity>>
+  findByParentId(
+    parentId: TParentId,
+    options?: PaginationOptions
+  ): Promise<PaginatedResult<TEntity>>
 
   /**
    * Count child entities belonging to a parent

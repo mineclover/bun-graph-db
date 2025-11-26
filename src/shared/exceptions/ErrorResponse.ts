@@ -47,28 +47,21 @@ export function createErrorResponse(
     statusCode: options?.statusCode ?? 500,
     context: options?.context,
     timestamp: new Date().toISOString(),
-    requestId: options?.requestId
+    requestId: options?.requestId,
   }
 }
 
 /**
  * Convert BaseException to ErrorResponse
  */
-export function exceptionToErrorResponse(
-  error: Error,
-  requestId?: string
-): ErrorResponse {
+export function exceptionToErrorResponse(error: Error, requestId?: string): ErrorResponse {
   // Check if it's a BaseException with code property
   if ('code' in error && 'statusCode' in error) {
-    return createErrorResponse(
-      (error as any).code,
-      error.message,
-      {
-        statusCode: (error as any).statusCode,
-        context: (error as any).context,
-        requestId
-      }
-    )
+    return createErrorResponse((error as any).code, error.message, {
+      statusCode: (error as any).statusCode,
+      context: (error as any).context,
+      requestId,
+    })
   }
 
   // Generic error
@@ -77,7 +70,7 @@ export function exceptionToErrorResponse(
     error.message || 'An unexpected error occurred',
     {
       statusCode: 500,
-      requestId
+      requestId,
     }
   )
 }
@@ -93,7 +86,7 @@ export function formatGraphQLError(error: ErrorResponse): {
   return {
     message: error.message,
     code: error.code,
-    field: error.field
+    field: error.field,
   }
 }
 

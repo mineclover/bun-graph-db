@@ -1,5 +1,6 @@
 import * as AttributeDto from '@/application/dtos/AttributeDto.js'
 import { DocDto } from '@/application/dtos/DocDto.js'
+import { queryTemplateToDto } from '@/application/dtos/QueryTemplateDto.js'
 import type {
   GetTableDocsInput,
   GetTableDocsOutput,
@@ -14,11 +15,10 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import { queryTemplateToDto } from '@/application/dtos/QueryTemplateDto.js'
 import { LegacyAIMetadataAdapter } from '@/infrastructure/ai-metadata/LegacyAIMetadataAdapter.js'
 
 export class GetTableDocsUseCase {
-  private aiMetadataAdapter: LegacyAIMetadataAdapter;
+  private aiMetadataAdapter: LegacyAIMetadataAdapter
 
   constructor(
     private readonly tableRepository: ITableRepository,
@@ -30,11 +30,11 @@ export class GetTableDocsUseCase {
     private readonly docRepository: IDocRepository,
     private readonly logger: ILogger
   ) {
-    this.aiMetadataAdapter = new LegacyAIMetadataAdapter(this.logger);
+    this.aiMetadataAdapter = new LegacyAIMetadataAdapter(this.logger)
     // Initialize the enhanced system
-    this.aiMetadataAdapter.initialize().catch(error => {
-      this.logger.warn('AI metadata adapter initialization failed', { error });
-    });
+    this.aiMetadataAdapter.initialize().catch((error) => {
+      this.logger.warn('AI metadata adapter initialization failed', { error })
+    })
   }
 
   async execute(input: GetTableDocsInput): Promise<GetTableDocsOutput> {
@@ -136,5 +136,4 @@ export class GetTableDocsUseCase {
       throw error
     }
   }
-
 }

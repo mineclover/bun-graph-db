@@ -7,7 +7,7 @@ import type {
   SearchCriteria,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
-import { DomainException, DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { DatabaseException, DomainException } from '@/shared/exceptions/DomainException.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface QueryTemplateRow {

@@ -9,23 +9,23 @@ import {
   type FlatJsonExport,
   type FlatJsonPatchRequest,
   type FlatNodePatch,
+  HFI_PROTOCOL_VERSION,
   type HFIBranchPatch,
   type HFINodePatch,
   type HFIProtocolExport,
   type HFIProtocolPatchRequest,
   type HFIRelationPatch,
   type HFIStateConnectionPatch,
-  type JsonPatchRequest,
-  type JsonPatchResult,
-  type PatchOperationResult,
-  type PayloadFieldPatch,
-  HFI_PROTOCOL_VERSION,
   isEffectNode,
   isFlatJsonExport,
   isFlatJsonPatchRequest,
   isHFIProtocol,
   isHFIProtocolPatchRequest,
   isQueryNode,
+  type JsonPatchRequest,
+  type JsonPatchResult,
+  type PatchOperationResult,
+  type PayloadFieldPatch,
 } from '@/core/types/JsonExport.js'
 
 describe('JSON Export Type Guards', () => {
@@ -374,11 +374,11 @@ describe('HFI Protocol Patch Types', () => {
           { id: 'node-1', title: 'Updated Node' },
           { id: 'node-2', payload: [{ key: 'status', value: 'active' }] },
         ],
-        branches: [
-          { nodeId: 'query-1', case: 'success', label: 'Success Path' },
-        ],
+        branches: [{ nodeId: 'query-1', case: 'success', label: 'Success Path' }],
         relations: [
-          { add: { sourceNodeId: 'node-1', targetNodeId: 'node-3', relationTypeIdentifier: 'next' } },
+          {
+            add: { sourceNodeId: 'node-1', targetNodeId: 'node-3', relationTypeIdentifier: 'next' },
+          },
         ],
         stateConnections: [
           { add: { from: 'node-1', fromField: 'output', to: 'node-2', toField: 'input' } },

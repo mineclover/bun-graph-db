@@ -7,7 +7,7 @@
  * Parallel: Can run with Phase 1 tasks
  */
 
-import { describe, it, expect } from '@jest/globals'
+import { describe, expect, it } from '@jest/globals'
 
 // Import will be added when SchemaMapper is implemented
 // import { SchemaMapper } from '../../../src/presentation/mcp/schema/SchemaMapper'
@@ -20,7 +20,7 @@ describe('Schema Type Mapping Utilities', () => {
       // Expected JSON Schema for TEXT
       const expectedSchema = {
         type: 'string',
-        description: 'Text value'
+        description: 'Text value',
       }
 
       // This test will pass when SchemaMapper is implemented
@@ -36,7 +36,7 @@ describe('Schema Type Mapping Utilities', () => {
 
       const expectedSchema = {
         type: 'number',
-        description: 'Integer value'
+        description: 'Integer value',
       }
 
       expect(true).toBe(true) // Placeholder
@@ -51,10 +51,10 @@ describe('Schema Type Mapping Utilities', () => {
 
       const expectedSchema = {
         type: 'number',
-        description: 'Numeric value'
+        description: 'Numeric value',
       }
 
-      sqliteTypes.forEach(sqliteType => {
+      sqliteTypes.forEach((sqliteType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -68,10 +68,10 @@ describe('Schema Type Mapping Utilities', () => {
 
       const expectedSchema = {
         type: 'boolean',
-        description: 'Boolean value'
+        description: 'Boolean value',
       }
 
-      sqliteTypes.forEach(sqliteType => {
+      sqliteTypes.forEach((sqliteType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -86,13 +86,13 @@ describe('Schema Type Mapping Utilities', () => {
       const expectedJsonSchema = {
         type: 'object',
         description: 'JSON object',
-        additionalProperties: true
+        additionalProperties: true,
       }
 
       const expectedBlobSchema = {
         type: 'string',
         description: 'Binary data (base64 encoded)',
-        format: 'base64'
+        format: 'base64',
       }
 
       expect(true).toBe(true) // Placeholder
@@ -108,16 +108,16 @@ describe('Schema Type Mapping Utilities', () => {
       const expectedDateSchema = {
         type: 'string',
         description: 'Date value',
-        format: 'date'
+        format: 'date',
       }
 
       const expectedDateTimeSchema = {
         type: 'string',
         description: 'Date and time value',
-        format: 'date-time'
+        format: 'date-time',
       }
 
-      sqliteTypes.forEach(sqliteType => {
+      sqliteTypes.forEach((sqliteType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -137,7 +137,7 @@ describe('Schema Type Mapping Utilities', () => {
 
       const expectedSchema = {
         type: 'string',
-        description: 'Text value (required)'
+        description: 'Text value (required)',
       }
 
       expect(true).toBe(true) // Placeholder
@@ -153,7 +153,7 @@ describe('Schema Type Mapping Utilities', () => {
       const expectedSchema = {
         type: 'string',
         description: 'Text value',
-        default: 'example'
+        default: 'example',
       }
 
       expect(true).toBe(true) // Placeholder
@@ -169,7 +169,7 @@ describe('Schema Type Mapping Utilities', () => {
       const expectedSchema = {
         type: 'string',
         description: 'Variable length text',
-        maxLength: 255
+        maxLength: 255,
       }
 
       expect(true).toBe(true) // Placeholder
@@ -186,7 +186,7 @@ describe('Schema Type Mapping Utilities', () => {
         type: 'number',
         description: 'Integer value (with constraints)',
         minimum: 0,
-        exclusiveMinimum: true
+        exclusiveMinimum: true,
       }
 
       expect(true).toBe(true) // Placeholder
@@ -200,13 +200,22 @@ describe('Schema Type Mapping Utilities', () => {
   describe('Case Insensitive Type Matching', () => {
     it('should handle case variations in SQLite types', () => {
       const typeVariations = [
-        'text', 'TEXT', 'Text', 'tExT',
-        'integer', 'INTEGER', 'Integer',
-        'real', 'REAL', 'Real',
-        'boolean', 'BOOLEAN', 'Boolean'
+        'text',
+        'TEXT',
+        'Text',
+        'tExT',
+        'integer',
+        'INTEGER',
+        'Integer',
+        'real',
+        'REAL',
+        'Real',
+        'boolean',
+        'BOOLEAN',
+        'Boolean',
       ]
 
-      typeVariations.forEach(sqliteType => {
+      typeVariations.forEach((sqliteType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -223,7 +232,7 @@ describe('Schema Type Mapping Utilities', () => {
         name: 'userId',
         type: 'INTEGER',
         description: 'User identifier',
-        required: true
+        required: true,
       }
 
       const expectedMcpSchema = {
@@ -231,10 +240,10 @@ describe('Schema Type Mapping Utilities', () => {
         properties: {
           userId: {
             type: 'number',
-            description: 'User identifier'
-          }
+            description: 'User identifier',
+          },
         },
-        required: ['userId']
+        required: ['userId'],
       }
 
       expect(true).toBe(true) // Placeholder
@@ -250,20 +259,20 @@ describe('Schema Type Mapping Utilities', () => {
           name: 'userId',
           type: 'INTEGER',
           description: 'User identifier',
-          required: true
+          required: true,
         },
         {
           name: 'userName',
           type: 'TEXT',
           description: 'User name',
-          required: false
+          required: false,
         },
         {
           name: 'isActive',
           type: 'BOOLEAN',
           description: 'User active status',
-          required: true
-        }
+          required: true,
+        },
       ]
 
       const expectedMcpSchema = {
@@ -271,18 +280,18 @@ describe('Schema Type Mapping Utilities', () => {
         properties: {
           userId: {
             type: 'number',
-            description: 'User identifier'
+            description: 'User identifier',
           },
           userName: {
             type: 'string',
-            description: 'User name'
+            description: 'User name',
           },
           isActive: {
             type: 'boolean',
-            description: 'User active status'
-          }
+            description: 'User active status',
+          },
         },
-        required: ['userId', 'isActive']
+        required: ['userId', 'isActive'],
       }
 
       expect(true).toBe(true) // Placeholder
@@ -298,7 +307,7 @@ describe('Schema Type Mapping Utilities', () => {
       const expectedMcpSchema = {
         type: 'object',
         properties: {},
-        required: []
+        required: [],
       }
 
       expect(true).toBe(true) // Placeholder
@@ -315,7 +324,7 @@ describe('Schema Type Mapping Utilities', () => {
 
       const expectedSchema = {
         type: 'string',
-        description: 'Unknown type (treated as string)'
+        description: 'Unknown type (treated as string)',
       }
 
       expect(true).toBe(true) // Placeholder
@@ -339,10 +348,10 @@ describe('Schema Type Mapping Utilities', () => {
         'TEXT INVALID CONSTRAINT',
         'INTEGER DEFAULT',
         'VARCHAR()',
-        'CHECK (invalid syntax)'
+        'CHECK (invalid syntax)',
       ]
 
-      malformedTypes.forEach(malformedType => {
+      malformedTypes.forEach((malformedType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -368,10 +377,10 @@ describe('Schema Type Mapping Utilities', () => {
       const invalidSchemas = [
         { type: 'invalid_type' },
         { description: 'missing type' },
-        { type: 'string', additionalProperties: 'not boolean' }
+        { type: 'string', additionalProperties: 'not boolean' },
       ]
 
-      invalidSchemas.forEach(invalidSchema => {
+      invalidSchemas.forEach((invalidSchema) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:

@@ -4,6 +4,7 @@
  * Handles JSON export operations in Flat and HFI Protocol formats
  */
 
+import type { GraphQLResolveInfo } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
 import type {
@@ -13,7 +14,6 @@ import type {
   JsonExportOptions,
 } from '@/core/types/JsonExport.js'
 import type { JsonExportService } from '@/domain/services/JsonExportService.js'
-import type { GraphQLResolveInfo } from 'graphql'
 
 /** GraphQL enum format values */
 type GraphQLExportFormat = 'FLAT' | 'HFI'
@@ -94,10 +94,7 @@ export class JsonExportQueries {
         tags: args.options?.tags,
       }
 
-      const result = await jsonExportService.exportTable(
-        args.tableId as TableId,
-        serviceOptions
-      )
+      const result = await jsonExportService.exportTable(args.tableId as TableId, serviceOptions)
 
       logger.info('[GraphQL] exportTableJson completed', {
         success: result.success,

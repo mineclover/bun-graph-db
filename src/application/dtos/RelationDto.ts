@@ -1,10 +1,6 @@
+import type { BaseEntityDto, WithDescription, WithIdentifier } from '@/core/types/UseCaseTypes.js'
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { RelationType } from '@/domain/entities/RelationType.js'
-import type {
-  BaseEntityDto,
-  WithIdentifier,
-  WithDescription,
-} from '@/core/types/UseCaseTypes.js'
 
 // Data Transfer Object for NodeRelation entity
 export interface NodeRelationDto extends BaseEntityDto {

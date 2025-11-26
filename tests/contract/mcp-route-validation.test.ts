@@ -7,7 +7,7 @@
  * Parallel: Can run with tasks 1-2
  */
 
-import { describe, it, expect, beforeAll } from '@jest/globals'
+import { beforeAll, describe, expect, it } from '@jest/globals'
 
 describe('MCP Route Contract Tests', () => {
   const baseUrl = 'http://localhost:4141'
@@ -24,7 +24,7 @@ describe('MCP Route Contract Tests', () => {
       'x'.repeat(1000), // extremely long
       'null',
       'undefined',
-      '../../'
+      '../../',
     ]
   })
 
@@ -35,7 +35,7 @@ describe('MCP Route Contract Tests', () => {
         'test-table-456',
         'Table_123',
         'a1b2c3',
-        'table-with-dashes-123'
+        'table-with-dashes-123',
       ]
 
       for (const tableId of validIds) {
@@ -43,13 +43,13 @@ describe('MCP Route Contract Tests', () => {
           jsonrpc: '2.0',
           id: 1,
           method: 'tools/list',
-          params: {}
+          params: {},
         }
 
         const response = await fetch(`${baseUrl}/sub/${tableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(request)
+          body: JSON.stringify(request),
         })
 
         // Should not fail due to invalid table ID format
@@ -66,7 +66,7 @@ describe('MCP Route Contract Tests', () => {
       const uuidTableIds = [
         '123e4567-e89b-12d3-a456-426614174000',
         'f47ac10b-58cc-4372-a567-0e02b2c3d479',
-        '6ba7b810-9dad-11d1-80b4-00c04fd430c8'
+        '6ba7b810-9dad-11d1-80b4-00c04fd430c8',
       ]
 
       for (const tableId of uuidTableIds) {
@@ -74,13 +74,13 @@ describe('MCP Route Contract Tests', () => {
           jsonrpc: '2.0',
           id: 1,
           method: 'tools/list',
-          params: {}
+          params: {},
         }
 
         const response = await fetch(`${baseUrl}/sub/${tableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(request)
+          body: JSON.stringify(request),
         })
 
         // Should not fail due to invalid table ID format
@@ -95,7 +95,7 @@ describe('MCP Route Contract Tests', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       for (const invalidId of invalidTableIds) {
@@ -103,7 +103,7 @@ describe('MCP Route Contract Tests', () => {
           const response = await fetch(`${baseUrl}/sub/${encodeURIComponent(invalidId)}/mcp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(request)
+            body: JSON.stringify(request),
           })
 
           // Should return 404 for invalid table IDs or 400 for malformed requests
@@ -134,13 +134,13 @@ describe('MCP Route Contract Tests', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const response = await fetch(`${baseUrl}/sub/${nonExistentTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
       })
 
       expect(response.status).toBe(404)
@@ -170,14 +170,14 @@ describe('MCP Route Contract Tests', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       for (const path of invalidPaths) {
         const response = await fetch(`${baseUrl}${path}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(request)
+          body: JSON.stringify(request),
         })
 
         // Should return 404 for pattern mismatches
@@ -192,13 +192,13 @@ describe('MCP Route Contract Tests', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const response = await fetch(`${baseUrl}/sub/${encodedTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
       })
 
       // Should handle URL decoding properly
@@ -212,7 +212,7 @@ describe('MCP Route Contract Tests', () => {
 
       for (const method of methods) {
         const response = await fetch(`${baseUrl}/sub/${validTableId}/mcp`, {
-          method
+          method,
         })
 
         // Should reject non-POST methods
@@ -225,13 +225,13 @@ describe('MCP Route Contract Tests', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       // Test with missing Content-Type
       let response = await fetch(`${baseUrl}/sub/${validTableId}/mcp`, {
         method: 'POST',
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
       })
 
       // May be lenient about content-type, but should still process
@@ -241,7 +241,7 @@ describe('MCP Route Contract Tests', () => {
       response = await fetch(`${baseUrl}/sub/${validTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
       })
 
       expect([200, 400, 415].includes(response.status)).toBe(true)
@@ -254,21 +254,21 @@ describe('MCP Route Contract Tests', () => {
         '../../../etc/passwd',
         '..%2F..%2F..%2Fetc%2Fpasswd',
         '....//....//....//etc//passwd',
-        '%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd'
+        '%2e%2e%2f%2e%2e%2f%2e%2e%2fetc%2fpasswd',
       ]
 
       const request = {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       for (const maliciousId of maliciousIds) {
         const response = await fetch(`${baseUrl}/sub/${maliciousId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(request)
+          body: JSON.stringify(request),
         })
 
         // Should safely reject malicious table IDs
@@ -283,14 +283,14 @@ describe('MCP Route Contract Tests', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       try {
         const response = await fetch(`${baseUrl}/sub/${longTableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(request)
+          body: JSON.stringify(request),
         })
 
         // Should handle or reject gracefully

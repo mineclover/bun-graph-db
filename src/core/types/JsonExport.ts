@@ -528,6 +528,8 @@ export function isFlatJsonPatchRequest(request: JsonPatchRequest): request is Fl
   return request.format === 'flat'
 }
 
-export function isHFIProtocolPatchRequest(request: JsonPatchRequest): request is HFIProtocolPatchRequest {
+export function isHFIProtocolPatchRequest(
+  request: JsonPatchRequest
+): request is HFIProtocolPatchRequest {
   return request.format === 'hfi'
 }

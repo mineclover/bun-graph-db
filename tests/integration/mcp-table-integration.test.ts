@@ -7,7 +7,7 @@
  * Sequential: Integration testing after complete implementation
  */
 
-import { beforeAll, afterAll, beforeEach, afterEach, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 
 const TEST_PORT = 4141
 const BASE_URL = `http://localhost:${TEST_PORT}`
@@ -22,7 +22,7 @@ describe('MCP Table Integration Tests', () => {
     console.log('🧪 Starting MCP Table Integration Tests')
 
     // Wait for server to be ready
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 2000))
 
     // Verify server is running
     try {
@@ -56,7 +56,7 @@ describe('MCP Table Integration Tests', () => {
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: createTableQuery })
+      body: JSON.stringify({ query: createTableQuery }),
     })
 
     const result = await response.json()
@@ -99,7 +99,7 @@ describe('MCP Table Integration Tests', () => {
     const templateResponse = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: createTemplateQuery })
+      body: JSON.stringify({ query: createTemplateQuery }),
     })
 
     const templateResult = await templateResponse.json()
@@ -119,7 +119,7 @@ describe('MCP Table Integration Tests', () => {
     test('should handle GET request to table MCP endpoint', async () => {
       const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' }
+        headers: { Accept: 'application/json' },
       })
 
       expect(response.status).toBe(200)
@@ -131,11 +131,11 @@ describe('MCP Table Integration Tests', () => {
         protocolVersion: '2025-06-18',
         capabilities: {
           tools: {},
-          logging: {}
+          logging: {},
         },
         tableId: testTableId,
         toolCount: expect.any(Number),
-        initialized: expect.any(Boolean)
+        initialized: expect.any(Boolean),
       })
 
       console.log(`✅ GET /sub/${testTableId}/mcp returned server info`)
@@ -147,12 +147,12 @@ describe('MCP Table Integration Tests', () => {
         'table-with-script<script>',
         '',
         'table with spaces',
-        'x'.repeat(300) // too long
+        'x'.repeat(300), // too long
       ]
 
       for (const invalidId of invalidTableIds) {
         const response = await fetch(`${BASE_URL}/sub/${encodeURIComponent(invalidId)}/mcp`, {
-          method: 'GET'
+          method: 'GET',
         })
 
         // Invalid table IDs should return 400 or 404 (depending on validation layer)
@@ -181,14 +181,14 @@ describe('MCP Table Integration Tests', () => {
       const nonExistentId = 'non_existent_table_12345'
 
       const response = await fetch(`${BASE_URL}/sub/${nonExistentId}/mcp`, {
-        method: 'GET'
+        method: 'GET',
       })
 
       expect(response.status).toBe(404)
 
       const error = await response.json()
       expect(error).toMatchObject({
-        error: 'Table not found'
+        error: 'Table not found',
       })
 
       console.log(`✅ Handled non-existent table ID: ${nonExistentId}`)
@@ -205,16 +205,16 @@ describe('MCP Table Integration Tests', () => {
           protocolVersion: '2025-06-18',
           clientInfo: {
             name: 'test-client',
-            version: '1.0.0'
+            version: '1.0.0',
           },
-          capabilities: {}
-        }
+          capabilities: {},
+        },
       }
 
       const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initializeRequest)
+        body: JSON.stringify(initializeRequest),
       })
 
       expect(response.status).toBe(200)
@@ -226,8 +226,8 @@ describe('MCP Table Integration Tests', () => {
         result: {
           protocolVersion: '2025-06-18',
           capabilities: expect.any(Object),
-          serverInfo: expect.any(Object)
-        }
+          serverInfo: expect.any(Object),
+        },
       })
 
       console.log(`✅ Initialize method handled correctly`)
@@ -242,14 +242,14 @@ describe('MCP Table Integration Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           clientInfo: { name: 'test', version: '1.0.0' },
-          capabilities: {}
-        }
+          capabilities: {},
+        },
       }
 
       await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initRequest)
+        body: JSON.stringify(initRequest),
       })
 
       // Now test tools/list
@@ -257,13 +257,13 @@ describe('MCP Table Integration Tests', () => {
         jsonrpc: '2.0',
         id: 2,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       expect(response.status).toBe(200)
@@ -273,8 +273,8 @@ describe('MCP Table Integration Tests', () => {
         jsonrpc: '2.0',
         id: 2,
         result: {
-          tools: expect.any(Array)
-        }
+          tools: expect.any(Array),
+        },
       })
 
       // Verify that our test template appears as a tool
@@ -289,16 +289,16 @@ describe('MCP Table Integration Tests', () => {
 
       expect(Array.isArray(tools)).toBe(true)
 
-      const templateTool = tools.find((tool: any) =>
-        tool.name === testTemplateIdentifier ||
-        tool.description?.includes(testTableId)
+      const templateTool = tools.find(
+        (tool: any) =>
+          tool.name === testTemplateIdentifier || tool.description?.includes(testTableId)
       )
 
       if (templateTool) {
         expect(templateTool).toMatchObject({
           name: expect.any(String),
           description: expect.stringContaining('Table'),
-          inputSchema: expect.any(Object)
+          inputSchema: expect.any(Object),
         })
         console.log(`✅ Found template tool: ${templateTool.name}`)
       } else {
@@ -317,14 +317,14 @@ describe('MCP Table Integration Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           clientInfo: { name: 'test', version: '1.0.0' },
-          capabilities: {}
-        }
+          capabilities: {},
+        },
       }
 
       await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initRequest)
+        body: JSON.stringify(initRequest),
       })
 
       // Get available tools first
@@ -332,13 +332,13 @@ describe('MCP Table Integration Tests', () => {
         jsonrpc: '2.0',
         id: 2,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const toolsResponse = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       const toolsResult = await toolsResponse.json()
@@ -354,14 +354,14 @@ describe('MCP Table Integration Tests', () => {
           method: 'tools/call',
           params: {
             name: toolToCall.name,
-            arguments: {}
-          }
+            arguments: {},
+          },
         }
 
         const callResponse = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toolCallRequest)
+          body: JSON.stringify(toolCallRequest),
         })
 
         expect(callResponse.status).toBe(200)
@@ -375,8 +375,8 @@ describe('MCP Table Integration Tests', () => {
             id: 3,
             result: {
               content: expect.any(Array),
-              isError: expect.any(Boolean)
-            }
+              isError: expect.any(Boolean),
+            },
           })
         } else if (callResult.error) {
           expect(callResult).toMatchObject({
@@ -384,8 +384,8 @@ describe('MCP Table Integration Tests', () => {
             id: 3,
             error: {
               code: expect.any(Number),
-              message: expect.any(String)
-            }
+              message: expect.any(String),
+            },
           })
         }
 
@@ -410,7 +410,7 @@ describe('MCP Table Integration Tests', () => {
         'invalid json',
 
         // Empty request
-        ''
+        '',
       ]
 
       for (let i = 0; i < invalidRequests.length; i++) {
@@ -420,7 +420,7 @@ describe('MCP Table Integration Tests', () => {
         const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body
+          body,
         })
 
         // Invalid requests should return 400 or 200 with JSON-RPC error
@@ -434,8 +434,8 @@ describe('MCP Table Integration Tests', () => {
             jsonrpc: '2.0',
             error: {
               code: expect.any(Number),
-              message: expect.any(String)
-            }
+              message: expect.any(String),
+            },
           })
         } else if (response.status === 400) {
           expect(result).toHaveProperty('error')
@@ -467,7 +467,7 @@ describe('MCP Table Integration Tests', () => {
       const table2Response = await fetch(GRAPHQL_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: createTable2Query })
+        body: JSON.stringify({ query: createTable2Query }),
       })
 
       const table2Result = await table2Response.json()
@@ -505,7 +505,7 @@ describe('MCP Table Integration Tests', () => {
       await fetch(GRAPHQL_ENDPOINT, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: createTemplate2Query })
+        body: JSON.stringify({ query: createTemplate2Query }),
       })
 
       // Initialize both MCP servers
@@ -516,21 +516,21 @@ describe('MCP Table Integration Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           clientInfo: { name: 'test', version: '1.0.0' },
-          capabilities: {}
-        }
+          capabilities: {},
+        },
       }
 
       await Promise.all([
         fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(initRequest)
+          body: JSON.stringify(initRequest),
         }),
         fetch(`${BASE_URL}/sub/${testTable2Id}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(initRequest)
-        })
+          body: JSON.stringify(initRequest),
+        }),
       ])
 
       // Get tools from both tables
@@ -538,20 +538,20 @@ describe('MCP Table Integration Tests', () => {
         jsonrpc: '2.0',
         id: 2,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const [tools1Response, tools2Response] = await Promise.all([
         fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toolsRequest)
+          body: JSON.stringify(toolsRequest),
         }),
         fetch(`${BASE_URL}/sub/${testTable2Id}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toolsRequest)
-        })
+          body: JSON.stringify(toolsRequest),
+        }),
       ])
 
       const tools1 = (await tools1Response.json()).result.tools
@@ -570,7 +570,7 @@ describe('MCP Table Integration Tests', () => {
       const table2ToolNames = new Set(table2SpecificTools.map((t: any) => t.name))
 
       // Table-specific tools should not appear in the other table's set
-      const overlap = [...table1ToolNames].filter(name => table2ToolNames.has(name))
+      const overlap = [...table1ToolNames].filter((name) => table2ToolNames.has(name))
       expect(overlap).toHaveLength(0)
 
       console.log(`✅ Table ${testTableId}: ${table1SpecificTools.length} specific tools`)
@@ -584,14 +584,14 @@ describe('MCP Table Integration Tests', () => {
       const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ test: 'data' })
+        body: JSON.stringify({ test: 'data' }),
       })
 
       expect(response.status).toBe(405)
 
       const error = await response.json()
       expect(error).toMatchObject({
-        error: 'Method Not Allowed'
+        error: 'Method Not Allowed',
       })
 
       console.log(`✅ Rejected PUT method`)
@@ -599,16 +599,16 @@ describe('MCP Table Integration Tests', () => {
 
     test('should handle malformed route patterns', async () => {
       const invalidRoutes = [
-        '/sub/mcp',           // missing table ID
-        '/sub//mcp',          // empty table ID
+        '/sub/mcp', // missing table ID
+        '/sub//mcp', // empty table ID
         '/sub/table/extra/mcp', // extra path segments
-        '/sub/table',         // missing /mcp
-        '/mcp/table'          // wrong order
+        '/sub/table', // missing /mcp
+        '/mcp/table', // wrong order
       ]
 
       for (const route of invalidRoutes) {
         const response = await fetch(`${BASE_URL}${route}`, {
-          method: 'GET'
+          method: 'GET',
         })
 
         // Should either be 404 (not found) or handled by other routes
@@ -629,14 +629,14 @@ describe('MCP Table Integration Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           clientInfo: { name: 'test', version: '1.0.0' },
-          capabilities: {}
-        }
+          capabilities: {},
+        },
       }
 
       await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initRequest)
+        body: JSON.stringify(initRequest),
       })
 
       // Get tools list
@@ -644,13 +644,13 @@ describe('MCP Table Integration Tests', () => {
         jsonrpc: '2.0',
         id: 2,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       expect(response.status).toBe(200)
@@ -660,8 +660,8 @@ describe('MCP Table Integration Tests', () => {
       expect(Array.isArray(tools)).toBe(true)
 
       // Find the aiMetadata tool
-      const aiMetadataTool = tools.find((tool: any) =>
-        tool.name === `get-table-metadata-${testTableId}`
+      const aiMetadataTool = tools.find(
+        (tool: any) => tool.name === `get-table-metadata-${testTableId}`
       )
 
       expect(aiMetadataTool).toBeDefined()
@@ -674,16 +674,16 @@ describe('MCP Table Integration Tests', () => {
             includeSampleData: {
               type: 'boolean',
               description: 'Whether to include sample data in the response',
-              default: true
+              default: true,
             },
             sampleLimit: {
               type: 'number',
               description: 'Maximum number of sample nodes to include',
-              default: 5
-            }
+              default: 5,
+            },
           },
-          required: []
-        }
+          required: [],
+        },
       })
 
       console.log(`✅ Found get-table-metadata tool for table ${testTableId}`)
@@ -698,14 +698,14 @@ describe('MCP Table Integration Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           clientInfo: { name: 'test', version: '1.0.0' },
-          capabilities: {}
-        }
+          capabilities: {},
+        },
       }
 
       await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initRequest)
+        body: JSON.stringify(initRequest),
       })
 
       // Call get-table-metadata tool
@@ -717,15 +717,15 @@ describe('MCP Table Integration Tests', () => {
           name: `get-table-metadata-${testTableId}`,
           arguments: {
             includeSampleData: true,
-            sampleLimit: 3
-          }
-        }
+            sampleLimit: 3,
+          },
+        },
       }
 
       const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolCallRequest)
+        body: JSON.stringify(toolCallRequest),
       })
 
       expect(response.status).toBe(200)
@@ -737,8 +737,8 @@ describe('MCP Table Integration Tests', () => {
         id: 3,
         result: {
           content: expect.any(Array),
-          isError: false
-        }
+          isError: false,
+        },
       })
 
       // Parse the returned metadata
@@ -756,7 +756,7 @@ describe('MCP Table Integration Tests', () => {
       }
       expect(content[0]).toMatchObject({
         type: 'text',
-        text: expect.any(String)
+        text: expect.any(String),
       })
 
       // Verify the text contains valid JSON with aiMetadata structure
@@ -773,7 +773,7 @@ describe('MCP Table Integration Tests', () => {
         if (metadata.aiMetadata) {
           expect(metadata.aiMetadata).toMatchObject({
             schemaInfo: expect.any(Object),
-            usagePatterns: expect.any(Object)
+            usagePatterns: expect.any(Object),
           })
 
           // Check schemaInfo structure
@@ -782,7 +782,7 @@ describe('MCP Table Integration Tests', () => {
               dataTypes: expect.any(Object),
               requiredFields: expect.any(Array),
               searchableFields: expect.any(Array),
-              relationshipCapabilities: expect.any(Array)
+              relationshipCapabilities: expect.any(Array),
             })
           }
 
@@ -791,7 +791,7 @@ describe('MCP Table Integration Tests', () => {
             expect(metadata.aiMetadata.usagePatterns).toMatchObject({
               commonQueries: expect.any(Array),
               templateRecommendations: expect.any(Array),
-              queryComplexity: expect.any(String)
+              queryComplexity: expect.any(String),
             })
           }
         }
@@ -810,21 +810,21 @@ describe('MCP Table Integration Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           clientInfo: { name: 'test', version: '1.0.0' },
-          capabilities: {}
-        }
+          capabilities: {},
+        },
       }
 
       await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initRequest)
+        body: JSON.stringify(initRequest),
       })
 
       // Test different parameter combinations
       const testCases = [
         { includeSampleData: false, sampleLimit: 0 },
         { includeSampleData: true, sampleLimit: 10 },
-        {} // default parameters
+        {}, // default parameters
       ]
 
       for (let i = 0; i < testCases.length; i++) {
@@ -835,14 +835,14 @@ describe('MCP Table Integration Tests', () => {
           method: 'tools/call',
           params: {
             name: `get-table-metadata-${testTableId}`,
-            arguments: params
-          }
+            arguments: params,
+          },
         }
 
         const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toolCallRequest)
+          body: JSON.stringify(toolCallRequest),
         })
 
         expect(response.status).toBe(200)
@@ -852,7 +852,7 @@ describe('MCP Table Integration Tests', () => {
         expect(result).toMatchObject({
           jsonrpc: '2.0',
           id: 4 + i,
-          result: expect.any(Object)
+          result: expect.any(Object),
         })
 
         console.log(`✅ Handled parameters: ${JSON.stringify(params)}`)
@@ -868,21 +868,21 @@ describe('MCP Table Integration Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           clientInfo: { name: 'test', version: '1.0.0' },
-          capabilities: {}
-        }
+          capabilities: {},
+        },
       }
 
       await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initRequest)
+        body: JSON.stringify(initRequest),
       })
 
       // Test invalid parameter types
       const invalidCases = [
         { includeSampleData: 'invalid', sampleLimit: 5 },
         { includeSampleData: true, sampleLimit: 'invalid' },
-        { includeSampleData: true, sampleLimit: -1 }
+        { includeSampleData: true, sampleLimit: -1 },
       ]
 
       for (let i = 0; i < invalidCases.length; i++) {
@@ -893,14 +893,14 @@ describe('MCP Table Integration Tests', () => {
           method: 'tools/call',
           params: {
             name: `get-table-metadata-${testTableId}`,
-            arguments: invalidParams
-          }
+            arguments: invalidParams,
+          },
         }
 
         const response = await fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toolCallRequest)
+          body: JSON.stringify(toolCallRequest),
         })
 
         expect(response.status).toBe(200)
@@ -909,14 +909,14 @@ describe('MCP Table Integration Tests', () => {
         // Should return either success (with validation handling) or error
         expect(result).toMatchObject({
           jsonrpc: '2.0',
-          id: 10 + i
+          id: 10 + i,
         })
 
         // If there's an error, it should be properly formatted
         if (result.error) {
           expect(result.error).toMatchObject({
             code: expect.any(Number),
-            message: expect.any(String)
+            message: expect.any(String),
           })
         }
 
@@ -933,7 +933,7 @@ describe('MCP Table Integration Tests', () => {
       for (let i = 0; i < concurrentRequests; i++) {
         const request = fetch(`${BASE_URL}/sub/${testTableId}/mcp`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: { Accept: 'application/json' },
         })
         requests.push(request)
       }
@@ -970,7 +970,7 @@ describe('MCP Table Integration Tests', () => {
         const response = await fetch(GRAPHQL_ENDPOINT, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: createTableQuery })
+          body: JSON.stringify({ query: createTableQuery }),
         })
 
         const result = await response.json()
@@ -978,10 +978,10 @@ describe('MCP Table Integration Tests', () => {
       }
 
       // Make concurrent requests to different tables
-      const requests = tableIds.map(tableId =>
+      const requests = tableIds.map((tableId) =>
         fetch(`${BASE_URL}/sub/${tableId}/mcp`, {
           method: 'GET',
-          headers: { 'Accept': 'application/json' }
+          headers: { Accept: 'application/json' },
         })
       )
 

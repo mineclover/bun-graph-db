@@ -3,7 +3,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
-import { McpSchemaValidator, McpDataValidator } from '@/presentation/mcp/schema/SchemaMapper.js'
+import { McpDataValidator, McpSchemaValidator } from '@/presentation/mcp/schema/SchemaMapper.js'
 
 export class TemplateQueries extends BaseResolver {
   protected logger: ILogger
@@ -238,7 +238,11 @@ export class TemplateQueries extends BaseResolver {
           },
           errors: validationResult.valid
             ? []
-            : [{ message: `Schema validation failed with ${validationResult.errors.length} error(s)` }],
+            : [
+                {
+                  message: `Schema validation failed with ${validationResult.errors.length} error(s)`,
+                },
+              ],
         }
       },
       'validateInputSchema',
@@ -272,7 +276,11 @@ export class TemplateQueries extends BaseResolver {
           },
           errors: validationResult.valid
             ? []
-            : [{ message: `Data validation failed with ${validationResult.errors.length} error(s)` }],
+            : [
+                {
+                  message: `Data validation failed with ${validationResult.errors.length} error(s)`,
+                },
+              ],
         }
       },
       'validateData',

@@ -1,13 +1,20 @@
 /**
  * Test helpers for creating properly structured domain entities
  */
-import { Table } from '@/domain/entities/Table.js'
-import { Node } from '@/domain/entities/Node.js'
-import { RelationType } from '@/domain/entities/RelationType.js'
+
+import type {
+  AttributeId,
+  AttributeTypeId,
+  NodeId,
+  RelationTypeId,
+  TableId,
+} from '@/core/types/CommonTypes.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
+import { Node } from '@/domain/entities/Node.js'
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
-import type { TableId, NodeId, RelationTypeId, AttributeId, AttributeTypeId } from '@/core/types/CommonTypes.js'
+import { RelationType } from '@/domain/entities/RelationType.js'
+import { Table } from '@/domain/entities/Table.js'
 
 export function createTestTable(
   id: string = 'table-1',

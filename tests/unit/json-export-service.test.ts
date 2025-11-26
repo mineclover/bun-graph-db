@@ -4,9 +4,8 @@
  * Tests for JSON export functionality in Flat and HFI Protocol formats
  */
 
-import { describe, expect, test, beforeEach, mock } from 'bun:test'
+import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import type { NodeId, TableId } from '@/core/types/CommonTypes.js'
-import { JsonExportService } from '@/domain/services/JsonExportService.js'
 import type { Attribute } from '@/domain/entities/Attribute.js'
 import type { Node } from '@/domain/entities/Node.js'
 import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
@@ -19,6 +18,7 @@ import type { INodeRelationRepository } from '@/domain/repositories/INodeRelatio
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { JsonExportService } from '@/domain/services/JsonExportService.js'
 
 // Mock entities
 const mockTable = {
@@ -338,7 +338,11 @@ describe('JsonExportService', () => {
 
     test('should export empty table in HFI format', async () => {
       mockNodeRepo.findByTableId = mock(async () => ({ nodes: [], total: 0, hasNextPage: false }))
-      mockRelationRepo.findByTableId = mock(async () => ({ nodes: [], total: 0, hasNextPage: false }))
+      mockRelationRepo.findByTableId = mock(async () => ({
+        nodes: [],
+        total: 0,
+        hasNextPage: false,
+      }))
 
       const result = await service.exportTable('table-1' as TableId, { format: 'hfi' })
 
@@ -530,11 +534,31 @@ describe('JsonExportService', () => {
       } as unknown as NodeAttribute
 
       const attributes = [
-        { getId: () => 'attr-string', getIdentifier: () => 'stringField', getIsRequired: () => false },
-        { getId: () => 'attr-number', getIdentifier: () => 'numberField', getIsRequired: () => true },
-        { getId: () => 'attr-boolean', getIdentifier: () => 'booleanField', getIsRequired: () => false },
-        { getId: () => 'attr-array', getIdentifier: () => 'arrayField', getIsRequired: () => false },
-        { getId: () => 'attr-object', getIdentifier: () => 'objectField', getIsRequired: () => false },
+        {
+          getId: () => 'attr-string',
+          getIdentifier: () => 'stringField',
+          getIsRequired: () => false,
+        },
+        {
+          getId: () => 'attr-number',
+          getIdentifier: () => 'numberField',
+          getIsRequired: () => true,
+        },
+        {
+          getId: () => 'attr-boolean',
+          getIdentifier: () => 'booleanField',
+          getIsRequired: () => false,
+        },
+        {
+          getId: () => 'attr-array',
+          getIdentifier: () => 'arrayField',
+          getIsRequired: () => false,
+        },
+        {
+          getId: () => 'attr-object',
+          getIdentifier: () => 'objectField',
+          getIsRequired: () => false,
+        },
       ] as unknown as Attribute[]
 
       mockAttrRepo.findByTableId = mock(async () => ({
@@ -610,16 +634,22 @@ describe('JsonExportService', () => {
   describe('edge cases - backward compatibility with data property', () => {
     test('should handle repositories returning data instead of nodes', async () => {
       // Simulate old-style repository response
-      mockNodeRepo.findByTableId = mock(async () => ({
-        data: [mockNode],
-        total: 1,
-        hasNextPage: false,
-      }) as any)
-      mockAttrRepo.findByTableId = mock(async () => ({
-        data: [mockAttribute],
-        total: 1,
-        hasNextPage: false,
-      }) as any)
+      mockNodeRepo.findByTableId = mock(
+        async () =>
+          ({
+            data: [mockNode],
+            total: 1,
+            hasNextPage: false,
+          }) as any
+      )
+      mockAttrRepo.findByTableId = mock(
+        async () =>
+          ({
+            data: [mockAttribute],
+            total: 1,
+            hasNextPage: false,
+          }) as any
+      )
 
       const result = await service.exportTable('table-1' as TableId, { format: 'flat' })
 

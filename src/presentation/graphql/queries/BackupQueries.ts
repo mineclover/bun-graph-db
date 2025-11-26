@@ -4,9 +4,9 @@
  * Handles backup listing and metrics queries
  */
 
+import type { GraphQLResolveInfo } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { SQLiteBackupService } from '@/domain/services/SQLiteBackupService.js'
-import type { GraphQLResolveInfo } from 'graphql'
 
 export interface BackupQueriesContext {
   backupService: SQLiteBackupService

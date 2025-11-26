@@ -1,4 +1,4 @@
-import type { ILogger } from '@/application/ports/ILogger.js'
+import { GraphQLError } from 'graphql'
 import type {
   TableNodesExportInput,
   TableNodesExportOutput,
@@ -7,9 +7,9 @@ import {
   createDefaultExportOptions,
   validateExportInput,
 } from '@/application/dtos/TableNodesExportDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
-import { GraphQLError } from 'graphql'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class ExportMutations extends BaseResolver {
@@ -23,15 +23,27 @@ export class ExportMutations extends BaseResolver {
     this.logger = logger
   }
 
-  async exportTableNodes(_: GraphQLParent, args: { input: TableNodesExportInput }, context?: GraphQLContext) {
+  async exportTableNodes(
+    _: GraphQLParent,
+    args: { input: TableNodesExportInput },
+    context?: GraphQLContext
+  ) {
     try {
       this.logger.info('Executing mutation: exportTableNodes', { input: args.input })
 
       const input: TableNodesExportInput = {
         ...args.input,
         format: args.input.format.toLowerCase() as 'json' | 'csv' | 'excel' | 'xml' | 'yaml',
-        attributeFormat: (args.input.attributeFormat?.toLowerCase() || 'nested') as 'columns' | 'nested' | 'keyvalue' | undefined,
-        dateFormat: (args.input.dateFormat?.toLowerCase() || 'iso') as 'iso' | 'timestamp' | 'readable' | undefined,
+        attributeFormat: (args.input.attributeFormat?.toLowerCase() || 'nested') as
+          | 'columns'
+          | 'nested'
+          | 'keyvalue'
+          | undefined,
+        dateFormat: (args.input.dateFormat?.toLowerCase() || 'iso') as
+          | 'iso'
+          | 'timestamp'
+          | 'readable'
+          | undefined,
       }
 
       const options = {
@@ -66,7 +78,7 @@ export class ExportMutations extends BaseResolver {
       this.logger.info('Mutation completed: exportTableNodes', {
         success: result.success,
         format: result.format,
-        dataLength: data?.length || binaryData?.length || 0
+        dataLength: data?.length || binaryData?.length || 0,
       })
 
       return {
@@ -79,7 +91,9 @@ export class ExportMutations extends BaseResolver {
         errors: result.errors || [],
       }
     } catch (error) {
-      this.logger.error('Export table nodes failed', { error: error instanceof Error ? error.message : String(error) })
+      this.logger.error('Export table nodes failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
       return {
         success: false,
         format: args.input.format.toLowerCase(),
@@ -96,15 +110,19 @@ export class ExportMutations extends BaseResolver {
     }
   }
 
-  async exportMultipleTables(_: GraphQLParent, args: {
-    tableIds: string[],
-    format: string,
-    options?: Partial<TableNodesExportInput>
-  }, context?: GraphQLContext) {
+  async exportMultipleTables(
+    _: GraphQLParent,
+    args: {
+      tableIds: string[]
+      format: string
+      options?: Partial<TableNodesExportInput>
+    },
+    context?: GraphQLContext
+  ) {
     try {
       this.logger.info('Executing mutation: exportMultipleTables', {
         tableIds: args.tableIds,
-        format: args.format
+        format: args.format,
       })
 
       const results: TableNodesExportOutput[] = []
@@ -165,13 +183,17 @@ export class ExportMutations extends BaseResolver {
 
       this.logger.info('Mutation completed: exportMultipleTables', {
         tableCount: args.tableIds.length,
-        successCount: results.filter(r => r.success).length
+        successCount: results.filter((r) => r.success).length,
       })
 
       return results
     } catch (error) {
-      this.logger.error('Export multiple tables failed', { error: error instanceof Error ? error.message : String(error) })
-      throw new GraphQLError(`Bulk export failed: ${error instanceof Error ? error.message : String(error)}`)
+      this.logger.error('Export multiple tables failed', {
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw new GraphQLError(
+        `Bulk export failed: ${error instanceof Error ? error.message : String(error)}`
+      )
     }
   }
 
@@ -180,13 +202,25 @@ export class ExportMutations extends BaseResolver {
     return ['CSV', 'JSON', 'EXCEL', 'XML', 'YAML']
   }
 
-  async validateExportOptions(_: GraphQLParent, args: { input: TableNodesExportInput }, context?: GraphQLContext) {
+  async validateExportOptions(
+    _: GraphQLParent,
+    args: { input: TableNodesExportInput },
+    context?: GraphQLContext
+  ) {
     try {
       const input: TableNodesExportInput = {
         ...args.input,
         format: args.input.format.toLowerCase() as 'json' | 'csv' | 'excel' | 'xml' | 'yaml',
-        attributeFormat: (args.input.attributeFormat?.toLowerCase() || 'nested') as 'columns' | 'nested' | 'keyvalue' | undefined,
-        dateFormat: (args.input.dateFormat?.toLowerCase() || 'iso') as 'iso' | 'timestamp' | 'readable' | undefined,
+        attributeFormat: (args.input.attributeFormat?.toLowerCase() || 'nested') as
+          | 'columns'
+          | 'nested'
+          | 'keyvalue'
+          | undefined,
+        dateFormat: (args.input.dateFormat?.toLowerCase() || 'iso') as
+          | 'iso'
+          | 'timestamp'
+          | 'readable'
+          | undefined,
       }
 
       const errors = validateExportInput(input)
@@ -220,7 +254,8 @@ export class ExportMutations extends BaseResolver {
 
         // Rough duration estimate
         const processingTimeMs = Math.max(1000, estimatedRows * 0.1) // 0.1ms per row minimum
-        estimatedDuration = processingTimeMs < 1000 ? '<1s' : `${Math.ceil(processingTimeMs / 1000)}s`
+        estimatedDuration =
+          processingTimeMs < 1000 ? '<1s' : `${Math.ceil(processingTimeMs / 1000)}s`
       }
 
       return {
@@ -231,11 +266,17 @@ export class ExportMutations extends BaseResolver {
         estimatedDuration,
       }
     } catch (error) {
-      throw new GraphQLError(`Validation failed: ${error instanceof Error ? error.message : String(error)}`)
+      throw new GraphQLError(
+        `Validation failed: ${error instanceof Error ? error.message : String(error)}`
+      )
     }
   }
 
-  async getExportHistory(_: GraphQLParent, args: { tableId?: string, limit?: number }, context?: GraphQLContext) {
+  async getExportHistory(
+    _: GraphQLParent,
+    args: { tableId?: string; limit?: number },
+    context?: GraphQLContext
+  ) {
     // This would need to be implemented with an export history repository
     // For now, return empty array
     return []

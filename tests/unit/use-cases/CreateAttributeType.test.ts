@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { CreateAttributeTypeInput } from '@/application/dtos/AttributeTypeDto.js'
-import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException, ConflictException } from '@/shared/exceptions/DomainException.js'
+import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { createTestAttributeType } from './test-helpers.js'
 
 describe('CreateAttributeTypeUseCase', () => {
@@ -34,10 +34,7 @@ describe('CreateAttributeTypeUseCase', () => {
       deleteMany: mock(async () => {}),
     } as any
 
-    useCase = new CreateAttributeTypeUseCase(
-      mockAttributeTypeRepository,
-      mockLogger
-    )
+    useCase = new CreateAttributeTypeUseCase(mockAttributeTypeRepository, mockLogger)
   })
 
   describe('Input Validation', () => {
@@ -89,14 +86,20 @@ describe('CreateAttributeTypeUseCase', () => {
         jsonType: 'string',
       }
 
-      const existingAttributeType = createTestAttributeType('attr-type-1', 'existing_type', 'string')
+      const existingAttributeType = createTestAttributeType(
+        'attr-type-1',
+        'existing_type',
+        'string'
+      )
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
-        .mockResolvedValueOnce(existingAttributeType)
+      mockAttributeTypeRepository.findByIdentifier =
+        mock().mockResolvedValueOnce(existingAttributeType)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
-      await expect(promise).rejects.toThrow("Attribute type with identifier 'existing_type' already exists")
+      await expect(promise).rejects.toThrow(
+        "Attribute type with identifier 'existing_type' already exists"
+      )
     })
   })
 
@@ -110,8 +113,8 @@ describe('CreateAttributeTypeUseCase', () => {
       const createdAttributeType = createTestAttributeType('attr-type-1', 'new_type', 'string')
 
       mockAttributeTypeRepository.findByIdentifier = mock()
-        .mockResolvedValueOnce(null)              // First call for duplicate check
-        .mockResolvedValueOnce(createdAttributeType)  // Second call after save
+        .mockResolvedValueOnce(null) // First call for duplicate check
+        .mockResolvedValueOnce(createdAttributeType) // Second call after save
 
       const result = await useCase.execute(input)
 
@@ -119,9 +122,12 @@ describe('CreateAttributeTypeUseCase', () => {
       expect(result.attributeType.identifier).toBe('new_type')
       expect(result.attributeType.jsonType).toBe('string')
       expect(mockAttributeTypeRepository.save).toHaveBeenCalled()
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating new attribute type', expect.objectContaining({
-        identifier: input.identifier,
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Creating new attribute type',
+        expect.objectContaining({
+          identifier: input.identifier,
+        })
+      )
     })
 
     it('should create attribute type with format', async () => {
@@ -131,7 +137,12 @@ describe('CreateAttributeTypeUseCase', () => {
         format: 'email',
       }
 
-      const createdAttributeType = createTestAttributeType('attr-type-1', 'email_type', 'string', 'Email address type')
+      const createdAttributeType = createTestAttributeType(
+        'attr-type-1',
+        'email_type',
+        'string',
+        'Email address type'
+      )
 
       mockAttributeTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -152,7 +163,12 @@ describe('CreateAttributeTypeUseCase', () => {
         description: 'A custom object type for testing',
       }
 
-      const createdAttributeType = createTestAttributeType('attr-type-1', 'custom_type', 'object', 'A custom object type for testing')
+      const createdAttributeType = createTestAttributeType(
+        'attr-type-1',
+        'custom_type',
+        'object',
+        'A custom object type for testing'
+      )
 
       mockAttributeTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -177,7 +193,11 @@ describe('CreateAttributeTypeUseCase', () => {
         },
       }
 
-      const createdAttributeType = createTestAttributeType('attr-type-1', 'validated_type', 'string')
+      const createdAttributeType = createTestAttributeType(
+        'attr-type-1',
+        'validated_type',
+        'string'
+      )
 
       mockAttributeTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -201,7 +221,11 @@ describe('CreateAttributeTypeUseCase', () => {
         },
       }
 
-      const createdAttributeType = createTestAttributeType('attr-type-1', 'reference_type', 'string')
+      const createdAttributeType = createTestAttributeType(
+        'attr-type-1',
+        'reference_type',
+        'string'
+      )
 
       mockAttributeTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -266,7 +290,12 @@ describe('CreateAttributeTypeUseCase', () => {
         examples: [{ field1: 'example1' }, { field1: 'example2' }],
       }
 
-      const createdAttributeType = createTestAttributeType('attr-type-1', 'complete_type', 'object', 'A complete attribute type with all fields')
+      const createdAttributeType = createTestAttributeType(
+        'attr-type-1',
+        'complete_type',
+        'object',
+        'A complete attribute type with all fields'
+      )
 
       mockAttributeTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -297,10 +326,13 @@ describe('CreateAttributeTypeUseCase', () => {
       })
 
       await expect(useCase.execute(input)).rejects.toThrow('Database connection failed')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create attribute type', expect.objectContaining({
-        identifier: 'new_type',
-        error: 'Database connection failed',
-      }))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to create attribute type',
+        expect.objectContaining({
+          identifier: 'new_type',
+          error: 'Database connection failed',
+        })
+      )
     })
 
     it('should throw error when saved attribute type cannot be retrieved', async () => {
@@ -310,11 +342,16 @@ describe('CreateAttributeTypeUseCase', () => {
       }
 
       mockAttributeTypeRepository.findByIdentifier = mock()
-        .mockResolvedValueOnce(null)  // First call for duplicate check
-        .mockResolvedValueOnce(null)  // Second call after save - retrieval fails
+        .mockResolvedValueOnce(null) // First call for duplicate check
+        .mockResolvedValueOnce(null) // Second call after save - retrieval fails
 
-      await expect(useCase.execute(input)).rejects.toThrow('Failed to retrieve saved attribute type')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create attribute type', expect.any(Object))
+      await expect(useCase.execute(input)).rejects.toThrow(
+        'Failed to retrieve saved attribute type'
+      )
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to create attribute type',
+        expect.any(Object)
+      )
     })
   })
 
@@ -333,13 +370,19 @@ describe('CreateAttributeTypeUseCase', () => {
 
       await useCase.execute(input)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating new attribute type', expect.objectContaining({
-        identifier: 'logged_type',
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Attribute type created successfully', expect.objectContaining({
-        id: 'attr-type-1',
-        identifier: 'logged_type',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Creating new attribute type',
+        expect.objectContaining({
+          identifier: 'logged_type',
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Attribute type created successfully',
+        expect.objectContaining({
+          id: 'attr-type-1',
+          identifier: 'logged_type',
+        })
+      )
     })
   })
 })

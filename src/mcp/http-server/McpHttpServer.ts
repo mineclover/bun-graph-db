@@ -61,7 +61,8 @@ export class McpHttpServer {
   private serverInfo = {
     name: 'Bun Graph Database - MCP Server',
     version: '1.0.0',
-    description: 'GraphQL-based graph database with AI integration. Manage tables, nodes, relationships, and execute graph queries via Model Context Protocol.',
+    description:
+      'GraphQL-based graph database with AI integration. Manage tables, nodes, relationships, and execute graph queries via Model Context Protocol.',
   }
 
   constructor(graphqlEndpoint: string, restApiBaseUrl?: string) {
@@ -546,14 +547,14 @@ export class McpHttpServer {
     args: any
   ): Promise<McpResponse> {
     try {
-      const { 
-        tableId, 
-        format = 'CSV', 
-        outputDirectory = './exports', 
+      const {
+        tableId,
+        format = 'CSV',
+        outputDirectory = './exports',
         filename,
         includeAttributes = [],
         limit = 1000,
-        saveToFile = true 
+        saveToFile = true,
       } = args
 
       if (!tableId) {
@@ -586,8 +587,9 @@ export class McpHttpServer {
       }
 
       const exportData = response.data
-      const formatDesc = format === 'CSV' ? 'CSV with column-based attributes' : 'JSON with key-value arrays'
-      
+      const formatDesc =
+        format === 'CSV' ? 'CSV with column-based attributes' : 'JSON with key-value arrays'
+
       return {
         jsonrpc: '2.0',
         id,
@@ -595,9 +597,10 @@ export class McpHttpServer {
           content: [
             {
               type: 'text',
-              text: saveToFile && exportData?.filePath
-                ? `Table ${tableId} successfully exported as ${formatDesc} to ${exportData.filePath}`
-                : `Table ${tableId} export completed successfully as ${formatDesc}`,
+              text:
+                saveToFile && exportData?.filePath
+                  ? `Table ${tableId} successfully exported as ${formatDesc} to ${exportData.filePath}`
+                  : `Table ${tableId} export completed successfully as ${formatDesc}`,
             },
           ],
         },
@@ -1082,14 +1085,7 @@ export class McpHttpServer {
     args: any
   ): Promise<McpResponse> {
     try {
-      const {
-        identifier,
-        name,
-        query,
-        description = '',
-        tags = [],
-        targetTableId
-      } = args
+      const { identifier, name, query, description = '', tags = [], targetTableId } = args
 
       if (!identifier || !name || !query) {
         return this.createErrorMcpResponse(

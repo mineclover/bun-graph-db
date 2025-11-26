@@ -358,7 +358,10 @@ export class BackupCommands {
       console.log('\n💡 Tip: Run "bun run db:list-backups" to see all backups')
     } catch (error) {
       this.logger.error('Backup stats command failed', toErrorMeta(error))
-      console.error('❌ Failed to get stats:', error instanceof Error ? error.message : 'Unknown error')
+      console.error(
+        '❌ Failed to get stats:',
+        error instanceof Error ? error.message : 'Unknown error'
+      )
       process.exit(1)
     }
   }
@@ -368,7 +371,7 @@ export class BackupCommands {
    *
    * Usage: bun run db:schedule [--interval daily|weekly|hourly] [--time HH:MM]
    */
-  async schedule(args: {
+  async schedule(_args: {
     interval?: 'hourly' | 'daily' | 'weekly'
     time?: string
     compress?: boolean
@@ -391,6 +394,6 @@ export class BackupCommands {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
 
-    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
+    return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`
   }
 }

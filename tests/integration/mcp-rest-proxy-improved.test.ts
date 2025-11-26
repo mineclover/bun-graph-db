@@ -5,12 +5,12 @@
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import {
-  UnifiedTestEnvironmentManager,
   createIntegrationConfig,
-  withAutoServer,
   McpHelper,
   RestApiHelper,
   type UnifiedTestEnvironment,
+  UnifiedTestEnvironmentManager,
+  withAutoServer,
 } from '../fixtures/unified-test-environment'
 
 describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
@@ -184,7 +184,12 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
       expect(typeof mcpResult).toBe(typeof restResult)
 
       // If both succeed, they should have similar data structure
-      if (mcpResult && restResult && typeof mcpResult === 'object' && typeof restResult === 'object') {
+      if (
+        mcpResult &&
+        restResult &&
+        typeof mcpResult === 'object' &&
+        typeof restResult === 'object'
+      ) {
         if ('success' in mcpResult && 'success' in restResult) {
           expect(typeof mcpResult.success).toBe(typeof restResult.success)
         }
@@ -382,7 +387,9 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
       const successful = results.filter((r) => r.status === 'fulfilled').length
       const failed = results.filter((r) => r.status === 'rejected').length
 
-      console.log(`🏁 Concurrent Results: ${successful} successful, ${failed} failed, ${duration}ms total`)
+      console.log(
+        `🏁 Concurrent Results: ${successful} successful, ${failed} failed, ${duration}ms total`
+      )
 
       // Most requests should succeed
       expect(successful).toBeGreaterThanOrEqual(10) // At least 10 out of 15
@@ -415,7 +422,9 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
       const successful = results.filter((r) => r.status === 'fulfilled').length
       const avgTime = duration / results.length
 
-      console.log(`📈 Load Test Results: ${successful}/${results.length} successful, avg ${avgTime.toFixed(2)}ms per request`)
+      console.log(
+        `📈 Load Test Results: ${successful}/${results.length} successful, avg ${avgTime.toFixed(2)}ms per request`
+      )
 
       // Should handle mixed load well
       expect(successful / results.length).toBeGreaterThanOrEqual(0.75) // 75% success rate
@@ -465,36 +474,30 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
 // withAutoServer 패턴 사용 예시
 describe('Integration Tests with Auto Server Pattern', () => {
   test('should work with auto server management', async () => {
-    await withAutoServer(
-      createIntegrationConfig('auto-integration-test'),
-      async (env) => {
-        const mcpHelper = new McpHelper(`http://localhost:${env.server!.port}`)
+    await withAutoServer(createIntegrationConfig('auto-integration-test'), async (env) => {
+      const mcpHelper = new McpHelper(`http://localhost:${env.server!.port}`)
 
-        const result = await mcpHelper.callTool('healthCheck', {})
-        expect(result).toBeDefined()
+      const result = await mcpHelper.callTool('healthCheck', {})
+      expect(result).toBeDefined()
 
-        // Should have basic health check structure
-        if (typeof result === 'object' && result !== null && 'success' in result) {
-          expect(result.success).toBe(true)
-        }
+      // Should have basic health check structure
+      if (typeof result === 'object' && result !== null && 'success' in result) {
+        expect(result.success).toBe(true)
       }
-    )
+    })
   })
 
   test('should handle quick successive auto server instances', async () => {
     // Test rapid creation and cleanup
     for (let i = 0; i < 3; i++) {
-      await withAutoServer(
-        createIntegrationConfig(`quick-test-${i}`),
-        async (env) => {
-          const mcpHelper = new McpHelper(`http://localhost:${env.server!.port}`)
+      await withAutoServer(createIntegrationConfig(`quick-test-${i}`), async (env) => {
+        const mcpHelper = new McpHelper(`http://localhost:${env.server!.port}`)
 
-          const result = await mcpHelper.callTool('healthCheck', {})
-          expect(result).toBeDefined()
+        const result = await mcpHelper.callTool('healthCheck', {})
+        expect(result).toBeDefined()
 
-          console.log(`✅ Quick test ${i + 1} completed`)
-        }
-      )
+        console.log(`✅ Quick test ${i + 1} completed`)
+      })
     }
   })
 })

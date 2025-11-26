@@ -133,11 +133,7 @@ export class PerformanceMonitor {
   /**
    * Measure a sync operation
    */
-  measureSync<T>(
-    operation: string,
-    fn: () => T,
-    metadata?: Record<string, unknown>
-  ): T {
+  measureSync<T>(operation: string, fn: () => T, metadata?: Record<string, unknown>): T {
     const timer = this.startTimer(operation)
     try {
       const result = fn()
@@ -409,7 +405,9 @@ let globalMonitor: PerformanceMonitor | null = null
 /**
  * Get or create global performance monitor
  */
-export function getPerformanceMonitor(config?: Partial<PerformanceMonitorConfig>): PerformanceMonitor {
+export function getPerformanceMonitor(
+  config?: Partial<PerformanceMonitorConfig>
+): PerformanceMonitor {
   if (!globalMonitor) {
     globalMonitor = new PerformanceMonitor(config)
   } else if (config) {
@@ -429,11 +427,11 @@ export function resetPerformanceMonitor(): void {
  * Decorator for measuring async methods
  */
 export function measured(operationName?: string) {
-  return function <T extends (...args: unknown[]) => Promise<unknown>>(
+  return <T extends (...args: unknown[]) => Promise<unknown>>(
     target: object,
     propertyKey: string,
     descriptor: TypedPropertyDescriptor<T>
-  ): TypedPropertyDescriptor<T> {
+  ): TypedPropertyDescriptor<T> => {
     const originalMethod = descriptor.value!
     const name = operationName || `${target.constructor.name}.${propertyKey}`
 

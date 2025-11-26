@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   DeleteQueryTemplate,
   type DeleteQueryTemplateRequest,
 } from '@/application/use-cases/query-templates/DeleteQueryTemplate.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 // Helper function to create test QueryTemplate
@@ -126,7 +126,10 @@ describe('DeleteQueryTemplate', () => {
       expect(result.errors[0].message).toContain('has been used 5 times')
       expect(result.errors[0].message).toContain('Use force=true to delete anyway')
       expect(result.errors[0].code).toBe('TEMPLATE_IN_USE')
-      expect(mockLogger.warn).toHaveBeenCalledWith('Attempting to delete template with usage history', expect.any(Object))
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Attempting to delete template with usage history',
+        expect.any(Object)
+      )
     })
 
     it('should allow deletion when template has usage count > 0 with force flag', async () => {
@@ -174,7 +177,10 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(mockQueryTemplateRepository.updateStatus).toHaveBeenCalledWith('template-1', false)
-      expect(mockLogger.info).toHaveBeenCalledWith('Template deactivated before deletion', expect.any(Object))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Template deactivated before deletion',
+        expect.any(Object)
+      )
       expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
 
@@ -205,14 +211,22 @@ describe('DeleteQueryTemplate', () => {
       const result = await useCase.execute(request)
 
       expect(result.success).toBe(true)
-      expect(mockLogger.warn).toHaveBeenCalledWith('Deleting active template', expect.objectContaining({
-        id: 'template-1',
-        identifier: 'active-template',
-      }))
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Deleting active template',
+        expect.objectContaining({
+          id: 'template-1',
+          identifier: 'active-template',
+        })
+      )
     })
 
     it('should allow deletion of active template with force flag', async () => {
-      const activeTemplateWithUsage = createTestTemplate('template-1', 'active-used-template', 5, true)
+      const activeTemplateWithUsage = createTestTemplate(
+        'template-1',
+        'active-used-template',
+        5,
+        true
+      )
       mockQueryTemplateRepository.findById = mock(async () => activeTemplateWithUsage)
 
       const request: DeleteQueryTemplateRequest = {
@@ -242,7 +256,10 @@ describe('DeleteQueryTemplate', () => {
       expect(result.success).toBe(true)
       expect(result.errors.length).toBe(0)
       expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
-      expect(mockLogger.info).toHaveBeenCalledWith('Query template deleted successfully', expect.any(Object))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Query template deleted successfully',
+        expect.any(Object)
+      )
     })
 
     it('should delete used template with force flag', async () => {
@@ -324,7 +341,10 @@ describe('DeleteQueryTemplate', () => {
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
       await expect(useCase.execute(request)).rejects.toThrow('Failed to delete query template')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to delete query template', expect.any(Object))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to delete query template',
+        expect.any(Object)
+      )
     })
 
     it('should handle updateStatus failure', async () => {
@@ -355,15 +375,21 @@ describe('DeleteQueryTemplate', () => {
 
       await useCase.execute(request)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Deleting query template', expect.objectContaining({
-        id: 'template-123',
-        force: true,
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Query template deleted successfully', expect.objectContaining({
-        id: 'template-123',
-        identifier: 'test-identifier',
-        usageCount: 5,
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Deleting query template',
+        expect.objectContaining({
+          id: 'template-123',
+          force: true,
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Query template deleted successfully',
+        expect.objectContaining({
+          id: 'template-123',
+          identifier: 'test-identifier',
+          usageCount: 5,
+        })
+      )
     })
 
     it('should log warning for active template deletion', async () => {
@@ -376,10 +402,13 @@ describe('DeleteQueryTemplate', () => {
 
       await useCase.execute(request)
 
-      expect(mockLogger.warn).toHaveBeenCalledWith('Deleting active template', expect.objectContaining({
-        id: 'template-1',
-        identifier: 'active-template',
-      }))
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Deleting active template',
+        expect.objectContaining({
+          id: 'template-1',
+          identifier: 'active-template',
+        })
+      )
     })
 
     it('should log warning for template with usage history', async () => {
@@ -393,10 +422,13 @@ describe('DeleteQueryTemplate', () => {
 
       await useCase.execute(request)
 
-      expect(mockLogger.warn).toHaveBeenCalledWith('Attempting to delete template with usage history', expect.objectContaining({
-        id: 'template-1',
-        usageCount: 10,
-      }))
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        'Attempting to delete template with usage history',
+        expect.objectContaining({
+          id: 'template-1',
+          usageCount: 10,
+        })
+      )
     })
   })
 

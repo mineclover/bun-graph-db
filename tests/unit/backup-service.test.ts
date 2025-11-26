@@ -4,7 +4,7 @@
  * Tests for database backup and restore functionality
  */
 
-import { describe, expect, test, beforeEach, afterEach, mock } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
@@ -330,10 +330,7 @@ describe('SQLiteBackupService', () => {
     })
 
     test('should handle very large backup paths', async () => {
-      const longPath = join(
-        testBackupDir,
-        'very-long-backup-name-'.repeat(10) + 'backup.sqlite'
-      )
+      const longPath = join(testBackupDir, 'very-long-backup-name-'.repeat(10) + 'backup.sqlite')
 
       const result = await backupService.createBackup({
         outputPath: longPath,

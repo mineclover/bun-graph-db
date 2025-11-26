@@ -9,15 +9,15 @@
  */
 
 import { beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import type { ILogger } from '../../src/application/ports/ILogger'
 import { GetTableDocsUseCase } from '../../src/application/use-cases/tables/GetTableDocs'
-import type { ITableRepository } from '../../src/domain/repositories/ITableRepository'
 import type { IAttributeRepository } from '../../src/domain/repositories/IAttributeRepository'
 import type { IAttributeTypeRepository } from '../../src/domain/repositories/IAttributeTypeRepository'
+import type { IDocRepository } from '../../src/domain/repositories/IDocRepository'
 import type { INodeRepository } from '../../src/domain/repositories/INodeRepository'
 import type { IQueryTemplateRepository } from '../../src/domain/repositories/IQueryTemplateRepository'
 import type { IRelationTypeRepository } from '../../src/domain/repositories/IRelationTypeRepository'
-import type { IDocRepository } from '../../src/domain/repositories/IDocRepository'
-import type { ILogger } from '../../src/application/ports/ILogger'
+import type { ITableRepository } from '../../src/domain/repositories/ITableRepository'
 
 // Mock implementations with proper domain entity structure
 const createMockTable = (id: string, identifier: string, description: string | null = null) => ({
@@ -25,10 +25,15 @@ const createMockTable = (id: string, identifier: string, description: string | n
   identifier,
   description,
   createdAt: new Date('2024-01-01T00:00:00Z'),
-  updatedAt: new Date('2024-01-01T00:00:00Z')
+  updatedAt: new Date('2024-01-01T00:00:00Z'),
 })
 
-const createMockAttribute = (id: string, identifier: string, attributeTypeId: string, description: string) => ({
+const createMockAttribute = (
+  id: string,
+  identifier: string,
+  attributeTypeId: string,
+  description: string
+) => ({
   getId: () => id,
   getTableId: () => 'test-table-1',
   getIdentifier: () => identifier,
@@ -50,8 +55,8 @@ const createMockAttribute = (id: string, identifier: string, attributeTypeId: st
     is_required: false,
     metadata: null,
     created_at: new Date('2024-01-01T00:00:00Z').toISOString(),
-    updated_at: new Date('2024-01-01T00:00:00Z').toISOString()
-  })
+    updated_at: new Date('2024-01-01T00:00:00Z').toISOString(),
+  }),
 })
 
 const createMockAttributeType = (id: string, identifier: string, jsonType: string) => ({
@@ -63,18 +68,23 @@ const createMockAttributeType = (id: string, identifier: string, jsonType: strin
   getDefaultValue: () => null,
   getDescription: () => null,
   getCreatedAt: () => new Date('2024-01-01T00:00:00Z'),
-  getUpdatedAt: () => new Date('2024-01-01T00:00:00Z')
+  getUpdatedAt: () => new Date('2024-01-01T00:00:00Z'),
 })
 
 // Create DTO-compatible attribute (what AttributeDto.fromEntities returns)
-const createMockAttributeDto = (id: string, identifier: string, attributeTypeDto: any, description: string) => ({
+const createMockAttributeDto = (
+  id: string,
+  identifier: string,
+  attributeTypeDto: any,
+  description: string
+) => ({
   id,
   identifier,
   name: identifier,
   description,
   attributeType: attributeTypeDto, // This is what generateSchemaInfo expects
   createdAt: new Date('2024-01-01T00:00:00Z').toISOString(),
-  updatedAt: new Date('2024-01-01T00:00:00Z').toISOString()
+  updatedAt: new Date('2024-01-01T00:00:00Z').toISOString(),
 })
 
 const createMockAttributeTypeDto = (identifier: string, dataType: string) => ({
@@ -82,7 +92,7 @@ const createMockAttributeTypeDto = (identifier: string, dataType: string) => ({
   dataType,
   format: null,
   constraints: {},
-  defaultValue: null
+  defaultValue: null,
 })
 
 const createMockNode = (id: string, title: string, content: string) => ({
@@ -91,10 +101,16 @@ const createMockNode = (id: string, title: string, content: string) => ({
   getTitle: () => title,
   getContent: () => content,
   getCreatedAt: () => new Date('2024-01-01T00:00:00Z'),
-  getUpdatedAt: () => new Date('2024-01-01T00:00:00Z')
+  getUpdatedAt: () => new Date('2024-01-01T00:00:00Z'),
 })
 
-const createMockQueryTemplate = (id: string, identifier: string, name: string, query: string, tags: string[]) => ({
+const createMockQueryTemplate = (
+  id: string,
+  identifier: string,
+  name: string,
+  query: string,
+  tags: string[]
+) => ({
   getId: () => id,
   getIdentifier: () => identifier,
   getName: () => name,
@@ -114,7 +130,7 @@ const createMockQueryTemplate = (id: string, identifier: string, name: string, q
   getIsActive: () => true,
   getTags: () => tags,
   getCreatedAt: () => new Date('2024-01-01T00:00:00Z'),
-  getUpdatedAt: () => new Date('2024-01-01T00:00:00Z')
+  getUpdatedAt: () => new Date('2024-01-01T00:00:00Z'),
 })
 
 describe('AIMetadata Unit Tests', () => {
@@ -229,27 +245,39 @@ describe('AIMetadata Unit Tests', () => {
 
     // Set default mock returns
     mockDocRepository.findByTableIds.mockResolvedValue([])
-    mockRelationTypeRepository.findAll.mockResolvedValue({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })
+    mockRelationTypeRepository.findAll.mockResolvedValue({
+      data: [],
+      nodes: [],
+      totalCount: 0,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    })
 
     // Mock AttributeDto.fromEntities static method
     const originalFromEntities = require('../../src/application/dtos/AttributeDto').fromEntities
-    spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation((attributes) => {
-      return attributes.map((attr: any) => createMockAttributeDto(
-        attr.getId(),
-        attr.getIdentifier(),
-        createMockAttributeTypeDto('string', 'string'),
-        attr.getDescription()
-      ))
-    })
+    spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation(
+      (attributes) => {
+        return attributes.map((attr: any) =>
+          createMockAttributeDto(
+            attr.getId(),
+            attr.getIdentifier(),
+            createMockAttributeTypeDto('string', 'string'),
+            attr.getDescription()
+          )
+        )
+      }
+    )
 
     // Mock TableDto.fromEntity static method
-    spyOn(require('../../src/application/dtos/TableDto'), 'fromEntity').mockImplementation((table) => ({
-      id: table.id,
-      identifier: table.identifier,
-      description: table.description,
-      createdAt: table.createdAt.toISOString(),
-      updatedAt: table.updatedAt.toISOString()
-    }))
+    spyOn(require('../../src/application/dtos/TableDto'), 'fromEntity').mockImplementation(
+      (table) => ({
+        id: table.id,
+        identifier: table.identifier,
+        description: table.description,
+        createdAt: table.createdAt.toISOString(),
+        updatedAt: table.updatedAt.toISOString(),
+      })
+    )
   })
 
   describe('AIMetadata Generation', () => {
@@ -261,19 +289,31 @@ describe('AIMetadata Unit Tests', () => {
       const mockAttributes = [
         createMockAttribute('attr-1', 'name', 'type-1', 'User full name'),
         createMockAttribute('attr-2', 'email', 'type-2', 'User email address'),
-        createMockAttribute('attr-3', 'age', 'type-3', 'User age')
+        createMockAttribute('attr-3', 'age', 'type-3', 'User age'),
       ]
 
       // Mock templates
       const mockTemplates = [
-        createMockQueryTemplate('template-1', 'create-user', 'Create User Profile', 'CREATE USER...', ['create', 'user']),
-        createMockQueryTemplate('template-2', 'update-user', 'Update User Profile', 'UPDATE USER...', ['update', 'user']),
+        createMockQueryTemplate(
+          'template-1',
+          'create-user',
+          'Create User Profile',
+          'CREATE USER...',
+          ['create', 'user']
+        ),
+        createMockQueryTemplate(
+          'template-2',
+          'update-user',
+          'Update User Profile',
+          'UPDATE USER...',
+          ['update', 'user']
+        ),
       ]
 
       // Mock sample data
       const mockSampleNodes = [
         createMockNode('node-1', 'John Doe', 'Software Engineer'),
-        createMockNode('node-2', 'Jane Smith', 'Product Manager')
+        createMockNode('node-2', 'Jane Smith', 'Product Manager'),
       ]
 
       // Setup mocks
@@ -283,7 +323,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: mockAttributes,
         totalCount: mockAttributes.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue(mockTemplates)
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -291,14 +331,14 @@ describe('AIMetadata Unit Tests', () => {
         nodes: mockSampleNodes,
         totalCount: mockSampleNodes.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       // Execute
       const result = await getTableDocsUseCase.execute({
         tableId: 'test-table-1',
         includeAiMetadata: true,
-        includeRelatedTemplates: true
+        includeRelatedTemplates: true,
       })
 
       // Verify AI metadata structure
@@ -316,21 +356,23 @@ describe('AIMetadata Unit Tests', () => {
       const mockAttributes = [
         createMockAttribute('attr-1', 'name', 'type-1', 'Product name'),
         createMockAttribute('attr-2', 'price', 'type-2', 'Product price'),
-        createMockAttribute('attr-3', 'category', 'type-3', 'Product category')
+        createMockAttribute('attr-3', 'category', 'type-3', 'Product category'),
       ]
 
       // Override the AttributeDto mock to return specific attribute types
-      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation((attributes) => {
-        return attributes.map((attr: any, index: number) => {
-          const dataTypes = ['string', 'number', 'string']
-          return createMockAttributeDto(
-            attr.getId(),
-            attr.getIdentifier(),
-            createMockAttributeTypeDto(dataTypes[index], dataTypes[index]),
-            attr.getDescription()
-          )
-        })
-      })
+      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation(
+        (attributes) => {
+          return attributes.map((attr: any, index: number) => {
+            const dataTypes = ['string', 'number', 'string']
+            return createMockAttributeDto(
+              attr.getId(),
+              attr.getIdentifier(),
+              createMockAttributeTypeDto(dataTypes[index], dataTypes[index]),
+              attr.getDescription()
+            )
+          })
+        }
+      )
 
       mockTableRepository.findById.mockResolvedValue(mockTable)
       mockAttributeRepository.findByTableId.mockResolvedValue({
@@ -338,7 +380,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: mockAttributes,
         totalCount: mockAttributes.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue([])
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -346,7 +388,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({
@@ -374,9 +416,27 @@ describe('AIMetadata Unit Tests', () => {
       const mockTable = createMockTable('test-table-1', 'orders', 'Order management')
 
       const mockTemplates = [
-        createMockQueryTemplate('template-1', 'create-order', 'Create New Order', 'INSERT INTO orders...', ['create', 'order']),
-        createMockQueryTemplate('template-2', 'update-order-status', 'Update Order Status', 'UPDATE orders SET status...', ['update', 'status']),
-        createMockQueryTemplate('template-3', 'search-orders-by-customer', 'Search Orders by Customer', 'SELECT * FROM orders WHERE customer_id...', ['search', 'customer']),
+        createMockQueryTemplate(
+          'template-1',
+          'create-order',
+          'Create New Order',
+          'INSERT INTO orders...',
+          ['create', 'order']
+        ),
+        createMockQueryTemplate(
+          'template-2',
+          'update-order-status',
+          'Update Order Status',
+          'UPDATE orders SET status...',
+          ['update', 'status']
+        ),
+        createMockQueryTemplate(
+          'template-3',
+          'search-orders-by-customer',
+          'Search Orders by Customer',
+          'SELECT * FROM orders WHERE customer_id...',
+          ['search', 'customer']
+        ),
       ]
 
       mockTableRepository.findById.mockResolvedValue(mockTable)
@@ -385,7 +445,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue(mockTemplates)
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -393,13 +453,13 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({
         tableId: 'test-table-1',
         includeAiMetadata: true,
-        includeRelatedTemplates: true
+        includeRelatedTemplates: true,
       })
 
       const usagePatterns = result.tableDocs.aiMetadata.usagePatterns
@@ -428,7 +488,7 @@ describe('AIMetadata Unit Tests', () => {
 
       const mockSampleNodes = [
         createMockNode('node-1', 'ACME Corp', 'Enterprise customer'),
-        createMockNode('node-2', 'Beta Inc', 'Small business customer')
+        createMockNode('node-2', 'Beta Inc', 'Small business customer'),
       ]
 
       mockTableRepository.findById.mockResolvedValue(mockTable)
@@ -437,7 +497,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue([])
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -445,7 +505,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: mockSampleNodes,
         totalCount: mockSampleNodes.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({
@@ -500,7 +560,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue([])
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -508,7 +568,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({
@@ -540,7 +600,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue([])
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -548,7 +608,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: mockSampleNodes,
         totalCount: mockSampleNodes.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({
@@ -570,7 +630,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({
@@ -587,16 +647,28 @@ describe('AIMetadata Unit Tests', () => {
       const mockTable = createMockTable('test-table-1', 'test', 'Test table')
       const mockAttributes = [
         createMockAttribute('attr-1', 'valid_field', 'type-1', 'Valid field'),
-        createMockAttribute('attr-2', 'numeric_field', 'type-2', 'Numeric field')
+        createMockAttribute('attr-2', 'numeric_field', 'type-2', 'Numeric field'),
       ]
 
       // Override AttributeDto mock for this test
-      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation((attributes) => {
-        return [
-          createMockAttributeDto('attr-1', 'valid_field', createMockAttributeTypeDto('text', 'string'), 'Valid field'),
-          createMockAttributeDto('attr-2', 'numeric_field', createMockAttributeTypeDto('number', 'number'), 'Numeric field')
-        ]
-      })
+      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation(
+        (attributes) => {
+          return [
+            createMockAttributeDto(
+              'attr-1',
+              'valid_field',
+              createMockAttributeTypeDto('text', 'string'),
+              'Valid field'
+            ),
+            createMockAttributeDto(
+              'attr-2',
+              'numeric_field',
+              createMockAttributeTypeDto('number', 'number'),
+              'Numeric field'
+            ),
+          ]
+        }
+      )
 
       mockTableRepository.findById.mockResolvedValue(mockTable)
       mockAttributeRepository.findByTableId.mockResolvedValue({
@@ -604,7 +676,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: mockAttributes,
         totalCount: mockAttributes.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue([])
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -612,7 +684,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({
@@ -633,16 +705,28 @@ describe('AIMetadata Unit Tests', () => {
       const mockTable = createMockTable('test-table-1', 'test', 'Test table')
       const mockAttributes = [
         createMockAttribute('attr-1', 'user_name', 'type-1', 'User name'),
-        createMockAttribute('attr-2', 'email_address', 'type-2', 'Email address')
+        createMockAttribute('attr-2', 'email_address', 'type-2', 'Email address'),
       ]
 
       // Override AttributeDto mock for this test
-      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation((attributes) => {
-        return [
-          createMockAttributeDto('attr-1', 'user_name', createMockAttributeTypeDto('text', 'string'), 'User name'),
-          createMockAttributeDto('attr-2', 'email_address', createMockAttributeTypeDto('email', 'string'), 'Email address')
-        ]
-      })
+      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation(
+        (attributes) => {
+          return [
+            createMockAttributeDto(
+              'attr-1',
+              'user_name',
+              createMockAttributeTypeDto('text', 'string'),
+              'User name'
+            ),
+            createMockAttributeDto(
+              'attr-2',
+              'email_address',
+              createMockAttributeTypeDto('email', 'string'),
+              'Email address'
+            ),
+          ]
+        }
+      )
 
       mockTableRepository.findById.mockResolvedValue(mockTable)
       mockAttributeRepository.findByTableId.mockResolvedValue({
@@ -650,7 +734,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: mockAttributes,
         totalCount: mockAttributes.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue([])
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -658,7 +742,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({
@@ -689,7 +773,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: largeAttributeSet,
         totalCount: largeAttributeSet.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue([])
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -697,7 +781,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const startTime = performance.now()
@@ -726,7 +810,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: [],
         totalCount: 0,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
       mockQueryTemplateRepository.findByApplicableTable.mockResolvedValue([])
       mockNodeRepository.findByTableId.mockResolvedValue({
@@ -734,7 +818,7 @@ describe('AIMetadata Unit Tests', () => {
         nodes: limitedSamples,
         totalCount: limitedSamples.length,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       })
 
       const result = await getTableDocsUseCase.execute({

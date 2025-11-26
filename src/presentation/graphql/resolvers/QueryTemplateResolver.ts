@@ -1,8 +1,4 @@
 import { execute, GraphQLError, type GraphQLSchema, parse } from 'graphql'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import type { GraphQLContext, JsonValue } from '@/core/types/GraphQLTypes.js'
-import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import {
   type CreateQueryTemplateInput,
   createInputToEntity,
@@ -16,6 +12,10 @@ import {
   type TableDependencyTemplateResult,
   type UpdateQueryTemplateInput,
 } from '@/application/dtos/QueryTemplateDto.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { GraphQLContext, JsonValue } from '@/core/types/GraphQLTypes.js'
+import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 

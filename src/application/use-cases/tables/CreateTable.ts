@@ -1,11 +1,11 @@
 import type { CreateTableInput, CreateTableOutput } from '@/application/dtos/TableDto.js'
 import { fromEntity as tableFromEntity } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { Table } from '@/domain/entities/Table.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import { TableTemplateAutoGenerator } from '@/application/services/TableTemplateAutoGenerator.js'
+import { Table } from '@/domain/entities/Table.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export class CreateTableUseCase {

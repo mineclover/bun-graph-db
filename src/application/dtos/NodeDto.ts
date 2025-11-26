@@ -1,11 +1,11 @@
-import type { Node } from '@/domain/entities/Node.js'
-import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import type {
   BaseEntityDto,
-  WithDescription,
-  GetManyInput,
   DeleteOutput,
+  GetManyInput,
+  WithDescription,
 } from '@/core/types/UseCaseTypes.js'
+import type { Node } from '@/domain/entities/Node.js'
+import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 
 // Data Transfer Object for Node entity
 export interface NodeDto extends BaseEntityDto, WithDescription {
@@ -49,10 +49,11 @@ export interface UpdateNodeInput {
 }
 
 // Use generic GetManyInput with node-specific filters
-export interface GetNodesInput extends GetManyInput<{
-  tableId?: string
-  search?: string
-}> {}
+export interface GetNodesInput
+  extends GetManyInput<{
+    tableId?: string
+    search?: string
+  }> {}
 
 // Output DTOs for operations - using standard patterns
 export interface CreateNodeOutput {

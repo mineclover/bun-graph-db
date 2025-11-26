@@ -7,10 +7,10 @@
  * Sequential: Implements after comprehensive testing
  */
 
-import { McpHttpServer } from '../../../mcp/http-server/McpHttpServer'
-import { SchemaMapper, McpSchemaValidator, McpDataValidator } from '../schema/SchemaMapper'
 import type { McpToolDefinition } from '../../../application/services/McpToolRegistry'
 import { SchemaDiscoveryService } from '../../../infrastructure/ai-metadata/SchemaDiscoveryService'
+import { McpHttpServer } from '../../../mcp/http-server/McpHttpServer'
+import { McpDataValidator, McpSchemaValidator, SchemaMapper } from '../schema/SchemaMapper'
 
 interface Template {
   identifier: string
@@ -80,7 +80,9 @@ export class TableMcpServer {
     await this.loadTableTemplates()
 
     this.tableInitialized = true
-    console.log(`Table MCP Server initialized for table ${this.tableId} with ${this.tableTools.size} tools`)
+    console.log(
+      `Table MCP Server initialized for table ${this.tableId} with ${this.tableTools.size} tools`
+    )
   }
 
   /**
@@ -103,7 +105,7 @@ export class TableMcpServer {
       console.log(`Found ${templates.length} templates for table ${this.tableId}`)
 
       // Convert each template to MCP tool
-      templates.forEach(template => {
+      templates.forEach((template) => {
         try {
           const mcpTool = this.convertTemplateToMcpTool(template)
           this.tableTools.set(mcpTool.name, mcpTool)
@@ -112,7 +114,9 @@ export class TableMcpServer {
         }
       })
 
-      console.log(`Converted ${this.tableTools.size} tools (including aiMetadata) for table ${this.tableId}`)
+      console.log(
+        `Converted ${this.tableTools.size} tools (including aiMetadata) for table ${this.tableId}`
+      )
     } catch (error) {
       console.error(`Failed to load templates for table ${this.tableId}:`, error)
       // Continue with empty tool set rather than failing
@@ -132,15 +136,15 @@ export class TableMcpServer {
           includeSampleData: {
             type: 'boolean',
             description: 'Whether to include sample data in the response',
-            default: true
+            default: true,
           },
           sampleLimit: {
             type: 'number',
             description: 'Maximum number of sample nodes to include',
-            default: 5
-          }
+            default: 5,
+          },
         },
-        required: []
+        required: [],
       },
       operationType: 'query',
       graphqlOperation: {
@@ -185,8 +189,8 @@ export class TableMcpServer {
               }
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     this.tableTools.set(aiMetadataTool.name, aiMetadataTool)
@@ -205,12 +209,12 @@ export class TableMcpServer {
         properties: {
           schema: {
             type: 'object',
-            description: 'JSON Schema to validate for MCP compatibility'
-          }
+            description: 'JSON Schema to validate for MCP compatibility',
+          },
         },
-        required: ['schema']
+        required: ['schema'],
       },
-      operationType: 'query'
+      operationType: 'query',
     }
 
     // 2. Validate data against schema tool
@@ -222,16 +226,16 @@ export class TableMcpServer {
         properties: {
           data: {
             type: 'object',
-            description: 'Data to validate'
+            description: 'Data to validate',
           },
           schema: {
             type: 'object',
-            description: 'JSON Schema to validate against'
-          }
+            description: 'JSON Schema to validate against',
+          },
         },
-        required: ['data', 'schema']
+        required: ['data', 'schema'],
       },
-      operationType: 'query'
+      operationType: 'query',
     }
 
     this.tableTools.set(validateInputSchemaTool.name, validateInputSchemaTool)
@@ -258,12 +262,12 @@ export class TableMcpServer {
             baseOperation: {
               type: 'string',
               description: 'Base operation to discover variations for',
-              default: 'searchNodes'
-            }
+              default: 'searchNodes',
+            },
           },
-          required: []
+          required: [],
         },
-        operationType: 'query'
+        operationType: 'query',
       }
 
       // 2. Discover filter options tool
@@ -273,9 +277,9 @@ export class TableMcpServer {
         inputSchema: {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         },
-        operationType: 'query'
+        operationType: 'query',
       }
 
       // 3. Generate search examples tool
@@ -285,9 +289,9 @@ export class TableMcpServer {
         inputSchema: {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         },
-        operationType: 'query'
+        operationType: 'query',
       }
 
       // Add all schema discovery tools
@@ -357,19 +361,19 @@ export class TableMcpServer {
             }
           }
         `
-        
+
         const result = await graphqlExecutor.execute({
           operationName: 'IntrospectionQuery',
           operationType: 'query',
           query: introspectionQuery,
-          variables: {}
+          variables: {},
         })
-        
+
         if (result.data && result.data.__schema && !result.errors) {
           return result.data.__schema
         }
       }
-      
+
       console.warn('Could not get GraphQL schema via introspection')
       return null
     } catch (error) {
@@ -389,7 +393,7 @@ export class TableMcpServer {
       inputSchema: {
         type: 'object',
         properties: {},
-        required: []
+        required: [],
       },
       operationType: 'query',
       graphqlOperation: {
@@ -415,8 +419,8 @@ export class TableMcpServer {
               }
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // 2. Create attribute - Fixed: removed unused $tableId variable
@@ -428,27 +432,27 @@ export class TableMcpServer {
         properties: {
           identifier: {
             type: 'string',
-            description: 'Unique identifier for the attribute'
+            description: 'Unique identifier for the attribute',
           },
           name: {
             type: 'string',
-            description: 'Display name for the attribute'
+            description: 'Display name for the attribute',
           },
           description: {
             type: 'string',
-            description: 'Description of the attribute'
+            description: 'Description of the attribute',
           },
           attributeTypeId: {
             type: 'string',
-            description: 'ID of the attribute type'
+            description: 'ID of the attribute type',
           },
           required: {
             type: 'boolean',
             description: 'Whether this attribute is required',
-            default: false
-          }
+            default: false,
+          },
         },
-        required: ['identifier', 'name', 'attributeTypeId']
+        required: ['identifier', 'name', 'attributeTypeId'],
       },
       operationType: 'mutation',
       graphqlOperation: {
@@ -469,8 +473,8 @@ export class TableMcpServer {
               }
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // 3. Update attribute
@@ -482,22 +486,22 @@ export class TableMcpServer {
         properties: {
           attributeId: {
             type: 'string',
-            description: 'ID of the attribute to update'
+            description: 'ID of the attribute to update',
           },
           name: {
             type: 'string',
-            description: 'New display name for the attribute'
+            description: 'New display name for the attribute',
           },
           description: {
             type: 'string',
-            description: 'New description of the attribute'
+            description: 'New description of the attribute',
           },
           required: {
             type: 'boolean',
-            description: 'Whether this attribute is required'
-          }
+            description: 'Whether this attribute is required',
+          },
         },
-        required: ['attributeId']
+        required: ['attributeId'],
       },
       operationType: 'mutation',
       graphqlOperation: {
@@ -518,8 +522,8 @@ export class TableMcpServer {
               }
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // 4. Delete attribute
@@ -531,10 +535,10 @@ export class TableMcpServer {
         properties: {
           attributeId: {
             type: 'string',
-            description: 'ID of the attribute to delete'
-          }
+            description: 'ID of the attribute to delete',
+          },
         },
-        required: ['attributeId']
+        required: ['attributeId'],
       },
       operationType: 'mutation',
       graphqlOperation: {
@@ -549,8 +553,8 @@ export class TableMcpServer {
               }
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // 5. Get table templates
@@ -563,15 +567,15 @@ export class TableMcpServer {
           limit: {
             type: 'number',
             description: 'Maximum number of templates to return',
-            default: 50
+            default: 50,
           },
           offset: {
             type: 'number',
             description: 'Number of templates to skip',
-            default: 0
-          }
+            default: 0,
+          },
         },
-        required: []
+        required: [],
       },
       operationType: 'query',
       graphqlOperation: {
@@ -601,8 +605,8 @@ export class TableMcpServer {
               hasNextPage
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // 6. Create table-specific template
@@ -614,27 +618,27 @@ export class TableMcpServer {
         properties: {
           identifier: {
             type: 'string',
-            description: 'Unique identifier for the template'
+            description: 'Unique identifier for the template',
           },
           name: {
             type: 'string',
-            description: 'Human-readable name for the template'
+            description: 'Human-readable name for the template',
           },
           description: {
             type: 'string',
-            description: 'Description of what the template does'
+            description: 'Description of what the template does',
           },
           query: {
             type: 'string',
-            description: 'GraphQL query/mutation string that operates on this table'
+            description: 'GraphQL query/mutation string that operates on this table',
           },
           additionalTags: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Additional tags besides the automatic table tag'
-          }
+            description: 'Additional tags besides the automatic table tag',
+          },
         },
-        required: ['identifier', 'name', 'query']
+        required: ['identifier', 'name', 'query'],
       },
       operationType: 'mutation',
       graphqlOperation: {
@@ -657,8 +661,8 @@ export class TableMcpServer {
               }
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // 7. Search table-specific templates (permission filtered) - FIXED: removed unsupported query field
@@ -671,20 +675,20 @@ export class TableMcpServer {
           limit: {
             type: 'number',
             description: 'Maximum number of templates to return',
-            default: 20
+            default: 20,
           },
           offset: {
             type: 'number',
             description: 'Number of templates to skip',
-            default: 0
+            default: 0,
           },
           includeGlobal: {
             type: 'boolean',
             description: 'Whether to include global templates (not table-specific)',
-            default: true
-          }
+            default: true,
+          },
         },
-        required: []
+        required: [],
       },
       operationType: 'query',
       graphqlOperation: {
@@ -714,8 +718,8 @@ export class TableMcpServer {
               hasNextPage
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // 8. Execute table-specific template
@@ -727,15 +731,15 @@ export class TableMcpServer {
         properties: {
           templateIdentifier: {
             type: 'string',
-            description: 'Identifier of the template to execute'
+            description: 'Identifier of the template to execute',
           },
           variables: {
             type: 'object',
             description: 'Variables to pass to the template execution',
-            additionalProperties: true
-          }
+            additionalProperties: true,
+          },
         },
-        required: ['templateIdentifier']
+        required: ['templateIdentifier'],
       },
       operationType: 'mutation',
       graphqlOperation: {
@@ -753,8 +757,8 @@ export class TableMcpServer {
               }
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // 9. Update template
@@ -766,27 +770,27 @@ export class TableMcpServer {
         properties: {
           templateId: {
             type: 'string',
-            description: 'ID of the template to update'
+            description: 'ID of the template to update',
           },
           name: {
             type: 'string',
-            description: 'New name for the template'
+            description: 'New name for the template',
           },
           description: {
             type: 'string',
-            description: 'New description for the template'
+            description: 'New description for the template',
           },
           query: {
             type: 'string',
-            description: 'New GraphQL query for the template'
+            description: 'New GraphQL query for the template',
           },
           tags: {
             type: 'array',
             items: { type: 'string' },
-            description: 'New tags for the template'
-          }
+            description: 'New tags for the template',
+          },
         },
-        required: ['templateId']
+        required: ['templateId'],
       },
       operationType: 'mutation',
       graphqlOperation: {
@@ -809,8 +813,8 @@ export class TableMcpServer {
               }
             }
           }
-        `
-      }
+        `,
+      },
     }
 
     // Add all tools to the registry
@@ -860,7 +864,7 @@ export class TableMcpServer {
         operationName: 'GetTableTemplates',
         query,
         variables,
-        operationType: 'query' as const
+        operationType: 'query' as const,
       }
 
       const result = await (this.mcpServer as any).graphqlExecutor.execute(operation)
@@ -874,7 +878,7 @@ export class TableMcpServer {
       // Filter templates that are actually associated with this table
       return templates.filter((template: Template) => {
         // Check if template has table-specific tag or query references
-        const hasTableTag = template.tags?.some(tag => tag === `table:${tableId}`)
+        const hasTableTag = template.tags?.some((tag) => tag === `table:${tableId}`)
         const hasTableReference = template.query?.includes(tableId)
 
         return hasTableTag || hasTableReference
@@ -903,8 +907,8 @@ export class TableMcpServer {
         operationType: detectedOperationType,
         graphqlOperation: {
           operationType: detectedOperationType,
-          query: template.query
-        }
+          query: template.query,
+        },
       }
     } catch (error) {
       console.warn(`Failed to map template ${template.identifier}:`, error)
@@ -919,13 +923,13 @@ export class TableMcpServer {
         inputSchema: {
           type: 'object',
           properties: {},
-          required: []
+          required: [],
         },
         operationType: detectedOperationType,
         graphqlOperation: {
           operationType: detectedOperationType,
-          query: template.query
-        }
+          query: template.query,
+        },
       }
     }
   }
@@ -944,22 +948,19 @@ export class TableMcpServer {
       jsonrpc: '2.0',
       id,
       result: {
-        tools: tableSpecificTools.map(tool => ({
+        tools: tableSpecificTools.map((tool) => ({
           name: tool.name,
           description: tool.description,
-          inputSchema: tool.inputSchema
-        }))
-      }
+          inputSchema: tool.inputSchema,
+        })),
+      },
     }
   }
 
   /**
    * Override tools/call to handle table-specific tool execution
    */
-  async handleToolsCall(
-    id: string | number | undefined,
-    params: any
-  ): Promise<McpResponse> {
+  async handleToolsCall(id: string | number | undefined, params: any): Promise<McpResponse> {
     if (!params || !params.name) {
       return this.createErrorResponse(id, -32602, 'Invalid params', 'Tool name required')
     }
@@ -999,7 +1000,12 @@ export class TableMcpServer {
     try {
       const tool = this.tableTools.get(toolName)
       if (!tool) {
-        return this.createErrorResponse(id, -32601, 'Method not found', `Tool ${toolName} not found`)
+        return this.createErrorResponse(
+          id,
+          -32601,
+          'Method not found',
+          `Tool ${toolName} not found`
+        )
       }
 
       // Validate arguments against tool schema
@@ -1027,11 +1033,11 @@ export class TableMcpServer {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(result, null, 2)
-              }
+                text: JSON.stringify(result, null, 2),
+              },
             ],
-            isError: result.errors && result.errors.length > 0
-          }
+            isError: result.errors && result.errors.length > 0,
+          },
         }
       } else {
         // This is a template tool - execute via executeTemplateWithGraphQL
@@ -1044,11 +1050,11 @@ export class TableMcpServer {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(result, null, 2)
-              }
+                text: JSON.stringify(result, null, 2),
+              },
             ],
-            isError: !result.success
-          }
+            isError: !result.success,
+          },
         }
       }
     } catch (error) {
@@ -1121,9 +1127,9 @@ export class TableMcpServer {
         query: mutation,
         variables: {
           templateIdentifier,
-          variables: cleanVariables
+          variables: cleanVariables,
         },
-        operationType: 'mutation' as const
+        operationType: 'mutation' as const,
       }
 
       const result = await (this.mcpServer as any).graphqlExecutor.execute(operation)
@@ -1132,20 +1138,22 @@ export class TableMcpServer {
         return {
           success: false,
           error: result.errors[0].message,
-          data: null
+          data: null,
         }
       }
 
-      return result.data?.executeTemplateWithGraphQL || {
-        success: false,
-        error: 'No result returned',
-        data: null
-      }
+      return (
+        result.data?.executeTemplateWithGraphQL || {
+          success: false,
+          error: 'No result returned',
+          data: null,
+        }
+      )
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        data: null
+        data: null,
       }
     }
   }
@@ -1205,9 +1213,9 @@ export class TableMcpServer {
         query,
         variables: {
           tableId: this.tableId,
-          includeAiMetadata: true
+          includeAiMetadata: true,
         },
-        operationType: 'query' as const
+        operationType: 'query' as const,
       }
 
       const result = await (this.mcpServer as any).graphqlExecutor.execute(operation)
@@ -1216,19 +1224,19 @@ export class TableMcpServer {
         return {
           success: false,
           error: result.errors[0].message,
-          data: null
+          data: null,
         }
       }
 
       return {
         success: true,
-        data: result.data?.table || null
+        data: result.data?.table || null,
       }
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        data: null
+        data: null,
       }
     }
   }
@@ -1247,7 +1255,7 @@ export class TableMcpServer {
             return {
               success: false,
               error: 'schema is required',
-              data: null
+              data: null,
             }
           }
           const validationResult = McpSchemaValidator.validateMcpInputSchema(schema)
@@ -1256,7 +1264,7 @@ export class TableMcpServer {
             valid: validationResult.valid,
             errors: validationResult.errors,
             warnings: validationResult.warnings,
-            formattedResult
+            formattedResult,
           }
           break
         }
@@ -1267,7 +1275,7 @@ export class TableMcpServer {
             return {
               success: false,
               error: 'data and schema are required',
-              data: null
+              data: null,
             }
           }
           const validationResult = McpDataValidator.validate(data, schema)
@@ -1276,7 +1284,7 @@ export class TableMcpServer {
             valid: validationResult.valid,
             errors: validationResult.errors,
             coercedData: validationResult.coercedData,
-            formattedResult
+            formattedResult,
           }
           break
         }
@@ -1285,19 +1293,19 @@ export class TableMcpServer {
           return {
             success: false,
             error: `Unknown validation method: ${method}`,
-            data: null
+            data: null,
           }
       }
 
       return {
         success: true,
-        data: result
+        data: result,
       }
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        data: null
+        data: null,
       }
     }
   }
@@ -1318,7 +1326,7 @@ export class TableMcpServer {
           return {
             success: false,
             error: 'Unable to access GraphQL schema for schema discovery',
-            data: null
+            data: null,
           }
         }
       }
@@ -1344,19 +1352,19 @@ export class TableMcpServer {
           return {
             success: false,
             error: `Unknown schema discovery method: ${method}`,
-            data: null
+            data: null,
           }
       }
 
       return {
         success: true,
-        data: result
+        data: result,
       }
     } catch (error) {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-        data: null
+        data: null,
       }
     }
   }
@@ -1400,7 +1408,7 @@ export class TableMcpServer {
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     }
   }
 
@@ -1411,7 +1419,7 @@ export class TableMcpServer {
     return {
       name: `Bun Graph Database - Table ${this.tableId} MCP`,
       version: '1.0.0',
-      description: `Table-specific MCP server for '${this.tableId}'. Provides isolated access to table schema, nodes, relationships, and query templates. Includes ${this.tableTools.size} specialized tools.`
+      description: `Table-specific MCP server for '${this.tableId}'. Provides isolated access to table schema, nodes, relationships, and query templates. Includes ${this.tableTools.size} specialized tools.`,
     }
   }
 
@@ -1473,13 +1481,13 @@ export class TableMcpServer {
 
       return new Response(JSON.stringify(result), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       })
     } catch (error) {
       const errorResponse = this.createErrorResponse(null, -32700, 'Parse error')
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       })
     }
   }
@@ -1542,56 +1550,49 @@ export class TableMcpServer {
       if (tool.name.includes('get-table-') && tool.name.includes('-attributes')) {
         // CRUD: Get table attributes - needs tableId
         variables = { tableId: this.tableId }
-        
       } else if (tool.name.includes('create-table-') && tool.name.includes('-attribute')) {
         // CRUD: Create attribute - needs only input object (tableId goes inside input)
         variables = {
           input: {
             tableId: this.tableId,
-            ...args
-          }
+            ...args,
+          },
         }
-        
       } else if (tool.name.includes('update-table-') && tool.name.includes('-attribute')) {
         // CRUD: Update attribute - needs id and input object
         // Extract attributeId and create proper structure
         const { attributeId, ...inputFields } = args
         variables = {
           id: attributeId,
-          input: inputFields
+          input: inputFields,
         }
-        
       } else if (tool.name.includes('delete-table-') && tool.name.includes('-attribute')) {
         // CRUD: Delete attribute - needs id parameter
         variables = { id: args.attributeId }
-        
       } else if (tool.name.includes('get-table-') && tool.name.includes('-templates')) {
         // CRUD: Get table templates - needs special filter format
         variables = {
           tableId: `table:${this.tableId}`,
           limit: args.limit || 50,
-          offset: args.offset || 0
+          offset: args.offset || 0,
         }
-        
       } else if (tool.name.includes('create-table-') && tool.name.includes('-template')) {
         // CRUD: Create table-specific template - needs input object with automatic table tagging
         const { additionalTags = [], ...templateFields } = args
         variables = {
           input: {
             ...templateFields,
-            tags: [`table:${this.tableId}`, ...additionalTags]
-          }
+            tags: [`table:${this.tableId}`, ...additionalTags],
+          },
         }
-
       } else if (tool.name.includes('update-table-') && tool.name.includes('-template')) {
         // CRUD: Update template - needs id and input object
         // Extract templateId and create proper structure
         const { templateId, ...inputFields } = args
         variables = {
           id: templateId,
-          input: inputFields
+          input: inputFields,
         }
-
       } else if (tool.name.includes('search-table-') && tool.name.includes('-templates')) {
         // FIXED: Search table-specific templates with permission filtering
         // Match the corrected GraphQL query variables: $tableTag, $limit, $offset (removed $query)
@@ -1599,30 +1600,27 @@ export class TableMcpServer {
         variables = {
           tableTag: `table:${this.tableId}`,
           limit,
-          offset
+          offset,
         }
-        
       } else if (tool.name.includes('execute-table-') && tool.name.includes('-template')) {
         // NEW: Execute table-accessible template
         // Match the GraphQL query variables: $templateIdentifier, $variables
         const { templateIdentifier, variables: templateVariables = {} } = args
         variables = {
           templateIdentifier,
-          variables: templateVariables
+          variables: templateVariables,
         }
-
       } else if (tool.name.includes('get-table-metadata-')) {
         // CRUD: Get table metadata - metadata tool uses direct GraphQL execution
         // Only pass the parameters that the GraphQL query expects
         variables = {
           tableId: this.tableId,
-          includeAiMetadata: true
+          includeAiMetadata: true,
         }
-        
       } else {
         // Template-based tool - pass args directly without modifications
         variables = { ...args }
-        
+
         // Auto-detect operation type for template tools
         operationType = this.detectGraphQLOperationType(tool.graphqlOperation.query || '')
       }
@@ -1634,12 +1632,12 @@ export class TableMcpServer {
         operationName: operationName,
         query: tool.graphqlOperation.query,
         variables,
-        operationType: operationType as 'query' | 'mutation'
+        operationType: operationType as 'query' | 'mutation',
       }
 
       console.log(`🔧 Executing GraphQL ${operationType} for tool ${tool.name}:`, {
         operation: operationType,
-        variables
+        variables,
       })
 
       const result = await (this.mcpServer as any).graphqlExecutor.execute(operation)
@@ -1649,21 +1647,21 @@ export class TableMcpServer {
         return {
           success: false,
           errors: result.errors,
-          data: result.data
+          data: result.data,
         }
       }
 
       return {
         success: true,
         data: result.data,
-        errors: []
+        errors: [],
       }
     } catch (error) {
       console.error(`Error executing GraphQL for tool ${tool.name}:`, error)
       return {
         success: false,
         errors: [{ message: error instanceof Error ? error.message : 'Unknown error' }],
-        data: null
+        data: null,
       }
     }
   }
@@ -1683,8 +1681,8 @@ export class TableMcpServer {
       error: {
         code,
         message,
-        ...(data && { data })
-      }
+        ...(data && { data }),
+      },
     }
   }
 }

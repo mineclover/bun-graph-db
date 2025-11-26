@@ -1,5 +1,5 @@
-import type { QueryTemplateDto } from './QueryTemplateDto.js'
 import type { AttributeDto } from './AttributeDto.js'
+import type { QueryTemplateDto } from './QueryTemplateDto.js'
 import type { TableDto } from './TableDto.js'
 
 export interface DocDto {

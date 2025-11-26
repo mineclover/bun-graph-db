@@ -164,7 +164,9 @@ export class TemplateMutations extends BaseResolver {
       const tags = args.input.tags || updatedTemplate.getTags() || []
       const cacheResult = await refreshMcpCacheForTemplate(tags)
       if (cacheResult.refreshed.length > 0) {
-        this.logger.info('MCP cache refreshed for tables after template update', { refreshed: cacheResult.refreshed })
+        this.logger.info('MCP cache refreshed for tables after template update', {
+          refreshed: cacheResult.refreshed,
+        })
       }
 
       return {
@@ -224,7 +226,9 @@ export class TemplateMutations extends BaseResolver {
         // Refresh MCP cache for affected tables after deletion
         const cacheResult = await refreshMcpCacheForTemplate(tags)
         if (cacheResult.refreshed.length > 0) {
-          this.logger.info('MCP cache refreshed for tables after template deletion', { refreshed: cacheResult.refreshed })
+          this.logger.info('MCP cache refreshed for tables after template deletion', {
+            refreshed: cacheResult.refreshed,
+          })
         }
 
         return true
@@ -758,7 +762,9 @@ export class TemplateMutations extends BaseResolver {
       const tags = updatedTemplate.getTags() || []
       const cacheResult = await refreshMcpCacheForTemplate(tags)
       if (cacheResult.refreshed.length > 0) {
-        this.logger.info('MCP cache refreshed for tables after query update', { refreshed: cacheResult.refreshed })
+        this.logger.info('MCP cache refreshed for tables after query update', {
+          refreshed: cacheResult.refreshed,
+        })
       }
 
       return {

@@ -325,7 +325,8 @@ export class McpToolRegistry {
     // Register create template tool (Global template creation)
     const createTemplateTool: McpToolDefinition = {
       name: 'create-template',
-      description: 'Create a new global GraphQL template with validation. For table-specific templates, use the table MCP server create-template tool.',
+      description:
+        'Create a new global GraphQL template with validation. For table-specific templates, use the table MCP server create-template tool.',
       operationType: 'mutation',
       inputSchema: {
         type: 'object',
@@ -540,7 +541,8 @@ export class McpToolRegistry {
     // Register export table nodes tool
     const exportTableNodesTool: McpToolDefinition = {
       name: 'export-table-nodes',
-      description: 'Export table nodes to CSV or JSON with improved formatting. CSV uses column-based attributes, JSON uses key-value arrays.',
+      description:
+        'Export table nodes to CSV or JSON with improved formatting. CSV uses column-based attributes, JSON uses key-value arrays.',
       operationType: 'mutation',
       inputSchema: {
         type: 'object',
@@ -598,7 +600,8 @@ export class McpToolRegistry {
     // Register system initialization tool
     const systemInitializationTool: McpToolDefinition = {
       name: 'initialize-system',
-      description: 'Initialize or reset the system with various modes: quick reset for development, full reset, demo setup, or custom initialization.',
+      description:
+        'Initialize or reset the system with various modes: quick reset for development, full reset, demo setup, or custom initialization.',
       operationType: 'mutation',
       inputSchema: {
         type: 'object',
@@ -607,7 +610,8 @@ export class McpToolRegistry {
           mode: {
             type: 'string',
             enum: ['quick', 'full', 'demo', 'custom'],
-            description: 'Initialization mode: quick (reset DB + test data + samples), full (complete clean slate), demo (demo data), custom (specific options)',
+            description:
+              'Initialization mode: quick (reset DB + test data + samples), full (complete clean slate), demo (demo data), custom (specific options)',
           },
           options: {
             type: 'object',
@@ -684,7 +688,8 @@ export class McpToolRegistry {
     // Register system status tool
     const systemStatusTool: McpToolDefinition = {
       name: 'get-system-status',
-      description: 'Get current system status including database state, table counts, and last initialization info.',
+      description:
+        'Get current system status including database state, table counts, and last initialization info.',
       operationType: 'query',
       inputSchema: {
         type: 'object',
@@ -714,7 +719,8 @@ export class McpToolRegistry {
     // Register quick reset tool
     const quickResetTool: McpToolDefinition = {
       name: 'quick-reset',
-      description: 'Quick development reset: reset database, test data, and create sample data. Ideal for development workflow.',
+      description:
+        'Quick development reset: reset database, test data, and create sample data. Ideal for development workflow.',
       operationType: 'mutation',
       inputSchema: {
         type: 'object',

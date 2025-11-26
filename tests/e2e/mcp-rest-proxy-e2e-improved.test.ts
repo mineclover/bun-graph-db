@@ -5,12 +5,12 @@
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import {
-  UnifiedTestEnvironmentManager,
   createE2EConfig,
-  withAutoServer,
-  type UnifiedTestEnvironment,
   type McpHelper,
   type RestApiHelper,
+  type UnifiedTestEnvironment,
+  UnifiedTestEnvironmentManager,
+  withAutoServer,
 } from '../fixtures/unified-test-environment'
 
 describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
@@ -134,9 +134,7 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
       expect(typeof mcpResult.success).toBe(typeof restResult.success)
       if (mcpResult.data && restResult.data) {
         expect(typeof mcpResult.data.tables).toBe(typeof restResult.data.tables)
-        expect(Array.isArray(mcpResult.data.tables)).toBe(
-          Array.isArray(restResult.data.tables)
-        )
+        expect(Array.isArray(mcpResult.data.tables)).toBe(Array.isArray(restResult.data.tables))
       }
 
       console.log('✅ Data consistency verified between MCP and REST')
@@ -312,7 +310,9 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
       const successful = results.filter((r) => r.status === 'fulfilled').length
       const failed = results.filter((r) => r.status === 'rejected').length
 
-      console.log(`🏁 Performance Results: ${successful} successful, ${failed} failed, ${duration}ms total`)
+      console.log(
+        `🏁 Performance Results: ${successful} successful, ${failed} failed, ${duration}ms total`
+      )
 
       // At least 80% should succeed
       expect(successful / results.length).toBeGreaterThanOrEqual(0.8)
@@ -409,16 +409,13 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
 // 추가 테스트: withAutoServer 패턴 사용 예시
 describe('withAutoServer Pattern Example', () => {
   test('should work with auto server management', async () => {
-    await withAutoServer(
-      createE2EConfig('auto-server-example'),
-      async (env) => {
-        const result = await env.mcpHelper!.callTool('healthCheck', {})
-        expect(result.success).toBe(true)
-        expect(result.data.status).toBe('OK')
+    await withAutoServer(createE2EConfig('auto-server-example'), async (env) => {
+      const result = await env.mcpHelper!.callTool('healthCheck', {})
+      expect(result.success).toBe(true)
+      expect(result.data.status).toBe('OK')
 
-        // 환경은 자동으로 정리됨
-      }
-    )
+      // 환경은 자동으로 정리됨
+    })
   })
 
   test('should handle multiple auto server instances', async () => {

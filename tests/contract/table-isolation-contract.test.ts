@@ -7,7 +7,7 @@
  * Parallel: Can run with tasks 1-4
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals'
 
 describe('Table Isolation Contract Tests', () => {
   const baseUrl = 'http://localhost:4141'
@@ -33,21 +33,21 @@ describe('Table Isolation Contract Tests', () => {
         jsonrpc: '2.0',
         id: 1,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       // Get tools from first table
       const response1 = await fetch(`${baseUrl}/sub/${testTable1Id}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       // Get tools from second table
       const response2 = await fetch(`${baseUrl}/sub/${testTable2Id}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       expect(response1.status).toBe(200)
@@ -76,7 +76,7 @@ describe('Table Isolation Contract Tests', () => {
         jsonrpc: '2.0',
         id: 2,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       // Make multiple requests to each table endpoint
@@ -88,7 +88,7 @@ describe('Table Isolation Contract Tests', () => {
           fetch(`${baseUrl}/sub/${testTable1Id}/mcp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...toolsListRequest, id: 2 + i })
+            body: JSON.stringify({ ...toolsListRequest, id: 2 + i }),
           })
         )
 
@@ -96,7 +96,7 @@ describe('Table Isolation Contract Tests', () => {
           fetch(`${baseUrl}/sub/${testTable2Id}/mcp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...toolsListRequest, id: 5 + i })
+            body: JSON.stringify({ ...toolsListRequest, id: 5 + i }),
           })
         )
       }
@@ -105,21 +105,21 @@ describe('Table Isolation Contract Tests', () => {
       const responses2 = await Promise.all(requests2)
 
       // All requests should succeed
-      responses1.forEach(response => expect(response.status).toBe(200))
-      responses2.forEach(response => expect(response.status).toBe(200))
+      responses1.forEach((response) => expect(response.status).toBe(200))
+      responses2.forEach((response) => expect(response.status).toBe(200))
 
-      const results1 = await Promise.all(responses1.map(r => r.json()))
-      const results2 = await Promise.all(responses2.map(r => r.json()))
+      const results1 = await Promise.all(responses1.map((r) => r.json()))
+      const results2 = await Promise.all(responses2.map((r) => r.json()))
 
       // Each table should consistently return the same tool set
       const table1Tools = results1[0].result.tools
       const table2Tools = results2[0].result.tools
 
-      results1.forEach(result => {
+      results1.forEach((result) => {
         expect(result.result.tools).toEqual(table1Tools)
       })
 
-      results2.forEach(result => {
+      results2.forEach((result) => {
         expect(result.result.tools).toEqual(table2Tools)
       })
     })
@@ -130,20 +130,20 @@ describe('Table Isolation Contract Tests', () => {
         jsonrpc: '2.0',
         id: 8,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const [response1, response2] = await Promise.all([
         fetch(`${baseUrl}/sub/${testTable1Id}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toolsListRequest)
+          body: JSON.stringify(toolsListRequest),
         }),
         fetch(`${baseUrl}/sub/${testTable2Id}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toolsListRequest)
-        })
+          body: JSON.stringify(toolsListRequest),
+        }),
       ])
 
       if (response1.status === 200 && response2.status === 200) {
@@ -161,21 +161,21 @@ describe('Table Isolation Contract Tests', () => {
             method: 'tools/call',
             params: {
               name: tool1.name,
-              arguments: {}
-            }
+              arguments: {},
+            },
           }
 
           const [execResponse1, execResponse2] = await Promise.all([
             fetch(`${baseUrl}/sub/${testTable1Id}/mcp`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...toolCallRequest, id: 9 })
+              body: JSON.stringify({ ...toolCallRequest, id: 9 }),
             }),
             fetch(`${baseUrl}/sub/${testTable2Id}/mcp`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...toolCallRequest, id: 10 })
-            })
+              body: JSON.stringify({ ...toolCallRequest, id: 10 }),
+            }),
           ])
 
           // Execution should be isolated to respective table contexts
@@ -204,13 +204,13 @@ describe('Table Isolation Contract Tests', () => {
         jsonrpc: '2.0',
         id: 11,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const response = await fetch(`${baseUrl}/sub/${nonExistentTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       expect(response.status).toBe(404)
@@ -231,14 +231,14 @@ describe('Table Isolation Contract Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           capabilities: {},
-          clientInfo: { name: 'Test', version: '1.0.0' }
-        }
+          clientInfo: { name: 'Test', version: '1.0.0' },
+        },
       }
 
       const initResponse = await fetch(`${baseUrl}/sub/${testTable1Id}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initializeRequest)
+        body: JSON.stringify(initializeRequest),
       })
 
       expect(initResponse.status).toBe(200)
@@ -248,13 +248,13 @@ describe('Table Isolation Contract Tests', () => {
         jsonrpc: '2.0',
         id: 13,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const toolsResponse = await fetch(`${baseUrl}/sub/${testTable1Id}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       expect(toolsResponse.status).toBe(200)
@@ -270,7 +270,7 @@ describe('Table Isolation Contract Tests', () => {
       const toolsListRequest = {
         jsonrpc: '2.0',
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       // Create multiple concurrent requests to different tables
@@ -281,7 +281,7 @@ describe('Table Isolation Contract Tests', () => {
           fetch(`${baseUrl}/sub/${testTable1Id}/mcp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...toolsListRequest, id: 14 + i })
+            body: JSON.stringify({ ...toolsListRequest, id: 14 + i }),
           })
         )
 
@@ -289,7 +289,7 @@ describe('Table Isolation Contract Tests', () => {
           fetch(`${baseUrl}/sub/${testTable2Id}/mcp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...toolsListRequest, id: 19 + i })
+            body: JSON.stringify({ ...toolsListRequest, id: 19 + i }),
           })
         )
       }
@@ -301,10 +301,10 @@ describe('Table Isolation Contract Tests', () => {
         expect(response.status).toBe(200)
       })
 
-      const results = await Promise.all(responses.map(r => r.json()))
+      const results = await Promise.all(responses.map((r) => r.json()))
 
       // Verify all responses are valid JSON-RPC responses
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toHaveProperty('jsonrpc', '2.0')
         expect(result).toHaveProperty('id')
         expect(result).toHaveProperty('result')
@@ -315,7 +315,7 @@ describe('Table Isolation Contract Tests', () => {
       const toolsListRequest = {
         jsonrpc: '2.0',
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       // Generate many concurrent requests
@@ -328,20 +328,20 @@ describe('Table Isolation Contract Tests', () => {
           fetch(`${baseUrl}/sub/${tableId}/mcp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...toolsListRequest, id: 30 + i })
+            body: JSON.stringify({ ...toolsListRequest, id: 30 + i }),
           })
         )
       }
 
       const responses = await Promise.all(requests)
-      const successfulResponses = responses.filter(r => r.status === 200)
+      const successfulResponses = responses.filter((r) => r.status === 200)
 
       // Most requests should succeed (allowing for some to fail under high load)
       expect(successfulResponses.length).toBeGreaterThan(numRequests * 0.8)
 
       if (successfulResponses.length > 0) {
-        const results = await Promise.all(successfulResponses.map(r => r.json()))
-        results.forEach(result => {
+        const results = await Promise.all(successfulResponses.map((r) => r.json()))
+        results.forEach((result) => {
           expect(result).toHaveProperty('jsonrpc', '2.0')
           expect(result.result).toHaveProperty('tools')
         })

@@ -115,12 +115,8 @@ export function createApiRoutes(
     router.get('/mcp-tools/get-system-status', (req, res) =>
       mcpToolController.getSystemStatus(req, res)
     )
-    router.post('/mcp-tools/quick-reset', (req, res) =>
-      mcpToolController.quickReset(req, res)
-    )
-    router.post('/mcp-tools/setup-demo', (req, res) =>
-      mcpToolController.setupDemo(req, res)
-    )
+    router.post('/mcp-tools/quick-reset', (req, res) => mcpToolController.quickReset(req, res))
+    router.post('/mcp-tools/setup-demo', (req, res) => mcpToolController.setupDemo(req, res))
   }
 
   return router

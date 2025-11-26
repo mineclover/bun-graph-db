@@ -1,15 +1,19 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
-import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { Node } from '@/domain/entities/Node.js'
-import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
-import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { CreateNodeInput } from '@/application/dtos/NodeDto.js'
-import { createTestTable, createTestNode, createTestAttribute } from './test-helpers.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { Node } from '@/domain/entities/Node.js'
+import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
+import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
+import { createTestAttribute, createTestNode, createTestTable } from './test-helpers.js'
 
 describe('CreateNodeUseCase', () => {
   let useCase: CreateNodeUseCase
@@ -126,7 +130,9 @@ describe('CreateNodeUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow('Table with id \'non-existent-table\' not found')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Table with id 'non-existent-table' not found"
+      )
       expect(mockTableRepository.findById).toHaveBeenCalledWith('non-existent-table')
     })
   })
@@ -145,7 +151,9 @@ describe('CreateNodeUseCase', () => {
       mockNodeRepository.findByTableIdAndContent = mock(async () => existingNode)
 
       await expect(useCase.execute(input)).rejects.toThrow(ConflictException)
-      await expect(useCase.execute(input)).rejects.toThrow('Node with content \'Duplicate Content\' already exists in table \'test-table\'')
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Node with content 'Duplicate Content' already exists in table 'test-table'"
+      )
     })
   })
 
@@ -159,7 +167,13 @@ describe('CreateNodeUseCase', () => {
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
-      const createdNode = createTestNode('node-1', 'table-1', 'Test Content', 'Test Title', 'Test Description')
+      const createdNode = createTestNode(
+        'node-1',
+        'table-1',
+        'Test Content',
+        'Test Title',
+        'Test Description'
+      )
 
       mockTableRepository.findById = mock(async () => table as any)
       mockNodeRepository.findByTableIdAndContent = mock()
@@ -184,15 +198,27 @@ describe('CreateNodeUseCase', () => {
         tableId: 'table-1',
         content: 'Test Content',
         attributes: {
-          'test_attr': 'test-value',
-          'number_attr': 42,
+          test_attr: 'test-value',
+          number_attr: 42,
         },
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const createdNode = createTestNode('node-1', 'table-1', 'Test Content')
-      const testAttribute = createTestAttribute('attr-1', 'table-1', 'test_attr', 'Test Attribute', '1')
-      const numberAttribute = createTestAttribute('attr-2', 'table-1', 'number_attr', 'Number Attribute', '1')
+      const testAttribute = createTestAttribute(
+        'attr-1',
+        'table-1',
+        'test_attr',
+        'Test Attribute',
+        '1'
+      )
+      const numberAttribute = createTestAttribute(
+        'attr-2',
+        'table-1',
+        'number_attr',
+        'Number Attribute',
+        '1'
+      )
 
       mockTableRepository.findById = mock(async () => table as any)
       mockNodeRepository.findByTableIdAndContent = mock()
@@ -208,11 +234,14 @@ describe('CreateNodeUseCase', () => {
       expect(result.node).toBeDefined()
       expect(result.node.content).toBe('Test Content')
       expect(mockNodeAttributeRepository.save).toHaveBeenCalledTimes(2)
-      expect(mockLogger.info).toHaveBeenCalledWith('Node created successfully', expect.objectContaining({
-        id: 'node-1',
-        content: 'Test Content',
-        attributeCount: 2,
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Node created successfully',
+        expect.objectContaining({
+          id: 'node-1',
+          content: 'Test Content',
+          attributeCount: 2,
+        })
+      )
     })
 
     it('should skip attributes that do not exist', async () => {
@@ -240,7 +269,9 @@ describe('CreateNodeUseCase', () => {
 
       expect(result.node).toBeDefined()
       expect(mockNodeAttributeRepository.save).not.toHaveBeenCalled()
-      expect(mockLogger.warn).toHaveBeenCalledWith('Attribute \'non-existent-attr\' not found for table, skipping')
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        "Attribute 'non-existent-attr' not found for table, skipping"
+      )
     })
   })
 
@@ -261,11 +292,14 @@ describe('CreateNodeUseCase', () => {
       })
 
       await expect(useCase.execute(input)).rejects.toThrow('Database connection failed')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create node', expect.objectContaining({
-        content: input.content,
-        tableId: input.tableId,
-        error: 'Database connection failed',
-      }))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to create node',
+        expect.objectContaining({
+          content: input.content,
+          tableId: input.tableId,
+          error: 'Database connection failed',
+        })
+      )
     })
 
     it('should throw error when saved node cannot be retrieved', async () => {
@@ -306,10 +340,13 @@ describe('CreateNodeUseCase', () => {
         tableId: 'table-1',
         content: 'Test Content',
       })
-      expect(mockLogger.info).toHaveBeenCalledWith('Node created successfully', expect.objectContaining({
-        id: 'node-1',
-        content: 'Test Content',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Node created successfully',
+        expect.objectContaining({
+          id: 'node-1',
+          content: 'Test Content',
+        })
+      )
     })
   })
 })

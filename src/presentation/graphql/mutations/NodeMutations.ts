@@ -41,6 +41,7 @@ interface NodeAttributeInput {
   attributeId: string
   value: string
 }
+
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
@@ -484,7 +485,10 @@ export class NodeMutations extends BaseResolver {
       await this.nodeRepository.save(node)
 
       // Fetch the saved node back to get the ID
-      const savedNode = await this.nodeRepository.findByTableIdAndContent(tableId, args.input.content)
+      const savedNode = await this.nodeRepository.findByTableIdAndContent(
+        tableId,
+        args.input.content
+      )
 
       if (!savedNode) {
         throw new Error('Failed to retrieve saved node')
@@ -512,7 +516,9 @@ export class NodeMutations extends BaseResolver {
           // Continue with node creation but no attributes
         } else {
           // Find "name" attribute (identifier: name)
-          this.logger.info('Looking for name attribute', { availableAttributes: nameAttributes.map(attr => attr.getIdentifier()) })
+          this.logger.info('Looking for name attribute', {
+            availableAttributes: nameAttributes.map((attr) => attr.getIdentifier()),
+          })
           const nameAttr = nameAttributes.find((attr) => attr.getIdentifier() === 'name')
           if (nameAttr) {
             const nameAttrId = nameAttr.getId()
@@ -608,7 +614,10 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.required('input', 'Create node with attributes input'),
           BaseResolver.validationRules.required('input.content', 'Node content'),
           BaseResolver.validationRules.required('input.tableId', 'Table ID'),
-          BaseResolver.validationRules.required('input.attributesByIdentifier', 'Attributes by identifier'),
+          BaseResolver.validationRules.required(
+            'input.attributesByIdentifier',
+            'Attributes by identifier'
+          ),
           BaseResolver.validationRules.nonEmpty('input.content', 'Node content'),
           BaseResolver.validationRules.nonEmpty('input.tableId', 'Table ID'),
         ],
@@ -654,7 +663,7 @@ export class NodeMutations extends BaseResolver {
         this.logger.info('Available attributes for table', {
           tableId: args.input.tableId,
           count: availableAttributes.length,
-          identifiers: availableAttributes.map(attr => attr.getIdentifier())
+          identifiers: availableAttributes.map((attr) => attr.getIdentifier()),
         })
 
         // Map each input attribute by identifier
@@ -669,7 +678,7 @@ export class NodeMutations extends BaseResolver {
               this.logger.info('Setting attribute', {
                 identifier: inputAttr.identifier,
                 value: inputAttr.value,
-                attributeId: attrId
+                attributeId: attrId,
               })
 
               const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
@@ -682,7 +691,7 @@ export class NodeMutations extends BaseResolver {
           } else {
             this.logger.warn('Attribute not found by identifier', {
               identifier: inputAttr.identifier,
-              availableIdentifiers: availableAttributes.map(attr => attr.getIdentifier())
+              availableIdentifiers: availableAttributes.map((attr) => attr.getIdentifier()),
             })
           }
         }
@@ -761,13 +770,13 @@ export class NodeMutations extends BaseResolver {
           this.logger.info('Set attribute', {
             nodeId: args.input.nodeId,
             attributeId: attr.attributeId,
-            value: attr.value
+            value: attr.value,
           })
         } catch (error) {
           this.logger.warn('Failed to set attribute', {
             nodeId: args.input.nodeId,
             attributeId: attr.attributeId,
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           })
         }
       }
@@ -810,7 +819,10 @@ export class NodeMutations extends BaseResolver {
         [
           BaseResolver.validationRules.required('input', 'Set node attributes by identifier input'),
           BaseResolver.validationRules.required('input.nodeId', 'Node ID'),
-          BaseResolver.validationRules.required('input.attributesByIdentifier', 'Attributes by identifier'),
+          BaseResolver.validationRules.required(
+            'input.attributesByIdentifier',
+            'Attributes by identifier'
+          ),
           BaseResolver.validationRules.nonEmpty('input.nodeId', 'Node ID'),
         ],
         'setNodeAttributesByIdentifier'
@@ -834,7 +846,7 @@ export class NodeMutations extends BaseResolver {
         nodeId: args.input.nodeId,
         tableId,
         count: availableAttributes.length,
-        identifiers: availableAttributes.map(attr => attr.getIdentifier())
+        identifiers: availableAttributes.map((attr) => attr.getIdentifier()),
       })
 
       const nodeAttributes = []
@@ -860,20 +872,20 @@ export class NodeMutations extends BaseResolver {
                 nodeId: args.input.nodeId,
                 identifier: inputAttr.identifier,
                 attributeId: attrId,
-                value: inputAttr.value
+                value: inputAttr.value,
               })
             } catch (error) {
               this.logger.warn('Failed to set attribute by identifier', {
                 nodeId: args.input.nodeId,
                 identifier: inputAttr.identifier,
-                error: error instanceof Error ? error.message : 'Unknown error'
+                error: error instanceof Error ? error.message : 'Unknown error',
               })
             }
           }
         } else {
           this.logger.warn('Attribute not found by identifier', {
             identifier: inputAttr.identifier,
-            availableIdentifiers: availableAttributes.map(attr => attr.getIdentifier())
+            availableIdentifiers: availableAttributes.map((attr) => attr.getIdentifier()),
           })
         }
       }

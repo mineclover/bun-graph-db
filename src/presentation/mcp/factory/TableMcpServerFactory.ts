@@ -7,8 +7,8 @@
  * Sequential: Implements after comprehensive testing
  */
 
-import { TableMcpServer } from './TableMcpServer'
 import type { ILogger } from '../../../application/ports/ILogger'
+import { TableMcpServer } from './TableMcpServer'
 
 interface TableValidationResult {
   exists: boolean
@@ -31,11 +31,7 @@ export class TableMcpServerFactory {
   private restApiBaseUrl: string
   private logger?: ILogger
 
-  constructor(
-    graphqlEndpoint: string,
-    restApiBaseUrl: string,
-    logger?: ILogger
-  ) {
+  constructor(graphqlEndpoint: string, restApiBaseUrl: string, logger?: ILogger) {
     this.graphqlEndpoint = graphqlEndpoint
     this.restApiBaseUrl = restApiBaseUrl
     this.logger = logger
@@ -100,7 +96,7 @@ export class TableMcpServerFactory {
       if (!tableId || typeof tableId !== 'string' || tableId.trim() === '') {
         return {
           exists: false,
-          error: 'Invalid table ID: empty or invalid format'
+          error: 'Invalid table ID: empty or invalid format',
         }
       }
 
@@ -109,7 +105,7 @@ export class TableMcpServerFactory {
       if (!sanitizedTableId) {
         return {
           exists: false,
-          error: 'Invalid table ID: contains invalid characters'
+          error: 'Invalid table ID: contains invalid characters',
         }
       }
 
@@ -135,7 +131,7 @@ export class TableMcpServerFactory {
       this.logger?.error(`Table validation error for ${tableId}:`, { error })
       return {
         exists: false,
-        error: error instanceof Error ? error.message : 'Unknown validation error'
+        error: error instanceof Error ? error.message : 'Unknown validation error',
       }
     }
   }
@@ -148,14 +144,14 @@ export class TableMcpServerFactory {
       const response = await fetch(`${this.restApiBaseUrl}/tables`, {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       })
 
       if (!response.ok) {
         return {
           exists: false,
-          error: `REST API error: ${response.status} ${response.statusText}`
+          error: `REST API error: ${response.status} ${response.statusText}`,
         }
       }
 
@@ -166,30 +162,31 @@ export class TableMcpServerFactory {
       const tables = data?.data?.tables || data?.tables || []
 
       if (Array.isArray(tables)) {
-        const table = tables.find((t: any) =>
-          t.id === tableId ||
-          t.identifier === tableId ||
-          String(t.id) === tableId ||
-          String(t.identifier) === tableId
+        const table = tables.find(
+          (t: any) =>
+            t.id === tableId ||
+            t.identifier === tableId ||
+            String(t.id) === tableId ||
+            String(t.identifier) === tableId
         )
 
         if (table) {
           return {
             exists: true,
             id: table.id,
-            identifier: table.identifier
+            identifier: table.identifier,
           }
         }
       }
 
       return {
         exists: false,
-        error: 'Table not found in API response'
+        error: 'Table not found in API response',
       }
     } catch (error) {
       return {
         exists: false,
-        error: error instanceof Error ? error.message : 'REST API check failed'
+        error: error instanceof Error ? error.message : 'REST API check failed',
       }
     }
   }
@@ -261,12 +258,12 @@ export class TableMcpServerFactory {
     const serverDetails = Array.from(this.servers.entries()).map(([tableId, server]) => ({
       tableId,
       initialized: server.isTableInitialized(),
-      toolCount: server.getTableToolsCount()
+      toolCount: server.getTableToolsCount(),
     }))
 
     return {
       totalServers: this.servers.size,
-      serverDetails
+      serverDetails,
     }
   }
 
@@ -297,7 +294,7 @@ export class TableMcpServerFactory {
       const batch = tableIds.slice(i, i + batchSize)
 
       const results = await Promise.allSettled(
-        batch.map(async tableId => {
+        batch.map(async (tableId) => {
           const server = await this.getServerForTable(tableId)
           if (server) {
             return { tableId, success: true }
@@ -314,14 +311,14 @@ export class TableMcpServerFactory {
         } else if (tableId && result.status === 'rejected') {
           failed.push({
             tableId,
-            error: (result.reason as Error)?.message || 'Unknown error'
+            error: (result.reason as Error)?.message || 'Unknown error',
           })
         }
       })
 
       // Small delay between batches
       if (i + batchSize < tableIds.length) {
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise((resolve) => setTimeout(resolve, 100))
       }
     }
 
@@ -349,13 +346,13 @@ export class TableMcpServerFactory {
         } else {
           unhealthy.push({
             tableId,
-            error: 'Server not initialized'
+            error: 'Server not initialized',
           })
         }
       } catch (error) {
         unhealthy.push({
           tableId,
-          error: error instanceof Error ? error.message : 'Health check failed'
+          error: error instanceof Error ? error.message : 'Health check failed',
         })
       }
     }
@@ -376,16 +373,18 @@ export class TableMcpServerFactory {
 
     // Extract table IDs from tags (format: "table:tableId")
     const tableIds = tags
-      .filter(tag => tag.startsWith('table:'))
-      .map(tag => tag.replace('table:', ''))
-      .filter(id => id.length > 0)
+      .filter((tag) => tag.startsWith('table:'))
+      .map((tag) => tag.replace('table:', ''))
+      .filter((id) => id.length > 0)
 
     if (tableIds.length === 0) {
       this.logger?.debug('No table tags found in template, skipping cache refresh')
       return { refreshed, failed }
     }
 
-    this.logger?.info(`Refreshing MCP servers for ${tableIds.length} tables: ${tableIds.join(', ')}`)
+    this.logger?.info(
+      `Refreshing MCP servers for ${tableIds.length} tables: ${tableIds.join(', ')}`
+    )
 
     for (const tableId of tableIds) {
       try {
@@ -404,7 +403,7 @@ export class TableMcpServerFactory {
       } catch (error) {
         failed.push({
           tableId,
-          error: error instanceof Error ? error.message : 'Unknown error during refresh'
+          error: error instanceof Error ? error.message : 'Unknown error during refresh',
         })
         this.logger?.error(`Failed to refresh MCP server for table ${tableId}:`, { error })
       }

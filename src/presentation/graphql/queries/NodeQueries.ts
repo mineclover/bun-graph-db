@@ -8,8 +8,8 @@ import type {
   NodesArgs,
   SearchNodesArgs,
 } from '@/core/types/GraphQLTypes.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
@@ -66,12 +66,16 @@ export class NodeQueries extends BaseResolver {
           const attr = await this.attributeRepository.findById(filter.attributeId)
           attrIdentifier = attr?.getIdentifier()
         } catch {
-          this.logger.warn('Failed to resolve attribute identifier', { attributeId: filter.attributeId })
+          this.logger.warn('Failed to resolve attribute identifier', {
+            attributeId: filter.attributeId,
+          })
         }
       }
 
       if (!attrIdentifier) {
-        this.logger.warn('AttributeFilter missing both identifier and valid attributeId', { filter })
+        this.logger.warn('AttributeFilter missing both identifier and valid attributeId', {
+          filter,
+        })
         continue
       }
 

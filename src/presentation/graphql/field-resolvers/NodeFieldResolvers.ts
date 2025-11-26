@@ -193,7 +193,8 @@ export class NodeFieldResolvers extends BaseResolver {
         // For each relation type, find neighbors
         for (const relationTypeIdentifier of args.relationTypes) {
           // Get relation type by identifier
-          const relationType = await this.relationTypeRepository.findByIdentifier(relationTypeIdentifier)
+          const relationType =
+            await this.relationTypeRepository.findByIdentifier(relationTypeIdentifier)
           if (!relationType) continue
 
           const relationTypeId = relationType.getId()
@@ -205,7 +206,9 @@ export class NodeFieldResolvers extends BaseResolver {
               relationTypeId
             )
             neighborIds.push(
-              ...outgoing.map((rel) => rel.getTargetNodeId()).filter((id): id is string => id !== null)
+              ...outgoing
+                .map((rel) => rel.getTargetNodeId())
+                .filter((id): id is string => id !== null)
             )
           }
 
@@ -216,7 +219,9 @@ export class NodeFieldResolvers extends BaseResolver {
               relationTypeId
             )
             neighborIds.push(
-              ...incoming.map((rel) => rel.getSourceNodeId()).filter((id): id is string => id !== null)
+              ...incoming
+                .map((rel) => rel.getSourceNodeId())
+                .filter((id): id is string => id !== null)
             )
           }
         }

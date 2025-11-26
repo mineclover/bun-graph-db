@@ -58,7 +58,15 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
       // Required only
       ['password-hash', 'password_hash', 'Password Hash', 'text', 1, 0, 'Encrypted password'],
-      ['created-date', 'created_date', 'Account Created', 'datetime', 1, 0, 'Account creation timestamp'],
+      [
+        'created-date',
+        'created_date',
+        'Account Created',
+        'datetime',
+        1,
+        0,
+        'Account creation timestamp',
+      ],
 
       // Searchable only
       ['username', 'username', 'Username', 'text', 0, 1, 'Public username'],
@@ -72,7 +80,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       ['is-active', 'is_active', 'Account Active', 'boolean', 0, 0, 'Account status flag'],
       ['profile-image', 'profile_image', 'Profile Image', 'file', 0, 0, 'User profile photo'],
       ['location', 'location', 'Location', 'location', 0, 1, 'User geographic location'],
-      ['website', 'website', 'Website', 'url', 0, 0, 'Personal website URL']
+      ['website', 'website', 'Website', 'url', 0, 0, 'Personal website URL'],
     ]
 
     for (const [id, identifier, name, type, required, searchable, description] of attributeData) {
@@ -85,26 +93,110 @@ describe('AIMetadata Documentation E2E Tests', () => {
     // Create comprehensive template set
     const templateData = [
       // CRUD operations
-      ['create-user', 'Create User Profile', 'Creates a new user with complete profile information', 'INSERT INTO users...', 'create,user,profile'],
-      ['update-user', 'Update User Profile', 'Updates existing user profile information', 'UPDATE users SET...', 'update,user,profile'],
-      ['delete-user', 'Delete User Account', 'Safely removes user account and related data', 'DELETE FROM users...', 'delete,user,account'],
-      ['get-user', 'Get User Details', 'Retrieves complete user profile information', 'SELECT * FROM users WHERE...', 'read,user,profile'],
+      [
+        'create-user',
+        'Create User Profile',
+        'Creates a new user with complete profile information',
+        'INSERT INTO users...',
+        'create,user,profile',
+      ],
+      [
+        'update-user',
+        'Update User Profile',
+        'Updates existing user profile information',
+        'UPDATE users SET...',
+        'update,user,profile',
+      ],
+      [
+        'delete-user',
+        'Delete User Account',
+        'Safely removes user account and related data',
+        'DELETE FROM users...',
+        'delete,user,account',
+      ],
+      [
+        'get-user',
+        'Get User Details',
+        'Retrieves complete user profile information',
+        'SELECT * FROM users WHERE...',
+        'read,user,profile',
+      ],
 
       // Search operations
-      ['search-users-by-name', 'Search Users by Name', 'Find users by name pattern matching', 'SELECT * FROM users WHERE full_name LIKE...', 'search,name,user'],
-      ['search-users-by-email', 'Search Users by Email', 'Find users by email address', 'SELECT * FROM users WHERE email LIKE...', 'search,email,user'],
-      ['search-users-by-department', 'Search Users by Department', 'Find all users in specific department', 'SELECT * FROM users WHERE department...', 'search,department,user'],
-      ['search-users-by-skills', 'Search Users by Skills', 'Find users with specific skills', 'SELECT * FROM users WHERE skills CONTAINS...', 'search,skills,user'],
+      [
+        'search-users-by-name',
+        'Search Users by Name',
+        'Find users by name pattern matching',
+        'SELECT * FROM users WHERE full_name LIKE...',
+        'search,name,user',
+      ],
+      [
+        'search-users-by-email',
+        'Search Users by Email',
+        'Find users by email address',
+        'SELECT * FROM users WHERE email LIKE...',
+        'search,email,user',
+      ],
+      [
+        'search-users-by-department',
+        'Search Users by Department',
+        'Find all users in specific department',
+        'SELECT * FROM users WHERE department...',
+        'search,department,user',
+      ],
+      [
+        'search-users-by-skills',
+        'Search Users by Skills',
+        'Find users with specific skills',
+        'SELECT * FROM users WHERE skills CONTAINS...',
+        'search,skills,user',
+      ],
 
       // Analytics operations
-      ['user-count-by-department', 'User Count by Department', 'Count users grouped by department', 'SELECT department, COUNT(*) FROM users...', 'analytics,count,department'],
-      ['active-users-report', 'Active Users Report', 'Generate report of active users', 'SELECT COUNT(*) FROM users WHERE is_active...', 'analytics,active,report'],
-      ['user-registration-trends', 'User Registration Trends', 'Analyze user registration over time', 'SELECT DATE(created_date), COUNT(*) FROM users...', 'analytics,trends,registration'],
+      [
+        'user-count-by-department',
+        'User Count by Department',
+        'Count users grouped by department',
+        'SELECT department, COUNT(*) FROM users...',
+        'analytics,count,department',
+      ],
+      [
+        'active-users-report',
+        'Active Users Report',
+        'Generate report of active users',
+        'SELECT COUNT(*) FROM users WHERE is_active...',
+        'analytics,active,report',
+      ],
+      [
+        'user-registration-trends',
+        'User Registration Trends',
+        'Analyze user registration over time',
+        'SELECT DATE(created_date), COUNT(*) FROM users...',
+        'analytics,trends,registration',
+      ],
 
       // Advanced operations
-      ['bulk-update-department', 'Bulk Update Department', 'Update department for multiple users', 'UPDATE users SET department = ? WHERE...', 'bulk,update,department'],
-      ['export-user-list', 'Export User List', 'Export filtered user list with selected fields', 'SELECT full_name, email, department FROM users...', 'export,users,list'],
-      ['user-audit-log', 'User Audit Log', 'Generate audit trail for user changes', 'SELECT * FROM user_audit WHERE user_id...', 'audit,log,history']
+      [
+        'bulk-update-department',
+        'Bulk Update Department',
+        'Update department for multiple users',
+        'UPDATE users SET department = ? WHERE...',
+        'bulk,update,department',
+      ],
+      [
+        'export-user-list',
+        'Export User List',
+        'Export filtered user list with selected fields',
+        'SELECT full_name, email, department FROM users...',
+        'export,users,list',
+      ],
+      [
+        'user-audit-log',
+        'User Audit Log',
+        'Generate audit trail for user changes',
+        'SELECT * FROM user_audit WHERE user_id...',
+        'audit,log,history',
+      ],
     ]
 
     for (let i = 0; i < templateData.length; i++) {
@@ -117,16 +209,76 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
     // Create diverse sample data
     const sampleUsers = [
-      ['John Doe', 'Senior Software Engineer', 'john.doe@company.com', 'Engineering', 'JavaScript,TypeScript,React'],
-      ['Jane Smith', 'Product Manager', 'jane.smith@company.com', 'Product', 'Product Strategy,Analytics,Agile'],
-      ['Mike Johnson', 'DevOps Engineer', 'mike.johnson@company.com', 'Engineering', 'Docker,Kubernetes,AWS'],
-      ['Sarah Wilson', 'UX Designer', 'sarah.wilson@company.com', 'Design', 'Figma,User Research,Prototyping'],
-      ['Tom Brown', 'Data Scientist', 'tom.brown@company.com', 'Data', 'Python,Machine Learning,Statistics'],
-      ['Lisa Davis', 'Marketing Manager', 'lisa.davis@company.com', 'Marketing', 'Digital Marketing,SEO,Content Strategy'],
-      ['Alex Chen', 'Frontend Developer', 'alex.chen@company.com', 'Engineering', 'Vue.js,CSS,HTML'],
-      ['Emily Rodriguez', 'Backend Developer', 'emily.rodriguez@company.com', 'Engineering', 'Node.js,PostgreSQL,GraphQL'],
-      ['David Kim', 'QA Engineer', 'david.kim@company.com', 'Quality', 'Test Automation,Selenium,Jest'],
-      ['Maria Garcia', 'Business Analyst', 'maria.garcia@company.com', 'Business', 'SQL,Requirements Analysis,Process Modeling']
+      [
+        'John Doe',
+        'Senior Software Engineer',
+        'john.doe@company.com',
+        'Engineering',
+        'JavaScript,TypeScript,React',
+      ],
+      [
+        'Jane Smith',
+        'Product Manager',
+        'jane.smith@company.com',
+        'Product',
+        'Product Strategy,Analytics,Agile',
+      ],
+      [
+        'Mike Johnson',
+        'DevOps Engineer',
+        'mike.johnson@company.com',
+        'Engineering',
+        'Docker,Kubernetes,AWS',
+      ],
+      [
+        'Sarah Wilson',
+        'UX Designer',
+        'sarah.wilson@company.com',
+        'Design',
+        'Figma,User Research,Prototyping',
+      ],
+      [
+        'Tom Brown',
+        'Data Scientist',
+        'tom.brown@company.com',
+        'Data',
+        'Python,Machine Learning,Statistics',
+      ],
+      [
+        'Lisa Davis',
+        'Marketing Manager',
+        'lisa.davis@company.com',
+        'Marketing',
+        'Digital Marketing,SEO,Content Strategy',
+      ],
+      [
+        'Alex Chen',
+        'Frontend Developer',
+        'alex.chen@company.com',
+        'Engineering',
+        'Vue.js,CSS,HTML',
+      ],
+      [
+        'Emily Rodriguez',
+        'Backend Developer',
+        'emily.rodriguez@company.com',
+        'Engineering',
+        'Node.js,PostgreSQL,GraphQL',
+      ],
+      [
+        'David Kim',
+        'QA Engineer',
+        'david.kim@company.com',
+        'Quality',
+        'Test Automation,Selenium,Jest',
+      ],
+      [
+        'Maria Garcia',
+        'Business Analyst',
+        'maria.garcia@company.com',
+        'Business',
+        'SQL,Requirements Analysis,Process Modeling',
+      ],
     ]
 
     for (let i = 0; i < sampleUsers.length; i++) {
@@ -331,7 +483,15 @@ describe('AIMetadata Documentation E2E Tests', () => {
           expect(entry.attributes.email).toContain('@')
         }
         if (entry.attributes.department) {
-          expect(['Engineering', 'Product', 'Design', 'Data', 'Marketing', 'Quality', 'Business']).toContain(entry.attributes.department)
+          expect([
+            'Engineering',
+            'Product',
+            'Design',
+            'Data',
+            'Marketing',
+            'Quality',
+            'Business',
+          ]).toContain(entry.attributes.department)
         }
       })
 
@@ -344,12 +504,14 @@ describe('AIMetadata Documentation E2E Tests', () => {
       const db = testContext.database!.database.getConnection()
 
       // Get actual table structure from database
-      const actualAttributes = db.prepare(`
+      const actualAttributes = db
+        .prepare(`
         SELECT identifier, attribute_type_id, required, searchable
         FROM attributes
         WHERE table_id = 'comprehensive-test-table'
         ORDER BY identifier
-      `).all()
+      `)
+        .all()
 
       // Get AIMetadata schema info
       const query = `
@@ -376,11 +538,15 @@ describe('AIMetadata Documentation E2E Tests', () => {
       }
 
       // Verify required fields accuracy
-      const actualRequiredFields = actualAttributes.filter(attr => attr.required === 1).map(attr => attr.identifier)
+      const actualRequiredFields = actualAttributes
+        .filter((attr) => attr.required === 1)
+        .map((attr) => attr.identifier)
       expect(schemaInfo.requiredFields.sort()).toEqual(actualRequiredFields.sort())
 
       // Verify searchable fields accuracy
-      const actualSearchableFields = actualAttributes.filter(attr => attr.searchable === 1).map(attr => attr.identifier)
+      const actualSearchableFields = actualAttributes
+        .filter((attr) => attr.searchable === 1)
+        .map((attr) => attr.identifier)
       expect(schemaInfo.searchableFields.sort()).toEqual(actualSearchableFields.sort())
 
       console.log('✅ Schema info accuracy verified against database')
@@ -390,11 +556,13 @@ describe('AIMetadata Documentation E2E Tests', () => {
       const db = testContext.database!.database.getConnection()
 
       // Get actual template count
-      const actualTemplateCount = db.prepare(`
+      const actualTemplateCount = db
+        .prepare(`
         SELECT COUNT(*) as count
         FROM templates
         WHERE table_id = 'comprehensive-test-table'
-      `).get().count
+      `)
+        .get().count
 
       // Get AIMetadata usage patterns
       const query = `
@@ -413,17 +581,21 @@ describe('AIMetadata Documentation E2E Tests', () => {
       `
 
       const result = await testContext.graphqlRequest!(query)
-      const templateRecommendations = result.data.table.aiMetadata.usagePatterns.templateRecommendations
+      const templateRecommendations =
+        result.data.table.aiMetadata.usagePatterns.templateRecommendations
 
       // Verify template count matches
       expect(templateRecommendations.length).toBe(actualTemplateCount)
 
       // Verify template IDs are valid
-      const actualTemplateIds = db.prepare(`
+      const actualTemplateIds = db
+        .prepare(`
         SELECT identifier
         FROM templates
         WHERE table_id = 'comprehensive-test-table'
-      `).all().map(t => t.identifier)
+      `)
+        .all()
+        .map((t) => t.identifier)
 
       for (const rec of templateRecommendations) {
         expect(actualTemplateIds).toContain(rec.templateId)
@@ -436,13 +608,15 @@ describe('AIMetadata Documentation E2E Tests', () => {
       const db = testContext.database!.database.getConnection()
 
       // Get actual sample nodes
-      const actualNodes = db.prepare(`
+      const actualNodes = db
+        .prepare(`
         SELECT id, title, content
         FROM nodes
         WHERE table_id = 'comprehensive-test-table'
         ORDER BY created_at
         LIMIT 5
-      `).all()
+      `)
+        .all()
 
       // Get AIMetadata sample data
       const query = `
@@ -466,7 +640,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       const sampleData = result.data.table.aiMetadata.sampleData
 
       // Verify sample entries match actual nodes
-      const actualNodeIds = actualNodes.map(n => n.id)
+      const actualNodeIds = actualNodes.map((n) => n.id)
       const sampleNodeIds = sampleData.entries.map((e: any) => e.nodeId)
 
       for (const nodeId of sampleNodeIds) {
@@ -475,7 +649,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
       // Verify node details accuracy
       for (const entry of sampleData.entries) {
-        const actualNode = actualNodes.find(n => n.id === entry.nodeId)
+        const actualNode = actualNodes.find((n) => n.id === entry.nodeId)
         if (actualNode) {
           expect(entry.title).toBe(actualNode.title)
           expect(entry.content).toBe(actualNode.content)
@@ -542,8 +716,8 @@ describe('AIMetadata Documentation E2E Tests', () => {
         {
           tableId: 'comprehensive-test-table',
           expectedComplexity: 'complex', // Many templates and attributes
-          minTemplates: 10
-        }
+          minTemplates: 10,
+        },
       ]
 
       for (const testCase of testCases) {
@@ -566,14 +740,16 @@ describe('AIMetadata Documentation E2E Tests', () => {
         `
 
         const result = await testContext.graphqlRequest!(query, {
-          tableId: testCase.tableId
+          tableId: testCase.tableId,
         })
 
         const aiMetadata = result.data.table.aiMetadata
 
         // Verify complexity matches expectations based on data
         expect(aiMetadata.usagePatterns.queryComplexity).toBe(testCase.expectedComplexity)
-        expect(aiMetadata.usagePatterns.templateRecommendations.length).toBeGreaterThanOrEqual(testCase.minTemplates)
+        expect(aiMetadata.usagePatterns.templateRecommendations.length).toBeGreaterThanOrEqual(
+          testCase.minTemplates
+        )
         expect(Object.keys(aiMetadata.schemaInfo.dataTypes).length).toBeGreaterThan(5)
       }
 
@@ -594,15 +770,21 @@ describe('AIMetadata Documentation E2E Tests', () => {
       `
 
       const result = await testContext.graphqlRequest!(query)
-      const relationshipCapabilities = result.data.table.aiMetadata.schemaInfo.relationshipCapabilities
+      const relationshipCapabilities =
+        result.data.table.aiMetadata.schemaInfo.relationshipCapabilities
 
       // Verify relationship capabilities are informative
       expect(Array.isArray(relationshipCapabilities)).toBe(true)
       expect(relationshipCapabilities.length).toBeGreaterThan(0)
 
       // Should include common relationship types
-      const expectedCapabilities = ['one-to-many', 'many-to-one', 'many-to-many', 'self-referential']
-      const hasBasicCapabilities = expectedCapabilities.some(cap =>
+      const expectedCapabilities = [
+        'one-to-many',
+        'many-to-one',
+        'many-to-many',
+        'self-referential',
+      ]
+      const hasBasicCapabilities = expectedCapabilities.some((cap) =>
         relationshipCapabilities.some((rc: string) => rc.toLowerCase().includes(cap.split('-')[0]))
       )
       expect(hasBasicCapabilities).toBe(true)
@@ -638,7 +820,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       const results = await Promise.all([
         testContext.graphqlRequest!(query),
         testContext.graphqlRequest!(query),
-        testContext.graphqlRequest!(query)
+        testContext.graphqlRequest!(query),
       ])
 
       // Verify all results are identical
@@ -648,9 +830,15 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
         // Deep comparison of key properties
         expect(currentResult.schemaInfo.dataTypes).toEqual(firstResult.schemaInfo.dataTypes)
-        expect(currentResult.schemaInfo.requiredFields).toEqual(firstResult.schemaInfo.requiredFields)
-        expect(currentResult.schemaInfo.searchableFields).toEqual(firstResult.schemaInfo.searchableFields)
-        expect(currentResult.usagePatterns.queryComplexity).toBe(firstResult.usagePatterns.queryComplexity)
+        expect(currentResult.schemaInfo.requiredFields).toEqual(
+          firstResult.schemaInfo.requiredFields
+        )
+        expect(currentResult.schemaInfo.searchableFields).toEqual(
+          firstResult.schemaInfo.searchableFields
+        )
+        expect(currentResult.usagePatterns.queryComplexity).toBe(
+          firstResult.usagePatterns.queryComplexity
+        )
         expect(currentResult.sampleData.totalCount).toBe(firstResult.sampleData.totalCount)
       }
 
@@ -707,12 +895,16 @@ describe('AIMetadata Documentation E2E Tests', () => {
       const table = result.data.table
 
       // Verify integration between table data and AIMetadata
-      expect(table.attributes.length).toBe(Object.keys(table.aiMetadata.schemaInfo.dataTypes).length)
+      expect(table.attributes.length).toBe(
+        Object.keys(table.aiMetadata.schemaInfo.dataTypes).length
+      )
 
       // Verify attribute consistency
       for (const attr of table.attributes) {
         expect(table.aiMetadata.schemaInfo.dataTypes).toHaveProperty(attr.identifier)
-        expect(table.aiMetadata.schemaInfo.dataTypes[attr.identifier]).toBe(attr.attributeType.dataType)
+        expect(table.aiMetadata.schemaInfo.dataTypes[attr.identifier]).toBe(
+          attr.attributeType.dataType
+        )
 
         if (attr.required) {
           expect(table.aiMetadata.schemaInfo.requiredFields).toContain(attr.identifier)

@@ -1,9 +1,9 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import type { GraphQLContext, TableParent } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
 export class TableFieldResolvers extends BaseResolver {
@@ -161,7 +161,7 @@ export class TableFieldResolvers extends BaseResolver {
             tableId: parent.id,
             includeAiMetadata: true,
             includeDocs: false,
-            includeRelatedTemplates: false
+            includeRelatedTemplates: false,
           })
 
           return result.tableDocs?.aiMetadata || null

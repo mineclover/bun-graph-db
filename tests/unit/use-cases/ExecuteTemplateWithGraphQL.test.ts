@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { ExecuteTemplateWithGraphQLUseCase, type ExecuteTemplateWithGraphQLInput } from '@/application/use-cases/query-templates/ExecuteTemplateWithGraphQL.js'
-import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLInt, GraphQLList } from 'graphql'
+import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
+import {
+  type ExecuteTemplateWithGraphQLInput,
+  ExecuteTemplateWithGraphQLUseCase,
+} from '@/application/use-cases/query-templates/ExecuteTemplateWithGraphQL.js'
 
 describe('ExecuteTemplateWithGraphQLUseCase', () => {
   let useCase: ExecuteTemplateWithGraphQLUseCase
@@ -188,7 +191,10 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
       expect(result.data.users).toBeDefined()
       expect(result.data.users.length).toBe(2)
       expect(result.data.users[0].name).toBe('User 1')
-      expect(mockLogger.info).toHaveBeenCalledWith('Template executed successfully', expect.any(Object))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Template executed successfully',
+        expect.any(Object)
+      )
     })
 
     it('should return data even with partial errors in simple schema', async () => {
@@ -396,11 +402,17 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
 
       await useCase.execute(input)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Executing template with GraphQL', expect.objectContaining({
-        identifier: 'logged-execution',
-        hasVariables: true,
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Template executed successfully', expect.any(Object))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Executing template with GraphQL',
+        expect.objectContaining({
+          identifier: 'logged-execution',
+          hasVariables: true,
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Template executed successfully',
+        expect.any(Object)
+      )
     })
 
     it('should log parse errors with appropriate detail', async () => {

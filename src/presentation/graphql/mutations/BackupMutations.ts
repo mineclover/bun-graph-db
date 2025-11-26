@@ -4,6 +4,7 @@
  * Handles database backup and restore operations
  */
 
+import type { GraphQLResolveInfo } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
   BackupRetentionPolicy,
@@ -11,7 +12,6 @@ import type {
   SQLiteRestoreOptions,
 } from '@/core/types/DatabaseBackup.js'
 import type { SQLiteBackupService } from '@/domain/services/SQLiteBackupService.js'
-import type { GraphQLResolveInfo } from 'graphql'
 
 export interface BackupMutationsContext {
   backupService: SQLiteBackupService

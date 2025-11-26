@@ -5,9 +5,9 @@ import type {
   PaginationOptions,
   TableId,
 } from '@/core/types/CommonTypes.js'
+import type { IFullRepository, ITableScopedRepository } from '@/core/types/RepositoryTypes.js'
 import type { Attribute } from '@/domain/entities/Attribute.js'
 import type { AttributeType } from '@/domain/entities/AttributeType.js'
-import type { IFullRepository, ITableScopedRepository } from '@/core/types/RepositoryTypes.js'
 
 export interface AttributeUpdateData {
   identifier?: string
@@ -21,13 +21,9 @@ export interface AttributeUpdateData {
 // findByParentId, countByParentId, deleteByParentId)
 export interface IAttributeRepository
   extends IFullRepository<Attribute, AttributeId, AttributeUpdateData>,
-          ITableScopedRepository<Attribute, AttributeId> {
-
+    ITableScopedRepository<Attribute, AttributeId> {
   // Attribute-specific methods only
-  findByTableIdAndIdentifier(
-    tableId: TableId,
-    identifier: string
-  ): Promise<Attribute | null>
+  findByTableIdAndIdentifier(tableId: TableId, identifier: string): Promise<Attribute | null>
 
   findByAttributeTypeId(
     attributeTypeId: AttributeTypeId,

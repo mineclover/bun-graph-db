@@ -36,7 +36,9 @@ import type { IRelationTypeRepository } from '../repositories/IRelationTypeRepos
 import type { ITableRepository } from '../repositories/ITableRepository.js'
 
 /** Helper to convert ID to string safely */
-function toStringId(id: NodeId | RelationTypeId | TableId | string | number | null | undefined): string {
+function toStringId(
+  id: NodeId | RelationTypeId | TableId | string | number | null | undefined
+): string {
   if (id === null || id === undefined) return ''
   return String(id)
 }
@@ -117,7 +119,8 @@ export class JsonExportService {
           success: true,
           format: 'flat',
           data,
-          json: options.prettyPrint !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data),
+          json:
+            options.prettyPrint !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data),
           nodeCount: nodes.length,
           errors,
           warnings,
@@ -150,7 +153,8 @@ export class JsonExportService {
           success: true,
           format: 'hfi',
           data,
-          json: options.prettyPrint !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data),
+          json:
+            options.prettyPrint !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data),
           nodeCount: nodes.length,
           errors,
           warnings,

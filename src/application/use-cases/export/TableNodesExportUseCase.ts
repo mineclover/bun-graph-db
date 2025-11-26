@@ -1,13 +1,13 @@
+import * as fs from 'fs'
+import * as path from 'path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
-import * as fs from 'fs'
-import * as path from 'path'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface TableNodesExportOptions {
   format: 'csv' | 'json' | 'excel' | 'xml' | 'yaml'
@@ -131,16 +131,18 @@ export class TableNodesExportUseCase {
       let fileSize: string = '0 B'
 
       switch (options.format) {
-        case 'csv':
+        case 'csv': {
           // CSV는 기본적으로 columns 형태로 출력
           const csvOptions = { ...options, attributeFormat: 'columns' as const }
           exportedData = this.exportToCSV(exportData, csvOptions)
           break
-        case 'json':
+        }
+        case 'json': {
           // JSON도 attributes가 개별 컬럼으로 펼쳐지도록 columns 형태로 출력
           const jsonOptions = { ...options, attributeFormat: 'columns' as const }
           exportedData = this.exportToJSON(exportData, jsonOptions)
           break
+        }
         case 'excel':
           exportedData = await this.exportToExcel(exportData, options)
           break
@@ -295,7 +297,7 @@ export class TableNodesExportUseCase {
     const rows: string[] = []
 
     // Determine columns based on attributeFormat
-    let headers: string[] = ['id', 'title', 'content', 'description']
+    const headers: string[] = ['id', 'title', 'content', 'description']
 
     if (options.includeMetadata) {
       headers.push('createdAt', 'updatedAt', 'tableId')
@@ -305,8 +307,8 @@ export class TableNodesExportUseCase {
       if (options.attributeFormat === 'columns') {
         // Add each attribute as a separate column
         const allAttributeKeys = new Set<string>()
-        data.forEach(node => {
-          Object.keys(node.attributes).forEach(key => allAttributeKeys.add(key))
+        data.forEach((node) => {
+          Object.keys(node.attributes).forEach((key) => allAttributeKeys.add(key))
         })
         headers.push(...Array.from(allAttributeKeys))
       } else {
@@ -317,7 +319,7 @@ export class TableNodesExportUseCase {
     rows.push(headers.join(','))
 
     // Add data rows
-    data.forEach(node => {
+    data.forEach((node) => {
       const row: string[] = []
 
       // Basic fields
@@ -337,10 +339,10 @@ export class TableNodesExportUseCase {
       if (options.includeAttributes) {
         if (options.attributeFormat === 'columns') {
           const allAttributeKeys = new Set<string>()
-          data.forEach(n => {
-            Object.keys(n.attributes).forEach(key => allAttributeKeys.add(key))
+          data.forEach((n) => {
+            Object.keys(n.attributes).forEach((key) => allAttributeKeys.add(key))
           })
-          Array.from(allAttributeKeys).forEach(key => {
+          Array.from(allAttributeKeys).forEach((key) => {
             row.push(this.escapeCsvValue(node.attributes[key] || ''))
           })
         } else {
@@ -358,13 +360,13 @@ export class TableNodesExportUseCase {
 
   private exportToJSON(data: ExportedNodeData[], options: TableNodesExportOptions): string {
     // attributeFormat에 따라 속성 처리 방식 결정
-    const transformedNodes = data.map(node => {
+    const transformedNodes = data.map((node) => {
       if (options.attributeFormat === 'columns') {
         // columns 형태: 속성을 개별 필드로 펼쳐서 출력
         const { attributes, ...nodeWithoutAttributes } = node
         return {
           ...nodeWithoutAttributes,
-          ...attributes  // 속성들을 개별 필드로 펼침
+          ...attributes, // 속성들을 개별 필드로 펼침
         }
       } else {
         // nested 형태: 속성을 key-value 배열로 변환
@@ -372,8 +374,8 @@ export class TableNodesExportUseCase {
           ...node,
           attributes: Object.entries(node.attributes).map(([key, value]) => ({
             key,
-            value
-          }))
+            value,
+          })),
         }
       }
     })
@@ -393,7 +395,10 @@ export class TableNodesExportUseCase {
       : JSON.stringify(exportObject)
   }
 
-  private async exportToExcel(data: ExportedNodeData[], options: TableNodesExportOptions): Promise<Buffer> {
+  private async exportToExcel(
+    data: ExportedNodeData[],
+    options: TableNodesExportOptions
+  ): Promise<Buffer> {
     // This would require a library like 'xlsx' or 'exceljs'
     // For now, return JSON as buffer
     const jsonData = this.exportToJSON(data, options)
@@ -410,7 +415,7 @@ export class TableNodesExportUseCase {
     xml += `  </metadata>\n`
     xml += '  <nodes>\n'
 
-    data.forEach(node => {
+    data.forEach((node) => {
       xml += '    <node>\n'
       xml += `      <id>${this.escapeXml(node.id)}</id>\n`
       xml += `      <title>${this.escapeXml(node.title || '')}</title>\n`

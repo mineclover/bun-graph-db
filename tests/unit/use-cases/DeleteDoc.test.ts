@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
-import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
-import { ValidationException, NotFoundException } from '@/shared/exceptions/DomainException.js'
+import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 // Helper function to create test Doc
 function createTestDoc(
@@ -75,7 +75,9 @@ describe('DeleteDocUseCase', () => {
       mockDocRepository.findById = mock(async () => null)
 
       await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow("Doc with id 'nonexistent-doc' not found")
+      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow(
+        "Doc with id 'nonexistent-doc' not found"
+      )
     })
   })
 
@@ -114,11 +116,14 @@ describe('DeleteDocUseCase', () => {
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-1')
-      expect(mockLogger.info).toHaveBeenCalledWith('Doc deleted successfully', expect.objectContaining({
-        id: 'doc-1',
-        tableId: 'table-1',
-        category: 'usage',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Doc deleted successfully',
+        expect.objectContaining({
+          id: 'doc-1',
+          tableId: 'table-1',
+          category: 'usage',
+        })
+      )
     })
 
     it('should delete doc with GUIDE category', async () => {
@@ -166,7 +171,14 @@ describe('DeleteDocUseCase', () => {
     })
 
     it('should delete inactive doc', async () => {
-      const existingDoc = createTestDoc('doc-6', 'table-1', DocCategory.USAGE, 'Inactive doc', 1, false)
+      const existingDoc = createTestDoc(
+        'doc-6',
+        'table-1',
+        DocCategory.USAGE,
+        'Inactive doc',
+        1,
+        false
+      )
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
@@ -177,7 +189,14 @@ describe('DeleteDocUseCase', () => {
     })
 
     it('should delete doc with specific version', async () => {
-      const existingDoc = createTestDoc('doc-7', 'table-1', DocCategory.USAGE, 'Version 3 doc', 3, true)
+      const existingDoc = createTestDoc(
+        'doc-7',
+        'table-1',
+        DocCategory.USAGE,
+        'Version 3 doc',
+        3,
+        true
+      )
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
@@ -227,14 +246,20 @@ describe('DeleteDocUseCase', () => {
 
       await useCase.execute('doc-123' as any)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Deleting doc', expect.objectContaining({
-        id: 'doc-123',
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Doc deleted successfully', expect.objectContaining({
-        id: 'doc-123',
-        tableId: 'table-1',
-        category: 'usage',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Deleting doc',
+        expect.objectContaining({
+          id: 'doc-123',
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Doc deleted successfully',
+        expect.objectContaining({
+          id: 'doc-123',
+          tableId: 'table-1',
+          category: 'usage',
+        })
+      )
     })
 
     it('should log errors with context', async () => {
@@ -254,9 +279,12 @@ describe('DeleteDocUseCase', () => {
         // Expected error
       }
 
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to delete doc', expect.objectContaining({
-        id: 'doc-1',
-      }))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to delete doc',
+        expect.objectContaining({
+          id: 'doc-1',
+        })
+      )
     })
   })
 

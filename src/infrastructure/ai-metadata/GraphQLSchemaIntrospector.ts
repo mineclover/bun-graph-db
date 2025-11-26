@@ -1,17 +1,22 @@
-import { GraphQLSchema, introspectionFromSchema, buildClientSchema, getIntrospectionQuery } from 'graphql';
+import {
+  buildClientSchema,
+  type GraphQLSchema,
+  getIntrospectionQuery,
+  introspectionFromSchema,
+} from 'graphql'
 
 /**
  * GraphQL Schema Introspection Service
  * Extracts real-time schema information for AI metadata enhancement
  */
 export class GraphQLSchemaIntrospector {
-  private schema: GraphQLSchema;
-  private lastIntrospection: Date | null = null;
-  private cachedIntrospection: any = null;
-  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  private schema: GraphQLSchema
+  private lastIntrospection: Date | null = null
+  private cachedIntrospection: any = null
+  private readonly CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
   constructor(schema: GraphQLSchema) {
-    this.schema = schema;
+    this.schema = schema
   }
 
   /**
@@ -19,53 +24,57 @@ export class GraphQLSchemaIntrospector {
    */
   async getSchemaIntrospection(): Promise<SchemaIntrospectionResult> {
     if (this.isCacheValid()) {
-      return this.cachedIntrospection;
+      return this.cachedIntrospection
     }
 
-    const introspection = introspectionFromSchema(this.schema);
+    const introspection = introspectionFromSchema(this.schema)
     const result: SchemaIntrospectionResult = {
       schema: introspection,
       queries: this.extractQueries(introspection),
       mutations: this.extractMutations(introspection),
       types: this.extractTypes(introspection),
       lastUpdated: new Date().toISOString(),
-      version: this.generateSchemaVersion(introspection)
-    };
+      version: this.generateSchemaVersion(introspection),
+    }
 
-    this.cachedIntrospection = result;
-    this.lastIntrospection = new Date();
+    this.cachedIntrospection = result
+    this.lastIntrospection = new Date()
 
-    return result;
+    return result
   }
 
   /**
    * Extract query field definitions
    */
   private extractQueries(introspection: any): QueryFieldDefinition[] {
-    const queryType = introspection.data.__schema.queryType;
-    if (!queryType) return [];
+    const queryType = introspection.data.__schema.queryType
+    if (!queryType) return []
 
-    return this.extractFieldsFromType(introspection, queryType.name, 'query');
+    return this.extractFieldsFromType(introspection, queryType.name, 'query')
   }
 
   /**
    * Extract mutation field definitions
    */
   private extractMutations(introspection: any): MutationFieldDefinition[] {
-    const mutationType = introspection.data.__schema.mutationType;
-    if (!mutationType) return [];
+    const mutationType = introspection.data.__schema.mutationType
+    if (!mutationType) return []
 
-    return this.extractFieldsFromType(introspection, mutationType.name, 'mutation');
+    return this.extractFieldsFromType(introspection, mutationType.name, 'mutation')
   }
 
   /**
    * Extract field definitions from a specific type
    */
-  private extractFieldsFromType(introspection: any, typeName: string, operationType: 'query' | 'mutation'): any[] {
-    const types = introspection.data.__schema.types;
-    const targetType = types.find((type: any) => type.name === typeName);
+  private extractFieldsFromType(
+    introspection: any,
+    typeName: string,
+    operationType: 'query' | 'mutation'
+  ): any[] {
+    const types = introspection.data.__schema.types
+    const targetType = types.find((type: any) => type.name === typeName)
 
-    if (!targetType || !targetType.fields) return [];
+    if (!targetType || !targetType.fields) return []
 
     return targetType.fields.map((field: any) => ({
       name: field.name,
@@ -75,12 +84,12 @@ export class GraphQLSchemaIntrospector {
         name: arg.name,
         type: this.extractTypeInfo(arg.type),
         description: arg.description,
-        defaultValue: arg.defaultValue
+        defaultValue: arg.defaultValue,
       })),
       returnType: this.extractTypeInfo(field.type),
       isDeprecated: field.isDeprecated,
-      deprecationReason: field.deprecationReason
-    }));
+      deprecationReason: field.deprecationReason,
+    }))
   }
 
   /**
@@ -92,8 +101,8 @@ export class GraphQLSchemaIntrospector {
         kind: 'NON_NULL',
         name: null,
         isRequired: true,
-        ofType: this.extractTypeInfo(type.ofType)
-      };
+        ofType: this.extractTypeInfo(type.ofType),
+      }
     }
 
     if (type.kind === 'LIST') {
@@ -101,16 +110,16 @@ export class GraphQLSchemaIntrospector {
         kind: 'LIST',
         name: null,
         isRequired: false,
-        ofType: this.extractTypeInfo(type.ofType)
-      };
+        ofType: this.extractTypeInfo(type.ofType),
+      }
     }
 
     return {
       kind: type.kind,
       name: type.name,
       isRequired: false,
-      ofType: null
-    };
+      ofType: null,
+    }
   }
 
   /**
@@ -123,38 +132,44 @@ export class GraphQLSchemaIntrospector {
         name: type.name,
         kind: type.kind,
         description: type.description,
-        fields: type.fields ? type.fields.map((field: any) => ({
-          name: field.name,
-          type: this.extractTypeInfo(field.type),
-          description: field.description
-        })) : [],
-        inputFields: type.inputFields ? type.inputFields.map((field: any) => ({
-          name: field.name,
-          type: this.extractTypeInfo(field.type),
-          description: field.description,
-          defaultValue: field.defaultValue
-        })) : [],
-        enumValues: type.enumValues ? type.enumValues.map((value: any) => ({
-          name: value.name,
-          description: value.description,
-          isDeprecated: value.isDeprecated
-        })) : []
-      }));
+        fields: type.fields
+          ? type.fields.map((field: any) => ({
+              name: field.name,
+              type: this.extractTypeInfo(field.type),
+              description: field.description,
+            }))
+          : [],
+        inputFields: type.inputFields
+          ? type.inputFields.map((field: any) => ({
+              name: field.name,
+              type: this.extractTypeInfo(field.type),
+              description: field.description,
+              defaultValue: field.defaultValue,
+            }))
+          : [],
+        enumValues: type.enumValues
+          ? type.enumValues.map((value: any) => ({
+              name: value.name,
+              description: value.description,
+              isDeprecated: value.isDeprecated,
+            }))
+          : [],
+      }))
   }
 
   /**
    * Generate schema version hash for change detection
    */
   private generateSchemaVersion(introspection: any): string {
-    const schemaString = JSON.stringify(introspection, null, 0);
+    const schemaString = JSON.stringify(introspection, null, 0)
     // Simple hash function for version generation
-    let hash = 0;
+    let hash = 0
     for (let i = 0; i < schemaString.length; i++) {
-      const char = schemaString.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
+      const char = schemaString.charCodeAt(i)
+      hash = (hash << 5) - hash + char
+      hash = hash & hash // Convert to 32bit integer
     }
-    return Math.abs(hash).toString(16);
+    return Math.abs(hash).toString(16)
   }
 
   /**
@@ -162,45 +177,45 @@ export class GraphQLSchemaIntrospector {
    */
   private isCacheValid(): boolean {
     if (!this.lastIntrospection || !this.cachedIntrospection) {
-      return false;
+      return false
     }
 
-    const timeSinceLastIntrospection = Date.now() - this.lastIntrospection.getTime();
-    return timeSinceLastIntrospection < this.CACHE_TTL_MS;
+    const timeSinceLastIntrospection = Date.now() - this.lastIntrospection.getTime()
+    return timeSinceLastIntrospection < this.CACHE_TTL_MS
   }
 
   /**
    * Get schema-compliant query patterns for specific operations
    */
   async getQueryPatterns(): Promise<QueryPattern[]> {
-    const introspection = await this.getSchemaIntrospection();
-    const patterns: QueryPattern[] = [];
+    const introspection = await this.getSchemaIntrospection()
+    const patterns: QueryPattern[] = []
 
     // Extract searchNodes patterns
-    const searchNodesQuery = introspection.queries.find(q => q.name === 'searchNodes');
+    const searchNodesQuery = introspection.queries.find((q) => q.name === 'searchNodes')
     if (searchNodesQuery) {
       patterns.push({
         operationName: 'searchNodes',
         description: 'Search nodes with filtering, pagination, and sorting',
         example: this.generateSearchNodesExample(searchNodesQuery),
         parameters: searchNodesQuery.args,
-        complexity: 'medium'
-      });
+        complexity: 'medium',
+      })
     }
 
     // Extract createNode patterns
-    const createNodeMutation = introspection.mutations.find(m => m.name === 'createNode');
+    const createNodeMutation = introspection.mutations.find((m) => m.name === 'createNode')
     if (createNodeMutation) {
       patterns.push({
         operationName: 'createNode',
         description: 'Create a new node in a table',
         example: this.generateCreateNodeExample(createNodeMutation),
         parameters: createNodeMutation.args,
-        complexity: 'simple'
-      });
+        complexity: 'simple',
+      })
     }
 
-    return patterns;
+    return patterns
   }
 
   /**
@@ -216,7 +231,7 @@ export class GraphQLSchemaIntrospector {
     createdAt
     relevanceScore
   }
-}`;
+}`
   }
 
   /**
@@ -236,75 +251,75 @@ export class GraphQLSchemaIntrospector {
       field
     }
   }
-}`;
+}`
   }
 }
 
 // Type definitions for schema introspection
 export interface SchemaIntrospectionResult {
-  schema: any;
-  queries: QueryFieldDefinition[];
-  mutations: MutationFieldDefinition[];
-  types: TypeDefinition[];
-  lastUpdated: string;
-  version: string;
+  schema: any
+  queries: QueryFieldDefinition[]
+  mutations: MutationFieldDefinition[]
+  types: TypeDefinition[]
+  lastUpdated: string
+  version: string
 }
 
 export interface QueryFieldDefinition {
-  name: string;
-  description?: string;
-  operationType: 'query' | 'mutation';
-  args: ArgumentDefinition[];
-  returnType: TypeInfo;
-  isDeprecated: boolean;
-  deprecationReason?: string;
+  name: string
+  description?: string
+  operationType: 'query' | 'mutation'
+  args: ArgumentDefinition[]
+  returnType: TypeInfo
+  isDeprecated: boolean
+  deprecationReason?: string
 }
 
 export interface MutationFieldDefinition extends QueryFieldDefinition {}
 
 export interface ArgumentDefinition {
-  name: string;
-  type: TypeInfo;
-  description?: string;
-  defaultValue?: any;
+  name: string
+  type: TypeInfo
+  description?: string
+  defaultValue?: any
 }
 
 export interface TypeInfo {
-  kind: string;
-  name: string | null;
-  isRequired: boolean;
-  ofType: TypeInfo | null;
+  kind: string
+  name: string | null
+  isRequired: boolean
+  ofType: TypeInfo | null
 }
 
 export interface TypeDefinition {
-  name: string;
-  kind: string;
-  description?: string;
-  fields: FieldDefinition[];
-  inputFields: InputFieldDefinition[];
-  enumValues: EnumValueDefinition[];
+  name: string
+  kind: string
+  description?: string
+  fields: FieldDefinition[]
+  inputFields: InputFieldDefinition[]
+  enumValues: EnumValueDefinition[]
 }
 
 export interface FieldDefinition {
-  name: string;
-  type: TypeInfo;
-  description?: string;
+  name: string
+  type: TypeInfo
+  description?: string
 }
 
 export interface InputFieldDefinition extends FieldDefinition {
-  defaultValue?: any;
+  defaultValue?: any
 }
 
 export interface EnumValueDefinition {
-  name: string;
-  description?: string;
-  isDeprecated: boolean;
+  name: string
+  description?: string
+  isDeprecated: boolean
 }
 
 export interface QueryPattern {
-  operationName: string;
-  description: string;
-  example: string;
-  parameters: ArgumentDefinition[];
-  complexity: 'simple' | 'medium' | 'complex';
+  operationName: string
+  description: string
+  example: string
+  parameters: ArgumentDefinition[]
+  complexity: 'simple' | 'medium' | 'complex'
 }

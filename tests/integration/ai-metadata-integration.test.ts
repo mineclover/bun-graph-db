@@ -387,9 +387,7 @@ describe('AIMetadata Integration Tests', () => {
       const startTime = performance.now()
 
       // Send concurrent requests
-      const promises = tableIds.map((tableId) =>
-        testContext.graphqlRequest!(query, { tableId })
-      )
+      const promises = tableIds.map((tableId) => testContext.graphqlRequest!(query, { tableId }))
 
       const results = await Promise.all(promises)
       const duration = performance.now() - startTime

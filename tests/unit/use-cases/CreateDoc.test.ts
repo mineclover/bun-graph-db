@@ -1,10 +1,14 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { CreateDocUseCase, type CreateDocInput } from '@/application/use-cases/docs/CreateDoc.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import { type CreateDocInput, CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
+import { Doc, DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
-import { Doc, DocCategory } from '@/domain/entities/Doc.js'
-import { ValidationException, NotFoundException, ConflictException } from '@/shared/exceptions/DomainException.js'
+import {
+  ConflictException,
+  NotFoundException,
+  ValidationException,
+} from '@/shared/exceptions/DomainException.js'
 import { createTestTable } from './test-helpers.js'
 
 // Helper function to create test Doc
@@ -71,11 +75,7 @@ describe('CreateDocUseCase', () => {
       update: mock(async () => createTestTable()),
     } as any
 
-    useCase = new CreateDocUseCase(
-      mockDocRepository,
-      mockTableRepository,
-      mockLogger
-    )
+    useCase = new CreateDocUseCase(mockDocRepository, mockTableRepository, mockLogger)
   })
 
   describe('Input Validation', () => {
@@ -135,7 +135,9 @@ describe('CreateDocUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow("Table with id 'nonexistent-table' not found")
+      await expect(useCase.execute(input)).rejects.toThrow(
+        "Table with id 'nonexistent-table' not found"
+      )
     })
   })
 
@@ -147,7 +149,13 @@ describe('CreateDocUseCase', () => {
         content: 'Usage documentation',
       }
 
-      const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Usage documentation', 1)
+      const createdDoc = createTestDoc(
+        'doc-1',
+        'table-1',
+        DocCategory.USAGE,
+        'Usage documentation',
+        1
+      )
 
       mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
 
@@ -166,7 +174,13 @@ describe('CreateDocUseCase', () => {
         version: 2,
       }
 
-      const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, 'Guide documentation', 2)
+      const createdDoc = createTestDoc(
+        'doc-1',
+        'table-1',
+        DocCategory.GUIDE,
+        'Guide documentation',
+        2
+      )
 
       mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
 
@@ -189,7 +203,9 @@ describe('CreateDocUseCase', () => {
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
-      await expect(promise).rejects.toThrow("Doc with category 'example' and version 1 already exists for table 'table-1'")
+      await expect(promise).rejects.toThrow(
+        "Doc with category 'example' and version 1 already exists for table 'table-1'"
+      )
     })
   })
 
@@ -201,13 +217,22 @@ describe('CreateDocUseCase', () => {
         content: 'Specification documentation',
       }
 
-      const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.SPEC, 'Specification documentation', 1)
+      const createdDoc = createTestDoc(
+        'doc-1',
+        'table-1',
+        DocCategory.SPEC,
+        'Specification documentation',
+        1
+      )
 
       mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
 
       await useCase.execute(input)
 
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.SPEC)
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
+        'table-1',
+        DocCategory.SPEC
+      )
       expect(mockDocRepository.save).toHaveBeenCalled()
     })
   })
@@ -220,7 +245,12 @@ describe('CreateDocUseCase', () => {
         content: 'How to use this table',
       }
 
-      const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'How to use this table')
+      const createdDoc = createTestDoc(
+        'doc-1',
+        'table-1',
+        DocCategory.USAGE,
+        'How to use this table'
+      )
 
       mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
 
@@ -273,7 +303,12 @@ describe('CreateDocUseCase', () => {
         content: 'Technical specification',
       }
 
-      const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.SPEC, 'Technical specification')
+      const createdDoc = createTestDoc(
+        'doc-1',
+        'table-1',
+        DocCategory.SPEC,
+        'Technical specification'
+      )
 
       mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
 
@@ -290,7 +325,12 @@ describe('CreateDocUseCase', () => {
         content: 'General information',
       }
 
-      const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.GENERAL, 'General information')
+      const createdDoc = createTestDoc(
+        'doc-1',
+        'table-1',
+        DocCategory.GENERAL,
+        'General information'
+      )
 
       mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
 
@@ -307,7 +347,12 @@ describe('CreateDocUseCase', () => {
         content: 'Mapped category content',
       }
 
-      const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Mapped category content')
+      const createdDoc = createTestDoc(
+        'doc-1',
+        'table-1',
+        DocCategory.USAGE,
+        'Mapped category content'
+      )
 
       mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
 
@@ -364,16 +409,22 @@ describe('CreateDocUseCase', () => {
 
       await useCase.execute(input)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating new doc', expect.objectContaining({
-        tableId: 'table-1',
-        category: DocCategory.USAGE,
-      }))
-      expect(mockLogger.info).toHaveBeenCalledWith('Doc created successfully', expect.objectContaining({
-        id: 'doc-123',
-        tableId: 'table-1',
-        category: 'usage',
-        version: 1,
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Creating new doc',
+        expect.objectContaining({
+          tableId: 'table-1',
+          category: DocCategory.USAGE,
+        })
+      )
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Doc created successfully',
+        expect.objectContaining({
+          id: 'doc-123',
+          tableId: 'table-1',
+          category: 'usage',
+          version: 1,
+        })
+      )
     })
   })
 

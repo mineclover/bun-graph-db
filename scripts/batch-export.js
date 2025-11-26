@@ -6,32 +6,32 @@
  * Usage: node scripts/batch-export.js [tableId] [outputDir]
  */
 
-import { exportTableNodes } from './auto-export.js';
+import { exportTableNodes } from './auto-export.js'
 
 // Available export formats
-const ALL_FORMATS = ['CSV', 'JSON', 'EXCEL', 'XML', 'YAML'];
+const ALL_FORMATS = ['CSV', 'JSON', 'EXCEL', 'XML', 'YAML']
 
 // Default configuration
 const DEFAULT_CONFIG = {
   tableId: '267',
   outputDir: './exports',
-  limit: 100
-};
+  limit: 100,
+}
 
 /**
  * Export table to all formats
  */
 async function batchExport(config) {
-  console.log(`🚀 Starting batch export for table ${config.tableId}...`);
-  console.log(`📁 Output directory: ${config.outputDir}`);
-  console.log(`📊 Formats: ${ALL_FORMATS.join(', ')}`);
-  console.log('');
+  console.log(`🚀 Starting batch export for table ${config.tableId}...`)
+  console.log(`📁 Output directory: ${config.outputDir}`)
+  console.log(`📊 Formats: ${ALL_FORMATS.join(', ')}`)
+  console.log('')
 
-  const results = [];
+  const results = []
 
   for (const format of ALL_FORMATS) {
     try {
-      console.log(`📄 Exporting ${format}...`);
+      console.log(`📄 Exporting ${format}...`)
 
       const exportConfig = {
         host: 'localhost',
@@ -39,94 +39,94 @@ async function batchExport(config) {
         tableId: config.tableId,
         format: format,
         outputDir: config.outputDir,
-        limit: config.limit
-      };
-
-      const response = await exportTableNodes(exportConfig);
-
-      if (response.errors && response.errors.length > 0) {
-        throw new Error(`GraphQL errors: ${response.errors.map(e => e.message).join(', ')}`);
+        limit: config.limit,
       }
 
-      const result = response.data.exportTableNodes;
+      const response = await exportTableNodes(exportConfig)
+
+      if (response.errors && response.errors.length > 0) {
+        throw new Error(`GraphQL errors: ${response.errors.map((e) => e.message).join(', ')}`)
+      }
+
+      const result = response.data.exportTableNodes
 
       if (result.success) {
-        console.log(`✅ ${format} export completed: ${result.filePath}`);
+        console.log(`✅ ${format} export completed: ${result.filePath}`)
         results.push({
           format: format,
           success: true,
           filePath: result.filePath,
           exportedNodes: result.metadata.exportedNodes,
-          totalNodes: result.metadata.totalNodes
-        });
+          totalNodes: result.metadata.totalNodes,
+        })
       } else {
-        throw new Error(`Export failed: ${result.errors ? result.errors.join(', ') : 'Unknown error'}`);
+        throw new Error(
+          `Export failed: ${result.errors ? result.errors.join(', ') : 'Unknown error'}`
+        )
       }
-
     } catch (error) {
-      console.error(`❌ ${format} export failed: ${error.message}`);
+      console.error(`❌ ${format} export failed: ${error.message}`)
       results.push({
         format: format,
         success: false,
-        error: error.message
-      });
+        error: error.message,
+      })
     }
   }
 
-  console.log('');
-  console.log('📋 Batch Export Summary:');
-  console.log('========================');
+  console.log('')
+  console.log('📋 Batch Export Summary:')
+  console.log('========================')
 
-  const successful = results.filter(r => r.success);
-  const failed = results.filter(r => !r.success);
+  const successful = results.filter((r) => r.success)
+  const failed = results.filter((r) => !r.success)
 
-  console.log(`✅ Successful: ${successful.length}/${ALL_FORMATS.length}`);
-  successful.forEach(result => {
-    console.log(`   ${result.format}: ${result.filePath} (${result.exportedNodes} nodes)`);
-  });
+  console.log(`✅ Successful: ${successful.length}/${ALL_FORMATS.length}`)
+  successful.forEach((result) => {
+    console.log(`   ${result.format}: ${result.filePath} (${result.exportedNodes} nodes)`)
+  })
 
   if (failed.length > 0) {
-    console.log(`❌ Failed: ${failed.length}/${ALL_FORMATS.length}`);
-    failed.forEach(result => {
-      console.log(`   ${result.format}: ${result.error}`);
-    });
+    console.log(`❌ Failed: ${failed.length}/${ALL_FORMATS.length}`)
+    failed.forEach((result) => {
+      console.log(`   ${result.format}: ${result.error}`)
+    })
   }
 
-  return results;
+  return results
 }
 
 /**
  * Main execution function
  */
 async function main() {
-  const args = process.argv.slice(2);
+  const args = process.argv.slice(2)
 
   const config = {
     tableId: args[0] || DEFAULT_CONFIG.tableId,
     outputDir: args[1] || DEFAULT_CONFIG.outputDir,
-    limit: DEFAULT_CONFIG.limit
-  };
+    limit: DEFAULT_CONFIG.limit,
+  }
 
   try {
-    const results = await batchExport(config);
+    const results = await batchExport(config)
 
-    const successful = results.filter(r => r.success).length;
-    const total = results.length;
+    const successful = results.filter((r) => r.success).length
+    const total = results.length
 
     if (successful === total) {
-      console.log(`\n🎉 All exports completed successfully!`);
-      process.exit(0);
+      console.log(`\n🎉 All exports completed successfully!`)
+      process.exit(0)
     } else if (successful > 0) {
-      console.log(`\n⚠️ Partial success: ${successful}/${total} exports completed`);
-      process.exit(1);
+      console.log(`\n⚠️ Partial success: ${successful}/${total} exports completed`)
+      process.exit(1)
     } else {
-      console.log(`\n💥 All exports failed!`);
-      process.exit(1);
+      console.log(`\n💥 All exports failed!`)
+      process.exit(1)
     }
-
   } catch (error) {
-    console.error(`❌ Batch export failed: ${error.message}`);
-    process.exit(1);
+    console.error(`❌ Batch export failed: ${error.message}`)
+    process.exit(1)
   }
 }
 
@@ -150,14 +150,14 @@ Examples:
   node scripts/batch-export.js 267 ./my-exports   # Export table 267 to custom directory
 
 Supported formats: ${ALL_FORMATS.join(', ')}
-`);
-  process.exit(0);
+`)
+  process.exit(0)
 }
 
 // Run the script
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
-    console.error(`❌ Unexpected error: ${error.message}`);
-    process.exit(1);
-  });
+  main().catch((error) => {
+    console.error(`❌ Unexpected error: ${error.message}`)
+    process.exit(1)
+  })
 }

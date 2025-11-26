@@ -1,8 +1,11 @@
-import { describe, it, expect, beforeEach, mock } from 'bun:test'
-import { CreateRelationTypeUseCase, type CreateRelationTypeInput } from '@/application/use-cases/relations/CreateRelationType.js'
-import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { ValidationException, ConflictException } from '@/shared/exceptions/DomainException.js'
+import {
+  type CreateRelationTypeInput,
+  CreateRelationTypeUseCase,
+} from '@/application/use-cases/relations/CreateRelationType.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { createTestRelationType } from './test-helpers.js'
 
 describe('CreateRelationTypeUseCase', () => {
@@ -29,10 +32,7 @@ describe('CreateRelationTypeUseCase', () => {
       findAll: mock(async () => ({ data: [], metadata: {} })),
     } as any
 
-    useCase = new CreateRelationTypeUseCase(
-      mockRelationTypeRepository,
-      mockLogger
-    )
+    useCase = new CreateRelationTypeUseCase(mockRelationTypeRepository, mockLogger)
   })
 
   describe('Input Validation', () => {
@@ -61,14 +61,20 @@ describe('CreateRelationTypeUseCase', () => {
         identifier: 'existing_relation',
       }
 
-      const existingRelationType = createTestRelationType('rel-type-1', 'existing_relation', 'Existing Relation')
+      const existingRelationType = createTestRelationType(
+        'rel-type-1',
+        'existing_relation',
+        'Existing Relation'
+      )
 
-      mockRelationTypeRepository.findByIdentifier = mock()
-        .mockResolvedValueOnce(existingRelationType)
+      mockRelationTypeRepository.findByIdentifier =
+        mock().mockResolvedValueOnce(existingRelationType)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
-      await expect(promise).rejects.toThrow("RelationType with identifier 'existing_relation' already exists")
+      await expect(promise).rejects.toThrow(
+        "RelationType with identifier 'existing_relation' already exists"
+      )
     })
   })
 
@@ -78,20 +84,27 @@ describe('CreateRelationTypeUseCase', () => {
         identifier: 'new_relation',
       }
 
-      const createdRelationType = createTestRelationType('rel-type-1', 'new_relation', 'New Relation')
+      const createdRelationType = createTestRelationType(
+        'rel-type-1',
+        'new_relation',
+        'New Relation'
+      )
 
       mockRelationTypeRepository.findByIdentifier = mock()
-        .mockResolvedValueOnce(null)              // First call for duplicate check
-        .mockResolvedValueOnce(createdRelationType)  // Second call after save
+        .mockResolvedValueOnce(null) // First call for duplicate check
+        .mockResolvedValueOnce(createdRelationType) // Second call after save
 
       const result = await useCase.execute(input)
 
       expect(result.relationType).toBeDefined()
       expect(result.relationType.identifier).toBe('new_relation')
       expect(mockRelationTypeRepository.save).toHaveBeenCalled()
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating new relation type', expect.objectContaining({
-        identifier: input.identifier,
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Creating new relation type',
+        expect.objectContaining({
+          identifier: input.identifier,
+        })
+      )
     })
 
     it('should create a relation type with description', async () => {
@@ -101,7 +114,12 @@ describe('CreateRelationTypeUseCase', () => {
       }
 
       // Note: createTestRelationType params are (id, identifier, name, description)
-      const createdRelationType = createTestRelationType('rel-type-1', 'described_relation', 'Described Relation', 'A relation with description')
+      const createdRelationType = createTestRelationType(
+        'rel-type-1',
+        'described_relation',
+        'Described Relation',
+        'A relation with description'
+      )
 
       mockRelationTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -122,7 +140,11 @@ describe('CreateRelationTypeUseCase', () => {
         category: 'social',
       }
 
-      const createdRelationType = createTestRelationType('rel-type-1', 'categorized_relation', 'Categorized Relation')
+      const createdRelationType = createTestRelationType(
+        'rel-type-1',
+        'categorized_relation',
+        'Categorized Relation'
+      )
 
       mockRelationTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -142,7 +164,12 @@ describe('CreateRelationTypeUseCase', () => {
         category: 'business',
       }
 
-      const createdRelationType = createTestRelationType('rel-type-1', 'complete_relation', 'Complete Relation', 'A complete relation type')
+      const createdRelationType = createTestRelationType(
+        'rel-type-1',
+        'complete_relation',
+        'Complete Relation',
+        'A complete relation type'
+      )
 
       mockRelationTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -153,10 +180,13 @@ describe('CreateRelationTypeUseCase', () => {
       expect(result.relationType).toBeDefined()
       expect(result.relationType.identifier).toBe('complete_relation')
       expect(result.relationType.description).toBeDefined()
-      expect(mockLogger.info).toHaveBeenCalledWith('Relation type created successfully', expect.objectContaining({
-        id: 'rel-type-1',
-        identifier: 'complete_relation',
-      }))
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Relation type created successfully',
+        expect.objectContaining({
+          id: 'rel-type-1',
+          identifier: 'complete_relation',
+        })
+      )
     })
   })
 
@@ -174,10 +204,13 @@ describe('CreateRelationTypeUseCase', () => {
       })
 
       await expect(useCase.execute(input)).rejects.toThrow('Database connection failed')
-      expect(mockLogger.error).toHaveBeenCalledWith('Failed to create relation type', expect.objectContaining({
-        identifier: input.identifier,
-        error: 'Database connection failed',
-      }))
+      expect(mockLogger.error).toHaveBeenCalledWith(
+        'Failed to create relation type',
+        expect.objectContaining({
+          identifier: input.identifier,
+          error: 'Database connection failed',
+        })
+      )
     })
 
     it('should throw error when saved relation type cannot be retrieved', async () => {
@@ -186,8 +219,8 @@ describe('CreateRelationTypeUseCase', () => {
       }
 
       mockRelationTypeRepository.findByIdentifier = mock()
-        .mockResolvedValueOnce(null)  // First call for duplicate check
-        .mockResolvedValueOnce(null)  // Second call after save fails to retrieve
+        .mockResolvedValueOnce(null) // First call for duplicate check
+        .mockResolvedValueOnce(null) // Second call after save fails to retrieve
 
       await expect(useCase.execute(input)).rejects.toThrow('Failed to retrieve saved relation type')
     })

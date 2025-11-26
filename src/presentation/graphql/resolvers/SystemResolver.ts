@@ -3,8 +3,11 @@
  * Handles system-level operations including initialization
  */
 
+import {
+  type SystemInitializationRequest,
+  SystemInitializationUseCase,
+} from '../../../application/use-cases/system/SystemInitializationUseCase'
 import type { DIContainer } from '../../../infrastructure/container/DIContainer'
-import { SystemInitializationUseCase, type SystemInitializationRequest } from '../../../application/use-cases/system/SystemInitializationUseCase'
 import { BaseResolver } from '../base/BaseResolver'
 
 interface SystemInitializationInput {
@@ -23,9 +26,12 @@ interface SystemInitializationInput {
 export class SystemResolver extends BaseResolver {
   protected logger = {
     info: (msg: string, data?: Record<string, unknown>) => console.log(`[INFO] ${msg}`, data || ''),
-    warn: (msg: string, data?: Record<string, unknown>) => console.warn(`[WARN] ${msg}`, data || ''),
-    error: (msg: string, data?: Record<string, unknown>) => console.error(`[ERROR] ${msg}`, data || ''),
-    debug: (msg: string, data?: Record<string, unknown>) => console.debug(`[DEBUG] ${msg}`, data || ''),
+    warn: (msg: string, data?: Record<string, unknown>) =>
+      console.warn(`[WARN] ${msg}`, data || ''),
+    error: (msg: string, data?: Record<string, unknown>) =>
+      console.error(`[ERROR] ${msg}`, data || ''),
+    debug: (msg: string, data?: Record<string, unknown>) =>
+      console.debug(`[DEBUG] ${msg}`, data || ''),
   }
 
   private systemInitializationUseCase: SystemInitializationUseCase
@@ -38,10 +44,7 @@ export class SystemResolver extends BaseResolver {
   /**
    * Initialize system mutation
    */
-  async initializeSystem(
-    _parent: unknown,
-    args: { input: SystemInitializationInput }
-  ) {
+  async initializeSystem(_parent: unknown, args: { input: SystemInitializationInput }) {
     try {
       const { input } = args
 
@@ -50,30 +53,36 @@ export class SystemResolver extends BaseResolver {
 
       const request: SystemInitializationRequest = {
         mode,
-        options: input.options ? {
-          ...input.options,
-          mode: input.options.initMode ? input.options.initMode.toLowerCase() as any : 'development'
-        } : undefined
+        options: input.options
+          ? {
+              ...input.options,
+              mode: input.options.initMode
+                ? (input.options.initMode.toLowerCase() as any)
+                : 'development',
+            }
+          : undefined,
       }
 
       const result = await this.systemInitializationUseCase.execute(request)
 
       return {
         success: result.success,
-        result: result.success ? {
-          actions: result.actions,
-          timings: result.timings,
-          summary: result.summary,
-          totalTime: result.timings.total || 0
-        } : null,
-        errors: result.errors.map(error => ({ message: error }))
+        result: result.success
+          ? {
+              actions: result.actions,
+              timings: result.timings,
+              summary: result.summary,
+              totalTime: result.timings.total || 0,
+            }
+          : null,
+        errors: result.errors.map((error) => ({ message: error })),
       }
     } catch (error) {
       this.logger.error('Failed to initialize system', { error })
       return {
         success: false,
         result: null,
-        errors: [this.mapToGraphQLError(error, 'initializeSystem')]
+        errors: [this.mapToGraphQLError(error, 'initializeSystem')],
       }
     }
   }
@@ -91,9 +100,9 @@ export class SystemResolver extends BaseResolver {
           tablesCount: status.tablesCount,
           templatesCount: status.templatesCount,
           nodesCount: status.nodesCount,
-          attributesCount: 0 // Will be calculated if needed
+          attributesCount: 0, // Will be calculated if needed
         },
-        lastInitialized: status.lastInitialized
+        lastInitialized: status.lastInitialized,
       }
     } catch (error) {
       this.logger.error('Failed to get system status', { error })

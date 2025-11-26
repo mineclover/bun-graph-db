@@ -10,16 +10,24 @@
 Options for creating a database backup
 """
 input BackupDatabaseInput {
-  """Custom output path (default: ./backups/database/db_{timestamp}.sqlite)"""
+  """
+  Custom output path (default: ./backups/database/db_{timestamp}.sqlite)
+  """
   outputPath: String
 
-  """Enable gzip compression"""
+  """
+  Enable gzip compression
+  """
   compress: Boolean
 
-  """Validate backup integrity after creation"""
+  """
+  Validate backup integrity after creation
+  """
   validate: Boolean
 
-  """Include Write-Ahead Log (WAL) file"""
+  """
+  Include Write-Ahead Log (WAL) file
+  """
   includeWAL: Boolean
 }
 
@@ -27,16 +35,24 @@ input BackupDatabaseInput {
 Options for restoring from backup
 """
 input RestoreDatabaseInput {
-  """Path to the backup file"""
+  """
+  Path to the backup file
+  """
   backupPath: String!
 
-  """Create safety backup before restore"""
+  """
+  Create safety backup before restore
+  """
   safetyBackup: Boolean
 
-  """Validate backup before restore"""
+  """
+  Validate backup before restore
+  """
   validateBeforeRestore: Boolean
 
-  """Verify database after restore"""
+  """
+  Verify database after restore
+  """
   verifyAfterRestore: Boolean
 }
 
@@ -44,13 +60,19 @@ input RestoreDatabaseInput {
 Options for backup retention policy
 """
 input BackupRetentionPolicyInput {
-  """Maximum number of backups to keep"""
+  """
+  Maximum number of backups to keep
+  """
   maxBackups: Int
 
-  """Maximum age in days"""
+  """
+  Maximum age in days
+  """
   maxAgeDays: Int
 
-  """Minimum free disk space in bytes"""
+  """
+  Minimum free disk space in bytes
+  """
   minFreeSpaceBytes: Float
 }
 
@@ -58,13 +80,19 @@ input BackupRetentionPolicyInput {
 Filter for listing backups
 """
 input BackupListFilterInput {
-  """Backup type filter"""
+  """
+  Backup type filter
+  """
   type: BackupType
 
-  """Only backups created after this date"""
+  """
+  Only backups created after this date
+  """
   createdAfter: DateTime
 
-  """Only backups created before this date"""
+  """
+  Only backups created before this date
+  """
   createdBefore: DateTime
 }
 
@@ -76,25 +104,39 @@ input BackupListFilterInput {
 Result of database backup operation
 """
 type BackupDatabaseResult {
-  """Operation success status"""
+  """
+  Operation success status
+  """
   success: Boolean!
 
-  """Path to the backup file"""
+  """
+  Path to the backup file
+  """
   backupPath: String!
 
-  """Backup file size in bytes"""
+  """
+  Backup file size in bytes
+  """
   sizeBytes: Float!
 
-  """Operation duration in milliseconds"""
+  """
+  Operation duration in milliseconds
+  """
   duration: Float!
 
-  """SHA-256 checksum (if validation enabled)"""
+  """
+  SHA-256 checksum (if validation enabled)
+  """
   checksum: String
 
-  """Error messages"""
+  """
+  Error messages
+  """
   errors: [String!]!
 
-  """Warning messages"""
+  """
+  Warning messages
+  """
   warnings: [String!]!
 }
 
@@ -102,16 +144,24 @@ type BackupDatabaseResult {
 Verification results after restore
 """
 type RestoreVerification {
-  """Number of tables in restored database"""
+  """
+  Number of tables in restored database
+  """
   tablesCount: Int!
 
-  """Number of nodes in restored database"""
+  """
+  Number of nodes in restored database
+  """
   nodesCount: Int!
 
-  """Number of relations in restored database"""
+  """
+  Number of relations in restored database
+  """
   relationsCount: Int!
 
-  """Whether checksum matches"""
+  """
+  Whether checksum matches
+  """
   checksumMatch: Boolean!
 }
 
@@ -119,25 +169,39 @@ type RestoreVerification {
 Result of database restore operation
 """
 type RestoreDatabaseResult {
-  """Operation success status"""
+  """
+  Operation success status
+  """
   success: Boolean!
 
-  """Path to the restored database"""
+  """
+  Path to the restored database
+  """
   restoredPath: String!
 
-  """Path to safety backup (if created)"""
+  """
+  Path to safety backup (if created)
+  """
   safetyBackupPath: String
 
-  """Verification results"""
+  """
+  Verification results
+  """
   verification: RestoreVerification
 
-  """Operation duration in milliseconds"""
+  """
+  Operation duration in milliseconds
+  """
   duration: Float!
 
-  """Error messages"""
+  """
+  Error messages
+  """
   errors: [String!]!
 
-  """Warning messages"""
+  """
+  Warning messages
+  """
   warnings: [String!]!
 }
 
@@ -145,28 +209,44 @@ type RestoreDatabaseResult {
 Individual backup item
 """
 type BackupItem {
-  """Backup file path"""
+  """
+  Backup file path
+  """
   path: String!
 
-  """File size in bytes"""
+  """
+  File size in bytes
+  """
   sizeBytes: Float!
 
-  """Creation timestamp"""
+  """
+  Creation timestamp
+  """
   createdAt: DateTime!
 
-  """Backup type"""
+  """
+  Backup type
+  """
   type: BackupType!
 
-  """SHA-256 checksum"""
+  """
+  SHA-256 checksum
+  """
   checksum: String
 
-  """Table identifier (for table backups)"""
+  """
+  Table identifier (for table backups)
+  """
   tableIdentifier: String
 
-  """Node count (for table backups)"""
+  """
+  Node count (for table backups)
+  """
   nodeCount: Int
 
-  """Whether backup is compressed"""
+  """
+  Whether backup is compressed
+  """
   compressed: Boolean!
 }
 
@@ -174,16 +254,24 @@ type BackupItem {
 Result of listing backups
 """
 type BackupListResult {
-  """List of file-level backups"""
+  """
+  List of file-level backups
+  """
   fileBackups: [BackupItem!]!
 
-  """List of table-level backups"""
+  """
+  List of table-level backups
+  """
   tableBackups: [BackupItem!]!
 
-  """Total number of backups"""
+  """
+  Total number of backups
+  """
   totalCount: Int!
 
-  """Total size in bytes"""
+  """
+  Total size in bytes
+  """
   totalSizeBytes: Float!
 }
 
@@ -191,16 +279,24 @@ type BackupListResult {
 Result of applying retention policy
 """
 type ApplyRetentionPolicyResult {
-  """List of deleted backup paths"""
+  """
+  List of deleted backup paths
+  """
   deletedBackups: [String!]!
 
-  """Error messages"""
+  """
+  Error messages
+  """
   errors: [String!]!
 
-  """Number of backups deleted"""
+  """
+  Number of backups deleted
+  """
   deletedCount: Int!
 
-  """Space freed in bytes"""
+  """
+  Space freed in bytes
+  """
   spaceFreed: Float!
 }
 
@@ -208,22 +304,34 @@ type ApplyRetentionPolicyResult {
 Backup metrics and statistics
 """
 type BackupMetrics {
-  """Total number of backups created"""
+  """
+  Total number of backups created
+  """
   totalBackups: Int!
 
-  """Timestamp of last backup"""
+  """
+  Timestamp of last backup
+  """
   lastBackupTime: DateTime
 
-  """Average backup duration in milliseconds"""
+  """
+  Average backup duration in milliseconds
+  """
   averageBackupDuration: Float!
 
-  """Total size of all backups in bytes"""
+  """
+  Total size of all backups in bytes
+  """
   totalBackupSize: Float!
 
-  """Success rate percentage"""
+  """
+  Success rate percentage
+  """
   successRate: Float!
 
-  """List of recent failed backups"""
+  """
+  List of recent failed backups
+  """
   failedBackups: [FailedBackupInfo!]!
 }
 
@@ -231,13 +339,19 @@ type BackupMetrics {
 Information about failed backup
 """
 type FailedBackupInfo {
-  """Failure timestamp"""
+  """
+  Failure timestamp
+  """
   timestamp: DateTime!
 
-  """Table identifier (for table backups)"""
+  """
+  Table identifier (for table backups)
+  """
   tableIdentifier: String
 
-  """Error message"""
+  """
+  Error message
+  """
   error: String!
 }
 
@@ -249,13 +363,19 @@ type FailedBackupInfo {
 Backup type enumeration
 """
 enum BackupType {
-  """File-level database backup"""
+  """
+  File-level database backup
+  """
   FILE
 
-  """Table-level JSON backup"""
+  """
+  Table-level JSON backup
+  """
   TABLE
 
-  """All backup types"""
+  """
+  All backup types
+  """
   ALL
 }
 

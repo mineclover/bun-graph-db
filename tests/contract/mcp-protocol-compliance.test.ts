@@ -7,7 +7,7 @@
  * Parallel: Can run with task 2
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals'
 
 describe('MCP Protocol Contract Tests', () => {
   let testTableId: string
@@ -32,19 +32,19 @@ describe('MCP Protocol Contract Tests', () => {
           protocolVersion: '2025-06-18',
           capabilities: {
             roots: { listChanged: false },
-            sampling: {}
+            sampling: {},
           },
           clientInfo: {
             name: 'Test Client',
-            version: '1.0.0'
-          }
-        }
+            version: '1.0.0',
+          },
+        },
       }
 
       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initializeRequest)
+        body: JSON.stringify(initializeRequest),
       })
 
       expect(response.status).toBe(200)
@@ -66,13 +66,13 @@ describe('MCP Protocol Contract Tests', () => {
         jsonrpc: '2.0',
         id: 2,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       expect(response.status).toBe(200)
@@ -101,13 +101,13 @@ describe('MCP Protocol Contract Tests', () => {
         jsonrpc: '2.0',
         id: 3,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       let response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(toolsListRequest)
+        body: JSON.stringify(toolsListRequest),
       })
 
       const toolsResult = await response.json()
@@ -121,14 +121,14 @@ describe('MCP Protocol Contract Tests', () => {
           method: 'tools/call',
           params: {
             name: firstTool.name,
-            arguments: {}
-          }
+            arguments: {},
+          },
         }
 
         response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(toolsCallRequest)
+          body: JSON.stringify(toolsCallRequest),
         })
 
         const result = await response.json()
@@ -150,13 +150,13 @@ describe('MCP Protocol Contract Tests', () => {
         jsonrpc: '2.0',
         id: 5,
         method: 'nonexistent/method',
-        params: {}
+        params: {},
       }
 
       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invalidRequest)
+        body: JSON.stringify(invalidRequest),
       })
 
       const result = await response.json()
@@ -179,13 +179,13 @@ describe('MCP Protocol Contract Tests', () => {
         jsonrpc: '2.0',
         id: 6,
         method: 'tools/list',
-        params: {}
+        params: {},
       }
 
       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request)
+        body: JSON.stringify(request),
       })
 
       expect(response.status).toBe(200)
@@ -194,7 +194,7 @@ describe('MCP Protocol Contract Tests', () => {
 
     it('should reject GET requests to MCP endpoint', async () => {
       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
-        method: 'GET'
+        method: 'GET',
       })
 
       // Should return method not allowed or handle according to MCP spec
@@ -205,7 +205,7 @@ describe('MCP Protocol Contract Tests', () => {
       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: 'invalid json {'
+        body: 'invalid json {',
       })
 
       const result = await response.json()
@@ -225,14 +225,14 @@ describe('MCP Protocol Contract Tests', () => {
         params: {
           protocolVersion: '2025-06-18',
           capabilities: {},
-          clientInfo: { name: 'Test', version: '1.0.0' }
-        }
+          clientInfo: { name: 'Test', version: '1.0.0' },
+        },
       }
 
       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initializeRequest)
+        body: JSON.stringify(initializeRequest),
       })
 
       const result = await response.json()
@@ -247,14 +247,14 @@ describe('MCP Protocol Contract Tests', () => {
         params: {
           protocolVersion: '1999-01-01',
           capabilities: {},
-          clientInfo: { name: 'Test', version: '1.0.0' }
-        }
+          clientInfo: { name: 'Test', version: '1.0.0' },
+        },
       }
 
       const response = await fetch(`${baseUrl}/sub/${testTableId}/mcp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(initializeRequest)
+        body: JSON.stringify(initializeRequest),
       })
 
       const result = await response.json()
