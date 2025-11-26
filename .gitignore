@@ -49,3 +49,4 @@ cleanup-plan-*.json
 # Generated and temporary directories
 tmp/
 exported-templates/
+backups/

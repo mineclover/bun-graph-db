@@ -1,0 +1,306 @@
+# ============================================================================
+# Database Backup & Restore Schema
+# ============================================================================
+
+# ============================================================================
+# INPUT TYPES
+# ============================================================================
+
+"""
+Options for creating a database backup
+"""
+input BackupDatabaseInput {
+  """Custom output path (default: ./backups/database/db_{timestamp}.sqlite)"""
+  outputPath: String
+
+  """Enable gzip compression"""
+  compress: Boolean
+
+  """Validate backup integrity after creation"""
+  validate: Boolean
+
+  """Include Write-Ahead Log (WAL) file"""
+  includeWAL: Boolean
+}
+
+"""
+Options for restoring from backup
+"""
+input RestoreDatabaseInput {
+  """Path to the backup file"""
+  backupPath: String!
+
+  """Create safety backup before restore"""
+  safetyBackup: Boolean
+
+  """Validate backup before restore"""
+  validateBeforeRestore: Boolean
+
+  """Verify database after restore"""
+  verifyAfterRestore: Boolean
+}
+
+"""
+Options for backup retention policy
+"""
+input BackupRetentionPolicyInput {
+  """Maximum number of backups to keep"""
+  maxBackups: Int
+
+  """Maximum age in days"""
+  maxAgeDays: Int
+
+  """Minimum free disk space in bytes"""
+  minFreeSpaceBytes: Float
+}
+
+"""
+Filter for listing backups
+"""
+input BackupListFilterInput {
+  """Backup type filter"""
+  type: BackupType
+
+  """Only backups created after this date"""
+  createdAfter: DateTime
+
+  """Only backups created before this date"""
+  createdBefore: DateTime
+}
+
+# ============================================================================
+# OUTPUT TYPES
+# ============================================================================
+
+"""
+Result of database backup operation
+"""
+type BackupDatabaseResult {
+  """Operation success status"""
+  success: Boolean!
+
+  """Path to the backup file"""
+  backupPath: String!
+
+  """Backup file size in bytes"""
+  sizeBytes: Float!
+
+  """Operation duration in milliseconds"""
+  duration: Float!
+
+  """SHA-256 checksum (if validation enabled)"""
+  checksum: String
+
+  """Error messages"""
+  errors: [String!]!
+
+  """Warning messages"""
+  warnings: [String!]!
+}
+
+"""
+Verification results after restore
+"""
+type RestoreVerification {
+  """Number of tables in restored database"""
+  tablesCount: Int!
+
+  """Number of nodes in restored database"""
+  nodesCount: Int!
+
+  """Number of relations in restored database"""
+  relationsCount: Int!
+
+  """Whether checksum matches"""
+  checksumMatch: Boolean!
+}
+
+"""
+Result of database restore operation
+"""
+type RestoreDatabaseResult {
+  """Operation success status"""
+  success: Boolean!
+
+  """Path to the restored database"""
+  restoredPath: String!
+
+  """Path to safety backup (if created)"""
+  safetyBackupPath: String
+
+  """Verification results"""
+  verification: RestoreVerification
+
+  """Operation duration in milliseconds"""
+  duration: Float!
+
+  """Error messages"""
+  errors: [String!]!
+
+  """Warning messages"""
+  warnings: [String!]!
+}
+
+"""
+Individual backup item
+"""
+type BackupItem {
+  """Backup file path"""
+  path: String!
+
+  """File size in bytes"""
+  sizeBytes: Float!
+
+  """Creation timestamp"""
+  createdAt: DateTime!
+
+  """Backup type"""
+  type: BackupType!
+
+  """SHA-256 checksum"""
+  checksum: String
+
+  """Table identifier (for table backups)"""
+  tableIdentifier: String
+
+  """Node count (for table backups)"""
+  nodeCount: Int
+
+  """Whether backup is compressed"""
+  compressed: Boolean!
+}
+
+"""
+Result of listing backups
+"""
+type BackupListResult {
+  """List of file-level backups"""
+  fileBackups: [BackupItem!]!
+
+  """List of table-level backups"""
+  tableBackups: [BackupItem!]!
+
+  """Total number of backups"""
+  totalCount: Int!
+
+  """Total size in bytes"""
+  totalSizeBytes: Float!
+}
+
+"""
+Result of applying retention policy
+"""
+type ApplyRetentionPolicyResult {
+  """List of deleted backup paths"""
+  deletedBackups: [String!]!
+
+  """Error messages"""
+  errors: [String!]!
+
+  """Number of backups deleted"""
+  deletedCount: Int!
+
+  """Space freed in bytes"""
+  spaceFreed: Float!
+}
+
+"""
+Backup metrics and statistics
+"""
+type BackupMetrics {
+  """Total number of backups created"""
+  totalBackups: Int!
+
+  """Timestamp of last backup"""
+  lastBackupTime: DateTime
+
+  """Average backup duration in milliseconds"""
+  averageBackupDuration: Float!
+
+  """Total size of all backups in bytes"""
+  totalBackupSize: Float!
+
+  """Success rate percentage"""
+  successRate: Float!
+
+  """List of recent failed backups"""
+  failedBackups: [FailedBackupInfo!]!
+}
+
+"""
+Information about failed backup
+"""
+type FailedBackupInfo {
+  """Failure timestamp"""
+  timestamp: DateTime!
+
+  """Table identifier (for table backups)"""
+  tableIdentifier: String
+
+  """Error message"""
+  error: String!
+}
+
+# ============================================================================
+# ENUMS
+# ============================================================================
+
+"""
+Backup type enumeration
+"""
+enum BackupType {
+  """File-level database backup"""
+  FILE
+
+  """Table-level JSON backup"""
+  TABLE
+
+  """All backup types"""
+  ALL
+}
+
+# ============================================================================
+# QUERIES
+# ============================================================================
+
+extend type Query {
+  """
+  List all available backups
+  """
+  listBackups(filter: BackupListFilterInput): BackupListResult!
+
+  """
+  Get backup metrics and statistics
+  """
+  backupMetrics: BackupMetrics!
+}
+
+# ============================================================================
+# MUTATIONS
+# ============================================================================
+
+extend type Mutation {
+  """
+  Create a full database backup
+
+  Creates a complete SQLite database backup with optional compression and validation.
+  Uses VACUUM INTO for clean backup or falls back to file copy.
+  """
+  backupDatabase(input: BackupDatabaseInput): BackupDatabaseResult!
+
+  """
+  Restore database from backup
+
+  Restores the entire database from a backup file.
+  WARNING: Requires server restart to take effect.
+  """
+  restoreDatabase(input: RestoreDatabaseInput!): RestoreDatabaseResult!
+
+  """
+  Apply backup retention policy
+
+  Automatically delete old backups based on retention rules.
+  Helps manage disk space and backup organization.
+  """
+  applyRetentionPolicy(policy: BackupRetentionPolicyInput!): ApplyRetentionPolicyResult!
+}
