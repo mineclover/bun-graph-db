@@ -809,6 +809,277 @@ export class McpToolRegistry {
 
     this.register(demoSetupTool)
 
+    // ========== BACKUP & RESTORE TOOLS ==========
+
+    // Register database backup tool
+    const backupDatabaseTool: McpToolDefinition = {
+      name: 'backup-database',
+      description:
+        'Create a full SQLite database backup. Uses VACUUM INTO for clean backup or falls back to file copy. Returns backup path, size, and checksum.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          outputPath: {
+            type: 'string',
+            description: 'Custom output path (default: ./backups/database/db_{timestamp}.sqlite)',
+          },
+          compress: {
+            type: 'boolean',
+            description: 'Enable gzip compression',
+            default: false,
+          },
+          validate: {
+            type: 'boolean',
+            description: 'Validate backup integrity after creation',
+            default: true,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation BackupDatabase($input: BackupDatabaseInput) {
+            backupDatabase(input: $input) {
+              success
+              backupPath
+              sizeBytes
+              duration
+              checksum
+              errors
+              warnings
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(backupDatabaseTool)
+
+    // Register database restore tool
+    const restoreDatabaseTool: McpToolDefinition = {
+      name: 'restore-database',
+      description:
+        'Restore database from a backup file. Creates a safety backup before restore. WARNING: Requires server restart to take effect.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        required: ['backupPath'],
+        properties: {
+          backupPath: {
+            type: 'string',
+            description: 'Path to the backup file to restore from',
+          },
+          safetyBackup: {
+            type: 'boolean',
+            description: 'Create safety backup before restore',
+            default: true,
+          },
+          validateBeforeRestore: {
+            type: 'boolean',
+            description: 'Validate backup before restore',
+            default: true,
+          },
+          verifyAfterRestore: {
+            type: 'boolean',
+            description: 'Verify database after restore',
+            default: true,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation RestoreDatabase($input: RestoreDatabaseInput!) {
+            restoreDatabase(input: $input) {
+              success
+              restoredPath
+              safetyBackupPath
+              duration
+              errors
+              warnings
+              verification {
+                tablesCount
+                nodesCount
+                relationsCount
+                checksumMatch
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(restoreDatabaseTool)
+
+    // Register list backups tool
+    const listBackupsTool: McpToolDefinition = {
+      name: 'list-backups',
+      description: 'List all available database backups with metadata including path, size, and creation date.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          type: {
+            type: 'string',
+            enum: ['FILE', 'TABLE', 'ALL'],
+            description: 'Filter by backup type',
+            default: 'ALL',
+          },
+          createdAfter: {
+            type: 'string',
+            description: 'Only backups created after this date (ISO 8601)',
+          },
+          createdBefore: {
+            type: 'string',
+            description: 'Only backups created before this date (ISO 8601)',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: `
+          query ListBackups($filter: BackupListFilterInput) {
+            listBackups(filter: $filter) {
+              fileBackups {
+                path
+                sizeBytes
+                createdAt
+                compressed
+                checksum
+              }
+              tableBackups {
+                path
+                sizeBytes
+                createdAt
+                tableIdentifier
+                nodeCount
+              }
+              totalCount
+              totalSizeBytes
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(listBackupsTool)
+
+    // Register JSONL export tool
+    const exportJsonlTool: McpToolDefinition = {
+      name: 'export-jsonl',
+      description:
+        'Export database to JSONL format for Git-friendly backup. Creates per-table files, schema, and relations in a folder structure.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          outputDir: {
+            type: 'string',
+            description: 'Output directory path (default: ./backups/jsonl)',
+          },
+          tableIds: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Specific table IDs to export (default: all tables)',
+          },
+          includeRelations: {
+            type: 'boolean',
+            description: 'Include relations in export',
+            default: true,
+          },
+          includeSchema: {
+            type: 'boolean',
+            description: 'Include schema file',
+            default: true,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation ExportJsonl($input: JsonlExportInput) {
+            exportJsonl(input: $input) {
+              success
+              outputDir
+              files {
+                path
+                type
+                tableIdentifier
+                lineCount
+                sizeBytes
+              }
+              stats {
+                tablesExported
+                nodesExported
+                relationsExported
+                totalBytes
+              }
+              errors
+              warnings
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(exportJsonlTool)
+
+    // Register JSONL import tool
+    const importJsonlTool: McpToolDefinition = {
+      name: 'import-jsonl',
+      description:
+        'Import database from JSONL backup with conflict resolution (skip/overwrite/merge). Supports dry run mode for validation.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        required: ['inputDir', 'conflictResolution'],
+        properties: {
+          inputDir: {
+            type: 'string',
+            description: 'Input directory containing JSONL backup',
+          },
+          tableIdentifiers: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Specific table identifiers to import (default: all)',
+          },
+          conflictResolution: {
+            type: 'string',
+            enum: ['SKIP', 'OVERWRITE', 'MERGE'],
+            description: 'How to handle conflicts with existing data',
+          },
+          dryRun: {
+            type: 'boolean',
+            description: 'Validate without importing',
+            default: false,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation ImportJsonl($input: JsonlImportInput!) {
+            importJsonl(input: $input) {
+              success
+              inputDir
+              stats {
+                tablesImported
+                nodesImported
+                nodesSkipped
+                nodesUpdated
+                relationsImported
+              }
+              errors
+              warnings
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(importJsonlTool)
+
     console.log(`MCP Tool Registry: Registered ${this.getToolCount()} built-in tools`)
   }
 }

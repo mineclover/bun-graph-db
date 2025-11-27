@@ -131,6 +131,58 @@ const mapping = {
 
 📚 **상세 문서**: [Format Mapping Guide](docs/api/FORMAT_MAPPING_GUIDE.md)
 
+### 백업 & 복원 시스템
+**개념**: 데이터 안전성을 위한 이중 백업 전략
+
+**SQLite Backup (빠른 스냅샷):**
+- **backupDatabase**: 전체 데이터베이스 파일 백업
+- **restoreDatabase**: 백업에서 복원 (서버 재시작 필요)
+- **listBackups**: 백업 목록 조회
+- **applyRetentionPolicy**: 오래된 백업 자동 정리
+
+```graphql
+# 백업 생성
+mutation { backupDatabase(input: { compress: false, validate: true }) {
+  success backupPath sizeBytes checksum
+}}
+
+# 복원
+mutation { restoreDatabase(input: {
+  backupPath: "backups/database/db_xxx.sqlite",
+  safetyBackup: true
+}) { success restoredPath }}
+```
+
+**JSONL Backup (Git 친화적):**
+- **exportJsonl**: 폴더 기반 텍스트 백업 (git diff 가능)
+- **importJsonl**: 선택적 복원 (skip/overwrite/merge)
+- **inspectJsonlBackup**: 백업 검사
+
+```
+backups/jsonl/
+├── manifest.json       # 백업 메타데이터
+├── schema.jsonl        # 테이블/속성 정의
+├── relations.jsonl     # 관계 데이터
+├── relation-types.jsonl
+└── tables/
+    ├── users.jsonl     # 테이블별 노드 데이터
+    └── projects.jsonl
+```
+
+```graphql
+# JSONL 내보내기
+mutation { exportJsonl(input: { includeSchema: true, includeRelations: true }) {
+  success outputDir stats { tablesExported nodesExported }
+}}
+
+# JSONL 가져오기 (dry run)
+mutation { importJsonl(input: {
+  inputDir: "./backups/jsonl",
+  dryRun: true,
+  conflictResolution: SKIP
+}) { success stats { nodesImported nodesSkipped } }}
+```
+
 ### AI 통합 구조
 **개념**: AI 어시스턴트와 저장소 작업 간의 브리지
 
