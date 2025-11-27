@@ -28,6 +28,7 @@ export const GraphQLTokens = {
   ENHANCED_ATTRIBUTE_QUERIES: Symbol.for('EnhancedAttributeQueries'),
   JSON_EXPORT_QUERIES: Symbol.for('JsonExportQueries'),
   JSONL_BACKUP_QUERIES: Symbol.for('JsonlBackupQueries'),
+  BACKUP_QUERIES: Symbol.for('BackupQueries'),
 
   // Mutation resolvers
   TABLE_MUTATIONS: Symbol.for('TableMutations'),
@@ -37,6 +38,7 @@ export const GraphQLTokens = {
   TEMPLATE_MUTATIONS: Symbol.for('TemplateMutations'),
   DOC_MUTATIONS: Symbol.for('DocMutations'),
   EXPORT_MUTATIONS: Symbol.for('ExportMutations'),
+  BACKUP_MUTATIONS: Symbol.for('BackupMutations'),
   TABLE_PACKAGE_RESOLVER: Symbol.for('TablePackageResolver'),
   SYSTEM_RESOLVER: Symbol.for('SystemResolver'),
 

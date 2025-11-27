@@ -15,4 +15,5 @@ export const CommonTokens = {
   // Domain services
   JSON_EXPORT_SERVICE: Symbol.for('JsonExportService'),
   JSONL_BACKUP_SERVICE: Symbol.for('JsonlBackupService'),
+  SQLITE_BACKUP_SERVICE: Symbol.for('SQLiteBackupService'),
 } as const

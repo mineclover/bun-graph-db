@@ -59,6 +59,7 @@ export interface GraphQLDependencies {
     logger: any
   }
   jsonlBackupQueries?: any
+  backupQueries?: any
   // enhancedAttributeQueries?: any
 
   // Mutation resolvers
@@ -69,6 +70,7 @@ export interface GraphQLDependencies {
   templateMutations: TemplateMutations
   docMutations: DocMutations
   exportMutations: any
+  backupMutations?: any
   tablePackageResolver: TablePackageResolver
   systemResolver?: any
 
@@ -134,6 +136,10 @@ export class GraphQLSchemaBuilder {
       .resolve(GraphQLTokens.JSONL_BACKUP_QUERIES)
       .catch(() => null)) as any
 
+    const backupQueries = (await this.container
+      .resolve(GraphQLTokens.BACKUP_QUERIES)
+      .catch(() => null)) as any
+
     // Mutation resolvers
     const tableMutations = (await this.container.resolve(
       GraphQLTokens.TABLE_MUTATIONS
@@ -159,6 +165,10 @@ export class GraphQLSchemaBuilder {
 
     const exportMutations = (await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS)) as any
 
+    const backupMutations = (await this.container
+      .resolve(GraphQLTokens.BACKUP_MUTATIONS)
+      .catch(() => null)) as any
+
     const tablePackageResolver = (await this.container.resolve(
       GraphQLTokens.TABLE_PACKAGE_RESOLVER
     )) as TablePackageResolver
@@ -176,6 +186,7 @@ export class GraphQLSchemaBuilder {
       systemQueries,
       jsonExportQueries,
       jsonlBackupQueries,
+      backupQueries,
       tableMutations,
       nodeMutations,
       attributeMutations,
@@ -183,6 +194,7 @@ export class GraphQLSchemaBuilder {
       templateMutations,
       docMutations,
       exportMutations,
+      backupMutations,
       tablePackageResolver,
       systemResolver,
 
@@ -464,6 +476,32 @@ export class GraphQLSchemaBuilder {
         // JSONL Backup queries
         inspectJsonlBackup: (_: GraphQLParent, args: Record<string, unknown>) =>
           deps.jsonlBackupQueries?.inspectJsonlBackup(_, args) || null,
+
+        // SQLite Backup queries
+        listBackups: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: any
+        ) => {
+          if (!deps.backupQueries) {
+            throw new Error('BackupQueries not available')
+          }
+          const { BackupQueries, backupService, logger } = deps.backupQueries
+          return BackupQueries.listBackups(_, args, { backupService, logger }, info)
+        },
+        backupMetrics: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: any
+        ) => {
+          if (!deps.backupQueries) {
+            throw new Error('BackupQueries not available')
+          }
+          const { BackupQueries, backupService, logger } = deps.backupQueries
+          return BackupQueries.backupMetrics(_, args, { backupService, logger }, info)
+        },
       },
 
       Mutation: {
@@ -659,6 +697,44 @@ export class GraphQLSchemaBuilder {
             throw new Error('JSONL backup service not available')
           }
           return deps.jsonlBackupQueries.importJsonl(_, args)
+        },
+
+        // SQLite Backup mutations
+        backupDatabase: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: any
+        ) => {
+          if (!deps.backupMutations) {
+            throw new Error('BackupMutations not available')
+          }
+          const { BackupMutations, backupService, logger } = deps.backupMutations
+          return BackupMutations.backupDatabase(_, args, { backupService, logger }, info)
+        },
+        restoreDatabase: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: any
+        ) => {
+          if (!deps.backupMutations) {
+            throw new Error('BackupMutations not available')
+          }
+          const { BackupMutations, backupService, logger } = deps.backupMutations
+          return BackupMutations.restoreDatabase(_, args, { backupService, logger }, info)
+        },
+        applyRetentionPolicy: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: any
+        ) => {
+          if (!deps.backupMutations) {
+            throw new Error('BackupMutations not available')
+          }
+          const { BackupMutations, backupService, logger } = deps.backupMutations
+          return BackupMutations.applyRetentionPolicy(_, args, { backupService, logger }, info)
         },
       },
 

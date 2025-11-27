@@ -293,7 +293,13 @@ export class JsonlBackupService {
 
   private async exportSchema(
     outputDir: string,
-    tables: Array<{ id: string; identifier: string; description: string | null; createdAt: Date; updatedAt: Date }>
+    tables: Array<{
+      id: string
+      identifier: string
+      description: string | null
+      createdAt: Date
+      updatedAt: Date
+    }>
   ): Promise<JsonlExportedFile> {
     const schemaPath = join(outputDir, 'schema.jsonl')
     const lines: string[] = []
@@ -356,7 +362,9 @@ export class JsonlBackupService {
     const attributesResult = await this.attributeRepository.findByTableId(table.id, {
       limit: 1000,
     })
-    const attributeMap = new Map((attributesResult.data || []).map((a) => [a.getId(), a.getIdentifier()]))
+    const attributeMap = new Map(
+      (attributesResult.data || []).map((a) => [a.getId(), a.getIdentifier()])
+    )
 
     for (const node of nodesResult.data || []) {
       const nodeEntry: JsonlNodeEntry = {

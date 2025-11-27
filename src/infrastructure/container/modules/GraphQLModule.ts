@@ -324,6 +324,65 @@ export function registerGraphQLModule(container: DIContainer): void {
     ]
   )
 
+  // SQLiteBackupService registration
+  container.registerSingleton(
+    CommonTokens.SQLITE_BACKUP_SERVICE,
+    async (c) => {
+      const { SQLiteBackupService } = await import('@/domain/services/SQLiteBackupService.js')
+      const { DatabaseTokens } = await import('../tokens/DatabaseTokens.js')
+      const db = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
+
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[SQLiteBackup] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[SQLiteBackup] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[SQLiteBackup] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[SQLiteBackup] ${msg}`, data || ''),
+      }
+
+      return new SQLiteBackupService(db, simpleLogger)
+    },
+    []
+  )
+
+  // BackupQueries registration
+  container.registerSingleton(
+    GraphQLTokens.BACKUP_QUERIES,
+    async (c) => {
+      const { BackupQueries } = await import('@/presentation/graphql/queries/BackupQueries.js')
+      const backupService = (await c.resolve(CommonTokens.SQLITE_BACKUP_SERVICE)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[BackupQueries] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[BackupQueries] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[BackupQueries] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[BackupQueries] ${msg}`, data || ''),
+      }
+      return { BackupQueries, backupService, logger: simpleLogger }
+    },
+    [CommonTokens.SQLITE_BACKUP_SERVICE]
+  )
+
+  // BackupMutations registration
+  container.registerSingleton(
+    GraphQLTokens.BACKUP_MUTATIONS,
+    async (c) => {
+      const { BackupMutations } = await import(
+        '@/presentation/graphql/mutations/BackupMutations.js'
+      )
+      const backupService = (await c.resolve(CommonTokens.SQLITE_BACKUP_SERVICE)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[BackupMutations] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[BackupMutations] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[BackupMutations] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[BackupMutations] ${msg}`, data || ''),
+      }
+      return { BackupMutations, backupService, logger: simpleLogger }
+    },
+    [CommonTokens.SQLITE_BACKUP_SERVICE]
+  )
+
   // JsonlBackupQueries registration
   container.registerSingleton(
     GraphQLTokens.JSONL_BACKUP_QUERIES,
