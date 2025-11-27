@@ -1,4 +1,3 @@
-import type { Database } from 'bun:sqlite'
 import type {
   NodeId,
   NodeRelationId,
@@ -30,10 +29,6 @@ export class SqliteNodeRelationRepository
   extends BaseSqliteRepository<NodeRelation, NodeRelationId>
   implements INodeRelationRepository
 {
-  constructor(db: Database) {
-    super(db)
-  }
-
   protected get tableName(): string {
     return 'node_relations'
   }

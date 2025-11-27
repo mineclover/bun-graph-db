@@ -51,7 +51,7 @@ export class NodeQueries extends BaseResolver {
    * Supports both attributeId and identifier
    */
   private async buildQueryFromFilters(
-    tableId: string,
+    _tableId: string,
     attributeFilters: AttributeFilter[],
     existingQuery?: string
   ): Promise<string> {

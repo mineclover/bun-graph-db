@@ -161,7 +161,7 @@ export class McpRoutes {
       let jsonRpcRequest: any
       try {
         jsonRpcRequest = JSON.parse(body)
-      } catch (parseError) {
+      } catch (_parseError) {
         return this.createErrorResponse(null, -32700, 'Parse error', 'Invalid JSON in request body')
       }
 

@@ -104,6 +104,33 @@ bun run dev
 - **트랜잭션 안전성**: 롤백이 가능한 원자적 작업
 - **오류 처리**: 상세한 보고와 함께 우아한 실패
 
+### JSON Export & Format Mapping
+**개념**: 다양한 형식으로 데이터 내보내기 및 커스텀 변환
+
+**Export 형식:**
+- **Flat JSON**: 간단한 배열 구조, 외부 통합용
+- **HFI Protocol**: 그래프 시각화 호환 형식
+
+**Format Mapping 시스템:**
+- **NodeLevelMapping**: 노드 단위 간소화 매핑 문법 (권장)
+- **접두사 규칙**: `@` (attributes), `@@` (시스템 필드)
+- **Transform 함수**: uppercase, date, json 등 데이터 변환
+- **가이드 자동 생성**: `generateMappingGuide()` 메서드
+
+```typescript
+// NodeLevelMapping 예시
+const mapping = {
+  outputKey: 'users',
+  nodeMapping: {
+    id: 'id',           // $.nodes[*].id
+    name: 'title',      // $.nodes[*].title
+    email: '@email',    // $.nodes[*].attributes.email
+  }
+}
+```
+
+📚 **상세 문서**: [Format Mapping Guide](docs/api/FORMAT_MAPPING_GUIDE.md)
+
 ### AI 통합 구조
 **개념**: AI 어시스턴트와 저장소 작업 간의 브리지
 

@@ -1,8 +1,4 @@
-import type {
-  GraphQLSchemaIntrospector,
-  QueryPattern,
-  SchemaIntrospectionResult,
-} from './GraphQLSchemaIntrospector'
+import type { GraphQLSchemaIntrospector, QueryPattern } from './GraphQLSchemaIntrospector'
 
 /**
  * Enhanced AI Metadata Generator
@@ -227,7 +223,7 @@ export class EnhancedAIMetadataGenerator {
    */
   private generateSchemaCompliantExamples(
     queryPatterns: QueryPattern[],
-    tableId: string
+    _tableId: string
   ): Record<string, string> {
     const examples: Record<string, string> = {}
 
@@ -241,7 +237,7 @@ export class EnhancedAIMetadataGenerator {
   /**
    * Calculate compatibility score between AI suggestions and actual schema
    */
-  private async calculateCompatibilityScore(tableId: string): Promise<number> {
+  private async calculateCompatibilityScore(_tableId: string): Promise<number> {
     // This would compare legacy AI metadata patterns with current schema
     // For now, return a moderate score indicating partial compatibility
     return 0.65 // 65% compatibility - needs improvement

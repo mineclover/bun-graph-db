@@ -16,7 +16,6 @@ export class SchemaDriftMonitor {
   private isMonitoring = false
 
   private readonly DEFAULT_CHECK_INTERVAL = 30 * 1000 // 30 seconds
-  private readonly DRIFT_THRESHOLD = 0.1 // 10% change threshold
 
   constructor(
     schema: GraphQLSchema,
@@ -225,7 +224,7 @@ export class SchemaDriftMonitor {
     console.log(`📊 Schema baseline updated: ${this.lastSchemaHash}`)
   }
 
-  private async analyzeDrift(previousHash: string, currentHash: string): Promise<DriftAnalysis> {
+  private async analyzeDrift(_previousHash: string, _currentHash: string): Promise<DriftAnalysis> {
     // Get detailed introspection data
     const currentIntrospection = await this.schemaIntrospector.getSchemaIntrospection()
 
@@ -277,7 +276,7 @@ export class SchemaDriftMonitor {
     }
   }
 
-  private async triggerAutoSync(driftAnalysis: DriftAnalysis): Promise<void> {
+  private async triggerAutoSync(_driftAnalysis: DriftAnalysis): Promise<void> {
     // For now, we don't have a list of active tables
     // In a real implementation, this would get the list from a service
     console.log('🔄 Auto-sync would trigger for affected tables')

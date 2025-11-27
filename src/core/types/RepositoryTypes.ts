@@ -18,7 +18,7 @@ export interface IBaseRepository<TEntity, TId> {
    * @param entity - The entity to save
    * @returns The saved entity (may include generated fields like ID)
    */
-  save(entity: TEntity): Promise<TEntity | void>
+  save(entity: TEntity): Promise<TEntity | undefined>
 
   /**
    * Find an entity by its unique ID

@@ -428,12 +428,12 @@ describe('AIMetadata Integration Tests', () => {
       // First request
       const startTime1 = performance.now()
       const result1 = await testContext.graphqlRequest!(query, { tableId })
-      const duration1 = performance.now() - startTime1
+      const _duration1 = performance.now() - startTime1
 
       // Second request (should be potentially faster if cached)
       const startTime2 = performance.now()
       const result2 = await testContext.graphqlRequest!(query, { tableId })
-      const duration2 = performance.now() - startTime2
+      const _duration2 = performance.now() - startTime2
 
       // Both should return valid data
       expect(result1.data.table.aiMetadata).toBeDefined()

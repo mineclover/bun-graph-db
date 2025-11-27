@@ -16,8 +16,8 @@ describe('Table Isolation Contract Tests', () => {
 
   beforeAll(async () => {
     // Create two distinct test tables for isolation testing
-    testTable1Id = 'isolation-test-table-1-' + Date.now()
-    testTable2Id = 'isolation-test-table-2-' + Date.now()
+    testTable1Id = `isolation-test-table-1-${Date.now()}`
+    testTable2Id = `isolation-test-table-2-${Date.now()}`
 
     // Note: In real implementation, these tables would need to exist
     // with different templates/tools for proper isolation testing
@@ -105,8 +105,12 @@ describe('Table Isolation Contract Tests', () => {
       const responses2 = await Promise.all(requests2)
 
       // All requests should succeed
-      responses1.forEach((response) => expect(response.status).toBe(200))
-      responses2.forEach((response) => expect(response.status).toBe(200))
+      for (const response of responses1) {
+        expect(response.status).toBe(200)
+      }
+      for (const response of responses2) {
+        expect(response.status).toBe(200)
+      }
 
       const results1 = await Promise.all(responses1.map((r) => r.json()))
       const results2 = await Promise.all(responses2.map((r) => r.json()))
@@ -153,7 +157,7 @@ describe('Table Isolation Contract Tests', () => {
         // If both tables have tools, test execution isolation
         if (result1.result.tools.length > 0 && result2.result.tools.length > 0) {
           const tool1 = result1.result.tools[0]
-          const tool2 = result2.result.tools[0]
+          const _tool2 = result2.result.tools[0]
 
           // Execute same tool from different table contexts
           const toolCallRequest = {
@@ -198,7 +202,7 @@ describe('Table Isolation Contract Tests', () => {
 
   describe('Table Context Validation', () => {
     it('should validate table existence before serving tools', async () => {
-      const nonExistentTableId = 'definitely-does-not-exist-' + Math.random()
+      const nonExistentTableId = `definitely-does-not-exist-${Math.random()}`
 
       const toolsListRequest = {
         jsonrpc: '2.0',
@@ -297,7 +301,7 @@ describe('Table Isolation Contract Tests', () => {
       const responses = await Promise.all(concurrentRequests)
 
       // All requests should succeed independently
-      responses.forEach((response, index) => {
+      responses.forEach((response, _index) => {
         expect(response.status).toBe(200)
       })
 

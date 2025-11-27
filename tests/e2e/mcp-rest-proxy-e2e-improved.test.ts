@@ -372,7 +372,7 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
         // Try to call each tool (may fail due to parameters, but should be accessible)
         try {
           await mcpHelper.callTool(testTool.name, {})
-        } catch (error) {
+        } catch (_error) {
           // Expected for some tools without proper parameters
           console.log(`   ⚠️ ${testTool.name} accessible (parameter validation expected)`)
         }

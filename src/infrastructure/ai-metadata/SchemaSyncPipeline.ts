@@ -3,7 +3,7 @@ import type { EnhancedAIMetadata, TableAttributeProvider } from './EnhancedAIMet
 import { EnhancedAIMetadataGenerator } from './EnhancedAIMetadataGenerator'
 import type { SchemaIntrospectionResult } from './GraphQLSchemaIntrospector'
 import { GraphQLSchemaIntrospector } from './GraphQLSchemaIntrospector'
-import type { TemplateDefinition, ValidatedTemplate, ValidationResult } from './TemplateValidator'
+import type { TemplateDefinition, ValidationResult } from './TemplateValidator'
 import { TemplateValidator } from './TemplateValidator'
 
 /**
@@ -11,10 +11,10 @@ import { TemplateValidator } from './TemplateValidator'
  * Coordinates schema introspection, AI metadata enhancement, and template validation
  */
 export class SchemaSyncPipeline {
+  private schema: GraphQLSchema
   private schemaIntrospector: GraphQLSchemaIntrospector
   private metadataGenerator: EnhancedAIMetadataGenerator
   private templateValidator: TemplateValidator
-  private schema: GraphQLSchema
   private lastSyncTime: Date | null = null
   private syncInProgress = false
 
@@ -82,7 +82,7 @@ export class SchemaSyncPipeline {
       return {
         tableId,
         timestamp: new Date().toISOString(),
-        duration: new Date().getTime() - startTime.getTime(),
+        duration: Date.now() - startTime.getTime(),
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
         recommendations: [],
@@ -102,17 +102,17 @@ export class SchemaSyncPipeline {
     const validation = await this.templateValidator.validateTemplate(template)
 
     // 2. If validation fails, attempt auto-correction
-    let correctedTemplate = null
-    let correctionAttempted = false
+    let _correctedTemplate = null
+    let _correctionAttempted = false
 
     if (!validation.isValid && validation.corrections.length > 0) {
       console.log('🔧 Attempting auto-correction...')
-      correctionAttempted = true
+      _correctionAttempted = true
       const correctionResult = await this.templateValidator.applyCorrections(
         template,
         validation.corrections
       )
-      correctedTemplate = correctionResult
+      _correctedTemplate = correctionResult
 
       // Re-validate corrected template
       const correctedValidation = await this.templateValidator.validateTemplate(

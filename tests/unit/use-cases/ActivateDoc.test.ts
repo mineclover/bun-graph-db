@@ -341,7 +341,7 @@ describe('ActivateDocUseCase', () => {
 
       try {
         await useCase.execute('doc-1' as any)
-      } catch (e) {
+      } catch (_e) {
         // Expected error
       }
 

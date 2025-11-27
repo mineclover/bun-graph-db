@@ -1,4 +1,3 @@
-import type { Database } from 'bun:sqlite'
 import type { PaginatedResult, TableId, TableSearchOptions } from '@/core/types/CommonTypes.js'
 import { Table } from '@/domain/entities/Table.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
@@ -17,10 +16,6 @@ export class SqliteTableRepository
   extends BaseSqliteRepository<Table, TableId>
   implements ITableRepository
 {
-  constructor(db: Database) {
-    super(db)
-  }
-
   protected get tableName(): string {
     return 'tables'
   }

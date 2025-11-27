@@ -24,9 +24,9 @@ export class GetTableDocsUseCase {
     private readonly tableRepository: ITableRepository,
     private readonly attributeRepository: IAttributeRepository,
     readonly _attributeTypeRepository: IAttributeTypeRepository,
-    private readonly nodeRepository: INodeRepository,
+    readonly _nodeRepository: INodeRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly relationTypeRepository: IRelationTypeRepository,
+    readonly _relationTypeRepository: IRelationTypeRepository,
     private readonly docRepository: IDocRepository,
     private readonly logger: ILogger
   ) {

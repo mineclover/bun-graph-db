@@ -1,8 +1,4 @@
-import type {
-  PaginatedResult,
-  PaginationOptions,
-  RelationTypeId,
-} from '@/core/types/CommonTypes.js'
+import type { RelationTypeId } from '@/core/types/CommonTypes.js'
 import type {
   IRepositoryWithBatchOperations,
   IRepositoryWithIdentifier,

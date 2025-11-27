@@ -1,4 +1,3 @@
-import type { Database } from 'bun:sqlite'
 import type { RelationTypeId } from '@/core/types/CommonTypes.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
@@ -18,15 +17,11 @@ export class SqliteRelationTypeRepository
   extends BaseSqliteRepository<RelationType, RelationTypeId>
   implements IRelationTypeRepository
 {
-  constructor(db: Database) {
-    super(db)
-  }
-
   protected get tableName(): string {
     return 'relation_types'
   }
 
-  async save(relationType: RelationType): Promise<void> {
+  async save(relationType: RelationType): Promise<RelationType | undefined> {
     const data = relationType.toDatabase()
 
     if (!data.id) {
@@ -52,6 +47,7 @@ export class SqliteRelationTypeRepository
     } else {
       await this.update(relationType)
     }
+    return undefined
   }
 
   // findById() - inherited from BaseSqliteRepository

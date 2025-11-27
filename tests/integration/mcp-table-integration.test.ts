@@ -7,7 +7,7 @@
  * Sequential: Integration testing after complete implementation
  */
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
 
 const TEST_PORT = 4141
 const BASE_URL = `http://localhost:${TEST_PORT}`
@@ -162,7 +162,7 @@ describe('MCP Table Integration Tests', () => {
         let error = null
         try {
           error = await response.json()
-        } catch (jsonError) {
+        } catch (_jsonError) {
           // If JSON parsing fails, that's also acceptable for invalid requests
           console.log(`✅ Invalid JSON response (expected for invalid table ID): ${invalidId}`)
         }

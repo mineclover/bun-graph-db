@@ -233,7 +233,7 @@ export class SystemInitializationService {
   /**
    * Reset templates to baseline set
    */
-  private async resetTemplates(database: Database, options: InitializationOptions): Promise<void> {
+  private async resetTemplates(database: Database, _options: InitializationOptions): Promise<void> {
     this.logger.info('📄 Resetting templates...')
 
     // Keep only essential system templates
@@ -252,7 +252,7 @@ export class SystemInitializationService {
   /**
    * Reset test data specifically
    */
-  private async resetTestData(database: Database, options: InitializationOptions): Promise<void> {
+  private async resetTestData(database: Database, _options: InitializationOptions): Promise<void> {
     this.logger.info('🧪 Resetting test data...')
 
     // Remove test tables (those with test prefixes)
@@ -270,7 +270,7 @@ export class SystemInitializationService {
    */
   private async createSampleData(
     database: Database,
-    options: InitializationOptions
+    _options: InitializationOptions
   ): Promise<void> {
     this.logger.info('🎭 Creating sample data...')
 
@@ -374,7 +374,7 @@ export class SystemInitializationService {
     for (const table of systemTables) {
       try {
         database.exec(`DELETE FROM ${table}`)
-      } catch (error) {
+      } catch {
         // Table might not exist, ignore
       }
     }
@@ -449,7 +449,7 @@ export class SystemInitializationService {
         templatesCount: templates.count,
         nodesCount: nodes.count,
       }
-    } catch (error) {
+    } catch {
       return {
         database: false,
         tablesCount: 0,

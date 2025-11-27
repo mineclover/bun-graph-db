@@ -15,10 +15,10 @@ import { describe, expect, it } from '@jest/globals'
 describe('Schema Type Mapping Utilities', () => {
   describe('Basic SQLite Type Conversions', () => {
     it('should convert TEXT types to string schema', () => {
-      const sqliteType = 'TEXT'
+      const _sqliteType = 'TEXT'
 
       // Expected JSON Schema for TEXT
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'string',
         description: 'Text value',
       }
@@ -32,9 +32,9 @@ describe('Schema Type Mapping Utilities', () => {
     })
 
     it('should convert INTEGER types to number schema', () => {
-      const sqliteType = 'INTEGER'
+      const _sqliteType = 'INTEGER'
 
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'number',
         description: 'Integer value',
       }
@@ -49,12 +49,12 @@ describe('Schema Type Mapping Utilities', () => {
     it('should convert REAL/NUMERIC types to number schema', () => {
       const sqliteTypes = ['REAL', 'NUMERIC', 'DECIMAL', 'FLOAT', 'DOUBLE']
 
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'number',
         description: 'Numeric value',
       }
 
-      sqliteTypes.forEach((sqliteType) => {
+      sqliteTypes.forEach((_sqliteType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -66,12 +66,12 @@ describe('Schema Type Mapping Utilities', () => {
     it('should convert BOOLEAN/BIT types to boolean schema', () => {
       const sqliteTypes = ['BOOLEAN', 'BIT']
 
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'boolean',
         description: 'Boolean value',
       }
 
-      sqliteTypes.forEach((sqliteType) => {
+      sqliteTypes.forEach((_sqliteType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -81,15 +81,15 @@ describe('Schema Type Mapping Utilities', () => {
     })
 
     it('should convert JSON/BLOB types to object schema', () => {
-      const sqliteTypes = ['JSON', 'BLOB']
+      const _sqliteTypes = ['JSON', 'BLOB']
 
-      const expectedJsonSchema = {
+      const _expectedJsonSchema = {
         type: 'object',
         description: 'JSON object',
         additionalProperties: true,
       }
 
-      const expectedBlobSchema = {
+      const _expectedBlobSchema = {
         type: 'string',
         description: 'Binary data (base64 encoded)',
         format: 'base64',
@@ -105,19 +105,19 @@ describe('Schema Type Mapping Utilities', () => {
     it('should convert DATE/DATETIME/TIMESTAMP types to string with date format', () => {
       const sqliteTypes = ['DATE', 'DATETIME', 'TIMESTAMP']
 
-      const expectedDateSchema = {
+      const _expectedDateSchema = {
         type: 'string',
         description: 'Date value',
         format: 'date',
       }
 
-      const expectedDateTimeSchema = {
+      const _expectedDateTimeSchema = {
         type: 'string',
         description: 'Date and time value',
         format: 'date-time',
       }
 
-      sqliteTypes.forEach((sqliteType) => {
+      sqliteTypes.forEach((_sqliteType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -133,9 +133,9 @@ describe('Schema Type Mapping Utilities', () => {
 
   describe('Type Constraints and Modifiers', () => {
     it('should handle NOT NULL constraints', () => {
-      const sqliteTypeWithConstraint = 'TEXT NOT NULL'
+      const _sqliteTypeWithConstraint = 'TEXT NOT NULL'
 
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'string',
         description: 'Text value (required)',
       }
@@ -148,9 +148,9 @@ describe('Schema Type Mapping Utilities', () => {
     })
 
     it('should handle DEFAULT values', () => {
-      const sqliteTypeWithDefault = "TEXT DEFAULT 'example'"
+      const _sqliteTypeWithDefault = "TEXT DEFAULT 'example'"
 
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'string',
         description: 'Text value',
         default: 'example',
@@ -164,9 +164,9 @@ describe('Schema Type Mapping Utilities', () => {
     })
 
     it('should handle length constraints', () => {
-      const sqliteTypeWithLength = 'VARCHAR(255)'
+      const _sqliteTypeWithLength = 'VARCHAR(255)'
 
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'string',
         description: 'Variable length text',
         maxLength: 255,
@@ -180,9 +180,9 @@ describe('Schema Type Mapping Utilities', () => {
     })
 
     it('should handle CHECK constraints', () => {
-      const sqliteTypeWithCheck = 'INTEGER CHECK (value > 0)'
+      const _sqliteTypeWithCheck = 'INTEGER CHECK (value > 0)'
 
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'number',
         description: 'Integer value (with constraints)',
         minimum: 0,
@@ -215,7 +215,7 @@ describe('Schema Type Mapping Utilities', () => {
         'Boolean',
       ]
 
-      typeVariations.forEach((sqliteType) => {
+      typeVariations.forEach((_sqliteType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -228,14 +228,14 @@ describe('Schema Type Mapping Utilities', () => {
 
   describe('Template InputSchema Mapping', () => {
     it('should map template parameter to MCP input schema', () => {
-      const templateParameter = {
+      const _templateParameter = {
         name: 'userId',
         type: 'INTEGER',
         description: 'User identifier',
         required: true,
       }
 
-      const expectedMcpSchema = {
+      const _expectedMcpSchema = {
         type: 'object',
         properties: {
           userId: {
@@ -254,7 +254,7 @@ describe('Schema Type Mapping Utilities', () => {
     })
 
     it('should handle multiple template parameters', () => {
-      const templateParameters = [
+      const _templateParameters = [
         {
           name: 'userId',
           type: 'INTEGER',
@@ -275,7 +275,7 @@ describe('Schema Type Mapping Utilities', () => {
         },
       ]
 
-      const expectedMcpSchema = {
+      const _expectedMcpSchema = {
         type: 'object',
         properties: {
           userId: {
@@ -302,9 +302,9 @@ describe('Schema Type Mapping Utilities', () => {
     })
 
     it('should handle empty parameter list', () => {
-      const templateParameters: any[] = []
+      const _templateParameters: any[] = []
 
-      const expectedMcpSchema = {
+      const _expectedMcpSchema = {
         type: 'object',
         properties: {},
         required: [],
@@ -320,9 +320,9 @@ describe('Schema Type Mapping Utilities', () => {
 
   describe('Edge Cases and Error Handling', () => {
     it('should handle unknown SQLite types gracefully', () => {
-      const unknownType = 'UNKNOWN_TYPE'
+      const _unknownType = 'UNKNOWN_TYPE'
 
-      const expectedSchema = {
+      const _expectedSchema = {
         type: 'string',
         description: 'Unknown type (treated as string)',
       }
@@ -351,7 +351,7 @@ describe('Schema Type Mapping Utilities', () => {
         'CHECK (invalid syntax)',
       ]
 
-      malformedTypes.forEach((malformedType) => {
+      malformedTypes.forEach((_malformedType) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:
@@ -364,7 +364,7 @@ describe('Schema Type Mapping Utilities', () => {
 
   describe('Schema Validation', () => {
     it('should validate generated JSON schema', () => {
-      const sqliteType = 'TEXT'
+      const _sqliteType = 'TEXT'
 
       expect(true).toBe(true) // Placeholder
 
@@ -380,7 +380,7 @@ describe('Schema Type Mapping Utilities', () => {
         { type: 'string', additionalProperties: 'not boolean' },
       ]
 
-      invalidSchemas.forEach((invalidSchema) => {
+      invalidSchemas.forEach((_invalidSchema) => {
         expect(true).toBe(true) // Placeholder
 
         // When implemented:

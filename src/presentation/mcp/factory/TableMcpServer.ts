@@ -8,6 +8,13 @@
  */
 
 import type { McpToolDefinition } from '../../../application/services/McpToolRegistry'
+import type {
+  FormatMappingTemplate,
+  SimpleMappingDefinition,
+} from '../../../core/types/FormatMapping.js'
+import { PRESET_MAPPINGS } from '../../../core/types/FormatMapping.js'
+import type { FlatJsonExport } from '../../../core/types/JsonExport.js'
+import { FormatMapperService } from '../../../domain/services/FormatMapperService.js'
 import { SchemaDiscoveryService } from '../../../infrastructure/ai-metadata/SchemaDiscoveryService'
 import { McpHttpServer } from '../../../mcp/http-server/McpHttpServer'
 import { McpDataValidator, McpSchemaValidator, SchemaMapper } from '../schema/SchemaMapper'
@@ -29,11 +36,11 @@ interface Template {
   tableId?: string
 }
 
-interface McpRequest {
+interface _McpRequest {
   jsonrpc: '2.0'
   id?: string | number
   method: string
-  params?: any
+  params?: unknown
 }
 
 interface McpResponse {
@@ -56,10 +63,12 @@ export class TableMcpServer {
   private tableInitialized: boolean = false
   private mcpServer: McpHttpServer
   private schemaDiscoveryService: SchemaDiscoveryService | null = null
+  private formatMapperService: FormatMapperService
 
   constructor(tableId: string, graphqlEndpoint: string, restApiBaseUrl?: string) {
     this.tableId = tableId
     this.mcpServer = new McpHttpServer(graphqlEndpoint, restApiBaseUrl)
+    this.formatMapperService = new FormatMapperService()
   }
 
   /**
@@ -98,6 +107,9 @@ export class TableMcpServer {
 
       // Add schema discovery tools
       this.addSchemaDiscoveryTools()
+
+      // Add format mapper tools
+      this.addFormatMapperTools()
 
       // Query templates associated with this table
       const templates = await this.getTableTemplates(this.tableId)
@@ -306,6 +318,156 @@ export class TableMcpServer {
   }
 
   /**
+   * Add format mapper tools for this table
+   * Enables flexible export format mapping based on Flat JSON
+   */
+  private addFormatMapperTools(): void {
+    try {
+      // 1. Export with custom format mapping
+      const exportWithMappingTool: McpToolDefinition = {
+        name: `export-with-mapping-${this.tableId}`,
+        description: `[커스텀 포맷 Export] Export table ${this.tableId} data with custom format mapping. Transform Flat JSON to any custom structure using address-based field mapping. Supports preset formats (CSV_FLAT, API_RESPONSE, GRAPH_FORMAT) or custom mapping templates.`,
+        inputSchema: {
+          type: 'object',
+          properties: {
+            mapping: {
+              type: 'object',
+              description:
+                'Mapping template or simple key-value mappings. Key = target path, Value = source path (e.g., {"users[*].id": "$.nodes[*].id", "users[*].name": "$.nodes[*].title"})',
+            },
+            presetFormat: {
+              type: 'string',
+              enum: ['CSV_FLAT', 'API_RESPONSE', 'GRAPH_FORMAT'],
+              description: 'Use a preset format instead of custom mapping',
+            },
+            prettyPrint: {
+              type: 'boolean',
+              description: 'Pretty print JSON output',
+              default: true,
+            },
+            includeNulls: {
+              type: 'boolean',
+              description: 'Include null values in output',
+              default: false,
+            },
+            strictMode: {
+              type: 'boolean',
+              description: 'Fail on missing source fields',
+              default: false,
+            },
+          },
+          required: [],
+        },
+        operationType: 'query',
+      }
+
+      // 2. Import/Patch from custom format
+      const importWithMappingTool: McpToolDefinition = {
+        name: `import-with-mapping-${this.tableId}`,
+        description: `[커스텀 포맷 Import] Import data into table ${this.tableId} from custom format. Transform custom JSON structure back to Flat JSON using reverse address mapping. Use for batch data import.`,
+        inputSchema: {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              description: 'Custom format data to import',
+            },
+            mapping: {
+              type: 'object',
+              description:
+                'Mapping template (same format used for export). Will be inverted automatically.',
+            },
+            presetFormat: {
+              type: 'string',
+              enum: ['CSV_FLAT', 'API_RESPONSE', 'GRAPH_FORMAT'],
+              description: 'Use a preset format instead of custom mapping',
+            },
+            mergeStrategy: {
+              type: 'string',
+              enum: ['replace', 'merge', 'deep-merge'],
+              description: 'How to merge with existing data',
+              default: 'replace',
+            },
+          },
+          required: ['data'],
+        },
+        operationType: 'mutation',
+      }
+
+      // 3. Generate patches from custom format
+      const generatePatchesTool: McpToolDefinition = {
+        name: `generate-patches-${this.tableId}`,
+        description: `[Patch 생성] Generate update patches from custom format data for table ${this.tableId}. Useful for partial updates - converts custom format data to FlatNodePatch[] that can be applied to existing nodes.`,
+        inputSchema: {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'object',
+              description: 'Custom format data containing updates',
+            },
+            mapping: {
+              type: 'object',
+              description: 'Mapping template (must include ID mapping for node identification)',
+            },
+            presetFormat: {
+              type: 'string',
+              enum: ['CSV_FLAT', 'API_RESPONSE', 'GRAPH_FORMAT'],
+              description: 'Use a preset format instead of custom mapping',
+            },
+          },
+          required: ['data'],
+        },
+        operationType: 'query',
+      }
+
+      // 4. Validate mapping template
+      const validateMappingTool: McpToolDefinition = {
+        name: `validate-mapping-${this.tableId}`,
+        description: `[매핑 검증] Validate a format mapping template for table ${this.tableId}. Checks for duplicate targets, invalid paths, unsupported transforms, and warns about potential issues.`,
+        inputSchema: {
+          type: 'object',
+          properties: {
+            mapping: {
+              type: 'object',
+              description: 'Mapping template to validate',
+            },
+            validateAgainstData: {
+              type: 'boolean',
+              description: 'Also validate source paths against actual table data',
+              default: false,
+            },
+          },
+          required: ['mapping'],
+        },
+        operationType: 'query',
+      }
+
+      // 5. List preset mapping formats
+      const listPresetsTool: McpToolDefinition = {
+        name: `list-format-presets-${this.tableId}`,
+        description: `[프리셋 목록] List available preset format mappings. Shows CSV_FLAT, API_RESPONSE, GRAPH_FORMAT with their descriptions and mapping definitions. Useful for understanding available transformations.`,
+        inputSchema: {
+          type: 'object',
+          properties: {},
+          required: [],
+        },
+        operationType: 'query',
+      }
+
+      // Add all format mapper tools
+      this.tableTools.set(exportWithMappingTool.name, exportWithMappingTool)
+      this.tableTools.set(importWithMappingTool.name, importWithMappingTool)
+      this.tableTools.set(generatePatchesTool.name, generatePatchesTool)
+      this.tableTools.set(validateMappingTool.name, validateMappingTool)
+      this.tableTools.set(listPresetsTool.name, listPresetsTool)
+
+      console.log(`Added 5 format mapper tools for table ${this.tableId}`)
+    } catch (error) {
+      console.error(`Failed to add format mapper tools for table ${this.tableId}:`, error)
+    }
+  }
+
+  /**
    * Get GraphQL schema from the MCP server
    */
   private async getGraphQLSchema(): Promise<any> {
@@ -369,7 +531,7 @@ export class TableMcpServer {
           variables: {},
         })
 
-        if (result.data && result.data.__schema && !result.errors) {
+        if (result.data?.__schema && !result.errors) {
           return result.data.__schema
         }
       }
@@ -1097,6 +1259,23 @@ export class TableMcpServer {
         return this.executeSchemaDiscoveryTool('generateSearchExamples', variables)
       }
 
+      // Special handling for format mapper tools
+      if (templateIdentifier === `export-with-mapping-${this.tableId}`) {
+        return this.executeFormatMapperTool('exportWithMapping', variables)
+      }
+      if (templateIdentifier === `import-with-mapping-${this.tableId}`) {
+        return this.executeFormatMapperTool('importWithMapping', variables)
+      }
+      if (templateIdentifier === `generate-patches-${this.tableId}`) {
+        return this.executeFormatMapperTool('generatePatches', variables)
+      }
+      if (templateIdentifier === `validate-mapping-${this.tableId}`) {
+        return this.executeFormatMapperTool('validateMapping', variables)
+      }
+      if (templateIdentifier === `list-format-presets-${this.tableId}`) {
+        return this.executeFormatMapperTool('listPresets', variables)
+      }
+
       // Clean variables - remove any variables that are not expected by the template
       const cleanVariables = { ...variables }
 
@@ -1163,8 +1342,8 @@ export class TableMcpServer {
    */
   private async executeAiMetadataQuery(variables: any): Promise<any> {
     try {
-      const includeSampleData = variables.includeSampleData !== false
-      const sampleLimit = variables.sampleLimit || 5
+      const _includeSampleData = variables.includeSampleData !== false
+      const _sampleLimit = variables.sampleLimit || 5
 
       const query = `
         query GetTableMetadata($tableId: ID!, $includeAiMetadata: Boolean!) {
@@ -1370,6 +1549,213 @@ export class TableMcpServer {
   }
 
   /**
+   * Execute format mapper tool
+   */
+  private async executeFormatMapperTool(method: string, variables: any): Promise<any> {
+    try {
+      // Get mapping template from preset or custom
+      const getMapping = (): FormatMappingTemplate | SimpleMappingDefinition => {
+        if (variables.presetFormat) {
+          const preset = PRESET_MAPPINGS[variables.presetFormat as keyof typeof PRESET_MAPPINGS]
+          if (!preset) {
+            throw new Error(`Unknown preset format: ${variables.presetFormat}`)
+          }
+          return preset
+        }
+        if (variables.mapping) {
+          return variables.mapping
+        }
+        throw new Error('Either mapping or presetFormat is required')
+      }
+
+      switch (method) {
+        case 'exportWithMapping': {
+          // First, get the flat JSON data from the table
+          const flatData = await this.getTableFlatJson()
+          if (!flatData) {
+            return {
+              success: false,
+              error: 'Failed to get table data',
+              data: null,
+            }
+          }
+
+          const mapping = getMapping()
+          const result = this.formatMapperService.transformToCustomFormat(flatData, {
+            template: mapping,
+            prettyPrint: variables.prettyPrint !== false,
+            includeNulls: variables.includeNulls === true,
+            strictMode: variables.strictMode === true,
+          })
+
+          return {
+            success: result.success,
+            data: result.data,
+            json: result.json,
+            stats: result.stats,
+            itemCount: result.itemCount,
+            errors: result.errors,
+            warnings: result.warnings,
+          }
+        }
+
+        case 'importWithMapping': {
+          if (!variables.data) {
+            return {
+              success: false,
+              error: 'data is required for import',
+              data: null,
+            }
+          }
+
+          const mapping = getMapping()
+          const result = this.formatMapperService.transformToFlatJson(variables.data, {
+            template: mapping,
+            mergeStrategy: variables.mergeStrategy || 'replace',
+            strictMode: variables.strictMode === true,
+          })
+
+          return {
+            success: result.success,
+            flatData: result.flatData,
+            stats: result.stats,
+            itemCount: result.itemCount,
+            errors: result.errors,
+            warnings: result.warnings,
+          }
+        }
+
+        case 'generatePatches': {
+          if (!variables.data) {
+            return {
+              success: false,
+              error: 'data is required for patch generation',
+              data: null,
+            }
+          }
+
+          const mapping = getMapping()
+          const result = this.formatMapperService.generatePatches(variables.data, {
+            template: mapping,
+            strictMode: variables.strictMode === true,
+          })
+
+          return {
+            success: result.success,
+            patches: result.patches,
+            stats: result.stats,
+            itemCount: result.itemCount,
+            errors: result.errors,
+            warnings: result.warnings,
+          }
+        }
+
+        case 'validateMapping': {
+          if (!variables.mapping) {
+            return {
+              success: false,
+              error: 'mapping is required for validation',
+              data: null,
+            }
+          }
+
+          let sourceData: FlatJsonExport | undefined
+          if (variables.validateAgainstData) {
+            const flatJson = await this.getTableFlatJson()
+            sourceData = flatJson ?? undefined
+          }
+
+          const result = this.formatMapperService.validateMapping(variables.mapping, sourceData)
+
+          return {
+            success: true,
+            data: {
+              valid: result.valid,
+              errors: result.errors,
+              warnings: result.warnings,
+            },
+          }
+        }
+
+        case 'listPresets': {
+          return {
+            success: true,
+            data: {
+              presets: Object.entries(PRESET_MAPPINGS).map(([key, preset]) => ({
+                id: key,
+                name: preset.name,
+                description: preset.description,
+                mappings: preset.mappings,
+                rootTemplate: preset.rootTemplate,
+              })),
+            },
+          }
+        }
+
+        default:
+          return {
+            success: false,
+            error: `Unknown format mapper method: ${method}`,
+            data: null,
+          }
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        data: null,
+      }
+    }
+  }
+
+  /**
+   * Get table data as Flat JSON for format mapping
+   */
+  private async getTableFlatJson(): Promise<FlatJsonExport | null> {
+    try {
+      const query = `
+        query ExportTableJson($tableId: ID!) {
+          exportTableJson(tableId: $tableId, options: { format: FLAT }) {
+            success
+            format
+            data
+            nodeCount
+            errors
+          }
+        }
+      `
+
+      const operation = {
+        operationName: 'ExportTableJson',
+        query,
+        variables: { tableId: this.tableId },
+        operationType: 'query' as const,
+      }
+
+      const result = await (this.mcpServer as any).graphqlExecutor.execute(operation)
+
+      if (result.errors && result.errors.length > 0) {
+        console.error('Failed to get flat JSON:', result.errors)
+        return null
+      }
+
+      const exportResult = result.data?.exportTableJson
+      if (!exportResult?.success || !exportResult.data) {
+        return null
+      }
+
+      // Parse the data if it's a string
+      const data =
+        typeof exportResult.data === 'string' ? JSON.parse(exportResult.data) : exportResult.data
+
+      return data as FlatJsonExport
+    } catch (error) {
+      console.error('Error getting table flat JSON:', error)
+      return null
+    }
+  }
+
+  /**
    * Validate tool arguments against schema
    */
   private validateToolArguments(args: any, schema: any): { valid: boolean; errors: string[] } {
@@ -1483,7 +1869,7 @@ export class TableMcpServer {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
-    } catch (error) {
+    } catch (_error) {
       const errorResponse = this.createErrorResponse(null, -32700, 'Parse error')
       return new Response(JSON.stringify(errorResponse), {
         status: 400,
@@ -1499,7 +1885,7 @@ export class TableMcpServer {
     try {
       // Use regex to extract operation name from query
       const match = query.match(/(query|mutation)\s+(\w+)/i)
-      if (match && match[2]) {
+      if (match?.[2]) {
         return match[2]
       }
     } catch (error) {

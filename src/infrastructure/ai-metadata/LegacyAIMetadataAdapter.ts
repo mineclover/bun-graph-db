@@ -28,7 +28,7 @@ export class LegacyAIMetadataAdapter {
 
       // Create simple table attribute provider
       const tableAttributeProvider = {
-        async getTableAttributes(tableId: string) {
+        async getTableAttributes(_tableId: string) {
           // Return basic attributes - this would be enhanced with real data
           return [
             {
@@ -131,7 +131,7 @@ export class LegacyAIMetadataAdapter {
   private generateLegacyAiMetadataWithCorrections(
     attributes: any[],
     relatedTemplates: any[] = [],
-    sampleLimit: number = 5
+    _sampleLimit: number = 5
   ): any {
     const schemaInfo = {
       dataTypes: this.extractDataTypes(attributes),

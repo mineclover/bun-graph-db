@@ -1,9 +1,4 @@
-import {
-  buildClientSchema,
-  type GraphQLSchema,
-  getIntrospectionQuery,
-  introspectionFromSchema,
-} from 'graphql'
+import { type GraphQLSchema, introspectionFromSchema } from 'graphql'
 
 /**
  * GraphQL Schema Introspection Service
@@ -221,7 +216,7 @@ export class GraphQLSchemaIntrospector {
   /**
    * Generate working searchNodes example based on actual schema
    */
-  private generateSearchNodesExample(searchNodesQuery: any): string {
+  private generateSearchNodesExample(_searchNodesQuery: any): string {
     return `query SearchNodes($filter: SearchNodesFilter!, $pagination: NodesPagination, $sort: [NodeSortInput!]) {
   searchNodes(filter: $filter, pagination: $pagination, sort: $sort) {
     id
@@ -237,7 +232,7 @@ export class GraphQLSchemaIntrospector {
   /**
    * Generate working createNode example based on actual schema
    */
-  private generateCreateNodeExample(createNodeMutation: any): string {
+  private generateCreateNodeExample(_createNodeMutation: any): string {
     return `mutation CreateNode($input: CreateNodeInput!) {
   createNode(input: $input) {
     success

@@ -1,4 +1,3 @@
-import type { Database } from 'bun:sqlite'
 import type {
   AttributeTypeId,
   PaginatedResult,
@@ -30,10 +29,6 @@ export class SqliteAttributeTypeRepository
   extends BaseSqliteRepository<AttributeType, AttributeTypeId>
   implements IAttributeTypeRepository
 {
-  constructor(db: Database) {
-    super(db)
-  }
-
   protected get tableName(): string {
     return 'attribute_types'
   }

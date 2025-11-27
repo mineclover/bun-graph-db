@@ -1,4 +1,3 @@
-import type { Database } from 'bun:sqlite'
 import type {
   AttributeId,
   NodeId,
@@ -23,10 +22,6 @@ export class SqliteNodeAttributeRepository
   extends BaseSqliteRepository<NodeAttribute, string>
   implements INodeAttributeRepository
 {
-  constructor(db: Database) {
-    super(db)
-  }
-
   protected get tableName(): string {
     return 'node_attributes'
   }

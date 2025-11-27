@@ -388,7 +388,7 @@ describe('SearchRelatedNodesUseCase', () => {
       }
 
       mockGraphRepository.findPathsBetweenNodes = mock(
-        async (tableId, startIds, endIds, maxDepth, relationTypes) => {
+        async (_tableId, _startIds, _endIds, _maxDepth, relationTypes) => {
           expect(relationTypes).toEqual(['depends-on', 'requires'])
           return []
         }
@@ -447,7 +447,7 @@ describe('SearchRelatedNodesUseCase', () => {
 
   describe('getDependencies() - Successful Retrieval', () => {
     it('should get incoming dependencies', async () => {
-      mockGraphRepository.getDependencyChain = mock(async (tableId, nodeId, direction) => {
+      mockGraphRepository.getDependencyChain = mock(async (_tableId, _nodeId, direction) => {
         expect(direction).toBe(RelationDirection.INCOMING)
         return [
           { nodeId: 'node-1', level: 0, relationPath: [] },
@@ -465,7 +465,7 @@ describe('SearchRelatedNodesUseCase', () => {
     })
 
     it('should get outgoing dependencies', async () => {
-      mockGraphRepository.getDependencyChain = mock(async (tableId, nodeId, direction) => {
+      mockGraphRepository.getDependencyChain = mock(async (_tableId, _nodeId, direction) => {
         expect(direction).toBe(RelationDirection.OUTGOING)
         return [
           { nodeId: 'node-1', level: 0, relationPath: [] },
@@ -482,7 +482,7 @@ describe('SearchRelatedNodesUseCase', () => {
 
     it('should get dependencies with relationTypes filter', async () => {
       mockGraphRepository.getDependencyChain = mock(
-        async (tableId, nodeId, direction, relationTypes) => {
+        async (_tableId, _nodeId, _direction, relationTypes) => {
           expect(relationTypes).toEqual(['depends-on', 'requires'])
           return []
         }

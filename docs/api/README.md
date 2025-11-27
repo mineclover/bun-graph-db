@@ -31,6 +31,13 @@ bun-graph-db GraphQL API의 쿼리, 뮤테이션, 구독에 대한 종합 가이
 - **Flat JSON Export**: 간단한 배열 형태 내보내기
 - **HFI Protocol Export**: 그래프 시각화 호환 형식
 - **Patch Types**: 형식별 수정 타입 정의
+- **Format Mapping**: 커스텀 출력 형식 변환
+
+### [🔄 Format Mapping Guide](./FORMAT_MAPPING_GUIDE.md)
+- **NodeLevelMapping**: 노드 단위 간소화 매핑 문법
+- **JSONPath 주소 체계**: 필드 매핑 주소 시스템
+- **Transform 함수**: 데이터 변환 (uppercase, date, json 등)
+- **가이드 생성**: 매핑 문서 자동 생성 기능
 
 ### [⚡ Performance Monitor API](./PERFORMANCE_MONITOR_API.md)
 - **Operation Timing**: 작업 시간 측정

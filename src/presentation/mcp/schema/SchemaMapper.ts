@@ -116,13 +116,13 @@ export class SchemaMapper {
   private static extractBaseType(normalizedType: string): string {
     // Handle types with parentheses like VARCHAR(255), DECIMAL(10,2)
     const parenthesesMatch = normalizedType.match(/^(\w+)(?:\([^)]*\))?/)
-    if (parenthesesMatch && parenthesesMatch[1]) {
+    if (parenthesesMatch?.[1]) {
       return parenthesesMatch[1]
     }
 
     // Handle types with constraints like "INTEGER NOT NULL"
     const constraintMatch = normalizedType.match(/^(\w+)/)
-    if (constraintMatch && constraintMatch[1]) {
+    if (constraintMatch?.[1]) {
       return constraintMatch[1]
     }
 
@@ -135,12 +135,12 @@ export class SchemaMapper {
   private static applyConstraints(schema: JsonSchema, normalizedType: string): void {
     // Handle NOT NULL constraint
     if (normalizedType.includes('NOT NULL')) {
-      schema.description = schema.description + ' (required)'
+      schema.description = `${schema.description} (required)`
     }
 
     // Handle DEFAULT values
     const defaultMatch = normalizedType.match(/DEFAULT\s+(.+?)(?:\s|$)/)
-    if (defaultMatch && defaultMatch[1]) {
+    if (defaultMatch?.[1]) {
       const defaultValue = SchemaMapper.parseDefaultValue(defaultMatch[1], schema.type)
       if (defaultValue !== null) {
         schema.default = defaultValue
@@ -149,13 +149,13 @@ export class SchemaMapper {
 
     // Handle VARCHAR length constraints
     const varcharMatch = normalizedType.match(/VARCHAR\((\d+)\)/)
-    if (varcharMatch && varcharMatch[1]) {
+    if (varcharMatch?.[1]) {
       schema.maxLength = parseInt(varcharMatch[1], 10)
     }
 
     // Handle CHAR length constraints
     const charMatch = normalizedType.match(/CHAR\((\d+)\)/)
-    if (charMatch && charMatch[1]) {
+    if (charMatch?.[1]) {
       const length = parseInt(charMatch[1], 10)
       schema.minLength = length
       schema.maxLength = length
@@ -164,11 +164,11 @@ export class SchemaMapper {
     // Handle CHECK constraints for numeric types
     if (schema.type === 'number') {
       const checkMatch = normalizedType.match(/CHECK\s*\(\s*\w+\s*([><=]+)\s*([^)]+)\s*\)/)
-      if (checkMatch && checkMatch[1] && checkMatch[2]) {
+      if (checkMatch?.[1] && checkMatch[2]) {
         const operator = checkMatch[1].trim()
         const value = parseFloat(checkMatch[2].trim())
 
-        if (!isNaN(value)) {
+        if (!Number.isNaN(value)) {
           switch (operator) {
             case '>':
               schema.minimum = value
@@ -201,7 +201,7 @@ export class SchemaMapper {
         return cleanDefault
       case 'number': {
         const numValue = parseFloat(cleanDefault)
-        return isNaN(numValue) ? null : numValue
+        return Number.isNaN(numValue) ? null : numValue
       }
       case 'boolean':
         return cleanDefault.toLowerCase() === 'true' || cleanDefault === '1'
@@ -1149,7 +1149,7 @@ export class McpDataValidator {
         if (typeof value !== 'number') {
           if (typeof value === 'string') {
             const num = parseFloat(value)
-            if (!isNaN(num)) {
+            if (!Number.isNaN(num)) {
               coercedValue = num
             } else {
               errors.push({
@@ -1176,7 +1176,7 @@ export class McpDataValidator {
         if (typeof value !== 'number' || !Number.isInteger(value)) {
           if (typeof value === 'string') {
             const num = parseInt(value, 10)
-            if (!isNaN(num) && String(num) === value.trim()) {
+            if (!Number.isNaN(num) && String(num) === value.trim()) {
               coercedValue = num
             } else {
               errors.push({

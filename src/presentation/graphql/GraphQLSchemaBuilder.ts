@@ -58,6 +58,7 @@ export interface GraphQLDependencies {
     jsonExportService: any
     logger: any
   }
+  jsonlBackupQueries?: any
   // enhancedAttributeQueries?: any
 
   // Mutation resolvers
@@ -129,6 +130,10 @@ export class GraphQLSchemaBuilder {
       .resolve(GraphQLTokens.JSON_EXPORT_QUERIES)
       .catch(() => null)) as any
 
+    const jsonlBackupQueries = (await this.container
+      .resolve(GraphQLTokens.JSONL_BACKUP_QUERIES)
+      .catch(() => null)) as any
+
     // Mutation resolvers
     const tableMutations = (await this.container.resolve(
       GraphQLTokens.TABLE_MUTATIONS
@@ -170,6 +175,7 @@ export class GraphQLSchemaBuilder {
       docQueries,
       systemQueries,
       jsonExportQueries,
+      jsonlBackupQueries,
       tableMutations,
       nodeMutations,
       attributeMutations,
@@ -440,7 +446,7 @@ export class GraphQLSchemaBuilder {
         exportTableJson: (
           _: GraphQLParent,
           args: Record<string, unknown>,
-          context: GraphQLContext,
+          _context: GraphQLContext,
           info: any
         ) => {
           if (!deps.jsonExportQueries) {
@@ -454,6 +460,10 @@ export class GraphQLSchemaBuilder {
             info
           )
         },
+
+        // JSONL Backup queries
+        inspectJsonlBackup: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.jsonlBackupQueries?.inspectJsonlBackup(_, args) || null,
       },
 
       Mutation: {
@@ -636,6 +646,20 @@ export class GraphQLSchemaBuilder {
           args: Record<string, unknown>,
           context: GraphQLContext
         ) => deps.exportMutations.Mutation.exportMultipleTables(_, args as any, context),
+
+        // JSONL Backup mutations
+        exportJsonl: async (_: GraphQLParent, args: Record<string, unknown>) => {
+          if (!deps.jsonlBackupQueries) {
+            throw new Error('JSONL backup service not available')
+          }
+          return deps.jsonlBackupQueries.exportJsonl(_, args)
+        },
+        importJsonl: async (_: GraphQLParent, args: Record<string, unknown>) => {
+          if (!deps.jsonlBackupQueries) {
+            throw new Error('JSONL backup service not available')
+          }
+          return deps.jsonlBackupQueries.importJsonl(_, args)
+        },
       },
 
       Subscription: {

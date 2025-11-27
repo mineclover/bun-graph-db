@@ -4,7 +4,6 @@
  */
 export class SchemaDiscoveryService {
   private schema: any
-  private operationCache = new Map<string, OperationDiscovery>()
 
   constructor(schema: any) {
     // schema is now the introspection result, not a GraphQL schema object
@@ -51,8 +50,7 @@ export class SchemaDiscoveryService {
     // Find all search-related operations with null safety
     const searchOperations = queryType.fields.filter(
       (field: any) =>
-        field &&
-        field.name &&
+        field?.name &&
         (field.name.toLowerCase().includes('search') || field.name.toLowerCase().includes('node'))
     )
 
@@ -249,7 +247,7 @@ export class SchemaDiscoveryService {
     }
 
     return operation.args
-      .filter((arg: any) => arg && arg.name && arg.type) // Filter out null/invalid args
+      .filter((arg: any) => arg?.name && arg.type) // Filter out null/invalid args
       .map((arg: any) => ({
         name: arg.name,
         type: this.getTypeName(arg.type),
@@ -291,7 +289,7 @@ export class SchemaDiscoveryService {
     return 'simple'
   }
 
-  private identifyUseCases(name: string, description: string): string[] {
+  private identifyUseCases(name: string, _description: string): string[] {
     const useCases: { [key: string]: string[] } = {
       searchNodes: ['General content search', 'User directory lookups', 'Product catalog search'],
       searchNodesAdvanced: [
@@ -316,7 +314,7 @@ export class SchemaDiscoveryService {
     }
 
     if (type.kind === 'NON_NULL') {
-      return this.getTypeName(type.ofType) + '!'
+      return `${this.getTypeName(type.ofType)}!`
     }
     if (type.kind === 'LIST') {
       return `[${this.getTypeName(type.ofType)}]`
@@ -328,7 +326,7 @@ export class SchemaDiscoveryService {
     return type && type.kind === 'NON_NULL'
   }
 
-  private generateFilterExamples(fieldName: string, type: any): string[] {
+  private generateFilterExamples(fieldName: string, _type: any): string[] {
     const examples: { [key: string]: string[] } = {
       search: ['"engineer"', '"senior developer"', '"project manager"'],
       content: ['"React component"', '"API documentation"', '"user guide"'],

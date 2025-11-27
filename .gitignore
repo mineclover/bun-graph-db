@@ -50,3 +50,4 @@ cleanup-plan-*.json
 tmp/
 exported-templates/
 backups/
+generated/*.md

@@ -128,7 +128,7 @@ describe('MCP Route Contract Tests', () => {
     })
 
     it('should return 404 for non-existent table IDs', async () => {
-      const nonExistentTableId = 'definitely-does-not-exist-' + Math.random()
+      const nonExistentTableId = `definitely-does-not-exist-${Math.random()}`
 
       const request = {
         jsonrpc: '2.0',

@@ -295,7 +295,7 @@ export class TemplateValidator {
    * Generate automatic corrections for common validation errors
    */
   private async generateAutoCorrections(
-    template: TemplateDefinition,
+    _template: TemplateDefinition,
     errors: ValidationError[]
   ): Promise<Correction[]> {
     const corrections: Correction[] = []
@@ -494,7 +494,7 @@ export class TemplateValidator {
   private calculateConfidence(errors: ValidationError[], corrections: Correction[]): number {
     if (errors.length === 0) return 1.0
 
-    const correctableErrors = errors.filter((error) =>
+    const correctableErrors = errors.filter((_error) =>
       corrections.some((correction) => correction.type !== 'PARAMETER_ADD')
     ).length
 

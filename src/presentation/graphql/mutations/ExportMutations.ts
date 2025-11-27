@@ -3,10 +3,7 @@ import type {
   TableNodesExportInput,
   TableNodesExportOutput,
 } from '@/application/dtos/TableNodesExportDto.js'
-import {
-  createDefaultExportOptions,
-  validateExportInput,
-} from '@/application/dtos/TableNodesExportDto.js'
+import { validateExportInput } from '@/application/dtos/TableNodesExportDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
@@ -26,7 +23,7 @@ export class ExportMutations extends BaseResolver {
   async exportTableNodes(
     _: GraphQLParent,
     args: { input: TableNodesExportInput },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     try {
       this.logger.info('Executing mutation: exportTableNodes', { input: args.input })
@@ -117,7 +114,7 @@ export class ExportMutations extends BaseResolver {
       format: string
       options?: Partial<TableNodesExportInput>
     },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     try {
       this.logger.info('Executing mutation: exportMultipleTables', {
@@ -205,7 +202,7 @@ export class ExportMutations extends BaseResolver {
   async validateExportOptions(
     _: GraphQLParent,
     args: { input: TableNodesExportInput },
-    context?: GraphQLContext
+    _context?: GraphQLContext
   ) {
     try {
       const input: TableNodesExportInput = {
@@ -274,8 +271,8 @@ export class ExportMutations extends BaseResolver {
 
   async getExportHistory(
     _: GraphQLParent,
-    args: { tableId?: string; limit?: number },
-    context?: GraphQLContext
+    _args: { tableId?: string; limit?: number },
+    _context?: GraphQLContext
   ) {
     // This would need to be implemented with an export history repository
     // For now, return empty array

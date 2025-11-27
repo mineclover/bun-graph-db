@@ -10,11 +10,6 @@ import {
 
 describe('Additional Sort Strategies Tests', () => {
   describe('RelationshipSortStrategy', () => {
-    test('should create relationship sort strategy', () => {
-      const strategy = new RelationshipSortStrategy()
-      expect(strategy).toBeDefined()
-    })
-
     test('should handle relationship field detection', () => {
       const strategy = new RelationshipSortStrategy()
       expect(strategy.canHandle('_connection_count', 'number')).toBe(true)
@@ -44,11 +39,6 @@ describe('Additional Sort Strategies Tests', () => {
   })
 
   describe('AggregateSortStrategy', () => {
-    test('should create aggregate sort strategy', () => {
-      const strategy = new AggregateSortStrategy()
-      expect(strategy).toBeDefined()
-    })
-
     test('should handle aggregate field detection', () => {
       const strategy = new AggregateSortStrategy()
       expect(strategy.canHandle('_aggregate_sum', 'number')).toBe(true)
@@ -86,11 +76,6 @@ describe('Additional Sort Strategies Tests', () => {
   })
 
   describe('RelevanceSortStrategy', () => {
-    test('should create relevance sort strategy', () => {
-      const strategy = new RelevanceSortStrategy()
-      expect(strategy).toBeDefined()
-    })
-
     test('should handle relevance field detection', () => {
       const strategy = new RelevanceSortStrategy()
       expect(strategy.canHandle('_relevance', 'string')).toBe(true)
@@ -152,16 +137,6 @@ describe('Additional Sort Strategies Tests', () => {
   })
 
   describe('Integration Tests', () => {
-    test('should work together in multi-strategy scenarios', () => {
-      const relationshipStrategy = new RelationshipSortStrategy()
-      const aggregateStrategy = new AggregateSortStrategy()
-      const relevanceStrategy = new RelevanceSortStrategy()
-
-      expect(relationshipStrategy).toBeDefined()
-      expect(aggregateStrategy).toBeDefined()
-      expect(relevanceStrategy).toBeDefined()
-    })
-
     test('should have different priorities for proper ordering', () => {
       const relationshipStrategy = new RelationshipSortStrategy()
       const aggregateStrategy = new AggregateSortStrategy()

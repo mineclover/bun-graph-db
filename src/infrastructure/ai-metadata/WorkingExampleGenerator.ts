@@ -100,7 +100,7 @@ export class WorkingExampleGenerator {
       validationResults,
       totalTemplates: templates.length,
       validTemplates: templates.filter(
-        (template, i) => template && validationResults[template.identifier]?.isValid === true
+        (template, _i) => template && validationResults[template.identifier]?.isValid === true
       ).length,
     }
   }
@@ -203,7 +203,7 @@ export class WorkingExampleGenerator {
   /**
    * Private implementation methods
    */
-  private isPatternRelevantForTable(pattern: QueryPattern, tableId: string): boolean {
+  private isPatternRelevantForTable(pattern: QueryPattern, _tableId: string): boolean {
     // Check if pattern can work with table-specific operations
     const tableRelevantOperations = ['searchNodes', 'createNode', 'updateNode', 'deleteNode']
     return tableRelevantOperations.some((op) => pattern.operationName.includes(op))
@@ -489,11 +489,11 @@ ${JSON.stringify(example.variables, null, 2)}
     }
 
     const categories = this.categorizeExamples(examples)
-    if (!categories['mutation']) {
+    if (!categories.mutation) {
       recommendations.push('Add mutation examples for complete CRUD coverage')
     }
 
-    if (!categories['search']) {
+    if (!categories.search) {
       recommendations.push('Add search examples for data retrieval patterns')
     }
 

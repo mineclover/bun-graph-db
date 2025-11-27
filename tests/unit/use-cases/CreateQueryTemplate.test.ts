@@ -4,7 +4,6 @@ import {
   CreateQueryTemplate,
   type CreateQueryTemplateRequest,
 } from '@/application/use-cases/query-templates/CreateQueryTemplate.js'
-import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
@@ -398,7 +397,7 @@ describe('CreateQueryTemplate', () => {
         tags: ['logging'],
       }
 
-      const result = await useCase.execute(request)
+      const _result = await useCase.execute(request)
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Creating query template',

@@ -1,4 +1,3 @@
-import type { Database } from 'bun:sqlite'
 import type { DocId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import { Doc, type DocCategory } from '@/domain/entities/Doc.js'
 import type {
@@ -25,10 +24,6 @@ export class SqliteDocRepository
   extends BaseSqliteRepository<Doc, DocId>
   implements IDocRepository
 {
-  constructor(db: Database) {
-    super(db)
-  }
-
   protected get tableName(): string {
     return 'docs'
   }

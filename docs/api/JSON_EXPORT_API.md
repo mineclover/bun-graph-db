@@ -401,11 +401,52 @@ if (isFlatJsonPatchRequest(request)) {
 }
 ```
 
+## Format Mapping System
+
+Flat JSON 데이터를 커스텀 형식으로 변환하는 매핑 시스템입니다.
+
+### 매핑 유형
+
+| 유형 | 설명 |
+|------|------|
+| `FormatMappingTemplate` | 완전한 매핑 정의 (메타데이터 포함) |
+| `SimpleMappingDefinition` | 간략 키-값 문법 |
+| `NodeLevelMapping` | 노드 단위 간소화 문법 (권장) |
+
+### NodeLevelMapping 예시
+
+```typescript
+const userMapping: NodeLevelMapping = {
+  outputKey: 'users',
+  nodeMapping: {
+    id: 'id',           // $.nodes[*].id
+    name: 'title',      // $.nodes[*].title
+    email: '@email',    // $.nodes[*].attributes.email (@ prefix)
+    createdAt: '@@createdAt',  // $.nodes[*].createdAt (@@ prefix)
+  },
+  metaMapping: {
+    tableId: 'id',
+    tableName: 'identifier',
+  }
+}
+```
+
+### 접두사 규칙
+
+| 접두사 | 의미 | 변환 결과 |
+|--------|------|-----------|
+| (없음) | 코어 필드 | `$.nodes[*].{field}` |
+| `@` | attributes | `$.nodes[*].attributes.{field}` |
+| `@@` | 시스템 필드 | `$.nodes[*].{field}` |
+
+📚 **상세 문서**: [Format Mapping Guide](./FORMAT_MAPPING_GUIDE.md)
+
 ## Best Practices
 
 1. **Format Selection**
    - Use `FLAT` for simple data exports and external integrations
    - Use `HFI` for graph visualization and flow-based processing
+   - Use `Format Mapping` for custom output structures
 
 2. **Performance**
    - Use `nodeIds` filter for large tables
@@ -420,3 +461,8 @@ if (isFlatJsonPatchRequest(request)) {
    - Use format-specific patch types for type safety
    - Always include target `id` in patch operations
    - Batch related patches in single request
+
+5. **Format Mapping**
+   - Use `NodeLevelMapping` for common node array transformations
+   - Apply transforms for data type conversions
+   - Generate guides with `generateMappingGuide()` for documentation

@@ -128,21 +128,6 @@ export class CreateAttributeUseCase {
 
       // Auto-generate attribute-specific template
       try {
-        const attributeWithType = {
-          id: savedAttribute.getId(),
-          identifier: savedAttribute.getIdentifier(),
-          name: savedAttribute.getName(),
-          description: savedAttribute.getDescription(),
-          required: savedAttribute.getIsRequired(),
-          attributeType: {
-            id: attributeType.getId(),
-            identifier: attributeType.getIdentifier(),
-            name: attributeType.getIdentifier(), // Use identifier as name since there's no getName() method
-            dataType: attributeType.getJsonType(), // Use getJsonType() instead of getDataType()
-            description: attributeType.getDescription(),
-          },
-        }
-
         const templates = await this.templateAutoGenerator.generateTemplatesForTable(
           table.id,
           table.identifier

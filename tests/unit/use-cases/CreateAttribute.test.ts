@@ -70,7 +70,7 @@ describe('CreateAttributeUseCase', () => {
       count: mock(async () => 0),
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
-      update: mock(async (id, updates) => ({}) as any),
+      update: mock(async (_id, _updates) => ({}) as any),
     } as any
 
     mockTableRepository = {
@@ -101,7 +101,7 @@ describe('CreateAttributeUseCase', () => {
       findByApplicableTable: mock(async () => []),
       findTemplatesWithTableDependencies: mock(async () => []),
       create: mock(async (template) => template),
-      update: mock(async (id, updates) => ({}) as any),
+      update: mock(async (_id, _updates) => ({}) as any),
       deleteById: mock(async () => true),
       incrementUsage: mock(async () => {}),
       updateExecutionStats: mock(async () => {}),

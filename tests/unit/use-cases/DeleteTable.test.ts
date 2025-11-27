@@ -3,7 +3,6 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   type DeleteTableInput,
   DeleteTableUseCase,
-  type TableDependencyInfo,
 } from '@/application/use-cases/tables/DeleteTable.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'

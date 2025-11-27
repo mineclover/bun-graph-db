@@ -85,8 +85,7 @@ export class TableNodesExportUseCase {
       }
 
       // Get table attributes for schema information
-      const attributesResult = await this.attributeRepository.findByTableId(tableId as TableId)
-      const attributes = attributesResult.data || []
+      await this.attributeRepository.findByTableId(tableId as TableId)
 
       // Get nodes with pagination
       const nodesResult = await this.nodeRepository.findByTableId(tableId as TableId, {
@@ -466,7 +465,7 @@ export class TableNodesExportUseCase {
     yaml += `    format: "yaml"\n`
     yaml += '  nodes:\n'
 
-    data.forEach((node, index) => {
+    data.forEach((node) => {
       yaml += `    - id: "${node.id}"\n`
       yaml += `      title: "${node.title || ''}"\n`
       yaml += `      content: "${node.content.replace(/"/g, '\\"')}"\n`

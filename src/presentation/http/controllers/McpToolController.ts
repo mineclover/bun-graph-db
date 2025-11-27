@@ -264,13 +264,22 @@ export class McpToolController {
    */
   async validateTemplate(req: Request, res: Response): Promise<void> {
     try {
-      const { query, variables: templateVariables } = req.body
+      const { query } = req.body
 
       this.logger.info('MCP Tool: validate-template called')
 
       // Validate by attempting to parse the query using GraphQL introspection
       // First try a simple health check to ensure the query is syntactically correct
-      let validationResult
+      let validationResult: {
+        isValid: boolean
+        errors: string[]
+        parsedQuery?: {
+          operationType: string
+          operationName: string
+          fieldCount: number
+        }
+        parseError?: string
+      }
       try {
         // Test the query by executing it (if it's a query) or checking syntax
         if (query.trim().toLowerCase().startsWith('query')) {
@@ -302,7 +311,7 @@ export class McpToolController {
         validationResult = {
           isValid: false,
           errors: [getErrorMessage(syntaxError)],
-          parsedQuery: null,
+          parsedQuery: undefined,
         }
       }
 
@@ -657,7 +666,7 @@ export class McpToolController {
       const {
         tableId,
         format = 'CSV',
-        outputDirectory = process.cwd() + '/exports',
+        outputDirectory = `${process.cwd()}/exports`,
         filename,
         includeAttributes = [],
         limit = 1000,

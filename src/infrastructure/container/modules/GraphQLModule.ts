@@ -269,6 +269,83 @@ export function registerGraphQLModule(container: DIContainer): void {
     [CommonTokens.JSON_EXPORT_SERVICE]
   )
 
+  // JsonlBackupService registration
+  container.registerSingleton(
+    CommonTokens.JSONL_BACKUP_SERVICE,
+    async (c) => {
+      const { JsonlBackupService } = await import('@/domain/services/JsonlBackupService.js')
+      const tableRepository = (await c.resolve(
+        RepositoryTokens.TABLE_REPOSITORY
+      )) as ITableRepository
+      const attributeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_REPOSITORY
+      )) as IAttributeRepository
+      const attributeTypeRepository = (await c.resolve(
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY
+      )) as IAttributeTypeRepository
+      const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
+      const nodeAttributeRepository = (await c.resolve(
+        RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY
+      )) as any
+      const nodeRelationRepository = (await c.resolve(
+        RepositoryTokens.NODE_RELATION_REPOSITORY
+      )) as INodeRelationRepository
+      const relationTypeRepository = (await c.resolve(
+        RepositoryTokens.RELATION_TYPE_REPOSITORY
+      )) as IRelationTypeRepository
+
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[JsonlBackup] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[JsonlBackup] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[JsonlBackup] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[JsonlBackup] ${msg}`, data || ''),
+      }
+
+      return new JsonlBackupService(
+        tableRepository,
+        attributeRepository,
+        attributeTypeRepository,
+        nodeRepository,
+        nodeAttributeRepository,
+        nodeRelationRepository,
+        relationTypeRepository,
+        simpleLogger
+      )
+    },
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
+    ]
+  )
+
+  // JsonlBackupQueries registration
+  container.registerSingleton(
+    GraphQLTokens.JSONL_BACKUP_QUERIES,
+    async (c) => {
+      const { JsonlBackupQueries } = await import(
+        '@/presentation/graphql/queries/JsonlBackupQueries.js'
+      )
+      const jsonlBackupService = (await c.resolve(CommonTokens.JSONL_BACKUP_SERVICE)) as any
+      // Use simple console logger to avoid circular dependency
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[JsonlBackupQueries] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[JsonlBackupQueries] ${msg}`, data || ''),
+        error: (msg: string, data?: any) =>
+          console.error(`[JsonlBackupQueries] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) =>
+          console.debug(`[JsonlBackupQueries] ${msg}`, data || ''),
+      }
+      return new JsonlBackupQueries(jsonlBackupService, simpleLogger)
+    },
+    [CommonTokens.JSONL_BACKUP_SERVICE]
+  )
+
   // Mutation resolvers
   container.registerSingleton(
     GraphQLTokens.TABLE_MUTATIONS,
@@ -1051,6 +1128,9 @@ export function registerGraphQLModule(container: DIContainer): void {
       const jsonExportQueries = (await c
         .resolve(GraphQLTokens.JSON_EXPORT_QUERIES)
         .catch(() => null)) as any
+      const jsonlBackupQueries = (await c
+        .resolve(GraphQLTokens.JSONL_BACKUP_QUERIES)
+        .catch(() => null)) as any
       // const enhancedAttributeQueries = (await c.resolve(GraphQLTokens.ENHANCED_ATTRIBUTE_QUERIES)) as any
 
       const tableMutations = (await c.resolve(GraphQLTokens.TABLE_MUTATIONS)) as any
@@ -1092,6 +1172,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         docQueries,
         systemQueries,
         jsonExportQueries,
+        jsonlBackupQueries,
         // enhancedAttributeQueries,
         // Mutations
         tableMutations,
@@ -1142,6 +1223,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       GraphQLTokens.QUERY_TEMPLATE_FIELD_RESOLVERS,
       GraphQLTokens.DOC_FIELD_RESOLVERS,
       GraphQLTokens.GRAPHQL_SCHEMA_BUILDER,
+      GraphQLTokens.JSONL_BACKUP_QUERIES,
     ]
   )
 }

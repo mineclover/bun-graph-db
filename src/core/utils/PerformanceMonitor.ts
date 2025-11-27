@@ -320,13 +320,11 @@ export class PerformanceMonitor {
     let totalOperations = 0
     let totalDuration = 0
     let totalSuccess = 0
-    let totalFailure = 0
 
     for (const aggregated of allMetrics) {
       totalOperations += aggregated.count
       totalDuration += aggregated.totalDurationMs
       totalSuccess += Math.round(aggregated.count * aggregated.successRate)
-      totalFailure += Math.round(aggregated.count * (1 - aggregated.successRate))
     }
 
     const slowOps = this.getSlowOperations()

@@ -330,7 +330,7 @@ describe('SQLiteBackupService', () => {
     })
 
     test('should handle very large backup paths', async () => {
-      const longPath = join(testBackupDir, 'very-long-backup-name-'.repeat(10) + 'backup.sqlite')
+      const longPath = join(testBackupDir, `${'very-long-backup-name-'.repeat(10)}backup.sqlite`)
 
       const result = await backupService.createBackup({
         outputPath: longPath,

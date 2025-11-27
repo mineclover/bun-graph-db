@@ -248,7 +248,7 @@ describe('SearchNodesUseCase', () => {
 
       mockTableRepository.findById = mock(async () => table as any)
       mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
-      mockNodeSearchRepository.searchNodes = mock(async (tableId, searchQuery) => {
+      mockNodeSearchRepository.searchNodes = mock(async (_tableId, searchQuery) => {
         // Verify pagination parameters are passed correctly
         expect(searchQuery.limit).toBe(50)
         expect(searchQuery.offset).toBe(100)
@@ -282,7 +282,7 @@ describe('SearchNodesUseCase', () => {
 
       mockTableRepository.findById = mock(async () => table as any)
       mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
-      mockNodeSearchRepository.searchNodes = mock(async (tableId, searchQuery) => {
+      mockNodeSearchRepository.searchNodes = mock(async (_tableId, searchQuery) => {
         // Verify sort parameters are passed correctly
         expect(searchQuery.sortBy).toEqual([
           { field: 'created_at', direction: 'desc' },

@@ -1,4 +1,3 @@
-import type { Database } from 'bun:sqlite'
 import type {
   AttributeId,
   AttributeTypeId,
@@ -46,15 +45,11 @@ export class SqliteAttributeRepository
   extends BaseSqliteRepository<Attribute, AttributeId>
   implements IAttributeRepository
 {
-  constructor(db: Database) {
-    super(db)
-  }
-
   protected get tableName(): string {
     return 'attributes'
   }
 
-  async save(attribute: Attribute): Promise<void> {
+  async save(attribute: Attribute): Promise<Attribute | undefined> {
     const attributeData = attribute.toDatabase()
 
     if (attributeData.id === null || attributeData.id === 'null') {
@@ -104,6 +99,7 @@ export class SqliteAttributeRepository
         throw new DatabaseException(`Failed to update attribute: ${error}`)
       }
     }
+    return undefined
   }
 
   // findById() - inherited from BaseSqliteRepository

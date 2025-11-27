@@ -1,0 +1,350 @@
+# ============================================================================
+# JSONL Backup & Restore Schema
+# GitHub-friendly text-based backup format
+# ============================================================================
+
+# ============================================================================
+# INPUT TYPES
+# ============================================================================
+
+"""
+Options for JSONL export
+"""
+input JsonlExportInput {
+  """
+  Output directory path (default: ./backups/jsonl)
+  """
+  outputDir: String
+
+  """
+  Specific table IDs to export (default: all tables)
+  """
+  tableIds: [String!]
+
+  """
+  Include relations in export (default: true)
+  """
+  includeRelations: Boolean
+
+  """
+  Include schema file (default: true)
+  """
+  includeSchema: Boolean
+
+  """
+  Pretty print JSON (default: false for git diff compatibility)
+  """
+  prettyPrint: Boolean
+}
+
+"""
+Options for JSONL import
+"""
+input JsonlImportInput {
+  """
+  Input directory path containing JSONL backup
+  """
+  inputDir: String!
+
+  """
+  Specific table identifiers to import (default: all)
+  """
+  tableIdentifiers: [String!]
+
+  """
+  How to handle conflicts with existing data
+  """
+  conflictResolution: JsonlConflictResolution!
+
+  """
+  Validate schema before import (default: true)
+  """
+  validateSchema: Boolean
+
+  """
+  Dry run - validate without importing (default: false)
+  """
+  dryRun: Boolean
+}
+
+# ============================================================================
+# ENUMS
+# ============================================================================
+
+"""
+Conflict resolution strategy for JSONL import
+"""
+enum JsonlConflictResolution {
+  """
+  Skip existing records
+  """
+  SKIP
+
+  """
+  Overwrite existing records
+  """
+  OVERWRITE
+
+  """
+  Merge attributes only
+  """
+  MERGE
+}
+
+"""
+Type of exported file
+"""
+enum JsonlFileType {
+  SCHEMA
+  TABLE
+  RELATIONS
+  RELATION_TYPES
+}
+
+# ============================================================================
+# OUTPUT TYPES
+# ============================================================================
+
+"""
+Information about a single exported file
+"""
+type JsonlExportedFile {
+  """
+  File path
+  """
+  path: String!
+
+  """
+  File type
+  """
+  type: JsonlFileType!
+
+  """
+  Table identifier (for table files)
+  """
+  tableIdentifier: String
+
+  """
+  Number of lines in file
+  """
+  lineCount: Int!
+
+  """
+  File size in bytes
+  """
+  sizeBytes: Float!
+}
+
+"""
+Statistics for JSONL export
+"""
+type JsonlExportStats {
+  """
+  Number of tables exported
+  """
+  tablesExported: Int!
+
+  """
+  Number of nodes exported
+  """
+  nodesExported: Int!
+
+  """
+  Number of relations exported
+  """
+  relationsExported: Int!
+
+  """
+  Total bytes written
+  """
+  totalBytes: Float!
+}
+
+"""
+Result of JSONL export operation
+"""
+type JsonlExportResult {
+  """
+  Operation success status
+  """
+  success: Boolean!
+
+  """
+  Output directory path
+  """
+  outputDir: String!
+
+  """
+  List of exported files
+  """
+  files: [JsonlExportedFile!]!
+
+  """
+  Export statistics
+  """
+  stats: JsonlExportStats!
+
+  """
+  Error messages
+  """
+  errors: [String!]!
+
+  """
+  Warning messages
+  """
+  warnings: [String!]!
+}
+
+"""
+Statistics for JSONL import
+"""
+type JsonlImportStats {
+  """
+  Number of tables imported/created
+  """
+  tablesImported: Int!
+
+  """
+  Number of nodes imported
+  """
+  nodesImported: Int!
+
+  """
+  Number of nodes skipped due to conflicts
+  """
+  nodesSkipped: Int!
+
+  """
+  Number of nodes updated
+  """
+  nodesUpdated: Int!
+
+  """
+  Number of relations imported
+  """
+  relationsImported: Int!
+}
+
+"""
+Result of JSONL import operation
+"""
+type JsonlImportResult {
+  """
+  Operation success status
+  """
+  success: Boolean!
+
+  """
+  Input directory path
+  """
+  inputDir: String!
+
+  """
+  Import statistics
+  """
+  stats: JsonlImportStats!
+
+  """
+  Error messages
+  """
+  errors: [String!]!
+
+  """
+  Warning messages
+  """
+  warnings: [String!]!
+}
+
+"""
+Information about a backup manifest
+"""
+type JsonlBackupInfo {
+  """
+  Backup version
+  """
+  version: String!
+
+  """
+  When the backup was created
+  """
+  createdAt: DateTime!
+
+  """
+  Source identifier
+  """
+  source: String!
+
+  """
+  Tables in the backup
+  """
+  tables: [JsonlBackupTableInfo!]!
+
+  """
+  Whether relations are included
+  """
+  hasRelations: Boolean!
+
+  """
+  Whether schema is included
+  """
+  hasSchema: Boolean!
+}
+
+"""
+Table information in backup manifest
+"""
+type JsonlBackupTableInfo {
+  """
+  Table identifier
+  """
+  identifier: String!
+
+  """
+  Number of nodes in the table
+  """
+  nodeCount: Int!
+
+  """
+  File path for table data
+  """
+  file: String!
+}
+
+# ============================================================================
+# QUERIES
+# ============================================================================
+
+extend type Query {
+  """
+  Inspect a JSONL backup without importing
+  Returns manifest information and validation status
+  """
+  inspectJsonlBackup(inputDir: String!): JsonlBackupInfo
+}
+
+# ============================================================================
+# MUTATIONS
+# ============================================================================
+
+extend type Mutation {
+  """
+  Export database to JSONL format
+
+  Creates GitHub-friendly text-based backup with:
+  - Per-table JSONL files for granular git tracking
+  - Schema file with table and attribute definitions
+  - Relations file for node relationships
+  - Manifest file with backup metadata
+  """
+  exportJsonl(input: JsonlExportInput): JsonlExportResult!
+
+  """
+  Import database from JSONL format
+
+  Restores data from JSONL backup with:
+  - Conflict resolution strategies (skip/overwrite/merge)
+  - Schema validation before import
+  - Dry run mode for validation
+  """
+  importJsonl(input: JsonlImportInput!): JsonlImportResult!
+}

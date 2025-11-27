@@ -18,7 +18,7 @@ export interface SystemInitializationRequest {
 export class SystemInitializationUseCase {
   private initializationService: SystemInitializationService
 
-  constructor(private container: DIContainer) {
+  constructor(container: DIContainer) {
     this.initializationService = new SystemInitializationService(container)
   }
 

@@ -110,7 +110,7 @@ export class TableMcpServerFactory {
       }
 
       // Query GraphQL to check if table exists
-      const query = `
+      const _query = `
         query ValidateTable($tableId: ID!) {
           table(id: $tableId) {
             id
