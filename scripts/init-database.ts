@@ -6,7 +6,7 @@
  */
 
 import { Database } from 'bun:sqlite'
-import { readFileSync } from 'node:fs'
+import { readFileSync } from 'fs'
 
 const DB_PATH = './data/bun-graph-db.sqlite'
 const SCHEMA_PATH = './scripts/database/schema.sql'

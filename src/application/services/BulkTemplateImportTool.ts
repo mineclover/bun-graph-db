@@ -6,7 +6,7 @@
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { join } from 'node:path'
+import { join } from 'path'
 import type { RestApiClient } from './RestApiClient.js'
 
 export interface BulkImportOptions {

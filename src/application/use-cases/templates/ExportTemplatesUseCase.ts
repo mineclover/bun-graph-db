@@ -4,8 +4,8 @@
  * 여러 템플릿을 필터링하여 한번에 내보내는 유스케이스
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
+import { join } from 'path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
   BatchTemplateExportOptions,

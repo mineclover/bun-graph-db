@@ -6,7 +6,7 @@
  * Usage: node scripts/auto-export.js [tableId] [format] [outputDir]
  */
 
-import http from 'node:http'
+import http from 'http'
 
 // Default configuration
 const DEFAULT_CONFIG = {

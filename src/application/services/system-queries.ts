@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
-import * as fs from 'node:fs'
 import * as os from 'node:os'
+import * as fs from 'fs'
 
 export interface Logger {
   log: (message: string) => void

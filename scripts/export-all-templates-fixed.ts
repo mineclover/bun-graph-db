@@ -9,8 +9,8 @@
  * - import 가능한 형태로 JSON 파일 생성
  */
 
-import { promises as fs } from 'node:fs'
-import { join } from 'node:path'
+import { promises as fs } from 'fs'
+import { join } from 'path'
 
 interface FullTemplate {
   id: string

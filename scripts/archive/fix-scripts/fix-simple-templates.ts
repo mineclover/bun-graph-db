@@ -14,8 +14,8 @@
  */
 
 import { Database } from 'bun:sqlite'
-import { copyFileSync, existsSync } from 'node:fs'
-import path from 'node:path'
+import { copyFileSync, existsSync } from 'fs'
+import path from 'path'
 
 interface TemplateUpdate {
   id: number

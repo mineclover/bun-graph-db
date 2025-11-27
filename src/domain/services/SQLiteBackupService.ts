@@ -5,7 +5,8 @@
  * using SQLite VACUUM INTO command and file operations
  */
 
-import { createHash } from 'node:crypto'
+import { gunzipSync, gzipSync } from 'bun'
+import { createHash } from 'crypto'
 import {
   copyFileSync,
   existsSync,
@@ -14,9 +15,8 @@ import {
   readFileSync,
   statSync,
   unlinkSync,
-} from 'node:fs'
-import { join } from 'node:path'
-import { gunzipSync, gzipSync } from 'bun'
+} from 'fs'
+import { join } from 'path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { getDatabasePath } from '@/config/database.js'
 import type { IDatabaseConnection } from '@/core/database/interfaces/IDatabaseConnection.js'
