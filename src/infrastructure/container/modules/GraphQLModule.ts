@@ -409,9 +409,7 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     CommonTokens.AUTO_PERSISTENCE_SERVICE,
     async (c) => {
-      const { AutoPersistenceService } = await import(
-        '@/domain/services/AutoPersistenceService.js'
-      )
+      const { AutoPersistenceService } = await import('@/domain/services/AutoPersistenceService.js')
       const jsonlBackupService = (await c.resolve(CommonTokens.JSONL_BACKUP_SERVICE)) as any
       const simpleLogger = {
         info: (msg: string, data?: any) => console.log(`[AutoPersistence] ${msg}`, data || ''),

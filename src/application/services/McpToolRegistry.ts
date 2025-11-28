@@ -915,7 +915,8 @@ export class McpToolRegistry {
     // Register list backups tool
     const listBackupsTool: McpToolDefinition = {
       name: 'list-backups',
-      description: 'List all available database backups with metadata including path, size, and creation date.',
+      description:
+        'List all available database backups with metadata including path, size, and creation date.',
       operationType: 'query',
       inputSchema: {
         type: 'object',

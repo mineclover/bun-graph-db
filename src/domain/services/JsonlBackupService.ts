@@ -7,7 +7,7 @@
  * - Line-by-line format for streaming
  */
 
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
@@ -464,7 +464,7 @@ export class JsonlBackupService {
   private async writeManifest(
     outputDir: string,
     files: JsonlExportedFile[],
-    tables: Array<{ identifier: string }>
+    _tables: Array<{ identifier: string }>
   ): Promise<JsonlExportedFile> {
     const manifestPath = join(outputDir, 'manifest.json')
 
