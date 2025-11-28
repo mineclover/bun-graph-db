@@ -113,6 +113,17 @@ const yoga = createYoga({
               (def: any) => def.kind === 'OperationDefinition'
             ) as any
             if (operationType?.operation === 'mutation') {
+              // Skip backup-related mutations to avoid recursive saves
+              const queryText = args.document.loc?.source?.body || ''
+              const isBackupMutation =
+                queryText.includes('backupDatabase') ||
+                queryText.includes('restoreDatabase') ||
+                queryText.includes('exportJsonl') ||
+                queryText.includes('importJsonl')
+              if (isBackupMutation) {
+                return
+              }
+
               // Check if result has no errors
               const hasErrors = 'errors' in result && result.errors?.length > 0
               if (!hasErrors) {
