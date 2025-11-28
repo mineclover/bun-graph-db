@@ -11,7 +11,6 @@ import { TemplateValidator } from './TemplateValidator'
  * Coordinates schema introspection, AI metadata enhancement, and template validation
  */
 export class SchemaSyncPipeline {
-  private schema: GraphQLSchema
   private schemaIntrospector: GraphQLSchemaIntrospector
   private metadataGenerator: EnhancedAIMetadataGenerator
   private templateValidator: TemplateValidator
@@ -19,7 +18,6 @@ export class SchemaSyncPipeline {
   private syncInProgress = false
 
   constructor(schema: GraphQLSchema, tableAttributeProvider: TableAttributeProvider) {
-    this.schema = schema
     this.schemaIntrospector = new GraphQLSchemaIntrospector(schema)
     this.metadataGenerator = new EnhancedAIMetadataGenerator(
       this.schemaIntrospector,
