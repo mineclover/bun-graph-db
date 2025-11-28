@@ -5,6 +5,7 @@ import { createGraphQLConfig } from './src/config/graphql'
 import { createContainer } from './src/infrastructure/container/ContainerBootstrap'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens'
 import { UseCaseTokens } from './src/infrastructure/container/tokens/UseCaseTokens'
+import type { AutoPersistenceService } from './src/domain/services/AutoPersistenceService'
 import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder'
 import { toErrorMeta } from './src/presentation/http/utils/errorHelpers.js'
 import {
@@ -79,6 +80,17 @@ const schema = await schemaBuilder.build()
 
 const logger = await container.resolve<ILogger>(CommonTokens.LOGGER)
 
+// Initialize AutoPersistenceService
+const autoPersistence = await container.resolve<AutoPersistenceService>(
+  CommonTokens.AUTO_PERSISTENCE_SERVICE
+)
+const persistenceResult = await autoPersistence.initialize()
+if (persistenceResult.restored) {
+  logger.info(`📂 Auto-restored from: ${persistenceResult.backupPath}`)
+} else if (persistenceResult.error) {
+  logger.warn(`⚠️ Auto-restore skipped: ${persistenceResult.error}`)
+}
+
 // Create GraphQL config with CLI options
 const graphqlConfig = createGraphQLConfig(finalOptions)
 
@@ -90,6 +102,28 @@ const yoga = createYoga({
     warn: (...args) => logger.warn('GraphQL Warning', { args }),
     error: (...args) => logger.error('GraphQL Error', { args }),
   },
+  plugins: [
+    {
+      // Auto-save hook: mark dirty after successful mutations
+      onExecute() {
+        return {
+          onExecuteDone({ result, args }: { result: any; args: any }) {
+            // Check if this was a mutation and successful
+            const operationType = args.document.definitions.find(
+              (def: any) => def.kind === 'OperationDefinition'
+            ) as any
+            if (operationType?.operation === 'mutation') {
+              // Check if result has no errors
+              const hasErrors = 'errors' in result && result.errors?.length > 0
+              if (!hasErrors) {
+                autoPersistence.markDirty()
+              }
+            }
+          },
+        }
+      },
+    },
+  ],
   cors: graphqlConfig.cors,
   graphiql: {
     title: 'Bun Graph DB - GraphQL API',
@@ -455,6 +489,15 @@ const shutdown = async () => {
   logger.info('🛑 Server shutting down...')
 
   try {
+    // 0. Auto-backup before shutdown
+    logger.info('💾 Performing auto-backup...')
+    const backupResult = await autoPersistence.shutdown()
+    if (backupResult.backed) {
+      logger.info(`✅ Auto-backup completed: ${backupResult.backupPath}`)
+    } else if (backupResult.error) {
+      logger.warn(`⚠️ Auto-backup failed: ${backupResult.error}`)
+    }
+
     // 1. Stop accepting new connections first
     logger.info('🔌 Stopping HTTP server...')
 

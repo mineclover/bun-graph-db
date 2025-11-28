@@ -405,6 +405,25 @@ export function registerGraphQLModule(container: DIContainer): void {
     [CommonTokens.JSONL_BACKUP_SERVICE]
   )
 
+  // AutoPersistenceService registration
+  container.registerSingleton(
+    CommonTokens.AUTO_PERSISTENCE_SERVICE,
+    async (c) => {
+      const { AutoPersistenceService } = await import(
+        '@/domain/services/AutoPersistenceService.js'
+      )
+      const jsonlBackupService = (await c.resolve(CommonTokens.JSONL_BACKUP_SERVICE)) as any
+      const simpleLogger = {
+        info: (msg: string, data?: any) => console.log(`[AutoPersistence] ${msg}`, data || ''),
+        warn: (msg: string, data?: any) => console.warn(`[AutoPersistence] ${msg}`, data || ''),
+        error: (msg: string, data?: any) => console.error(`[AutoPersistence] ${msg}`, data || ''),
+        debug: (msg: string, data?: any) => console.debug(`[AutoPersistence] ${msg}`, data || ''),
+      }
+      return new AutoPersistenceService(jsonlBackupService, simpleLogger)
+    },
+    [CommonTokens.JSONL_BACKUP_SERVICE]
+  )
+
   // Mutation resolvers
   container.registerSingleton(
     GraphQLTokens.TABLE_MUTATIONS,
