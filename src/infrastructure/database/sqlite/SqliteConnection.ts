@@ -45,7 +45,7 @@ export class SqliteConnection {
   private initializeSchema(): void {
     try {
       // Read and execute schema file
-      const schemaPath = join(process.cwd(), 'core', 'schema.sql')
+      const schemaPath = join(process.cwd(), 'scripts', 'database', 'schema.sql')
       const schema = readFileSync(schemaPath, 'utf-8')
 
       // Execute schema in a transaction for safety

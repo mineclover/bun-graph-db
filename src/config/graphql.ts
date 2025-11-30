@@ -22,7 +22,10 @@ export function createGraphQLConfig(cliOptions?: CliOptions): GraphQLConfig {
     introspection: env !== 'production',
     playground: env !== 'production',
     cors: {
-      origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
+      origin: process.env.CORS_ORIGIN?.split(',') || [
+        'http://localhost:3000',
+        'http://localhost:5173', // graph-hub dev server
+      ],
       credentials: true,
     },
   }

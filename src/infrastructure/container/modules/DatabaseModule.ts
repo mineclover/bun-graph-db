@@ -22,8 +22,31 @@ export function registerDatabaseModule(container: DIContainer): void {
       // Create SQLite database connection using the configured path
       const db = new Database(config.url)
 
-      // The database schema is managed separately - no initialization needed
-      // Just return the database connection
+      // Initialize schema if tables don't exist
+      try {
+        const { readFileSync } = await import('fs')
+        const { join } = await import('path')
+        
+        // Enable foreign keys
+        db.exec('PRAGMA foreign_keys = ON')
+        
+        // Check if tables exist
+        const tableExists = db.query("SELECT name FROM sqlite_master WHERE type='table' AND name='tables'").get()
+        
+        if (!tableExists) {
+          console.log('Initializing database schema...')
+          const schemaPath = join(process.cwd(), 'scripts', 'database', 'schema.sql')
+          const schema = readFileSync(schemaPath, 'utf-8')
+          
+          db.transaction(() => {
+            db.exec(schema)
+          })()
+          console.log('Database schema initialized successfully')
+        }
+      } catch (error) {
+        console.error('Failed to initialize database schema:', error)
+      }
+
       return db
     },
     [DatabaseTokens.DATABASE_CONFIG]
