@@ -51,3 +51,4 @@ tmp/
 exported-templates/
 backups/
 generated/*.md
+.turbo/

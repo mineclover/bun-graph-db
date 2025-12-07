@@ -9,6 +9,7 @@
 [![System Health](https://img.shields.io/badge/System%20Health-✅%20Verified-brightgreen)](./CLAUDE.md)
 [![Test Coverage](https://img.shields.io/badge/Tests-310/310%20Passing-brightgreen)](#testing)
 [![Documentation](https://img.shields.io/badge/Docs-Complete-blue)](./docs/README.md)
+[![Last Updated](https://img.shields.io/badge/Updated-2025--12--08-blue)](#)
 
 ## ⚡ 빠른 시작
 
