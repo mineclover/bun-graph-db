@@ -92,7 +92,7 @@ export async function setupE2ETest(
     seedData?: boolean
     mockExternalServices?: boolean
     enableLogging?: boolean
-  }
+  },
 ): Promise<IsolatedTestContext> {
   console.log(`🌐 Setting up E2E test environment: ${suiteName}`)
 
@@ -272,7 +272,7 @@ export function createPerformanceHelper(suiteName: string) {
         const min = Math.min(...times)
         const max = Math.max(...times)
         console.log(
-          `  ${operation}: avg=${avg.toFixed(2)}ms, min=${min.toFixed(2)}ms, max=${max.toFixed(2)}ms (${times.length} calls)`
+          `  ${operation}: avg=${avg.toFixed(2)}ms, min=${min.toFixed(2)}ms, max=${max.toFixed(2)}ms (${times.length} calls)`,
         )
       }
     },
@@ -306,9 +306,7 @@ export function createAssertionHelpers() {
       const record = db.prepare(`SELECT * FROM ${table} WHERE ${whereClause}`).get(...values)
 
       if (!record) {
-        throw new Error(
-          `No record found in ${table} with conditions: ${JSON.stringify(conditions)}`
-        )
+        throw new Error(`No record found in ${table} with conditions: ${JSON.stringify(conditions)}`)
       }
 
       return record
@@ -316,9 +314,7 @@ export function createAssertionHelpers() {
 
     assertPerformance: (actualMs: number, maxMs: number, operation: string) => {
       if (actualMs > maxMs) {
-        throw new Error(
-          `Performance assertion failed: ${operation} took ${actualMs}ms, expected < ${maxMs}ms`
-        )
+        throw new Error(`Performance assertion failed: ${operation} took ${actualMs}ms, expected < ${maxMs}ms`)
       }
     },
   }

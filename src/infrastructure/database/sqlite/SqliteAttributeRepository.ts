@@ -7,10 +7,7 @@ import type {
 } from '@/core/types/CommonTypes.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
-import type {
-  AttributeUpdateData,
-  IAttributeRepository,
-} from '@/domain/repositories/IAttributeRepository.js'
+import type { AttributeUpdateData, IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
@@ -104,10 +101,7 @@ export class SqliteAttributeRepository
 
   // findById() - inherited from BaseSqliteRepository
 
-  async findByTableIdAndIdentifier(
-    tableId: TableId,
-    identifier: string
-  ): Promise<Attribute | null> {
+  async findByTableIdAndIdentifier(tableId: TableId, identifier: string): Promise<Attribute | null> {
     const query = `
       SELECT id, table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at
       FROM attributes
@@ -122,10 +116,7 @@ export class SqliteAttributeRepository
     }
   }
 
-  async findByTableId(
-    tableId: TableId,
-    options: PaginationOptions = {}
-  ): Promise<PaginatedResult<Attribute>> {
+  async findByTableId(tableId: TableId, options: PaginationOptions = {}): Promise<PaginatedResult<Attribute>> {
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
@@ -139,9 +130,7 @@ export class SqliteAttributeRepository
     const countQuery = `SELECT COUNT(*) as count FROM attributes WHERE table_id = ?`
 
     try {
-      const rows = this.db
-        .query<AttributeRow, [string, number, number]>(dataQuery)
-        .all(tableId, limit, offset)
+      const rows = this.db.query<AttributeRow, [string, number, number]>(dataQuery).all(tableId, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(tableId)
       const total = countResult?.count || 0
 
@@ -163,7 +152,7 @@ export class SqliteAttributeRepository
 
   async findByAttributeTypeId(
     attributeTypeId: AttributeTypeId,
-    options: PaginationOptions = {}
+    options: PaginationOptions = {},
   ): Promise<PaginatedResult<Attribute>> {
     const { limit = 10, offset = 0 } = options
 
@@ -178,12 +167,8 @@ export class SqliteAttributeRepository
     const countQuery = `SELECT COUNT(*) as count FROM attributes WHERE attribute_type_id = ?`
 
     try {
-      const rows = this.db
-        .query<AttributeRow, [string, number, number]>(dataQuery)
-        .all(attributeTypeId, limit, offset)
-      const countResult = this.db
-        .query<{ count: number }, [string]>(countQuery)
-        .get(attributeTypeId)
+      const rows = this.db.query<AttributeRow, [string, number, number]>(dataQuery).all(attributeTypeId, limit, offset)
+      const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(attributeTypeId)
       const total = countResult?.count || 0
 
       const attributes = rows.map((row) => this.mapRowToEntity(row))
@@ -264,7 +249,7 @@ export class SqliteAttributeRepository
             attributeData.is_required,
             attributeData.metadata,
             attributeData.created_at,
-            attributeData.updated_at
+            attributeData.updated_at,
           )
         }
       })()
@@ -333,7 +318,7 @@ export class SqliteAttributeRepository
       row.is_required,
       row.metadata,
       new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.updated_at),
     )
 
     console.log('DEBUG: created attribute:', {
@@ -364,7 +349,7 @@ export class SqliteAttributeRepository
       updates.isRequired ?? existing.getIsRequired(),
       existing.getMetadata(), // No update available for this
       existing.getCreatedAt(),
-      existing.getUpdatedAt()
+      existing.getUpdatedAt(),
     )
 
     const data = updatedAttribute.toDatabase()
@@ -422,15 +407,12 @@ export class SqliteAttributeRepository
       row.default_value,
       row.examples,
       new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.updated_at),
     )
   }
 
   // ITableScopedRepository method implementations (aliases for table-specific methods)
-  async findByParentId(
-    parentId: TableId,
-    options?: PaginationOptions
-  ): Promise<PaginatedResult<Attribute>> {
+  async findByParentId(parentId: TableId, options?: PaginationOptions): Promise<PaginatedResult<Attribute>> {
     return this.findByTableId(parentId, options)
   }
 

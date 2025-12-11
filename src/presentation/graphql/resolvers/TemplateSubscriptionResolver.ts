@@ -20,7 +20,7 @@ export interface ExecuteTemplateStreamArgs {
 export class TemplateSubscriptionResolver {
   constructor(
     private readonly executeTemplateWithSubscriptionUseCase: ExecuteTemplateWithSubscriptionUseCase,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -29,7 +29,7 @@ export class TemplateSubscriptionResolver {
    */
   async executeTemplateStream(
     args: ExecuteTemplateStreamArgs,
-    context: SubscriptionContext
+    context: SubscriptionContext,
   ): Promise<AsyncIterableIterator<TemplateExecutionStreamEvent>> {
     this.logger.info('Template stream subscription started', {
       templateIdentifier: args.templateIdentifier,
@@ -62,7 +62,7 @@ export class TemplateSubscriptionResolver {
       // 에러를 비동기 이터레이터로 래핑하여 반환
       return this.createErrorStream(
         error instanceof Error ? error.message : 'Unknown error occurred',
-        args.templateIdentifier
+        args.templateIdentifier,
       )
     }
   }
@@ -72,7 +72,7 @@ export class TemplateSubscriptionResolver {
    */
   async executeTemplateStreamWithChunking(
     args: ExecuteTemplateStreamArgs & { chunkSize?: number },
-    context: SubscriptionContext
+    context: SubscriptionContext,
   ): Promise<AsyncIterableIterator<TemplateExecutionStreamEvent>> {
     this.logger.info('Template chunked stream subscription started', {
       templateIdentifier: args.templateIdentifier,
@@ -97,7 +97,7 @@ export class TemplateSubscriptionResolver {
 
       return this.createErrorStream(
         error instanceof Error ? error.message : 'Unknown error occurred',
-        args.templateIdentifier
+        args.templateIdentifier,
       )
     }
   }
@@ -122,7 +122,7 @@ export class TemplateSubscriptionResolver {
    */
   private async *createErrorStream(
     errorMessage: string,
-    templateIdentifier: string
+    templateIdentifier: string,
   ): AsyncIterableIterator<TemplateExecutionStreamEvent> {
     yield {
       status: 'ERROR',
@@ -146,11 +146,7 @@ export const templateSubscriptionResolvers = {
   Subscription: {
     executeTemplateStream: {
       // GraphQL Subscription 리졸버 함수
-      subscribe: async (
-        _: unknown,
-        args: ExecuteTemplateStreamArgs,
-        context: SubscriptionContext
-      ) => {
+      subscribe: async (_: unknown, args: ExecuteTemplateStreamArgs, context: SubscriptionContext) => {
         // DI 컨테이너에서 리졸버 인스턴스 가져오기
         // 실제 구현에서는 DI 컨테이너를 통해 주입받아야 함
         const resolver = context.extra?.templateSubscriptionResolver as TemplateSubscriptionResolver

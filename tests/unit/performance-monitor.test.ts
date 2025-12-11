@@ -3,11 +3,7 @@
  */
 
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
-import {
-  getPerformanceMonitor,
-  PerformanceMonitor,
-  resetPerformanceMonitor,
-} from '@/core/utils/PerformanceMonitor.js'
+import { getPerformanceMonitor, PerformanceMonitor, resetPerformanceMonitor } from '@/core/utils/PerformanceMonitor.js'
 
 describe('PerformanceMonitor', () => {
   let monitor: PerformanceMonitor
@@ -74,7 +70,7 @@ describe('PerformanceMonitor', () => {
       await expect(
         monitor.measure('failing-async', async () => {
           throw new Error('Async error')
-        })
+        }),
       ).rejects.toThrow('Async error')
 
       const metrics = monitor.getRecentMetrics('failing-async')
@@ -109,7 +105,7 @@ describe('PerformanceMonitor', () => {
       expect(() =>
         monitor.measureSync('failing-sync', () => {
           throw new Error('Sync error')
-        })
+        }),
       ).toThrow('Sync error')
 
       const metrics = monitor.getRecentMetrics('failing-sync')
@@ -132,11 +128,11 @@ describe('PerformanceMonitor', () => {
 
       const aggregated = monitor.getAggregatedMetrics('agg-test')
       expect(aggregated).not.toBeNull()
-      expect(aggregated!.operation).toBe('agg-test')
-      expect(aggregated!.count).toBe(10)
-      expect(aggregated!.successRate).toBe(1)
-      expect(aggregated!.avgDurationMs).toBeGreaterThanOrEqual(0)
-      expect(aggregated!.minDurationMs).toBeLessThanOrEqual(aggregated!.maxDurationMs)
+      expect(aggregated?.operation).toBe('agg-test')
+      expect(aggregated?.count).toBe(10)
+      expect(aggregated?.successRate).toBe(1)
+      expect(aggregated?.avgDurationMs).toBeGreaterThanOrEqual(0)
+      expect(aggregated?.minDurationMs).toBeLessThanOrEqual(aggregated?.maxDurationMs)
     })
 
     test('should track success rate correctly', () => {
@@ -148,7 +144,7 @@ describe('PerformanceMonitor', () => {
       }
 
       const aggregated = monitor.getAggregatedMetrics('mixed-ops')
-      expect(aggregated!.successRate).toBe(0.8)
+      expect(aggregated?.successRate).toBe(0.8)
     })
 
     test('should calculate percentiles correctly', () => {
@@ -161,11 +157,11 @@ describe('PerformanceMonitor', () => {
       }
 
       const aggregated = testMonitor.getAggregatedMetrics('percentile-test')
-      expect(aggregated!.p50DurationMs).toBeDefined()
-      expect(aggregated!.p95DurationMs).toBeDefined()
-      expect(aggregated!.p99DurationMs).toBeDefined()
-      expect(aggregated!.p50DurationMs).toBeLessThanOrEqual(aggregated!.p95DurationMs)
-      expect(aggregated!.p95DurationMs).toBeLessThanOrEqual(aggregated!.p99DurationMs)
+      expect(aggregated?.p50DurationMs).toBeDefined()
+      expect(aggregated?.p95DurationMs).toBeDefined()
+      expect(aggregated?.p99DurationMs).toBeDefined()
+      expect(aggregated?.p50DurationMs).toBeLessThanOrEqual(aggregated?.p95DurationMs)
+      expect(aggregated?.p95DurationMs).toBeLessThanOrEqual(aggregated?.p99DurationMs)
     })
   })
 
@@ -382,8 +378,8 @@ describe('Edge Cases', () => {
     monitor.startTimer('single').stop()
 
     const aggregated = monitor.getAggregatedMetrics('single')
-    expect(aggregated!.p50DurationMs).toBe(aggregated!.minDurationMs)
-    expect(aggregated!.p99DurationMs).toBe(aggregated!.maxDurationMs)
+    expect(aggregated?.p50DurationMs).toBe(aggregated?.minDurationMs)
+    expect(aggregated?.p99DurationMs).toBe(aggregated?.maxDurationMs)
   })
 
   test('should handle empty metrics gracefully', () => {
@@ -400,7 +396,7 @@ describe('Edge Cases', () => {
     await expect(
       monitor.measure('string-error', async () => {
         throw 'string error'
-      })
+      }),
     ).rejects.toBe('string error')
 
     const metrics = monitor.getRecentMetrics('string-error')

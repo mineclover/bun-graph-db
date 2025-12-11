@@ -37,10 +37,7 @@ export class AggregateSortStrategy extends SortStrategy {
     return this.buildCountAggregate(direction, context)
   }
 
-  override buildEnhancedSortClause(
-    sortOption: EnhancedSortOption,
-    context: SortContext
-  ): SortResult {
+  override buildEnhancedSortClause(sortOption: EnhancedSortOption, context: SortContext): SortResult {
     const _field = sortOption.field
     const direction = sortOption.direction
     const params = this.parseAggregateParameters(sortOption)
@@ -82,11 +79,7 @@ export class AggregateSortStrategy extends SortStrategy {
     }
   }
 
-  private buildAggregateSort(
-    params: AggregateParameters,
-    direction: 'asc' | 'desc',
-    context: SortContext
-  ): SortResult {
+  private buildAggregateSort(params: AggregateParameters, direction: 'asc' | 'desc', context: SortContext): SortResult {
     const _aggregateFunction = params.aggregateFunction
     const _sourceField = params.sourceField
 
@@ -111,7 +104,7 @@ export class AggregateSortStrategy extends SortStrategy {
   private buildSimpleAggregate(
     params: AggregateParameters,
     direction: 'asc' | 'desc',
-    _context: SortContext
+    _context: SortContext,
   ): SortResult {
     const parameters: any[] = []
     let aggregateExpression = ''
@@ -217,7 +210,7 @@ export class AggregateSortStrategy extends SortStrategy {
   private buildRelatedNodesAggregate(
     params: AggregateParameters,
     direction: 'asc' | 'desc',
-    _context: SortContext
+    _context: SortContext,
   ): SortResult {
     const parameters: any[] = []
 
@@ -260,7 +253,7 @@ export class AggregateSortStrategy extends SortStrategy {
   private buildTimeBasedAggregate(
     params: AggregateParameters,
     direction: 'asc' | 'desc',
-    _context: SortContext
+    _context: SortContext,
   ): SortResult {
     const parameters: any[] = []
     const timeWindow = params.timeWindow || 'day'
@@ -328,7 +321,7 @@ export class AggregateSortStrategy extends SortStrategy {
   private buildAttributeBasedAggregate(
     params: AggregateParameters,
     direction: 'asc' | 'desc',
-    context: SortContext
+    context: SortContext,
   ): SortResult {
     // Group by a specific attribute value and aggregate another attribute
     return this.buildSimpleAggregate(params, direction, context)
@@ -337,7 +330,7 @@ export class AggregateSortStrategy extends SortStrategy {
   private buildCustomAggregate(
     params: AggregateParameters,
     direction: 'asc' | 'desc',
-    context: SortContext
+    context: SortContext,
   ): SortResult {
     if (!params.customGroupExpression) {
       return this.buildSimpleAggregate(params, direction, context)
@@ -426,7 +419,7 @@ export class AggregateSortStrategy extends SortStrategy {
    */
   static createCountSort(
     sourceField: string = '*',
-    sortDirection: SortDirection = SortDirection.DESC
+    sortDirection: SortDirection = SortDirection.DESC,
   ): EnhancedSortOption {
     const parameters: AggregateParameters = {
       aggregateFunction: 'count',
@@ -441,10 +434,7 @@ export class AggregateSortStrategy extends SortStrategy {
     }
   }
 
-  static createSumSort(
-    sourceField: string,
-    sortDirection: SortDirection = SortDirection.DESC
-  ): EnhancedSortOption {
+  static createSumSort(sourceField: string, sortDirection: SortDirection = SortDirection.DESC): EnhancedSortOption {
     const parameters: AggregateParameters = {
       aggregateFunction: 'sum',
       sourceField,
@@ -458,10 +448,7 @@ export class AggregateSortStrategy extends SortStrategy {
     }
   }
 
-  static createAverageSort(
-    sourceField: string,
-    sortDirection: SortDirection = SortDirection.DESC
-  ): EnhancedSortOption {
+  static createAverageSort(sourceField: string, sortDirection: SortDirection = SortDirection.DESC): EnhancedSortOption {
     const parameters: AggregateParameters = {
       aggregateFunction: 'avg',
       sourceField,
@@ -478,7 +465,7 @@ export class AggregateSortStrategy extends SortStrategy {
   static createRelatedNodesAggregateSort(
     aggregateFunction: 'count' | 'sum' | 'avg' | 'min' | 'max',
     sourceField: string,
-    sortDirection: SortDirection = SortDirection.DESC
+    sortDirection: SortDirection = SortDirection.DESC,
   ): EnhancedSortOption {
     const parameters: AggregateParameters = {
       aggregateFunction,
@@ -498,7 +485,7 @@ export class AggregateSortStrategy extends SortStrategy {
     aggregateFunction: 'count' | 'sum' | 'avg',
     timeWindow: 'hour' | 'day' | 'week' | 'month' | 'year',
     sourceField: string = '*',
-    sortDirection: SortDirection = SortDirection.DESC
+    sortDirection: SortDirection = SortDirection.DESC,
   ): EnhancedSortOption {
     const parameters: AggregateParameters = {
       aggregateFunction,

@@ -40,7 +40,7 @@ const PORT_OFFSETS = {
  */
 export function generatePortConfig(
   basePort: number,
-  environment: 'development' | 'test' | 'production' = 'development'
+  environment: 'development' | 'test' | 'production' = 'development',
 ): PortConfiguration {
   const validatedPort = validatePort(basePort, environment)
 
@@ -66,7 +66,7 @@ function validatePort(port: number, environment: keyof typeof PORT_RANGES): numb
 
   if (port < range.min || port > range.max) {
     console.warn(
-      `Port ${port} is outside ${environment} range (${range.min}-${range.max}). Using default: ${range.min}`
+      `Port ${port} is outside ${environment} range (${range.min}-${range.max}). Using default: ${range.min}`,
     )
     return range.min
   }
@@ -94,20 +94,13 @@ export const DEFAULT_PORTS = {
 /**
  * Get port configuration from environment variables or CLI args
  */
-export function getPortConfiguration(
-  cliPort?: string | number,
-  envPort?: string,
-  nodeEnv?: string
-): PortConfiguration {
-  const environment = (nodeEnv || process.env.NODE_ENV || 'development') as
-    | 'development'
-    | 'test'
-    | 'production'
+export function getPortConfiguration(cliPort?: string | number, envPort?: string, nodeEnv?: string): PortConfiguration {
+  const environment = (nodeEnv || process.env.NODE_ENV || 'development') as 'development' | 'test' | 'production'
 
   // Priority: CLI > GRAPHQL_PORT/envPort > PORT > Default
   const basePort = parsePort(
     cliPort || envPort || process.env.GRAPHQL_PORT || process.env.PORT,
-    DEFAULT_PORTS[environment]
+    DEFAULT_PORTS[environment],
   )
 
   const config = generatePortConfig(basePort, environment)

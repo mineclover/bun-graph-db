@@ -36,9 +36,7 @@ import type { IRelationTypeRepository } from '../repositories/IRelationTypeRepos
 import type { ITableRepository } from '../repositories/ITableRepository.js'
 
 /** Helper to convert ID to string safely */
-function toStringId(
-  id: NodeId | RelationTypeId | TableId | string | number | null | undefined
-): string {
+function toStringId(id: NodeId | RelationTypeId | TableId | string | number | null | undefined): string {
   if (id === null || id === undefined) return ''
   return String(id)
 }
@@ -64,16 +62,13 @@ export class JsonExportService {
     private readonly attributeRepository: IAttributeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
-    private readonly relationTypeRepository: IRelationTypeRepository
+    private readonly relationTypeRepository: IRelationTypeRepository,
   ) {}
 
   /**
    * Export table data to JSON
    */
-  async exportTable(
-    tableId: TableId,
-    options: JsonExportOptions = { format: 'flat' }
-  ): Promise<JsonExportResult> {
+  async exportTable(tableId: TableId, options: JsonExportOptions = { format: 'flat' }): Promise<JsonExportResult> {
     const errors: string[] = []
     const warnings: string[] = []
 
@@ -119,8 +114,7 @@ export class JsonExportService {
           success: true,
           format: 'flat',
           data,
-          json:
-            options.prettyPrint !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data),
+          json: options.prettyPrint !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data),
           nodeCount: nodes.length,
           errors,
           warnings,
@@ -139,22 +133,13 @@ export class JsonExportService {
           relationTypes = relationTypesResult.nodes || relationTypesResult.data || []
         }
 
-        const data = this.exportHFI(
-          table,
-          nodes,
-          attributes,
-          nodeAttributesMap,
-          relations,
-          relationTypes,
-          options
-        )
+        const data = this.exportHFI(table, nodes, attributes, nodeAttributesMap, relations, relationTypes, options)
 
         return {
           success: true,
           format: 'hfi',
           data,
-          json:
-            options.prettyPrint !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data),
+          json: options.prettyPrint !== false ? JSON.stringify(data, null, 2) : JSON.stringify(data),
           nodeCount: nodes.length,
           errors,
           warnings,
@@ -178,7 +163,7 @@ export class JsonExportService {
     table: Table,
     nodes: Node[],
     attributes: Attribute[],
-    nodeAttributesMap: Map<string, NodeAttribute[]>
+    nodeAttributesMap: Map<string, NodeAttribute[]>,
   ): FlatJsonExport {
     const flatNodes: FlatNode[] = nodes.map((node) => {
       const nodeId = toStringId(node.getId())
@@ -222,7 +207,7 @@ export class JsonExportService {
     nodeAttributesMap: Map<string, NodeAttribute[]>,
     relations: NodeRelation[],
     relationTypes: RelationType[],
-    options: JsonExportOptions
+    options: JsonExportOptions,
   ): HFIProtocolExport {
     // Build relation type map
     const relationTypeMap = new Map<string, RelationType>()
@@ -237,7 +222,7 @@ export class JsonExportService {
       if (!outgoingRelationsMap.has(sourceId)) {
         outgoingRelationsMap.set(sourceId, [])
       }
-      outgoingRelationsMap.get(sourceId)!.push(relation)
+      outgoingRelationsMap.get(sourceId)?.push(relation)
     }
 
     // Convert nodes to FlowNodes
@@ -332,10 +317,7 @@ export class JsonExportService {
   /**
    * Build branches from outgoing relations
    */
-  private buildBranches(
-    relations: NodeRelation[],
-    relationTypeMap: Map<string, RelationType>
-  ): BranchMetadata[] {
+  private buildBranches(relations: NodeRelation[], relationTypeMap: Map<string, RelationType>): BranchMetadata[] {
     // Group relations by relation type
     const branchMap = new Map<string, BranchMapEntry>()
 
@@ -350,7 +332,7 @@ export class JsonExportService {
           targets: [],
         })
       }
-      branchMap.get(relationTypeId)!.targets.push(targetId)
+      branchMap.get(relationTypeId)?.targets.push(targetId)
     }
 
     // Convert to BranchMetadata
@@ -375,7 +357,7 @@ export class JsonExportService {
    */
   private buildStateConnections(
     relations: NodeRelation[],
-    _relationTypeMap: Map<string, RelationType>
+    _relationTypeMap: Map<string, RelationType>,
   ): StateConnection[] {
     const stateConnections: StateConnection[] = []
 

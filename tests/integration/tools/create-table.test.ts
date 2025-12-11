@@ -81,12 +81,8 @@ describe('CreateTable Tool Integration', () => {
     expect(graphqlResult.data.createTable.success).toBe(true)
     expect(graphqlResult.data.createTable.table).toBeDefined()
     expect(graphqlResult.data.createTable.table.id).toBeDefined()
-    expect(graphqlResult.data.createTable.table.identifier).toBe(
-      mcpRequest.params.arguments.identifier
-    )
-    expect(graphqlResult.data.createTable.table.description).toBe(
-      mcpRequest.params.arguments.description
-    )
+    expect(graphqlResult.data.createTable.table.identifier).toBe(mcpRequest.params.arguments.identifier)
+    expect(graphqlResult.data.createTable.table.description).toBe(mcpRequest.params.arguments.description)
 
     console.log(`✅ CreateTable tool executed in ${responseTime}ms`)
   })

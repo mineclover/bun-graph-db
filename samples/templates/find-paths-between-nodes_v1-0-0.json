@@ -19,7 +19,7 @@
         "description": "ID of the source node to start path finding"
       },
       "targetNodeId": {
-        "type": "string", 
+        "type": "string",
         "description": "ID of the target node to find paths to"
       },
       "maxDepth": {

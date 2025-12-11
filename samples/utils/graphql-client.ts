@@ -25,7 +25,7 @@ export interface GraphQLRequestOptions {
 export class GraphQLClient {
   constructor(
     private readonly endpoint: string,
-    private readonly defaultHeaders: Record<string, string> = {}
+    private readonly defaultHeaders: Record<string, string> = {},
   ) {}
 
   async request<T = any>(options: GraphQLRequestOptions): Promise<GraphQLResponse<T>> {
@@ -157,11 +157,7 @@ export class GraphQLClient {
     })
   }
 
-  async executeTemplate(params: {
-    templateId?: string
-    templateIdentifier?: string
-    variables?: Record<string, any>
-  }) {
+  async executeTemplate(params: { templateId?: string; templateIdentifier?: string; variables?: Record<string, any> }) {
     return this.request({
       query: `
         mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
@@ -241,11 +237,7 @@ export class GraphQLClient {
   }
 
   // 템플릿 내보내기
-  async exportTemplate(params: {
-    templateId?: string
-    templateIdentifier?: string
-    includeStatistics?: boolean
-  }) {
+  async exportTemplate(params: { templateId?: string; templateIdentifier?: string; includeStatistics?: boolean }) {
     return this.request({
       query: `
         mutation ExportTemplate(
@@ -314,10 +306,7 @@ export class GraphQLClient {
 }
 
 // 팩토리 함수
-export function createGraphQLClient(
-  endpoint: string,
-  headers?: Record<string, string>
-): GraphQLClient {
+export function createGraphQLClient(endpoint: string, headers?: Record<string, string>): GraphQLClient {
   return new GraphQLClient(endpoint, headers)
 }
 

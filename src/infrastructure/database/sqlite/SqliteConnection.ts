@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { getDatabasePath } from '@/config/database.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
@@ -49,8 +49,8 @@ export class SqliteConnection {
       const schema = readFileSync(schemaPath, 'utf-8')
 
       // Execute schema in a transaction for safety
-      this.db!.transaction(() => {
-        this.db!.exec(schema)
+      this.db?.transaction(() => {
+        this.db?.exec(schema)
       })()
 
       console.log('Database schema initialized successfully')

@@ -18,7 +18,7 @@ export interface DeleteQueryTemplateResponse {
 export class DeleteQueryTemplate {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(request: DeleteQueryTemplateRequest): Promise<DeleteQueryTemplateResponse> {

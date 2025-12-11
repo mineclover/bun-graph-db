@@ -1,10 +1,7 @@
 {
   "timestamp": "2025-09-19T03:11:53.841Z",
   "operation": "template-recreation",
-  "targetTemplates": [
-    815,
-    816
-  ],
+  "targetTemplates": [815, 816],
   "backupCount": 2,
   "success": true,
   "changes": [

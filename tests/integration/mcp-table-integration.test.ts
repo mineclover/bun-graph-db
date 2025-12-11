@@ -290,8 +290,7 @@ describe('MCP Table Integration Tests', () => {
       expect(Array.isArray(tools)).toBe(true)
 
       const templateTool = tools.find(
-        (tool: any) =>
-          tool.name === testTemplateIdentifier || tool.description?.includes(testTableId)
+        (tool: any) => tool.name === testTemplateIdentifier || tool.description?.includes(testTableId),
       )
 
       if (templateTool) {
@@ -558,12 +557,8 @@ describe('MCP Table Integration Tests', () => {
       const tools2 = (await tools2Response.json()).result.tools
 
       // Verify that each table has different table-specific tools
-      const table1SpecificTools = tools1.filter((tool: any) =>
-        tool.description.includes(testTableId)
-      )
-      const table2SpecificTools = tools2.filter((tool: any) =>
-        tool.description.includes(testTable2Id)
-      )
+      const table1SpecificTools = tools1.filter((tool: any) => tool.description.includes(testTableId))
+      const table2SpecificTools = tools2.filter((tool: any) => tool.description.includes(testTable2Id))
 
       // Tools should not overlap between tables (except base tools)
       const table1ToolNames = new Set(table1SpecificTools.map((t: any) => t.name))
@@ -660,9 +655,7 @@ describe('MCP Table Integration Tests', () => {
       expect(Array.isArray(tools)).toBe(true)
 
       // Find the aiMetadata tool
-      const aiMetadataTool = tools.find(
-        (tool: any) => tool.name === `get-table-metadata-${testTableId}`
-      )
+      const aiMetadataTool = tools.find((tool: any) => tool.name === `get-table-metadata-${testTableId}`)
 
       expect(aiMetadataTool).toBeDefined()
       expect(aiMetadataTool).toMatchObject({
@@ -982,7 +975,7 @@ describe('MCP Table Integration Tests', () => {
         fetch(`${BASE_URL}/sub/${tableId}/mcp`, {
           method: 'GET',
           headers: { Accept: 'application/json' },
-        })
+        }),
       )
 
       const responses = await Promise.all(requests)

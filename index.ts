@@ -8,13 +8,7 @@ import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens
 import { UseCaseTokens } from './src/infrastructure/container/tokens/UseCaseTokens'
 import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder'
 import { toErrorMeta } from './src/presentation/http/utils/errorHelpers.js'
-import {
-  mergeWithEnvironment,
-  parseCliArgs,
-  printHelp,
-  printVersion,
-  validateOptions,
-} from './src/utils/cli-parser'
+import { mergeWithEnvironment, parseCliArgs, printHelp, printVersion, validateOptions } from './src/utils/cli-parser'
 
 // Parse CLI arguments
 const { options, unknown } = parseCliArgs()
@@ -81,9 +75,7 @@ const schema = await schemaBuilder.build()
 const logger = await container.resolve<ILogger>(CommonTokens.LOGGER)
 
 // Initialize AutoPersistenceService
-const autoPersistence = await container.resolve<AutoPersistenceService>(
-  CommonTokens.AUTO_PERSISTENCE_SERVICE
-)
+const autoPersistence = await container.resolve<AutoPersistenceService>(CommonTokens.AUTO_PERSISTENCE_SERVICE)
 const persistenceResult = await autoPersistence.initialize()
 if (persistenceResult.restored) {
   logger.info(`📂 Auto-restored from: ${persistenceResult.backupPath}`)
@@ -110,7 +102,7 @@ const yoga = createYoga({
           onExecuteDone({ result, args }: { result: any; args: any }) {
             // Check if this was a mutation and successful
             const operationType = args.document.definitions.find(
-              (def: any) => def.kind === 'OperationDefinition'
+              (def: any) => def.kind === 'OperationDefinition',
             ) as any
             if (operationType?.operation === 'mutation') {
               // Skip backup-related mutations to avoid recursive saves
@@ -211,7 +203,7 @@ const attributeController = new AttributeApiController(
   createAttributeUseCase,
   attributeRepository,
   nodeAttributeRepository,
-  logger
+  logger,
 )
 const graphController = new GraphApiController(
   logger,
@@ -220,7 +212,7 @@ const graphController = new GraphApiController(
   searchRelatedNodesUseCase,
   tableRepository,
   nodeRelationRepository,
-  graphqlConfig.port
+  graphqlConfig.port,
 )
 const _mcpToolController = new McpToolController(logger, graphqlConfig.port)
 
@@ -233,7 +225,7 @@ const [schemaHandler, templateFileHandler] = await Promise.all([
 // Create MCP HTTP server with REST API base URL
 const mcpServer = new McpHttpServer(
   `http://localhost:${graphqlConfig.port}/graphql`,
-  `http://localhost:${graphqlConfig.port}/api`
+  `http://localhost:${graphqlConfig.port}/api`,
 )
 await mcpServer.initialize()
 
@@ -325,20 +317,12 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       await graphDbController.executeTemplateWithGraphQL(req, res)
     } else if (method === 'POST' && pathname === '/api/attributes') {
       await attributeController.createAttribute(req, res)
-    } else if (
-      method === 'GET' &&
-      pathname.startsWith('/api/nodes/') &&
-      pathname.endsWith('/attributes')
-    ) {
+    } else if (method === 'GET' && pathname.startsWith('/api/nodes/') && pathname.endsWith('/attributes')) {
       // Extract nodeId from path like /api/nodes/123/attributes
       const nodeId = pathname.split('/')[3]
       req.params.nodeId = nodeId
       await attributeController.getNodeAttributes(req, res)
-    } else if (
-      method === 'POST' &&
-      pathname.startsWith('/api/tables/') &&
-      pathname.endsWith('/export')
-    ) {
+    } else if (method === 'POST' && pathname.startsWith('/api/tables/') && pathname.endsWith('/export')) {
       // Extract tableId from path like /api/tables/123/export
       const tableId = pathname.split('/')[3]
       req.params.tableId = tableId
@@ -384,13 +368,10 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
     }
 
     // Return response
-    return new Response(
-      typeof responseData === 'string' ? responseData : JSON.stringify(responseData),
-      {
-        status: statusCode,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
+    return new Response(typeof responseData === 'string' ? responseData : JSON.stringify(responseData), {
+      status: statusCode,
+      headers: { 'Content-Type': 'application/json' },
+    })
   } catch (error) {
     logger.error('API request error:', toErrorMeta(error))
     return new Response(JSON.stringify({ success: false, error: 'Internal server error' }), {
@@ -463,9 +444,7 @@ if (!(await checkPortAvailable(graphqlConfig.port))) {
     const proc = Bun.spawn(['lsof', '-ti', `:${graphqlConfig.port}`])
     const output = await new Response(proc.stdout).text()
     if (output.trim()) {
-      console.error(
-        `🔍 Process(es) using port ${graphqlConfig.port}: ${output.trim().split('\n').join(', ')}`
-      )
+      console.error(`🔍 Process(es) using port ${graphqlConfig.port}: ${output.trim().split('\n').join(', ')}`)
     }
   } catch {
     // lsof might not be available on all systems
@@ -480,12 +459,8 @@ const server = Bun.serve({
   hostname: finalOptions.host || '0.0.0.0',
 })
 
-logger.info(
-  `🚀 Bun Graph DB Server ready at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`
-)
-logger.info(
-  `📊 GraphiQL available at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`
-)
+logger.info(`🚀 Bun Graph DB Server ready at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`)
+logger.info(`📊 GraphiQL available at http://localhost:${graphqlConfig.port}${yoga.graphqlEndpoint}`)
 logger.info(`🔌 MCP Protocol available at http://localhost:${graphqlConfig.port}/mcp`)
 logger.info(`📋 Schema endpoints available:`)
 logger.info(`   • SDL: http://localhost:${graphqlConfig.port}/schema`)

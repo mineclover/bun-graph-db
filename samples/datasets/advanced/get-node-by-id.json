@@ -1,16 +1,16 @@
 {
   "name": "Get Node By ID Dataset",
   "description": "Execute node lookup by ID using existing template with variable",
-  "domain": "node_management", 
+  "domain": "node_management",
   "category": "advanced",
-  
+
   "templateExecution": {
     "templateIdentifier": "test-get-node",
     "variables": {
       "id": "1"
     }
   },
-  
+
   "expectedResult": {
     "success": true,
     "dataShape": {
@@ -21,7 +21,7 @@
       }
     }
   },
-  
+
   "testConfig": {
     "shouldExport": true,
     "retryOnFailure": false

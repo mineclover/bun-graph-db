@@ -19,7 +19,5 @@ extend type Mutation {
 
   # Batch node attribute management
   setNodeAttributes(input: SetNodeAttributesInput!): SetNodeAttributesPayload!
-  setNodeAttributesByIdentifier(
-    input: SetNodeAttributesByIdentifierInput!
-  ): SetNodeAttributesByIdentifierPayload!
+  setNodeAttributesByIdentifier(input: SetNodeAttributesByIdentifierInput!): SetNodeAttributesByIdentifierPayload!
 }

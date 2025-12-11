@@ -13,7 +13,7 @@ export class NodeRelation {
     private readonly properties: Record<string, any> | null,
     private readonly strength: number,
     private readonly createdAt: Date,
-    private readonly updatedAt: Date
+    private readonly updatedAt: Date,
   ) {
     this.validateExternalIds(sourceExternalId, targetExternalId)
     this.validateStrength(strength)
@@ -27,7 +27,7 @@ export class NodeRelation {
     targetExternalId: string,
     relationTypeId: RelationTypeId,
     properties?: Record<string, any> | null,
-    strength?: number
+    strength?: number,
   ): NodeRelation {
     return new NodeRelation(
       null as any as NodeRelationId,
@@ -40,7 +40,7 @@ export class NodeRelation {
       properties || null,
       strength ?? 1, // Default strength: 1=auto_generated (valid range: 0-4)
       new Date(),
-      new Date()
+      new Date(),
     )
   }
 
@@ -55,7 +55,7 @@ export class NodeRelation {
     properties: string | null,
     strength: number,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
   ): NodeRelation {
     let parsedProperties: Record<string, any> | null = null
     if (properties) {
@@ -78,7 +78,7 @@ export class NodeRelation {
       parsedProperties,
       strength,
       createdAt,
-      updatedAt
+      updatedAt,
     )
   }
 
@@ -93,11 +93,7 @@ export class NodeRelation {
 
     // For internal nodes (external_id = 'internal'), we rely on node IDs for uniqueness
     // For external nodes, external IDs must be different
-    if (
-      sourceExternalId !== 'internal' &&
-      targetExternalId !== 'internal' &&
-      sourceExternalId === targetExternalId
-    ) {
+    if (sourceExternalId !== 'internal' && targetExternalId !== 'internal' && sourceExternalId === targetExternalId) {
       throw new DomainException('Source and target external IDs cannot be the same')
     }
   }
@@ -125,7 +121,7 @@ export class NodeRelation {
       properties,
       this.strength,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 
@@ -142,7 +138,7 @@ export class NodeRelation {
       this.properties,
       strength,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 
@@ -158,7 +154,7 @@ export class NodeRelation {
       this.properties,
       this.strength,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 

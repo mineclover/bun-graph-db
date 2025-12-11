@@ -265,10 +265,10 @@ describe('Custom Sort Functions System', () => {
 
       const stats = registry.getUsageStats('stats-sort')
       expect(stats).toBeDefined()
-      expect(stats!.callCount).toBe(3)
-      expect(stats!.errorCount).toBe(0)
-      expect(stats!.successRate).toBe(100)
-      expect(stats!.averageExecutionTime).toBeGreaterThanOrEqual(0)
+      expect(stats?.callCount).toBe(3)
+      expect(stats?.errorCount).toBe(0)
+      expect(stats?.successRate).toBe(100)
+      expect(stats?.averageExecutionTime).toBeGreaterThanOrEqual(0)
     })
 
     it('should handle function execution errors gracefully', () => {
@@ -293,8 +293,8 @@ describe('Custom Sort Functions System', () => {
 
       // Check error statistics
       const stats = registry.getUsageStats('error-sort')
-      expect(stats!.errorCount).toBe(1)
-      expect(stats!.successRate).toBe(0)
+      expect(stats?.errorCount).toBe(1)
+      expect(stats?.successRate).toBe(0)
     })
 
     it('should export and provide registry information', () => {
@@ -397,7 +397,7 @@ describe('Custom Sort Functions System', () => {
 
       const specificFunction = customStrategy.getCustomFunction('test-custom-sort')
       expect(specificFunction).toBeDefined()
-      expect(specificFunction!.name).toBe('Test Custom Sort')
+      expect(specificFunction?.name).toBe('Test Custom Sort')
 
       const searchResults = customStrategy.searchCustomFunctions('Test')
       expect(searchResults).toHaveLength(1)
@@ -422,19 +422,19 @@ describe('Custom Sort Functions System', () => {
       // Check for specific built-in functions
       const naturalString = testRegistry.get('natural-string')
       expect(naturalString).toBeDefined()
-      expect(naturalString!.name).toBe('Natural String Sort')
+      expect(naturalString?.name).toBe('Natural String Sort')
 
       const lengthSort = testRegistry.get('length-sort')
       expect(lengthSort).toBeDefined()
-      expect(lengthSort!.name).toBe('Length-based Sort')
+      expect(lengthSort?.name).toBe('Length-based Sort')
 
       const relevanceScore = testRegistry.get('relevance-score')
       expect(relevanceScore).toBeDefined()
-      expect(relevanceScore!.name).toBe('Relevance Score Sort')
+      expect(relevanceScore?.name).toBe('Relevance Score Sort')
 
       const seededRandom = testRegistry.get('seeded-random')
       expect(seededRandom).toBeDefined()
-      expect(seededRandom!.name).toBe('Seeded Random Sort')
+      expect(seededRandom?.name).toBe('Seeded Random Sort')
     })
 
     it('should execute natural string sorting correctly', () => {
@@ -525,7 +525,7 @@ describe('Custom Sort Functions System', () => {
 
       const retrieved = getCustomSortFunction('factory-test-sort')
       expect(retrieved).toBeDefined()
-      expect(retrieved!.name).toBe('Factory Test Sort')
+      expect(retrieved?.name).toBe('Factory Test Sort')
 
       // Clean up
       unregisterCustomSortFunction('factory-test-sort')
@@ -625,8 +625,8 @@ describe('Custom Sort Functions System', () => {
 
       return Promise.all(promises).then(() => {
         const stats = registry.getUsageStats('load-test-sort')
-        expect(stats!.callCount).toBe(100)
-        expect(stats!.successRate).toBe(100)
+        expect(stats?.callCount).toBe(100)
+        expect(stats?.successRate).toBe(100)
       })
     })
   })

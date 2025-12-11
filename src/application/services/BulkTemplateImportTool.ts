@@ -6,7 +6,7 @@
  */
 
 import { readdir, readFile, stat } from 'node:fs/promises'
-import { join } from 'path'
+import { join } from 'node:path'
 import type { RestApiClient } from './RestApiClient.js'
 
 export interface BulkImportOptions {
@@ -61,9 +61,7 @@ export class BulkTemplateImportTool {
 
     // Filter files if specified
     const filteredFiles =
-      filter.length > 0
-        ? templateFiles.filter((file) => filter.some((f) => file.includes(f)))
-        : templateFiles
+      filter.length > 0 ? templateFiles.filter((file) => filter.some((f) => file.includes(f))) : templateFiles
 
     console.log(`📁 Found ${templateFiles.length} files, ${filteredFiles.length} after filtering`)
 
@@ -75,14 +73,10 @@ export class BulkTemplateImportTool {
     // Process in batches to avoid overwhelming the system
     for (let i = 0; i < filteredFiles.length; i += batchSize) {
       const batch = filteredFiles.slice(i, i + batchSize)
-      console.log(
-        `📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filteredFiles.length / batchSize)}`
-      )
+      console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filteredFiles.length / batchSize)}`)
 
       const batchResults = await Promise.allSettled(
-        batch.map((file) =>
-          this.importSingleTemplate(file, { overwriteExisting, generateNewIdentifier, dryRun })
-        )
+        batch.map((file) => this.importSingleTemplate(file, { overwriteExisting, generateNewIdentifier, dryRun })),
       )
 
       for (const result of batchResults) {
@@ -143,16 +137,14 @@ export class BulkTemplateImportTool {
 
       // Filter for JSON files, exclude INDEX.md and other non-template files
       const templateFiles = files.filter(
-        (file) => file.endsWith('.json') && !file.startsWith('.') && file !== 'INDEX.json'
+        (file) => file.endsWith('.json') && !file.startsWith('.') && file !== 'INDEX.json',
       )
 
       console.log(`📄 Discovered ${templateFiles.length} template files`)
 
       return templateFiles.map((file) => join(templatesPath, file))
     } catch (error) {
-      throw new Error(
-        `Failed to discover template files: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      throw new Error(`Failed to discover template files: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -161,7 +153,7 @@ export class BulkTemplateImportTool {
    */
   private async importSingleTemplate(
     filePath: string,
-    options: { overwriteExisting: boolean; generateNewIdentifier: boolean; dryRun: boolean }
+    options: { overwriteExisting: boolean; generateNewIdentifier: boolean; dryRun: boolean },
   ): Promise<TemplateImportResult> {
     try {
       // Extract identifier from filename for logging
@@ -253,9 +245,7 @@ export class BulkTemplateImportTool {
         estimatedImportTime: templateFiles.length * 100, // rough estimate: 100ms per template
       }
     } catch (error) {
-      throw new Error(
-        `Failed to get import status: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      throw new Error(`Failed to get import status: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 

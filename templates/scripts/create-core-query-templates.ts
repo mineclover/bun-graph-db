@@ -651,9 +651,7 @@ async function insertCoreQueryTemplate(template: CoreQueryTemplate): Promise<voi
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
 
-    const operationType = template.query.trim().toLowerCase().startsWith('mutation')
-      ? 'mutation'
-      : 'query'
+    const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
 
     db.run(insertQuery, [
       template.identifier,
@@ -791,7 +789,7 @@ async function demoCoreQueries(): Promise<void> {
       console.log('✅ 성공!')
       console.log(
         '📤 결과 미리보기:',
-        `${JSON.stringify(result.data.executeTemplate.data, null, 2).substring(0, 200)}...`
+        `${JSON.stringify(result.data.executeTemplate.data, null, 2).substring(0, 200)}...`,
       )
     } else {
       console.log('❌ 실패:', result.data?.executeTemplate?.errors || result.errors)

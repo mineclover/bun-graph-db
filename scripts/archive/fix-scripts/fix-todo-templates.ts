@@ -221,9 +221,7 @@ async function updateTemplate(template: TemplateUpdate): Promise<void> {
       `
 
       // Extract operation type from query
-      const operationType = template.query.trim().toLowerCase().startsWith('mutation')
-        ? 'mutation'
-        : 'query'
+      const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
 
       db.run(insertQuery, [
         template.identifier,

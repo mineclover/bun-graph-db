@@ -50,7 +50,7 @@ export class DocQueries extends BaseResolver {
 
   constructor(
     private readonly docRepository: IDocRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -59,11 +59,8 @@ export class DocQueries extends BaseResolver {
   async getDoc(_: GraphQLParent, args: GetDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args as any,
-      [
-        BaseResolver.validationRules.required('id', 'Doc ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Doc ID'),
-      ],
-      'getDoc'
+      [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
+      'getDoc',
     )
 
     return this.handleQuery(
@@ -72,7 +69,7 @@ export class DocQueries extends BaseResolver {
         return doc ? DocDto.fromEntity(doc) : null
       },
       'findDocById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
@@ -85,19 +82,16 @@ export class DocQueries extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('tableId', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('category', 'Doc category'),
       ],
-      'getActiveDoc'
+      'getActiveDoc',
     )
 
     return this.handleQuery(
       async () => {
-        const doc = await this.docRepository.findActiveByTableAndCategory(
-          args.tableId,
-          args.category
-        )
+        const doc = await this.docRepository.findActiveByTableAndCategory(args.tableId, args.category)
         return doc ? DocDto.fromEntity(doc) : null
       },
       'findActiveDocByTableAndCategory',
-      { tableId: args.tableId, category: args.category }
+      { tableId: args.tableId, category: args.category },
     )
   }
 
@@ -126,7 +120,7 @@ export class DocQueries extends BaseResolver {
         category: args.category,
         isActive: args.isActive,
         pagination: args.pagination,
-      }
+      },
     )
   }
 
@@ -139,15 +133,12 @@ export class DocQueries extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('tableId', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('category', 'Doc category'),
       ],
-      'getDocVersions'
+      'getDocVersions',
     )
 
     return this.handleQuery(
       async () => {
-        const result = await this.docRepository.findVersionsByTableAndCategory(
-          args.tableId,
-          args.category
-        )
+        const result = await this.docRepository.findVersionsByTableAndCategory(args.tableId, args.category)
 
         return {
           docs: DocDto.fromEntities(result),
@@ -161,7 +152,7 @@ export class DocQueries extends BaseResolver {
         tableId: args.tableId,
         category: args.category,
         pagination: args.pagination,
-      }
+      },
     )
   }
 
@@ -172,7 +163,7 @@ export class DocQueries extends BaseResolver {
         BaseResolver.validationRules.required('query', 'Search query'),
         BaseResolver.validationRules.nonEmpty('query', 'Search query'),
       ],
-      'searchDocs'
+      'searchDocs',
     )
 
     return this.handleQuery(
@@ -184,7 +175,7 @@ export class DocQueries extends BaseResolver {
             category: args.category,
             isActive: args.isActive,
           },
-          args.pagination || { limit: 10, offset: 0 }
+          args.pagination || { limit: 10, offset: 0 },
         )
 
         return {
@@ -201,7 +192,7 @@ export class DocQueries extends BaseResolver {
         category: args.category,
         isActive: args.isActive,
         pagination: args.pagination,
-      }
+      },
     )
   }
 }

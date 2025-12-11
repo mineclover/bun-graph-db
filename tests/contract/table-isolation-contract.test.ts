@@ -89,7 +89,7 @@ describe('Table Isolation Contract Tests', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...toolsListRequest, id: 2 + i }),
-          })
+          }),
         )
 
         requests2.push(
@@ -97,7 +97,7 @@ describe('Table Isolation Contract Tests', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...toolsListRequest, id: 5 + i }),
-          })
+          }),
         )
       }
 
@@ -286,7 +286,7 @@ describe('Table Isolation Contract Tests', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...toolsListRequest, id: 14 + i }),
-          })
+          }),
         )
 
         concurrentRequests.push(
@@ -294,7 +294,7 @@ describe('Table Isolation Contract Tests', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...toolsListRequest, id: 19 + i }),
-          })
+          }),
         )
       }
 
@@ -333,7 +333,7 @@ describe('Table Isolation Contract Tests', () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...toolsListRequest, id: 30 + i }),
-          })
+          }),
         )
       }
 

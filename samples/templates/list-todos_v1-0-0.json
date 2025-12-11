@@ -16,7 +16,12 @@
   "variablesSchema": {
     "limit": { "type": "Int", "required": false, "default": 20, "description": "페이지당 항목 수 (최대 100)" },
     "offset": { "type": "Int", "required": false, "default": 0, "description": "건너뛸 항목 수" },
-    "status": { "type": "String", "required": false, "description": "필터링할 상태 (비워두면 전체 조회)", "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] }
+    "status": {
+      "type": "String",
+      "required": false,
+      "description": "필터링할 상태 (비워두면 전체 조회)",
+      "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"]
+    }
   },
   "version": "1.0.0"
 }

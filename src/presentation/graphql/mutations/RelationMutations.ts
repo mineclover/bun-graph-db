@@ -15,11 +15,7 @@ import type { INodeRelationRepository } from '@/domain/repositories/INodeRelatio
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
-import {
-  ConflictException,
-  NotFoundException,
-  ValidationException,
-} from '@/shared/exceptions/DomainException.js'
+import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export class RelationMutations extends BaseResolver {
   protected logger: ILogger
@@ -29,17 +25,13 @@ export class RelationMutations extends BaseResolver {
     private readonly createRelationTypeUseCase: CreateRelationTypeUseCase,
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
   }
 
-  async createRelationType(
-    _: GraphQLParent,
-    args: CreateRelationTypeArgs,
-    _context?: GraphQLContext
-  ) {
+  async createRelationType(_: GraphQLParent, args: CreateRelationTypeArgs, _context?: GraphQLContext) {
     try {
       this.validateArgs(
         args as any,
@@ -50,7 +42,7 @@ export class RelationMutations extends BaseResolver {
           BaseResolver.validationRules.nonEmpty('input.identifier', 'Relation type identifier'),
           BaseResolver.validationRules.nonEmpty('input.name', 'Relation type name'),
         ],
-        'createRelationType'
+        'createRelationType',
       )
 
       this.logger.info('Executing mutation: createRelationType', { input: args.input })
@@ -101,7 +93,7 @@ export class RelationMutations extends BaseResolver {
           BaseResolver.validationRules.nonEmpty('input.targetNodeId', 'Target node ID'),
           BaseResolver.validationRules.nonEmpty('input.relationTypeId', 'Relation type ID'),
         ],
-        'createRelation'
+        'createRelation',
       )
 
       this.logger.info('Executing mutation: createRelation', { input: args.input })
@@ -177,11 +169,7 @@ export class RelationMutations extends BaseResolver {
     }
   }
 
-  async updateRelationType(
-    _: GraphQLParent,
-    args: MutationUpdateRelationTypeArgs,
-    _context?: GraphQLContext
-  ) {
+  async updateRelationType(_: GraphQLParent, args: MutationUpdateRelationTypeArgs, _context?: GraphQLContext) {
     try {
       this.validateArgs(
         args as any,
@@ -190,7 +178,7 @@ export class RelationMutations extends BaseResolver {
           BaseResolver.validationRules.required('input', 'Update relation type input'),
           BaseResolver.validationRules.nonEmpty('id', 'Relation type ID'),
         ],
-        'updateRelationType'
+        'updateRelationType',
       )
 
       this.logger.info('Executing mutation: updateRelationType', { id: args.id, input: args.input })
@@ -204,12 +192,10 @@ export class RelationMutations extends BaseResolver {
       const updatedRelationType = RelationType.fromDatabase(
         existingRelationType.getId()!,
         existingRelationType.getIdentifier(),
-        args.input.description !== undefined
-          ? args.input.description
-          : existingRelationType.getDescription(),
+        args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
         args.input.name || existingRelationType.getCategory(),
         existingRelationType.getCreatedAt(),
-        new Date() // Update timestamp
+        new Date(), // Update timestamp
       )
 
       await this.relationTypeRepository.update(updatedRelationType)
@@ -273,11 +259,7 @@ export class RelationMutations extends BaseResolver {
     }
   }
 
-  async deleteRelationType(
-    _: GraphQLParent,
-    args: MutationDeleteRelationTypeArgs,
-    _context?: GraphQLContext
-  ) {
+  async deleteRelationType(_: GraphQLParent, args: MutationDeleteRelationTypeArgs, _context?: GraphQLContext) {
     try {
       this.validateArgs(
         args as any,
@@ -285,7 +267,7 @@ export class RelationMutations extends BaseResolver {
           BaseResolver.validationRules.required('id', 'Relation type ID'),
           BaseResolver.validationRules.nonEmpty('id', 'Relation type ID'),
         ],
-        'deleteRelationType'
+        'deleteRelationType',
       )
 
       this.logger.info('Executing mutation: deleteRelationType', { id: args.id })
@@ -338,7 +320,7 @@ export class RelationMutations extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Relation ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Relation ID'),
       ],
-      'deleteRelation'
+      'deleteRelation',
     )
 
     return this.handleMutation(
@@ -353,7 +335,7 @@ export class RelationMutations extends BaseResolver {
         return true
       },
       'deleteRelation',
-      { id: args.id }
+      { id: args.id },
     )
   }
 }

@@ -28,13 +28,7 @@ describe('CreateTableUseCase', () => {
     mockTableRepository = {
       save: mock(async (table: Table) => {
         // Return a properly constructed table using fromDatabase
-        return Table.fromDatabase(
-          'table-1',
-          table.identifier,
-          table.description || null,
-          new Date(),
-          new Date()
-        ) as any
+        return Table.fromDatabase('table-1', table.identifier, table.description || null, new Date(), new Date()) as any
       }),
       findById: mock(async () => null),
       findByIdentifier: mock(async () => null),
@@ -102,7 +96,7 @@ describe('CreateTableUseCase', () => {
       mockTableRepository,
       mockQueryTemplateRepository,
       mockAttributeRepository,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -155,20 +149,12 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      const existingTable = Table.fromDatabase(
-        'table-1',
-        'existing-table',
-        'Existing Table',
-        new Date(),
-        new Date()
-      )
+      const existingTable = Table.fromDatabase('table-1', 'existing-table', 'Existing Table', new Date(), new Date())
 
       mockTableRepository.findByIdentifier = mock(async () => existingTable as any)
 
       await expect(useCase.execute(input)).rejects.toThrow(ConflictException)
-      await expect(useCase.execute(input)).rejects.toThrow(
-        "Table with identifier 'existing-table' already exists"
-      )
+      await expect(useCase.execute(input)).rejects.toThrow("Table with identifier 'existing-table' already exists")
       expect(mockTableRepository.findByIdentifier).toHaveBeenCalledWith('existing-table')
     })
 
@@ -253,13 +239,10 @@ describe('CreateTableUseCase', () => {
       const result = await useCase.execute(input)
 
       expect(result.table).toBeDefined()
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Auto-generated templates created successfully',
-        {
-          tableId: 'table-1',
-          identifier: 'test-table',
-        }
-      )
+      expect(mockLogger.info).toHaveBeenCalledWith('Auto-generated templates created successfully', {
+        tableId: 'table-1',
+        identifier: 'test-table',
+      })
     })
 
     it('should not fail table creation when template generation fails', async () => {
@@ -353,7 +336,7 @@ describe('CreateTableUseCase', () => {
         expect.objectContaining({
           identifier: 'test-table',
           description: 'Test Description',
-        })
+        }),
       )
     })
   })

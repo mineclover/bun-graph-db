@@ -61,7 +61,7 @@ global.fetch = mock(() =>
           },
         },
       }),
-  })
+  }),
 )
 
 // Mock node:fs/promises and node:path for file operations
@@ -325,7 +325,7 @@ const mockCreateAttributeUseCase = {
         name: 'Test Attribute',
         attributeTypeId: '1',
       },
-    })
+    }),
   ),
 }
 
@@ -343,7 +343,7 @@ const mockNodeAttributeRepository = {
       getNodeId: () => nodeId || 'node-123',
       getAttributeId: () => attributeId || 'attr-123',
       getValue: () => value || 'test-value',
-    })
+    }),
   ),
   findByNodeId: mock(() =>
     Promise.resolve([
@@ -353,7 +353,7 @@ const mockNodeAttributeRepository = {
         getAttributeId: () => 'attr-123',
         getValue: () => 'test-value',
       },
-    ])
+    ]),
   ),
 }
 
@@ -365,7 +365,7 @@ describe('AttributeApiController Unit Tests', () => {
       mockCreateAttributeUseCase as any,
       mockAttributeRepository as any,
       mockNodeAttributeRepository as any,
-      mockLogger as any
+      mockLogger as any,
     )
     // Clear all mocks
     mockLogger.debug.mockClear()
@@ -531,7 +531,7 @@ const mockGetTableDocsUseCase = {
         nodes: [],
         relationships: [],
       },
-    })
+    }),
   ),
 }
 
@@ -540,7 +540,7 @@ const mockSearchNodesUseCase = {
     Promise.resolve({
       nodes: [],
       totalCount: 0,
-    })
+    }),
   ),
 }
 
@@ -565,7 +565,7 @@ const mockSearchRelatedNodesUseCase = {
         },
       ],
       totalCount: 1,
-    })
+    }),
   ),
 }
 
@@ -583,7 +583,7 @@ const mockTableRepository = {
       ],
       total: 1,
       hasMore: false,
-    })
+    }),
   ),
   findById: mock(() => Promise.resolve(null)),
 }
@@ -601,7 +601,7 @@ const mockNodeRelationRepository = {
         title: 'Target Node',
         content: 'Target node content',
       },
-    ])
+    ]),
   ),
   findConnectedNodes: mock(() => Promise.resolve([])),
 }
@@ -617,7 +617,7 @@ describe('GraphApiController Unit Tests', () => {
       mockSearchRelatedNodesUseCase as any,
       mockTableRepository as any,
       mockNodeRelationRepository as any,
-      4000
+      4000,
     )
     // Clear all mocks
     mockLogger.debug.mockClear()
@@ -825,7 +825,7 @@ describe('Controller Response Format Consistency', () => {
         mockCreateAttributeUseCase as any,
         mockAttributeRepository as any,
         mockNodeAttributeRepository as any,
-        mockLogger as any
+        mockLogger as any,
       ),
       new GraphApiController(
         mockLogger as any,
@@ -833,7 +833,7 @@ describe('Controller Response Format Consistency', () => {
         mockSearchNodesUseCase as any,
         mockSearchRelatedNodesUseCase as any,
         mockTableRepository as any,
-        mockNodeRelationRepository as any
+        mockNodeRelationRepository as any,
       ),
     ]
 
@@ -860,7 +860,7 @@ describe('Controller Response Format Consistency', () => {
         expect.objectContaining({
           success: true,
           data: expect.any(Object),
-        })
+        }),
       )
     }
   })
@@ -880,7 +880,7 @@ describe('Controller Response Format Consistency', () => {
       expect.objectContaining({
         success: false,
         error: expect.any(String),
-      })
+      }),
     )
     expect(res.status).toHaveBeenCalledWith(400)
   })

@@ -70,13 +70,7 @@ export class SqliteRelationTypeRepository
     `
 
     try {
-      const result = this.db.run(query, [
-        data.identifier,
-        data.description,
-        data.category,
-        data.updated_at,
-        data.id,
-      ])
+      const result = this.db.run(query, [data.identifier, data.description, data.category, data.updated_at, data.id])
 
       if (result.changes === 0) {
         throw new DatabaseException(`RelationType with id ${data.id} not found for update`)
@@ -97,7 +91,7 @@ export class SqliteRelationTypeRepository
       row.description,
       row.category,
       new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.updated_at),
     )
   }
 
@@ -113,13 +107,7 @@ export class SqliteRelationTypeRepository
     try {
       for (const relationType of relationTypes) {
         const data = relationType.toDatabase()
-        this.db.run(query, [
-          data.identifier,
-          data.description,
-          data.category,
-          data.created_at,
-          data.updated_at,
-        ])
+        this.db.run(query, [data.identifier, data.description, data.category, data.created_at, data.updated_at])
       }
     } catch (error) {
       throw new DatabaseException(`Failed to save multiple relation types: ${error}`)

@@ -5,11 +5,7 @@
  */
 
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type {
-  TemplateExportFormat,
-  TemplateImportOptions,
-  TemplateImportResult,
-} from '@/core/types/TemplateExport.js'
+import type { TemplateExportFormat, TemplateImportOptions, TemplateImportResult } from '@/core/types/TemplateExport.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
@@ -25,7 +21,7 @@ export class ImportTemplateUseCase {
 
   constructor(
     readonly templateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {
     this.importExportService = new TemplateImportExportService(templateRepository)
   }

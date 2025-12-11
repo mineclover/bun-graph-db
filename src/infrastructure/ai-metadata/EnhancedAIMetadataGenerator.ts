@@ -8,10 +8,7 @@ export class EnhancedAIMetadataGenerator {
   private schemaIntrospector: GraphQLSchemaIntrospector
   private tableAttributeProvider: TableAttributeProvider
 
-  constructor(
-    schemaIntrospector: GraphQLSchemaIntrospector,
-    tableAttributeProvider: TableAttributeProvider
-  ) {
+  constructor(schemaIntrospector: GraphQLSchemaIntrospector, tableAttributeProvider: TableAttributeProvider) {
     this.schemaIntrospector = schemaIntrospector
     this.tableAttributeProvider = tableAttributeProvider
   }
@@ -20,13 +17,12 @@ export class EnhancedAIMetadataGenerator {
    * Generate enhanced AI metadata with real schema integration
    */
   async generateEnhancedMetadata(tableId: string): Promise<EnhancedAIMetadata> {
-    const [schemaIntrospection, queryPatterns, tableAttributes, workingExamples] =
-      await Promise.all([
-        this.schemaIntrospector.getSchemaIntrospection(),
-        this.schemaIntrospector.getQueryPatterns(),
-        this.tableAttributeProvider.getTableAttributes(tableId),
-        this.generateWorkingExamples(tableId),
-      ])
+    const [schemaIntrospection, queryPatterns, tableAttributes, workingExamples] = await Promise.all([
+      this.schemaIntrospector.getSchemaIntrospection(),
+      this.schemaIntrospector.getQueryPatterns(),
+      this.tableAttributeProvider.getTableAttributes(tableId),
+      this.generateWorkingExamples(tableId),
+    ])
 
     return {
       schemaInfo: {
@@ -80,10 +76,7 @@ export class EnhancedAIMetadataGenerator {
   /**
    * Generate common queries with actual schema compliance
    */
-  private generateValidCommonQueries(
-    queryPatterns: QueryPattern[],
-    tableAttributes: TableAttribute[]
-  ): CommonQuery[] {
+  private generateValidCommonQueries(queryPatterns: QueryPattern[], tableAttributes: TableAttribute[]): CommonQuery[] {
     const queries: CommonQuery[] = []
 
     // Basic node search (schema-compliant)
@@ -162,7 +155,7 @@ export class EnhancedAIMetadataGenerator {
    */
   private async generateTemplateRecommendations(
     tableId: string,
-    queryPatterns: QueryPattern[]
+    queryPatterns: QueryPattern[],
   ): Promise<TemplateRecommendation[]> {
     const recommendations: TemplateRecommendation[] = []
 
@@ -200,9 +193,7 @@ export class EnhancedAIMetadataGenerator {
   /**
    * Extract actual GraphQL parameters from schema patterns
    */
-  private extractActualParameters(
-    queryPatterns: QueryPattern[]
-  ): Record<string, ParameterDefinition[]> {
+  private extractActualParameters(queryPatterns: QueryPattern[]): Record<string, ParameterDefinition[]> {
     const parameters: Record<string, ParameterDefinition[]> = {}
 
     queryPatterns.forEach((pattern) => {
@@ -221,10 +212,7 @@ export class EnhancedAIMetadataGenerator {
   /**
    * Generate schema-compliant examples for each operation
    */
-  private generateSchemaCompliantExamples(
-    queryPatterns: QueryPattern[],
-    _tableId: string
-  ): Record<string, string> {
+  private generateSchemaCompliantExamples(queryPatterns: QueryPattern[], _tableId: string): Record<string, string> {
     const examples: Record<string, string> = {}
 
     queryPatterns.forEach((pattern) => {
@@ -260,20 +248,12 @@ export class EnhancedAIMetadataGenerator {
 
   private extractSearchableFields(attributes: TableAttribute[]): string[] {
     // For now, assume all string fields are searchable
-    return attributes
-      .filter((attr) => attr.attributeType.dataType === 'string')
-      .map((attr) => attr.identifier)
+    return attributes.filter((attr) => attr.attributeType.dataType === 'string').map((attr) => attr.identifier)
   }
 
-  private assessComplexity(
-    attributes: TableAttribute[],
-    patterns: QueryPattern[]
-  ): 'simple' | 'moderate' | 'complex' {
-    const attributeComplexity =
-      attributes.length > 5 ? 'high' : attributes.length > 2 ? 'medium' : 'simple'
-    const patternComplexity = patterns.some((p) => p.complexity === 'complex')
-      ? 'complex'
-      : 'medium'
+  private assessComplexity(attributes: TableAttribute[], patterns: QueryPattern[]): 'simple' | 'moderate' | 'complex' {
+    const attributeComplexity = attributes.length > 5 ? 'high' : attributes.length > 2 ? 'medium' : 'simple'
+    const patternComplexity = patterns.some((p) => p.complexity === 'complex') ? 'complex' : 'medium'
 
     if (attributeComplexity === 'high' || patternComplexity === 'complex') return 'complex'
     if (attributeComplexity === 'medium' || patternComplexity === 'medium') return 'moderate'

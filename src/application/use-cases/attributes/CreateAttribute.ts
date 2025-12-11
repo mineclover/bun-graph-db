@@ -1,7 +1,4 @@
-import type {
-  CreateAttributeInput,
-  CreateAttributeOutput,
-} from '@/application/dtos/AttributeDto.js'
+import type { CreateAttributeInput, CreateAttributeOutput } from '@/application/dtos/AttributeDto.js'
 import { fromEntity as attributeFromEntity } from '@/application/dtos/AttributeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { TableTemplateAutoGenerator } from '@/application/services/TableTemplateAutoGenerator.js'
@@ -12,11 +9,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import {
-  ConflictException,
-  NotFoundException,
-  ValidationException,
-} from '@/shared/exceptions/DomainException.js'
+import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export class CreateAttributeUseCase {
   private readonly templateAutoGenerator: TableTemplateAutoGenerator
@@ -26,12 +19,12 @@ export class CreateAttributeUseCase {
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly tableRepository: ITableRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {
     this.templateAutoGenerator = new TableTemplateAutoGenerator(
       this.queryTemplateRepository,
       this.attributeRepository,
-      this.logger
+      this.logger,
     )
   }
 
@@ -61,9 +54,7 @@ export class CreateAttributeUseCase {
     }
 
     // Check if attribute type exists
-    const attributeType = await this.attributeTypeRepository.findById(
-      input.attributeTypeId as AttributeTypeId
-    )
+    const attributeType = await this.attributeTypeRepository.findById(input.attributeTypeId as AttributeTypeId)
     if (!attributeType) {
       throw new NotFoundException(`Attribute type with id '${input.attributeTypeId}' not found`)
     }
@@ -71,11 +62,11 @@ export class CreateAttributeUseCase {
     // Check if attribute already exists for this table
     const existingAttribute = await this.attributeRepository.findByTableIdAndIdentifier(
       input.tableId as TableId,
-      input.identifier
+      input.identifier,
     )
     if (existingAttribute) {
       throw new ConflictException(
-        `Attribute with identifier '${input.identifier}' already exists for table '${table.identifier}'`
+        `Attribute with identifier '${input.identifier}' already exists for table '${table.identifier}'`,
       )
     }
 
@@ -91,7 +82,7 @@ export class CreateAttributeUseCase {
         input.name,
         input.description,
         input.isRequired || false,
-        metadataJson
+        metadataJson,
       )
 
       // Save to repository
@@ -100,7 +91,7 @@ export class CreateAttributeUseCase {
       // Retrieve the saved attribute with the generated ID
       const savedAttribute = await this.attributeRepository.findByTableIdAndIdentifier(
         input.tableId as TableId,
-        input.identifier
+        input.identifier,
       )
       if (!savedAttribute) {
         console.error('CRITICAL: Failed to retrieve saved attribute after creation:', {
@@ -128,15 +119,11 @@ export class CreateAttributeUseCase {
 
       // Auto-generate attribute-specific template
       try {
-        const templates = await this.templateAutoGenerator.generateTemplatesForTable(
-          table.id,
-          table.identifier
-        )
+        const templates = await this.templateAutoGenerator.generateTemplatesForTable(table.id, table.identifier)
 
         // Find and create only the attribute-specific template
         const attributeTemplate = templates.find(
-          (t) =>
-            t.templateType === 'attribute' && t.identifier.includes(savedAttribute.getIdentifier())
+          (t) => t.templateType === 'attribute' && t.identifier.includes(savedAttribute.getIdentifier()),
         )
 
         if (attributeTemplate) {
@@ -149,7 +136,7 @@ export class CreateAttributeUseCase {
               description: attributeTemplate.description,
               applicableTables: [table.identifier],
               version: '1.0.0',
-            }
+            },
           )
           await this.queryTemplateRepository.create(queryTemplate)
 
@@ -159,14 +146,11 @@ export class CreateAttributeUseCase {
           })
         }
       } catch (error) {
-        this.logger.warn(
-          'Failed to auto-generate attribute template, but attribute creation succeeded',
-          {
-            attributeId: savedAttribute.getId(),
-            identifier: savedAttribute.getIdentifier(),
-            error: error instanceof Error ? error.message : String(error),
-          }
-        )
+        this.logger.warn('Failed to auto-generate attribute template, but attribute creation succeeded', {
+          attributeId: savedAttribute.getId(),
+          identifier: savedAttribute.getIdentifier(),
+          error: error instanceof Error ? error.message : String(error),
+        })
         // Don't fail attribute creation if template generation fails
       }
 

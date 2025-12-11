@@ -38,7 +38,7 @@ export class SqliteQueryTemplateRepository
 {
   constructor(
     db: Database,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {
     super(db)
   }
@@ -174,8 +174,8 @@ export class SqliteQueryTemplateRepository
           Boolean(row.is_active),
           row.tags,
           row.created_at,
-          row.updated_at
-        )
+          row.updated_at,
+        ),
       )
 
       return {
@@ -201,9 +201,7 @@ export class SqliteQueryTemplateRepository
       const searchPattern = `%"${queryName}"%`
       const queryTextPattern = `%${queryName}%`
 
-      const rows = this.db
-        .query<QueryTemplateRow, [string, string]>(query)
-        .all(searchPattern, queryTextPattern)
+      const rows = this.db.query<QueryTemplateRow, [string, string]>(query).all(searchPattern, queryTextPattern)
 
       return rows.map((row) =>
         QueryTemplate.fromDatabase(
@@ -226,8 +224,8 @@ export class SqliteQueryTemplateRepository
           Boolean(row.is_active),
           row.tags,
           row.created_at,
-          row.updated_at
-        )
+          row.updated_at,
+        ),
       )
     } catch (error) {
       this.logger.error('Failed to search templates by query name', {
@@ -271,8 +269,8 @@ export class SqliteQueryTemplateRepository
           Boolean(row.is_active),
           row.tags,
           row.created_at,
-          row.updated_at
-        )
+          row.updated_at,
+        ),
       )
     } catch (error) {
       this.logger.error('Failed to search templates by operation type', {
@@ -337,7 +335,7 @@ export class SqliteQueryTemplateRepository
         data.is_active,
         data.tags,
         data.created_at,
-        data.updated_at
+        data.updated_at,
       )
     } catch (error) {
       this.logger.error('Failed to create template', { template, ...toErrorMeta(error) })
@@ -373,7 +371,7 @@ export class SqliteQueryTemplateRepository
         updates.isActive ?? existing.getIsActive(),
         updates.tags ?? existing.getTags(),
         existing.getCreatedAt(),
-        new Date()
+        new Date(),
       )
 
       const data = updatedTemplate.toDatabase()
@@ -415,7 +413,7 @@ export class SqliteQueryTemplateRepository
         data.version,
         data.is_active,
         data.tags,
-        id
+        id,
       )
 
       // Return the updated template by querying from database to ensure consistency
@@ -518,10 +516,7 @@ export class SqliteQueryTemplateRepository
     }
   }
 
-  async findByApplicableTable(
-    tableName: string,
-    includeUniversal: boolean = true
-  ): Promise<QueryTemplate[]> {
+  async findByApplicableTable(tableName: string, includeUniversal: boolean = true): Promise<QueryTemplate[]> {
     try {
       let query = `
         SELECT * FROM templates
@@ -558,8 +553,8 @@ export class SqliteQueryTemplateRepository
           row.is_active === 1,
           row.tags,
           row.created_at,
-          row.updated_at
-        )
+          row.updated_at,
+        ),
       )
     } catch (error) {
       this.logger?.error('Error finding templates by applicable table:', error as any)
@@ -600,8 +595,8 @@ export class SqliteQueryTemplateRepository
           row.is_active === 1,
           row.tags,
           row.created_at,
-          row.updated_at
-        )
+          row.updated_at,
+        ),
       )
     } catch (error) {
       this.logger?.error('Error finding templates with table dependencies:', error as any)
@@ -640,8 +635,8 @@ export class SqliteQueryTemplateRepository
           Boolean(row.is_active),
           row.tags,
           row.created_at,
-          row.updated_at
-        )
+          row.updated_at,
+        ),
       )
     } catch (error) {
       this.logger.error('Failed to find popular templates', { limit, ...toErrorMeta(error) })
@@ -706,7 +701,7 @@ export class SqliteQueryTemplateRepository
       Boolean(row.is_active),
       row.tags,
       row.created_at,
-      row.updated_at
+      row.updated_at,
     )
   }
 }

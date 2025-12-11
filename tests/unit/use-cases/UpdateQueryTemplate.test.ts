@@ -14,7 +14,7 @@ function createTestTemplate(
   identifier: string = 'test-template',
   name: string = 'Test Template',
   queryText: string = 'query { test }',
-  tags: string[] = ['test']
+  tags: string[] = ['test'],
 ): QueryTemplate {
   return QueryTemplate.fromDatabase(
     id,
@@ -36,7 +36,7 @@ function createTestTemplate(
     true, // isActive
     JSON.stringify(tags), // tags stored as JSON string
     new Date().toISOString(),
-    new Date().toISOString()
+    new Date().toISOString(),
   )
 }
 
@@ -120,9 +120,7 @@ describe('UpdateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(request)).rejects.toThrow(
-        'Template type must be query, mutation, or subscription'
-      )
+      await expect(useCase.execute(request)).rejects.toThrow('Template type must be query, mutation, or subscription')
     })
 
     it('should throw ValidationException when complexityScore is less than 1', async () => {
@@ -135,9 +133,7 @@ describe('UpdateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(request)).rejects.toThrow(
-        'Complexity score must be between 1 and 10'
-      )
+      await expect(useCase.execute(request)).rejects.toThrow('Complexity score must be between 1 and 10')
     })
 
     it('should throw ValidationException when complexityScore is greater than 10', async () => {
@@ -150,9 +146,7 @@ describe('UpdateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(request)).rejects.toThrow(
-        'Complexity score must be between 1 and 10'
-      )
+      await expect(useCase.execute(request)).rejects.toThrow('Complexity score must be between 1 and 10')
     })
 
     it('should throw ValidationException when tags array is empty', async () => {
@@ -223,7 +217,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           name: 'Updated Name',
-        })
+        }),
       )
     })
 
@@ -244,7 +238,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           description: 'New description',
-        })
+        }),
       )
     })
 
@@ -265,7 +259,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           queryText: 'query { newQuery }',
-        })
+        }),
       )
     })
 
@@ -291,7 +285,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           inputSchema: expect.any(Object),
-        })
+        }),
       )
     })
 
@@ -312,7 +306,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           defaultVariables: { limit: 10, offset: 0 },
-        })
+        }),
       )
     })
 
@@ -333,7 +327,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           applicableTables: ['users', 'products'],
-        })
+        }),
       )
     })
 
@@ -354,7 +348,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           templateType: 'mutation',
-        })
+        }),
       )
     })
 
@@ -375,7 +369,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           complexityScore: 8,
-        })
+        }),
       )
     })
 
@@ -396,7 +390,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           version: '2.0.0',
-        })
+        }),
       )
     })
 
@@ -417,7 +411,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           isActive: false,
-        })
+        }),
       )
     })
 
@@ -438,7 +432,7 @@ describe('UpdateQueryTemplate', () => {
         'template-1',
         expect.objectContaining({
           tags: ['updated', 'new-tags'],
-        })
+        }),
       )
     })
 
@@ -465,7 +459,7 @@ describe('UpdateQueryTemplate', () => {
           description: 'Updated with multiple fields',
           complexityScore: 7,
           tags: ['multi', 'update'],
-        })
+        }),
       )
     })
   })
@@ -535,10 +529,7 @@ describe('UpdateQueryTemplate', () => {
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
       await expect(useCase.execute(request)).rejects.toThrow('Failed to update query template')
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to update query template',
-        expect.any(Object)
-      )
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to update query template', expect.any(Object))
     })
   })
 
@@ -561,14 +552,14 @@ describe('UpdateQueryTemplate', () => {
         'Updating query template',
         expect.objectContaining({
           id: 'template-123',
-        })
+        }),
       )
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Query template updated successfully',
         expect.objectContaining({
           id: 'template-123',
           identifier: 'test-identifier',
-        })
+        }),
       )
     })
   })

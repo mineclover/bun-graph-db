@@ -1,9 +1,5 @@
-import crypto from 'crypto'
-import type {
-  EnhancedSortOption,
-  MultiCriteriaSortResult,
-  SortContext,
-} from '@/domain/value-objects/SortStrategy.js'
+import crypto from 'node:crypto'
+import type { EnhancedSortOption, MultiCriteriaSortResult, SortContext } from '@/domain/value-objects/SortStrategy.js'
 import type { ComplexityMetrics } from './SortComplexityAnalyzer.js'
 
 /**
@@ -83,7 +79,7 @@ export class SortResultCache {
   generateCacheKey(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    additionalParams: Record<string, any> = {}
+    additionalParams: Record<string, any> = {},
   ): string {
     // Create normalized sort key components
     const sortKey = this.normalizeSortOptions(sortOptions)
@@ -202,8 +198,7 @@ export class SortResultCache {
     const complexityWeights = { low: 1, medium: 2, high: 3, extreme: 4 }
     const avgComplexityScore =
       entries.length > 0
-        ? entries.reduce((sum, entry) => sum + complexityWeights[entry.metadata.complexity], 0) /
-          entries.length
+        ? entries.reduce((sum, entry) => sum + complexityWeights[entry.metadata.complexity], 0) / entries.length
         : 0
 
     const avgComplexity =
@@ -217,8 +212,7 @@ export class SortResultCache {
 
     // Estimate memory usage
     const memoryUsage = entries.reduce((total, entry) => {
-      const entrySize =
-        JSON.stringify(entry.result).length + JSON.stringify(entry.metadata).length + 200 // overhead estimate
+      const entrySize = JSON.stringify(entry.result).length + JSON.stringify(entry.metadata).length + 200 // overhead estimate
       return total + entrySize
     }, 0)
 
@@ -324,7 +318,7 @@ export class SortResultCache {
           obj[key] = params[key]
           return obj
         },
-        {} as Record<string, any>
+        {} as Record<string, any>,
       )
 
     return JSON.stringify(sortedParams)
@@ -394,9 +388,7 @@ export class SortResultCache {
     }
 
     // LRU eviction: remove least recently used entries
-    const entries = Array.from(this.cache.entries()).sort(
-      (a, b) => a[1].lastAccess - b[1].lastAccess
-    )
+    const entries = Array.from(this.cache.entries()).sort((a, b) => a[1].lastAccess - b[1].lastAccess)
 
     const toRemove = Math.floor(this.config.maxEntries * 0.2) // Remove 20%
 

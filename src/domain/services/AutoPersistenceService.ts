@@ -7,8 +7,8 @@
  * - Write operations: Debounced auto-save after mutations
  */
 
-import { existsSync, readdirSync, statSync } from 'fs'
-import { join } from 'path'
+import { existsSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import type { JsonlBackupService } from './JsonlBackupService.js'
@@ -44,7 +44,7 @@ export class AutoPersistenceService {
   constructor(
     private readonly jsonlBackupService: JsonlBackupService,
     private readonly logger: ILogger,
-    config: Partial<AutoPersistenceConfig> = {}
+    config: Partial<AutoPersistenceConfig> = {},
   ) {
     this.config = { ...DEFAULT_CONFIG, ...config }
   }

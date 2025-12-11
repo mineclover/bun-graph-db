@@ -2,8 +2,8 @@
  * JSONL Backup GraphQL Queries
  */
 
-import { existsSync, readFileSync } from 'fs'
-import { join } from 'path'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { JsonlBackupManifest } from '@/core/types/JsonlBackup.js'
 import type { JsonlBackupService } from '@/domain/services/JsonlBackupService.js'
@@ -11,7 +11,7 @@ import type { JsonlBackupService } from '@/domain/services/JsonlBackupService.js
 export class JsonlBackupQueries {
   constructor(
     private readonly jsonlBackupService: JsonlBackupService,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -63,7 +63,7 @@ export class JsonlBackupQueries {
         includeSchema?: boolean
         prettyPrint?: boolean
       }
-    }
+    },
   ) {
     try {
       this.logger.info('Executing JSONL export', { input: args.input })
@@ -128,7 +128,7 @@ export class JsonlBackupQueries {
         validateSchema?: boolean
         dryRun?: boolean
       }
-    }
+    },
   ) {
     try {
       this.logger.info('Executing JSONL import', { input: args.input })
@@ -136,10 +136,7 @@ export class JsonlBackupQueries {
       const result = await this.jsonlBackupService.import({
         inputDir: args.input.inputDir,
         tableIdentifiers: args.input.tableIdentifiers,
-        conflictResolution: args.input.conflictResolution.toLowerCase() as
-          | 'skip'
-          | 'overwrite'
-          | 'merge',
+        conflictResolution: args.input.conflictResolution.toLowerCase() as 'skip' | 'overwrite' | 'merge',
         validateSchema: args.input.validateSchema,
         dryRun: args.input.dryRun,
       })

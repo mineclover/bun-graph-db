@@ -26,12 +26,10 @@ export interface TemplateExecutionStreamEvent {
 export class ExecuteTemplateWithSubscriptionUseCase {
   constructor(
     private readonly executeTemplateWithGraphQLUseCase: ExecuteTemplateWithGraphQLUseCase,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
-  async *execute(
-    input: ExecuteTemplateStreamInput
-  ): AsyncIterableIterator<TemplateExecutionStreamEvent> {
+  async *execute(input: ExecuteTemplateStreamInput): AsyncIterableIterator<TemplateExecutionStreamEvent> {
     const startTime = Date.now()
 
     this.logger.info('Starting template stream execution', {

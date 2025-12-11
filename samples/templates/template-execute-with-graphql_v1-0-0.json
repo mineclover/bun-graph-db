@@ -14,9 +14,7 @@
     "applicableTables": null,
     "complexityScore": 2,
     "version": "1.0.0",
-    "tags": [
-      "general"
-    ],
+    "tags": ["general"],
     "isActive": true,
     "statistics": {
       "usageCount": 1,

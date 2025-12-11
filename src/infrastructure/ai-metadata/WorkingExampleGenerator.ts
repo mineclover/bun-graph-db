@@ -15,7 +15,7 @@ export class WorkingExampleGenerator {
   constructor(
     schema: GraphQLSchema,
     schemaIntrospector: GraphQLSchemaIntrospector,
-    templateValidator: TemplateValidator
+    templateValidator: TemplateValidator,
   ) {
     this.schema = schema
     this.schemaIntrospector = schemaIntrospector
@@ -100,7 +100,7 @@ export class WorkingExampleGenerator {
       validationResults,
       totalTemplates: templates.length,
       validTemplates: templates.filter(
-        (template, _i) => template && validationResults[template.identifier]?.isValid === true
+        (template, _i) => template && validationResults[template.identifier]?.isValid === true,
       ).length,
     }
   }
@@ -209,10 +209,7 @@ export class WorkingExampleGenerator {
     return tableRelevantOperations.some((op) => pattern.operationName.includes(op))
   }
 
-  private async generateExampleFromPattern(
-    pattern: QueryPattern,
-    tableId: string
-  ): Promise<WorkingExample | null> {
+  private async generateExampleFromPattern(pattern: QueryPattern, tableId: string): Promise<WorkingExample | null> {
     try {
       const example: WorkingExample = {
         name: `${pattern.operationName} Example`,
@@ -474,10 +471,7 @@ ${JSON.stringify(example.variables, null, 2)}
 5. Expected result: ${example.expectedResult}`
   }
 
-  private generateDocumentationRecommendations(
-    examples: WorkingExample[],
-    testResults: BatchTestResult
-  ): string[] {
+  private generateDocumentationRecommendations(examples: WorkingExample[], testResults: BatchTestResult): string[] {
     const recommendations: string[] = []
 
     if (testResults.successRate < 0.8) {

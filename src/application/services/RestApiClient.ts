@@ -17,7 +17,7 @@ export class RestApiClient {
     method: string,
     endpoint: string,
     data?: any,
-    params?: Record<string, string>
+    params?: Record<string, string>,
   ): Promise<ApiResponse<T>> {
     try {
       let url = `${this.baseUrl}${endpoint}`
@@ -43,9 +43,7 @@ export class RestApiClient {
 
       if (!response.ok) {
         const text = await response.text()
-        console.error(
-          `REST API ${method} ${endpoint} error - Status: ${response.status}, Body: ${text}`
-        )
+        console.error(`REST API ${method} ${endpoint} error - Status: ${response.status}, Body: ${text}`)
         return {
           success: false,
           error: `HTTP ${response.status}: ${text}`,
@@ -95,7 +93,7 @@ export class RestApiClient {
   private prepareRequest(
     _toolName: string,
     endpoint: string,
-    params: any
+    params: any,
   ): {
     method: string
     path: string
@@ -145,11 +143,7 @@ export class RestApiClient {
     return this.makeRequest('GET', '/stats')
   }
 
-  async createTable(params: {
-    identifier: string
-    name?: string
-    description?: string
-  }): Promise<ApiResponse> {
+  async createTable(params: { identifier: string; name?: string; description?: string }): Promise<ApiResponse> {
     return this.makeRequest('POST', '/tables', params)
   }
 
@@ -160,19 +154,11 @@ export class RestApiClient {
     })
   }
 
-  async createNode(params: {
-    tableId: string
-    content: string
-    metadata?: any
-  }): Promise<ApiResponse> {
+  async createNode(params: { tableId: string; content: string; metadata?: any }): Promise<ApiResponse> {
     return this.makeRequest('POST', '/nodes', params)
   }
 
-  async searchNodes(params: {
-    tableId: string
-    search?: string
-    limit?: number
-  }): Promise<ApiResponse> {
+  async searchNodes(params: { tableId: string; search?: string; limit?: number }): Promise<ApiResponse> {
     return this.makeRequest('GET', '/nodes/search', undefined, {
       tableId: params.tableId,
       search: params.search || '',
@@ -199,10 +185,7 @@ export class RestApiClient {
     return this.makeRequest('POST', '/templates', params)
   }
 
-  async executeTemplateWithGraphQL(params: {
-    templateIdentifier: string
-    variables?: any
-  }): Promise<ApiResponse> {
+  async executeTemplateWithGraphQL(params: { templateIdentifier: string; variables?: any }): Promise<ApiResponse> {
     return this.makeRequest('POST', '/templates/execute', params)
   }
 

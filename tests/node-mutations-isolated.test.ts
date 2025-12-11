@@ -4,11 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import {
-  createRequestHelper,
-  startServerForSuite,
-  stopServerForSuite,
-} from './fixtures/test-graphql-server'
+import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'node-mutations-isolated'
 const TEST_TIMEOUT = 15000
@@ -543,7 +539,7 @@ describe('Node Mutations - Isolated Database Test Suite', () => {
               content: `Performance test node ${i}`,
               tableId: testTableId,
             },
-          })
+          }),
         )
       }
 

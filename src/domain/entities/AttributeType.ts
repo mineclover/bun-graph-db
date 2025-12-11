@@ -13,7 +13,7 @@ export class AttributeType {
     private readonly defaultValue: string | null,
     private readonly examples: string | null,
     private readonly createdAt: Date,
-    private readonly updatedAt: Date
+    private readonly updatedAt: Date,
   ) {
     this.validateIdentifier(identifier)
     this.validateJsonType(jsonType)
@@ -29,7 +29,7 @@ export class AttributeType {
     validationSchema?: string,
     referenceConfig?: string,
     defaultValue?: string,
-    examples?: string
+    examples?: string,
   ): AttributeType {
     return new AttributeType(
       null as any as AttributeTypeId,
@@ -42,7 +42,7 @@ export class AttributeType {
       defaultValue || null,
       examples || null,
       new Date(),
-      new Date()
+      new Date(),
     )
   }
 
@@ -57,7 +57,7 @@ export class AttributeType {
     defaultValue: string | null,
     examples: string | null,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
   ): AttributeType {
     return new AttributeType(
       id as AttributeTypeId,
@@ -70,7 +70,7 @@ export class AttributeType {
       defaultValue,
       examples,
       createdAt,
-      updatedAt
+      updatedAt,
     )
   }
 
@@ -84,7 +84,7 @@ export class AttributeType {
     if (!/^[a-z][a-z0-9_]*$/.test(identifier)) {
       throw new DomainException(
         'AttributeType identifier must start with lowercase letter and contain only lowercase letters, numbers, and underscores',
-        { code: 'DOMAIN_ERROR' }
+        { code: 'DOMAIN_ERROR' },
       )
     }
 

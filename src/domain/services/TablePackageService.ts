@@ -46,7 +46,7 @@ export class TablePackageService implements ITablePackageService {
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     private readonly logger: ILogger,
-    private readonly container: DIContainer
+    private readonly container: DIContainer,
   ) {
     // Initialize enhanced services
     this.enhancedDependencyAnalyzer = new EnhancedDependencyAnalyzer(
@@ -55,7 +55,7 @@ export class TablePackageService implements ITablePackageService {
       this.nodeRepository,
       this.nodeRelationRepository,
       this.queryTemplateRepository,
-      this.logger
+      this.logger,
     )
 
     this.enhancedTemplateGenerator = new EnhancedTemplateGenerator(
@@ -63,7 +63,7 @@ export class TablePackageService implements ITablePackageService {
       this.attributeRepository,
       this.attributeTypeRepository,
       this.queryTemplateRepository,
-      this.logger
+      this.logger,
     )
 
     this.schemaIntrospectionService = new SchemaIntrospectionService(this.container, this.logger)
@@ -71,7 +71,7 @@ export class TablePackageService implements ITablePackageService {
 
   async exportTable(
     tableIdentifier: string,
-    options: TablePackageExportOptions = {}
+    options: TablePackageExportOptions = {},
   ): Promise<TablePackageExportResult> {
     try {
       this.logger.info('Starting table export', { tableIdentifier, options })
@@ -98,9 +98,7 @@ export class TablePackageService implements ITablePackageService {
 
       // Export data if requested
       const dataset =
-        options.includeData !== false
-          ? await this.exportTableData(table.id)
-          : { nodes: [], nodeAttributes: [] }
+        options.includeData !== false ? await this.exportTableData(table.id) : { nodes: [], nodeAttributes: [] }
 
       // Export relations if requested
       const relations =
@@ -155,7 +153,7 @@ export class TablePackageService implements ITablePackageService {
 
   async exportRelatedTables(
     tableIdentifiers: string[],
-    options: TablePackageExportOptions = {}
+    options: TablePackageExportOptions = {},
   ): Promise<TablePackageExportResult[]> {
     const results: TablePackageExportResult[] = []
 
@@ -169,7 +167,7 @@ export class TablePackageService implements ITablePackageService {
 
   async importTablePackage(
     packageData: TablePackageFormat,
-    options: TablePackageImportOptions = { conflictResolution: 'skip' }
+    options: TablePackageImportOptions = { conflictResolution: 'skip' },
   ): Promise<TablePackageImportResult> {
     try {
       this.logger.info('Starting table package import', {
@@ -191,17 +189,10 @@ export class TablePackageService implements ITablePackageService {
       }
 
       // Handle conflicts based on resolution strategy
-      const resolvedIdentifier = await this.resolveTableNameConflict(
-        packageData.sourceTable.identifier,
-        options
-      )
+      const resolvedIdentifier = await this.resolveTableNameConflict(packageData.sourceTable.identifier, options)
 
       // Import schema (table, attributes, attribute types)
-      const importedTable = await this.importTableSchema(
-        packageData.package.schema,
-        resolvedIdentifier,
-        options
-      )
+      const importedTable = await this.importTableSchema(packageData.package.schema, resolvedIdentifier, options)
 
       // Import data if requested
       if (options.importData !== false) {
@@ -219,7 +210,7 @@ export class TablePackageService implements ITablePackageService {
         const importedTemplates = await this.importTableTemplates(
           packageData.package.templates,
           resolvedIdentifier,
-          options
+          options,
         )
         generatedTemplates.push(...importedTemplates)
       }
@@ -233,7 +224,7 @@ export class TablePackageService implements ITablePackageService {
               identifier: t.identifier,
               name: t.name,
               operationType: t.operationType,
-            }))
+            })),
           )
         }
       }
@@ -257,8 +248,7 @@ export class TablePackageService implements ITablePackageService {
             type: 'table',
             originalName: packageData.sourceTable.identifier,
             resolvedName: resolvedIdentifier,
-            action:
-              resolvedIdentifier !== packageData.sourceTable.identifier ? 'renamed' : 'overwritten',
+            action: resolvedIdentifier !== packageData.sourceTable.identifier ? 'renamed' : 'overwritten',
           },
         ],
         errors: [],
@@ -282,7 +272,7 @@ export class TablePackageService implements ITablePackageService {
 
   async importTablePackages(
     packages: TablePackageFormat[],
-    options: TablePackageImportOptions = { conflictResolution: 'skip' }
+    options: TablePackageImportOptions = { conflictResolution: 'skip' },
   ): Promise<TablePackageImportResult[]> {
     // Resolve import order based on dependencies
     const identifiers = packages.map((p) => p.sourceTable.identifier)
@@ -317,10 +307,7 @@ export class TablePackageService implements ITablePackageService {
     const circularReferences: string[] = []
 
     // Find templates that reference this table
-    const templates = await this.queryTemplateRepository.findByApplicableTable(
-      tableIdentifier,
-      true
-    )
+    const templates = await this.queryTemplateRepository.findByApplicableTable(tableIdentifier, true)
 
     // Extract table references from template queries
     for (const template of templates) {
@@ -349,7 +336,7 @@ export class TablePackageService implements ITablePackageService {
       const depInfo = await this.analyzeDependencies(identifier)
       dependencies.set(
         identifier,
-        depInfo.dependencies.filter((d) => tableIdentifiers.includes(d))
+        depInfo.dependencies.filter((d) => tableIdentifiers.includes(d)),
       )
     }
 
@@ -385,14 +372,12 @@ export class TablePackageService implements ITablePackageService {
 
   async validatePackage(
     packageData: TablePackageFormat,
-    options: TablePackageImportOptions = { conflictResolution: 'skip' }
+    options: TablePackageImportOptions = { conflictResolution: 'skip' },
   ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Check if table already exists
-    const existingTable = await this.tableRepository.findByIdentifier(
-      packageData.sourceTable.identifier
-    )
+    const existingTable = await this.tableRepository.findByIdentifier(packageData.sourceTable.identifier)
 
     if (existingTable && options.conflictResolution === 'skip') {
       conflicts.push({
@@ -485,9 +470,7 @@ export class TablePackageService implements ITablePackageService {
       this.logger.info('Import session rollback completed', { sessionId })
     } catch (error) {
       this.logger.error('Import session rollback failed', { sessionId, ...toErrorMeta(error) })
-      session.errors.push(
-        `Rollback failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      session.errors.push(`Rollback failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       throw error
     }
   }
@@ -501,7 +484,7 @@ export class TablePackageService implements ITablePackageService {
       includeDelete?: boolean
       includeSearch?: boolean
       includeBatch?: boolean
-    } = {}
+    } = {},
   ): Promise<{
     success: boolean
     templates: Array<{
@@ -538,7 +521,7 @@ export class TablePackageService implements ITablePackageService {
       includeDelete?: boolean
       includeSearch?: boolean
       includeBatch?: boolean
-    } = {}
+    } = {},
   ): Promise<{
     success: boolean
     templates: Array<{
@@ -693,13 +676,13 @@ export class TablePackageService implements ITablePackageService {
               description: `Auto-generated ${template.operationType} template for ${tableIdentifier} table`,
               complexityScore: 2,
               applicableTables: [tableIdentifier],
-            }
+            },
           )
 
           await this.queryTemplateRepository.create(queryTemplate)
         } catch (error) {
           errors.push(
-            `Failed to create template '${template.identifier}': ${error instanceof Error ? error.message : 'Unknown error'}`
+            `Failed to create template '${template.identifier}': ${error instanceof Error ? error.message : 'Unknown error'}`,
           )
         }
       }
@@ -732,9 +715,7 @@ export class TablePackageService implements ITablePackageService {
 
     // Get all attribute types used by these attributes
     const attributeTypeIds = [...new Set(attributes.map((attr) => attr.getAttributeTypeId()))]
-    const attributeTypes = await Promise.all(
-      attributeTypeIds.map((id) => this.attributeTypeRepository.findById(id))
-    )
+    const attributeTypes = await Promise.all(attributeTypeIds.map((id) => this.attributeTypeRepository.findById(id)))
 
     return {
       table: {
@@ -753,14 +734,14 @@ export class TablePackageService implements ITablePackageService {
         updatedAt: attr.getUpdatedAt().toISOString(),
       })),
       attributeTypes: attributeTypes.filter(Boolean).map((attrType) => ({
-        id: attrType!.getId() as string,
-        identifier: attrType!.getIdentifier(),
-        description: attrType!.getDescription(),
-        dataType: attrType!.getJsonType(),
-        validation: attrType!.getValidationSchema(),
+        id: attrType?.getId() as string,
+        identifier: attrType?.getIdentifier(),
+        description: attrType?.getDescription(),
+        dataType: attrType?.getJsonType(),
+        validation: attrType?.getValidationSchema(),
         metadata: null,
-        createdAt: attrType!.getCreatedAt().toISOString(),
-        updatedAt: attrType!.getUpdatedAt().toISOString(),
+        createdAt: attrType?.getCreatedAt().toISOString(),
+        updatedAt: attrType?.getUpdatedAt().toISOString(),
       })),
     }
   }
@@ -772,9 +753,7 @@ export class TablePackageService implements ITablePackageService {
 
     // Get all node attributes for these nodes
     const nodeIds = nodes.map((node) => node.getId())
-    const nodeAttributes = await Promise.all(
-      nodeIds.map((nodeId) => this.nodeAttributeRepository.findByNodeId(nodeId))
-    )
+    const nodeAttributes = await Promise.all(nodeIds.map((nodeId) => this.nodeAttributeRepository.findByNodeId(nodeId)))
     const flatNodeAttributes = nodeAttributes.flat()
 
     return {
@@ -811,24 +790,22 @@ export class TablePackageService implements ITablePackageService {
         const outgoing = await this.nodeRelationRepository.findBySourceNodeId(nodeId)
         const incoming = await this.nodeRelationRepository.findByTargetNodeId(nodeId)
         return [...outgoing, ...incoming]
-      })
+      }),
     )
     const flatNodeRelations = nodeRelations.flat()
 
     // Get unique relation types used
     const relationTypeIds = [...new Set(flatNodeRelations.map((rel) => rel.getRelationTypeId()))]
-    const relationTypes = await Promise.all(
-      relationTypeIds.map((id) => this.relationTypeRepository.findById(id))
-    )
+    const relationTypes = await Promise.all(relationTypeIds.map((id) => this.relationTypeRepository.findById(id)))
 
     return {
       relationTypes: relationTypes.filter(Boolean).map((relType) => ({
-        id: relType!.getId() as string,
-        identifier: relType!.getIdentifier(),
-        description: relType!.getDescription(),
+        id: relType?.getId() as string,
+        identifier: relType?.getIdentifier(),
+        description: relType?.getDescription(),
         properties: {}, // No properties available in current RelationType entity
-        createdAt: relType!.getCreatedAt().toISOString(),
-        updatedAt: relType!.getUpdatedAt().toISOString(),
+        createdAt: relType?.getCreatedAt().toISOString(),
+        updatedAt: relType?.getUpdatedAt().toISOString(),
       })),
       nodeRelations: flatNodeRelations.map((nodeRel) => ({
         sourceExternalId: nodeRel.getSourceNodeId() as string,
@@ -844,12 +821,9 @@ export class TablePackageService implements ITablePackageService {
 
   private async exportTableTemplates(
     tableIdentifier: string,
-    includeStatistics?: boolean
+    includeStatistics?: boolean,
   ): Promise<TableTemplatesExport> {
-    const templates = await this.queryTemplateRepository.findByApplicableTable(
-      tableIdentifier,
-      true
-    )
+    const templates = await this.queryTemplateRepository.findByApplicableTable(tableIdentifier, true)
 
     return {
       templates: templates.map((t) => ({
@@ -878,10 +852,7 @@ export class TablePackageService implements ITablePackageService {
     }
   }
 
-  private async resolveTableNameConflict(
-    originalName: string,
-    options: TablePackageImportOptions
-  ): Promise<string> {
+  private async resolveTableNameConflict(originalName: string, options: TablePackageImportOptions): Promise<string> {
     const existingTable = await this.tableRepository.findByIdentifier(originalName)
 
     if (!existingTable) {
@@ -913,16 +884,14 @@ export class TablePackageService implements ITablePackageService {
   private async importTableSchema(
     schema: TableSchemaExport,
     resolvedIdentifier: string,
-    _options: TablePackageImportOptions
+    _options: TablePackageImportOptions,
   ): Promise<{ id: string }> {
     // Create or update attribute types first
     const attributeTypeMap = new Map<string, string>()
     for (const attrTypeData of schema.attributeTypes) {
       try {
         // Check if attribute type already exists
-        const existingAttrType = await this.attributeTypeRepository.findByIdentifier(
-          attrTypeData.identifier
-        )
+        const existingAttrType = await this.attributeTypeRepository.findByIdentifier(attrTypeData.identifier)
 
         if (existingAttrType) {
           attributeTypeMap.set(attrTypeData.id, existingAttrType.getId() as string)
@@ -934,7 +903,7 @@ export class TablePackageService implements ITablePackageService {
             attrTypeData.dataType,
             attrTypeData.description || undefined,
             attrTypeData.validation || undefined,
-            attrTypeData.metadata || undefined
+            attrTypeData.metadata || undefined,
           )
 
           await this.attributeTypeRepository.save(newAttrType)
@@ -977,7 +946,7 @@ export class TablePackageService implements ITablePackageService {
           attrData.identifier, // name parameter
           attrData.description || undefined,
           attrData.isRequired,
-          attrData.metadata || undefined
+          attrData.metadata || undefined,
         )
 
         await this.attributeRepository.save(attribute)
@@ -995,7 +964,7 @@ export class TablePackageService implements ITablePackageService {
   private async importTableData(
     dataset: TableDataExport,
     tableId: string,
-    _options: TablePackageImportOptions
+    _options: TablePackageImportOptions,
   ): Promise<void> {
     // Create nodes first
     const nodeIdMap = new Map<string, string>()
@@ -1007,7 +976,7 @@ export class TablePackageService implements ITablePackageService {
           tableId as any,
           JSON.stringify(nodeData.content),
           undefined, // title
-          undefined // description
+          undefined, // description
         )
 
         await this.nodeRepository.save(node)
@@ -1042,11 +1011,7 @@ export class TablePackageService implements ITablePackageService {
         }
 
         const NodeAttribute = (await import('../entities/NodeAttribute.js')).NodeAttribute
-        const nodeAttribute = NodeAttribute.create(
-          nodeId as any,
-          attributeId as any,
-          nodeAttrData.value
-        )
+        const nodeAttribute = NodeAttribute.create(nodeId as any, attributeId as any, nodeAttrData.value)
 
         await this.nodeAttributeRepository.save(nodeAttribute)
       } catch (error) {
@@ -1062,7 +1027,7 @@ export class TablePackageService implements ITablePackageService {
   private async importTableRelations(
     relations: TableRelationsExport,
     tableId: string,
-    _options: TablePackageImportOptions
+    _options: TablePackageImportOptions,
   ): Promise<void> {
     // Create or find relation types first
     const relationTypeMap = new Map<string, string>()
@@ -1070,9 +1035,7 @@ export class TablePackageService implements ITablePackageService {
     for (const relTypeData of relations.relationTypes) {
       try {
         // Check if relation type already exists
-        const existingRelType = await this.relationTypeRepository.findByIdentifier(
-          relTypeData.identifier
-        )
+        const existingRelType = await this.relationTypeRepository.findByIdentifier(relTypeData.identifier)
 
         if (existingRelType) {
           relationTypeMap.set(relTypeData.id, existingRelType.getId() as string)
@@ -1082,7 +1045,7 @@ export class TablePackageService implements ITablePackageService {
           const newRelType = RelationType.create(
             relTypeData.identifier,
             relTypeData.description || undefined,
-            typeof relTypeData.properties === 'string' ? relTypeData.properties : undefined
+            typeof relTypeData.properties === 'string' ? relTypeData.properties : undefined,
           )
 
           await this.relationTypeRepository.save(newRelType)
@@ -1129,7 +1092,7 @@ export class TablePackageService implements ITablePackageService {
           nodeRelData.targetExternalId,
           relationTypeId as any,
           nodeRelData.properties || undefined,
-          nodeRelData.strength
+          nodeRelData.strength,
         )
 
         await this.nodeRelationRepository.save(nodeRelation)
@@ -1146,7 +1109,7 @@ export class TablePackageService implements ITablePackageService {
   private async importTableTemplates(
     templates: TableTemplatesExport,
     _tableIdentifier: string,
-    _options: TablePackageImportOptions
+    _options: TablePackageImportOptions,
   ): Promise<Array<{ id: string; identifier: string; name: string; operationType: string }>> {
     const imported = []
 
@@ -1164,7 +1127,7 @@ export class TablePackageService implements ITablePackageService {
             applicableTables: templateData.applicableTables || undefined,
             complexityScore: templateData.complexityScore,
             version: templateData.version,
-          }
+          },
         )
 
         const created = await this.queryTemplateRepository.create(template)
@@ -1233,14 +1196,12 @@ export class TablePackageService implements ITablePackageService {
       const schemaAnalysis = await this.schemaIntrospectionService.analyzeSchema()
 
       // Generate template suggestions based on schema
-      const _templateSuggestions =
-        await this.schemaIntrospectionService.generateTemplateForTable(tableIdentifier)
+      const _templateSuggestions = await this.schemaIntrospectionService.generateTemplateForTable(tableIdentifier)
 
       // Generate templates using enhanced generator
-      const templates = await this.enhancedTemplateGenerator.generateTableTemplates(
-        tableIdentifier,
-        { includeSubscriptions: true }
-      )
+      const templates = await this.enhancedTemplateGenerator.generateTableTemplates(tableIdentifier, {
+        includeSubscriptions: true,
+      })
 
       // Validate each template against live schema
       const validationResults = []
@@ -1248,7 +1209,7 @@ export class TablePackageService implements ITablePackageService {
         try {
           const validation = await this.schemaIntrospectionService.validateTemplateQuery(
             template.query,
-            template.variables || undefined
+            template.variables || undefined,
           )
           validationResults.push({
             template: template.identifier,
@@ -1308,7 +1269,7 @@ export class TablePackageService implements ITablePackageService {
         try {
           const validation = await this.schemaIntrospectionService.validateTemplateQuery(
             template.query,
-            template.variables || undefined
+            template.variables || undefined,
           )
 
           validationResults.push({
@@ -1319,14 +1280,12 @@ export class TablePackageService implements ITablePackageService {
 
           if (!validation.isValid) {
             recommendations.push(
-              `Template '${template.name}' has schema issues: ${validation.errors.map((e) => e.message).join(', ')}`
+              `Template '${template.name}' has schema issues: ${validation.errors.map((e) => e.message).join(', ')}`,
             )
           }
 
           if (validation.suggestions?.length > 0) {
-            recommendations.push(
-              ...validation.suggestions.map((s) => `Template '${template.name}': ${s}`)
-            )
+            recommendations.push(...validation.suggestions.map((s) => `Template '${template.name}': ${s}`))
           }
         } catch (error) {
           validationResults.push({
@@ -1334,13 +1293,11 @@ export class TablePackageService implements ITablePackageService {
             templateName: template.name,
             validation: {
               isValid: false,
-              errors: [
-                { message: error instanceof Error ? error.message : 'Unknown validation error' },
-              ],
+              errors: [{ message: error instanceof Error ? error.message : 'Unknown validation error' }],
             },
           })
           recommendations.push(
-            `Template '${template.name}' failed validation: ${error instanceof Error ? error.message : 'Unknown error'}`
+            `Template '${template.name}' failed validation: ${error instanceof Error ? error.message : 'Unknown error'}`,
           )
         }
       }
@@ -1350,7 +1307,7 @@ export class TablePackageService implements ITablePackageService {
 
       if (!isCompatible) {
         recommendations.unshift(
-          'Some templates are incompatible with current schema. Consider updating templates or schema.'
+          'Some templates are incompatible with current schema. Consider updating templates or schema.',
         )
       }
 

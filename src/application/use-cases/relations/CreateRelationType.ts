@@ -23,7 +23,7 @@ export interface CreateRelationTypeOutput {
 export class CreateRelationTypeUseCase {
   constructor(
     private readonly relationTypeRepository: IRelationTypeRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(input: CreateRelationTypeInput): Promise<CreateRelationTypeOutput> {
@@ -37,13 +37,9 @@ export class CreateRelationTypeUseCase {
     }
 
     // Check if relation type with same identifier already exists
-    const existingRelationType = await this.relationTypeRepository.findByIdentifier(
-      input.identifier
-    )
+    const existingRelationType = await this.relationTypeRepository.findByIdentifier(input.identifier)
     if (existingRelationType) {
-      throw new ConflictException(
-        `RelationType with identifier '${input.identifier}' already exists`
-      )
+      throw new ConflictException(`RelationType with identifier '${input.identifier}' already exists`)
     }
 
     try {

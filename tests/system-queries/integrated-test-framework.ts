@@ -70,10 +70,7 @@ export class IntegratedTestFramework {
 
   private extractSQLOperations(): void {
     // Extract SQL operations from repository files
-    const _repositoryPatterns = [
-      'src/infrastructure/persistence/sqlite/**/*.ts',
-      'src/services/**/*.ts',
-    ]
+    const _repositoryPatterns = ['src/infrastructure/persistence/sqlite/**/*.ts', 'src/services/**/*.ts']
 
     // This will be implemented to scan SQL operations
     this.sqlOperations = [
@@ -373,7 +370,7 @@ export class IntegratedTestFramework {
     for (const entity of entities) {
       for (const operation of operations) {
         const hasOperation = this.apiOperations.some(
-          (op) => op.entity === entity && op.operation === operation && op.covered
+          (op) => op.entity === entity && op.operation === operation && op.covered,
         )
         if (!hasOperation) {
           missingOperations.push(`${entity}.${operation}`)
@@ -441,9 +438,7 @@ export class IntegratedTestFramework {
     const performanceIssues: string[] = []
 
     // Example: Test that complex queries have appropriate performance
-    const complexOperations = this.apiOperations.filter(
-      (op) => op.operation === 'search' || op.operation === 'analyze'
-    )
+    const complexOperations = this.apiOperations.filter((op) => op.operation === 'search' || op.operation === 'analyze')
 
     // Simulate performance testing
     for (const op of complexOperations) {
@@ -562,7 +557,7 @@ ${this.testResults
   ✅ ${result.name}: ${result.passed ? 'PASSED' : 'FAILED'}
      Details: ${result.details}
      Execution Time: ${result.executionTime}ms
-`
+`,
   )
   .join('')}
 
@@ -591,16 +586,14 @@ ${this.testResults
         name: 'Phase 1: Critical CRUD Operations',
         priority: 'HIGH',
         operations: coverage.uncoveredOperations.filter(
-          (op) => op.includes('create') || op.includes('update') || op.includes('delete')
+          (op) => op.includes('create') || op.includes('update') || op.includes('delete'),
         ),
         targetCoverage: 85,
       },
       {
         name: 'Phase 2: Search and Analysis Features',
         priority: 'MEDIUM',
-        operations: coverage.uncoveredOperations.filter(
-          (op) => op.includes('search') || op.includes('analyze')
-        ),
+        operations: coverage.uncoveredOperations.filter((op) => op.includes('search') || op.includes('analyze')),
         targetCoverage: 95,
       },
       {
@@ -612,7 +605,7 @@ ${this.testResults
             !op.includes('update') &&
             !op.includes('delete') &&
             !op.includes('search') &&
-            !op.includes('analyze')
+            !op.includes('analyze'),
         ),
         targetCoverage: 100,
       },
@@ -635,13 +628,9 @@ ${phases
    ${phase.operations.map((op) => `     - ${op}`).join('\n')}
 
    Estimated Timeline: ${
-     phase.priority === 'HIGH'
-       ? '1-2 weeks'
-       : phase.priority === 'MEDIUM'
-         ? '2-3 weeks'
-         : '1-2 weeks'
+     phase.priority === 'HIGH' ? '1-2 weeks' : phase.priority === 'MEDIUM' ? '2-3 weeks' : '1-2 weeks'
    }
-`
+`,
   )
   .join('')}
 

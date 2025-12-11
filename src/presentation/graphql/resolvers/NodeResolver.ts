@@ -65,7 +65,7 @@ export class NodeResolver extends BaseResolver {
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly attributeRepository: IAttributeRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -75,11 +75,8 @@ export class NodeResolver extends BaseResolver {
   async node(args: { id: string }, _context?: GraphQLContext): Promise<NodeDto | null> {
     this.validateArgs(
       args,
-      [
-        BaseResolver.validationRules.required('id', 'Node ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
-      ],
-      'node'
+      [BaseResolver.validationRules.required('id', 'Node ID'), BaseResolver.validationRules.nonEmpty('id', 'Node ID')],
+      'node',
     )
 
     return this.handleQuery(
@@ -101,14 +98,11 @@ export class NodeResolver extends BaseResolver {
         return nodeFromEntity(node, attributeValues)
       },
       'findNodeById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
-  async nodeByContent(
-    args: { tableId: string; content: string },
-    _context?: GraphQLContext
-  ): Promise<NodeDto | null> {
+  async nodeByContent(args: { tableId: string; content: string }, _context?: GraphQLContext): Promise<NodeDto | null> {
     this.validateArgs(
       args,
       [
@@ -116,15 +110,12 @@ export class NodeResolver extends BaseResolver {
         BaseResolver.validationRules.required('content', 'Content'),
         BaseResolver.validationRules.nonEmpty('content', 'Content'),
       ],
-      'nodeByContent'
+      'nodeByContent',
     )
 
     return this.handleQuery(
       async () => {
-        const node = await this.nodeRepository.findByTableIdAndContent(
-          args.tableId as TableId,
-          args.content
-        )
+        const node = await this.nodeRepository.findByTableIdAndContent(args.tableId as TableId, args.content)
         if (!node) return null
 
         // Get node attributes
@@ -141,14 +132,11 @@ export class NodeResolver extends BaseResolver {
         return nodeFromEntity(node, attributeValues)
       },
       'findNodeByContent',
-      { tableId: args.tableId, content: args.content }
+      { tableId: args.tableId, content: args.content },
     )
   }
 
-  async nodes(args: {
-    tableId: string
-    pagination?: { limit?: number; offset?: number }
-  }): Promise<{
+  async nodes(args: { tableId: string; pagination?: { limit?: number; offset?: number } }): Promise<{
     nodes: NodeDto[]
     totalCount: number
     hasNextPage: boolean
@@ -189,7 +177,7 @@ export class NodeResolver extends BaseResolver {
           }
 
           return nodeFromEntity(node, attributeValues)
-        })
+        }),
       )
 
       return {
@@ -242,7 +230,7 @@ export class NodeResolver extends BaseResolver {
   // Mutation resolvers
   async createNode(
     args: { input: CreateNodeInput },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<{
     success: boolean
     data?: NodeDto | null
@@ -255,7 +243,7 @@ export class NodeResolver extends BaseResolver {
         BaseResolver.validationRules.required('content', 'Content'),
         BaseResolver.validationRules.nonEmpty('content', 'Content'),
       ],
-      'createNode'
+      'createNode',
     )
 
     const result = await this.handleMutation(
@@ -265,9 +253,7 @@ export class NodeResolver extends BaseResolver {
         if (args.input.attributes) {
           for (const attr of args.input.attributes) {
             // Find attribute to get its identifier
-            const attribute = await this.attributeRepository.findById(
-              attr.attributeId as AttributeId
-            )
+            const attribute = await this.attributeRepository.findById(attr.attributeId as AttributeId)
             if (attribute) {
               attributes[attribute.getIdentifier()] = attr.value
             }
@@ -285,7 +271,7 @@ export class NodeResolver extends BaseResolver {
         return useCaseResult.node
       },
       'createNode',
-      { input: args.input }
+      { input: args.input },
     )
 
     return {
@@ -297,7 +283,7 @@ export class NodeResolver extends BaseResolver {
 
   async createPersonNode(
     args: { input: CreatePersonNodeInput },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<{
     success: boolean
     node?: NodeDto | null
@@ -314,7 +300,7 @@ export class NodeResolver extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('name', 'Name'),
         BaseResolver.validationRules.nonEmpty('age', 'Age'),
       ],
-      'createPersonNode'
+      'createPersonNode',
     )
 
     const result = await this.handleMutation(
@@ -352,17 +338,11 @@ export class NodeResolver extends BaseResolver {
           try {
             // Find attribute by identifier
             const attributes = await this.attributeRepository.findByTableId('267' as TableId)
-            const attribute = attributes.nodes.find(
-              (attr: Attribute) => attr.getIdentifier() === attrToSet.identifier
-            )
+            const attribute = attributes.nodes.find((attr: Attribute) => attr.getIdentifier() === attrToSet.identifier)
 
             if (attribute) {
               // Create node attribute
-              const nodeAttribute = NodeAttribute.create(
-                createdNode.id as NodeId,
-                attribute.getId(),
-                attrToSet.value
-              )
+              const nodeAttribute = NodeAttribute.create(createdNode.id as NodeId, attribute.getId(), attrToSet.value)
               await this.nodeAttributeRepository.save(nodeAttribute)
 
               // Convert to DTO for response
@@ -384,7 +364,7 @@ export class NodeResolver extends BaseResolver {
         return { node: createdNode, attributes: nodeAttributeDtos }
       },
       'createPersonNode',
-      { input: args.input }
+      { input: args.input },
     )
 
     return {
@@ -456,7 +436,7 @@ export class NodeResolver extends BaseResolver {
 
   async deleteNode(
     args: { id: string },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<{
     success: boolean
     data?: boolean
@@ -464,11 +444,8 @@ export class NodeResolver extends BaseResolver {
   }> {
     this.validateArgs(
       args,
-      [
-        BaseResolver.validationRules.required('id', 'Node ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
-      ],
-      'deleteNode'
+      [BaseResolver.validationRules.required('id', 'Node ID'), BaseResolver.validationRules.nonEmpty('id', 'Node ID')],
+      'deleteNode',
     )
 
     const result = await this.handleMutation(
@@ -487,7 +464,7 @@ export class NodeResolver extends BaseResolver {
         return true
       },
       'deleteNode',
-      { id: args.id }
+      { id: args.id },
     )
 
     return {
@@ -517,7 +494,7 @@ export class NodeResolver extends BaseResolver {
       // Check if node attribute already exists
       const existingNodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
         args.nodeId as NodeId,
-        args.attributeId as AttributeId
+        args.attributeId as AttributeId,
       )
 
       const valueString = typeof args.value === 'string' ? args.value : JSON.stringify(args.value)
@@ -528,11 +505,7 @@ export class NodeResolver extends BaseResolver {
         await this.nodeAttributeRepository.update(updatedNodeAttribute)
       } else {
         // Create new
-        const nodeAttribute = NodeAttribute.create(
-          args.nodeId as NodeId,
-          args.attributeId as AttributeId,
-          valueString
-        )
+        const nodeAttribute = NodeAttribute.create(args.nodeId as NodeId, args.attributeId as AttributeId, valueString)
         await this.nodeAttributeRepository.save(nodeAttribute)
       }
 
@@ -579,7 +552,7 @@ export class NodeResolver extends BaseResolver {
       },
       'table',
       'Node',
-      { nodeId: node.id }
+      { nodeId: node.id },
     )
   }
 
@@ -591,7 +564,7 @@ export class NodeResolver extends BaseResolver {
       },
       'attributeCount',
       'Node',
-      { nodeId: node.id }
+      { nodeId: node.id },
     )
     return result ?? 0
   }
@@ -604,7 +577,7 @@ export class NodeResolver extends BaseResolver {
       },
       'attributes',
       'Node',
-      { nodeId: node.id }
+      { nodeId: node.id },
     )
     return result ?? []
   }
@@ -617,7 +590,7 @@ export class NodeResolver extends BaseResolver {
       },
       'outgoingRelations',
       'Node',
-      { nodeId: node.id }
+      { nodeId: node.id },
     )
     return result ?? []
   }
@@ -629,7 +602,7 @@ export class NodeResolver extends BaseResolver {
       },
       'incomingRelations',
       'Node',
-      { nodeId: node.id }
+      { nodeId: node.id },
     )
     return result ?? []
   }
@@ -637,17 +610,13 @@ export class NodeResolver extends BaseResolver {
   async relationCount_field(node: NodeDto, _context?: GraphQLContext): Promise<number> {
     const result = await this.handleFieldResolution(
       async () => {
-        const outgoingCount = await this.nodeRelationRepository.countBySourceNodeId(
-          node.id as NodeId
-        )
-        const incomingCount = await this.nodeRelationRepository.countByTargetNodeId(
-          node.id as NodeId
-        )
+        const outgoingCount = await this.nodeRelationRepository.countBySourceNodeId(node.id as NodeId)
+        const incomingCount = await this.nodeRelationRepository.countByTargetNodeId(node.id as NodeId)
         return outgoingCount + incomingCount
       },
       'relationCount',
       'Node',
-      { nodeId: node.id }
+      { nodeId: node.id },
     )
     return result ?? 0
   }
@@ -660,7 +629,7 @@ export class NodeResolver extends BaseResolver {
       direction?: 'OUTGOING' | 'INCOMING' | 'BOTH'
       relationTypes?: string[]
     },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<any[]> {
     this.logger.info('connectedNodes field resolver called', {
       parentId: node.id,
@@ -675,15 +644,7 @@ export class NodeResolver extends BaseResolver {
       const visited = new Set<string>()
       const result: any[] = []
 
-      await this._traverseGraph(
-        node.id as NodeId,
-        depth,
-        direction,
-        relationTypes,
-        visited,
-        result,
-        0
-      )
+      await this._traverseGraph(node.id as NodeId, depth, direction, relationTypes, visited, result, 0)
 
       // Extract just the nodes from the result objects
       // Filter out the starting node itself and only return connected nodes
@@ -714,7 +675,7 @@ export class NodeResolver extends BaseResolver {
   async shortestPath_field(
     node: NodeDto,
     args: { targetNodeId: string; maxDepth?: number },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<any[]> {
     this.validateArgs(
       args,
@@ -722,24 +683,20 @@ export class NodeResolver extends BaseResolver {
         BaseResolver.validationRules.required('targetNodeId', 'Target Node ID'),
         BaseResolver.validationRules.nonEmpty('targetNodeId', 'Target Node ID'),
       ],
-      'shortestPath'
+      'shortestPath',
     )
 
     const result = await this.handleFieldResolution(
       async () => {
         const { targetNodeId, maxDepth = 6 } = args
-        const path = await this._findShortestPath(
-          node.id as NodeId,
-          targetNodeId as NodeId,
-          maxDepth
-        )
+        const path = await this._findShortestPath(node.id as NodeId, targetNodeId as NodeId, maxDepth)
 
         // Return just the nodes array
         return path ? path.nodes : []
       },
       'shortestPath',
       'Node',
-      { sourceNodeId: node.id, targetNodeId: args.targetNodeId }
+      { sourceNodeId: node.id, targetNodeId: args.targetNodeId },
     )
     return result ?? []
   }
@@ -752,7 +709,7 @@ export class NodeResolver extends BaseResolver {
     relationTypes: string[] | undefined,
     visited: Set<string>,
     result: any[],
-    currentDepth: number
+    currentDepth: number,
   ): Promise<void> {
     if (remainingDepth <= 0 || visited.has(nodeId)) return
 
@@ -786,10 +743,7 @@ export class NodeResolver extends BaseResolver {
 
     // Traverse next level
     for (const relation of filteredRelations) {
-      const nextNodeId =
-        relation.getSourceNodeId() === nodeId
-          ? relation.getTargetNodeId()
-          : relation.getSourceNodeId()
+      const nextNodeId = relation.getSourceNodeId() === nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
 
       if (nextNodeId) {
         await this._traverseGraph(
@@ -799,7 +753,7 @@ export class NodeResolver extends BaseResolver {
           relationTypes,
           visited,
           result,
-          currentDepth + 1
+          currentDepth + 1,
         )
       }
     }
@@ -808,7 +762,7 @@ export class NodeResolver extends BaseResolver {
   private async _findShortestPath(
     sourceId: NodeId,
     targetId: NodeId,
-    maxDepth: number
+    maxDepth: number,
   ): Promise<{ nodes: any[]; relations: any[]; distance: number } | null> {
     const queue: Array<{ nodeId: NodeId; path: NodeId[]; relations: any[]; depth: number }> = [
       { nodeId: sourceId, path: [sourceId], relations: [], depth: 0 },
@@ -842,15 +796,9 @@ export class NodeResolver extends BaseResolver {
 
       for (const relation of allRelations) {
         const nextNodeId =
-          relation.getSourceNodeId() === current.nodeId
-            ? relation.getTargetNodeId()
-            : relation.getSourceNodeId()
+          relation.getSourceNodeId() === current.nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
 
-        if (
-          nextNodeId &&
-          !visited.has(nextNodeId) &&
-          !current.path.includes(nextNodeId as NodeId)
-        ) {
+        if (nextNodeId && !visited.has(nextNodeId) && !current.path.includes(nextNodeId as NodeId)) {
           queue.push({
             nodeId: nextNodeId as NodeId,
             path: [...current.path, nextNodeId as NodeId],

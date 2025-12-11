@@ -1,17 +1,8 @@
-import {
-  type SortContext,
-  type SortResult,
-  SortStrategy,
-} from '@/domain/value-objects/SortStrategy.js'
+import { type SortContext, type SortResult, SortStrategy } from '@/domain/value-objects/SortStrategy.js'
 
 export class NumericSortStrategy extends SortStrategy {
   canHandle(_field: string, dataType: string): boolean {
-    return (
-      dataType === 'number' ||
-      dataType === 'integer' ||
-      dataType === 'float' ||
-      dataType === 'decimal'
-    )
+    return dataType === 'number' || dataType === 'integer' || dataType === 'float' || dataType === 'decimal'
   }
 
   buildSortClause(field: string, direction: 'asc' | 'desc', context: SortContext): SortResult {

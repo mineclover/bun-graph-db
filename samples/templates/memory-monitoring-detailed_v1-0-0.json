@@ -37,7 +37,7 @@
     "memory_metrics": {
       "system_memory": {
         "used": "Currently used system memory in MB",
-        "free": "Available system memory in MB", 
+        "free": "Available system memory in MB",
         "total": "Total system memory in MB",
         "percentage": "Memory usage percentage"
       },

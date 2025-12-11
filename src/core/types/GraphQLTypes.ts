@@ -176,13 +176,7 @@ export interface GraphQLContext {
 }
 
 // JSON Value Types
-export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue }
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 
 // Database Query Parameter Types
 export type DatabaseParams = (string | number | boolean | null)[]
@@ -548,13 +542,9 @@ export interface NodeRelationParent {
 }
 
 // Resolver function types
-export type GraphQLResolver<
-  TParent = unknown,
-  TArgs = Record<string, unknown>,
-  TResult = unknown,
-> = (
+export type GraphQLResolver<TParent = unknown, TArgs = Record<string, unknown>, TResult = unknown> = (
   parent: TParent,
   args: TArgs,
   context: GraphQLContext,
-  info?: ResolverInfo
+  info?: ResolverInfo,
 ) => TResult | Promise<TResult>

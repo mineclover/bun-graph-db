@@ -12,7 +12,7 @@ export class AttributeFieldResolvers extends BaseResolver {
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly tableRepository: ITableRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -183,9 +183,7 @@ export class AttributeFieldResolvers extends BaseResolver {
       }
 
       // Get the associated AttributeType to resolve the name
-      const attributeType = await this.attributeTypeRepository.findById(
-        attribute.getAttributeTypeId()
-      )
+      const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
 
       // Transform the domain entity to a GraphQL-compatible object
       const graphqlAttribute = {
@@ -229,11 +227,7 @@ export class AttributeFieldResolvers extends BaseResolver {
   }
 
   // Field resolver for NodeAttribute formattedValue field
-  async nodeAttribute_formattedValue_field(
-    parent: any,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string> {
+  async nodeAttribute_formattedValue_field(parent: any, _args?: any, _context?: GraphQLContext): Promise<string> {
     try {
       this.logger.debug(`Resolving field: NodeAttribute.formattedValue`, {
         nodeAttributeId: parent.id,

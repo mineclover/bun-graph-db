@@ -3,14 +3,14 @@
   "description": "Execute table lookup by name using existing template with variable",
   "domain": "table_management",
   "category": "advanced",
-  
+
   "templateExecution": {
     "templateIdentifier": "test-get-table",
     "variables": {
       "tableId": "1"
     }
   },
-  
+
   "expectedResult": {
     "success": true,
     "dataShape": {
@@ -21,7 +21,7 @@
       }
     }
   },
-  
+
   "testConfig": {
     "shouldExport": true,
     "retryOnFailure": false

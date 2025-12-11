@@ -16,17 +16,14 @@ export interface ITablePackageService {
   /**
    * Export a single table as a package
    */
-  exportTable(
-    tableIdentifier: string,
-    options?: TablePackageExportOptions
-  ): Promise<TablePackageExportResult>
+  exportTable(tableIdentifier: string, options?: TablePackageExportOptions): Promise<TablePackageExportResult>
 
   /**
    * Export multiple related tables with dependency resolution
    */
   exportRelatedTables(
     tableIdentifiers: string[],
-    options?: TablePackageExportOptions
+    options?: TablePackageExportOptions,
   ): Promise<TablePackageExportResult[]>
 
   /**
@@ -34,7 +31,7 @@ export interface ITablePackageService {
    */
   importTablePackage(
     packageData: TablePackageFormat,
-    options?: TablePackageImportOptions
+    options?: TablePackageImportOptions,
   ): Promise<TablePackageImportResult>
 
   /**
@@ -42,7 +39,7 @@ export interface ITablePackageService {
    */
   importTablePackages(
     packages: TablePackageFormat[],
-    options?: TablePackageImportOptions
+    options?: TablePackageImportOptions,
   ): Promise<TablePackageImportResult[]>
 
   /**
@@ -58,10 +55,7 @@ export interface ITablePackageService {
   /**
    * Validate table package before import
    */
-  validatePackage(
-    packageData: TablePackageFormat,
-    options?: TablePackageImportOptions
-  ): Promise<TablePackageConflict[]>
+  validatePackage(packageData: TablePackageFormat, options?: TablePackageImportOptions): Promise<TablePackageConflict[]>
 
   /**
    * Create an import session for tracking progress
@@ -90,7 +84,7 @@ export interface ITablePackageService {
       includeDelete?: boolean
       includeSearch?: boolean
       includeBatch?: boolean
-    }
+    },
   ): Promise<{
     success: boolean
     templates: Array<{

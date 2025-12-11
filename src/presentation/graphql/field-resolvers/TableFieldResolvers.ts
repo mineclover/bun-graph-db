@@ -14,7 +14,7 @@ export class TableFieldResolvers extends BaseResolver {
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly getTableDocsUseCase: GetTableDocsUseCase,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -30,9 +30,7 @@ export class TableFieldResolvers extends BaseResolver {
         const mappedAttributes = await Promise.all(
           attributes.map(async (attribute) => {
             // Get the associated AttributeType to resolve the name
-            const attributeType = await this.attributeTypeRepository.findById(
-              attribute.getAttributeTypeId()
-            )
+            const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
 
             return {
               id: attribute.getId(),
@@ -43,14 +41,14 @@ export class TableFieldResolvers extends BaseResolver {
               createdAt: attribute.getCreatedAt(),
               updatedAt: attribute.getUpdatedAt(),
             }
-          })
+          }),
         )
 
         return mappedAttributes
       },
       'attributes',
       'Table',
-      { tableId: parent.id }
+      { tableId: parent.id },
     )
   }
 
@@ -59,17 +57,14 @@ export class TableFieldResolvers extends BaseResolver {
       async () => {
         // Get all attributes for this table
         const attributesResult = await this.attributeRepository.findByTableId(parent.id)
-        const attributes =
-          attributesResult.data || attributesResult.nodes || attributesResult.items || []
+        const attributes = attributesResult.data || attributesResult.nodes || attributesResult.items || []
 
         // Get unique attribute type IDs
-        const attributeTypeIds = [
-          ...new Set(attributes.map((attr) => attr.getAttributeTypeId()).filter(Boolean)),
-        ]
+        const attributeTypeIds = [...new Set(attributes.map((attr) => attr.getAttributeTypeId()).filter(Boolean))]
 
         // Fetch all attribute types for these IDs
         const attributeTypes = await Promise.all(
-          attributeTypeIds.map((id) => this.attributeTypeRepository.findById(id))
+          attributeTypeIds.map((id) => this.attributeTypeRepository.findById(id)),
         )
 
         // Map to GraphQL format
@@ -90,7 +85,7 @@ export class TableFieldResolvers extends BaseResolver {
       },
       'attributeTypes',
       'Table',
-      { tableId: parent.id }
+      { tableId: parent.id },
     )
   }
 
@@ -175,7 +170,7 @@ export class TableFieldResolvers extends BaseResolver {
       },
       'aiMetadata',
       'Table',
-      { tableId: parent.id }
+      { tableId: parent.id },
     )
   }
 

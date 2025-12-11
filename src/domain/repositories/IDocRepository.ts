@@ -42,11 +42,7 @@ export interface IDocRepository {
 
   // Versioning operations
   getLatestVersion(tableId: TableId, category: DocCategory): Promise<number>
-  deactivateOthersInCategory(
-    tableId: TableId,
-    category: DocCategory,
-    exceptId?: DocId
-  ): Promise<void>
+  deactivateOthersInCategory(tableId: TableId, category: DocCategory, exceptId?: DocId): Promise<void>
 
   // Business-specific queries
   exists(tableId: TableId, category: DocCategory, version: number): Promise<boolean>
@@ -56,7 +52,7 @@ export interface IDocRepository {
   // Content search operations
   searchByContent(
     options: DocContentSearchOptions,
-    pagination?: DocContentSearchPagination
+    pagination?: DocContentSearchPagination,
   ): Promise<PaginatedResult<Doc>>
 
   // Batch operations for performance

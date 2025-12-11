@@ -69,7 +69,7 @@ describe('Comprehensive Template System Test Suite', () => {
         },
       }
 
-      const result = await testContext.graphqlRequest!<CreateTemplateResponse>(mutation, variables)
+      const result = await testContext.graphqlRequest?.<CreateTemplateResponse>(mutation, variables)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.createTemplate.success).toBe(true)
@@ -146,7 +146,7 @@ describe('Comprehensive Template System Test Suite', () => {
         expect.objectContaining({
           field: 'query',
           message: expect.stringContaining('syntax'),
-        })
+        }),
       )
     })
 
@@ -175,7 +175,7 @@ describe('Comprehensive Template System Test Suite', () => {
         expect.objectContaining({
           field: 'identifier',
           message: expect.stringContaining('already exists'),
-        })
+        }),
       )
     })
   })
@@ -433,7 +433,7 @@ describe('Comprehensive Template System Test Suite', () => {
       expect(result.errors).toContainEqual(
         expect.objectContaining({
           message: expect.stringContaining('requiredParam'),
-        })
+        }),
       )
     })
   })
@@ -554,7 +554,7 @@ describe('Comprehensive Template System Test Suite', () => {
       expect(failResult.errors).toContainEqual(
         expect.objectContaining({
           message: expect.stringContaining('already exists'),
-        })
+        }),
       )
 
       // Import with overwrite (should succeed)
@@ -752,7 +752,7 @@ describe('Comprehensive Template System Test Suite', () => {
         executeTemplateUseCase.execute({
           templateIdentifier: 'concurrent-template',
           variables: { delay: i * 10 },
-        })
+        }),
       )
 
       const results = await Promise.all(promises)
@@ -774,7 +774,7 @@ describe('Comprehensive Template System Test Suite', () => {
           query: `query PerfTest${i} { healthCheck { status } }`,
           variables: [],
           tags: ['performance', `batch-${Math.floor(i / 10)}`],
-        })
+        }),
       )
 
       await Promise.all(templatePromises)

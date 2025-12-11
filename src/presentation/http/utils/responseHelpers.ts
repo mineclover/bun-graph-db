@@ -24,7 +24,7 @@ export function sendError(
   logger: ILogger,
   statusCode: number,
   message: string,
-  logContext?: string
+  logContext?: string,
 ): void {
   if (logContext) {
     logger.error(logContext, { error: message })
@@ -36,12 +36,7 @@ export function sendError(
   } satisfies ApiResponse)
 }
 
-export function sendHandleError(
-  res: Response,
-  logger: ILogger,
-  error: unknown,
-  operation: string
-): void {
+export function sendHandleError(res: Response, logger: ILogger, error: unknown, operation: string): void {
   logger.error(`${operation} error:`, toErrorMeta(error))
 
   const message = error instanceof Error ? error.message : `${operation} failed`

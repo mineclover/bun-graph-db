@@ -16,9 +16,24 @@
   },
   "variablesSchema": {
     "searchTerm": { "type": "String", "required": true, "description": "검색할 텍스트 (제목, 설명에서 검색)" },
-    "category": { "type": "String", "required": false, "description": "카테고리 필터", "enum": ["WORK", "PERSONAL", "SHOPPING", "HEALTH", "LEARNING", "OTHER"] },
-    "priority": { "type": "String", "required": false, "description": "우선순위 필터", "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"] },
-    "status": { "type": "String", "required": false, "description": "상태 필터", "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] }
+    "category": {
+      "type": "String",
+      "required": false,
+      "description": "카테고리 필터",
+      "enum": ["WORK", "PERSONAL", "SHOPPING", "HEALTH", "LEARNING", "OTHER"]
+    },
+    "priority": {
+      "type": "String",
+      "required": false,
+      "description": "우선순위 필터",
+      "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"]
+    },
+    "status": {
+      "type": "String",
+      "required": false,
+      "description": "상태 필터",
+      "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"]
+    }
   },
   "version": "1.0.0"
 }

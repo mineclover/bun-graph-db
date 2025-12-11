@@ -20,12 +20,10 @@ export interface ActivateDeactivateQueryTemplateResponse {
 export class ActivateDeactivateQueryTemplate {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
-  async execute(
-    request: ActivateDeactivateQueryTemplateRequest
-  ): Promise<ActivateDeactivateQueryTemplateResponse> {
+  async execute(request: ActivateDeactivateQueryTemplateRequest): Promise<ActivateDeactivateQueryTemplateResponse> {
     try {
       const action = request.activate ? 'Activating' : 'Deactivating'
       this.logger.info(`${action} query template`, { id: request.id })
@@ -65,10 +63,7 @@ export class ActivateDeactivateQueryTemplate {
       }
 
       // Perform activation/deactivation using repository method
-      const updatedTemplate = await this.queryTemplateRepository.updateStatus(
-        request.id,
-        request.activate
-      )
+      const updatedTemplate = await this.queryTemplateRepository.updateStatus(request.id, request.activate)
 
       if (!updatedTemplate) {
         const action = request.activate ? 'activate' : 'deactivate'

@@ -4,7 +4,7 @@ import { LogLevel } from '@/application/ports/ILogger.js'
 export class ConsoleLogger implements ILogger {
   constructor(
     private readonly minLevel: LogLevel = LogLevel.INFO,
-    private readonly enableColors: boolean = true
+    private readonly enableColors: boolean = true,
   ) {}
 
   debug(message: string, meta?: Record<string, unknown>): void {
@@ -31,12 +31,7 @@ export class ConsoleLogger implements ILogger {
     }
   }
 
-  private log(
-    level: string,
-    message: string,
-    meta?: Record<string, unknown>,
-    color?: string
-  ): void {
+  private log(level: string, message: string, meta?: Record<string, unknown>, color?: string): void {
     const timestamp = new Date().toISOString()
     const colorCode = this.enableColors && color ? color : ''
     const resetCode = this.enableColors ? '\x1b[0m' : ''

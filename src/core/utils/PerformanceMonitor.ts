@@ -114,11 +114,7 @@ export class PerformanceMonitor {
   /**
    * Measure an async operation
    */
-  async measure<T>(
-    operation: string,
-    fn: () => Promise<T>,
-    metadata?: Record<string, unknown>
-  ): Promise<T> {
+  async measure<T>(operation: string, fn: () => Promise<T>, metadata?: Record<string, unknown>): Promise<T> {
     const timer = this.startTimer(operation)
     try {
       const result = await fn()
@@ -154,7 +150,7 @@ export class PerformanceMonitor {
     startMemory: number | undefined,
     success: boolean,
     error: string | undefined,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
   ): PerformanceMetric {
     if (!this.config.enabled) {
       return {
@@ -403,9 +399,7 @@ let globalMonitor: PerformanceMonitor | null = null
 /**
  * Get or create global performance monitor
  */
-export function getPerformanceMonitor(
-  config?: Partial<PerformanceMonitorConfig>
-): PerformanceMonitor {
+export function getPerformanceMonitor(config?: Partial<PerformanceMonitorConfig>): PerformanceMonitor {
   if (!globalMonitor) {
     globalMonitor = new PerformanceMonitor(config)
   } else if (config) {
@@ -428,7 +422,7 @@ export function measured(operationName?: string) {
   return <T extends (...args: unknown[]) => Promise<unknown>>(
     target: object,
     propertyKey: string,
-    descriptor: TypedPropertyDescriptor<T>
+    descriptor: TypedPropertyDescriptor<T>,
   ): TypedPropertyDescriptor<T> => {
     const originalMethod = descriptor.value!
     const name = operationName || `${target.constructor.name}.${propertyKey}`

@@ -17,11 +17,7 @@ export class SchemaDriftMonitor {
 
   private readonly DEFAULT_CHECK_INTERVAL = 30 * 1000 // 30 seconds
 
-  constructor(
-    schema: GraphQLSchema,
-    syncPipeline: SchemaSyncPipeline,
-    checkInterval = this.DEFAULT_CHECK_INTERVAL
-  ) {
+  constructor(schema: GraphQLSchema, syncPipeline: SchemaSyncPipeline, checkInterval = this.DEFAULT_CHECK_INTERVAL) {
     this.schema = schema
     this.schemaIntrospector = new GraphQLSchemaIntrospector(schema)
     this.syncPipeline = syncPipeline
@@ -48,9 +44,7 @@ export class SchemaDriftMonitor {
     }, this.DEFAULT_CHECK_INTERVAL)
 
     this.isMonitoring = true
-    console.log(
-      `✅ Schema drift monitoring active (check interval: ${this.DEFAULT_CHECK_INTERVAL}ms)`
-    )
+    console.log(`✅ Schema drift monitoring active (check interval: ${this.DEFAULT_CHECK_INTERVAL}ms)`)
   }
 
   /**
@@ -336,7 +330,7 @@ export class SchemaDriftMonitorFactory {
     options?: {
       checkInterval?: number
       autoStart?: boolean
-    }
+    },
   ): SchemaDriftMonitor {
     const monitor = new SchemaDriftMonitor(schema, syncPipeline, options?.checkInterval)
 
@@ -370,7 +364,7 @@ export class SchemaDriftMonitorFactory {
   static createProductionMonitor(
     schema: GraphQLSchema,
     syncPipeline: SchemaSyncPipeline,
-    logger: (message: string, data?: any) => void
+    logger: (message: string, data?: any) => void,
   ): SchemaDriftMonitor {
     const monitor = new SchemaDriftMonitor(schema, syncPipeline, 60 * 1000) // 1 minute
 

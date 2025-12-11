@@ -11,11 +11,7 @@ export interface IQueryExecutor {
   /**
    * Execute a single query with parameters
    */
-  executeQuery<T = any>(
-    sql: string,
-    params?: any[],
-    options?: QueryOptions
-  ): Promise<QueryResult<T>>
+  executeQuery<T = any>(sql: string, params?: any[], options?: QueryOptions): Promise<QueryResult<T>>
 
   /**
    * Execute batch operations efficiently

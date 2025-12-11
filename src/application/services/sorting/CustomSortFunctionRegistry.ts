@@ -47,7 +47,7 @@ export type CustomSortHandler = (
   field: string,
   direction: 'asc' | 'desc',
   context: SortContext,
-  parameters?: Record<string, any>
+  parameters?: Record<string, any>,
 ) => SortResult
 
 /**
@@ -197,10 +197,7 @@ export class CustomSortFunctionRegistry {
    */
   getByDataType(dataType: string): CustomSortFunction[] {
     return Array.from(this.functions.values())
-      .filter(
-        (func) =>
-          func.supportedDataTypes.includes(dataType) || func.supportedDataTypes.includes('*')
-      )
+      .filter((func) => func.supportedDataTypes.includes(dataType) || func.supportedDataTypes.includes('*'))
       .sort((a, b) => b.priority - a.priority)
   }
 
@@ -223,7 +220,7 @@ export class CustomSortFunctionRegistry {
         (func) =>
           func.name.toLowerCase().includes(lowercaseQuery) ||
           func.description.toLowerCase().includes(lowercaseQuery) ||
-          func.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery))
+          func.tags.some((tag) => tag.toLowerCase().includes(lowercaseQuery)),
       )
       .sort((a, b) => b.priority - a.priority)
   }
@@ -236,7 +233,7 @@ export class CustomSortFunctionRegistry {
     field: string,
     direction: 'asc' | 'desc',
     context: SortContext,
-    parameters?: Record<string, any>
+    parameters?: Record<string, any>,
   ): SortResult {
     const func = this.functions.get(functionId)
     if (!func) {
@@ -331,10 +328,7 @@ export class CustomSortFunctionRegistry {
       })
     })
 
-    const totalUsage = Array.from(this.usageStats.values()).reduce(
-      (sum, stats) => sum + stats.callCount,
-      0
-    )
+    const totalUsage = Array.from(this.usageStats.values()).reduce((sum, stats) => sum + stats.callCount, 0)
     const averageUsage = functions.length > 0 ? totalUsage / functions.length : 0
 
     return {
@@ -349,7 +343,7 @@ export class CustomSortFunctionRegistry {
 
   private validateParameters(
     paramDefs: Record<string, CustomSortParameter>,
-    actualParams: Record<string, any>
+    actualParams: Record<string, any>,
   ): { valid: boolean; errors: string[] } {
     const errors: string[] = []
 
@@ -399,10 +393,7 @@ export class CustomSortFunctionRegistry {
     }
   }
 
-  private validateParameterValue(
-    value: any,
-    validation: CustomSortParameterValidation
-  ): string | null {
+  private validateParameterValue(value: any, validation: CustomSortParameterValidation): string | null {
     if (validation.min !== undefined && value < validation.min) {
       return `must be at least ${validation.min}`
     }

@@ -8,7 +8,7 @@ export class EnhancedAttributeQueries extends BaseResolver {
 
   constructor(
     readonly _attributeTypeRepository: IAttributeTypeRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -27,7 +27,7 @@ export class EnhancedAttributeQueries extends BaseResolver {
         }
       },
       'enhancedAttributeTypes',
-      args
+      args,
     )
   }
 
@@ -38,7 +38,7 @@ export class EnhancedAttributeQueries extends BaseResolver {
         return null
       },
       'enhancedAttributeType',
-      args
+      args,
     )
   }
 }

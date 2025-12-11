@@ -17,7 +17,7 @@ export class TableQueries extends BaseResolver {
   constructor(
     private readonly tableRepository: ITableRepository,
     private readonly container: DIContainer,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -30,7 +30,7 @@ export class TableQueries extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
       ],
-      'table'
+      'table',
     )
 
     return this.handleQuery(
@@ -38,22 +38,18 @@ export class TableQueries extends BaseResolver {
         return await this.tableRepository.findById(args.id)
       },
       'findTableById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
-  async tableByIdentifier(
-    _: GraphQLParent,
-    args: TableByIdentifierArgs,
-    _context?: GraphQLContext
-  ) {
+  async tableByIdentifier(_: GraphQLParent, args: TableByIdentifierArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args as any,
       [
         BaseResolver.validationRules.required('identifier', 'Table identifier'),
         BaseResolver.validationRules.nonEmpty('identifier', 'Table identifier'),
       ],
-      'tableByIdentifier'
+      'tableByIdentifier',
     )
 
     return this.handleQuery(
@@ -61,16 +57,14 @@ export class TableQueries extends BaseResolver {
         return await this.tableRepository.findByIdentifier(args.identifier)
       },
       'findTableByIdentifier',
-      { identifier: args.identifier }
+      { identifier: args.identifier },
     )
   }
 
   async tables(_: GraphQLParent, args: TablesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        const result = await this.tableRepository.findAll(
-          args.pagination || { limit: 10, offset: 0 }
-        )
+        const result = await this.tableRepository.findAll(args.pagination || { limit: 10, offset: 0 })
 
         return {
           nodes: result.data || [],
@@ -80,7 +74,7 @@ export class TableQueries extends BaseResolver {
         }
       },
       'findTables',
-      { filter: args.filter, pagination: args.pagination, sort: args.sort }
+      { filter: args.filter, pagination: args.pagination, sort: args.sort },
     )
   }
 
@@ -94,7 +88,7 @@ export class TableQueries extends BaseResolver {
         pagination: { limit: 50, offset: 0 },
         sort: { field: 'createdAt', direction: 'DESC' },
       },
-      _context
+      _context,
     )
   }
 
@@ -109,7 +103,7 @@ export class TableQueries extends BaseResolver {
       includeUsageStats?: boolean
       includeAiMetadata?: boolean
     },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     // Validate that either tableId or identifier is provided
     if (!args.tableId && !args.identifier) {
@@ -119,9 +113,7 @@ export class TableQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         // Resolve the use case from container to avoid circular dependency
-        const getTableDocsUseCase = (await this.container.resolve(
-          UseCaseTokens.GET_TABLE_DOCS_USE_CASE
-        )) as any
+        const getTableDocsUseCase = (await this.container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE)) as any
 
         const result = await getTableDocsUseCase.execute({
           tableId: args.tableId,
@@ -135,7 +127,7 @@ export class TableQueries extends BaseResolver {
         return result.tableDocs
       },
       'tableDocumentation',
-      { tableId: args.tableId, identifier: args.identifier }
+      { tableId: args.tableId, identifier: args.identifier },
     )
   }
 }

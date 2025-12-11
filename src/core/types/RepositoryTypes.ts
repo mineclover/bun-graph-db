@@ -72,8 +72,7 @@ export interface IRepositoryWithIdentifier<TEntity, TId> extends IBaseRepository
  * Extended repository interface with batch operations support
  * For repositories that need to handle bulk operations efficiently
  */
-export interface IRepositoryWithBatchOperations<TEntity, TId>
-  extends IBaseRepository<TEntity, TId> {
+export interface IRepositoryWithBatchOperations<TEntity, TId> extends IBaseRepository<TEntity, TId> {
   /**
    * Save multiple entities in a single operation
    * @param entities - Array of entities to save
@@ -137,10 +136,7 @@ export interface IChildRepository<TEntity, TId, TParentId> extends IBaseReposito
    * @param options - Pagination options
    * @returns Paginated result of child entities
    */
-  findByParentId(
-    parentId: TParentId,
-    options?: PaginationOptions
-  ): Promise<PaginatedResult<TEntity>>
+  findByParentId(parentId: TParentId, options?: PaginationOptions): Promise<PaginatedResult<TEntity>>
 
   /**
    * Count child entities belonging to a parent

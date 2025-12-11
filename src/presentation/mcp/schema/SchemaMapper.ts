@@ -282,10 +282,7 @@ export class SchemaMapper {
     }
 
     // Validate additionalProperties if present
-    if (
-      schema.additionalProperties !== undefined &&
-      typeof schema.additionalProperties !== 'boolean'
-    ) {
+    if (schema.additionalProperties !== undefined && typeof schema.additionalProperties !== 'boolean') {
       return false
     }
 
@@ -375,7 +372,7 @@ export class SchemaMapper {
 export class SchemaMappingError extends Error {
   constructor(
     message: string,
-    public readonly originalType?: string
+    public readonly originalType?: string,
   ) {
     super(message)
     this.name = 'SchemaMappingError'
@@ -405,15 +402,7 @@ export interface SchemaValidationResult {
  * MCP-specific schema validator (JSON Schema Draft-07 compliant)
  */
 export class McpSchemaValidator {
-  private static readonly VALID_TYPES = [
-    'string',
-    'number',
-    'integer',
-    'boolean',
-    'object',
-    'array',
-    'null',
-  ]
+  private static readonly VALID_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null']
   private static readonly VALID_FORMATS = [
     'date',
     'date-time',
@@ -468,12 +457,7 @@ export class McpSchemaValidator {
       } else {
         // Validate each property
         for (const [propName, propSchema] of Object.entries(schema.properties)) {
-          McpSchemaValidator.validatePropertySchema(
-            propSchema,
-            `$.properties.${propName}`,
-            errors,
-            warnings
-          )
+          McpSchemaValidator.validatePropertySchema(propSchema, `$.properties.${propName}`, errors, warnings)
         }
       }
     }
@@ -530,7 +514,7 @@ export class McpSchemaValidator {
     schema: any,
     path: string,
     errors: SchemaValidationError[],
-    warnings: SchemaValidationError[]
+    warnings: SchemaValidationError[],
   ): void {
     if (!schema || typeof schema !== 'object') {
       errors.push({
@@ -634,12 +618,7 @@ export class McpSchemaValidator {
     // Validate nested object properties
     if (schema.type === 'object' && schema.properties) {
       for (const [propName, propSchema] of Object.entries(schema.properties)) {
-        McpSchemaValidator.validatePropertySchema(
-          propSchema,
-          `${path}.properties.${propName}`,
-          errors,
-          warnings
-        )
+        McpSchemaValidator.validatePropertySchema(propSchema, `${path}.properties.${propName}`, errors, warnings)
       }
     }
   }
@@ -647,11 +626,7 @@ export class McpSchemaValidator {
   /**
    * Validate numeric constraints
    */
-  private static validateNumericConstraints(
-    schema: any,
-    path: string,
-    errors: SchemaValidationError[]
-  ): void {
+  private static validateNumericConstraints(schema: any, path: string, errors: SchemaValidationError[]): void {
     if (schema.minimum !== undefined && typeof schema.minimum !== 'number') {
       errors.push({
         path: `${path}.minimum`,
@@ -685,11 +660,7 @@ export class McpSchemaValidator {
   /**
    * Validate string constraints
    */
-  private static validateStringConstraints(
-    schema: any,
-    path: string,
-    errors: SchemaValidationError[]
-  ): void {
+  private static validateStringConstraints(schema: any, path: string, errors: SchemaValidationError[]): void {
     if (schema.minLength !== undefined) {
       if (typeof schema.minLength !== 'number' || schema.minLength < 0) {
         errors.push({
@@ -806,7 +777,7 @@ export class McpSchemaValidator {
       required?: boolean
       enum?: any[]
       default?: any
-    }>
+    }>,
   ): McpInputSchema {
     const properties: Record<string, JsonSchema> = {}
     const required: string[] = []
@@ -998,11 +969,7 @@ export class McpDataValidator {
           continue
         }
 
-        const propResult = McpDataValidator.validateProperty(
-          value,
-          propSchema as any,
-          `$.${propName}`
-        )
+        const propResult = McpDataValidator.validateProperty(value, propSchema as any, `$.${propName}`)
         errors.push(...propResult.errors)
 
         if (propResult.coercedValue !== undefined) {
@@ -1043,7 +1010,7 @@ export class McpDataValidator {
   private static validateProperty(
     value: any,
     schema: any,
-    path: string
+    path: string,
   ): { errors: DataValidationError[]; coercedValue?: any } {
     const errors: DataValidationError[] = []
     let coercedValue: any = value
@@ -1099,7 +1066,7 @@ export class McpDataValidator {
             ...nestedResult.errors.map((e) => ({
               ...e,
               path: e.path.replace('$', path),
-            }))
+            })),
           )
         }
         break
@@ -1114,7 +1081,7 @@ export class McpDataValidator {
   private static validateType(
     value: any,
     expectedType: string,
-    path: string
+    path: string,
   ): { errors: DataValidationError[]; coercedValue?: any } {
     const errors: DataValidationError[] = []
     let coercedValue = value
@@ -1268,11 +1235,7 @@ export class McpDataValidator {
   /**
    * Validate string constraints
    */
-  private static validateStringConstraints(
-    value: string,
-    schema: any,
-    path: string
-  ): DataValidationError[] {
+  private static validateStringConstraints(value: string, schema: any, path: string): DataValidationError[] {
     const errors: DataValidationError[] = []
 
     if (schema.minLength !== undefined && value.length < schema.minLength) {
@@ -1328,11 +1291,7 @@ export class McpDataValidator {
   /**
    * Validate numeric constraints
    */
-  private static validateNumericConstraints(
-    value: number,
-    schema: any,
-    path: string
-  ): DataValidationError[] {
+  private static validateNumericConstraints(value: number, schema: any, path: string): DataValidationError[] {
     const errors: DataValidationError[] = []
 
     if (schema.minimum !== undefined) {
@@ -1406,11 +1365,7 @@ export class McpDataValidator {
   /**
    * Validate array constraints
    */
-  private static validateArrayConstraints(
-    value: any[],
-    schema: any,
-    path: string
-  ): DataValidationError[] {
+  private static validateArrayConstraints(value: any[], schema: any, path: string): DataValidationError[] {
     const errors: DataValidationError[] = []
 
     if (schema.minItems !== undefined && value.length < schema.minItems) {
@@ -1460,11 +1415,7 @@ export class McpDataValidator {
     // Validate each item against items schema
     if (schema.items) {
       value.forEach((item, index) => {
-        const itemResult = McpDataValidator.validateProperty(
-          item,
-          schema.items,
-          `${path}[${index}]`
-        )
+        const itemResult = McpDataValidator.validateProperty(item, schema.items, `${path}[${index}]`)
         errors.push(...itemResult.errors)
       })
     }
@@ -1475,15 +1426,8 @@ export class McpDataValidator {
   /**
    * Validate string format
    */
-  private static validateFormat(
-    value: string,
-    format: string,
-    path: string
-  ): DataValidationError | null {
-    const formatValidators: Record<
-      string,
-      { regex: RegExp | ((v: string) => boolean); example: string }
-    > = {
+  private static validateFormat(value: string, format: string, path: string): DataValidationError | null {
+    const formatValidators: Record<string, { regex: RegExp | ((v: string) => boolean); example: string }> = {
       date: { regex: /^\d{4}-\d{2}-\d{2}$/, example: '2024-01-15' },
       'date-time': {
         regex: /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})?$/,
@@ -1497,8 +1441,7 @@ export class McpDataValidator {
         example: '550e8400-e29b-41d4-a716-446655440000',
       },
       hostname: {
-        regex:
-          /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/,
+        regex: /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/,
         example: 'example.com',
       },
       ipv4: { regex: /^(\d{1,3}\.){3}\d{1,3}$/, example: '192.168.1.1' },
@@ -1543,9 +1486,7 @@ export class McpDataValidator {
     if (result.valid) {
       lines.push('✅ Data is valid')
     } else {
-      lines.push(
-        `❌ Data validation failed (${result.errors.length} error${result.errors.length > 1 ? 's' : ''})`
-      )
+      lines.push(`❌ Data validation failed (${result.errors.length} error${result.errors.length > 1 ? 's' : ''})`)
     }
 
     if (result.errors.length > 0) {
@@ -1574,11 +1515,7 @@ export const SchemaUtils = {
    * Check if a schema is compatible with MCP requirements
    */
   isCompatibleWithMcp(schema: any): boolean {
-    return (
-      SchemaMapper.validateJsonSchema(schema) &&
-      schema.type === 'object' &&
-      typeof schema.properties === 'object'
-    )
+    return SchemaMapper.validateJsonSchema(schema) && schema.type === 'object' && typeof schema.properties === 'object'
   },
 
   /**

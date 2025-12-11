@@ -344,12 +344,7 @@ describe('Schema Type Mapping Utilities', () => {
     })
 
     it('should handle malformed type definitions', () => {
-      const malformedTypes = [
-        'TEXT INVALID CONSTRAINT',
-        'INTEGER DEFAULT',
-        'VARCHAR()',
-        'CHECK (invalid syntax)',
-      ]
+      const malformedTypes = ['TEXT INVALID CONSTRAINT', 'INTEGER DEFAULT', 'VARCHAR()', 'CHECK (invalid syntax)']
 
       malformedTypes.forEach((_malformedType) => {
         expect(true).toBe(true) // Placeholder

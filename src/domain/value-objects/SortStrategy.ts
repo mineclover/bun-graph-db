@@ -14,11 +14,7 @@ export interface SortContext {
 
 export abstract class SortStrategy {
   abstract canHandle(field: string, dataType: string): boolean
-  abstract buildSortClause(
-    field: string,
-    direction: 'asc' | 'desc',
-    context: SortContext
-  ): SortResult
+  abstract buildSortClause(field: string, direction: 'asc' | 'desc', context: SortContext): SortResult
   abstract getPriority(): number
 
   // New enhanced method for building sort clauses with enhanced options
@@ -51,7 +47,7 @@ export abstract class SortStrategy {
   protected buildNullHandling(
     sortOption: EnhancedSortOption,
     context: SortContext,
-    valueAlias: string = `${context.attributeAlias}.value`
+    valueAlias: string = `${context.attributeAlias}.value`,
   ): string {
     const nullHandling = sortOption.nullHandling || 'default'
 

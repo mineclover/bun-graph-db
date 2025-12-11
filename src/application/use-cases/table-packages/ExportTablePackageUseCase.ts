@@ -1,8 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type {
-  TablePackageExportOptions,
-  TablePackageExportResult,
-} from '@/core/types/TablePackage.js'
+import type { TablePackageExportOptions, TablePackageExportResult } from '@/core/types/TablePackage.js'
 import type { ITablePackageService } from '@/domain/services/ITablePackageService.js'
 
 export interface ExportTablePackageRequest {
@@ -21,7 +18,7 @@ export interface ExportTablePackageResponse {
 export class ExportTablePackageUseCase {
   constructor(
     private readonly tablePackageService: ITablePackageService,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(request: ExportTablePackageRequest): Promise<ExportTablePackageResponse> {
@@ -69,11 +66,7 @@ export class ExportTablePackageUseCase {
       // Optionally write to file system
       let exportPath: string | undefined
       if (request.outputPath && result.tablePackage) {
-        exportPath = await this.writePackageToFile(
-          result.tablePackage,
-          request.outputPath,
-          options.prettyPrint
-        )
+        exportPath = await this.writePackageToFile(result.tablePackage, request.outputPath, options.prettyPrint)
       }
 
       this.logger.info('Table package export completed successfully', {
@@ -101,11 +94,7 @@ export class ExportTablePackageUseCase {
     }
   }
 
-  private async writePackageToFile(
-    packageData: any,
-    outputPath: string,
-    prettyPrint?: boolean
-  ): Promise<string> {
+  private async writePackageToFile(packageData: any, outputPath: string, prettyPrint?: boolean): Promise<string> {
     const fs = await import('node:fs/promises')
     const path = await import('node:path')
 

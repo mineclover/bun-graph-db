@@ -11,7 +11,7 @@ export class TemplateQueries extends BaseResolver {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     logger: ILogger,
-    readonly _schema?: GraphQLSchema
+    readonly _schema?: GraphQLSchema,
   ) {
     super()
     this.logger = logger
@@ -24,7 +24,7 @@ export class TemplateQueries extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Template ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Template ID'),
       ],
-      'getTemplate'
+      'getTemplate',
     )
 
     return this.handleQuery(
@@ -32,22 +32,18 @@ export class TemplateQueries extends BaseResolver {
         return await this.queryTemplateRepository.findById(args.id)
       },
       'findTemplateById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
-  async getTemplateByIdentifier(
-    _: GraphQLParent,
-    args: { identifier: string },
-    _context?: GraphQLContext
-  ) {
+  async getTemplateByIdentifier(_: GraphQLParent, args: { identifier: string }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
         BaseResolver.validationRules.required('identifier', 'Template Identifier'),
         BaseResolver.validationRules.nonEmpty('identifier', 'Template Identifier'),
       ],
-      'getTemplateByIdentifier'
+      'getTemplateByIdentifier',
     )
 
     return this.handleQuery(
@@ -55,7 +51,7 @@ export class TemplateQueries extends BaseResolver {
         return await this.queryTemplateRepository.findByIdentifier(args.identifier)
       },
       'findTemplateByIdentifier',
-      { identifier: args.identifier }
+      { identifier: args.identifier },
     )
   }
 
@@ -83,7 +79,7 @@ export class TemplateQueries extends BaseResolver {
         direction: 'ASC' | 'DESC'
       }>
     },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     return this.handleQuery(
       async () => {
@@ -118,7 +114,7 @@ export class TemplateQueries extends BaseResolver {
         }
       },
       'searchTemplates',
-      { args }
+      { args },
     )
   }
 
@@ -129,14 +125,14 @@ export class TemplateQueries extends BaseResolver {
         return result
       },
       'findPopularTemplates',
-      { limit: args.limit }
+      { limit: args.limit },
     )
   }
 
   async templatesByTable(
     _: GraphQLParent,
     args: { input: { tableName: string; includeUniversal?: boolean } },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     this.validateArgs(
       args,
@@ -145,40 +141,32 @@ export class TemplateQueries extends BaseResolver {
         BaseResolver.validationRules.required('input.tableName', 'Table Name'),
         BaseResolver.validationRules.nonEmpty('input.tableName', 'Table Name'),
       ],
-      'templatesByTable'
+      'templatesByTable',
     )
 
     return this.handleQuery(
       async () => {
         return await this.queryTemplateRepository.findByApplicableTable(
           args.input.tableName,
-          args.input.includeUniversal ?? true
+          args.input.includeUniversal ?? true,
         )
       },
       'findTemplatesByTable',
-      { tableName: args.input.tableName, includeUniversal: args.input.includeUniversal }
+      { tableName: args.input.tableName, includeUniversal: args.input.includeUniversal },
     )
   }
 
-  async templatesWithTableDependencies(
-    _: GraphQLParent,
-    _args: Record<string, never>,
-    _context?: GraphQLContext
-  ) {
+  async templatesWithTableDependencies(_: GraphQLParent, _args: Record<string, never>, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         return await this.queryTemplateRepository.findTemplatesWithTableDependencies()
       },
       'findTemplatesWithTableDependencies',
-      {}
+      {},
     )
   }
 
-  async tableDependencyTemplates(
-    _: GraphQLParent,
-    _args: Record<string, never>,
-    _context?: GraphQLContext
-  ) {
+  async tableDependencyTemplates(_: GraphQLParent, _args: Record<string, never>, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         const templates = await this.queryTemplateRepository.findTemplatesWithTableDependencies()
@@ -192,7 +180,7 @@ export class TemplateQueries extends BaseResolver {
             if (!groupedByTable.has(tableName)) {
               groupedByTable.set(tableName, [])
             }
-            groupedByTable.get(tableName)!.push(template)
+            groupedByTable.get(tableName)?.push(template)
           })
         })
 
@@ -204,7 +192,7 @@ export class TemplateQueries extends BaseResolver {
         }))
       },
       'getTableDependencyTemplates',
-      {}
+      {},
     )
   }
 
@@ -215,11 +203,7 @@ export class TemplateQueries extends BaseResolver {
   /**
    * Validate JSON Schema for MCP inputSchema compatibility
    */
-  async validateInputSchema(
-    _: GraphQLParent,
-    args: { input: { schema: any } },
-    _context?: GraphQLContext
-  ) {
+  async validateInputSchema(_: GraphQLParent, args: { input: { schema: any } }, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         const { schema } = args.input
@@ -246,18 +230,14 @@ export class TemplateQueries extends BaseResolver {
         }
       },
       'validateInputSchema',
-      { schemaType: typeof args.input?.schema }
+      { schemaType: typeof args.input?.schema },
     )
   }
 
   /**
    * Validate runtime data against a JSON Schema
    */
-  async validateData(
-    _: GraphQLParent,
-    args: { input: { data: any; schema: any } },
-    _context?: GraphQLContext
-  ) {
+  async validateData(_: GraphQLParent, args: { input: { data: any; schema: any } }, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         const { data, schema } = args.input
@@ -284,7 +264,7 @@ export class TemplateQueries extends BaseResolver {
         }
       },
       'validateData',
-      { dataType: typeof args.input?.data, schemaType: typeof args.input?.schema }
+      { dataType: typeof args.input?.data, schemaType: typeof args.input?.schema },
     )
   }
 }

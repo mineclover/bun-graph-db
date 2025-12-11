@@ -25,7 +25,7 @@ export class EnhancedDependencyAnalyzer {
     private readonly nodeRepository: INodeRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -79,10 +79,7 @@ export class EnhancedDependencyAnalyzer {
       const uniqueDependents = [...new Set(dependents)]
 
       // 5. Detect circular dependencies
-      const circularPaths = await this.detectCircularDependencies(
-        tableIdentifier,
-        uniqueDependencies
-      )
+      const circularPaths = await this.detectCircularDependencies(tableIdentifier, uniqueDependencies)
       circularReferences.push(...circularPaths)
 
       // 6. Calculate dependency depth
@@ -276,10 +273,7 @@ export class EnhancedDependencyAnalyzer {
 
     try {
       // Find templates that reference this table
-      const templates = await this.queryTemplateRepository.findByApplicableTable(
-        tableIdentifier,
-        true
-      )
+      const templates = await this.queryTemplateRepository.findByApplicableTable(tableIdentifier, true)
 
       for (const template of templates) {
         const queryText = template.getQueryText()
@@ -398,10 +392,7 @@ export class EnhancedDependencyAnalyzer {
   /**
    * Detect circular dependencies with path tracking
    */
-  private async detectCircularDependencies(
-    tableIdentifier: string,
-    _dependencies: string[]
-  ): Promise<string[]> {
+  private async detectCircularDependencies(tableIdentifier: string, _dependencies: string[]): Promise<string[]> {
     const circularPaths: string[] = []
     const visited = new Set<string>()
     const path = new Set<string>()
@@ -440,10 +431,7 @@ export class EnhancedDependencyAnalyzer {
   /**
    * Calculate maximum dependency depth
    */
-  private async calculateDependencyDepth(
-    _tableIdentifier: string,
-    dependencies: string[]
-  ): Promise<number> {
+  private async calculateDependencyDepth(_tableIdentifier: string, dependencies: string[]): Promise<number> {
     if (dependencies.length === 0) return 0
 
     const visited = new Set<string>()

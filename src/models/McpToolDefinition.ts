@@ -55,9 +55,7 @@ export class McpToolDefinitionBuilder {
     const hasComposition = schema.anyOf || schema.oneOf || schema.allOf
 
     if (!hasValidType && !hasComposition) {
-      throw new Error(
-        'Input schema must be of type "object" or use composition keywords (anyOf, oneOf, allOf)'
-      )
+      throw new Error('Input schema must be of type "object" or use composition keywords (anyOf, oneOf, allOf)')
     }
 
     // For object type schemas, ensure additionalProperties is defined (security requirement)
@@ -93,10 +91,7 @@ export class McpToolDefinitionBuilder {
       throw new Error('GraphQL query cannot be empty')
     }
 
-    if (
-      !operation.operationType ||
-      !['query', 'mutation', 'custom'].includes(operation.operationType)
-    ) {
+    if (!operation.operationType || !['query', 'mutation', 'custom'].includes(operation.operationType)) {
       throw new Error('GraphQL operation type must be "query", "mutation", or "custom"')
     }
 
@@ -143,9 +138,7 @@ export function validateMcpToolDefinition(tool: McpToolDefinition): {
   if (!tool.name || tool.name.trim().length === 0) {
     errors.push('Tool name is required and cannot be empty')
   } else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(tool.name)) {
-    errors.push(
-      'Tool name must start with a letter and contain only letters, numbers, and underscores'
-    )
+    errors.push('Tool name must start with a letter and contain only letters, numbers, and underscores')
   }
 
   // Validate description
@@ -188,10 +181,7 @@ export function validateMcpToolDefinition(tool: McpToolDefinition): {
   if (!tool.graphqlOperation) {
     errors.push('Tool GraphQL operation is required')
   } else {
-    if (
-      !tool.graphqlOperation.operationName ||
-      tool.graphqlOperation.operationName.trim().length === 0
-    ) {
+    if (!tool.graphqlOperation.operationName || tool.graphqlOperation.operationName.trim().length === 0) {
       errors.push('GraphQL operation name is required')
     }
     if (!tool.graphqlOperation.query || tool.graphqlOperation.query.trim().length === 0) {
@@ -268,7 +258,7 @@ export function createMcpQueryTool(
   description: string,
   inputSchema: JSONSchema7,
   query: string,
-  operationName?: string
+  operationName?: string,
 ): McpToolDefinition {
   return new McpToolDefinitionBuilder()
     .withName(name)
@@ -288,7 +278,7 @@ export function createMcpMutationTool(
   description: string,
   inputSchema: JSONSchema7,
   mutation: string,
-  operationName?: string
+  operationName?: string,
 ): McpToolDefinition {
   return new McpToolDefinitionBuilder()
     .withName(name)
@@ -304,12 +294,7 @@ export function createMcpMutationTool(
 }
 
 export function createMcpToolFromContract(contractTool: any): McpToolDefinition {
-  if (
-    !contractTool.name ||
-    !contractTool.description ||
-    !contractTool.inputSchema ||
-    !contractTool.graphqlOperation
-  ) {
+  if (!contractTool.name || !contractTool.description || !contractTool.inputSchema || !contractTool.graphqlOperation) {
     throw new Error('Invalid contract tool: missing required fields')
   }
 

@@ -3,7 +3,7 @@
   "description": "Test advanced template search functionality with pagination and sorting",
   "domain": "template_management",
   "category": "advanced",
-  
+
   "templateExecution": {
     "templateIdentifier": "search-templates-advanced",
     "variables": {
@@ -19,7 +19,7 @@
       ]
     }
   },
-  
+
   "expectedResult": {
     "success": true,
     "dataShape": {
@@ -28,7 +28,7 @@
       "hasNextPage": "boolean"
     }
   },
-  
+
   "testConfig": {
     "shouldExport": false,
     "retryOnFailure": false

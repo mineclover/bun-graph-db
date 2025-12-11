@@ -5,18 +5,10 @@
  * using SQLite VACUUM INTO command and file operations
  */
 
+import { createHash } from 'node:crypto'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from 'node:fs'
+import { join } from 'node:path'
 import { gunzipSync, gzipSync } from 'bun'
-import { createHash } from 'crypto'
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  statSync,
-  unlinkSync,
-} from 'fs'
-import { join } from 'path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { getDatabasePath } from '@/config/database.js'
 import type { IDatabaseConnection } from '@/core/database/interfaces/IDatabaseConnection.js'
@@ -38,7 +30,7 @@ export class SQLiteBackupService {
 
   constructor(
     private readonly db: IDatabaseConnection,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {
     this.ensureBackupDirectory()
   }
@@ -55,11 +47,7 @@ export class SQLiteBackupService {
       this.logger.info('Starting database backup', { options })
 
       // Generate backup path
-      const timestamp = new Date()
-        .toISOString()
-        .replace(/[:.]/g, '-')
-        .replace('T', '_')
-        .split('.')[0]
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').split('.')[0]
       const defaultPath = join(this.backupDir, `db_${timestamp}.sqlite`)
       const outputPath = options.outputPath || defaultPath
 
@@ -237,10 +225,7 @@ export class SQLiteBackupService {
       let safetyBackupPath: string | undefined
       if (safetyBackup) {
         const safetyResult = await this.createBackup({
-          outputPath: join(
-            this.backupDir,
-            `safety_backup_${new Date().toISOString().replace(/[:.]/g, '-')}.sqlite`
-          ),
+          outputPath: join(this.backupDir, `safety_backup_${new Date().toISOString().replace(/[:.]/g, '-')}.sqlite`),
           validate: true,
         })
 
@@ -283,9 +268,7 @@ export class SQLiteBackupService {
       if (verifyAfterRestore) {
         try {
           const tablesCount = await this.db
-            .queryFirst<{ count: number }>(
-              `SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'`
-            )
+            .queryFirst<{ count: number }>(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='table'`)
             .then((r) => r?.count || 0)
 
           const nodesCount = await this.db
@@ -371,8 +354,7 @@ export class SQLiteBackupService {
       fileBackups.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 
       const totalSizeBytes =
-        fileBackups.reduce((sum, b) => sum + b.sizeBytes, 0) +
-        tableBackups.reduce((sum, b) => sum + b.sizeBytes, 0)
+        fileBackups.reduce((sum, b) => sum + b.sizeBytes, 0) + tableBackups.reduce((sum, b) => sum + b.sizeBytes, 0)
 
       return {
         fileBackups,
@@ -525,14 +507,12 @@ export class SQLiteBackupService {
 
       try {
         // Check if database has expected tables
-        const tables = testDb
-          .query(`SELECT name FROM sqlite_master WHERE type='table'`)
-          .all() as Array<{ name: string }>
+        const tables = testDb.query(`SELECT name FROM sqlite_master WHERE type='table'`).all() as Array<{
+          name: string
+        }>
 
         const requiredTables = ['tables', 'table_nodes', 'attributes']
-        const hasRequiredTables = requiredTables.every((table) =>
-          tables.some((t) => t.name === table)
-        )
+        const hasRequiredTables = requiredTables.every((table) => tables.some((t) => t.name === table))
 
         testDb.close()
 
@@ -569,8 +549,7 @@ export class SQLiteBackupService {
       if (update.success) {
         metrics.lastBackupTime = new Date()
         metrics.averageBackupDuration =
-          (metrics.averageBackupDuration * (metrics.totalBackups - 1) + update.duration) /
-          metrics.totalBackups
+          (metrics.averageBackupDuration * (metrics.totalBackups - 1) + update.duration) / metrics.totalBackups
 
         if (update.sizeBytes) {
           metrics.totalBackupSize += update.sizeBytes

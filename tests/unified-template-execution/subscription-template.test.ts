@@ -90,20 +90,17 @@ describe('Unified Template Execution - Subscription Tests', () => {
 
   beforeAll(async () => {
     // Setup use cases
-    executeQueryTemplateUseCase = new ExecuteQueryTemplateUseCase(
-      mockQueryTemplateRepository as any,
-      mockLogger
-    )
+    executeQueryTemplateUseCase = new ExecuteQueryTemplateUseCase(mockQueryTemplateRepository as any, mockLogger)
 
     executeTemplateWithGraphQLUseCase = new ExecuteTemplateWithGraphQLUseCase(
       executeQueryTemplateUseCase,
       testSchema,
-      mockLogger
+      mockLogger,
     )
 
     executeSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
       executeTemplateWithGraphQLUseCase,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -224,15 +221,8 @@ describe('Unified Template Execution - Subscription Tests', () => {
     }
 
     const tempUseCase = new ExecuteQueryTemplateUseCase(mockRepo as any, mockLogger)
-    const tempGraphQLUseCase = new ExecuteTemplateWithGraphQLUseCase(
-      tempUseCase,
-      testSchema,
-      mockLogger
-    )
-    const tempSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
-      tempGraphQLUseCase,
-      mockLogger
-    )
+    const tempGraphQLUseCase = new ExecuteTemplateWithGraphQLUseCase(tempUseCase, testSchema, mockLogger)
+    const tempSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(tempGraphQLUseCase, mockLogger)
 
     const events: any[] = []
     const stream = tempSubscriptionUseCase.execute({
@@ -300,20 +290,17 @@ describe('Unified Template Execution - Subscription Tests', () => {
 // Performance test
 describe('Template Execution Performance', () => {
   test('should complete stream execution within reasonable time', async () => {
-    const executeQueryTemplateUseCase = new ExecuteQueryTemplateUseCase(
-      mockQueryTemplateRepository as any,
-      mockLogger
-    )
+    const executeQueryTemplateUseCase = new ExecuteQueryTemplateUseCase(mockQueryTemplateRepository as any, mockLogger)
 
     const executeTemplateWithGraphQLUseCase = new ExecuteTemplateWithGraphQLUseCase(
       executeQueryTemplateUseCase,
       testSchema,
-      mockLogger
+      mockLogger,
     )
 
     const executeSubscriptionUseCase = new ExecuteTemplateWithSubscriptionUseCase(
       executeTemplateWithGraphQLUseCase,
-      mockLogger
+      mockLogger,
     )
 
     const startTime = Date.now()

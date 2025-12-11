@@ -22,7 +22,7 @@ import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 export class TablePackageCommands {
   constructor(
     private readonly tablePackageService: ITablePackageService,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -163,9 +163,7 @@ export class TablePackageCommands {
       if (result.result?.resolvedConflicts && result.result.resolvedConflicts.length > 0) {
         console.log(`⚡ Resolved conflicts:`)
         for (const conflict of result.result.resolvedConflicts) {
-          console.log(
-            `   - ${conflict.type}: ${conflict.originalName} → ${conflict.resolvedName} (${conflict.action})`
-          )
+          console.log(`   - ${conflict.type}: ${conflict.originalName} → ${conflict.resolvedName} (${conflict.action})`)
         }
       }
 
@@ -212,10 +210,7 @@ export class TablePackageCommands {
         prettyPrint: args.prettyPrint ?? true,
       }
 
-      const results = await this.tablePackageService.exportRelatedTables(
-        args.tableIdentifiers,
-        options
-      )
+      const results = await this.tablePackageService.exportRelatedTables(args.tableIdentifiers, options)
 
       let successCount = 0
       let failureCount = 0
@@ -248,10 +243,7 @@ export class TablePackageCommands {
       }
     } catch (error) {
       this.logger.error('Batch export command failed', toErrorMeta(error))
-      console.error(
-        '❌ Batch export failed:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
+      console.error('❌ Batch export failed:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
   }
@@ -350,10 +342,7 @@ export class TablePackageCommands {
       }
     } catch (error) {
       this.logger.error('Batch import command failed', toErrorMeta(error))
-      console.error(
-        '❌ Batch import failed:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
+      console.error('❌ Batch import failed:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
   }
@@ -424,10 +413,7 @@ export class TablePackageCommands {
       console.log('\n💡 Import in this order to resolve dependencies correctly')
     } catch (error) {
       this.logger.error('Import order resolution command failed', toErrorMeta(error))
-      console.error(
-        '❌ Resolution failed:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
+      console.error('❌ Resolution failed:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
   }
@@ -480,10 +466,7 @@ export class TablePackageCommands {
       }
     } catch (error) {
       this.logger.error('Template generation command failed', toErrorMeta(error))
-      console.error(
-        '❌ Generation failed:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
+      console.error('❌ Generation failed:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
   }
@@ -541,10 +524,7 @@ export class TablePackageCommands {
       }
     } catch (error) {
       this.logger.error('Package validation command failed', toErrorMeta(error))
-      console.error(
-        '❌ Validation failed:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
+      console.error('❌ Validation failed:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
   }

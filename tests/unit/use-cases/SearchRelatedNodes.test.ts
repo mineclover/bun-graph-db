@@ -93,7 +93,7 @@ describe('SearchRelatedNodesUseCase', () => {
       mockRelationRepository,
       mockGraphRepository,
       mockTableRepository,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -150,9 +150,7 @@ describe('SearchRelatedNodesUseCase', () => {
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow(
-        'Path query max depth must be at least 1'
-      )
+      await expect(useCase.execute(input)).rejects.toThrow('Path query max depth must be at least 1')
     })
   })
 
@@ -165,9 +163,7 @@ describe('SearchRelatedNodesUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow(
-        "Table with id 'nonexistent-table' not found"
-      )
+      await expect(useCase.execute(input)).rejects.toThrow("Table with id 'nonexistent-table' not found")
     })
   })
 
@@ -236,7 +232,7 @@ describe('SearchRelatedNodesUseCase', () => {
 
       mockGraphRepository.searchRelatedNodes = mock(async (_tableId, graphQuery) => {
         expect(graphQuery.relationFilters).toBeDefined()
-        expect(graphQuery.relationFilters![0].relationTypeIds).toEqual(['rel-type-1'])
+        expect(graphQuery.relationFilters?.[0].relationTypeIds).toEqual(['rel-type-1'])
         return {
           data: [],
           total: 0,
@@ -360,17 +356,17 @@ describe('SearchRelatedNodesUseCase', () => {
       const result = await useCase.execute(input)
 
       expect(result.paths).toBeDefined()
-      expect(result.paths!.length).toBe(1)
-      expect(result.paths![0].startNodeId).toBe('node-1')
-      expect(result.paths![0].endNodeId).toBe('node-3')
-      expect(result.paths![0].path).toEqual(['node-1', 'node-2', 'node-3'])
-      expect(result.paths![0].length).toBe(3)
+      expect(result.paths?.length).toBe(1)
+      expect(result.paths?.[0].startNodeId).toBe('node-1')
+      expect(result.paths?.[0].endNodeId).toBe('node-3')
+      expect(result.paths?.[0].path).toEqual(['node-1', 'node-2', 'node-3'])
+      expect(result.paths?.[0].length).toBe(3)
       expect(mockGraphRepository.findPathsBetweenNodes).toHaveBeenCalledWith(
         'table-1',
         ['node-1'],
         ['node-3'],
         3,
-        undefined
+        undefined,
       )
     })
 
@@ -391,7 +387,7 @@ describe('SearchRelatedNodesUseCase', () => {
         async (_tableId, _startIds, _endIds, _maxDepth, relationTypes) => {
           expect(relationTypes).toEqual(['depends-on', 'requires'])
           return []
-        }
+        },
       )
 
       await useCase.execute(input)
@@ -417,7 +413,7 @@ describe('SearchRelatedNodesUseCase', () => {
         'Failed to search related nodes',
         expect.objectContaining({
           error: 'Graph database connection failed',
-        })
+        }),
       )
     })
   })
@@ -436,11 +432,9 @@ describe('SearchRelatedNodesUseCase', () => {
     it('should throw NotFoundException when table does not exist', async () => {
       mockTableRepository.findById = mock(async () => null)
 
+      await expect(useCase.getDependencies('nonexistent-table', 'node-1')).rejects.toThrow(NotFoundException)
       await expect(useCase.getDependencies('nonexistent-table', 'node-1')).rejects.toThrow(
-        NotFoundException
-      )
-      await expect(useCase.getDependencies('nonexistent-table', 'node-1')).rejects.toThrow(
-        "Table with id 'nonexistent-table' not found"
+        "Table with id 'nonexistent-table' not found",
       )
     })
   })
@@ -481,23 +475,18 @@ describe('SearchRelatedNodesUseCase', () => {
     })
 
     it('should get dependencies with relationTypes filter', async () => {
-      mockGraphRepository.getDependencyChain = mock(
-        async (_tableId, _nodeId, _direction, relationTypes) => {
-          expect(relationTypes).toEqual(['depends-on', 'requires'])
-          return []
-        }
-      )
+      mockGraphRepository.getDependencyChain = mock(async (_tableId, _nodeId, _direction, relationTypes) => {
+        expect(relationTypes).toEqual(['depends-on', 'requires'])
+        return []
+      })
 
-      await useCase.getDependencies('table-1', 'node-1', RelationDirection.INCOMING, [
-        'depends-on',
-        'requires',
-      ])
+      await useCase.getDependencies('table-1', 'node-1', RelationDirection.INCOMING, ['depends-on', 'requires'])
 
       expect(mockGraphRepository.getDependencyChain).toHaveBeenCalledWith(
         'table-1',
         'node-1',
         RelationDirection.INCOMING,
-        ['depends-on', 'requires']
+        ['depends-on', 'requires'],
       )
     })
   })
@@ -510,14 +499,12 @@ describe('SearchRelatedNodesUseCase', () => {
         throw depError
       })
 
-      await expect(useCase.getDependencies('table-1', 'node-1')).rejects.toThrow(
-        'Dependency chain query failed'
-      )
+      await expect(useCase.getDependencies('table-1', 'node-1')).rejects.toThrow('Dependency chain query failed')
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Failed to get dependencies',
         expect.objectContaining({
           error: 'Dependency chain query failed',
-        })
+        }),
       )
     })
   })

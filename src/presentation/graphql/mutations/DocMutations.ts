@@ -49,7 +49,7 @@ export class DocMutations extends BaseResolver {
     private readonly updateDocUseCase: UpdateDocUseCase,
     private readonly deleteDocUseCase: DeleteDocUseCase,
     private readonly activateDocUseCase: ActivateDocUseCase,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -67,7 +67,7 @@ export class DocMutations extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('input.category', 'Doc category'),
         BaseResolver.validationRules.nonEmpty('input.content', 'Doc content'),
       ],
-      'createDoc'
+      'createDoc',
     )
 
     try {
@@ -111,7 +111,7 @@ export class DocMutations extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('id', 'Doc ID'),
         BaseResolver.validationRules.nonEmpty('input.content', 'Doc content'),
       ],
-      'updateDoc'
+      'updateDoc',
     )
 
     try {
@@ -149,11 +149,8 @@ export class DocMutations extends BaseResolver {
   async deleteDoc(_: GraphQLParent, args: DeleteDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args as any,
-      [
-        BaseResolver.validationRules.required('id', 'Doc ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Doc ID'),
-      ],
-      'deleteDoc'
+      [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
+      'deleteDoc',
     )
 
     try {
@@ -183,11 +180,8 @@ export class DocMutations extends BaseResolver {
   async activateDoc(_: GraphQLParent, args: ActivateDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args as any,
-      [
-        BaseResolver.validationRules.required('id', 'Doc ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Doc ID'),
-      ],
-      'activateDoc'
+      [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
+      'activateDoc',
     )
 
     try {
@@ -228,7 +222,7 @@ export class DocMutations extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('input.category', 'Doc category'),
         BaseResolver.validationRules.nonEmpty('input.content', 'Doc content'),
       ],
-      'createDocVersion'
+      'createDocVersion',
     )
 
     try {

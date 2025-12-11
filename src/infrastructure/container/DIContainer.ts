@@ -22,11 +22,7 @@ export class DIContainer {
   /**
    * Register a transient service (new instance each time)
    */
-  registerTransient<T>(
-    token: ServiceToken<T>,
-    factory: ServiceFactory<T>,
-    dependencies: ServiceToken[] = []
-  ): void {
+  registerTransient<T>(token: ServiceToken<T>, factory: ServiceFactory<T>, dependencies: ServiceToken[] = []): void {
     this.registrations.set(token, {
       token,
       factory,
@@ -38,11 +34,7 @@ export class DIContainer {
   /**
    * Register a singleton service (same instance each time)
    */
-  registerSingleton<T>(
-    token: ServiceToken<T>,
-    factory: ServiceFactory<T>,
-    dependencies: ServiceToken[] = []
-  ): void {
+  registerSingleton<T>(token: ServiceToken<T>, factory: ServiceFactory<T>, dependencies: ServiceToken[] = []): void {
     this.registrations.set(token, {
       token,
       factory,
@@ -77,7 +69,7 @@ export class DIContainer {
     if (this.resolutionStack.has(token)) {
       const stackArray = Array.from(this.resolutionStack).map((t) => String(t))
       throw new Error(
-        `Circular dependency detected for token: ${String(token)}\nDependency chain: ${stackArray.join(' -> ')} -> ${String(token)}`
+        `Circular dependency detected for token: ${String(token)}\nDependency chain: ${stackArray.join(' -> ')} -> ${String(token)}`,
       )
     }
 
@@ -91,7 +83,7 @@ export class DIContainer {
     try {
       // Resolve dependencies first
       const _dependencyInstances = await Promise.all(
-        registration.dependencies.map((depToken) => this.resolve(depToken))
+        registration.dependencies.map((depToken) => this.resolve(depToken)),
       )
 
       // Create instance

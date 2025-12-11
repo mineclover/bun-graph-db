@@ -96,9 +96,7 @@ export function validateGraphQLOperation(operation: GraphQLOperation): {
   if (!operation.operationName || operation.operationName.trim().length === 0) {
     errors.push('Operation name is required')
   } else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(operation.operationName)) {
-    errors.push(
-      'Operation name must start with a letter and contain only letters, numbers, and underscores'
-    )
+    errors.push('Operation name must start with a letter and contain only letters, numbers, and underscores')
   }
 
   // Validate query syntax
@@ -114,16 +112,12 @@ export function validateGraphQLOperation(operation: GraphQLOperation): {
       } else {
         // Validate operation type matches
         if (operationDef.operation !== operation.operationType) {
-          errors.push(
-            `Operation type mismatch: expected ${operation.operationType}, found ${operationDef.operation}`
-          )
+          errors.push(`Operation type mismatch: expected ${operation.operationType}, found ${operationDef.operation}`)
         }
 
         // Validate operation name matches if present
         if (operationDef.name && operationDef.name.value !== operation.operationName) {
-          errors.push(
-            `Operation name mismatch: expected ${operation.operationName}, found ${operationDef.name.value}`
-          )
+          errors.push(`Operation name mismatch: expected ${operation.operationName}, found ${operationDef.name.value}`)
         }
       }
     } catch (parseError) {
@@ -132,10 +126,7 @@ export function validateGraphQLOperation(operation: GraphQLOperation): {
   }
 
   // Validate operation type
-  if (
-    !operation.operationType ||
-    !['query', 'mutation', 'custom'].includes(operation.operationType)
-  ) {
+  if (!operation.operationType || !['query', 'mutation', 'custom'].includes(operation.operationType)) {
     errors.push('Operation type must be "query" or "mutation"')
   }
 
@@ -152,7 +143,7 @@ export function validateGraphQLOperation(operation: GraphQLOperation): {
 
 export function validateGraphQLOperationVariables(
   operation: GraphQLOperation,
-  providedVariables: Record<string, any>
+  providedVariables: Record<string, any>,
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
@@ -177,9 +168,7 @@ export function validateGraphQLOperationVariables(
 
     // Check for unexpected variables
     for (const providedVar in providedVariables) {
-      const hasDefinition = operationDef.variableDefinitions?.some(
-        (def) => def.variable.name.value === providedVar
-      )
+      const hasDefinition = operationDef.variableDefinitions?.some((def) => def.variable.name.value === providedVar)
       if (!hasDefinition) {
         errors.push(`Unexpected variable "${providedVar}" provided`)
       }
@@ -201,10 +190,7 @@ export class GraphQLOperationExecutor {
     this.graphqlEndpoint = endpoint
   }
 
-  async execute(
-    operation: GraphQLOperation,
-    variables?: Record<string, any>
-  ): Promise<GraphQLExecutionResult> {
+  async execute(operation: GraphQLOperation, variables?: Record<string, any>): Promise<GraphQLExecutionResult> {
     const validation = validateGraphQLOperation(operation)
     if (!validation.valid) {
       return {
@@ -266,7 +252,7 @@ export class GraphQLOperationExecutor {
 export function createGraphQLQuery(
   operationName: string,
   query: string,
-  variables?: Record<string, any>
+  variables?: Record<string, any>,
 ): GraphQLOperation {
   return new GraphQLOperationBuilder()
     .withOperationName(operationName)
@@ -279,7 +265,7 @@ export function createGraphQLQuery(
 export function createGraphQLMutation(
   operationName: string,
   mutation: string,
-  variables?: Record<string, any>
+  variables?: Record<string, any>,
 ): GraphQLOperation {
   return new GraphQLOperationBuilder()
     .withOperationName(operationName)
@@ -307,7 +293,7 @@ export function extractGraphQLVariables(query: string): string[] {
 export function createGraphQLExecutionContext(
   operation: GraphQLOperation,
   variables?: Record<string, any>,
-  requestId?: string
+  requestId?: string,
 ): GraphQLExecutionContext {
   return {
     operation,

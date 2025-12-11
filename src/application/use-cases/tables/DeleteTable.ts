@@ -24,7 +24,7 @@ export class DeleteTableUseCase {
     private readonly nodeRepository: INodeRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly relationRepository: INodeRelationRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async checkTableDependencies(tableId: TableId): Promise<TableDependencyInfo> {
@@ -110,10 +110,7 @@ export class DeleteTableUseCase {
     return dependencies
   }
 
-  private async deleteCascadeData(
-    tableId: TableId,
-    dependencies: TableDependencyInfo
-  ): Promise<void> {
+  private async deleteCascadeData(tableId: TableId, dependencies: TableDependencyInfo): Promise<void> {
     this.logger.info('Starting cascade deletion process', {
       tableId,
       nodeCount: dependencies.nodeCount,

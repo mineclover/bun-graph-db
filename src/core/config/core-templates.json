@@ -199,12 +199,7 @@
     "Table Operations": {
       "description": "Templates for table schema and metadata operations",
       "priority": 8,
-      "templates": [
-        "get-table-detailed-statistics",
-        "test-get-table",
-        "get-table-attributes-by-id",
-        "get-table-schema"
-      ]
+      "templates": ["get-table-detailed-statistics", "test-get-table", "get-table-attributes-by-id", "get-table-schema"]
     },
     "Query Operations": {
       "description": "Templates for searching and retrieving data",

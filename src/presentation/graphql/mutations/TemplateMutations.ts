@@ -22,7 +22,7 @@ export class TemplateMutations extends BaseResolver {
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     private readonly executeQueryTemplateUseCase: ExecuteQueryTemplateUseCase,
     logger: ILogger,
-    private readonly schema?: GraphQLSchema
+    private readonly schema?: GraphQLSchema,
   ) {
     super()
     this.logger = logger
@@ -43,7 +43,7 @@ export class TemplateMutations extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('input.name', 'Template name'),
         BaseResolver.validationRules.nonEmpty('input.query', 'Query text'),
       ],
-      'createTemplate'
+      'createTemplate',
     )
 
     try {
@@ -62,7 +62,7 @@ export class TemplateMutations extends BaseResolver {
           templateType: args.input.templateType,
           complexityScore: args.input.complexityScore,
           version: args.input.version,
-        }
+        },
       )
 
       const result = await this.queryTemplateRepository.create(template)
@@ -100,11 +100,7 @@ export class TemplateMutations extends BaseResolver {
     }
   }
 
-  async updateTemplate(
-    _: GraphQLParent,
-    args: { id: string; input: any },
-    _context?: GraphQLContext
-  ) {
+  async updateTemplate(_: GraphQLParent, args: { id: string; input: any }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -112,7 +108,7 @@ export class TemplateMutations extends BaseResolver {
         BaseResolver.validationRules.required('input', 'Update template input'),
         BaseResolver.validationRules.nonEmpty('id', 'Template ID'),
       ],
-      'updateTemplate'
+      'updateTemplate',
     )
 
     try {
@@ -197,7 +193,7 @@ export class TemplateMutations extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Template ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Template ID'),
       ],
-      'deleteTemplate'
+      'deleteTemplate',
     )
 
     return this.handleMutation(
@@ -234,7 +230,7 @@ export class TemplateMutations extends BaseResolver {
         return true
       },
       'deleteTemplate',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
@@ -245,7 +241,7 @@ export class TemplateMutations extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Template ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Template ID'),
       ],
-      'activateTemplate'
+      'activateTemplate',
     )
 
     return this.handleMutation(
@@ -254,7 +250,7 @@ export class TemplateMutations extends BaseResolver {
         return result
       },
       'activateTemplate',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
@@ -265,7 +261,7 @@ export class TemplateMutations extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Template ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Template ID'),
       ],
-      'deactivateTemplate'
+      'deactivateTemplate',
     )
 
     return this.handleMutation(
@@ -274,7 +270,7 @@ export class TemplateMutations extends BaseResolver {
         return result
       },
       'deactivateTemplate',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
@@ -287,12 +283,12 @@ export class TemplateMutations extends BaseResolver {
         variables?: Record<string, unknown>
       }
     },
-    context?: GraphQLContext
+    context?: GraphQLContext,
   ) {
     this.validateArgs(
       args,
       [BaseResolver.validationRules.required('input', 'Execute template input')],
-      'executeTemplate'
+      'executeTemplate',
     )
 
     // Validate that either templateId or templateIdentifier is provided
@@ -327,18 +323,13 @@ export class TemplateMutations extends BaseResolver {
           variables: args.input.variables,
           trackUsage: true,
         },
-        context
+        context,
       )
 
       // Transform the result to match executeTemplate's expected return format
       // Create execution object from metadata if available
       let execution = null
-      if (
-        result.success &&
-        result.data &&
-        typeof result.data === 'object' &&
-        'metadata' in result.data
-      ) {
+      if (result.success && result.data && typeof result.data === 'object' && 'metadata' in result.data) {
         const metadata = (result.data as any).metadata
         execution = {
           id: `exec_${Date.now()}`,
@@ -389,7 +380,7 @@ export class TemplateMutations extends BaseResolver {
       variables?: Record<string, unknown>
       trackUsage?: boolean
     },
-    context?: GraphQLContext
+    context?: GraphQLContext,
   ) {
     this.validateArgs(
       args,
@@ -397,7 +388,7 @@ export class TemplateMutations extends BaseResolver {
         BaseResolver.validationRules.required('templateIdentifier', 'Template Identifier'),
         BaseResolver.validationRules.nonEmpty('templateIdentifier', 'Template Identifier'),
       ],
-      'executeTemplateWithGraphQL'
+      'executeTemplateWithGraphQL',
     )
 
     const startTime = Date.now()
@@ -518,7 +509,7 @@ export class TemplateMutations extends BaseResolver {
         }
       },
       'executeTemplateWithGraphQL',
-      { templateIdentifier: args.templateIdentifier }
+      { templateIdentifier: args.templateIdentifier },
     )
   }
 
@@ -705,7 +696,7 @@ export class TemplateMutations extends BaseResolver {
       templateIdentifier?: string
       newQuery: string
       updateVariables?: Record<string, unknown>
-    }
+    },
   ): Promise<{
     success: boolean
     template?: any

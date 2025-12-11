@@ -1,8 +1,4 @@
-import type {
-  EnhancedSortOption,
-  MultiCriteriaSortResult,
-  SortContext,
-} from '@/domain/value-objects/SortStrategy.js'
+import type { EnhancedSortOption, MultiCriteriaSortResult, SortContext } from '@/domain/value-objects/SortStrategy.js'
 import {
   type ComplexityMetrics,
   getOptimizationRecommendation,
@@ -54,20 +50,12 @@ export function buildOptimizedSort(
     estimatedDataSize?: number
     performanceBudget?: 'interactive' | 'background' | 'batch'
     allowApproximateResults?: boolean
-  } = {}
+  } = {},
 ): AdaptiveSortResult {
-  const {
-    estimatedDataSize = 1000,
-    performanceBudget = 'background',
-    allowApproximateResults = false,
-  } = options
+  const { estimatedDataSize = 1000, performanceBudget = 'background', allowApproximateResults = false } = options
 
   // Get optimization recommendation from complexity analyzer
-  const { metrics, hint, optimization } = getOptimizationRecommendation(
-    sortOptions,
-    context,
-    estimatedDataSize
-  )
+  const { metrics, hint, optimization } = getOptimizationRecommendation(sortOptions, context, estimatedDataSize)
 
   // Apply performance budget constraints
   const budgetMs = PERFORMANCE_BUDGETS[performanceBudget]
@@ -75,12 +63,7 @@ export function buildOptimizedSort(
   const adjustedOptimization = adjustOptimizationForBudget(optimization, budgetMs)
 
   // Build the actual sort clauses based on strategy
-  const sortResult = executeSortStrategy(
-    sortOptions,
-    context,
-    adjustedHint.strategy,
-    adjustedOptimization
-  )
+  const sortResult = executeSortStrategy(sortOptions, context, adjustedHint.strategy, adjustedOptimization)
 
   // Generate warnings and suggestions
   const warnings = generateWarnings(metrics, hint, budgetMs)
@@ -105,13 +88,9 @@ export function buildOptimizedSort(
   function _createExecutionPlanInternal(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    estimatedDataSize: number = 1000
+    estimatedDataSize: number = 1000,
   ): SortExecutionPlan {
-    const { metrics, hint, optimization } = getOptimizationRecommendation(
-      sortOptions,
-      context,
-      estimatedDataSize
-    )
+    const { metrics, hint, optimization } = getOptimizationRecommendation(sortOptions, context, estimatedDataSize)
 
     // Separate sort options into phases based on dependencies
     const phases = createExecutionPhases(sortOptions, context, hint, optimization)
@@ -135,7 +114,7 @@ export function buildOptimizedSort(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
     strategy: 'database' | 'memory' | 'hybrid' | 'lazy',
-    optimization: SortOptimization
+    optimization: SortOptimization,
   ): MultiCriteriaSortResult {
     switch (strategy) {
       case 'database':
@@ -162,16 +141,12 @@ export function buildOptimizedSort(
   function executeDatabaseSort(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    optimization: SortOptimization
+    optimization: SortOptimization,
   ): MultiCriteriaSortResult {
     // Prioritize simple, indexable fields for database sorting
-    const indexableOptions = sortOptions.filter(
-      (option) => !option.field.startsWith('_') && !option.customComparator
-    )
+    const indexableOptions = sortOptions.filter((option) => !option.field.startsWith('_') && !option.customComparator)
 
-    const computedOptions = sortOptions.filter(
-      (option) => option.field.startsWith('_') || option.customComparator
-    )
+    const computedOptions = sortOptions.filter((option) => option.field.startsWith('_') || option.customComparator)
 
     // Build database sort for indexable fields
     const databaseResult = buildEnhancedMultiCriteriaSort(indexableOptions, context)
@@ -181,9 +156,7 @@ export function buildOptimizedSort(
       const computedResult = buildEnhancedMultiCriteriaSort(computedOptions, context)
 
       return {
-        sqlClause: [databaseResult.sqlClause, computedResult.sqlClause]
-          .filter((clause) => clause.trim())
-          .join(' '),
+        sqlClause: [databaseResult.sqlClause, computedResult.sqlClause].filter((clause) => clause.trim()).join(' '),
         parameters: [...databaseResult.parameters, ...computedResult.parameters],
         sortFields: [...databaseResult.sortFields, ...computedResult.sortFields],
       }
@@ -198,7 +171,7 @@ export function buildOptimizedSort(
   function executeMemorySort(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    optimization: SortOptimization
+    optimization: SortOptimization,
   ): MultiCriteriaSortResult {
     // For SQLite, we still generate SQL but with memory-friendly patterns
     // This could be extended to include post-processing hints
@@ -222,7 +195,7 @@ export function buildOptimizedSort(
   function executeHybridSort(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    _optimization: SortOptimization
+    _optimization: SortOptimization,
   ): MultiCriteriaSortResult {
     // Separate simple and complex sort criteria
     const simpleOptions: EnhancedSortOption[] = []
@@ -266,7 +239,7 @@ export function buildOptimizedSort(
   function executeLazySort(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    optimization: SortOptimization
+    optimization: SortOptimization,
   ): MultiCriteriaSortResult {
     const result = buildEnhancedMultiCriteriaSort(sortOptions, context)
 
@@ -288,7 +261,7 @@ export function buildOptimizedSort(
   function applyPerformanceBudget(
     hint: PerformanceHint,
     budgetMs: number,
-    _allowApproximateResults: boolean
+    _allowApproximateResults: boolean,
   ): PerformanceHint {
     if (hint.estimatedCost <= budgetMs) {
       return hint // No changes needed
@@ -320,10 +293,7 @@ export function buildOptimizedSort(
   /**
    * Adjust optimization settings based on performance budget
    */
-  function adjustOptimizationForBudget(
-    optimization: SortOptimization,
-    budgetMs: number
-  ): SortOptimization {
+  function adjustOptimizationForBudget(optimization: SortOptimization, budgetMs: number): SortOptimization {
     // For tight budgets, enable approximation and smaller batch sizes
     if (budgetMs <= PERFORMANCE_BUDGETS.interactive) {
       return {
@@ -345,14 +315,12 @@ export function buildOptimizedSort(
     sortOptions: EnhancedSortOption[],
     _context: SortContext,
     hint: PerformanceHint,
-    _optimization: SortOptimization
+    _optimization: SortOptimization,
   ): SortExecutionPhase[] {
     const phases: SortExecutionPhase[] = []
 
     // Phase 1: Simple indexed fields
-    const simpleOptions = sortOptions.filter(
-      (option) => !option.field.startsWith('_') && !option.customComparator
-    )
+    const simpleOptions = sortOptions.filter((option) => !option.field.startsWith('_') && !option.customComparator)
 
     if (simpleOptions.length > 0) {
       phases.push({
@@ -366,7 +334,7 @@ export function buildOptimizedSort(
 
     // Phase 2: Computed fields that depend on relationships
     const relationshipOptions = sortOptions.filter(
-      (option) => option.field.startsWith('_relationship') || option.field.startsWith('_connection')
+      (option) => option.field.startsWith('_relationship') || option.field.startsWith('_connection'),
     )
 
     if (relationshipOptions.length > 0) {
@@ -383,18 +351,14 @@ export function buildOptimizedSort(
     const complexOptions = sortOptions.filter(
       (option) =>
         (option.field.startsWith('_relevance') || option.field.startsWith('_aggregate')) &&
-        !relationshipOptions.includes(option)
+        !relationshipOptions.includes(option),
     )
 
     if (complexOptions.length > 0) {
       phases.push({
         name: 'complex-computation',
         sortOptions: complexOptions,
-        strategy: (hint.strategy === 'lazy' ? 'lazy' : 'memory') as
-          | 'database'
-          | 'memory'
-          | 'hybrid'
-          | 'lazy',
+        strategy: (hint.strategy === 'lazy' ? 'lazy' : 'memory') as 'database' | 'memory' | 'hybrid' | 'lazy',
         estimatedCost: hint.estimatedCost * 0.3,
         dependencies: phases.map((p) => p.name),
       })
@@ -419,7 +383,7 @@ export function buildOptimizedSort(
    */
   function determineCacheStrategy(
     optimization: SortOptimization,
-    metrics: ComplexityMetrics
+    metrics: ComplexityMetrics,
   ): 'none' | 'partial' | 'full' {
     if (!optimization.cacheResults) {
       return 'none'
@@ -439,23 +403,15 @@ export function buildOptimizedSort(
   /**
    * Generate performance warnings
    */
-  function generateWarnings(
-    metrics: ComplexityMetrics,
-    hint: PerformanceHint,
-    budgetMs: number
-  ): string[] {
+  function generateWarnings(metrics: ComplexityMetrics, hint: PerformanceHint, budgetMs: number): string[] {
     const warnings: string[] = []
 
     if (metrics.overallComplexity === 'extreme') {
-      warnings.push(
-        'Extremely complex sort operation detected - consider simplifying or adding indexes'
-      )
+      warnings.push('Extremely complex sort operation detected - consider simplifying or adding indexes')
     }
 
     if (hint.estimatedCost > budgetMs) {
-      warnings.push(
-        `Estimated cost (${hint.estimatedCost}ms) exceeds performance budget (${budgetMs}ms)`
-      )
+      warnings.push(`Estimated cost (${hint.estimatedCost}ms) exceeds performance budget (${budgetMs}ms)`)
     }
 
     if (metrics.indexUtilization < 0.3) {
@@ -467,9 +423,7 @@ export function buildOptimizedSort(
     }
 
     if (metrics.relationshipDepth > 3) {
-      warnings.push(
-        'Deep relationship traversal detected - consider denormalizing frequently accessed paths'
-      )
+      warnings.push('Deep relationship traversal detected - consider denormalizing frequently accessed paths')
     }
 
     return warnings
@@ -481,7 +435,7 @@ export function buildOptimizedSort(
   function generateSuggestions(
     metrics: ComplexityMetrics,
     hint: PerformanceHint,
-    optimization: SortOptimization
+    optimization: SortOptimization,
   ): string[] {
     const suggestions: string[] = []
 
@@ -502,9 +456,7 @@ export function buildOptimizedSort(
     }
 
     if (metrics.textSearchComplexity > 3) {
-      suggestions.push(
-        'Consider implementing dedicated full-text search indexes for text relevance sorting'
-      )
+      suggestions.push('Consider implementing dedicated full-text search indexes for text relevance sorting')
     }
 
     if (metrics.aggregationComplexity > 4) {
@@ -521,13 +473,9 @@ export function buildOptimizedSort(
 export function createExecutionPlan(
   sortOptions: EnhancedSortOption[],
   context: SortContext,
-  estimatedDataSize: number = 1000
+  estimatedDataSize: number = 1000,
 ): SortExecutionPlan {
-  const { hint, optimization } = getOptimizationRecommendation(
-    sortOptions,
-    context,
-    estimatedDataSize
-  )
+  const { hint, optimization } = getOptimizationRecommendation(sortOptions, context, estimatedDataSize)
 
   // This is a simplified execution plan implementation
   // For complex phase-based execution, use buildOptimizedSort instead

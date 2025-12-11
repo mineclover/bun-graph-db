@@ -324,9 +324,7 @@ describe('SearchNodes Tool Integration', () => {
     const avgResponseTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length
     const maxResponseTime = Math.max(...responseTimes)
 
-    console.log(
-      `✅ SearchNodes performance: avg=${avgResponseTime.toFixed(1)}ms, max=${maxResponseTime}ms`
-    )
+    console.log(`✅ SearchNodes performance: avg=${avgResponseTime.toFixed(1)}ms, max=${maxResponseTime}ms`)
     expect(avgResponseTime).toBeLessThan(50) // Should be well under the 100ms requirement
     expect(maxResponseTime).toBeLessThan(100)
   })

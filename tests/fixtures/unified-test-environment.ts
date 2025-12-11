@@ -348,7 +348,7 @@ export class UnifiedTestEnvironmentManager {
  */
 export async function withAutoServer<T>(
   config: TestConfig,
-  testFn: (environment: UnifiedTestEnvironment) => Promise<T>
+  testFn: (environment: UnifiedTestEnvironment) => Promise<T>,
 ): Promise<T> {
   const manager = new UnifiedTestEnvironmentManager()
   let environment: UnifiedTestEnvironment | null = null

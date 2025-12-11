@@ -14,11 +14,7 @@
     "applicableTables": null,
     "complexityScore": 2,
     "version": "1.0.0",
-    "tags": [
-      "basic",
-      "health",
-      "test"
-    ],
+    "tags": ["basic", "health", "test"],
     "isActive": true,
     "statistics": {
       "usageCount": 2,

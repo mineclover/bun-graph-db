@@ -163,10 +163,7 @@
             "type": "object"
           },
           "id": {
-            "oneOf": [
-              {"type": "string"},
-              {"type": "number"}
-            ]
+            "oneOf": [{ "type": "string" }, { "type": "number" }]
           }
         }
       },
@@ -185,10 +182,7 @@
             "$ref": "#/components/schemas/McpError"
           },
           "id": {
-            "oneOf": [
-              {"type": "string"},
-              {"type": "number"}
-            ]
+            "oneOf": [{ "type": "string" }, { "type": "number" }]
           }
         }
       },

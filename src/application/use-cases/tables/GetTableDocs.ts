@@ -1,11 +1,7 @@
 import * as AttributeDto from '@/application/dtos/AttributeDto.js'
 import { DocDto } from '@/application/dtos/DocDto.js'
 import { queryTemplateToDto } from '@/application/dtos/QueryTemplateDto.js'
-import type {
-  GetTableDocsInput,
-  GetTableDocsOutput,
-  TableDocsDto,
-} from '@/application/dtos/TableDocsDto.js'
+import type { GetTableDocsInput, GetTableDocsOutput, TableDocsDto } from '@/application/dtos/TableDocsDto.js'
 import * as TableDto from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
@@ -28,7 +24,7 @@ export class GetTableDocsUseCase {
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     readonly _relationTypeRepository: IRelationTypeRepository,
     private readonly docRepository: IDocRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {
     this.aiMetadataAdapter = new LegacyAIMetadataAdapter(this.logger)
     // Initialize the enhanced system
@@ -89,10 +85,7 @@ export class GetTableDocsUseCase {
       // Get related templates if requested
       let relatedTemplates: any[] | undefined
       if (input.includeRelatedTemplates) {
-        const templates = await this.queryTemplateRepository.findByApplicableTable(
-          table.identifier,
-          true
-        )
+        const templates = await this.queryTemplateRepository.findByApplicableTable(table.identifier, true)
         relatedTemplates = templates.map((template) => queryTemplateToDto(template))
       }
 
@@ -103,7 +96,7 @@ export class GetTableDocsUseCase {
           table,
           attributeDtos,
           relatedTemplates,
-          input.sampleLimit || 5
+          input.sampleLimit || 5,
         )
       }
 

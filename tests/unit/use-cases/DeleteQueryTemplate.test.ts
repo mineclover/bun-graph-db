@@ -13,7 +13,7 @@ function createTestTemplate(
   id: string = 'template-1',
   identifier: string = 'test-template',
   usageCount: number = 0,
-  isActive: boolean = true
+  isActive: boolean = true,
 ): QueryTemplate {
   return QueryTemplate.fromDatabase(
     id,
@@ -35,7 +35,7 @@ function createTestTemplate(
     isActive,
     JSON.stringify(['test']), // tags
     new Date().toISOString(),
-    new Date().toISOString()
+    new Date().toISOString(),
   )
 }
 
@@ -128,7 +128,7 @@ describe('DeleteQueryTemplate', () => {
       expect(result.errors[0].code).toBe('TEMPLATE_IN_USE')
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Attempting to delete template with usage history',
-        expect.any(Object)
+        expect.any(Object),
       )
     })
 
@@ -177,10 +177,7 @@ describe('DeleteQueryTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(mockQueryTemplateRepository.updateStatus).toHaveBeenCalledWith('template-1', false)
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Template deactivated before deletion',
-        expect.any(Object)
-      )
+      expect(mockLogger.info).toHaveBeenCalledWith('Template deactivated before deletion', expect.any(Object))
       expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
     })
 
@@ -216,17 +213,12 @@ describe('DeleteQueryTemplate', () => {
         expect.objectContaining({
           id: 'template-1',
           identifier: 'active-template',
-        })
+        }),
       )
     })
 
     it('should allow deletion of active template with force flag', async () => {
-      const activeTemplateWithUsage = createTestTemplate(
-        'template-1',
-        'active-used-template',
-        5,
-        true
-      )
+      const activeTemplateWithUsage = createTestTemplate('template-1', 'active-used-template', 5, true)
       mockQueryTemplateRepository.findById = mock(async () => activeTemplateWithUsage)
 
       const request: DeleteQueryTemplateRequest = {
@@ -256,10 +248,7 @@ describe('DeleteQueryTemplate', () => {
       expect(result.success).toBe(true)
       expect(result.errors.length).toBe(0)
       expect(mockQueryTemplateRepository.deleteById).toHaveBeenCalledWith('template-1')
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Query template deleted successfully',
-        expect.any(Object)
-      )
+      expect(mockLogger.info).toHaveBeenCalledWith('Query template deleted successfully', expect.any(Object))
     })
 
     it('should delete used template with force flag', async () => {
@@ -341,10 +330,7 @@ describe('DeleteQueryTemplate', () => {
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)
       await expect(useCase.execute(request)).rejects.toThrow('Failed to delete query template')
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Failed to delete query template',
-        expect.any(Object)
-      )
+      expect(mockLogger.error).toHaveBeenCalledWith('Failed to delete query template', expect.any(Object))
     })
 
     it('should handle updateStatus failure', async () => {
@@ -380,7 +366,7 @@ describe('DeleteQueryTemplate', () => {
         expect.objectContaining({
           id: 'template-123',
           force: true,
-        })
+        }),
       )
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Query template deleted successfully',
@@ -388,7 +374,7 @@ describe('DeleteQueryTemplate', () => {
           id: 'template-123',
           identifier: 'test-identifier',
           usageCount: 5,
-        })
+        }),
       )
     })
 
@@ -407,7 +393,7 @@ describe('DeleteQueryTemplate', () => {
         expect.objectContaining({
           id: 'template-1',
           identifier: 'active-template',
-        })
+        }),
       )
     })
 
@@ -427,7 +413,7 @@ describe('DeleteQueryTemplate', () => {
         expect.objectContaining({
           id: 'template-1',
           usageCount: 10,
-        })
+        }),
       )
     })
   })

@@ -33,13 +33,11 @@ export function registerRepositoryModule(container: DIContainer): void {
   container.registerSingleton(
     RepositoryTokens.TABLE_REPOSITORY,
     async (c) => {
-      const { SqliteTableRepository } = await import(
-        '@/infrastructure/database/sqlite/SqliteTableRepository.js'
-      )
+      const { SqliteTableRepository } = await import('@/infrastructure/database/sqlite/SqliteTableRepository.js')
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteTableRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Attribute type repository
@@ -49,7 +47,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteAttributeTypeRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Attribute repository
@@ -59,7 +57,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteAttributeRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Node repository
@@ -69,7 +67,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteNodeRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Node attribute repository
@@ -79,7 +77,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteNodeAttributeRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Node relation repository
@@ -89,7 +87,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteNodeRelationRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Relation type repository
@@ -99,7 +97,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteRelationTypeRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Query template repository - DYNAMIC IMPORT to avoid module loading hang
@@ -112,7 +110,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteQueryTemplateRepository(connection, createSimpleLogger())
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Node search repository
@@ -122,7 +120,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteNodeSearchRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Graph repository
@@ -132,7 +130,7 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteGraphRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 
   // Doc repository
@@ -142,6 +140,6 @@ export function registerRepositoryModule(container: DIContainer): void {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as any
       return new SqliteDocRepository(connection)
     },
-    [DatabaseTokens.DATABASE_CONNECTION]
+    [DatabaseTokens.DATABASE_CONNECTION],
   )
 }

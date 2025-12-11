@@ -12,7 +12,7 @@ export class RelationFieldResolvers extends BaseResolver {
     private readonly tableRepository: ITableRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -25,7 +25,7 @@ export class RelationFieldResolvers extends BaseResolver {
       },
       'table',
       'NodeRelation',
-      { relationId: parent.id, tableId: parent.tableId }
+      { relationId: parent.id, tableId: parent.tableId },
     )
   }
 
@@ -36,7 +36,7 @@ export class RelationFieldResolvers extends BaseResolver {
       },
       'sourceNode',
       'NodeRelation',
-      { relationId: parent.id, sourceNodeId: parent.sourceNodeId }
+      { relationId: parent.id, sourceNodeId: parent.sourceNodeId },
     )
   }
 
@@ -47,7 +47,7 @@ export class RelationFieldResolvers extends BaseResolver {
       },
       'targetNode',
       'NodeRelation',
-      { relationId: parent.id, targetNodeId: parent.targetNodeId }
+      { relationId: parent.id, targetNodeId: parent.targetNodeId },
     )
   }
 
@@ -58,7 +58,7 @@ export class RelationFieldResolvers extends BaseResolver {
       },
       'relationType',
       'NodeRelation',
-      { relationId: parent.id, relationTypeId: parent.relationTypeId }
+      { relationId: parent.id, relationTypeId: parent.relationTypeId },
     )
   }
 }

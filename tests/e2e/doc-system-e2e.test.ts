@@ -76,7 +76,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const createResult = await testContext.graphqlRequest!(createMutation, {
+      const createResult = await testContext.graphqlRequest?.(createMutation, {
         input: { tableId, category, content: originalContent },
       })
 
@@ -102,7 +102,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const getResult = await testContext.graphqlRequest!(getQuery, { id: docId })
+      const getResult = await testContext.graphqlRequest?.(getQuery, { id: docId })
 
       expect(getResult.data.getDoc).toBeDefined()
       expect(getResult.data.getDoc.content).toBe(originalContent)
@@ -125,7 +125,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const updateResult = await testContext.graphqlRequest!(updateMutation, {
+      const updateResult = await testContext.graphqlRequest?.(updateMutation, {
         id: docId,
         input: { content: updatedContent },
       })
@@ -135,7 +135,7 @@ describe('Doc System - End-to-End Tests', () => {
       expect(updateResult.data.updateDoc.doc.content).toBe(updatedContent)
 
       // 4. Create new version
-      const versionResult = await testContext.graphqlRequest!(createMutation, {
+      const versionResult = await testContext.graphqlRequest?.(createMutation, {
         input: { tableId, category, content: 'Version 2 content', version: 2 },
       })
 
@@ -157,7 +157,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const versionsResult = await testContext.graphqlRequest!(versionsQuery, {
+      const versionsResult = await testContext.graphqlRequest?.(versionsQuery, {
         tableId,
         category,
       })
@@ -182,12 +182,12 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const deleteResult = await testContext.graphqlRequest!(deleteMutation, { id: docId })
+      const deleteResult = await testContext.graphqlRequest?.(deleteMutation, { id: docId })
 
       expect(deleteResult.data.deleteDoc.success).toBe(true)
 
       // 7. Verify deletion
-      const verifyResult = await testContext.graphqlRequest!(getQuery, { id: docId })
+      const verifyResult = await testContext.graphqlRequest?.(getQuery, { id: docId })
       expect(verifyResult.data.getDoc).toBeNull()
     })
 
@@ -220,14 +220,14 @@ describe('Doc System - End-to-End Tests', () => {
           `
 
           operations.push(
-            testContext.graphqlRequest!(mutation, {
+            testContext.graphqlRequest?.(mutation, {
               input: {
                 tableId: table.id.toString(),
                 category,
                 content,
                 version: table.id * 100 + categoryIndex + 1, // Unique version per table+category
               },
-            })
+            }),
           )
         }
       }
@@ -238,10 +238,7 @@ describe('Doc System - End-to-End Tests', () => {
       // Verify all operations succeeded
       results.forEach((result, index) => {
         if (!result.data.createDoc.success) {
-          console.log(
-            `Operation ${index} failed:`,
-            JSON.stringify(result.data.createDoc.errors, null, 2)
-          )
+          console.log(`Operation ${index} failed:`, JSON.stringify(result.data.createDoc.errors, null, 2))
         }
         expect(result.data.createDoc.success).toBe(true)
         expect(result.data.createDoc.doc).toBeDefined()
@@ -257,7 +254,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const countResult = await testContext.graphqlRequest!(countQuery)
+      const countResult = await testContext.graphqlRequest?.(countQuery)
       expect(countResult.data.getDocs.totalCount).toBeGreaterThan(0)
     })
   })
@@ -282,7 +279,7 @@ describe('Doc System - End-to-End Tests', () => {
           }
         `
 
-        await testContext.graphqlRequest!(mutation, {
+        await testContext.graphqlRequest?.(mutation, {
           input: {
             tableId: '58',
             category: 'example',
@@ -305,7 +302,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const filterResult = await testContext.graphqlRequest!(filterQuery, {
+      const filterResult = await testContext.graphqlRequest?.(filterQuery, {
         tableId: '58',
         category: 'example',
       })
@@ -333,7 +330,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, {
+      const result = await testContext.graphqlRequest?.(query, {
         tableId: '58',
         pagination: { limit: 5, offset: 0 },
       })
@@ -364,7 +361,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(invalidTableMutation, {
+      const result = await testContext.graphqlRequest?.(invalidTableMutation, {
         input: {
           tableId: '99999', // Non-existent table
           category: 'general',
@@ -399,7 +396,7 @@ describe('Doc System - End-to-End Tests', () => {
           }
         `
 
-        return testContext.graphqlRequest!(mutation, {
+        return testContext.graphqlRequest?.(mutation, {
           input: {
             tableId,
             category: 'usage',
@@ -414,10 +411,7 @@ describe('Doc System - End-to-End Tests', () => {
       // All operations should succeed
       results.forEach((result, index) => {
         if (!result.data.createDoc.success) {
-          console.log(
-            `Concurrent operation ${index} failed:`,
-            JSON.stringify(result.data.createDoc.errors, null, 2)
-          )
+          console.log(`Concurrent operation ${index} failed:`, JSON.stringify(result.data.createDoc.errors, null, 2))
         }
         expect(result.data.createDoc.success).toBe(true)
         expect(result.data.createDoc.doc).toBeDefined()
@@ -436,10 +430,8 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const verifyResult = await testContext.graphqlRequest!(verifyQuery, { tableId })
-      const concurrentDocs = verifyResult.data.getDocs.docs.filter(
-        (doc: any) => doc.category === category
-      )
+      const verifyResult = await testContext.graphqlRequest?.(verifyQuery, { tableId })
+      const concurrentDocs = verifyResult.data.getDocs.docs.filter((doc: any) => doc.category === category)
 
       expect(concurrentDocs).toHaveLength(10)
     })
@@ -466,7 +458,7 @@ describe('Doc System - End-to-End Tests', () => {
           }
         `
 
-        return testContext.graphqlRequest!(mutation, {
+        return testContext.graphqlRequest?.(mutation, {
           input: {
             tableId: '59', // Use table 59 for batch test to avoid conflicts with table 58
             category: 'guide', // Use different category for batch test
@@ -481,10 +473,7 @@ describe('Doc System - End-to-End Tests', () => {
       // Log any failures
       results.forEach((result, index) => {
         if (!result.data.createDoc.success) {
-          console.log(
-            `Batch operation ${index} failed:`,
-            JSON.stringify(result.data.createDoc.errors, null, 2)
-          )
+          console.log(`Batch operation ${index} failed:`, JSON.stringify(result.data.createDoc.errors, null, 2))
         }
       })
 
@@ -509,7 +498,7 @@ describe('Doc System - End-to-End Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, { tableId: '59' })
+      const result = await testContext.graphqlRequest?.(query, { tableId: '59' })
       const queryTime = performance.now() - queryStartTime
 
       // Verify that we created all documents and they exist in the database (some may be inactive due to versioning)
@@ -519,7 +508,7 @@ describe('Doc System - End-to-End Tests', () => {
     })
 
     test('should optimize database queries', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Enable query analysis
       db.exec('PRAGMA query_only = ON')
@@ -570,7 +559,7 @@ describe('Doc System - End-to-End Tests', () => {
 
       for (const [index, testCase] of edgeCases.entries()) {
         try {
-          const result = await testContext.graphqlRequest!(mutation, {
+          const result = await testContext.graphqlRequest?.(mutation, {
             input: {
               tableId: '58',
               category: 'spec', // Use 'spec' category for resilience test to avoid conflicts
@@ -587,7 +576,7 @@ describe('Doc System - End-to-End Tests', () => {
             if (!result.data.createDoc.success) {
               console.log(
                 `Resilience test failed for content: "${testCase.content}":`,
-                JSON.stringify(result.data.createDoc.errors, null, 2)
+                JSON.stringify(result.data.createDoc.errors, null, 2),
               )
             }
             expect(result.data.createDoc.success).toBe(true)
@@ -616,7 +605,7 @@ describe('Doc System - End-to-End Tests', () => {
       `
 
       // Query for non-existent ID
-      const result = await testContext.graphqlRequest!(query, { id: '99999' })
+      const result = await testContext.graphqlRequest?.(query, { id: '99999' })
 
       // Should return null, not throw error
       expect(result.data.getDoc).toBeNull()

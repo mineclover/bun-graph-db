@@ -294,11 +294,7 @@ export type MappingErrorCode =
 /**
  * Warning codes for mapping validation
  */
-export type MappingWarningCode =
-  | 'UNUSED_SOURCE_FIELD'
-  | 'DEEP_NESTING'
-  | 'POTENTIAL_DATA_LOSS'
-  | 'DEPRECATED_TRANSFORM'
+export type MappingWarningCode = 'UNUSED_SOURCE_FIELD' | 'DEEP_NESTING' | 'POTENTIAL_DATA_LOSS' | 'DEPRECATED_TRANSFORM'
 
 // =============================================================================
 // Preset Mapping Templates
@@ -376,12 +372,7 @@ export function isFormatMappingTemplate(value: unknown): value is FormatMappingT
  * Check if value is a SimpleMappingDefinition
  */
 export function isSimpleMappingDefinition(value: unknown): value is SimpleMappingDefinition {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    !('mappings' in value) &&
-    Object.keys(value).length > 0
-  )
+  return typeof value === 'object' && value !== null && !('mappings' in value) && Object.keys(value).length > 0
 }
 
 /**
@@ -412,7 +403,7 @@ export function isNodeLevelMapping(value: unknown): value is NodeLevelMapping {
  */
 export function normalizeMapping(
   mapping: FormatMappingTemplate | SimpleMappingDefinition | NodeLevelMapping,
-  name?: string
+  name?: string,
 ): FormatMappingTemplate {
   if (isFormatMappingTemplate(mapping)) {
     return mapping
@@ -462,10 +453,7 @@ export function normalizeMapping(
  * // - users[*].email → $.nodes[*].attributes.email
  * ```
  */
-export function expandNodeMapping(
-  nodeMapping: NodeLevelMapping,
-  name?: string
-): FormatMappingTemplate {
+export function expandNodeMapping(nodeMapping: NodeLevelMapping, name?: string): FormatMappingTemplate {
   const mappings: FieldMapping[] = []
   const outputKey = nodeMapping.outputKey || 'items'
   const metaKey = nodeMapping.metaKey || 'meta'

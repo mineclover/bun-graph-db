@@ -7,8 +7,8 @@
  * - Line-by-line format for streaming
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
   JsonlAttributeEntry,
@@ -43,7 +43,7 @@ export class JsonlBackupService {
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -70,7 +70,7 @@ export class JsonlBackupService {
       const allTables = await this.tableRepository.findAll({ limit: 1000 })
       const allTablesData = allTables.data || []
       const tablesToExport = options.tableIds
-        ? allTablesData.filter((t) => options.tableIds!.includes(t.id))
+        ? allTablesData.filter((t) => options.tableIds?.includes(t.id))
         : allTablesData
 
       // Export schema if requested
@@ -226,16 +226,12 @@ export class JsonlBackupService {
 
       // Import table nodes
       const tablesToImport = options.tableIdentifiers
-        ? manifest.tables.filter((t) => options.tableIdentifiers!.includes(t.identifier))
+        ? manifest.tables.filter((t) => options.tableIdentifiers?.includes(t.identifier))
         : manifest.tables
 
       for (const tableInfo of tablesToImport) {
         try {
-          const result = await this.importTableNodes(
-            options.inputDir,
-            tableInfo.identifier,
-            options.conflictResolution
-          )
+          const result = await this.importTableNodes(options.inputDir, tableInfo.identifier, options.conflictResolution)
           nodesImported += result.imported
           nodesSkipped += result.skipped
           nodesUpdated += result.updated
@@ -299,7 +295,7 @@ export class JsonlBackupService {
       description: string | null
       createdAt: Date
       updatedAt: Date
-    }>
+    }>,
   ): Promise<JsonlExportedFile> {
     const schemaPath = join(outputDir, 'schema.jsonl')
     const lines: string[] = []
@@ -349,7 +345,7 @@ export class JsonlBackupService {
 
   private async exportTableNodes(
     outputDir: string,
-    table: { id: string; identifier: string }
+    table: { id: string; identifier: string },
   ): Promise<JsonlExportedFile> {
     const tableDir = join(outputDir, 'tables')
     const filePath = join(tableDir, `${table.identifier}.jsonl`)
@@ -362,9 +358,7 @@ export class JsonlBackupService {
     const attributesResult = await this.attributeRepository.findByTableId(table.id, {
       limit: 1000,
     })
-    const attributeMap = new Map(
-      (attributesResult.data || []).map((a) => [a.getId(), a.getIdentifier()])
-    )
+    const attributeMap = new Map((attributesResult.data || []).map((a) => [a.getId(), a.getIdentifier()]))
 
     for (const node of nodesResult.data || []) {
       const nodeEntry: JsonlNodeEntry = {
@@ -464,7 +458,7 @@ export class JsonlBackupService {
   private async writeManifest(
     outputDir: string,
     files: JsonlExportedFile[],
-    _tables: Array<{ identifier: string }>
+    _tables: Array<{ identifier: string }>,
   ): Promise<JsonlExportedFile> {
     const manifestPath = join(outputDir, 'manifest.json')
 
@@ -498,7 +492,7 @@ export class JsonlBackupService {
 
   private async importSchema(
     inputDir: string,
-    _options: JsonlImportOptions
+    _options: JsonlImportOptions,
   ): Promise<{ tablesCreated: number; warnings: string[] }> {
     const schemaPath = join(inputDir, 'schema.jsonl')
     const warnings: string[] = []
@@ -533,7 +527,7 @@ export class JsonlBackupService {
   private async importTableNodes(
     inputDir: string,
     tableIdentifier: string,
-    conflictResolution: 'skip' | 'overwrite' | 'merge'
+    conflictResolution: 'skip' | 'overwrite' | 'merge',
   ): Promise<{ imported: number; skipped: number; updated: number }> {
     const filePath = join(inputDir, 'tables', `${tableIdentifier}.jsonl`)
     let imported = 0
@@ -557,10 +551,7 @@ export class JsonlBackupService {
       const entry: JsonlNodeEntry = JSON.parse(line)
 
       // Check if node with same content exists
-      const existingNode = await this.nodeRepository.findByTableIdAndContent(
-        table.id,
-        entry._content || ''
-      )
+      const existingNode = await this.nodeRepository.findByTableIdAndContent(table.id, entry._content || '')
 
       if (existingNode) {
         switch (conflictResolution) {
@@ -591,7 +582,7 @@ export class JsonlBackupService {
 
   private async importRelations(
     inputDir: string,
-    _conflictResolution: 'skip' | 'overwrite' | 'merge'
+    _conflictResolution: 'skip' | 'overwrite' | 'merge',
   ): Promise<{ imported: number }> {
     const filePath = join(inputDir, 'relations.jsonl')
     let imported = 0

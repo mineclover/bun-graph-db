@@ -33,7 +33,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
   }, 10000)
 
   async function setupComprehensiveTestData() {
-    const db = testContext.database!.database.getConnection()
+    const db = testContext.database?.database.getConnection()
 
     // Create comprehensive test table with full metadata
     const tableId = 'comprehensive-test-table'
@@ -58,15 +58,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
       // Required only
       ['password-hash', 'password_hash', 'Password Hash', 'text', 1, 0, 'Encrypted password'],
-      [
-        'created-date',
-        'created_date',
-        'Account Created',
-        'datetime',
-        1,
-        0,
-        'Account creation timestamp',
-      ],
+      ['created-date', 'created_date', 'Account Created', 'datetime', 1, 0, 'Account creation timestamp'],
 
       // Searchable only
       ['username', 'username', 'Username', 'text', 0, 1, 'Public username'],
@@ -209,41 +201,11 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
     // Create diverse sample data
     const sampleUsers = [
-      [
-        'John Doe',
-        'Senior Software Engineer',
-        'john.doe@company.com',
-        'Engineering',
-        'JavaScript,TypeScript,React',
-      ],
-      [
-        'Jane Smith',
-        'Product Manager',
-        'jane.smith@company.com',
-        'Product',
-        'Product Strategy,Analytics,Agile',
-      ],
-      [
-        'Mike Johnson',
-        'DevOps Engineer',
-        'mike.johnson@company.com',
-        'Engineering',
-        'Docker,Kubernetes,AWS',
-      ],
-      [
-        'Sarah Wilson',
-        'UX Designer',
-        'sarah.wilson@company.com',
-        'Design',
-        'Figma,User Research,Prototyping',
-      ],
-      [
-        'Tom Brown',
-        'Data Scientist',
-        'tom.brown@company.com',
-        'Data',
-        'Python,Machine Learning,Statistics',
-      ],
+      ['John Doe', 'Senior Software Engineer', 'john.doe@company.com', 'Engineering', 'JavaScript,TypeScript,React'],
+      ['Jane Smith', 'Product Manager', 'jane.smith@company.com', 'Product', 'Product Strategy,Analytics,Agile'],
+      ['Mike Johnson', 'DevOps Engineer', 'mike.johnson@company.com', 'Engineering', 'Docker,Kubernetes,AWS'],
+      ['Sarah Wilson', 'UX Designer', 'sarah.wilson@company.com', 'Design', 'Figma,User Research,Prototyping'],
+      ['Tom Brown', 'Data Scientist', 'tom.brown@company.com', 'Data', 'Python,Machine Learning,Statistics'],
       [
         'Lisa Davis',
         'Marketing Manager',
@@ -251,13 +213,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         'Marketing',
         'Digital Marketing,SEO,Content Strategy',
       ],
-      [
-        'Alex Chen',
-        'Frontend Developer',
-        'alex.chen@company.com',
-        'Engineering',
-        'Vue.js,CSS,HTML',
-      ],
+      ['Alex Chen', 'Frontend Developer', 'alex.chen@company.com', 'Engineering', 'Vue.js,CSS,HTML'],
       [
         'Emily Rodriguez',
         'Backend Developer',
@@ -265,13 +221,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         'Engineering',
         'Node.js,PostgreSQL,GraphQL',
       ],
-      [
-        'David Kim',
-        'QA Engineer',
-        'david.kim@company.com',
-        'Quality',
-        'Test Automation,Selenium,Jest',
-      ],
+      ['David Kim', 'QA Engineer', 'david.kim@company.com', 'Quality', 'Test Automation,Selenium,Jest'],
       [
         'Maria Garcia',
         'Business Analyst',
@@ -324,7 +274,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.table).toBeDefined()
@@ -387,7 +337,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       const usagePatterns = result.data.table.aiMetadata.usagePatterns
 
@@ -449,7 +399,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       const sampleData = result.data.table.aiMetadata.sampleData
 
@@ -483,15 +433,9 @@ describe('AIMetadata Documentation E2E Tests', () => {
           expect(entry.attributes.email).toContain('@')
         }
         if (entry.attributes.department) {
-          expect([
-            'Engineering',
-            'Product',
-            'Design',
-            'Data',
-            'Marketing',
-            'Quality',
-            'Business',
-          ]).toContain(entry.attributes.department)
+          expect(['Engineering', 'Product', 'Design', 'Data', 'Marketing', 'Quality', 'Business']).toContain(
+            entry.attributes.department,
+          )
         }
       })
 
@@ -501,7 +445,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
   describe('Documentation Accuracy Verification', () => {
     test('should accurately reflect table structure in schema info', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Get actual table structure from database
       const actualAttributes = db
@@ -528,7 +472,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
       const schemaInfo = result.data.table.aiMetadata.schemaInfo
 
       // Verify data types accuracy
@@ -538,9 +482,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       }
 
       // Verify required fields accuracy
-      const actualRequiredFields = actualAttributes
-        .filter((attr) => attr.required === 1)
-        .map((attr) => attr.identifier)
+      const actualRequiredFields = actualAttributes.filter((attr) => attr.required === 1).map((attr) => attr.identifier)
       expect(schemaInfo.requiredFields.sort()).toEqual(actualRequiredFields.sort())
 
       // Verify searchable fields accuracy
@@ -553,7 +495,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     })
 
     test('should accurately count templates in usage patterns', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Get actual template count
       const actualTemplateCount = db
@@ -580,9 +522,8 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
-      const templateRecommendations =
-        result.data.table.aiMetadata.usagePatterns.templateRecommendations
+      const result = await testContext.graphqlRequest?.(query)
+      const templateRecommendations = result.data.table.aiMetadata.usagePatterns.templateRecommendations
 
       // Verify template count matches
       expect(templateRecommendations.length).toBe(actualTemplateCount)
@@ -605,7 +546,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     })
 
     test('should accurately reflect sample data from actual nodes', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Get actual sample nodes
       const actualNodes = db
@@ -636,7 +577,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
       const sampleData = result.data.table.aiMetadata.sampleData
 
       // Verify sample entries match actual nodes
@@ -682,7 +623,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
       const usagePatterns = result.data.table.aiMetadata.usagePatterns
 
       // Verify template recommendations are actionable
@@ -739,7 +680,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
           }
         `
 
-        const result = await testContext.graphqlRequest!(query, {
+        const result = await testContext.graphqlRequest?.(query, {
           tableId: testCase.tableId,
         })
 
@@ -747,9 +688,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
         // Verify complexity matches expectations based on data
         expect(aiMetadata.usagePatterns.queryComplexity).toBe(testCase.expectedComplexity)
-        expect(aiMetadata.usagePatterns.templateRecommendations.length).toBeGreaterThanOrEqual(
-          testCase.minTemplates
-        )
+        expect(aiMetadata.usagePatterns.templateRecommendations.length).toBeGreaterThanOrEqual(testCase.minTemplates)
         expect(Object.keys(aiMetadata.schemaInfo.dataTypes).length).toBeGreaterThan(5)
       }
 
@@ -769,23 +708,17 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
-      const relationshipCapabilities =
-        result.data.table.aiMetadata.schemaInfo.relationshipCapabilities
+      const result = await testContext.graphqlRequest?.(query)
+      const relationshipCapabilities = result.data.table.aiMetadata.schemaInfo.relationshipCapabilities
 
       // Verify relationship capabilities are informative
       expect(Array.isArray(relationshipCapabilities)).toBe(true)
       expect(relationshipCapabilities.length).toBeGreaterThan(0)
 
       // Should include common relationship types
-      const expectedCapabilities = [
-        'one-to-many',
-        'many-to-one',
-        'many-to-many',
-        'self-referential',
-      ]
+      const expectedCapabilities = ['one-to-many', 'many-to-one', 'many-to-many', 'self-referential']
       const hasBasicCapabilities = expectedCapabilities.some((cap) =>
-        relationshipCapabilities.some((rc: string) => rc.toLowerCase().includes(cap.split('-')[0]))
+        relationshipCapabilities.some((rc: string) => rc.toLowerCase().includes(cap.split('-')[0])),
       )
       expect(hasBasicCapabilities).toBe(true)
 
@@ -818,9 +751,9 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
       // Execute multiple queries concurrently
       const results = await Promise.all([
-        testContext.graphqlRequest!(query),
-        testContext.graphqlRequest!(query),
-        testContext.graphqlRequest!(query),
+        testContext.graphqlRequest?.(query),
+        testContext.graphqlRequest?.(query),
+        testContext.graphqlRequest?.(query),
       ])
 
       // Verify all results are identical
@@ -830,15 +763,9 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
         // Deep comparison of key properties
         expect(currentResult.schemaInfo.dataTypes).toEqual(firstResult.schemaInfo.dataTypes)
-        expect(currentResult.schemaInfo.requiredFields).toEqual(
-          firstResult.schemaInfo.requiredFields
-        )
-        expect(currentResult.schemaInfo.searchableFields).toEqual(
-          firstResult.schemaInfo.searchableFields
-        )
-        expect(currentResult.usagePatterns.queryComplexity).toBe(
-          firstResult.usagePatterns.queryComplexity
-        )
+        expect(currentResult.schemaInfo.requiredFields).toEqual(firstResult.schemaInfo.requiredFields)
+        expect(currentResult.schemaInfo.searchableFields).toEqual(firstResult.schemaInfo.searchableFields)
+        expect(currentResult.usagePatterns.queryComplexity).toBe(firstResult.usagePatterns.queryComplexity)
         expect(currentResult.sampleData.totalCount).toBe(firstResult.sampleData.totalCount)
       }
 
@@ -891,20 +818,16 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
       const table = result.data.table
 
       // Verify integration between table data and AIMetadata
-      expect(table.attributes.length).toBe(
-        Object.keys(table.aiMetadata.schemaInfo.dataTypes).length
-      )
+      expect(table.attributes.length).toBe(Object.keys(table.aiMetadata.schemaInfo.dataTypes).length)
 
       // Verify attribute consistency
       for (const attr of table.attributes) {
         expect(table.aiMetadata.schemaInfo.dataTypes).toHaveProperty(attr.identifier)
-        expect(table.aiMetadata.schemaInfo.dataTypes[attr.identifier]).toBe(
-          attr.attributeType.dataType
-        )
+        expect(table.aiMetadata.schemaInfo.dataTypes[attr.identifier]).toBe(attr.attributeType.dataType)
 
         if (attr.required) {
           expect(table.aiMetadata.schemaInfo.requiredFields).toContain(attr.identifier)
@@ -974,7 +897,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
       const table = result.data.table
 
       // Comprehensive validation for AI system consumption

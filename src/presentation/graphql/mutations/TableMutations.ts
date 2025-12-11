@@ -19,7 +19,7 @@ export class TableMutations extends BaseResolver {
     private readonly createTableUseCase: CreateTableUseCase,
     private readonly deleteTableUseCase: DeleteTableUseCase,
     private readonly tableRepository: ITableRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -33,7 +33,7 @@ export class TableMutations extends BaseResolver {
         BaseResolver.validationRules.required('input.identifier', 'Table identifier'),
         BaseResolver.validationRules.nonEmpty('input.identifier', 'Table identifier'),
       ],
-      'createTable'
+      'createTable',
     )
 
     try {
@@ -59,9 +59,7 @@ export class TableMutations extends BaseResolver {
 
       const errorCode =
         (error as any).code ||
-        ((error as Error).message?.includes('already exists')
-          ? 'CREATE_TABLE_ERROR'
-          : 'INTERNAL_ERROR')
+        ((error as Error).message?.includes('already exists') ? 'CREATE_TABLE_ERROR' : 'INTERNAL_ERROR')
       const errorMessage = (error as Error).message || 'Unknown error occurred'
 
       return {
@@ -80,7 +78,7 @@ export class TableMutations extends BaseResolver {
         BaseResolver.validationRules.required('input', 'Update table input'),
         BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
       ],
-      'updateTable'
+      'updateTable',
     )
 
     try {
@@ -128,7 +126,7 @@ export class TableMutations extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
       ],
-      'deleteTable'
+      'deleteTable',
     )
 
     try {

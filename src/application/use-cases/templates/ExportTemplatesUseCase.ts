@@ -4,18 +4,15 @@
  * 여러 템플릿을 필터링하여 한번에 내보내는 유스케이스
  */
 
-import { existsSync, mkdirSync, writeFileSync } from 'fs'
-import { join } from 'path'
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs'
+import { join } from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
   BatchTemplateExportOptions,
   BatchTemplateExportResult,
   ExportedTemplateInfo,
 } from '@/core/types/TemplateExport.js'
-import type {
-  IQueryTemplateRepository,
-  SearchCriteria,
-} from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { IQueryTemplateRepository, SearchCriteria } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { TemplateImportExportService } from '@/domain/services/TemplateImportExportService.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
@@ -33,7 +30,7 @@ export class ExportTemplatesUseCase {
 
   constructor(
     readonly templateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {
     this.importExportService = new TemplateImportExportService(templateRepository)
   }
@@ -115,9 +112,7 @@ export class ExportTemplatesUseCase {
               exportError: errorMessage,
             })
 
-            exportErrors.push(
-              `Failed to export template ${template.getIdentifier()}: ${errorMessage}`
-            )
+            exportErrors.push(`Failed to export template ${template.getIdentifier()}: ${errorMessage}`)
           }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -130,9 +125,7 @@ export class ExportTemplatesUseCase {
             exportError: errorMessage,
           })
 
-          exportErrors.push(
-            `Failed to export template ${template.getIdentifier()}: ${errorMessage}`
-          )
+          exportErrors.push(`Failed to export template ${template.getIdentifier()}: ${errorMessage}`)
           this.logger.error('Template export failed', {
             templateId: template.getId(),
             ...toErrorMeta(new Error(errorMessage)),

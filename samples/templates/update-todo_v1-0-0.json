@@ -24,7 +24,11 @@
     "description": { "type": "String", "required": false, "description": "새로운 할일 설명" },
     "status": { "type": "String", "required": false, "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] },
     "priority": { "type": "String", "required": false, "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"] },
-    "category": { "type": "String", "required": false, "enum": ["WORK", "PERSONAL", "SHOPPING", "HEALTH", "LEARNING", "OTHER"] },
+    "category": {
+      "type": "String",
+      "required": false,
+      "enum": ["WORK", "PERSONAL", "SHOPPING", "HEALTH", "LEARNING", "OTHER"]
+    },
     "dueDate": { "type": "String", "required": false, "description": "마감일 (YYYY-MM-DD 형식)" },
     "completedAt": { "type": "String", "required": false, "description": "완료일 (ISO 8601 형식)" }
   },

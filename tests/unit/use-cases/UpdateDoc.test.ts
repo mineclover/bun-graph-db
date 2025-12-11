@@ -12,18 +12,9 @@ function createTestDoc(
   category: DocCategory,
   content: string,
   version: number = 1,
-  isActive: boolean = true
+  isActive: boolean = true,
 ): Doc {
-  return Doc.fromDatabase(
-    id,
-    tableId,
-    category as string,
-    version,
-    content,
-    isActive,
-    new Date(),
-    new Date()
-  )
+  return Doc.fromDatabase(id, tableId, category as string, version, content, isActive, new Date(), new Date())
 }
 
 describe('UpdateDocUseCase', () => {
@@ -86,11 +77,9 @@ describe('UpdateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => null)
 
+      await expect(useCase.execute('nonexistent-doc' as any, input)).rejects.toThrow(NotFoundException)
       await expect(useCase.execute('nonexistent-doc' as any, input)).rejects.toThrow(
-        NotFoundException
-      )
-      await expect(useCase.execute('nonexistent-doc' as any, input)).rejects.toThrow(
-        "Doc with id 'nonexistent-doc' not found"
+        "Doc with id 'nonexistent-doc' not found",
       )
     })
   })
@@ -154,11 +143,7 @@ describe('UpdateDocUseCase', () => {
 
       expect(result.doc).toBeDefined()
       expect(result.doc.isActive).toBe(true)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-1',
-        DocCategory.USAGE,
-        'doc-1'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.USAGE, 'doc-1')
       expect(mockDocRepository.save).toHaveBeenCalled()
     })
 
@@ -196,14 +181,7 @@ describe('UpdateDocUseCase', () => {
 
   describe('Combined Updates', () => {
     it('should update both content and activation status', async () => {
-      const existingDoc = createTestDoc(
-        'doc-1',
-        'table-1',
-        DocCategory.SPEC,
-        'Original content',
-        1,
-        false
-      )
+      const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.SPEC, 'Original content', 1, false)
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
@@ -222,14 +200,7 @@ describe('UpdateDocUseCase', () => {
     })
 
     it('should update content and deactivate', async () => {
-      const existingDoc = createTestDoc(
-        'doc-1',
-        'table-1',
-        DocCategory.EXAMPLE,
-        'Original content',
-        1,
-        true
-      )
+      const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.EXAMPLE, 'Original content', 1, true)
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
@@ -262,14 +233,7 @@ describe('UpdateDocUseCase', () => {
     })
 
     it('should handle undefined content', async () => {
-      const existingDoc = createTestDoc(
-        'doc-1',
-        'table-1',
-        DocCategory.USAGE,
-        'Original content',
-        1,
-        true
-      )
+      const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Original content', 1, true)
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
@@ -286,14 +250,7 @@ describe('UpdateDocUseCase', () => {
     })
 
     it('should handle undefined isActive', async () => {
-      const existingDoc = createTestDoc(
-        'doc-1',
-        'table-1',
-        DocCategory.USAGE,
-        'Original content',
-        1,
-        true
-      )
+      const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Original content', 1, true)
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
@@ -327,9 +284,7 @@ describe('UpdateDocUseCase', () => {
         throw saveError
       })
 
-      await expect(useCase.execute('doc-1' as any, input)).rejects.toThrow(
-        'Database connection failed'
-      )
+      await expect(useCase.execute('doc-1' as any, input)).rejects.toThrow('Database connection failed')
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to update doc', expect.any(Object))
     })
   })
@@ -351,7 +306,7 @@ describe('UpdateDocUseCase', () => {
         expect.objectContaining({
           id: 'doc-1',
           input: input,
-        })
+        }),
       )
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Doc updated successfully',
@@ -359,7 +314,7 @@ describe('UpdateDocUseCase', () => {
           id: 'doc-1',
           tableId: 'table-1',
           category: 'usage',
-        })
+        }),
       )
     })
   })
@@ -424,12 +379,7 @@ describe('UpdateDocUseCase', () => {
       ]
 
       for (const category of categories) {
-        const existingDoc = createTestDoc(
-          `doc-${category}`,
-          'table-1',
-          category,
-          'Original content'
-        )
+        const existingDoc = createTestDoc(`doc-${category}`, 'table-1', category, 'Original content')
 
         mockDocRepository.findById = mock(async () => existingDoc)
 

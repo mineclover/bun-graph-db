@@ -2,23 +2,17 @@ import type { IResolvers } from '@graphql-tools/utils'
 import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type { ExportMutations } from '@/presentation/graphql/mutations/ExportMutations.js'
 
-export function createExportResolvers(
-  exportMutations: ExportMutations
-): IResolvers<any, GraphQLContext> {
+export function createExportResolvers(exportMutations: ExportMutations): IResolvers<any, GraphQLContext> {
   return {
     Query: {
       getSupportedExportFormats: () => exportMutations.getSupportedExportFormats(),
-      validateExportOptions: (parent, args, context) =>
-        exportMutations.validateExportOptions(parent, args, context),
-      getExportHistory: (parent, args, context) =>
-        exportMutations.getExportHistory(parent, args, context),
+      validateExportOptions: (parent, args, context) => exportMutations.validateExportOptions(parent, args, context),
+      getExportHistory: (parent, args, context) => exportMutations.getExportHistory(parent, args, context),
     },
 
     Mutation: {
-      exportTableNodes: (parent, args, context) =>
-        exportMutations.exportTableNodes(parent, args, context),
-      exportMultipleTables: (parent, args, context) =>
-        exportMutations.exportMultipleTables(parent, args, context),
+      exportTableNodes: (parent, args, context) => exportMutations.exportTableNodes(parent, args, context),
+      exportMultipleTables: (parent, args, context) => exportMutations.exportMultipleTables(parent, args, context),
     },
 
     Table: {

@@ -163,7 +163,7 @@ export class SQLCoverageTestFramework {
 
     this.sqlOperations = operations
     console.log(
-      `📊 Extracted ${operations.length} SQL operations from ${this.config.repositoryPaths.length} repository files`
+      `📊 Extracted ${operations.length} SQL operations from ${this.config.repositoryPaths.length} repository files`,
     )
   }
 
@@ -228,7 +228,7 @@ export class SQLCoverageTestFramework {
 
     this.testCases = testCases
     console.log(
-      `🧪 Generated ${testCases.length} test cases covering ${Object.keys(operationsByTable).length} entities`
+      `🧪 Generated ${testCases.length} test cases covering ${Object.keys(operationsByTable).length} entities`,
     )
   }
 
@@ -643,10 +643,7 @@ export class SQLCoverageTestFramework {
   }
 
   private extractTableName(sqlText: string): string {
-    const patterns = [
-      /(?:FROM|INTO|UPDATE|TABLE|JOIN)\s+`?(\w+)`?/i,
-      /(?:INTO|UPDATE)\s+`?(\w+)`?/i,
-    ]
+    const patterns = [/(?:FROM|INTO|UPDATE|TABLE|JOIN)\s+`?(\w+)`?/i, /(?:INTO|UPDATE)\s+`?(\w+)`?/i]
 
     for (const pattern of patterns) {
       const match = pattern.exec(sqlText)
@@ -677,7 +674,7 @@ export class SQLCoverageTestFramework {
         groups[table].push(op)
         return groups
       },
-      {} as Record<string, SQLOperation[]>
+      {} as Record<string, SQLOperation[]>,
     )
   }
 
@@ -691,11 +688,7 @@ export class SQLCoverageTestFramework {
   private identifyCoveredOperations(testCase: SQLTestCase): string[] {
     // Match test case to SQL operations based on expected tables and operations
     return this.sqlOperations
-      .filter(
-        (op) =>
-          testCase.expectedTables.includes(op.table) &&
-          testCase.expectedOperations.includes(op.operation)
-      )
+      .filter((op) => testCase.expectedTables.includes(op.table) && testCase.expectedOperations.includes(op.operation))
       .map((op) => `${op.file}:${op.line}`)
   }
 
@@ -731,11 +724,7 @@ export class SQLCoverageTestFramework {
     return missingAPIs
   }
 
-  private determinePriority(
-    table: string,
-    operation: string,
-    count: number
-  ): 'HIGH' | 'MEDIUM' | 'LOW' {
+  private determinePriority(table: string, operation: string, count: number): 'HIGH' | 'MEDIUM' | 'LOW' {
     const criticalTables = ['nodes', 'tables', 'attributes', 'relations']
     const criticalOperations = ['SELECT', 'INSERT']
 
@@ -752,21 +741,15 @@ export class SQLCoverageTestFramework {
       UPDATE: `update${entityName}`,
       DELETE: `delete${entityName}`,
     }
-    return (
-      operationMap[operation as keyof typeof operationMap] ||
-      `${operation.toLowerCase()}${entityName}`
-    )
+    return operationMap[operation as keyof typeof operationMap] || `${operation.toLowerCase()}${entityName}`
   }
 
-  private generateRecommendations(
-    uncoveredOperations: SQLOperation[],
-    coveragePercentage: number
-  ): string[] {
+  private generateRecommendations(uncoveredOperations: SQLOperation[], coveragePercentage: number): string[] {
     const recommendations: string[] = []
 
     if (coveragePercentage < this.config.coverageThreshold) {
       recommendations.push(
-        `Coverage is ${coveragePercentage.toFixed(1)}% (target: ${this.config.coverageThreshold}%) - add missing API operations`
+        `Coverage is ${coveragePercentage.toFixed(1)}% (target: ${this.config.coverageThreshold}%) - add missing API operations`,
       )
     }
 
@@ -777,15 +760,11 @@ export class SQLCoverageTestFramework {
       .slice(0, 3)
 
     for (const [table, operations] of problematicTables) {
-      recommendations.push(
-        `Table '${table}' has ${operations.length} uncovered operations - prioritize API completion`
-      )
+      recommendations.push(`Table '${table}' has ${operations.length} uncovered operations - prioritize API completion`)
     }
 
     if (uncoveredOperations.some((op) => op.operation === 'UPDATE')) {
-      recommendations.push(
-        'Missing UPDATE operations detected - add comprehensive update mutations'
-      )
+      recommendations.push('Missing UPDATE operations detected - add comprehensive update mutations')
     }
 
     if (uncoveredOperations.some((op) => op.operation === 'DELETE')) {
@@ -807,7 +786,7 @@ export class SQLCoverageTestFramework {
 
   private async runAssertions(
     assertions: TestAssertion[],
-    data: any
+    data: any,
   ): Promise<Array<{ success: boolean; error?: string }>> {
     const results: Array<{ success: boolean; error?: string }> = []
 
@@ -872,10 +851,7 @@ export class SQLCoverageTestFramework {
     return path.split('.').reduce((current, key) => current?.[key], obj)
   }
 
-  private groupBy<T, K extends string | number | symbol>(
-    array: T[],
-    keyFn: (item: T) => K
-  ): Record<K, T[]> {
+  private groupBy<T, K extends string | number | symbol>(array: T[], keyFn: (item: T) => K): Record<K, T[]> {
     return array.reduce(
       (groups, item) => {
         const key = keyFn(item)
@@ -883,7 +859,7 @@ export class SQLCoverageTestFramework {
         groups[key].push(item)
         return groups
       },
-      {} as Record<K, T[]>
+      {} as Record<K, T[]>,
     )
   }
 
@@ -898,8 +874,7 @@ export class SQLCoverageTestFramework {
     console.log(`   Coverage Percentage: ${report.coveragePercentage.toFixed(1)}%`)
     console.log(`   Target Threshold: ${this.config.coverageThreshold}%`)
 
-    const status =
-      report.coveragePercentage >= this.config.coverageThreshold ? '✅ PASSED' : '❌ FAILED'
+    const status = report.coveragePercentage >= this.config.coverageThreshold ? '✅ PASSED' : '❌ FAILED'
     console.log(`   Status: ${status}`)
 
     if (report.missingAPIs.length > 0) {
@@ -910,8 +885,7 @@ export class SQLCoverageTestFramework {
           return priorityOrder[b.priority] - priorityOrder[a.priority]
         })
         .forEach((api) => {
-          const priorityIcon =
-            api.priority === 'HIGH' ? '🔥' : api.priority === 'MEDIUM' ? '⚠️' : 'ℹ️'
+          const priorityIcon = api.priority === 'HIGH' ? '🔥' : api.priority === 'MEDIUM' ? '⚠️' : 'ℹ️'
           console.log(`   ${priorityIcon} ${api.entity}.${api.operation}: ${api.suggestedAPI}`)
           console.log(`      Rationale: ${api.rationale}`)
         })
@@ -940,9 +914,7 @@ export class SQLCoverageTestFramework {
 }
 
 // Export configuration and factory function
-export function createSQLCoverageFramework(
-  config: Partial<SQLCoverageConfig> = {}
-): SQLCoverageTestFramework {
+export function createSQLCoverageFramework(config: Partial<SQLCoverageConfig> = {}): SQLCoverageTestFramework {
   const defaultConfig: SQLCoverageConfig = {
     testDatabase: ':memory:',
     // Use a path that doesn't exist to trigger schema generation from distributed files

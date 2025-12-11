@@ -6,11 +6,7 @@
 
 import type { GraphQLResolveInfo } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type {
-  BackupRetentionPolicy,
-  SQLiteBackupOptions,
-  SQLiteRestoreOptions,
-} from '@/core/types/DatabaseBackup.js'
+import type { BackupRetentionPolicy, SQLiteBackupOptions, SQLiteRestoreOptions } from '@/core/types/DatabaseBackup.js'
 import type { SQLiteBackupService } from '@/domain/services/SQLiteBackupService.js'
 
 export interface BackupMutationsContext {
@@ -26,7 +22,7 @@ export class BackupMutations {
     _parent: unknown,
     args: { input?: SQLiteBackupOptions },
     context: BackupMutationsContext,
-    _info: GraphQLResolveInfo
+    _info: GraphQLResolveInfo,
   ) {
     const { backupService, logger } = context
 
@@ -55,7 +51,7 @@ export class BackupMutations {
     _parent: unknown,
     args: { input: SQLiteRestoreOptions },
     context: BackupMutationsContext,
-    _info: GraphQLResolveInfo
+    _info: GraphQLResolveInfo,
   ) {
     const { backupService, logger } = context
 
@@ -83,7 +79,7 @@ export class BackupMutations {
     _parent: unknown,
     args: { policy: BackupRetentionPolicy },
     context: BackupMutationsContext,
-    _info: GraphQLResolveInfo
+    _info: GraphQLResolveInfo,
   ) {
     const { backupService, logger } = context
 

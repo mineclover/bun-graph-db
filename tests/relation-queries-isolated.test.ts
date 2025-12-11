@@ -4,11 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import {
-  createRequestHelper,
-  startServerForSuite,
-  stopServerForSuite,
-} from './fixtures/test-graphql-server'
+import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'relation-queries-isolated'
 const TEST_TIMEOUT = 15000
@@ -193,10 +189,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
       // SearchRelatedNodesUseCase might not be available (dependency issue mentioned in code)
       // So we accept either successful search or fallback behavior
       if (result.errors) {
-        console.log(
-          'ℹ️ SearchRelatedNodes has implementation issues, this is expected:',
-          result.errors[0]?.message
-        )
+        console.log('ℹ️ SearchRelatedNodes has implementation issues, this is expected:', result.errors[0]?.message)
       } else {
         expect(result.data.searchRelatedNodes).toBeDefined()
         expect(result.data.searchRelatedNodes.nodes).toBeDefined()

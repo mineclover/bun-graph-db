@@ -18,16 +18,11 @@ export class Doc implements TimestampedEntity {
     private _content: string,
     private _isActive: boolean,
     private readonly _createdAt: Date,
-    private _updatedAt: Date
+    private _updatedAt: Date,
   ) {}
 
   // Factory method for creating new docs
-  static create(
-    tableId: TableId,
-    category: DocCategory,
-    content: string,
-    version: number = 1
-  ): Doc {
+  static create(tableId: TableId, category: DocCategory, content: string, version: number = 1): Doc {
     if (!tableId) {
       throw new DomainException('Table ID is required for doc creation')
     }
@@ -56,7 +51,7 @@ export class Doc implements TimestampedEntity {
       content.trim(),
       true, // New docs are active by default
       new Date(),
-      new Date()
+      new Date(),
     )
   }
 
@@ -69,7 +64,7 @@ export class Doc implements TimestampedEntity {
     content: string,
     isActive: boolean,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
   ): Doc {
     return new Doc(
       id as DocId,
@@ -79,7 +74,7 @@ export class Doc implements TimestampedEntity {
       content,
       isActive,
       createdAt,
-      updatedAt
+      updatedAt,
     )
   }
 

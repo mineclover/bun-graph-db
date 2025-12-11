@@ -139,10 +139,7 @@ export type EntityName<T extends string> = T extends `${infer Name}Dto` ? Name :
  * Type helper to create standard output type names
  * Example: Create<'User'> -> CreateUserOutput
  */
-export type OutputTypeName<
-  TOperation extends string,
-  TEntity extends string,
-> = `${TOperation}${TEntity}Output`
+export type OutputTypeName<TOperation extends string, TEntity extends string> = `${TOperation}${TEntity}Output`
 
 /**
  * Common validation input patterns
@@ -239,12 +236,7 @@ export function hasIdentifier(obj: unknown): obj is WithIdentifier {
 }
 
 export function hasName(obj: unknown): obj is WithName {
-  return (
-    typeof obj === 'object' &&
-    obj !== null &&
-    'name' in obj &&
-    typeof (obj as WithName).name === 'string'
-  )
+  return typeof obj === 'object' && obj !== null && 'name' in obj && typeof (obj as WithName).name === 'string'
 }
 
 export function hasMetadata(obj: unknown): obj is WithMetadata {
@@ -270,10 +262,10 @@ export type OmitEntityFields<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'>
  * Utility type for creating input from DTO
  * Removes id and timestamps, makes everything optional except required fields
  */
-export type ToCreateInput<
-  TDto,
-  TRequired extends keyof OmitEntityFields<TDto> = never,
-> = RequireFields<OmitEntityFields<TDto>, TRequired>
+export type ToCreateInput<TDto, TRequired extends keyof OmitEntityFields<TDto> = never> = RequireFields<
+  OmitEntityFields<TDto>,
+  TRequired
+>
 
 /**
  * Utility type for creating update input from DTO

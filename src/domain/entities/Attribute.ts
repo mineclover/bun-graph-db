@@ -12,7 +12,7 @@ export class Attribute {
     private readonly isRequired: boolean,
     private readonly metadata: string | null,
     private readonly createdAt: Date,
-    private readonly updatedAt: Date
+    private readonly updatedAt: Date,
   ) {
     this.validateIdentifier(identifier)
     this.validateMetadata()
@@ -25,7 +25,7 @@ export class Attribute {
     name?: string,
     description?: string,
     isRequired: boolean = false,
-    metadata?: string
+    metadata?: string,
   ): Attribute {
     return new Attribute(
       null as any as AttributeId,
@@ -37,7 +37,7 @@ export class Attribute {
       isRequired,
       metadata || null,
       new Date(),
-      new Date()
+      new Date(),
     )
   }
 
@@ -51,7 +51,7 @@ export class Attribute {
     isRequired: boolean,
     metadata: string | null,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
   ): Attribute {
     return new Attribute(
       id as AttributeId,
@@ -63,7 +63,7 @@ export class Attribute {
       isRequired,
       metadata,
       createdAt,
-      updatedAt
+      updatedAt,
     )
   }
 
@@ -75,7 +75,7 @@ export class Attribute {
     if (!/^[a-z][a-z0-9_]*$/.test(identifier)) {
       throw new DomainException(
         'Attribute identifier must start with lowercase letter and contain only lowercase letters, numbers, and underscores',
-        { code: 'DOMAIN_ERROR' }
+        { code: 'DOMAIN_ERROR' },
       )
     }
 
@@ -156,7 +156,7 @@ export class Attribute {
       this.isRequired,
       this.metadata,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 
@@ -171,7 +171,7 @@ export class Attribute {
       isRequired,
       this.metadata,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 
@@ -194,7 +194,7 @@ export class Attribute {
       this.isRequired,
       metadata,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 

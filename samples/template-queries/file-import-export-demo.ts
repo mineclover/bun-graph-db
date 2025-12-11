@@ -121,9 +121,7 @@ async function exportTemplatesToFiles(client: any, templates: any[]) {
 
         // 버전 기반 파일명 생성 (타임스탬프 제거, 점을 하이픈으로 변경)
         const version = (templateData.version || '1-0-0').replace(/\./g, '-')
-        const cleanIdentifier = template.identifier
-          .replace(/[^a-zA-Z0-9-]/g, '-')
-          .replace(/-\d+$/, '')
+        const cleanIdentifier = template.identifier.replace(/[^a-zA-Z0-9-]/g, '-').replace(/-\d+$/, '')
         const filename = `${cleanIdentifier}_v${version}.json`
         const filepath = join(EXPORT_DIR, filename)
 
@@ -139,10 +137,7 @@ async function exportTemplatesToFiles(client: any, templates: any[]) {
 
         console.log(`💾 저장됨: ${filename} (${exportResult.exportData.length}자)`)
       } else {
-        console.error(
-          `❌ Export 실패: ${template.identifier}`,
-          exportResponse.data?.exportTemplate?.errors
-        )
+        console.error(`❌ Export 실패: ${template.identifier}`, exportResponse.data?.exportTemplate?.errors)
       }
     } catch (error) {
       console.error(`💥 Export 오류 (${template.identifier}):`, error)
@@ -305,9 +300,7 @@ async function testBatchOperations(client: any, templates: any[]) {
 
       if (importResponse.data?.importTemplate?.success) {
         successCount++
-        console.log(
-          `✅ 배치 Import 성공: ${importResponse.data.importTemplate.template?.identifier}`
-        )
+        console.log(`✅ 배치 Import 성공: ${importResponse.data.importTemplate.template?.identifier}`)
       } else {
         failCount++
         console.error(`❌ 배치 Import 실패: ${templateData.template?.identifier}`)

@@ -4,11 +4,7 @@ import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
-import type {
-  AttributeData,
-  NodeAttributeData,
-  TableAttributesData,
-} from '../types/ApiResponseTypes.js'
+import type { AttributeData, NodeAttributeData, TableAttributesData } from '../types/ApiResponseTypes.js'
 import { ResponseHelper } from '../utils/responseHelpers.js'
 
 export class AttributeApiController {
@@ -18,7 +14,7 @@ export class AttributeApiController {
     private readonly createAttributeUseCase: CreateAttributeUseCase,
     private readonly attributeRepository: IAttributeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
-    readonly logger: ILogger
+    readonly logger: ILogger,
   ) {
     this.responseHelper = new ResponseHelper(logger)
   }
@@ -28,10 +24,7 @@ export class AttributeApiController {
       const { input } = req.body
 
       if (!input || !input.nodeId || !input.attributeId || input.value === undefined) {
-        this.responseHelper.validationError(
-          res,
-          'input with nodeId, attributeId, and value is required'
-        )
+        this.responseHelper.validationError(res, 'input with nodeId, attributeId, and value is required')
         return
       }
 
@@ -41,7 +34,7 @@ export class AttributeApiController {
       const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
         nodeId as NodeId,
         attributeId as AttributeId,
-        value
+        value,
       )
 
       const result: NodeAttributeData = {
@@ -211,14 +204,11 @@ export class AttributeApiController {
       // Use node attribute repository to remove node attribute
       const nodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
         nodeId as NodeId,
-        attributeId as AttributeId
+        attributeId as AttributeId,
       )
 
       if (!nodeAttribute) {
-        this.responseHelper.notFound(
-          res,
-          `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`
-        )
+        this.responseHelper.notFound(res, `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`)
         return
       }
 
@@ -253,14 +243,11 @@ export class AttributeApiController {
       // Use node attribute repository to update node attribute value
       const nodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
         nodeId as NodeId,
-        attributeId as AttributeId
+        attributeId as AttributeId,
       )
 
       if (!nodeAttribute) {
-        this.responseHelper.notFound(
-          res,
-          `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`
-        )
+        this.responseHelper.notFound(res, `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`)
         return
       }
 

@@ -122,9 +122,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       `)
 
       expect(outgoingQuery.data.getConnectedNodes.nodes).toHaveLength(2) // Should find nodes 2 and 4
-      const neighborContents = outgoingQuery.data.getConnectedNodes.nodes
-        .map((n: any) => n.content)
-        .sort()
+      const neighborContents = outgoingQuery.data.getConnectedNodes.nodes.map((n: any) => n.content).sort()
       expect(neighborContents).toEqual(['Content for node 2', 'Content for node 4'])
 
       // Test incoming neighbors of node 5
@@ -144,9 +142,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       `)
 
       expect(incomingQuery.data.getConnectedNodes.nodes).toHaveLength(2) // Should find nodes 2 and 4
-      const incomingContents = incomingQuery.data.getConnectedNodes.nodes
-        .map((n: any) => n.content)
-        .sort()
+      const incomingContents = incomingQuery.data.getConnectedNodes.nodes.map((n: any) => n.content).sort()
       expect(incomingContents).toEqual(['Content for node 2', 'Content for node 4'])
     })
 
@@ -158,7 +154,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
           depth: 2,
           direction: 'OUTGOING',
           algorithm: 'BFS',
-        }
+        },
       )
 
       // Should reach: Node 2, Node 4 (depth 1) + Node 3, Node 5 (depth 2)
@@ -185,7 +181,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
           depth: 3,
           direction: 'OUTGOING',
           algorithm: 'DFS',
-        }
+        },
       )
 
       // Should reach all nodes except node 1 itself
@@ -206,7 +202,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
           depth: 2,
           direction: 'OUTGOING',
           relationTypes: ['connects'], // Only 'connects' relations
-        }
+        },
       )
 
       // Should not include direct path to node 3 via 'shortcut'
@@ -249,13 +245,9 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       ]
 
       for (const rel of relations) {
-        await testDbFactory.createTestRelation(
-          nodeIds[rel.from],
-          nodeIds[rel.to],
-          rel.type,
-          tableId,
-          { weight: rel.weight }
-        )
+        await testDbFactory.createTestRelation(nodeIds[rel.from], nodeIds[rel.to], rel.type, tableId, {
+          weight: rel.weight,
+        })
       }
     })
 
@@ -263,7 +255,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       const shortestPath = await nodeRepository.findShortestPath(
         nodeIds[0], // PathNode 1
         nodeIds[6], // PathNode 7
-        { maxDepth: 10 }
+        { maxDepth: 10 },
       )
 
       expect(shortestPath.found).toBe(true)
@@ -284,7 +276,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       const noPath = await nodeRepository.findShortestPath(
         nodeIds[0], // PathNode 1
         isolatedNode.id, // Isolated node
-        { maxDepth: 10 }
+        { maxDepth: 10 },
       )
 
       expect(noPath.found).toBe(false)
@@ -296,7 +288,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       const limitedPath = await nodeRepository.findShortestPath(
         nodeIds[0], // PathNode 1
         nodeIds[6], // PathNode 7
-        { maxDepth: 2 } // Too shallow to reach
+        { maxDepth: 2 }, // Too shallow to reach
       )
 
       expect(limitedPath.found).toBe(false)
@@ -311,7 +303,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
         {
           maxDepth: 10,
           considerWeights: true,
-        }
+        },
       )
 
       expect(weightedPath.found).toBe(true)
@@ -326,7 +318,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
         {
           maxDepth: 5,
           maxPaths: 10,
-        }
+        },
       )
 
       expect(allPaths.paths.length).toBeGreaterThan(1)
@@ -399,13 +391,9 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       }
 
       for (const rel of relations) {
-        await testDbFactory.createTestRelation(
-          nodeIds[rel.from],
-          nodeIds[rel.to],
-          rel.type,
-          tableId,
-          { weight: rel.weight }
-        )
+        await testDbFactory.createTestRelation(nodeIds[rel.from], nodeIds[rel.to], rel.type, tableId, {
+          weight: rel.weight,
+        })
       }
     })
 
@@ -416,15 +404,12 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       expect(components.components).toBeDefined()
 
       // All nodes should be assigned to components
-      const totalNodes = components.components.reduce(
-        (sum: number, comp: any) => sum + comp.nodes.length,
-        0
-      )
+      const totalNodes = components.components.reduce((sum: number, comp: any) => sum + comp.nodes.length, 0)
       expect(totalNodes).toBe(15)
 
       // Largest component should contain most nodes (due to inter-cluster connections)
       const largestComponent = components.components.reduce((largest: any, current: any) =>
-        current.nodes.length > largest.nodes.length ? current : largest
+        current.nodes.length > largest.nodes.length ? current : largest,
       )
       expect(largestComponent.nodes.length).toBeGreaterThanOrEqual(10)
     })
@@ -445,14 +430,12 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
 
       // Nodes with higher degree should generally have higher centrality
       const sortedByDegree = centralityMeasures.nodes.sort(
-        (a: any, b: any) => b.centrality.degree - a.centrality.degree
+        (a: any, b: any) => b.centrality.degree - a.centrality.degree,
       )
       const highestDegreeNode = sortedByDegree[0]
       const lowestDegreeNode = sortedByDegree[sortedByDegree.length - 1]
 
-      expect(highestDegreeNode.centrality.pagerank).toBeGreaterThanOrEqual(
-        lowestDegreeNode.centrality.pagerank
-      )
+      expect(highestDegreeNode.centrality.pagerank).toBeGreaterThanOrEqual(lowestDegreeNode.centrality.pagerank)
     })
 
     test('should perform community detection', async () => {
@@ -520,12 +503,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       ]
 
       for (const rel of relations) {
-        await testDbFactory.createTestRelation(
-          nodeIds[rel.from],
-          nodeIds[rel.to],
-          rel.type,
-          tableId
-        )
+        await testDbFactory.createTestRelation(nodeIds[rel.from], nodeIds[rel.to], rel.type, tableId)
       }
     })
 
@@ -556,15 +534,13 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       // Triangle nodes should be in same SCC
       const triangleNodes = [nodeIds[0], nodeIds[1], nodeIds[2]]
       const triangleSCC = scc.components.find((comp: any) =>
-        triangleNodes.every((nodeId) => comp.nodes.includes(nodeId))
+        triangleNodes.every((nodeId) => comp.nodes.includes(nodeId)),
       )
       expect(triangleSCC).toBeDefined()
 
       // Square nodes should be in same SCC
       const squareNodes = [nodeIds[3], nodeIds[4], nodeIds[5], nodeIds[6]]
-      const squareSCC = scc.components.find((comp: any) =>
-        squareNodes.every((nodeId) => comp.nodes.includes(nodeId))
-      )
+      const squareSCC = scc.components.find((comp: any) => squareNodes.every((nodeId) => comp.nodes.includes(nodeId)))
       expect(squareSCC).toBeDefined()
     })
 
@@ -586,36 +562,11 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       }
 
       // Create DAG: 1 -> 2 -> 4, 1 -> 3 -> 4, 2 -> 5
-      await testDbFactory.createTestRelation(
-        acyclicNodes[0],
-        acyclicNodes[1],
-        'dag',
-        acyclicTable.id
-      )
-      await testDbFactory.createTestRelation(
-        acyclicNodes[1],
-        acyclicNodes[3],
-        'dag',
-        acyclicTable.id
-      )
-      await testDbFactory.createTestRelation(
-        acyclicNodes[0],
-        acyclicNodes[2],
-        'dag',
-        acyclicTable.id
-      )
-      await testDbFactory.createTestRelation(
-        acyclicNodes[2],
-        acyclicNodes[3],
-        'dag',
-        acyclicTable.id
-      )
-      await testDbFactory.createTestRelation(
-        acyclicNodes[1],
-        acyclicNodes[4],
-        'dag',
-        acyclicTable.id
-      )
+      await testDbFactory.createTestRelation(acyclicNodes[0], acyclicNodes[1], 'dag', acyclicTable.id)
+      await testDbFactory.createTestRelation(acyclicNodes[1], acyclicNodes[3], 'dag', acyclicTable.id)
+      await testDbFactory.createTestRelation(acyclicNodes[0], acyclicNodes[2], 'dag', acyclicTable.id)
+      await testDbFactory.createTestRelation(acyclicNodes[2], acyclicNodes[3], 'dag', acyclicTable.id)
+      await testDbFactory.createTestRelation(acyclicNodes[1], acyclicNodes[4], 'dag', acyclicTable.id)
 
       const acyclicCheck = await nodeRepository.isAcyclic(acyclicTable.id)
       expect(acyclicCheck).toBe(true)
@@ -645,12 +596,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       ]
 
       for (const rel of dagRelations) {
-        await testDbFactory.createTestRelation(
-          dagNodes[rel.from],
-          dagNodes[rel.to],
-          'dependency',
-          dagTable.id
-        )
+        await testDbFactory.createTestRelation(dagNodes[rel.from], dagNodes[rel.to], 'dependency', dagTable.id)
       }
 
       const topologicalOrder = await nodeRepository.topologicalSort(dagTable.id)
@@ -716,9 +662,9 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
               largeNodeIds[rel.from],
               largeNodeIds[rel.to],
               'large_graph',
-              largeTable.id
-            )
-          )
+              largeTable.id,
+            ),
+          ),
         )
       }
 
@@ -735,17 +681,11 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
       expect(connectedNodes).toBeDefined()
       expect(traversalTime).toBeLessThan(10000) // Should complete within 10 seconds
 
-      console.log(
-        `Traversal completed in ${traversalTime}ms, found ${connectedNodes.length} connected nodes`
-      )
+      console.log(`Traversal completed in ${traversalTime}ms, found ${connectedNodes.length} connected nodes`)
 
       // Test shortest path performance
       const pathStartTime = Date.now()
-      const shortestPath = await nodeRepository.findShortestPath(
-        largeNodeIds[0],
-        largeNodeIds[999],
-        { maxDepth: 10 }
-      )
+      const shortestPath = await nodeRepository.findShortestPath(largeNodeIds[0], largeNodeIds[999], { maxDepth: 10 })
       const pathTime = Date.now() - pathStartTime
 
       expect(pathTime).toBeLessThan(15000) // Should complete within 15 seconds
@@ -775,12 +715,7 @@ describe('Comprehensive Graph Traversal Test Suite', () => {
         for (let j = 0; j < 5; j++) {
           const target = Math.floor(Math.random() * nodeIds.length)
           if (target !== i) {
-            await testDbFactory.createTestRelation(
-              nodeIds[i],
-              nodeIds[target],
-              'memory_test',
-              table.id
-            )
+            await testDbFactory.createTestRelation(nodeIds[i], nodeIds[target], 'memory_test', table.id)
           }
         }
       }

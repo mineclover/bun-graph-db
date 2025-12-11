@@ -9,7 +9,7 @@ export class DocDto {
     public readonly content: string,
     public readonly isActive: boolean,
     public readonly createdAt: Date,
-    public readonly updatedAt: Date
+    public readonly updatedAt: Date,
   ) {}
 
   static fromEntity(doc: Doc): DocDto {
@@ -21,7 +21,7 @@ export class DocDto {
       doc.content,
       doc.isActive,
       doc.createdAt,
-      doc.updatedAt
+      doc.updatedAt,
     )
   }
 

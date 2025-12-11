@@ -25,7 +25,7 @@ export class TablePackageRecoveryManager {
     private readonly tableRepository: ITableRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -40,7 +40,7 @@ export class TablePackageRecoveryManager {
       maxRetries?: number
       partialSuccessHandling?: 'rollback' | 'continue' | 'prompt'
       recoveryStrategy?: 'aggressive' | 'conservative' | 'custom'
-    } = {}
+    } = {},
   ): Promise<{
     result: TablePackageImportResult
     recoveryInfo: RecoveryInfo
@@ -107,7 +107,7 @@ export class TablePackageRecoveryManager {
             const shouldContinue = await this.handlePartialSuccess(
               result,
               recoverySession,
-              defaults.partialSuccessHandling
+              defaults.partialSuccessHandling,
             )
 
             if (!shouldContinue && attempt < defaults.maxRetries) {
@@ -331,9 +331,7 @@ export class TablePackageRecoveryManager {
         tableIdentifier,
         ...toErrorMeta(error),
       })
-      throw new DomainException(
-        `Failed to create backup: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      throw new DomainException(`Failed to create backup: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -398,7 +396,7 @@ export class TablePackageRecoveryManager {
    */
   async verifyIntegrity(
     packageData: TablePackageFormat,
-    importResult: TablePackageImportResult
+    importResult: TablePackageImportResult,
   ): Promise<IntegrityCheckResult> {
     this.logger.info('Verifying data integrity', {
       tableIdentifier: packageData.sourceTable.identifier,
@@ -435,15 +433,9 @@ export class TablePackageRecoveryManager {
 
       // Calculate summary
       integrityResult.summary.totalChecks = integrityResult.checks.length
-      integrityResult.summary.passedChecks = integrityResult.checks.filter(
-        (c) => c.status === 'passed'
-      ).length
-      integrityResult.summary.failedChecks = integrityResult.checks.filter(
-        (c) => c.status === 'failed'
-      ).length
-      integrityResult.summary.warningChecks = integrityResult.checks.filter(
-        (c) => c.status === 'warning'
-      ).length
+      integrityResult.summary.passedChecks = integrityResult.checks.filter((c) => c.status === 'passed').length
+      integrityResult.summary.failedChecks = integrityResult.checks.filter((c) => c.status === 'failed').length
+      integrityResult.summary.warningChecks = integrityResult.checks.filter((c) => c.status === 'warning').length
 
       integrityResult.success = integrityResult.summary.failedChecks === 0
 
@@ -508,7 +500,7 @@ export class TablePackageRecoveryManager {
   private async handlePartialSuccess(
     result: TablePackageImportResult,
     session: RecoverySession,
-    handling: 'rollback' | 'continue' | 'prompt'
+    handling: 'rollback' | 'continue' | 'prompt',
   ): Promise<boolean> {
     this.logger.info('Handling partial import success', {
       sessionId: session.sessionId,
@@ -597,10 +589,7 @@ export class TablePackageRecoveryManager {
     return errorAnalysis
   }
 
-  private async applyRecoveryAction(
-    action: RecoveryAction,
-    session: RecoverySession
-  ): Promise<void> {
+  private async applyRecoveryAction(action: RecoveryAction, session: RecoverySession): Promise<void> {
     this.logger.info('Applying recovery action', {
       sessionId: session.sessionId,
       errorType: action.errorType,
@@ -652,7 +641,7 @@ export class TablePackageRecoveryManager {
 
   private async verifyTableIntegrity(
     _packageData: TablePackageFormat,
-    importResult: TablePackageImportResult
+    importResult: TablePackageImportResult,
   ): Promise<IntegrityCheck> {
     const check: IntegrityCheck = {
       name: 'table_integrity',
@@ -689,7 +678,7 @@ export class TablePackageRecoveryManager {
 
   private async verifyNodeIntegrity(
     packageData: TablePackageFormat,
-    importResult: TablePackageImportResult
+    importResult: TablePackageImportResult,
   ): Promise<IntegrityCheck> {
     const check: IntegrityCheck = {
       name: 'node_integrity',
@@ -707,9 +696,7 @@ export class TablePackageRecoveryManager {
         return check
       }
 
-      const nodesResult = await this.nodeRepository.findByTableId(
-        importResult.importedTable.id as any
-      )
+      const nodesResult = await this.nodeRepository.findByTableId(importResult.importedTable.id as any)
       const actualNodeCount = nodesResult.items?.length || 0
 
       if (actualNodeCount === expectedNodeCount) {
@@ -730,7 +717,7 @@ export class TablePackageRecoveryManager {
 
   private async verifyRelationshipIntegrity(
     packageData: TablePackageFormat,
-    _importResult: TablePackageImportResult
+    _importResult: TablePackageImportResult,
   ): Promise<IntegrityCheck> {
     const check: IntegrityCheck = {
       name: 'relationship_integrity',
@@ -764,7 +751,7 @@ export class TablePackageRecoveryManager {
 
   private async verifyTemplateIntegrity(
     packageData: TablePackageFormat,
-    importResult: TablePackageImportResult
+    importResult: TablePackageImportResult,
   ): Promise<IntegrityCheck> {
     const check: IntegrityCheck = {
       name: 'template_integrity',

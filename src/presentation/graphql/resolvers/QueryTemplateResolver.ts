@@ -25,7 +25,7 @@ export class QueryTemplateResolver extends BaseResolver {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     logger: ILogger,
-    private readonly schema: GraphQLSchema // GraphQL Schema instance
+    private readonly schema: GraphQLSchema, // GraphQL Schema instance
   ) {
     super()
     this.logger = logger
@@ -61,7 +61,7 @@ export class QueryTemplateResolver extends BaseResolver {
       template.defaultVariables,
       (input.variables as any) || null,
       template.inputSchema,
-      input.validateVariables !== false
+      input.validateVariables !== false,
     )
 
     // 4. 사용 통계 업데이트 (비동기, 실패 무시)
@@ -157,7 +157,7 @@ export class QueryTemplateResolver extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Template ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Template ID'),
       ],
-      'getTemplate'
+      'getTemplate',
     )
 
     return this.handleQuery(
@@ -166,7 +166,7 @@ export class QueryTemplateResolver extends BaseResolver {
         return template ? queryTemplateToDto(template) : null
       },
       'findTemplateById',
-      { id }
+      { id },
     )
   }
 
@@ -202,13 +202,11 @@ export class QueryTemplateResolver extends BaseResolver {
     defaultVariables: JsonValue,
     userVariables: JsonValue,
     schema: JsonValue,
-    validate: boolean
+    validate: boolean,
   ): Record<string, any> {
     // 기본값과 사용자 입력 병합
     const merged = {
-      ...(typeof defaultVariables === 'object' && defaultVariables !== null
-        ? defaultVariables
-        : {}),
+      ...(typeof defaultVariables === 'object' && defaultVariables !== null ? defaultVariables : {}),
       ...(typeof userVariables === 'object' && userVariables !== null ? userVariables : {}),
     }
 
@@ -220,10 +218,7 @@ export class QueryTemplateResolver extends BaseResolver {
     return merged
   }
 
-  private validateVariables(
-    variables: Record<string, unknown>,
-    schema: Record<string, unknown>
-  ): void {
+  private validateVariables(variables: Record<string, unknown>, schema: Record<string, unknown>): void {
     // JSON Schema 검증 로직
     // 실제 구현에서는 ajv 같은 JSON Schema validator 사용
     if (!schema) return
@@ -319,7 +314,7 @@ export class QueryTemplateResolver extends BaseResolver {
     try {
       const templates = await this.queryTemplateRepository.findByApplicableTable(
         input.tableName,
-        input.includeUniversal ?? true
+        input.includeUniversal ?? true,
       )
 
       return templates.map(queryTemplateToDto)
@@ -366,7 +361,7 @@ export class QueryTemplateResolver extends BaseResolver {
           if (!groupedByTable.has(tableName)) {
             groupedByTable.set(tableName, [])
           }
-          groupedByTable.get(tableName)!.push(template)
+          groupedByTable.get(tableName)?.push(template)
         })
       })
 

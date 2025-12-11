@@ -157,17 +157,13 @@ function showUsageGuide(): void {
   console.log('2. 속성 포함 업데이트:')
   console.log('   executeTemplate(input: {')
   console.log('     templateIdentifier: "update-todo-with-attributes"')
-  console.log(
-    '     variables: { nodeId: "123", content: "내용", attributeId: "456", attributeValue: "값" }'
-  )
+  console.log('     variables: { nodeId: "123", content: "내용", attributeId: "456", attributeValue: "값" }')
   console.log('   })')
   console.log('')
   console.log('3. 일괄 업데이트:')
   console.log('   executeTemplate(input: {')
   console.log('     templateIdentifier: "bulk-update-nodes-content"')
-  console.log(
-    '     variables: { nodeId1: "123", nodeId2: "456", content1: "내용1", content2: "내용2" }'
-  )
+  console.log('     variables: { nodeId1: "123", nodeId2: "456", content1: "내용1", content2: "내용2" }')
   console.log('   })')
 }
 

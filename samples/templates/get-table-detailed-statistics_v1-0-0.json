@@ -17,9 +17,7 @@
           "description": "조회할 테이블의 식별자"
         }
       },
-      "required": [
-        "tableIdentifier"
-      ]
+      "required": ["tableIdentifier"]
     },
     "defaultVariables": {
       "tableIdentifier": "demo-table"
@@ -27,9 +25,7 @@
     "applicableTables": null,
     "complexityScore": 2,
     "version": "1.0.0",
-    "tags": [
-      "general"
-    ],
+    "tags": ["general"],
     "isActive": true,
     "statistics": {
       "usageCount": 2,

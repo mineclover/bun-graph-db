@@ -146,9 +146,7 @@ export class McpToolRegistry {
     const searchTerm = query.toLowerCase().trim()
 
     return Array.from(this.tools.values()).filter(
-      (tool) =>
-        tool.name.toLowerCase().includes(searchTerm) ||
-        tool.description.toLowerCase().includes(searchTerm)
+      (tool) => tool.name.toLowerCase().includes(searchTerm) || tool.description.toLowerCase().includes(searchTerm),
     )
   }
 
@@ -290,8 +288,7 @@ export class McpToolRegistry {
     // Register list available templates tool
     const listTemplatesStatusTool: McpToolDefinition = {
       name: 'list-available-templates',
-      description:
-        'List all available template files in exported-templates directory with metadata.',
+      description: 'List all available template files in exported-templates directory with metadata.',
       operationType: 'query',
       inputSchema: {
         type: 'object',
@@ -688,8 +685,7 @@ export class McpToolRegistry {
     // Register system status tool
     const systemStatusTool: McpToolDefinition = {
       name: 'get-system-status',
-      description:
-        'Get current system status including database state, table counts, and last initialization info.',
+      description: 'Get current system status including database state, table counts, and last initialization info.',
       operationType: 'query',
       inputSchema: {
         type: 'object',
@@ -915,8 +911,7 @@ export class McpToolRegistry {
     // Register list backups tool
     const listBackupsTool: McpToolDefinition = {
       name: 'list-backups',
-      description:
-        'List all available database backups with metadata including path, size, and creation date.',
+      description: 'List all available database backups with metadata including path, size, and creation date.',
       operationType: 'query',
       inputSchema: {
         type: 'object',
@@ -1088,9 +1083,7 @@ export class McpToolRegistry {
 /**
  * Create a registry with tools loaded from contract
  */
-export async function createMcpToolRegistryWithContract(
-  _contractPath?: string
-): Promise<McpToolRegistry> {
+export async function createMcpToolRegistryWithContract(_contractPath?: string): Promise<McpToolRegistry> {
   const registry = new McpToolRegistry()
   await registry.initialize()
   return registry

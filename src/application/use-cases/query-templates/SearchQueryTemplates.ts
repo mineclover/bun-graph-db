@@ -1,9 +1,6 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
-import type {
-  IQueryTemplateRepository,
-  SearchCriteria,
-} from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { IQueryTemplateRepository, SearchCriteria } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
@@ -37,7 +34,7 @@ export interface SearchQueryTemplatesResponse {
 export class SearchQueryTemplates {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(request: SearchQueryTemplatesRequest = {}): Promise<SearchQueryTemplatesResponse> {
@@ -93,10 +90,7 @@ export class SearchQueryTemplates {
     }
 
     // Validate template type
-    if (
-      request.templateType &&
-      !['query', 'mutation', 'subscription'].includes(request.templateType)
-    ) {
+    if (request.templateType && !['query', 'mutation', 'subscription'].includes(request.templateType)) {
       throw new ValidationException('Template type must be query, mutation, or subscription')
     }
 

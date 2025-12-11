@@ -48,7 +48,7 @@ const testInstances: Map<string, TestEnvironment> = new Map()
 export async function createTestEnvironment(
   suiteName: string,
   testType?: TestType,
-  _isolationLevel: 'basic' | 'enhanced' | 'complete' = 'enhanced'
+  _isolationLevel: 'basic' | 'enhanced' | 'complete' = 'enhanced',
 ): Promise<TestEnvironment> {
   // TypeScript validation
   if (typeof suiteName !== 'string' || suiteName.trim().length === 0) {
@@ -77,9 +77,7 @@ export async function createTestEnvironment(
 
   // Verify file-based enforcement
   if (testDb.path === ':memory:' || testDb.path.includes(':memory:')) {
-    throw new Error(
-      `CRITICAL: In-memory database detected for ${suiteName}. File-based enforcement failed.`
-    )
+    throw new Error(`CRITICAL: In-memory database detected for ${suiteName}. File-based enforcement failed.`)
   }
 
   // Initialize with app schema
@@ -403,7 +401,7 @@ export async function cleanupAll(): Promise<void> {
  */
 export async function createInMemoryEnvironment(suiteName: string): Promise<TestEnvironment> {
   console.warn(
-    `WARNING: createInMemoryEnvironment is deprecated for ${suiteName}. Use createTestEnvironment for file-based isolation.`
+    `WARNING: createInMemoryEnvironment is deprecated for ${suiteName}. Use createTestEnvironment for file-based isolation.`,
   )
 
   // Force file-based even for "in-memory" requests
@@ -427,9 +425,7 @@ export function validateFileBasedEnforcement(): FileBasedValidationResult {
 
     // Validate file-based requirements
     if (env.databaseInfo.type !== 'file') {
-      violations.push(
-        `Suite "${suiteName}" database info indicates non-file-based: ${env.databasePath}`
-      )
+      violations.push(`Suite "${suiteName}" database info indicates non-file-based: ${env.databasePath}`)
     }
 
     // Validate isolation config
@@ -439,9 +435,7 @@ export function validateFileBasedEnforcement(): FileBasedValidationResult {
 
     // Validate path structure for temporary files
     if (env.databaseInfo.isTemporary && !env.databasePath.includes('/tmp/bun-graph-db-tests/')) {
-      violations.push(
-        `Suite "${suiteName}" temporary database not in expected directory: ${env.databasePath}`
-      )
+      violations.push(`Suite "${suiteName}" temporary database not in expected directory: ${env.databasePath}`)
     }
   }
 
@@ -481,7 +475,7 @@ export async function createFileBasedEnvironment(
     isolationLevel?: 'basic' | 'enhanced' | 'complete'
     customTempDir?: string
     metadata?: Record<string, unknown>
-  } = {}
+  } = {},
 ): Promise<TestEnvironment> {
   const { isolationLevel = 'complete', customTempDir, metadata } = options
 

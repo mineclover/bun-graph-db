@@ -30,7 +30,7 @@ class MockTableRepository implements Partial<ITableRepository> {
         table.identifier,
         table.description,
         table.createdAt,
-        table.updatedAt
+        table.updatedAt,
       )
       this.tables.set(table.identifier, savedTable)
       return savedTable
@@ -60,10 +60,7 @@ class MockTableRepository implements Partial<ITableRepository> {
 class MockQueryTemplateRepository implements Partial<IQueryTemplateRepository> {
   private templates = new Map<string, QueryTemplate>()
 
-  async findByApplicableTable(
-    tableName: string,
-    _includeUniversal?: boolean
-  ): Promise<QueryTemplate[]> {
+  async findByApplicableTable(tableName: string, _includeUniversal?: boolean): Promise<QueryTemplate[]> {
     const results = []
     for (const template of this.templates.values()) {
       if (template.isApplicableToTable(tableName)) {
@@ -219,7 +216,7 @@ describe('TablePackageService', () => {
       createMockRepo() as any,
       mockTemplateRepo as any,
       mockLogger,
-      mockContainer as any
+      mockContainer as any,
     )
   })
 

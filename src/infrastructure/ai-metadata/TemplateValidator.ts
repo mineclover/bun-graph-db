@@ -77,10 +77,7 @@ export class TemplateValidator {
   /**
    * Apply corrections to template
    */
-  async applyCorrections(
-    template: TemplateDefinition,
-    corrections: Correction[]
-  ): Promise<CorrectedTemplate> {
+  async applyCorrections(template: TemplateDefinition, corrections: Correction[]): Promise<CorrectedTemplate> {
     let correctedQuery = template.query
     const correctedVariables = { ...template.variables }
     const appliedCorrections: string[] = []
@@ -100,7 +97,7 @@ export class TemplateValidator {
           correctedQuery = this.restructureParameters(
             correctedQuery,
             correction.oldStructure!,
-            correction.newStructure!
+            correction.newStructure!,
           )
           appliedCorrections.push(`Restructured parameters: ${correction.description}`)
           break
@@ -132,17 +129,13 @@ export class TemplateValidator {
   /**
    * Generate schema-compliant template from AI suggestion
    */
-  async generateSchemaCompliantTemplate(
-    aiSuggestion: AITemplateRequest
-  ): Promise<ValidatedTemplate> {
+  async generateSchemaCompliantTemplate(aiSuggestion: AITemplateRequest): Promise<ValidatedTemplate> {
     const queryPatterns = await this.schemaIntrospector.getQueryPatterns()
 
     // Find matching operation pattern
     const matchingPattern = this.findMatchingPattern(aiSuggestion, queryPatterns)
     if (!matchingPattern) {
-      throw new Error(
-        `No matching schema pattern found for operation: ${aiSuggestion.operationType}`
-      )
+      throw new Error(`No matching schema pattern found for operation: ${aiSuggestion.operationType}`)
     }
 
     // Generate schema-compliant query
@@ -200,7 +193,7 @@ export class TemplateValidator {
    */
   private async validateParameters(
     template: TemplateDefinition,
-    schemaIntrospection: any
+    schemaIntrospection: any,
   ): Promise<{ errors: ValidationError[]; corrections: Correction[] }> {
     const errors: ValidationError[] = []
     const corrections: Correction[] = []
@@ -217,8 +210,7 @@ export class TemplateValidator {
     }
 
     const operationType = operationMatch[1]
-    const operations =
-      operationType === 'query' ? schemaIntrospection.queries : schemaIntrospection.mutations
+    const operations = operationType === 'query' ? schemaIntrospection.queries : schemaIntrospection.mutations
 
     // Find operation in schema
     const queryMatch = template.query.match(/(?:query|mutation)\s+\w*\s*(?:\([^)]*\))?\s*{\s*(\w+)/)
@@ -296,7 +288,7 @@ export class TemplateValidator {
    */
   private async generateAutoCorrections(
     _template: TemplateDefinition,
-    errors: ValidationError[]
+    errors: ValidationError[],
   ): Promise<Correction[]> {
     const corrections: Correction[] = []
 
@@ -362,15 +354,12 @@ export class TemplateValidator {
     return query.replace(new RegExp(`\\b${from}\\b`, 'g'), to)
   }
 
-  private findMatchingPattern(
-    aiSuggestion: AITemplateRequest,
-    patterns: QueryPattern[]
-  ): QueryPattern | null {
+  private findMatchingPattern(aiSuggestion: AITemplateRequest, patterns: QueryPattern[]): QueryPattern | null {
     return (
       patterns.find(
         (pattern) =>
           pattern.operationName === aiSuggestion.operationType ||
-          pattern.description.toLowerCase().includes(aiSuggestion.intent.toLowerCase())
+          pattern.description.toLowerCase().includes(aiSuggestion.intent.toLowerCase()),
       ) || null
     )
   }
@@ -385,7 +374,7 @@ export class TemplateValidator {
 
   private generateSchemaCompliantVariables(
     pattern: QueryPattern,
-    aiSuggestion: AITemplateRequest
+    aiSuggestion: AITemplateRequest,
   ): Record<string, any> {
     const variables: Record<string, any> = {}
 
@@ -444,15 +433,11 @@ export class TemplateValidator {
     for (let j = 1; j <= b.length; j++) {
       for (let i = 1; i <= a.length; i++) {
         const indicator = a[i - 1] === b[j - 1] ? 0 : 1
-        matrix[j]![i] = Math.min(
-          matrix[j]![i - 1]! + 1,
-          matrix[j - 1]![i]! + 1,
-          matrix[j - 1]![i - 1]! + indicator
-        )
+        matrix[j]![i] = Math.min(matrix[j]?.[i - 1]! + 1, matrix[j - 1]?.[i]! + 1, matrix[j - 1]?.[i - 1]! + indicator)
       }
     }
 
-    return matrix[b.length]![a.length]!
+    return matrix[b.length]?.[a.length]!
   }
 
   private formatTypeInfo(typeInfo: any): string {
@@ -495,7 +480,7 @@ export class TemplateValidator {
     if (errors.length === 0) return 1.0
 
     const correctableErrors = errors.filter((_error) =>
-      corrections.some((correction) => correction.type !== 'PARAMETER_ADD')
+      corrections.some((correction) => correction.type !== 'PARAMETER_ADD'),
     ).length
 
     const totalErrors = errors.length
@@ -508,9 +493,7 @@ export class TemplateValidator {
     if (corrections.length === 0) return 1.0
 
     const highConfidenceTypes = ['PARAMETER_RENAME', 'FIELD_REPLACEMENT']
-    const highConfidenceCorrections = corrections.filter((c) =>
-      highConfidenceTypes.includes(c.type)
-    ).length
+    const highConfidenceCorrections = corrections.filter((c) => highConfidenceTypes.includes(c.type)).length
 
     return (highConfidenceCorrections / corrections.length) * 0.9 + 0.1
   }
@@ -548,12 +531,7 @@ export interface ValidationError {
 }
 
 export interface Correction {
-  type:
-    | 'PARAMETER_RENAME'
-    | 'PARAMETER_STRUCTURE'
-    | 'OPERATION_TYPE_FIX'
-    | 'FIELD_REPLACEMENT'
-    | 'PARAMETER_ADD'
+  type: 'PARAMETER_RENAME' | 'PARAMETER_STRUCTURE' | 'OPERATION_TYPE_FIX' | 'FIELD_REPLACEMENT' | 'PARAMETER_ADD'
   description: string
   from?: string
   to?: string

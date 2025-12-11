@@ -135,9 +135,7 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
       const row = this.db.query<any, [string]>(query).get(identifier)
       return row ? this.mapRowToEntity(row) : null
     } catch (error) {
-      throw new DatabaseException(
-        `Failed to find ${this.tableName} by ${this.identifierField}: ${error}`
-      )
+      throw new DatabaseException(`Failed to find ${this.tableName} by ${this.identifierField}: ${error}`)
     }
   }
 

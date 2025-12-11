@@ -41,16 +41,12 @@
           "description": "노드 필터링을 위한 검색 텍스트"
         }
       },
-      "required": [
-        "tableIdentifier"
-      ]
+      "required": ["tableIdentifier"]
     },
     "applicableTables": null,
     "complexityScore": 4,
     "version": "1.0.0",
-    "tags": [
-      "general"
-    ],
+    "tags": ["general"],
     "isActive": true,
     "statistics": {
       "usageCount": 2,

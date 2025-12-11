@@ -30,7 +30,7 @@ export interface BatchImportResponse {
 export class BatchImportTablePackagesUseCase {
   constructor(
     private readonly tablePackageService: ITablePackageService,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(request: BatchImportRequest): Promise<BatchImportResponse> {
@@ -110,16 +110,14 @@ export class BatchImportTablePackagesUseCase {
               // Update session if exists
               if (session) {
                 session.packagesImported.push(identifier)
-                session.packagesRemaining = session.packagesRemaining.filter(
-                  (id) => id !== identifier
-                )
+                session.packagesRemaining = session.packagesRemaining.filter((id) => id !== identifier)
 
                 if (result.importedTable?.id) {
                   session.rollbackInfo.tablesCreated.push(result.importedTable.id)
                 }
                 if (result.generatedTemplates) {
                   session.rollbackInfo.templatesCreated.push(
-                    ...result.generatedTemplates.map((t) => t.id).filter(Boolean)
+                    ...result.generatedTemplates.map((t) => t.id).filter(Boolean),
                   )
                 }
               }
@@ -136,10 +134,7 @@ export class BatchImportTablePackagesUseCase {
               }
 
               // Decide whether to continue or stop based on conflict resolution strategy
-              if (
-                options.conflictResolution === 'skip' &&
-                result.errors.some((e) => e.includes('already exists'))
-              ) {
+              if (options.conflictResolution === 'skip' && result.errors.some((e) => e.includes('already exists'))) {
                 skipped++
                 this.logger.info('Skipping remaining packages due to conflicts')
                 break

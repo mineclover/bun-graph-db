@@ -11,7 +11,7 @@
     },
     {
       "identifier": "system-query-analytics",
-      "name": "System Query Usage Analytics", 
+      "name": "System Query Usage Analytics",
       "description": "Analyze system query usage patterns and identify most commonly used GraphQL operations",
       "query": "query SystemQueryAnalytics($minComplexity: Int = 1, $minUsage: Int = 0, $limit: Int = 50) { searchTemplates(filter: { complexityMin: $minComplexity, usageCountMin: $minUsage, isActive: true }, limit: $limit, orderBy: \"usage_count\", orderDirection: \"DESC\") { templates { id name queryName operationType usageCount complexityScore avgExecutionTimeMs lastUsedAt tags } totalCount } }",
       "tags": ["analytics", "system-queries", "usage-patterns"]
@@ -24,7 +24,7 @@
       "tags": ["analysis", "complexity", "performance"]
     },
     {
-      "identifier": "table-operation-templates", 
+      "identifier": "table-operation-templates",
       "name": "Table Operation Templates",
       "description": "Find all templates that perform table-related operations",
       "query": "query TableOperationTemplates($limit: Int = 30) { searchTemplates(limit: $limit) { templates { id name queryName operationType usageCount complexityScore } totalCount } }",
@@ -32,7 +32,7 @@
     },
     {
       "identifier": "mutation-templates-analysis",
-      "name": "Mutation Templates Analysis", 
+      "name": "Mutation Templates Analysis",
       "description": "Analyze all mutation templates and their system query patterns",
       "query": "query MutationTemplatesAnalysis($limit: Int = 25) { searchTemplates(limit: $limit, orderBy: \"updated_at\", orderDirection: \"DESC\") { templates { id name queryName operationType usageCount lastUsedAt avgExecutionTimeMs isActive } totalCount } }",
       "tags": ["mutations", "analysis", "system-queries"]

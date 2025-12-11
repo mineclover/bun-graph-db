@@ -106,21 +106,13 @@
       "name": "GetSystemHealthStatus",
       "query": "query GetSystemHealthStatus {\n  health {\n    status\n    timestamp\n    version\n    uptime\n    database {\n      status\n      connectionCount\n      queryCount\n    }\n    memory {\n      used\n      total\n      percentage\n    }\n  }\n}",
       "defaultVariables": {},
-      "tags": [
-        "system",
-        "health",
-        "monitoring",
-        "basic",
-        "fixed"
-      ],
+      "tags": ["system", "health", "monitoring", "basic", "fixed"],
       "category": "SYSTEM_MONITORING",
       "purpose": "SYSTEM_MONITORING 관련 작업",
       "complexity": "LOW",
       "necessity": "ESSENTIAL",
       "duplicates": [],
-      "recommendations": [
-        "✅ 유지 - 핵심 기능"
-      ]
+      "recommendations": ["✅ 유지 - 핵심 기능"]
     },
     {
       "identifier": "update-table-with-params",
@@ -132,21 +124,13 @@
           "description": "업데이트된 테이블 설명"
         }
       },
-      "tags": [
-        "table",
-        "mutation",
-        "update",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["table", "mutation", "update", "parameterized", "fixed"],
       "category": "UPDATE_OPERATIONS",
       "purpose": "UPDATE_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "create-table-with-params",
@@ -158,21 +142,13 @@
           "description": "새로운 테이블입니다"
         }
       },
-      "tags": [
-        "table",
-        "mutation",
-        "create",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["table", "mutation", "create", "parameterized", "fixed"],
       "category": "TABLE_MANAGEMENT",
       "purpose": "TABLE_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "ESSENTIAL",
       "duplicates": [],
-      "recommendations": [
-        "✅ 유지 - 핵심 기능"
-      ]
+      "recommendations": ["✅ 유지 - 핵심 기능"]
     },
     {
       "identifier": "list-tables-with-filter",
@@ -193,22 +169,13 @@
           }
         ]
       },
-      "tags": [
-        "table",
-        "query",
-        "list",
-        "filter",
-        "pagination",
-        "fixed"
-      ],
+      "tags": ["table", "query", "list", "filter", "pagination", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "analyze-table-relationships-with-params",
@@ -219,22 +186,13 @@
         "depth": 2,
         "includeStats": true
       },
-      "tags": [
-        "table",
-        "analysis",
-        "relationships",
-        "statistics",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["table", "analysis", "relationships", "statistics", "parameterized", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "update-node-with-params",
@@ -246,21 +204,13 @@
           "content": "업데이트된 내용"
         }
       },
-      "tags": [
-        "node",
-        "mutation",
-        "update",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["node", "mutation", "update", "parameterized", "fixed"],
       "category": "UPDATE_OPERATIONS",
       "purpose": "UPDATE_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "list-tables-with-pagination",
@@ -294,22 +244,13 @@
           },
           "sortBy": {
             "type": "string",
-            "enum": [
-              "createdAt",
-              "updatedAt",
-              "name",
-              "nodeCount",
-              "attributeCount"
-            ],
+            "enum": ["createdAt", "updatedAt", "name", "nodeCount", "attributeCount"],
             "default": "createdAt",
             "description": "정렬 기준 필드"
           },
           "sortOrder": {
             "type": "string",
-            "enum": [
-              "ASC",
-              "DESC"
-            ],
+            "enum": ["ASC", "DESC"],
             "default": "DESC",
             "description": "정렬 순서"
           },
@@ -326,18 +267,13 @@
         },
         "required": []
       },
-      "tags": [
-        "general",
-        "fixed"
-      ],
+      "tags": ["general", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "bulk-create-nodes-with-params",
@@ -363,23 +299,13 @@
           }
         }
       },
-      "tags": [
-        "node",
-        "mutation",
-        "bulk",
-        "batch",
-        "parameterized",
-        "fixed",
-        "create"
-      ],
+      "tags": ["node", "mutation", "bulk", "batch", "parameterized", "fixed", "create"],
       "category": "NODE_MANAGEMENT",
       "purpose": "NODE_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "ESSENTIAL",
       "duplicates": [],
-      "recommendations": [
-        "✅ 유지 - 핵심 기능"
-      ]
+      "recommendations": ["✅ 유지 - 핵심 기능"]
     },
     {
       "identifier": "create-node-with-params",
@@ -391,26 +317,13 @@
           "tableId": "1"
         }
       },
-      "tags": [
-        "node",
-        "mutation",
-        "create",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["node", "mutation", "create", "parameterized", "fixed"],
       "category": "NODE_MANAGEMENT",
       "purpose": "NODE_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "ESSENTIAL",
-      "duplicates": [
-        "create-todo-schema-fixed",
-        "create-todo-unique",
-        "create-table-node-schema-fixed"
-      ],
-      "recommendations": [
-        "✅ 유지 - 핵심 기능",
-        "⚠️ 과도한 중복 (3개)"
-      ]
+      "duplicates": ["create-todo-schema-fixed", "create-todo-unique", "create-table-node-schema-fixed"],
+      "recommendations": ["✅ 유지 - 핵심 기능", "⚠️ 과도한 중복 (3개)"]
     },
     {
       "identifier": "delete-node-with-params",
@@ -419,21 +332,13 @@
       "defaultVariables": {
         "id": "example-node-id"
       },
-      "tags": [
-        "node",
-        "mutation",
-        "delete",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["node", "mutation", "delete", "parameterized", "fixed"],
       "category": "DELETE_OPERATIONS",
       "purpose": "DELETE_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "search-related-nodes-with-params",
@@ -450,22 +355,13 @@
           "offset": 0
         }
       },
-      "tags": [
-        "node",
-        "query",
-        "relationship",
-        "search",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["node", "query", "relationship", "search", "parameterized", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "search-nodes-with-filter",
@@ -487,22 +383,13 @@
           }
         ]
       },
-      "tags": [
-        "node",
-        "query",
-        "search",
-        "filter",
-        "pagination",
-        "fixed"
-      ],
+      "tags": ["node", "query", "search", "filter", "pagination", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "find-paths-between-nodes-with-params",
@@ -516,22 +403,13 @@
           "algorithm": "SHORTEST_PATH"
         }
       },
-      "tags": [
-        "node",
-        "query",
-        "pathfinding",
-        "graph",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["node", "query", "pathfinding", "graph", "parameterized", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "search-templates-with-filter",
@@ -539,9 +417,7 @@
       "query": "query SearchTemplatesWithFilter($filter: QueryTemplatesFilter, $pagination: PaginationInput, $sort: [TemplateSortInput!]) {\n  searchTemplates(filter: $filter, pagination: $pagination, sort: $sort) {\n    id\n    identifier\n    name\n    description\n    tags\n    operationType\n    complexityScore\n    usageCount\n    avgExecutionTimeMs\n    isActive\n    createdAt\n  }\n}",
       "defaultVariables": {
         "filter": {
-          "tags": [
-            "fixed"
-          ],
+          "tags": ["fixed"],
           "isActive": true
         },
         "pagination": {
@@ -555,24 +431,13 @@
           }
         ]
       },
-      "tags": [
-        "template",
-        "query",
-        "search",
-        "filter",
-        "pagination",
-        "fixed"
-      ],
+      "tags": ["template", "query", "search", "filter", "pagination", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
-      "duplicates": [
-        "search-templates-advanced"
-      ],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "duplicates": ["search-templates-advanced"],
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "smart-search-with-params",
@@ -593,64 +458,39 @@
           "boostRecent": true
         }
       },
-      "tags": [
-        "search",
-        "ai",
-        "smart",
-        "recommendations",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["search", "ai", "smart", "recommendations", "parameterized", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "query-optimization",
       "name": "OptimizeQueries",
       "query": "query OptimizeQueries($options: OptimizationOptions) {\n  queryOptimization(options: $options) {\n    analysis {\n      slowQueries {\n        query\n        avgExecutionTime\n        executionCount\n        lastExecuted\n        optimization {\n          currentPlan\n          suggestedPlan\n          expectedImprovement\n        }\n      }\n      indexRecommendations {\n        table\n        columns\n        type\n        estimatedImprovement\n        creationCost\n        maintenanceCost\n      }\n      performanceBottlenecks {\n        type\n        description\n        severity\n        impact\n        solution\n      }\n    }\n    recommendations {\n      immediate {\n        action\n        description\n        expectedGain\n        effort\n      }\n      longTerm {\n        action\n        description\n        expectedGain\n        effort\n      }\n    }\n    metrics {\n      currentPerformance {\n        avgQueryTime\n        queriesPerSecond\n        cacheHitRate\n      }\n      projectedPerformance {\n        avgQueryTime\n        queriesPerSecond\n        cacheHitRate\n      }\n    }\n  }\n}",
       "defaultVariables": "{}",
-      "tags": [
-        "optimization",
-        "performance",
-        "indexing",
-        "tuning",
-        "fixed"
-      ],
+      "tags": ["optimization", "performance", "indexing", "tuning", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "data-validation",
       "name": "ValidateDataIntegrity",
       "query": "query ValidateDataIntegrity($options: ValidationOptions) {\n  validateDataIntegrity(options: $options) {\n    isValid\n    summary {\n      totalChecks\n      passedChecks\n      failedChecks\n      warningCount\n    }\n    issues {\n      id\n      type\n      severity\n      message\n      affectedNodes {\n        id\n        table\n        title\n      }\n      recommendation\n      fixable\n    }\n    checks {\n      orphanNodes {\n        count\n        samples {\n          id\n          table\n          title\n        }\n      }\n      duplicateData {\n        count\n        duplicateGroups {\n          hash\n          nodes {\n            id\n            title\n          }\n        }\n      }\n      schemaViolations {\n        count\n        violations {\n          rule\n          affectedCount\n          samples\n        }\n      }\n      brokenRelations {\n        count\n        samples {\n          fromNode\n          toNode\n          relationType\n        }\n      }\n    }\n  }\n}",
       "defaultVariables": "{}",
-      "tags": [
-        "validation",
-        "data-quality",
-        "integrity",
-        "schema",
-        "fixed"
-      ],
+      "tags": ["validation", "data-quality", "integrity", "schema", "fixed"],
       "category": "QUALITY_ASSURANCE",
       "purpose": "QUALITY_ASSURANCE 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "update-template-with-params",
@@ -661,48 +501,29 @@
         "input": {
           "name": "업데이트된 템플릿 이름",
           "description": "업데이트된 설명",
-          "tags": [
-            "updated",
-            "modified"
-          ]
+          "tags": ["updated", "modified"]
         }
       },
-      "tags": [
-        "template",
-        "mutation",
-        "update",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["template", "mutation", "update", "parameterized", "fixed"],
       "category": "UPDATE_OPERATIONS",
       "purpose": "UPDATE_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "bulk-data-import",
       "name": "BulkImport",
       "query": "mutation BulkImport($input: BulkImportInput!) {\n  bulkImport(input: $input) {\n    success\n    processedCount\n    totalCount\n    errors {\n      line\n      message\n      severity\n    }\n    progress {\n      percentage\n      estimatedTimeRemaining\n    }\n    summary {\n      created\n      updated\n      skipped\n      failed\n    }\n  }\n}",
       "defaultVariables": "{}",
-      "tags": [
-        "bulk",
-        "import",
-        "data-migration",
-        "batch-processing",
-        "fixed"
-      ],
+      "tags": ["bulk", "import", "data-migration", "batch-processing", "fixed"],
       "category": "BULK_OPERATIONS",
       "purpose": "BULK_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "list-attributes-with-filter",
@@ -723,22 +544,13 @@
           }
         ]
       },
-      "tags": [
-        "attribute",
-        "query",
-        "list",
-        "filter",
-        "pagination",
-        "fixed"
-      ],
+      "tags": ["attribute", "query", "list", "filter", "pagination", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "get-detailed-system-metrics",
@@ -748,22 +560,13 @@
         "timeRange": "1h",
         "includeHistory": true
       },
-      "tags": [
-        "system",
-        "monitoring",
-        "metrics",
-        "query",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["system", "monitoring", "metrics", "query", "parameterized", "fixed"],
       "category": "SYSTEM_MONITORING",
       "purpose": "SYSTEM_MONITORING 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "migrate-data-with-params",
@@ -790,22 +593,13 @@
           "generateReport": true
         }
       },
-      "tags": [
-        "migration",
-        "data",
-        "sync",
-        "batch",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["migration", "data", "sync", "batch", "parameterized", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "create-attribute-with-params",
@@ -820,21 +614,13 @@
           "isRequired": false
         }
       },
-      "tags": [
-        "attribute",
-        "mutation",
-        "create",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["attribute", "mutation", "create", "parameterized", "fixed"],
       "category": "ATTRIBUTE_MANAGEMENT",
       "purpose": "ATTRIBUTE_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "ESSENTIAL",
       "duplicates": [],
-      "recommendations": [
-        "✅ 유지 - 핵심 기능"
-      ]
+      "recommendations": ["✅ 유지 - 핵심 기능"]
     },
     {
       "identifier": "analyze-query-performance-with-params",
@@ -842,28 +628,16 @@
       "query": "query AnalyzeQueryPerformanceWithParams($timeRange: String!, $queryTypes: [String!], $threshold: Float) {\n  analyzeQueryPerformance(timeRange: $timeRange, queryTypes: $queryTypes, slowQueryThreshold: $threshold) {\n    summary {\n      totalQueries\n      avgExecutionTime\n      slowQueries\n      fastQueries\n      errorRate\n    }\n    slowQueries {\n      query\n      avgExecutionTime\n      executionCount\n      lastExecuted\n      optimization {\n        suggestions\n        expectedImprovement\n        complexity\n      }\n    }\n    patterns {\n      peakHours\n      commonPatterns\n      bottlenecks\n    }\n    recommendations {\n      indexSuggestions {\n        table\n        columns\n        estimatedImprovement\n        creationCost\n      }\n      queryOptimizations {\n        original\n        optimized\n        improvement\n      }\n      cacheStrategies {\n        queries\n        ttl\n        hitRate\n      }\n    }\n  }\n}",
       "defaultVariables": {
         "timeRange": "24h",
-        "queryTypes": [
-          "QUERY",
-          "MUTATION"
-        ],
+        "queryTypes": ["QUERY", "MUTATION"],
         "threshold": 100
       },
-      "tags": [
-        "performance",
-        "query",
-        "optimization",
-        "monitoring",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["performance", "query", "optimization", "monitoring", "parameterized", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "create-template-basic",
@@ -877,22 +651,13 @@
           "query": "query { __typename }"
         }
       },
-      "tags": [
-        "basic",
-        "create",
-        "management",
-        "fixed"
-      ],
+      "tags": ["basic", "create", "management", "fixed"],
       "category": "TEMPLATE_MANAGEMENT",
       "purpose": "TEMPLATE_MANAGEMENT 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
-      "duplicates": [
-        "create-template-with-params"
-      ],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "duplicates": ["create-template-with-params"],
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "create-template-with-params",
@@ -904,29 +669,18 @@
           "name": "새 커스텀 템플릿",
           "description": "사용자 정의 템플릿입니다",
           "query": "query CustomQuery { health { status } }",
-          "tags": [
-            "custom",
-            "user-defined"
-          ],
+          "tags": ["custom", "user-defined"],
           "complexityScore": 1,
           "version": "1.0.0"
         }
       },
-      "tags": [
-        "template",
-        "mutation",
-        "create",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["template", "mutation", "create", "parameterized", "fixed"],
       "category": "TEMPLATE_MANAGEMENT",
       "purpose": "TEMPLATE_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "track-changes-with-params",
@@ -934,34 +688,19 @@
       "query": "query TrackChangesWithParams($scope: ChangeTrackingScope!, $timeRange: String, $changeTypes: [ChangeType!]) {\n  trackChanges(scope: $scope, timeRange: $timeRange, changeTypes: $changeTypes) {\n    summary {\n      totalChanges\n      changesByType {\n        type\n        count\n        percentage\n      }\n      mostActiveUsers\n      mostChangedTables\n    }\n    changes {\n      id\n      timestamp\n      user {\n        id\n        name\n      }\n      type\n      entity {\n        type\n        id\n        name\n      }\n      changes {\n        field\n        oldValue\n        newValue\n        operation\n      }\n      metadata {\n        source\n        version\n        comments\n      }\n    }\n    analytics {\n      patterns {\n        timeOfDay\n        dayOfWeek\n        frequency\n      }\n      trends {\n        changeVelocity\n        userActivity\n        dataGrowth\n      }\n    }\n    conflicts {\n      potentialConflicts\n      resolved\n      pending\n    }\n  }\n}",
       "defaultVariables": {
         "scope": {
-          "tables": [
-            "example-table-id"
-          ],
+          "tables": ["example-table-id"],
           "includeSystemChanges": false
         },
         "timeRange": "7d",
-        "changeTypes": [
-          "CREATE",
-          "UPDATE",
-          "DELETE"
-        ]
+        "changeTypes": ["CREATE", "UPDATE", "DELETE"]
       },
-      "tags": [
-        "tracking",
-        "changes",
-        "collaboration",
-        "versioning",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["tracking", "changes", "collaboration", "versioning", "parameterized", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "validate-data-quality-with-params",
@@ -969,39 +708,23 @@
       "query": "query ValidateDataQualityWithParams($scope: DataValidationScope!, $checks: [ValidationCheckType!], $options: ValidationOptions) {\n  validateDataQuality(scope: $scope, checks: $checks, options: $options) {\n    overallScore\n    summary {\n      totalChecks\n      passedChecks\n      failedChecks\n      warningCount\n    }\n    results {\n      checkType\n      status\n      score\n      message\n      affectedRecords\n      recommendations\n    }\n    details {\n      completeness {\n        totalFields\n        completeFields\n        missingFields\n        completenessRate\n      }\n      consistency {\n        duplicates\n        conflicts\n        inconsistencies\n      }\n      accuracy {\n        validRecords\n        invalidRecords\n        accuracyRate\n      }\n    }\n    fixes {\n      autoFixable\n      manualRequired\n      estimatedEffort\n    }\n  }\n}",
       "defaultVariables": {
         "scope": {
-          "tableIds": [
-            "example-table-id"
-          ],
+          "tableIds": ["example-table-id"],
           "includeRelationships": true
         },
-        "checks": [
-          "COMPLETENESS",
-          "CONSISTENCY",
-          "ACCURACY",
-          "DUPLICATES"
-        ],
+        "checks": ["COMPLETENESS", "CONSISTENCY", "ACCURACY", "DUPLICATES"],
         "options": {
           "sampleSize": 1000,
           "strictMode": false,
           "generateReport": true
         }
       },
-      "tags": [
-        "data",
-        "quality",
-        "validation",
-        "analytics",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["data", "quality", "validation", "analytics", "parameterized", "fixed"],
       "category": "QUALITY_ASSURANCE",
       "purpose": "QUALITY_ASSURANCE 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "get-attribute-by-id",
@@ -1010,21 +733,13 @@
       "defaultVariables": {
         "attributeId": "example-attribute-id"
       },
-      "tags": [
-        "attribute",
-        "query",
-        "basic",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["attribute", "query", "basic", "parameterized", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "get-template-by-identifier",
@@ -1033,42 +748,26 @@
       "defaultVariables": {
         "identifier": "example-template"
       },
-      "tags": [
-        "template",
-        "query",
-        "basic",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["template", "query", "basic", "parameterized", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "data-export",
       "name": "ExportData",
       "query": "mutation ExportData($format: ExportFormat!, $options: ExportOptions!) {\n  exportData(format: $format, options: $options) {\n    success\n    exportId\n    format\n    downloadUrl\n    fileSize\n    recordCount\n    progress {\n      percentage\n      stage\n      estimatedCompletion\n    }\n    metadata {\n      exportedAt\n      schema {\n        tables\n        relations\n        attributes\n      }\n      statistics {\n        nodeCount\n        relationCount\n        tableCount\n      }\n    }\n    errors {\n      message\n      severity\n      affectedRecords\n    }\n  }\n}",
       "defaultVariables": "{}",
-      "tags": [
-        "export",
-        "data-transfer",
-        "formats",
-        "streaming",
-        "fixed"
-      ],
+      "tags": ["export", "data-transfer", "formats", "streaming", "fixed"],
       "category": "DATA_TRANSFER",
       "purpose": "DATA_TRANSFER 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "schedule-maintenance-tasks-with-params",
@@ -1087,9 +786,7 @@
           {
             "type": "REBUILD_INDEXES",
             "priority": "LOW",
-            "tables": [
-              "example-table-id"
-            ]
+            "tables": ["example-table-id"]
           }
         ],
         "schedule": {
@@ -1099,65 +796,39 @@
           "maintainWindow": 120
         }
       },
-      "tags": [
-        "maintenance",
-        "automation",
-        "schedule",
-        "batch",
-        "parameterized",
-        "fixed"
-      ],
+      "tags": ["maintenance", "automation", "schedule", "batch", "parameterized", "fixed"],
       "category": "TODO_MANAGEMENT",
       "purpose": "TODO_MANAGEMENT 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "template-lifecycle-management",
       "name": "TemplateLifecycleManagement",
       "query": "query TemplateLifecycleManagement($templateId: ID, $operation: LifecycleOperation!) {\n  templateLifecycle(templateId: $templateId, operation: $operation) {\n    template {\n      id\n      identifier\n      name\n      version\n      status\n      createdAt\n      updatedAt\n      lastUsedAt\n      usageCount\n    }\n    lifecycle {\n      currentStage\n      possibleTransitions\n      history {\n        stage\n        timestamp\n        performedBy\n        reason\n      }\n    }\n    dependencies {\n      dependsOn {\n        id\n        identifier\n        name\n        relationship\n      }\n      dependentTemplates {\n        id\n        identifier\n        name\n        relationship\n      }\n    }\n    analytics {\n      usageStats {\n        totalExecutions\n        successRate\n        avgExecutionTime\n        lastWeekUsage\n        popularVariables\n      }\n      performance {\n        complexity\n        executionTrend\n        errorPatterns\n      }\n    }\n    recommendations {\n      optimization\n      archiving\n      deprecation\n      migration\n    }\n  }\n}",
       "defaultVariables": "{}",
-      "tags": [
-        "lifecycle",
-        "management",
-        "versioning",
-        "analytics",
-        "fixed"
-      ],
+      "tags": ["lifecycle", "management", "versioning", "analytics", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "real-time-monitoring",
       "name": "SystemMonitoring",
       "query": "subscription SystemMonitoring($metrics: [MetricType!]) {\n  systemMetrics(metrics: $metrics) {\n    timestamp\n    server {\n      cpu {\n        usage\n        loadAverage\n        cores\n      }\n      memory {\n        used\n        total\n        percentage\n        available\n      }\n      disk {\n        used\n        total\n        percentage\n      }\n    }\n    database {\n      connections {\n        active\n        idle\n        total\n      }\n      performance {\n        queriesPerSecond\n        avgQueryTime\n        slowQueries\n      }\n      storage {\n        size\n        tables\n        indexes\n      }\n    }\n    alerts {\n      level\n      message\n      timestamp\n      component\n    }\n  }\n}",
       "defaultVariables": "{}",
-      "tags": [
-        "monitoring",
-        "real-time",
-        "performance",
-        "subscription",
-        "system",
-        "fixed"
-      ],
+      "tags": ["monitoring", "real-time", "performance", "subscription", "system", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "search-templates-advanced",
@@ -1179,20 +850,13 @@
           }
         ]
       },
-      "tags": [
-        "general",
-        "fixed"
-      ],
+      "tags": ["general", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
-      "duplicates": [
-        "search-templates-with-filter"
-      ],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "duplicates": ["search-templates-with-filter"],
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "create-todo-schema-fixed",
@@ -1205,24 +869,13 @@
           "attributes": []
         }
       },
-      "tags": [
-        "todo",
-        "create",
-        "schema-fixed"
-      ],
+      "tags": ["todo", "create", "schema-fixed"],
       "category": "TODO_MANAGEMENT",
       "purpose": "TODO_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
-      "duplicates": [
-        "create-node-with-params",
-        "create-todo-unique",
-        "create-table-node-schema-fixed"
-      ],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가",
-        "⚠️ 과도한 중복 (3개)"
-      ]
+      "duplicates": ["create-node-with-params", "create-todo-unique", "create-table-node-schema-fixed"],
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가", "⚠️ 과도한 중복 (3개)"]
     },
     {
       "identifier": "search-todos-fixed",
@@ -1232,20 +885,13 @@
         "tableId": "101",
         "searchTerm": "검색어"
       },
-      "tags": [
-        "todo",
-        "crud",
-        "search",
-        "fixed"
-      ],
+      "tags": ["todo", "crud", "search", "fixed"],
       "category": "SEARCH_OPERATIONS",
       "purpose": "SEARCH_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "create-todo-unique",
@@ -1258,25 +904,13 @@
           "attributes": []
         }
       },
-      "tags": [
-        "todo",
-        "create",
-        "unique",
-        "fixed"
-      ],
+      "tags": ["todo", "create", "unique", "fixed"],
       "category": "TODO_MANAGEMENT",
       "purpose": "TODO_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
-      "duplicates": [
-        "create-node-with-params",
-        "create-todo-schema-fixed",
-        "create-table-node-schema-fixed"
-      ],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가",
-        "⚠️ 과도한 중복 (3개)"
-      ]
+      "duplicates": ["create-node-with-params", "create-todo-schema-fixed", "create-table-node-schema-fixed"],
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가", "⚠️ 과도한 중복 (3개)"]
     },
     {
       "identifier": "bulk-create-unique-todos",
@@ -1294,21 +928,13 @@
           "attributes": []
         }
       },
-      "tags": [
-        "todo",
-        "bulk",
-        "create",
-        "unique",
-        "fixed"
-      ],
+      "tags": ["todo", "bulk", "create", "unique", "fixed"],
       "category": "BULK_OPERATIONS",
       "purpose": "BULK_OPERATIONS 관련 작업",
       "complexity": "MEDIUM",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "get-table-statistics-enhanced",
@@ -1317,20 +943,13 @@
       "defaultVariables": {
         "tableId": "101"
       },
-      "tags": [
-        "table",
-        "statistics",
-        "enhanced",
-        "fixed"
-      ],
+      "tags": ["table", "statistics", "enhanced", "fixed"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "update-todo-schema-fixed",
@@ -1342,19 +961,13 @@
           "content": "업데이트된 할일 1758265061392"
         }
       },
-      "tags": [
-        "todo",
-        "update",
-        "schema-fixed"
-      ],
+      "tags": ["todo", "update", "schema-fixed"],
       "category": "UPDATE_OPERATIONS",
       "purpose": "UPDATE_OPERATIONS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "create-table-node-schema-fixed",
@@ -1367,25 +980,13 @@
           "attributes": []
         }
       },
-      "tags": [
-        "table",
-        "node",
-        "create",
-        "schema-fixed"
-      ],
+      "tags": ["table", "node", "create", "schema-fixed"],
       "category": "TABLE_MANAGEMENT",
       "purpose": "TABLE_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "ESSENTIAL",
-      "duplicates": [
-        "create-node-with-params",
-        "create-todo-schema-fixed",
-        "create-todo-unique"
-      ],
-      "recommendations": [
-        "✅ 유지 - 핵심 기능",
-        "⚠️ 과도한 중복 (3개)"
-      ]
+      "duplicates": ["create-node-with-params", "create-todo-schema-fixed", "create-todo-unique"],
+      "recommendations": ["✅ 유지 - 핵심 기능", "⚠️ 과도한 중복 (3개)"]
     },
     {
       "identifier": "create-table-attribute-schema-fixed",
@@ -1400,78 +1001,52 @@
           "dataType": "string"
         }
       },
-      "tags": [
-        "table",
-        "attribute",
-        "create",
-        "schema-fixed"
-      ],
+      "tags": ["table", "attribute", "create", "schema-fixed"],
       "category": "TABLE_MANAGEMENT",
       "purpose": "TABLE_MANAGEMENT 관련 작업",
       "complexity": "LOW",
       "necessity": "ESSENTIAL",
       "duplicates": [],
-      "recommendations": [
-        "✅ 유지 - 핵심 기능"
-      ]
+      "recommendations": ["✅ 유지 - 핵심 기능"]
     },
     {
       "identifier": "universal_metric_entry",
       "name": "UniversalMetricEntry",
       "query": "mutation UniversalMetricEntry($tableId: ID!, $content: String!, $metricName: String!, $metricValue: String!, $timestamp: String!) { createNode(input: { tableId: $tableId, content: $content, attributes: [ { identifier: \"metric_name\", value: $metricName }, { identifier: \"metric_value\", value: $metricValue }, { identifier: \"timestamp\", value: $timestamp } ] }) { success node { id content } } }",
       "defaultVariables": "{ \"tableId\": \"103\", \"content\": \"Universal Metric Entry\", \"metricName\": \"api_calls\", \"metricValue\": \"150\", \"timestamp\": \"2025-09-19T10:30:00.000Z\" }",
-      "tags": [
-        "universal",
-        "composite-key",
-        "metrics",
-        "multi-table",
-        "fixed",
-        "documented"
-      ],
+      "tags": ["universal", "composite-key", "metrics", "multi-table", "fixed", "documented"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "HIGH",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가",
-        "🔧 단순화 고려"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가", "🔧 단순화 고려"]
     },
     {
       "identifier": "new-template",
       "name": "New Template",
       "query": "query { __typename }",
       "defaultVariables": "{}",
-      "tags": [
-        "general"
-      ],
+      "tags": ["general"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     },
     {
       "identifier": "new-custom-template",
       "name": "CustomQuery",
       "query": "query CustomQuery { health { status } }",
       "defaultVariables": "{}",
-      "tags": [
-        "custom",
-        "user-defined"
-      ],
+      "tags": ["custom", "user-defined"],
       "category": "MISCELLANEOUS",
       "purpose": "MISCELLANEOUS 관련 작업",
       "complexity": "LOW",
       "necessity": "USEFUL",
       "duplicates": [],
-      "recommendations": [
-        "🔄 검토 - 사용성 및 최적화 가능성 평가"
-      ]
+      "recommendations": ["🔄 검토 - 사용성 및 최적화 가능성 평가"]
     }
   ],
   "removalCandidates": []

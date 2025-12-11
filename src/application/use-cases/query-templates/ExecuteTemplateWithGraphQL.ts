@@ -33,7 +33,7 @@ export class ExecuteTemplateWithGraphQLUseCase {
   constructor(
     private readonly executeQueryTemplateUseCase: ExecuteQueryTemplateUseCase,
     private readonly schema: GraphQLSchema,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(input: ExecuteTemplateWithGraphQLInput): Promise<ExecuteTemplateWithGraphQLOutput> {

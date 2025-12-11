@@ -62,13 +62,10 @@ export class SchemaImportUseCase {
     private readonly nodeRepository: INodeRepository,
     private readonly relationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
-  async importSchema(
-    exportData: SchemaExportResult,
-    options: SchemaImportOptions = {}
-  ): Promise<ImportResult> {
+  async importSchema(exportData: SchemaExportResult, options: SchemaImportOptions = {}): Promise<ImportResult> {
     const startTime = Date.now()
 
     const result: ImportResult = {
@@ -141,10 +138,7 @@ export class SchemaImportUseCase {
     }
   }
 
-  private async validateExportData(
-    exportData: SchemaExportResult,
-    result: ImportResult
-  ): Promise<void> {
+  private async validateExportData(exportData: SchemaExportResult, result: ImportResult): Promise<void> {
     // Validate metadata
     if (!exportData.metadata || !exportData.metadata.exportedAt) {
       result.warnings.push({
@@ -196,7 +190,7 @@ export class SchemaImportUseCase {
   private async importAttributeTypes(
     attributeTypes: any[],
     options: SchemaImportOptions,
-    result: ImportResult
+    result: ImportResult,
   ): Promise<void> {
     for (const atData of attributeTypes) {
       try {
@@ -225,7 +219,7 @@ export class SchemaImportUseCase {
           atData.dataType,
           atData.description,
           atData.allowedValues,
-          atData.constraints
+          atData.constraints,
         )
 
         await this.attributeTypeRepository.save(attributeType)
@@ -246,7 +240,7 @@ export class SchemaImportUseCase {
   private async importRelationTypes(
     relationTypes: any[],
     options: SchemaImportOptions,
-    result: ImportResult
+    result: ImportResult,
   ): Promise<void> {
     for (const rtData of relationTypes) {
       try {
@@ -288,7 +282,7 @@ export class SchemaImportUseCase {
   private async importTable(
     tableData: ExportedTable,
     options: SchemaImportOptions,
-    result: ImportResult
+    result: ImportResult,
   ): Promise<void> {
     try {
       this.logger.info('Importing table', { identifier: tableData.identifier })
@@ -313,10 +307,7 @@ export class SchemaImportUseCase {
 
       // Create or update table
       let table: Table
-      if (
-        existingTable &&
-        (options.conflictResolution === 'overwrite' || options.conflictResolution === 'merge')
-      ) {
+      if (existingTable && (options.conflictResolution === 'overwrite' || options.conflictResolution === 'merge')) {
         table = existingTable
         // Update table properties if needed
       } else {
@@ -358,14 +349,12 @@ export class SchemaImportUseCase {
     tableId: string,
     attributes: ExportedAttribute[],
     options: SchemaImportOptions,
-    result: ImportResult
+    result: ImportResult,
   ): Promise<void> {
     for (const attrData of attributes) {
       try {
         // Find the attribute type
-        const attributeType = await this.attributeTypeRepository.findByIdentifier(
-          attrData.attributeType.identifier
-        )
+        const attributeType = await this.attributeTypeRepository.findByIdentifier(attrData.attributeType.identifier)
         if (!attributeType) {
           result.warnings.push({
             type: 'MISSING_REFERENCE',
@@ -378,16 +367,13 @@ export class SchemaImportUseCase {
             attrData.attributeType.identifier,
             attrData.attributeType.dataType || 'string',
             undefined, // format
-            attrData.attributeType.name // description
+            attrData.attributeType.name, // description
           )
           await this.attributeTypeRepository.save(newAttributeType)
         }
 
         // Check if attribute already exists
-        const existing = await this.attributeRepository.findByTableIdAndIdentifier(
-          tableId,
-          attrData.identifier
-        )
+        const existing = await this.attributeRepository.findByTableIdAndIdentifier(tableId, attrData.identifier)
 
         if (existing && options.skipDuplicates) {
           result.statistics.skipped++
@@ -400,7 +386,7 @@ export class SchemaImportUseCase {
           attributeType?.getId() || attrData.attributeType.id,
           attrData.identifier, // name parameter
           attrData.description,
-          attrData.isRequired
+          attrData.isRequired,
         )
 
         await this.attributeRepository.save(attribute)
@@ -420,17 +406,14 @@ export class SchemaImportUseCase {
     tableId: string,
     nodes: ExportedNode[],
     options: SchemaImportOptions,
-    result: ImportResult
+    result: ImportResult,
   ): Promise<Map<string, string>> {
     const nodeIdMapping = new Map<string, string>() // old ID -> new ID
 
     for (const nodeData of nodes) {
       try {
         // Check for existing node with same content
-        const existing = await this.nodeRepository.findByTableIdAndContent(
-          tableId,
-          nodeData.content
-        )
+        const existing = await this.nodeRepository.findByTableIdAndContent(tableId, nodeData.content)
 
         if (existing && options.skipDuplicates) {
           nodeIdMapping.set(nodeData.id, existing.getId())
@@ -463,7 +446,7 @@ export class SchemaImportUseCase {
     relations: ExportedRelation[],
     nodeIdMapping: Map<string, string>,
     _options: SchemaImportOptions,
-    result: ImportResult
+    result: ImportResult,
   ): Promise<void> {
     for (const relationData of relations) {
       try {
@@ -482,9 +465,7 @@ export class SchemaImportUseCase {
         }
 
         // Find the relation type
-        const relationType = await this.relationTypeRepository.findByIdentifier(
-          relationData.relationType.identifier
-        )
+        const relationType = await this.relationTypeRepository.findByIdentifier(relationData.relationType.identifier)
         if (!relationType) {
           result.warnings.push({
             type: 'MISSING_REFERENCE',
@@ -496,7 +477,7 @@ export class SchemaImportUseCase {
           const newRelationType = RelationType.create(
             relationData.relationType.identifier,
             relationData.relationType.name,
-            relationData.relationType.description
+            relationData.relationType.description,
           )
           await this.relationTypeRepository.save(newRelationType)
         }
@@ -509,7 +490,7 @@ export class SchemaImportUseCase {
           'internal',
           relationType?.getId() || relationData.relationType.id,
           relationData.properties,
-          relationData.strength || 50
+          relationData.strength || 50,
         )
 
         await this.relationRepository.save(relation)

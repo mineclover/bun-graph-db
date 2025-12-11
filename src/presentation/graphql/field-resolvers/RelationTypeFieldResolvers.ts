@@ -15,13 +15,11 @@ export class RelationTypeFieldResolvers extends BaseResolver {
       async () => {
         // Map 'name' field to the entity's 'category' field
         // This maintains compatibility with the GraphQL schema
-        return (
-          parent.getCategory?.() || parent.category || parent.getIdentifier?.() || parent.identifier
-        )
+        return parent.getCategory?.() || parent.category || parent.getIdentifier?.() || parent.identifier
       },
       'name',
       'RelationType',
-      { relationTypeId: parent.getId?.() || parent.id }
+      { relationTypeId: parent.getId?.() || parent.id },
     )
   }
 }

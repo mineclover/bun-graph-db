@@ -9,12 +9,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
-import {
-  createTestAttribute,
-  createTestAttributeType,
-  createTestNode,
-  createTestTable,
-} from './test-helpers.js'
+import { createTestAttribute, createTestAttributeType, createTestNode, createTestTable } from './test-helpers.js'
 
 describe('SearchNodesUseCase', () => {
   let useCase: SearchNodesUseCase
@@ -83,7 +78,7 @@ describe('SearchNodesUseCase', () => {
       mockNodeSearchRepository,
       mockAttributeRepository,
       mockTableRepository,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -137,9 +132,7 @@ describe('SearchNodesUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow(
-        "Table with id 'non-existent-table' not found"
-      )
+      await expect(useCase.execute(input)).rejects.toThrow("Table with id 'non-existent-table' not found")
     })
   })
 
@@ -324,7 +317,7 @@ describe('SearchNodesUseCase', () => {
         expect.objectContaining({
           input,
           error: 'Database connection failed',
-        })
+        }),
       )
     })
   })

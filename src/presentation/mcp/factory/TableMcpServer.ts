@@ -8,10 +8,7 @@
  */
 
 import type { McpToolDefinition } from '../../../application/services/McpToolRegistry'
-import type {
-  FormatMappingTemplate,
-  SimpleMappingDefinition,
-} from '../../../core/types/FormatMapping.js'
+import type { FormatMappingTemplate, SimpleMappingDefinition } from '../../../core/types/FormatMapping.js'
 import { PRESET_MAPPINGS } from '../../../core/types/FormatMapping.js'
 import type { FlatJsonExport } from '../../../core/types/JsonExport.js'
 import { FormatMapperService } from '../../../domain/services/FormatMapperService.js'
@@ -89,9 +86,7 @@ export class TableMcpServer {
     await this.loadTableTemplates()
 
     this.tableInitialized = true
-    console.log(
-      `Table MCP Server initialized for table ${this.tableId} with ${this.tableTools.size} tools`
-    )
+    console.log(`Table MCP Server initialized for table ${this.tableId} with ${this.tableTools.size} tools`)
   }
 
   /**
@@ -126,9 +121,7 @@ export class TableMcpServer {
         }
       })
 
-      console.log(
-        `Converted ${this.tableTools.size} tools (including aiMetadata) for table ${this.tableId}`
-      )
+      console.log(`Converted ${this.tableTools.size} tools (including aiMetadata) for table ${this.tableId}`)
     } catch (error) {
       console.error(`Failed to load templates for table ${this.tableId}:`, error)
       // Continue with empty tool set rather than failing
@@ -374,8 +367,7 @@ export class TableMcpServer {
             },
             mapping: {
               type: 'object',
-              description:
-                'Mapping template (same format used for export). Will be inverted automatically.',
+              description: 'Mapping template (same format used for export). Will be inverted automatically.',
             },
             presetFormat: {
               type: 'string',
@@ -1147,27 +1139,18 @@ export class TableMcpServer {
       id,
       -32601,
       'Method not found',
-      `Tool '${name}' is not available in table ${this.tableId} MCP server. Use the root MCP server for global tools.`
+      `Tool '${name}' is not available in table ${this.tableId} MCP server. Use the root MCP server for global tools.`,
     )
   }
 
   /**
    * Execute table-specific tool (template)
    */
-  private async executeTableTool(
-    id: string | number | undefined,
-    toolName: string,
-    args: any
-  ): Promise<McpResponse> {
+  private async executeTableTool(id: string | number | undefined, toolName: string, args: any): Promise<McpResponse> {
     try {
       const tool = this.tableTools.get(toolName)
       if (!tool) {
-        return this.createErrorResponse(
-          id,
-          -32601,
-          'Method not found',
-          `Tool ${toolName} not found`
-        )
+        return this.createErrorResponse(id, -32601, 'Method not found', `Tool ${toolName} not found`)
       }
 
       // Validate arguments against tool schema
@@ -1178,7 +1161,7 @@ export class TableMcpServer {
             id,
             -32602,
             'Invalid params',
-            `Schema validation failed: ${validation.errors.join(', ')}`
+            `Schema validation failed: ${validation.errors.join(', ')}`,
           )
         }
       }
@@ -1225,7 +1208,7 @@ export class TableMcpServer {
         id,
         -32603,
         'Internal error',
-        `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`
+        `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -1514,9 +1497,7 @@ export class TableMcpServer {
 
       switch (method) {
         case 'discoverSearchOperations':
-          result = await this.schemaDiscoveryService.discoverSearchOperations(
-            variables.baseOperation || 'searchNodes'
-          )
+          result = await this.schemaDiscoveryService.discoverSearchOperations(variables.baseOperation || 'searchNodes')
           break
 
         case 'discoverFilterOptions':
@@ -1745,8 +1726,7 @@ export class TableMcpServer {
       }
 
       // Parse the data if it's a string
-      const data =
-        typeof exportResult.data === 'string' ? JSON.parse(exportResult.data) : exportResult.data
+      const data = typeof exportResult.data === 'string' ? JSON.parse(exportResult.data) : exportResult.data
 
       return data as FlatJsonExport
     } catch (error) {
@@ -2059,7 +2039,7 @@ export class TableMcpServer {
     id: string | number | undefined | null,
     code: number,
     message: string,
-    data?: any
+    data?: any,
   ): McpResponse {
     return {
       jsonrpc: '2.0',

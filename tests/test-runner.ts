@@ -162,9 +162,7 @@ class TestRunner {
   }
 
   async runAll(category?: TestSuite['category'], parallel: boolean = false): Promise<void> {
-    const suitesToRun = category
-      ? testSuites.filter((suite) => suite.category === category)
-      : testSuites
+    const suitesToRun = category ? testSuites.filter((suite) => suite.category === category) : testSuites
 
     console.log(`🚀 Running ${suitesToRun.length} test suite(s)`)
     if (category) {
@@ -222,7 +220,7 @@ class TestRunner {
         }
         return acc
       },
-      {} as Record<string, { passed: number; failed: number }>
+      {} as Record<string, { passed: number; failed: number }>,
     )
 
     if (Object.keys(isolationStats).length > 1) {

@@ -38,7 +38,7 @@ export function createErrorResponse(
     statusCode?: number
     context?: Record<string, unknown>
     requestId?: string
-  }
+  },
 ): ErrorResponse {
   return {
     code,
@@ -65,14 +65,10 @@ export function exceptionToErrorResponse(error: Error, requestId?: string): Erro
   }
 
   // Generic error
-  return createErrorResponse(
-    'INTERNAL_ERROR' as ErrorCode,
-    error.message || 'An unexpected error occurred',
-    {
-      statusCode: 500,
-      requestId,
-    }
-  )
+  return createErrorResponse('INTERNAL_ERROR' as ErrorCode, error.message || 'An unexpected error occurred', {
+    statusCode: 500,
+    requestId,
+  })
 }
 
 /**

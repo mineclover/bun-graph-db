@@ -155,7 +155,7 @@ describe('JsonExportService', () => {
       mockAttrRepo,
       mockNodeAttrRepo,
       mockRelationRepo,
-      mockRelationTypeRepo
+      mockRelationTypeRepo,
     )
   })
 
@@ -566,13 +566,7 @@ describe('JsonExportService', () => {
         total: 5,
         hasNextPage: false,
       }))
-      mockNodeAttrRepo.findByNodeId = mock(async () => [
-        stringAttr,
-        numberAttr,
-        booleanAttr,
-        arrayAttr,
-        objectAttr,
-      ])
+      mockNodeAttrRepo.findByNodeId = mock(async () => [stringAttr, numberAttr, booleanAttr, arrayAttr, objectAttr])
       mockRelationRepo.findByTableId = mock(async () => ({
         nodes: [],
         total: 0,
@@ -640,7 +634,7 @@ describe('JsonExportService', () => {
             data: [mockNode],
             total: 1,
             hasNextPage: false,
-          }) as any
+          }) as any,
       )
       mockAttrRepo.findByTableId = mock(
         async () =>
@@ -648,7 +642,7 @@ describe('JsonExportService', () => {
             data: [mockAttribute],
             total: 1,
             hasNextPage: false,
-          }) as any
+          }) as any,
       )
 
       const result = await service.exportTable('table-1' as TableId, { format: 'flat' })

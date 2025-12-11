@@ -22,7 +22,7 @@ export interface ImportTablePackageResponse {
 export class ImportTablePackageUseCase {
   constructor(
     private readonly tablePackageService: ITablePackageService,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(request: ImportTablePackageRequest): Promise<ImportTablePackageResponse> {

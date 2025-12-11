@@ -4,11 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import {
-  createRequestHelper,
-  startServerForSuite,
-  stopServerForSuite,
-} from './fixtures/test-graphql-server'
+import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'relation-mutations-isolated'
 const TEST_TIMEOUT = 15000
@@ -89,13 +85,9 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       expect(result.errors).toBeUndefined()
       expect(result.data.createRelationType.success).toBe(true)
       expect(result.data.createRelationType.relationType).toBeDefined()
-      expect(result.data.createRelationType.relationType.identifier).toBe(
-        variables.input.identifier
-      )
+      expect(result.data.createRelationType.relationType.identifier).toBe(variables.input.identifier)
       expect(result.data.createRelationType.relationType.name).toBe('Depends On')
-      expect(result.data.createRelationType.relationType.description).toBe(
-        'A dependency relationship between nodes'
-      )
+      expect(result.data.createRelationType.relationType.description).toBe('A dependency relationship between nodes')
       expect(result.data.createRelationType.relationType.id).toBeDefined()
       expect(result.data.createRelationType.errors).toEqual([])
     })
@@ -125,9 +117,7 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
 
       expect(result.errors).toBeUndefined()
       expect(result.data.createRelationType.success).toBe(true)
-      expect(result.data.createRelationType.relationType.identifier).toBe(
-        variables.input.identifier
-      )
+      expect(result.data.createRelationType.relationType.identifier).toBe(variables.input.identifier)
       expect(result.data.createRelationType.relationType.name).toBe('Related To')
     })
 
@@ -239,7 +229,7 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       targetNodeId = targetNodeResult.data.createNode.node.id
 
       console.log(
-        `✅ Created test data: table(${testTableId}), relationType(${testRelationTypeId}), sourceNode(${sourceNodeId}), targetNode(${targetNodeId})`
+        `✅ Created test data: table(${testTableId}), relationType(${testRelationTypeId}), sourceNode(${sourceNodeId}), targetNode(${targetNodeId})`,
       )
     })
 
@@ -754,7 +744,7 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
               targetNodeId: targetNodes[i], // Different target for each relation
               relationTypeId: testRelationTypeId,
             },
-          })
+          }),
         )
       }
 
@@ -765,10 +755,7 @@ describe('Relation Mutations - Isolated Database Test Suite', () => {
       results.forEach((result, index) => {
         console.log(`🔍 Bulk relation ${index} result:`, JSON.stringify(result, null, 2))
         if (result.data.createRelation.success === false) {
-          console.log(
-            `❌ Bulk relation ${index} failed with errors:`,
-            result.data.createRelation.errors
-          )
+          console.log(`❌ Bulk relation ${index} failed with errors:`, result.data.createRelation.errors)
         }
         expect(result.errors).toBeUndefined()
         expect(result.data.createRelation.success).toBe(true)

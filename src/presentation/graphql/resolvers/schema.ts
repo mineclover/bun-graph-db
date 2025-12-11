@@ -30,9 +30,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
             includeRelations: options.includeRelations,
             compression: options.compression,
             format:
-              options.format === 'json' || options.format === 'yaml'
-                ? (options.format as 'json' | 'yaml')
-                : undefined,
+              options.format === 'json' || options.format === 'yaml' ? (options.format as 'json' | 'yaml') : undefined,
           }
           return await schemaExportUseCase.exportTable(tableId, exportOptions)
         } catch (error) {
@@ -49,9 +47,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
             includeRelations: options.includeRelations,
             compression: options.compression,
             format:
-              options.format === 'json' || options.format === 'yaml'
-                ? (options.format as 'json' | 'yaml')
-                : undefined,
+              options.format === 'json' || options.format === 'yaml' ? (options.format as 'json' | 'yaml') : undefined,
           }
           return await schemaExportUseCase.exportAllTables(exportOptions)
         } catch (error) {
@@ -72,9 +68,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
 
           const importOptions = {
             ...options,
-            conflictResolution: ['skip', 'overwrite', 'merge', 'fail'].includes(
-              options.conflictResolution as string
-            )
+            conflictResolution: ['skip', 'overwrite', 'merge', 'fail'].includes(options.conflictResolution as string)
               ? (options.conflictResolution as 'skip' | 'overwrite' | 'merge' | 'fail')
               : undefined,
           }

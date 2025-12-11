@@ -36,11 +36,7 @@
     "resultType": "success",
     "dataSize": 226,
     "hasData": true,
-    "dataFields": [
-      "queryText",
-      "processedVariables",
-      "metadata"
-    ],
+    "dataFields": ["queryText", "processedVariables", "metadata"],
     "serverUrl": "http://localhost:4000/graphql",
     "generatedBy": "curl-template-tester"
   }

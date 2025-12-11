@@ -60,9 +60,7 @@ async function batchExport(config) {
           totalNodes: result.metadata.totalNodes,
         })
       } else {
-        throw new Error(
-          `Export failed: ${result.errors ? result.errors.join(', ') : 'Unknown error'}`
-        )
+        throw new Error(`Export failed: ${result.errors ? result.errors.join(', ') : 'Unknown error'}`)
       }
     } catch (error) {
       console.error(`❌ ${format} export failed: ${error.message}`)

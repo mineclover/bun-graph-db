@@ -158,8 +158,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                     }
                   }
                 }
-              `)
-            )
+              `),
+            ),
           )
 
           return results
@@ -239,8 +239,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                     }
                   }
                 }
-              `)
-            )
+              `),
+            ),
           )
 
           return { nodeCreationResults, customers }
@@ -371,8 +371,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                     }
                   }
                 }
-              `)
-            )
+              `),
+            ),
           )
 
           return relationResults
@@ -433,10 +433,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           })
 
           // Verify relationships exist
-          const totalRelations = nodes.reduce(
-            (sum: number, node: any) => sum + node.relations.length,
-            0
-          )
+          const totalRelations = nodes.reduce((sum: number, node: any) => sum + node.relations.length, 0)
           expect(totalRelations).toBe(5)
         },
       })
@@ -533,15 +530,9 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
         },
         validate: (result) => {
           expect(result.errors).toBeUndefined()
-          expect(result.data.createTemplate.template.identifier).toBe(
-            'create-product-with-category'
-          )
+          expect(result.data.createTemplate.template.identifier).toBe('create-product-with-category')
           templateIdentifier = result.data.createTemplate.template.identifier
-          expect(result.data.createTemplate.template.variables).toEqual([
-            'productName',
-            'category',
-            'tableId',
-          ])
+          expect(result.data.createTemplate.template.variables).toEqual(['productName', 'category', 'tableId'])
         },
       })
 
@@ -577,8 +568,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                     executionTime
                   }
                 }
-              `)
-            )
+              `),
+            ),
           )
 
           return executions
@@ -618,13 +609,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(result.data.searchNodes.totalCount).toBe(5)
 
           const nodes = result.data.searchNodes.nodes
-          const expectedProducts = [
-            'Wireless Headphones',
-            'Running Shoes',
-            'Coffee Maker',
-            'Yoga Mat',
-            'Notebook',
-          ]
+          const expectedProducts = ['Wireless Headphones', 'Running Shoes', 'Coffee Maker', 'Yoga Mat', 'Notebook']
 
           nodes.forEach((node: any) => {
             expect(expectedProducts).toContain(node.content)
@@ -678,12 +663,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
         },
         validate: (result) => {
           expect(result.errors).toBeUndefined()
-          expect(result.data.updateTemplate.template.variables).toEqual([
-            'productName',
-            'category',
-            'price',
-            'tableId',
-          ])
+          expect(result.data.updateTemplate.template.variables).toEqual(['productName', 'category', 'price', 'tableId'])
           expect(result.data.updateTemplate.template.tags).toContain('v2')
         },
       })
@@ -740,8 +720,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                     node { id }
                   }
                 }
-              `)
-            )
+              `),
+            ),
           )
 
           return { tableResult, nodeResults }
@@ -759,13 +739,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
       workflow.addStep({
         name: 'Create Complex Network Relationships',
         action: async () => {
-          const _relationshipTypes = [
-            'FOLLOWS',
-            'FRIENDS',
-            'MENTIONS',
-            'COLLABORATES',
-            'INFLUENCES',
-          ]
+          const _relationshipTypes = ['FOLLOWS', 'FRIENDS', 'MENTIONS', 'COLLABORATES', 'INFLUENCES']
           const relationships = []
 
           // Create various relationship patterns
@@ -815,8 +789,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                     relation { id }
                   }
                 }
-              `)
-            )
+              `),
+            ),
           )
 
           return { relationships, relationResults }
@@ -849,7 +823,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                 }
               `)
               return { nodeId, connections: connections.data.getConnectedNodes }
-            })
+            }),
           )
 
           return centralityResults
@@ -895,7 +869,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                 }
               `)
               return { ...path, result: result.data.findShortestPath }
-            })
+            }),
           )
 
           return pathResults
@@ -1010,8 +984,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                     node { id }
                   }
                 }
-              `)
-            )
+              `),
+            ),
           )
 
           return { tableResult, attributeResult, nodeResults }
@@ -1067,9 +1041,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(result.errors).toBeUndefined()
           expect(result.data.exportTablePackage.success).toBe(true)
           expect(result.data.exportTablePackage.package).toBeDefined()
-          expect(result.data.exportTablePackage.package.sourceTable.identifier).toBe(
-            'export-source-table'
-          )
+          expect(result.data.exportTablePackage.package.sourceTable.identifier).toBe('export-source-table')
           expect(result.data.exportTablePackage.errors).toHaveLength(0)
           exportData = result.data.exportTablePackage.package
         },
@@ -1170,9 +1142,7 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           expect(importedData.errors).toBeUndefined()
           expect(originalData.errors).toBeUndefined()
 
-          expect(importedData.data.searchNodes.totalCount).toBe(
-            originalData.data.searchNodes.totalCount
-          )
+          expect(importedData.data.searchNodes.totalCount).toBe(originalData.data.searchNodes.totalCount)
 
           const importedNodes = importedData.data.searchNodes.nodes
           const originalNodes = originalData.data.searchNodes.nodes
@@ -1226,8 +1196,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
                     node { id }
                   }
                 }
-              `)
-            )
+              `),
+            ),
           )
 
           return { tableResult, nodeResults }
@@ -1379,11 +1349,8 @@ describe('End-to-End Workflow Comprehensive Tests', () => {
           // Verify we can access backup data and it's valid
           const backupValidation = {
             hasTable: backupData.sourceTable !== undefined,
-            hasNodes:
-              backupData.package?.dataset?.nodes && backupData.package.dataset.nodes.length > 0,
-            nodeCount: backupData.package?.dataset?.nodes
-              ? backupData.package.dataset.nodes.length
-              : 0,
+            hasNodes: backupData.package?.dataset?.nodes && backupData.package.dataset.nodes.length > 0,
+            nodeCount: backupData.package?.dataset?.nodes ? backupData.package.dataset.nodes.length : 0,
           }
 
           // Test that we could restore if needed (without actually doing it)

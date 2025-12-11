@@ -30,9 +30,9 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
     restHelper = testEnvironment.restApiHelper!
 
     console.log(`🚀 E2E Test Environment Ready:`)
-    console.log(`   - GraphQL: ${testEnvironment.server!.url}`)
-    console.log(`   - REST API: http://localhost:${testEnvironment.server!.port}/api`)
-    console.log(`   - MCP: http://localhost:${testEnvironment.server!.port}/mcp`)
+    console.log(`   - GraphQL: ${testEnvironment.server?.url}`)
+    console.log(`   - REST API: http://localhost:${testEnvironment.server?.port}/api`)
+    console.log(`   - MCP: http://localhost:${testEnvironment.server?.port}/mcp`)
   }, 60000)
 
   afterAll(async () => {
@@ -300,7 +300,7 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
       console.log('🏎️ Testing concurrent MCP requests...')
 
       const concurrentRequests = Array.from({ length: 20 }, (_, i) =>
-        mcpHelper.callTool('healthCheck', {}, `concurrent-${i}`)
+        mcpHelper.callTool('healthCheck', {}, `concurrent-${i}`),
       )
 
       const startTime = Date.now()
@@ -310,9 +310,7 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
       const successful = results.filter((r) => r.status === 'fulfilled').length
       const failed = results.filter((r) => r.status === 'rejected').length
 
-      console.log(
-        `🏁 Performance Results: ${successful} successful, ${failed} failed, ${duration}ms total`
-      )
+      console.log(`🏁 Performance Results: ${successful} successful, ${failed} failed, ${duration}ms total`)
 
       // At least 80% should succeed
       expect(successful / results.length).toBeGreaterThanOrEqual(0.8)
@@ -327,9 +325,7 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
       // Create large payload
       const largeMetadata = {
         description: 'A'.repeat(1000), // 1KB string
-        properties: Object.fromEntries(
-          Array.from({ length: 100 }, (_, i) => [`prop${i}`, `value${i}`.repeat(10)])
-        ),
+        properties: Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`prop${i}`, `value${i}`.repeat(10)])),
         tags: Array.from({ length: 50 }, (_, i) => `tag-${i}`),
       }
 
@@ -410,7 +406,7 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
 describe('withAutoServer Pattern Example', () => {
   test('should work with auto server management', async () => {
     await withAutoServer(createE2EConfig('auto-server-example'), async (env) => {
-      const result = await env.mcpHelper!.callTool('healthCheck', {})
+      const result = await env.mcpHelper?.callTool('healthCheck', {})
       expect(result.success).toBe(true)
       expect(result.data.status).toBe('OK')
 
@@ -422,13 +418,13 @@ describe('withAutoServer Pattern Example', () => {
     // 여러 개의 독립적인 서버 환경을 동시에 사용 가능
     const results = await Promise.all([
       withAutoServer(createE2EConfig('auto-1'), async (env) => {
-        return env.mcpHelper!.callTool('healthCheck', {})
+        return env.mcpHelper?.callTool('healthCheck', {})
       }),
       withAutoServer(createE2EConfig('auto-2'), async (env) => {
-        return env.mcpHelper!.callTool('healthCheck', {})
+        return env.mcpHelper?.callTool('healthCheck', {})
       }),
       withAutoServer(createE2EConfig('auto-3'), async (env) => {
-        return env.mcpHelper!.callTool('healthCheck', {})
+        return env.mcpHelper?.callTool('healthCheck', {})
       }),
     ])
 

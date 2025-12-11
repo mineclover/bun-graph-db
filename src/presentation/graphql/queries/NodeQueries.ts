@@ -27,12 +27,9 @@ export class NodeQueries extends BaseResolver {
 
   constructor(
     private readonly nodeRepository: INodeRepository,
-    private readonly searchNodesUseCaseResolver:
-      | (() => Promise<SearchNodesUseCase | null>)
-      | SearchNodesUseCase
-      | null,
+    private readonly searchNodesUseCaseResolver: (() => Promise<SearchNodesUseCase | null>) | SearchNodesUseCase | null,
     logger: ILogger,
-    attributeRepository?: IAttributeRepository
+    attributeRepository?: IAttributeRepository,
   ) {
     super()
     this.logger = logger
@@ -53,7 +50,7 @@ export class NodeQueries extends BaseResolver {
   private async buildQueryFromFilters(
     _tableId: string,
     attributeFilters: AttributeFilter[],
-    existingQuery?: string
+    existingQuery?: string,
   ): Promise<string> {
     const queryParts: string[] = existingQuery ? [existingQuery] : []
 
@@ -121,11 +118,8 @@ export class NodeQueries extends BaseResolver {
   async node(_: GraphQLParent, args: NodeArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args as any,
-      [
-        BaseResolver.validationRules.required('id', 'Node ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
-      ],
-      'node'
+      [BaseResolver.validationRules.required('id', 'Node ID'), BaseResolver.validationRules.nonEmpty('id', 'Node ID')],
+      'node',
     )
 
     return this.handleQuery(
@@ -145,7 +139,7 @@ export class NodeQueries extends BaseResolver {
         return node
       },
       'findNodeById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
@@ -157,7 +151,7 @@ export class NodeQueries extends BaseResolver {
         BaseResolver.validationRules.required('tableId', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('content', 'Content'),
       ],
-      'nodeByContent'
+      'nodeByContent',
     )
 
     return this.handleQuery(
@@ -169,7 +163,7 @@ export class NodeQueries extends BaseResolver {
         return await this.nodeRepository.findByTableIdAndContent(args.tableId, args.content)
       },
       'findNodeByContent',
-      { content: args.content, tableId: args.tableId }
+      { content: args.content, tableId: args.tableId },
     )
   }
 
@@ -177,9 +171,7 @@ export class NodeQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         try {
-          const result = await this.nodeRepository.findAll(
-            args.pagination || { limit: 10, offset: 0 }
-          )
+          const result = await this.nodeRepository.findAll(args.pagination || { limit: 10, offset: 0 })
 
           // Check if result is properly formatted
           if (!result || !result.nodes) {
@@ -204,7 +196,7 @@ export class NodeQueries extends BaseResolver {
         }
       },
       'findAllNodes',
-      { args }
+      { args },
     )
   }
 
@@ -219,9 +211,7 @@ export class NodeQueries extends BaseResolver {
         // Fallback to basic findAll when SearchNodesUseCase is not available
         if (!this.searchNodesUseCase) {
           this.logger.warn('SearchNodesUseCase not available, using basic node listing')
-          const result = await this.nodeRepository.findAll(
-            args.pagination || { limit: 10, offset: 0 }
-          )
+          const result = await this.nodeRepository.findAll(args.pagination || { limit: 10, offset: 0 })
 
           // Ensure all fields are non-null to satisfy GraphQL schema
           return {
@@ -242,7 +232,7 @@ export class NodeQueries extends BaseResolver {
           queryString = await this.buildQueryFromFilters(
             tableId,
             args.filter.attributeFilters as AttributeFilter[],
-            queryString
+            queryString,
           )
         }
 
@@ -281,7 +271,7 @@ export class NodeQueries extends BaseResolver {
         }
       },
       'searchNodes',
-      { args }
+      { args },
     )
   }
 }

@@ -328,9 +328,7 @@ async function insertSchemaFixedTemplate(template: SchemaFixedTemplate): Promise
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
 
-    const operationType = template.query.trim().toLowerCase().startsWith('mutation')
-      ? 'mutation'
-      : 'query'
+    const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
 
     db.run(insertQuery, [
       template.identifier,

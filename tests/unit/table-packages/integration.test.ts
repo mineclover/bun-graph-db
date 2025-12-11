@@ -1,10 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { graphql } from 'graphql'
 import type { TablePackageFormat } from '@/core/types/TablePackage.js'
-import {
-  createTestContainer,
-  resetContainer,
-} from '@/infrastructure/container/ContainerBootstrap.js'
+import { createTestContainer, resetContainer } from '@/infrastructure/container/ContainerBootstrap.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
 import type { GraphQLSchemaBuilder } from '@/presentation/graphql/GraphQLSchemaBuilder.js'
 
@@ -16,9 +13,7 @@ describe('Table Package System Integration', () => {
     // Initialize the DI container and schema for testing
     container = await createTestContainer()
 
-    const schemaBuilder = (await container.resolve(
-      Symbol.for('GraphQLSchemaBuilder')
-    )) as GraphQLSchemaBuilder
+    const schemaBuilder = (await container.resolve(Symbol.for('GraphQLSchemaBuilder'))) as GraphQLSchemaBuilder
     schema = await schemaBuilder.build()
   })
 
@@ -472,13 +467,9 @@ describe('Table Package System Integration', () => {
 
         expect(importResult.errors).toBeUndefined()
         expect((importResult.data?.importTablePackage as any)?.success).toBe(true)
-        expect((importResult.data?.importTablePackage as any)?.importedTable.identifier).toBe(
-          uniqueImportTableId
-        )
+        expect((importResult.data?.importTablePackage as any)?.importedTable.identifier).toBe(uniqueImportTableId)
         expect((importResult.data?.importTablePackage as any)?.generatedTemplates).toBeDefined()
-        expect(
-          (importResult.data?.importTablePackage as any)?.generatedTemplates.length
-        ).toBeGreaterThan(0)
+        expect((importResult.data?.importTablePackage as any)?.generatedTemplates.length).toBeGreaterThan(0)
       }
     })
 

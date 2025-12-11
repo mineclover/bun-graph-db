@@ -355,11 +355,7 @@ describe('TablePackageService Error Handling', () => {
   describe('Dependency Resolution Error Handling', () => {
     test('should handle circular dependency detection', async () => {
       // This test would require a more sophisticated mock that can simulate circular dependencies
-      const packages = [
-        createMockPackage('table-a'),
-        createMockPackage('table-b'),
-        createMockPackage('table-c'),
-      ]
+      const packages = [createMockPackage('table-a'), createMockPackage('table-b'), createMockPackage('table-c')]
 
       // Act
       const result = await batchImportUseCase.execute({
@@ -427,9 +423,7 @@ describe('TablePackageService Error Handling', () => {
       expect(infoLogs.length).toBeGreaterThan(0)
 
       // Check that we have logs for key operations
-      const hasExecutionLog = infoLogs.some((log) =>
-        log.message.includes('Executing batch table package import')
-      )
+      const hasExecutionLog = infoLogs.some((log) => log.message.includes('Executing batch table package import'))
       expect(hasExecutionLog).toBe(true)
     })
 

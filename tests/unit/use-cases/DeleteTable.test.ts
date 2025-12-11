@@ -1,9 +1,6 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import {
-  type DeleteTableInput,
-  DeleteTableUseCase,
-} from '@/application/use-cases/tables/DeleteTable.js'
+import { type DeleteTableInput, DeleteTableUseCase } from '@/application/use-cases/tables/DeleteTable.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
@@ -84,7 +81,7 @@ describe('DeleteTableUseCase', () => {
       mockNodeRepository,
       mockAttributeRepository,
       mockRelationRepository,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -96,9 +93,7 @@ describe('DeleteTableUseCase', () => {
 
       mockTableRepository.findById = mock(async () => null)
 
-      await expect(useCase.execute(input)).rejects.toThrow(
-        'Table with ID non-existent-table not found'
-      )
+      await expect(useCase.execute(input)).rejects.toThrow('Table with ID non-existent-table not found')
     })
   })
 
@@ -175,7 +170,7 @@ describe('DeleteTableUseCase', () => {
         expect.objectContaining({
           tableId: 'table-1',
           tableName: 'test-table',
-        })
+        }),
       )
     })
   })
@@ -290,12 +285,9 @@ describe('DeleteTableUseCase', () => {
           tableId: 'table-1',
           force: false,
           cascadeDelete: false,
-        })
+        }),
       )
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Table deletion completed successfully',
-        expect.any(Object)
-      )
+      expect(mockLogger.info).toHaveBeenCalledWith('Table deletion completed successfully', expect.any(Object))
     })
 
     it('should log warning when deletion is blocked', async () => {
@@ -312,10 +304,7 @@ describe('DeleteTableUseCase', () => {
 
       await expect(useCase.execute(input)).rejects.toThrow()
 
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        'Table deletion blocked due to existing data',
-        expect.any(Object)
-      )
+      expect(mockLogger.warn).toHaveBeenCalledWith('Table deletion blocked due to existing data', expect.any(Object))
     })
   })
 })

@@ -19,7 +19,7 @@ interface MemoryHealthStatus {
 export class SystemQueries {
   constructor(
     private systemMonitoringUseCase: SystemMonitoringUseCase,
-    private logger: ILogger
+    private logger: ILogger,
   ) {}
 
   async systemStats() {

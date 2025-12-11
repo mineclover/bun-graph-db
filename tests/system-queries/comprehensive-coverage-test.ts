@@ -63,8 +63,7 @@ async function validateSystemCoverage(): Promise<void> {
     console.log(roadmapReport)
 
     // 6. 성공/실패 평가
-    const overallSuccess =
-      passedTests === testResults.length && coverageReport.coveragePercentage >= 80
+    const overallSuccess = passedTests === testResults.length && coverageReport.coveragePercentage >= 80
 
     console.log(`\n${'='.repeat(60)}`)
     console.log(`🎯 Overall Assessment: ${overallSuccess ? '✅ SUCCESS' : '⚠️  NEEDS IMPROVEMENT'}`)
@@ -107,12 +106,7 @@ async function validateEntityCoverage(): Promise<void> {
   const entityOperations = {
     node: ['createNode', 'nodes', 'updateNode', 'deleteNode'],
     table: ['createTable', 'tables', 'updateTable', 'deleteTable'],
-    attribute: [
-      'setNodeAttribute',
-      'nodeAttributes',
-      'updateNodeAttributeValue',
-      'removeNodeAttribute',
-    ],
+    attribute: ['setNodeAttribute', 'nodeAttributes', 'updateNodeAttributeValue', 'removeNodeAttribute'],
     relation: ['createRelation', 'nodeRelations', 'updateRelation', 'deleteRelation'],
   }
 
@@ -152,7 +146,7 @@ async function validatePerformanceRequirements(): Promise<void> {
     const status = withinTarget ? '✅' : '⚠️ '
 
     console.log(
-      `${status} ${operation}: ${mockExecutionTime.toFixed(1)}${target.unit} (target: <${target.target}${target.unit})`
+      `${status} ${operation}: ${mockExecutionTime.toFixed(1)}${target.unit} (target: <${target.target}${target.unit})`,
     )
   }
 }

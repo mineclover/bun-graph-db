@@ -50,7 +50,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.data).toBeDefined()
       expect(result.data.__type).toBeDefined()
@@ -81,7 +81,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.data.__type).toBeDefined()
       expect(result.data.__type.name).toBe('AISchemaInfo')
@@ -109,7 +109,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.data.__type).toBeDefined()
       expect(result.data.__type.name).toBe('AIUsagePatterns')
@@ -123,7 +123,7 @@ describe('AIMetadata Integration Tests', () => {
 
   describe('End-to-End AIMetadata Retrieval', () => {
     test('should create test data and retrieve AIMetadata', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Create test table
       const tableId = `test-table-${Date.now()}`
@@ -199,7 +199,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, {
+      const result = await testContext.graphqlRequest?.(query, {
         tableId,
       })
 
@@ -244,7 +244,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, {
+      const result = await testContext.graphqlRequest?.(query, {
         tableId: 'non-existent-table-id',
       })
 
@@ -254,7 +254,7 @@ describe('AIMetadata Integration Tests', () => {
     })
 
     test('should support custom sample limits', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Create table with multiple nodes
       const tableId = `sample-test-${Date.now()}`
@@ -290,7 +290,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, {
+      const result = await testContext.graphqlRequest?.(query, {
         tableId,
         sampleLimit: 3,
       })
@@ -301,7 +301,7 @@ describe('AIMetadata Integration Tests', () => {
 
   describe('Performance and Scalability', () => {
     test('should handle large tables efficiently', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
       const tableId = `large-table-${Date.now()}`
 
       // Create table with many attributes
@@ -336,7 +336,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, {
+      const result = await testContext.graphqlRequest?.(query, {
         tableId,
       })
 
@@ -351,7 +351,7 @@ describe('AIMetadata Integration Tests', () => {
     })
 
     test('should handle concurrent AIMetadata requests', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
       const tableIds: string[] = []
 
       // Create multiple test tables
@@ -387,7 +387,7 @@ describe('AIMetadata Integration Tests', () => {
       const startTime = performance.now()
 
       // Send concurrent requests
-      const promises = tableIds.map((tableId) => testContext.graphqlRequest!(query, { tableId }))
+      const promises = tableIds.map((tableId) => testContext.graphqlRequest?.(query, { tableId }))
 
       const results = await Promise.all(promises)
       const duration = performance.now() - startTime
@@ -404,7 +404,7 @@ describe('AIMetadata Integration Tests', () => {
     })
 
     test('should cache AIMetadata appropriately', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
       const tableId = `cache-test-${Date.now()}`
 
       db.exec(`
@@ -427,12 +427,12 @@ describe('AIMetadata Integration Tests', () => {
 
       // First request
       const startTime1 = performance.now()
-      const result1 = await testContext.graphqlRequest!(query, { tableId })
+      const result1 = await testContext.graphqlRequest?.(query, { tableId })
       const _duration1 = performance.now() - startTime1
 
       // Second request (should be potentially faster if cached)
       const startTime2 = performance.now()
-      const result2 = await testContext.graphqlRequest!(query, { tableId })
+      const result2 = await testContext.graphqlRequest?.(query, { tableId })
       const _duration2 = performance.now() - startTime2
 
       // Both should return valid data
@@ -446,7 +446,7 @@ describe('AIMetadata Integration Tests', () => {
 
   describe('Data Quality and Validation', () => {
     test('should provide accurate schema information', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
       const tableId = `accuracy-test-${Date.now()}`
 
       db.exec(`
@@ -479,7 +479,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, { tableId })
+      const result = await testContext.graphqlRequest?.(query, { tableId })
 
       const schemaInfo = result.data.table.aiMetadata.schemaInfo
 
@@ -503,7 +503,7 @@ describe('AIMetadata Integration Tests', () => {
     })
 
     test('should handle various attribute types correctly', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
       const tableId = `types-test-${Date.now()}`
 
       db.exec(`
@@ -534,7 +534,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, { tableId })
+      const result = await testContext.graphqlRequest?.(query, { tableId })
 
       const dataTypes = result.data.table.aiMetadata.schemaInfo.dataTypes
 
@@ -548,7 +548,7 @@ describe('AIMetadata Integration Tests', () => {
 
   describe('Error Handling and Edge Cases', () => {
     test('should handle tables with no attributes', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
       const tableId = `empty-attrs-${Date.now()}`
 
       db.exec(`
@@ -571,7 +571,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, { tableId })
+      const result = await testContext.graphqlRequest?.(query, { tableId })
 
       expect(result.data.table.aiMetadata).toBeDefined()
 
@@ -582,7 +582,7 @@ describe('AIMetadata Integration Tests', () => {
     })
 
     test('should handle tables with no templates', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
       const tableId = `no-templates-${Date.now()}`
 
       db.exec(`
@@ -604,7 +604,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, { tableId })
+      const result = await testContext.graphqlRequest?.(query, { tableId })
 
       expect(result.data.table.aiMetadata).toBeDefined()
 
@@ -629,7 +629,7 @@ describe('AIMetadata Integration Tests', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       // Should handle null ID gracefully
       expect(result.errors).toBeDefined()

@@ -1,8 +1,4 @@
-import {
-  type SortContext,
-  type SortResult,
-  SortStrategy,
-} from '@/domain/value-objects/SortStrategy.js'
+import { type SortContext, type SortResult, SortStrategy } from '@/domain/value-objects/SortStrategy.js'
 
 export class DateTimeSortStrategy extends SortStrategy {
   canHandle(field: string, dataType: string): boolean {

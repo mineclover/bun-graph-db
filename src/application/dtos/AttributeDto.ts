@@ -9,11 +9,7 @@ import type {
 import type { Attribute } from '@/domain/entities/Attribute.js'
 
 // Data Transfer Object for Attribute entity
-export interface AttributeDto
-  extends BaseEntityDto,
-    WithIdentifier,
-    WithDescription,
-    WithMetadata<object> {
+export interface AttributeDto extends BaseEntityDto, WithIdentifier, WithDescription, WithMetadata<object> {
   tableId: string
   name: string
   attributeTypeId: string

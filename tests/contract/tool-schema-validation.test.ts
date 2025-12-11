@@ -93,7 +93,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         // Accept either "additional properties" or "Invalid params" error message
         expect(
           invalidData.error?.message?.includes('additional properties') ||
-            invalidData.error?.message?.includes('Invalid params')
+            invalidData.error?.message?.includes('Invalid params'),
         ).toBe(true)
       } catch (error) {
         // Expected to fail - no MCP server implemented yet
@@ -379,10 +379,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         const validData: ToolCallResponse = await validResponse.json()
         // exportTableWithNodes tool is not fully implemented yet
         if (validData.error) {
-          console.log(
-            'ℹ️ exportTableWithNodes not fully implemented, this is expected:',
-            validData.error.message
-          )
+          console.log('ℹ️ exportTableWithNodes not fully implemented, this is expected:', validData.error.message)
           expect(validData.error).toBeDefined()
         } else {
           expect(validData.result).toBeDefined()
@@ -399,7 +396,7 @@ describe('Tool Schema Validation Contract Tests', () => {
         // Accept either "additional properties" or "Invalid params" error message
         expect(
           invalidData.error?.message?.includes('additional properties') ||
-            invalidData.error?.message?.includes('Invalid params')
+            invalidData.error?.message?.includes('Invalid params'),
         ).toBe(true)
       } catch (error) {
         // Expected to fail - no MCP server implemented yet

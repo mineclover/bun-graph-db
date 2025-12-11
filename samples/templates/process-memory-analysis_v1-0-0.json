@@ -26,7 +26,7 @@
     "frequency": "On-demand or every 5-10 minutes for continuous monitoring",
     "memory_breakdown": {
       "heap_used": "실제 사용 중인 힙 메모리 (MB)",
-      "heap_total": "할당된 전체 힙 메모리 (MB)", 
+      "heap_total": "할당된 전체 힙 메모리 (MB)",
       "external": "C++ 객체가 사용하는 메모리 (MB)",
       "arrayBuffers": "ArrayBuffer가 사용하는 메모리 (MB)",
       "system_used": "프로세스 전체 메모리 사용량 (MB)",
@@ -46,7 +46,7 @@
       },
       "memory_usage": {
         "safe": "< 70%",
-        "warning": "70-85%", 
+        "warning": "70-85%",
         "critical": "> 85%",
         "action": "메모리 사용량 최적화 필요"
       },

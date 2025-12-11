@@ -4,11 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import {
-  createRequestHelper,
-  startServerForSuite,
-  stopServerForSuite,
-} from './fixtures/test-graphql-server'
+import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'table-queries-isolated'
 const TEST_TIMEOUT = 15000

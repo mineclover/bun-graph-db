@@ -19,11 +19,7 @@
     "applicableTables": null,
     "complexityScore": 3,
     "version": "1.0.0",
-    "tags": [
-      "basic",
-      "search",
-      "management"
-    ],
+    "tags": ["basic", "search", "management"],
     "isActive": true,
     "statistics": {
       "usageCount": 1,

@@ -19,10 +19,7 @@ export class SchemaSyncPipeline {
 
   constructor(schema: GraphQLSchema, tableAttributeProvider: TableAttributeProvider) {
     this.schemaIntrospector = new GraphQLSchemaIntrospector(schema)
-    this.metadataGenerator = new EnhancedAIMetadataGenerator(
-      this.schemaIntrospector,
-      tableAttributeProvider
-    )
+    this.metadataGenerator = new EnhancedAIMetadataGenerator(this.schemaIntrospector, tableAttributeProvider)
     this.templateValidator = new TemplateValidator(this.schemaIntrospector, schema)
   }
 
@@ -106,16 +103,11 @@ export class SchemaSyncPipeline {
     if (!validation.isValid && validation.corrections.length > 0) {
       console.log('🔧 Attempting auto-correction...')
       _correctionAttempted = true
-      const correctionResult = await this.templateValidator.applyCorrections(
-        template,
-        validation.corrections
-      )
+      const correctionResult = await this.templateValidator.applyCorrections(template, validation.corrections)
       _correctedTemplate = correctionResult
 
       // Re-validate corrected template
-      const correctedValidation = await this.templateValidator.validateTemplate(
-        correctionResult.correctedTemplate
-      )
+      const correctedValidation = await this.templateValidator.validateTemplate(correctionResult.correctedTemplate)
 
       return {
         originalTemplate: template,
@@ -150,16 +142,14 @@ export class SchemaSyncPipeline {
 
     try {
       // 1. Get enhanced metadata for context
-      const enhancedMetadata = await this.metadataGenerator.generateEnhancedMetadata(
-        aiRequest.tableId
-      )
+      const enhancedMetadata = await this.metadataGenerator.generateEnhancedMetadata(aiRequest.tableId)
 
       // 2. Find matching query patterns
       const queryPatterns = await this.schemaIntrospector.getQueryPatterns()
       const matchingPattern = queryPatterns.find(
         (pattern) =>
           pattern.operationName === aiRequest.operationType ||
-          pattern.description.toLowerCase().includes(aiRequest.intent.toLowerCase())
+          pattern.description.toLowerCase().includes(aiRequest.intent.toLowerCase()),
       )
 
       if (!matchingPattern) {
@@ -177,9 +167,7 @@ export class SchemaSyncPipeline {
       })
 
       // 4. Final validation
-      const finalValidation = await this.templateValidator.validateTemplate(
-        validatedTemplate.template
-      )
+      const finalValidation = await this.templateValidator.validateTemplate(validatedTemplate.template)
 
       return {
         template: validatedTemplate.template,
@@ -204,7 +192,7 @@ export class SchemaSyncPipeline {
    */
   private async detectSchemaDrift(
     enhancedMetadata: EnhancedAIMetadata,
-    schemaIntrospection: SchemaIntrospectionResult
+    schemaIntrospection: SchemaIntrospectionResult,
   ): Promise<SchemaDriftAnalysis> {
     const driftIssues: DriftIssue[] = []
 
@@ -276,7 +264,7 @@ export class SchemaSyncPipeline {
    */
   private async generateValidationReport(
     tableId: string,
-    enhancedMetadata: EnhancedAIMetadata
+    enhancedMetadata: EnhancedAIMetadata,
   ): Promise<ValidationReport> {
     const report: ValidationReport = {
       tableId,
@@ -340,10 +328,7 @@ export class SchemaSyncPipeline {
     return recommendations
   }
 
-  private generateRecommendations(
-    driftAnalysis: SchemaDriftAnalysis,
-    validationReport: ValidationReport
-  ): string[] {
+  private generateRecommendations(driftAnalysis: SchemaDriftAnalysis, validationReport: ValidationReport): string[] {
     const recommendations: string[] = []
 
     if (driftAnalysis.driftDetected) {
@@ -361,10 +346,7 @@ export class SchemaSyncPipeline {
     return recommendations
   }
 
-  private generateTemplateRecommendations(
-    validation: ValidationResult,
-    correctionResult?: any
-  ): string[] {
+  private generateTemplateRecommendations(validation: ValidationResult, correctionResult?: any): string[] {
     const recommendations: string[] = []
 
     if (!validation.isValid) {

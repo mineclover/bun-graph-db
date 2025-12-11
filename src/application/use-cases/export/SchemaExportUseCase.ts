@@ -123,13 +123,10 @@ export class SchemaExportUseCase {
     private readonly nodeRepository: INodeRepository,
     private readonly relationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
-  async exportTable(
-    tableId: string,
-    options: SchemaExportOptions = {}
-  ): Promise<SchemaExportResult> {
+  async exportTable(tableId: string, options: SchemaExportOptions = {}): Promise<SchemaExportResult> {
     const startTime = Date.now()
 
     try {
@@ -207,10 +204,7 @@ export class SchemaExportUseCase {
       // Calculate total statistics
       const totalNodes = exportedTables.reduce((sum, t) => sum + t.statistics.nodeCount, 0)
       const totalRelations = exportedTables.reduce((sum, t) => sum + t.statistics.relationCount, 0)
-      const totalAttributes = exportedTables.reduce(
-        (sum, t) => sum + t.statistics.attributeCount,
-        0
-      )
+      const totalAttributes = exportedTables.reduce((sum, t) => sum + t.statistics.attributeCount, 0)
 
       const statistics = {
         totalTables: exportedTables.length,
@@ -248,10 +242,7 @@ export class SchemaExportUseCase {
     }
   }
 
-  private async exportSingleTable(
-    tableId: string,
-    options: SchemaExportOptions
-  ): Promise<ExportedTable> {
+  private async exportSingleTable(tableId: string, options: SchemaExportOptions): Promise<ExportedTable> {
     // Get table
     const table = await this.tableRepository.findById(tableId as TableId)
     if (!table) {
@@ -266,9 +257,7 @@ export class SchemaExportUseCase {
     const exportedAttributes: ExportedAttribute[] = []
 
     for (const attribute of attributesResult.data || []) {
-      const attributeType = await this.attributeTypeRepository.findById(
-        attribute.getAttributeTypeId()
-      )
+      const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
       if (attributeType) {
         exportedAttributes.push({
           id: attribute.getId(),
@@ -321,9 +310,7 @@ export class SchemaExportUseCase {
       })
 
       for (const relation of relationsResult.data || []) {
-        const relationType = await this.relationTypeRepository.findById(
-          relation.getRelationTypeId()
-        )
+        const relationType = await this.relationTypeRepository.findById(relation.getRelationTypeId())
         if (relationType) {
           exportedRelations.push({
             id: relation.getId(),

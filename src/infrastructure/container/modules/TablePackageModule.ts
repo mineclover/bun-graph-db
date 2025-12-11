@@ -30,7 +30,7 @@ export function registerTablePackageModule(container: DIContainer): void {
         relationTypeRepo,
         queryTemplateRepo,
         logger,
-        c
+        c,
       )
     },
     [
@@ -43,6 +43,6 @@ export function registerTablePackageModule(container: DIContainer): void {
       RepositoryTokens.RELATION_TYPE_REPOSITORY,
       RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
       CommonTokens.LOGGER,
-    ]
+    ],
   )
 }

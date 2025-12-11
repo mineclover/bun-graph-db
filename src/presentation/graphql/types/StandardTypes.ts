@@ -116,7 +116,7 @@ export type FieldResolver<TSource, TResult, TContext = any, TArgs = Record<strin
   source: TSource,
   args: TArgs,
   context: TContext,
-  info?: any
+  info?: any,
 ) => Promise<TResult> | TResult
 
 // Query resolver wrapper type
@@ -124,7 +124,7 @@ export type QueryResolver<TResult, TContext = any, TArgs = Record<string, unknow
   parent: any,
   args: TArgs,
   context: TContext,
-  info?: any
+  info?: any,
 ) => Promise<TResult> | TResult
 
 // Mutation resolver wrapper type
@@ -132,7 +132,7 @@ export type MutationResolver<TResult, TContext = any, TArgs = Record<string, unk
   parent: any,
   args: TArgs,
   context: TContext,
-  info?: any
+  info?: any,
 ) => Promise<StandardMutationResult<TResult>> | StandardMutationResult<TResult>
 
 // Common validation result

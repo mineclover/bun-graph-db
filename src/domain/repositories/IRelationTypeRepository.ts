@@ -1,8 +1,5 @@
 import type { RelationTypeId } from '@/core/types/CommonTypes.js'
-import type {
-  IRepositoryWithBatchOperations,
-  IRepositoryWithIdentifier,
-} from '@/core/types/RepositoryTypes.js'
+import type { IRepositoryWithBatchOperations, IRepositoryWithIdentifier } from '@/core/types/RepositoryTypes.js'
 import type { RelationType } from '@/domain/entities/RelationType.js'
 
 // Extends IRepositoryWithIdentifier (provides: save, findById, findByIdentifier, findAll,

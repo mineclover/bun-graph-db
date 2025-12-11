@@ -119,9 +119,7 @@ export class SystemInitializationService {
       result.success = true
       this.logger.info(`✅ System initialization completed in ${result.timings.total}ms`)
     } catch (error) {
-      result.errors.push(
-        `Initialization failed: ${error instanceof Error ? error.message : String(error)}`
-      )
+      result.errors.push(`Initialization failed: ${error instanceof Error ? error.message : String(error)}`)
       this.logger.error('❌ System initialization failed', {
         error: error instanceof Error ? error.message : String(error),
       })
@@ -224,9 +222,7 @@ export class SystemInitializationService {
       }
 
       // Reset auto-increment sequences
-      database.exec(
-        `UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('tables', 'nodes', 'attributes', 'templates')`
-      )
+      database.exec(`UPDATE sqlite_sequence SET seq = 0 WHERE name IN ('tables', 'nodes', 'attributes', 'templates')`)
     })()
   }
 
@@ -259,19 +255,14 @@ export class SystemInitializationService {
     const testTablePrefixes = ['test-', 'mcp_', 'auto-', 'simple_test']
 
     for (const prefix of testTablePrefixes) {
-      database
-        .prepare(`DELETE FROM tables WHERE identifier LIKE ? OR identifier = ?`)
-        .run(`${prefix}%`, prefix)
+      database.prepare(`DELETE FROM tables WHERE identifier LIKE ? OR identifier = ?`).run(`${prefix}%`, prefix)
     }
   }
 
   /**
    * Create sample data for development/demo
    */
-  private async createSampleData(
-    database: Database,
-    _options: InitializationOptions
-  ): Promise<void> {
+  private async createSampleData(database: Database, _options: InitializationOptions): Promise<void> {
     this.logger.info('🎭 Creating sample data...')
 
     // Create sample table
@@ -351,7 +342,7 @@ export class SystemInitializationService {
           totalCount
         }
       }`,
-        'query'
+        'query',
       )
   }
 

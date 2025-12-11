@@ -20,10 +20,7 @@ interface DocRow {
   updated_at: string
 }
 
-export class SqliteDocRepository
-  extends BaseSqliteRepository<Doc, DocId>
-  implements IDocRepository
-{
+export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implements IDocRepository {
   protected get tableName(): string {
     return 'docs'
   }
@@ -66,12 +63,7 @@ export class SqliteDocRepository
       `
 
       try {
-        this.db.run(query, [
-          docData.content,
-          docData.is_active ? 1 : 0,
-          docData.updated_at.toISOString(),
-          docData.id,
-        ])
+        this.db.run(query, [docData.content, docData.is_active ? 1 : 0, docData.updated_at.toISOString(), docData.id])
       } catch (error) {
         throw new DatabaseException(`Failed to update doc: ${error}`)
       }
@@ -201,7 +193,7 @@ export class SqliteDocRepository
 
   async searchByContent(
     options: DocContentSearchOptions,
-    pagination?: DocContentSearchPagination
+    pagination?: DocContentSearchPagination,
   ): Promise<PaginatedResult<Doc>> {
     const { query, tableId, category, isActive } = options
 
@@ -263,20 +255,14 @@ export class SqliteDocRepository
     `
 
     try {
-      const result = this.db
-        .query<{ max_version: number | null }, [string, string]>(query)
-        .get(tableId, category)
+      const result = this.db.query<{ max_version: number | null }, [string, string]>(query).get(tableId, category)
       return result?.max_version || 0
     } catch (error) {
       throw new DatabaseException(`Failed to get latest version: ${error}`)
     }
   }
 
-  async deactivateOthersInCategory(
-    tableId: TableId,
-    category: DocCategory,
-    exceptId?: DocId
-  ): Promise<void> {
+  async deactivateOthersInCategory(tableId: TableId, category: DocCategory, exceptId?: DocId): Promise<void> {
     let query = `
       UPDATE docs
       SET is_active = 0, updated_at = CURRENT_TIMESTAMP
@@ -298,11 +284,7 @@ export class SqliteDocRepository
 
   // Note: This exists method has a different signature than the base class
   // but is needed for doc-specific existence checks
-  async existsByTableIdCategoryVersion(
-    tableId: TableId,
-    category: DocCategory,
-    version: number
-  ): Promise<boolean> {
+  async existsByTableIdCategoryVersion(tableId: TableId, category: DocCategory, version: number): Promise<boolean> {
     const query = `
       SELECT COUNT(*) as count
       FROM docs
@@ -310,9 +292,7 @@ export class SqliteDocRepository
     `
 
     try {
-      const result = this.db
-        .query<{ count: number }, [string, string, number]>(query)
-        .get(tableId, category, version)
+      const result = this.db.query<{ count: number }, [string, string, number]>(query).get(tableId, category, version)
       return (result?.count || 0) > 0
     } catch (error) {
       throw new DatabaseException(`Failed to check doc existence: ${error}`)
@@ -391,7 +371,7 @@ export class SqliteDocRepository
       row.content,
       Boolean(row.is_active),
       new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.updated_at),
     )
   }
 }

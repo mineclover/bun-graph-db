@@ -27,7 +27,7 @@ export class BackupQueries {
     _parent: unknown,
     args: { filter?: BackupListFilterInput },
     context: BackupQueriesContext,
-    _info: GraphQLResolveInfo
+    _info: GraphQLResolveInfo,
   ) {
     const { backupService, logger } = context
 
@@ -87,7 +87,7 @@ export class BackupQueries {
     _parent: unknown,
     _args: unknown,
     context: BackupQueriesContext,
-    _info: GraphQLResolveInfo
+    _info: GraphQLResolveInfo,
   ) {
     const { backupService, logger } = context
 

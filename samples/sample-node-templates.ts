@@ -238,14 +238,7 @@ export const sampleNodeCreationTemplates = [
         },
         orderNotes: { type: 'string', description: 'Additional order notes' },
       },
-      required: [
-        'tableId',
-        'customerEmail',
-        'orderTotal',
-        'currency',
-        'billingAddress',
-        'paymentMethod',
-      ],
+      required: ['tableId', 'customerEmail', 'orderTotal', 'currency', 'billingAddress', 'paymentMethod'],
     },
     defaultVariables: {
       currency: 'USD',
@@ -312,14 +305,7 @@ export const sampleNodeCreationTemplates = [
         },
         emergencyContact: { type: 'string', description: 'Emergency contact information' },
       },
-      required: [
-        'tableId',
-        'eventId',
-        'participantEmail',
-        'participantName',
-        'registrationDate',
-        'ticketType',
-      ],
+      required: ['tableId', 'eventId', 'participantEmail', 'participantName', 'registrationDate', 'ticketType'],
     },
     defaultVariables: {
       ticketType: 'general',

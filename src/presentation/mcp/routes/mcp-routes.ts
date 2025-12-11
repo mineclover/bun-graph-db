@@ -24,11 +24,7 @@ export class McpRoutes {
   private logger?: ILogger
 
   constructor(config: McpRouteConfig) {
-    this.factory = new TableMcpServerFactory(
-      config.graphqlEndpoint,
-      config.restApiBaseUrl,
-      config.logger
-    )
+    this.factory = new TableMcpServerFactory(config.graphqlEndpoint, config.restApiBaseUrl, config.logger)
     this.logger = config.logger
   }
 
@@ -43,12 +39,7 @@ export class McpRoutes {
     // Extract table ID from path pattern /sub/:tableId/mcp
     const pathMatch = pathname.match(/^\/sub\/([^/]+)\/mcp\/?$/)
     if (!pathMatch) {
-      return this.createErrorResponse(
-        null,
-        400,
-        'Invalid route pattern',
-        'Expected /sub/:tableId/mcp format'
-      )
+      return this.createErrorResponse(null, 400, 'Invalid route pattern', 'Expected /sub/:tableId/mcp format')
     }
 
     const tableId = decodeURIComponent(pathMatch[1] || '')
@@ -58,12 +49,7 @@ export class McpRoutes {
     try {
       // Validate HTTP method
       if (request.method !== 'POST' && request.method !== 'GET') {
-        return this.createErrorResponse(
-          null,
-          405,
-          'Method Not Allowed',
-          'Only POST and GET methods are supported'
-        )
+        return this.createErrorResponse(null, 405, 'Method Not Allowed', 'Only POST and GET methods are supported')
       }
 
       // Validate table ID format
@@ -79,7 +65,7 @@ export class McpRoutes {
           null,
           404,
           'Table not found',
-          `Table '${tableId}' does not exist or is not accessible`
+          `Table '${tableId}' does not exist or is not accessible`,
         )
       }
 
@@ -96,7 +82,7 @@ export class McpRoutes {
         null,
         500,
         'Internal Server Error',
-        error instanceof Error ? error.message : 'Unknown error'
+        error instanceof Error ? error.message : 'Unknown error',
       )
     }
   }
@@ -130,32 +116,18 @@ export class McpRoutes {
   /**
    * Handle POST requests (JSON-RPC)
    */
-  private async handlePostRequest(
-    request: Request,
-    mcpServer: any,
-    tableId: string
-  ): Promise<Response> {
+  private async handlePostRequest(request: Request, mcpServer: any, tableId: string): Promise<Response> {
     try {
       // Validate Content-Type
       const contentType = request.headers.get('Content-Type')
       if (!contentType || !contentType.includes('application/json')) {
-        return this.createErrorResponse(
-          null,
-          400,
-          'Invalid Content-Type',
-          'Content-Type must be application/json'
-        )
+        return this.createErrorResponse(null, 400, 'Invalid Content-Type', 'Content-Type must be application/json')
       }
 
       // Parse request body
       const body = await request.text()
       if (!body) {
-        return this.createErrorResponse(
-          null,
-          400,
-          'Empty request body',
-          'JSON-RPC request body is required'
-        )
+        return this.createErrorResponse(null, 400, 'Empty request body', 'JSON-RPC request body is required')
       }
 
       let jsonRpcRequest: any
@@ -171,7 +143,7 @@ export class McpRoutes {
           jsonRpcRequest?.id || null,
           -32600,
           'Invalid Request',
-          'Invalid JSON-RPC 2.0 format'
+          'Invalid JSON-RPC 2.0 format',
         )
       }
 
@@ -193,7 +165,7 @@ export class McpRoutes {
         null,
         500,
         'Internal Server Error',
-        error instanceof Error ? error.message : 'Request processing failed'
+        error instanceof Error ? error.message : 'Request processing failed',
       )
     }
   }
@@ -259,12 +231,7 @@ export class McpRoutes {
   /**
    * Create standardized error response
    */
-  private createErrorResponse(
-    id: string | number | null,
-    code: number,
-    message: string,
-    data?: any
-  ): Response {
+  private createErrorResponse(id: string | number | null, code: number, message: string, data?: any): Response {
     let status = 500
 
     // Map JSON-RPC error codes to HTTP status codes

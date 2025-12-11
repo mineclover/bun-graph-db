@@ -71,12 +71,11 @@ export async function basicQueryTemplateExample() {
         identifier: 'basic-table-query',
         name: 'Get Table Information',
         description: 'Retrieve basic table information with node count',
-        query:
-          'query GetTable($tableId: ID!) { table(id: $tableId) { id identifier description nodeCount } }',
+        query: 'query GetTable($tableId: ID!) { table(id: $tableId) { id identifier description nodeCount } }',
         variables: { tableId: '1' },
         createdBy: 'example-system',
       },
-    }
+    },
   )
 
   console.log('✅ Template created:', createResult.createTemplate.template.identifier)
@@ -99,7 +98,7 @@ export async function basicQueryTemplateExample() {
         templateIdentifier: 'basic-table-query',
         variables: { tableId: '2' },
       },
-    }
+    },
   )
 
   if (executeResult.executeTemplate.success) {
@@ -161,7 +160,7 @@ export async function graphqlExecutionExample() {
       templateIdentifier: 'basic-table-query',
       variables: { tableId },
       trackUsage: true,
-    }
+    },
   )
 
   if (realExecutionResult.executeTemplateWithGraphQL.success) {
@@ -245,7 +244,7 @@ export async function usageTrackingExample() {
   `,
     {
       identifier: 'basic-table-query',
-    }
+    },
   )
 
   const usageCountBefore = beforeResult.getTemplateByIdentifier.usageCount
@@ -268,7 +267,7 @@ export async function usageTrackingExample() {
       templateIdentifier: 'basic-table-query',
       variables: { tableId: '1' },
       trackUsage: true,
-    }
+    },
   )
 
   // Get template after usage
@@ -284,7 +283,7 @@ export async function usageTrackingExample() {
   `,
     {
       identifier: 'basic-table-query',
-    }
+    },
   )
 
   const usageCountAfter = afterResult.getTemplateByIdentifier.usageCount
@@ -351,7 +350,7 @@ export async function mutationTemplateExample() {
         },
         createdBy: 'example-system',
       },
-    }
+    },
   )
 
   if (createResult.createTemplate.errors.length === 0) {
@@ -382,7 +381,7 @@ export async function mutationTemplateExample() {
           title: 'Template-created Node',
         },
         trackUsage: true,
-      }
+      },
     )
 
     if (executeResult.executeTemplateWithGraphQL.success) {
@@ -426,7 +425,7 @@ export async function errorHandlingExample() {
           templateIdentifier: 'non-existent-template',
           variables: {},
         },
-      }
+      },
     )
 
     if (!result.executeTemplate.success) {
@@ -461,7 +460,7 @@ export async function errorHandlingExample() {
         templateIdentifier: 'basic-table-query',
         variables: {}, // Missing required tableId
         trackUsage: false,
-      }
+      },
     )
 
     if (result.executeTemplateWithGraphQL.success) {

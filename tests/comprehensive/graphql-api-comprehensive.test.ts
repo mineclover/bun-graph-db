@@ -47,7 +47,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!<HealthCheckResponse>(query)
+      const result = await testContext.graphqlRequest?.<HealthCheckResponse>(query)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.healthCheck).toMatchObject({
@@ -81,7 +81,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!<SystemStatsResponse>(query)
+      const result = await testContext.graphqlRequest?.<SystemStatsResponse>(query)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.systemStats.memory).toMatchObject({
@@ -131,7 +131,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         },
       }
 
-      const result = await testContext.graphqlRequest!(mutation, variables)
+      const result = await testContext.graphqlRequest?.(mutation, variables)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.createTable.success).toBe(true)
@@ -160,10 +160,10 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         input: { identifier: 'duplicate-test-table' },
       }
 
-      await testContext.graphqlRequest!(mutation, variables)
+      await testContext.graphqlRequest?.(mutation, variables)
 
       // Second creation (should fail)
-      const result = await testContext.graphqlRequest!(mutation, variables)
+      const result = await testContext.graphqlRequest?.(mutation, variables)
 
       expect(result.data.createTable.success).toBe(false)
       expect(result.data.createTable.errors).toContainEqual({
@@ -181,7 +181,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       ]
 
       for (const table of tables) {
-        await testContext.graphqlRequest!(`
+        await testContext.graphqlRequest?.(`
           mutation { createTable(input: { identifier: "${table.identifier}", description: "${table.description}" }) { success } }
         `)
       }
@@ -210,14 +210,12 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         },
       }
 
-      const result = await testContext.graphqlRequest!(query, variables)
+      const result = await testContext.graphqlRequest?.(query, variables)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.searchTables.nodes.length).toBeGreaterThanOrEqual(2)
       expect(result.data.searchTables.totalCount).toBeGreaterThanOrEqual(2)
-      const matchingTables = result.data.searchTables.nodes.filter((table) =>
-        table.identifier.includes('search-table')
-      )
+      const matchingTables = result.data.searchTables.nodes.filter((table) => table.identifier.includes('search-table'))
       expect(matchingTables.length).toBeGreaterThanOrEqual(2)
     })
   })
@@ -227,7 +225,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
     beforeEach(async () => {
       // Create a test table
-      const result = await testContext.graphqlRequest!(`
+      const result = await testContext.graphqlRequest?.(`
         mutation {
           createTable(input: { identifier: "node-test-table" }) {
             table { id }
@@ -269,7 +267,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         },
       }
 
-      const result = await testContext.graphqlRequest!(mutation, variables)
+      const result = await testContext.graphqlRequest?.(mutation, variables)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.createNode.success).toBe(true)
@@ -290,7 +288,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       ]
 
       for (const node of nodes) {
-        await testContext.graphqlRequest!(`
+        await testContext.graphqlRequest?.(`
           mutation {
             createNode(input: {
               tableId: "${tableId}"
@@ -344,7 +342,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         },
       }
 
-      const result = await testContext.graphqlRequest!(query, variables)
+      const result = await testContext.graphqlRequest?.(query, variables)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.searchNodes.nodes).toHaveLength(1)
@@ -393,7 +391,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         },
       }
 
-      const result = await testContext.graphqlRequest!(mutation, variables)
+      const result = await testContext.graphqlRequest?.(mutation, variables)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.batchCreateNodes.success).toBe(true)
@@ -411,7 +409,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
     beforeEach(async () => {
       const uniqueIdentifier = `attribute-test-table-${Date.now()}-${Math.random().toString(36).substring(7)}`
-      const result = await testContext.graphqlRequest!(`
+      const result = await testContext.graphqlRequest?.(`
         mutation {
           createTable(input: { identifier: "${uniqueIdentifier}" }) {
             success
@@ -439,7 +437,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       ]
 
       for (const attr of attributes) {
-        const result = await testContext.graphqlRequest!(`
+        const result = await testContext.graphqlRequest?.(`
           mutation {
             createAttribute(input: {
               tableId: "${tableId}"
@@ -473,7 +471,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
     test('should set and validate attribute values', async () => {
       // Create attributes first
-      await testContext.graphqlRequest!(`
+      await testContext.graphqlRequest?.(`
         mutation {
           createAttribute(input: {
             tableId: "${tableId}"
@@ -485,7 +483,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       `)
 
       // Create a node
-      const nodeResult = await testContext.graphqlRequest!(`
+      const nodeResult = await testContext.graphqlRequest?.(`
         mutation {
           createNode(input: {
             tableId: "${tableId}"
@@ -498,7 +496,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const nodeId = nodeResult.data.createNode.node.id
 
       // Get attribute ID
-      const attrResult = await testContext.graphqlRequest!(`
+      const attrResult = await testContext.graphqlRequest?.(`
         query {
           table(id: "${tableId}") {
             attributes {
@@ -511,7 +509,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const attributeId = attrResult.data.table.attributes[0].id
 
       // Set attribute value
-      const setResult = await testContext.graphqlRequest!(`
+      const setResult = await testContext.graphqlRequest?.(`
         mutation {
           setNodeAttribute(input: {
             nodeId: "${nodeId}"
@@ -532,15 +530,10 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         }
       `)
 
-      console.log(
-        'SetNodeAttribute result:',
-        JSON.stringify(setResult.data.setNodeAttribute, null, 2)
-      )
+      console.log('SetNodeAttribute result:', JSON.stringify(setResult.data.setNodeAttribute, null, 2))
       if (!setResult.data.setNodeAttribute.success) {
         console.log('SetNodeAttribute failed:', setResult.data.setNodeAttribute.errors)
-        throw new Error(
-          `SetNodeAttribute failed: ${JSON.stringify(setResult.data.setNodeAttribute.errors)}`
-        )
+        throw new Error(`SetNodeAttribute failed: ${JSON.stringify(setResult.data.setNodeAttribute.errors)}`)
       }
       expect(setResult.data.setNodeAttribute.success).toBe(true)
       expect(setResult.data.setNodeAttribute.nodeAttribute).toBeTruthy()
@@ -555,7 +548,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
     beforeEach(async () => {
       // Create table
-      const tableResult = await testContext.graphqlRequest!(`
+      const tableResult = await testContext.graphqlRequest?.(`
         mutation {
           createTable(input: { identifier: "relation-test-table" }) {
             table { id }
@@ -565,7 +558,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       tableId = tableResult.data.createTable.table.id
 
       // Create relation types
-      const relationTypeResult = await testContext.graphqlRequest!(`
+      const relationTypeResult = await testContext.graphqlRequest?.(`
         mutation {
           createRelationType(input: {
             identifier: "knows"
@@ -581,7 +574,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
       // Create test nodes
       for (let i = 1; i <= 4; i++) {
-        const result = await testContext.graphqlRequest!(`
+        const result = await testContext.graphqlRequest?.(`
           mutation {
             createNode(input: {
               tableId: "${tableId}"
@@ -640,7 +633,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         },
       }
 
-      const result = await testContext.graphqlRequest!(mutation, variables)
+      const result = await testContext.graphqlRequest?.(mutation, variables)
 
       expect(result.errors).toBeUndefined()
       expect(result.data.createRelation.success).toBe(true)
@@ -668,7 +661,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       ]
 
       for (const rel of relationships) {
-        await testContext.graphqlRequest!(`
+        await testContext.graphqlRequest?.(`
           mutation {
             createRelation(input: {
               sourceNodeId: "${nodeIds[rel.from]}"
@@ -718,7 +711,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query, { nodeId: nodeIds[0] })
+      const result = await testContext.graphqlRequest?.(query, { nodeId: nodeIds[0] })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.node.outgoingRelations).toHaveLength(2) // knows, manages
@@ -786,7 +779,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         },
       }
 
-      const createResult = await testContext.graphqlRequest!(createMutation, templateVariables)
+      const createResult = await testContext.graphqlRequest?.(createMutation, templateVariables)
       expect(createResult.data.createTemplate.success).toBe(true)
 
       // Execute the template
@@ -813,7 +806,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       `
 
       // First create a test table and node
-      const tableResult = await testContext.graphqlRequest!(`
+      const tableResult = await testContext.graphqlRequest?.(`
         mutation {
           createTable(input: { identifier: "template-test-table" }) {
             table { id }
@@ -822,7 +815,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       `)
       const tableId = tableResult.data.createTable.table.id
 
-      await testContext.graphqlRequest!(`
+      await testContext.graphqlRequest?.(`
         mutation {
           createNode(input: {
             tableId: "${tableId}"
@@ -839,7 +832,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         },
       }
 
-      const executeResult = await testContext.graphqlRequest!(executeMutation, executeVariables)
+      const executeResult = await testContext.graphqlRequest?.(executeMutation, executeVariables)
 
       expect(executeResult.errors).toBeUndefined()
       expect(executeResult.data.executeTemplateWithGraphQL.success).toBe(true)
@@ -858,7 +851,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(invalidQuery)
+      const result = await testContext.graphqlRequest?.(invalidQuery)
 
       expect(result.errors).toBeDefined()
       expect(result.errors[0].message).toContain('Cannot query field')
@@ -866,7 +859,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
     test.skip('should handle deeply nested operations', async () => {
       // Create complex nested structure
-      const tableResult = await testContext.graphqlRequest!(`
+      const tableResult = await testContext.graphqlRequest?.(`
         mutation {
           createTable(input: { identifier: "nested-test-table" }) {
             table { id }
@@ -876,7 +869,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const tableId = tableResult.data.createTable.table.id
 
       // Create nodes with deep nesting capability
-      const nodeResult = await testContext.graphqlRequest!(`
+      const nodeResult = await testContext.graphqlRequest?.(`
         mutation {
           createNode(input: {
             tableId: "${tableId}"
@@ -931,14 +924,14 @@ describe('Comprehensive GraphQL API Test Suite', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(deepQuery, { tableId })
+      const result = await testContext.graphqlRequest?.(deepQuery, { tableId })
 
       expect(result.errors).toBeUndefined()
       expect(result.data.table.nodes.edges[0].node.id).toBeDefined()
     })
 
     test('should handle concurrent operations safely', async () => {
-      const tableResult = await testContext.graphqlRequest!(`
+      const tableResult = await testContext.graphqlRequest?.(`
         mutation {
           createTable(input: { identifier: "concurrent-test-table" }) {
             success
@@ -953,7 +946,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
       // Execute multiple concurrent operations
       const promises = Array.from({ length: 10 }, (_, i) =>
-        testContext.graphqlRequest!(`
+        testContext.graphqlRequest?.(`
           mutation {
             createNode(input: {
               tableId: "${tableId}"
@@ -964,7 +957,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
               errors { message }
             }
           }
-        `)
+        `),
       )
 
       const results = await Promise.all(promises)
@@ -977,7 +970,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       })
 
       // Verify all nodes were created
-      const countResult = await testContext.graphqlRequest!(`
+      const countResult = await testContext.graphqlRequest?.(`
         query {
           table(id: "${tableId}") {
             tableNodeCount
@@ -991,7 +984,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
   describe('Performance and Scalability', () => {
     test.skip('should handle large dataset queries efficiently', async () => {
-      const tableResult = await testContext.graphqlRequest!(`
+      const tableResult = await testContext.graphqlRequest?.(`
         mutation {
           createTable(input: { identifier: "performance-test-table" }) {
             table { id }
@@ -1013,7 +1006,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
           },
         }))
 
-        await testContext.graphqlRequest!(`
+        await testContext.graphqlRequest?.(`
           mutation {
             batchCreateNodes(input: {
               tableId: "${tableId}"
@@ -1031,7 +1024,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       const startTime = Date.now()
 
       // Perform complex search operation
-      const searchResult = await testContext.graphqlRequest!(
+      const searchResult = await testContext.graphqlRequest?.(
         `
         query PerformanceSearch($tableId: ID!) {
           searchNodes(tableId: $tableId, searchQuery: {
@@ -1058,7 +1051,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
           }
         }
       `,
-        { tableId }
+        { tableId },
       )
 
       const endTime = Date.now()

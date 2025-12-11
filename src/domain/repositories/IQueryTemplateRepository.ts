@@ -1,8 +1,4 @@
-import type {
-  QueryTemplate,
-  QueryVariablesSchema,
-  TemplateType,
-} from '../entities/QueryTemplate.js'
+import type { QueryTemplate, QueryVariablesSchema, TemplateType } from '../entities/QueryTemplate.js'
 
 export interface QueryTemplateUpdateData {
   name?: string

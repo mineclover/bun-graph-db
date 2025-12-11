@@ -13,9 +13,7 @@ export class SchemaDiscoveryService {
   /**
    * Discover all variations of a search operation
    */
-  async discoverSearchOperations(
-    baseOperation: string = 'searchNodes'
-  ): Promise<SearchOperationDiscovery> {
+  async discoverSearchOperations(baseOperation: string = 'searchNodes'): Promise<SearchOperationDiscovery> {
     console.log(`🔍 Discovering variations of ${baseOperation}`)
 
     // The schema is now the introspection result directly
@@ -30,7 +28,7 @@ export class SchemaDiscoveryService {
     if (!queryType) {
       console.log(
         '❌ Query type not found in schema types:',
-        this.schema.types.map((t: any) => t?.name).filter(Boolean)
+        this.schema.types.map((t: any) => t?.name).filter(Boolean),
       )
       throw new Error('Query type not found in schema')
     }
@@ -50,13 +48,12 @@ export class SchemaDiscoveryService {
     // Find all search-related operations with null safety
     const searchOperations = queryType.fields.filter(
       (field: any) =>
-        field?.name &&
-        (field.name.toLowerCase().includes('search') || field.name.toLowerCase().includes('node'))
+        field?.name && (field.name.toLowerCase().includes('search') || field.name.toLowerCase().includes('node')),
     )
 
     console.log(
       `🔍 Found ${searchOperations.length} search-related operations:`,
-      searchOperations.map((op: any) => op.name)
+      searchOperations.map((op: any) => op.name),
     )
 
     const operations: SearchOperation[] = []
@@ -118,11 +115,9 @@ export class SchemaDiscoveryService {
     return {
       filterType: 'SearchNodesFilter',
       options: filterOptions,
-      basicOptions: filterOptions.filter((opt) =>
-        ['search', 'tableId', 'content'].includes(opt.name)
-      ),
+      basicOptions: filterOptions.filter((opt) => ['search', 'tableId', 'content'].includes(opt.name)),
       advancedOptions: filterOptions.filter((opt) =>
-        ['query', 'attributeFilters', 'relationFilters'].includes(opt.name)
+        ['query', 'attributeFilters', 'relationFilters'].includes(opt.name),
       ),
       examples: this.generateFilterCombinationExamples(),
       timestamp: new Date().toISOString(),
@@ -164,8 +159,7 @@ export class SchemaDiscoveryService {
             query: 'age:25..35 AND department:"Engineering" AND name:john*',
           },
         },
-        explanation:
-          'Finds people aged 25-35, in Engineering department, with names starting with "john"',
+        explanation: 'Finds people aged 25-35, in Engineering department, with names starting with "john"',
       },
 
       {
@@ -280,8 +274,7 @@ export class SchemaDiscoveryService {
 
   private assessComplexity(operation: any): 'simple' | 'medium' | 'complex' {
     const paramCount = operation.args?.length || 0
-    const hasAdvancedSorting =
-      operation.name.includes('Advanced') || operation.name.includes('Sorting')
+    const hasAdvancedSorting = operation.name.includes('Advanced') || operation.name.includes('Sorting')
     const hasCustom = operation.name.includes('Custom')
 
     if (hasCustom || hasAdvancedSorting) return 'complex'
@@ -297,11 +290,7 @@ export class SchemaDiscoveryService {
         'Complex data analysis',
         'Multi-dimensional sorting needs',
       ],
-      nodesWithSorting: [
-        'Custom business logic sorting',
-        'Dynamic ranking systems',
-        'Extensible sort capabilities',
-      ],
+      nodesWithSorting: ['Custom business logic sorting', 'Dynamic ranking systems', 'Extensible sort capabilities'],
     }
 
     return useCases[name] || ['General purpose operations']
@@ -330,11 +319,7 @@ export class SchemaDiscoveryService {
     const examples: { [key: string]: string[] } = {
       search: ['"engineer"', '"senior developer"', '"project manager"'],
       content: ['"React component"', '"API documentation"', '"user guide"'],
-      query: [
-        'age:25..35',
-        'department:"Engineering" AND location:"SF"',
-        'salary:>50000 AND experience:>=3',
-      ],
+      query: ['age:25..35', 'department:"Engineering" AND location:"SF"', 'salary:>50000 AND experience:>=3'],
       tableId: ['"person-table"', '"product-table"', '"project-table"'],
       attributeFilters: ['[{attributeId: "age", value: "30", operator: "GTE"}]'],
       relationFilters: ['[{relationTypeId: "employs", direction: "INCOMING"}]'],

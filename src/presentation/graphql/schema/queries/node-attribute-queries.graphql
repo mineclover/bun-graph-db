@@ -10,10 +10,7 @@ extend type Query {
   ): NodeAttributeAnalytics!
 
   # Attribute Value Distribution - Leverage normalized storage
-  attributeValueDistribution(
-    attributeId: ID!
-    groupBy: AttributeGroupBy = VALUE
-  ): [AttributeValueGroup!]!
+  attributeValueDistribution(attributeId: ID!, groupBy: AttributeGroupBy = VALUE): [AttributeValueGroup!]!
 
   # Cross-table attribute search - Utilize the relationship between tables
   searchNodesByAttribute(

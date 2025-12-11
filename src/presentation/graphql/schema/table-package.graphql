@@ -384,10 +384,7 @@ type TableDependencyAnalysis {
 # Extended Query type
 extend type Query {
   # Validation
-  validateTablePackage(
-    packageData: TablePackageInput!
-    options: ValidationOptionsInput
-  ): [ValidationConflict!]!
+  validateTablePackage(packageData: TablePackageInput!, options: ValidationOptionsInput): [ValidationConflict!]!
 
   # Dependency analysis
   analyzeTableDependencies(tableIdentifiers: [String!]!): [TableDependencyAnalysis!]!

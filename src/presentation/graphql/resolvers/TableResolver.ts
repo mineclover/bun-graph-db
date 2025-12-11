@@ -1,7 +1,4 @@
-import {
-  type AttributeDto,
-  fromEntities as attributeFromEntities,
-} from '@/application/dtos/AttributeDto.js'
+import { type AttributeDto, fromEntities as attributeFromEntities } from '@/application/dtos/AttributeDto.js'
 import {
   type AttributeTypeDto,
   fromEntities as attributeTypeFromEntities,
@@ -35,7 +32,7 @@ export class TableResolver extends BaseResolver {
     private readonly nodeRepository: INodeRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -49,7 +46,7 @@ export class TableResolver extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
       ],
-      'table'
+      'table',
     )
 
     return this.handleQuery(
@@ -58,21 +55,18 @@ export class TableResolver extends BaseResolver {
         return table ? tableFromEntity(table) : null
       },
       'findTableById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
-  async tableByIdentifier(
-    args: { identifier: string },
-    _context?: GraphQLContext
-  ): Promise<TableDto | null> {
+  async tableByIdentifier(args: { identifier: string }, _context?: GraphQLContext): Promise<TableDto | null> {
     this.validateArgs(
       args,
       [
         BaseResolver.validationRules.required('identifier', 'Table Identifier'),
         BaseResolver.validationRules.nonEmpty('identifier', 'Table Identifier'),
       ],
-      'tableByIdentifier'
+      'tableByIdentifier',
     )
 
     return this.handleQuery(
@@ -81,7 +75,7 @@ export class TableResolver extends BaseResolver {
         return table ? tableFromEntity(table) : null
       },
       'findTableByIdentifier',
-      { identifier: args.identifier }
+      { identifier: args.identifier },
     )
   }
 
@@ -210,14 +204,14 @@ export class TableResolver extends BaseResolver {
         }
       },
       'tableDocumentation',
-      { tableId: args.tableId, identifier: args.identifier }
+      { tableId: args.tableId, identifier: args.identifier },
     )
   }
 
   // Mutation resolvers
   async createTable(
     args: { input: CreateTableInput },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<{
     success: boolean
     data?: TableDto | null
@@ -229,7 +223,7 @@ export class TableResolver extends BaseResolver {
         BaseResolver.validationRules.required('identifier', 'Table Identifier'),
         BaseResolver.validationRules.nonEmpty('identifier', 'Table Identifier'),
       ],
-      'createTable'
+      'createTable',
     )
 
     const result = await this.handleMutation(
@@ -242,7 +236,7 @@ export class TableResolver extends BaseResolver {
         return useCaseResult.table
       },
       'createTable',
-      { input: args.input }
+      { input: args.input },
     )
 
     return {
@@ -353,7 +347,7 @@ export class TableResolver extends BaseResolver {
       },
       'nodeCount',
       'Table',
-      { tableId: table.id }
+      { tableId: table.id },
     )
     return result ?? 0
   }
@@ -365,7 +359,7 @@ export class TableResolver extends BaseResolver {
       },
       'attributeCount',
       'Table',
-      { tableId: table.id }
+      { tableId: table.id },
     )
     return result ?? 0
   }
@@ -379,7 +373,7 @@ export class TableResolver extends BaseResolver {
       },
       'attributes',
       'Table',
-      { tableId: table.id }
+      { tableId: table.id },
     )
     return result ?? []
   }
@@ -394,7 +388,7 @@ export class TableResolver extends BaseResolver {
       },
       'attributeTypes',
       'Table',
-      { tableId: table.id }
+      { tableId: table.id },
     )
     return result ?? []
   }
@@ -407,7 +401,7 @@ export class TableResolver extends BaseResolver {
       },
       'tableNodes',
       'Table',
-      { tableId: table.id }
+      { tableId: table.id },
     )
     return result ?? []
   }

@@ -109,9 +109,7 @@ describe('Health Check Tool Integration Tests', () => {
           expect(healthData.data.healthCheck.version).toBeDefined()
 
           // Health status should be healthy
-          expect(['healthy', 'ok', 'running']).toContain(
-            healthData.data.healthCheck.status.toLowerCase()
-          )
+          expect(['healthy', 'ok', 'running']).toContain(healthData.data.healthCheck.status.toLowerCase())
 
           // Should not be an error
           expect(data.result.isError).toBeFalsy()
@@ -337,9 +335,7 @@ describe('Health Check Tool Integration Tests', () => {
 
           // Both should have the same health check data
           expect(mcpHealthData.data.healthCheck.status).toBe(graphqlData.data.healthCheck.status)
-          expect(mcpHealthData.data.healthCheck.database).toBe(
-            graphqlData.data.healthCheck.database
-          )
+          expect(mcpHealthData.data.healthCheck.database).toBe(graphqlData.data.healthCheck.database)
           expect(mcpHealthData.data.healthCheck.version).toBe(graphqlData.data.healthCheck.version)
         }
       } catch (error) {

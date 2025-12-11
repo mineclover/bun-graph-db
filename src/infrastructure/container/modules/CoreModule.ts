@@ -17,7 +17,7 @@ export function registerCoreModule(container: DIContainer): void {
       const envConfig = (await c.resolve(CommonTokens.ENVIRONMENT_CONFIG)) as any
       return envConfig.database
     },
-    [CommonTokens.ENVIRONMENT_CONFIG]
+    [CommonTokens.ENVIRONMENT_CONFIG],
   )
 
   // Logger (removed EnvironmentConfig dependency to break circular reference)
@@ -28,6 +28,6 @@ export function registerCoreModule(container: DIContainer): void {
       const { LogLevel } = await import('@/application/ports/ILogger.js')
       return new ConsoleLogger(LogLevel.INFO)
     },
-    []
+    [],
   )
 }

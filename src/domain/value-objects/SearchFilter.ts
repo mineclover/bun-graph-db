@@ -57,12 +57,7 @@ export class SearchQueryBuilder {
   private limit?: number
   private offset?: number
 
-  addFilter(
-    field: string,
-    operator: SearchOperator,
-    value: any,
-    valueType: string = 'string'
-  ): this {
+  addFilter(field: string, operator: SearchOperator, value: any, valueType: string = 'string'): this {
     const filter: SearchFilter = { field, operator, value, valueType: valueType as any }
 
     if (this.conditions.length === 0) {

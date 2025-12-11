@@ -59,7 +59,7 @@ export class TemplateFileRoutes {
           {
             status: 400,
             headers: { 'Content-Type': 'application/json' },
-          }
+          },
         )
       }
 
@@ -78,7 +78,7 @@ export class TemplateFileRoutes {
           {
             status: 403,
             headers: { 'Content-Type': 'application/json' },
-          }
+          },
         )
       }
 
@@ -104,10 +104,7 @@ export class TemplateFileRoutes {
           JSON.stringify({
             path: filePath,
             name:
-              templateName ||
-              (extractedName || fileName)
-                .replace(/-/g, ' ')
-                .replace(/\b\w/g, (l) => l.toUpperCase()),
+              templateName || (extractedName || fileName).replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
             fileName,
             lastModified: fileStats.mtime.toISOString(),
             size: fileStats.size,
@@ -127,7 +124,7 @@ export class TemplateFileRoutes {
               'Access-Control-Allow-Methods': 'GET',
               'Access-Control-Allow-Headers': 'Content-Type',
             },
-          }
+          },
         )
       } catch (fileError) {
         logger.warn('Failed to read template file', { filePath, ...toErrorMeta(fileError) })
@@ -141,7 +138,7 @@ export class TemplateFileRoutes {
           {
             status: 404,
             headers: { 'Content-Type': 'application/json' },
-          }
+          },
         )
       }
     } catch (error) {
@@ -156,7 +153,7 @@ export class TemplateFileRoutes {
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
   }

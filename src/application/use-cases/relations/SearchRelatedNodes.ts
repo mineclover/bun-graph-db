@@ -48,7 +48,7 @@ export interface IGraphRepository {
     startNodeIds: string[],
     endNodeIds: string[],
     maxDepth?: number,
-    relationTypes?: string[]
+    relationTypes?: string[],
   ): Promise<
     Array<{
       startNodeId: string
@@ -62,7 +62,7 @@ export interface IGraphRepository {
     tableId: TableId,
     nodeId: string,
     direction: RelationDirection,
-    relationTypes?: string[]
+    relationTypes?: string[],
   ): Promise<
     Array<{
       nodeId: string
@@ -78,7 +78,7 @@ export class SearchRelatedNodesUseCase {
     readonly _relationRepository: INodeRelationRepository,
     private readonly graphRepository: IGraphRepository,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(input: SearchRelatedNodesInput): Promise<SearchRelatedNodesOutput> {
@@ -108,10 +108,7 @@ export class SearchRelatedNodesUseCase {
       }
 
       // Execute graph search
-      const result = await this.graphRepository.searchRelatedNodes(
-        input.tableId as TableId,
-        graphQuery
-      )
+      const result = await this.graphRepository.searchRelatedNodes(input.tableId as TableId, graphQuery)
 
       // Process path queries if specified
       const paths: Array<{
@@ -129,7 +126,7 @@ export class SearchRelatedNodesUseCase {
               pathQuery.startNodeIds,
               pathQuery.endNodeIds,
               pathQuery.maxDepth,
-              pathQuery.relationTypes
+              pathQuery.relationTypes,
             )
             paths.push(...queryPaths)
           }
@@ -137,9 +134,7 @@ export class SearchRelatedNodesUseCase {
       }
 
       // Convert to DTOs
-      const nodeDtos = (result.data || []).map((item: any) =>
-        nodeFromEntity(item.node, item.attributes || {})
-      )
+      const nodeDtos = (result.data || []).map((item: any) => nodeFromEntity(item.node, item.attributes || {}))
 
       this.logger.info('Related nodes search completed', {
         tableId: input.tableId,
@@ -177,7 +172,7 @@ export class SearchRelatedNodesUseCase {
     tableId: string,
     nodeId: string,
     direction: RelationDirection = RelationDirection.INCOMING,
-    relationTypes?: string[]
+    relationTypes?: string[],
   ): Promise<
     Array<{
       nodeId: string
@@ -200,12 +195,7 @@ export class SearchRelatedNodesUseCase {
     }
 
     try {
-      return await this.graphRepository.getDependencyChain(
-        tableId as TableId,
-        nodeId,
-        direction,
-        relationTypes
-      )
+      return await this.graphRepository.getDependencyChain(tableId as TableId, nodeId, direction, relationTypes)
     } catch (error) {
       this.logger.error('Failed to get dependencies', {
         tableId,

@@ -26,12 +26,9 @@ interface SystemInitializationInput {
 export class SystemResolver extends BaseResolver {
   protected logger = {
     info: (msg: string, data?: Record<string, unknown>) => console.log(`[INFO] ${msg}`, data || ''),
-    warn: (msg: string, data?: Record<string, unknown>) =>
-      console.warn(`[WARN] ${msg}`, data || ''),
-    error: (msg: string, data?: Record<string, unknown>) =>
-      console.error(`[ERROR] ${msg}`, data || ''),
-    debug: (msg: string, data?: Record<string, unknown>) =>
-      console.debug(`[DEBUG] ${msg}`, data || ''),
+    warn: (msg: string, data?: Record<string, unknown>) => console.warn(`[WARN] ${msg}`, data || ''),
+    error: (msg: string, data?: Record<string, unknown>) => console.error(`[ERROR] ${msg}`, data || ''),
+    debug: (msg: string, data?: Record<string, unknown>) => console.debug(`[DEBUG] ${msg}`, data || ''),
   }
 
   private systemInitializationUseCase: SystemInitializationUseCase
@@ -56,9 +53,7 @@ export class SystemResolver extends BaseResolver {
         options: input.options
           ? {
               ...input.options,
-              mode: input.options.initMode
-                ? (input.options.initMode.toLowerCase() as any)
-                : 'development',
+              mode: input.options.initMode ? (input.options.initMode.toLowerCase() as any) : 'development',
             }
           : undefined,
       }

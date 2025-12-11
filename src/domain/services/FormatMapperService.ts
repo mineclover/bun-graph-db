@@ -29,11 +29,7 @@ import type {
   SimpleMappingDefinition,
   TransformType,
 } from '../../core/types/FormatMapping.js'
-import {
-  isNodeLevelMapping,
-  normalizeMapping,
-  PRESET_MAPPINGS,
-} from '../../core/types/FormatMapping.js'
+import { isNodeLevelMapping, normalizeMapping, PRESET_MAPPINGS } from '../../core/types/FormatMapping.js'
 import type { FlatJsonExport, FlatNodePatch } from '../../core/types/JsonExport.js'
 
 // =============================================================================
@@ -41,10 +37,7 @@ import type { FlatJsonExport, FlatNodePatch } from '../../core/types/JsonExport.
 // =============================================================================
 
 /** Path segment types for JSONPath parsing */
-type PathSegment =
-  | { type: 'property'; key: string }
-  | { type: 'index'; index: number }
-  | { type: 'wildcard' }
+type PathSegment = { type: 'property'; key: string } | { type: 'index'; index: number } | { type: 'wildcard' }
 
 /** Export statistics tracking */
 interface ExportStats {
@@ -122,10 +115,7 @@ export class FormatMapperService {
   /**
    * Transform Flat JSON to custom format
    */
-  transformToCustomFormat(
-    flatData: FlatJsonExport,
-    options: ExportTransformOptions
-  ): FormatExportResult {
+  transformToCustomFormat(flatData: FlatJsonExport, options: ExportTransformOptions): FormatExportResult {
     const errors: string[] = []
     const warnings: string[] = []
     const stats = createExportStats()
@@ -174,9 +164,7 @@ export class FormatMapperService {
           }
 
           // Apply transform if specified
-          const transformedValue = mapping.transform
-            ? this.applyTransform(sourceValue, mapping.transform)
-            : sourceValue
+          const transformedValue = mapping.transform ? this.applyTransform(sourceValue, mapping.transform) : sourceValue
 
           if (mapping.transform) {
             stats.transformedValues++
@@ -209,8 +197,7 @@ export class FormatMapperService {
       return {
         success: true,
         data: output,
-        json:
-          options.prettyPrint !== false ? JSON.stringify(output, null, 2) : JSON.stringify(output),
+        json: options.prettyPrint !== false ? JSON.stringify(output, null, 2) : JSON.stringify(output),
         itemCount: flatData.nodes?.length || 0,
         stats,
         errors,
@@ -265,11 +252,7 @@ export class FormatMapperService {
 
           if (sourceValue === undefined) {
             if (mapping.defaultValue !== undefined) {
-              this.setValueByPath(
-                flatData as unknown as Record<string, unknown>,
-                mapping.target,
-                mapping.defaultValue
-              )
+              this.setValueByPath(flatData as unknown as Record<string, unknown>, mapping.target, mapping.defaultValue)
               stats.mappedFields++
             } else {
               stats.skippedFields++
@@ -278,20 +261,14 @@ export class FormatMapperService {
           }
 
           // Apply transform if specified
-          const transformedValue = mapping.transform
-            ? this.applyTransform(sourceValue, mapping.transform)
-            : sourceValue
+          const transformedValue = mapping.transform ? this.applyTransform(sourceValue, mapping.transform) : sourceValue
 
           if (mapping.transform) {
             stats.transformedValues++
           }
 
           // Set value in flat data
-          this.setValueByPath(
-            flatData as unknown as Record<string, unknown>,
-            mapping.target,
-            transformedValue
-          )
+          this.setValueByPath(flatData as unknown as Record<string, unknown>, mapping.target, transformedValue)
           stats.mappedFields++
         } catch (err) {
           const message = getErrorMessage(err)
@@ -347,9 +324,7 @@ export class FormatMapperService {
       const template = normalizeMapping(options.template)
 
       // Find node ID mapping
-      const idMapping = template.mappings.find(
-        (m) => m.source === '$.nodes[*].id' || m.source.endsWith('.id')
-      )
+      const idMapping = template.mappings.find((m) => m.source === '$.nodes[*].id' || m.source.endsWith('.id'))
 
       if (!idMapping) {
         return {
@@ -418,9 +393,7 @@ export class FormatMapperService {
           if (!sourceField) continue
 
           // Apply transform
-          const transformedValue = mapping.transform
-            ? this.applyTransform(value, mapping.transform)
-            : value
+          const transformedValue = mapping.transform ? this.applyTransform(value, mapping.transform) : value
 
           if (mapping.transform) {
             stats.transformedValues++
@@ -465,7 +438,7 @@ export class FormatMapperService {
    */
   validateMapping(
     template: FormatMappingTemplate | SimpleMappingDefinition,
-    sourceData?: FlatJsonExport
+    sourceData?: FlatJsonExport,
   ): MappingValidationResult {
     const errors: MappingValidationError[] = []
     const warnings: MappingValidationWarning[] = []
@@ -552,11 +525,7 @@ export class FormatMapperService {
     }
 
     // Remove leading $ if present
-    const normalizedPath = path.startsWith('$.')
-      ? path.slice(2)
-      : path.startsWith('$')
-        ? path.slice(1)
-        : path
+    const normalizedPath = path.startsWith('$.') ? path.slice(2) : path.startsWith('$') ? path.slice(1) : path
 
     // Handle special case for array length
     if (normalizedPath.endsWith('.length')) {
@@ -606,11 +575,7 @@ export class FormatMapperService {
    */
   private setValueByPath(obj: Record<string, unknown>, path: string, value: unknown): void {
     // Remove leading $ if present
-    const normalizedPath = path.startsWith('$.')
-      ? path.slice(2)
-      : path.startsWith('$')
-        ? path.slice(1)
-        : path
+    const normalizedPath = path.startsWith('$.') ? path.slice(2) : path.startsWith('$') ? path.slice(1) : path
 
     const segments = this.parsePathSegments(normalizedPath)
     let current: Record<string, unknown> = obj
@@ -622,15 +587,13 @@ export class FormatMapperService {
       if (segment.type === 'property') {
         if (current[segment.key] === undefined) {
           // Create array or object based on next segment
-          current[segment.key] =
-            nextSegment.type === 'index' || nextSegment.type === 'wildcard' ? [] : {}
+          current[segment.key] = nextSegment.type === 'index' || nextSegment.type === 'wildcard' ? [] : {}
         }
         current = current[segment.key] as Record<string, unknown>
       } else if (segment.type === 'index') {
         const arr = current as unknown as unknown[]
         if (arr[segment.index] === undefined) {
-          arr[segment.index] =
-            nextSegment.type === 'index' || nextSegment.type === 'wildcard' ? [] : {}
+          arr[segment.index] = nextSegment.type === 'index' || nextSegment.type === 'wildcard' ? [] : {}
         }
         current = arr[segment.index] as Record<string, unknown>
       } else if (segment.type === 'wildcard') {
@@ -795,7 +758,7 @@ export class FormatMapperService {
     options?: {
       includeExamples?: boolean
       language?: 'ko' | 'en'
-    }
+    },
   ): string {
     const normalized = normalizeMapping(template)
     const lang = options?.language ?? 'ko'
@@ -828,14 +791,13 @@ export class FormatMapperService {
     lines.push(
       lang === 'ko'
         ? '| 출력 필드 | 소스 경로 | Transform | 기본값 |'
-        : '| Output Field | Source Path | Transform | Default |'
+        : '| Output Field | Source Path | Transform | Default |',
     )
     lines.push('|------------|------------|-----------|---------|')
 
     for (const mapping of normalized.mappings) {
       const transform = mapping.transform ?? '-'
-      const defaultVal =
-        mapping.defaultValue !== undefined ? `\`${JSON.stringify(mapping.defaultValue)}\`` : '-'
+      const defaultVal = mapping.defaultValue !== undefined ? `\`${JSON.stringify(mapping.defaultValue)}\`` : '-'
       lines.push(`| \`${mapping.target}\` | \`${mapping.source}\` | ${transform} | ${defaultVal} |`)
     }
     lines.push('')
@@ -852,16 +814,12 @@ export class FormatMapperService {
 
     // NodeLevelMapping 간소화 문법 설명
     if (isNodeLevelMapping(template)) {
-      lines.push(
-        lang === 'ko'
-          ? '## 간소화 문법 (NodeLevelMapping)'
-          : '## Simplified Syntax (NodeLevelMapping)'
-      )
+      lines.push(lang === 'ko' ? '## 간소화 문법 (NodeLevelMapping)' : '## Simplified Syntax (NodeLevelMapping)')
       lines.push('')
       lines.push(
         lang === 'ko'
           ? '이 매핑은 NodeLevelMapping 문법으로 정의되었습니다:'
-          : 'This mapping was defined using NodeLevelMapping syntax:'
+          : 'This mapping was defined using NodeLevelMapping syntax:',
       )
       lines.push('')
       lines.push('```typescript')
@@ -876,17 +834,17 @@ export class FormatMapperService {
       lines.push(
         lang === 'ko'
           ? '| (없음) | 코어 필드 | `title` → `$.nodes[*].title` |'
-          : '| (none) | Core field | `title` → `$.nodes[*].title` |'
+          : '| (none) | Core field | `title` → `$.nodes[*].title` |',
       )
       lines.push(
         lang === 'ko'
           ? '| `@` | attributes 필드 | `@email` → `$.nodes[*].attributes.email` |'
-          : '| `@` | Attribute field | `@email` → `$.nodes[*].attributes.email` |'
+          : '| `@` | Attribute field | `@email` → `$.nodes[*].attributes.email` |',
       )
       lines.push(
         lang === 'ko'
           ? '| `@@` | 시스템 필드 | `@@createdAt` → `$.nodes[*].createdAt` |'
-          : '| `@@` | System field | `@@createdAt` → `$.nodes[*].createdAt` |'
+          : '| `@@` | System field | `@@createdAt` → `$.nodes[*].createdAt` |',
       )
       lines.push('')
     }
@@ -982,9 +940,7 @@ export class FormatMapperService {
     lines.push(lang === 'ko' ? '# 프리셋 매핑 가이드' : '# Preset Mappings Guide')
     lines.push('')
     lines.push(
-      lang === 'ko'
-        ? '자주 사용되는 내장 매핑 템플릿입니다.'
-        : 'Built-in mapping templates for common use cases.'
+      lang === 'ko' ? '자주 사용되는 내장 매핑 템플릿입니다.' : 'Built-in mapping templates for common use cases.',
     )
     lines.push('')
 
@@ -1027,11 +983,11 @@ export class FormatMapperService {
   async writeGuideToFile(
     content: string,
     filename: string,
-    outputDir = 'generated'
+    outputDir = 'generated',
   ): Promise<{ success: boolean; path: string; error?: string }> {
     try {
-      const fs = await import('fs/promises')
-      const path = await import('path')
+      const fs = await import('node:fs/promises')
+      const path = await import('node:path')
 
       // Ensure output directory exists
       await fs.mkdir(outputDir, { recursive: true })

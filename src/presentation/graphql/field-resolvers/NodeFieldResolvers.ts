@@ -16,7 +16,7 @@ export class NodeFieldResolvers extends BaseResolver {
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -29,7 +29,7 @@ export class NodeFieldResolvers extends BaseResolver {
       },
       'table',
       'Node',
-      { nodeId: parent.id, tableId: parent.tableId }
+      { nodeId: parent.id, tableId: parent.tableId },
     )
   }
 
@@ -40,7 +40,7 @@ export class NodeFieldResolvers extends BaseResolver {
       },
       'attributes',
       'Node',
-      { nodeId: parent.id }
+      { nodeId: parent.id },
     )
   }
 
@@ -51,7 +51,7 @@ export class NodeFieldResolvers extends BaseResolver {
       },
       'attributeCount',
       'Node',
-      { nodeId: parent.id }
+      { nodeId: parent.id },
     )
   }
 
@@ -62,7 +62,7 @@ export class NodeFieldResolvers extends BaseResolver {
       },
       'outgoingRelations',
       'Node',
-      { nodeId: parent.id }
+      { nodeId: parent.id },
     )
   }
 
@@ -73,7 +73,7 @@ export class NodeFieldResolvers extends BaseResolver {
       },
       'incomingRelations',
       'Node',
-      { nodeId: parent.id }
+      { nodeId: parent.id },
     )
   }
 
@@ -86,7 +86,7 @@ export class NodeFieldResolvers extends BaseResolver {
       },
       'relationCount',
       'Node',
-      { nodeId: parent.id }
+      { nodeId: parent.id },
     )
   }
 
@@ -98,7 +98,7 @@ export class NodeFieldResolvers extends BaseResolver {
       direction?: 'OUTGOING' | 'INCOMING' | 'BOTH'
       relationTypes?: string[]
     },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     this.logger.info('connectedNodes field resolver called', {
       parentId: parent.id,
@@ -142,18 +142,14 @@ export class NodeFieldResolvers extends BaseResolver {
     }
   }
 
-  async shortestPath(
-    parent: NodeParent,
-    args: { targetNodeId: string; maxDepth?: number },
-    _context?: GraphQLContext
-  ) {
+  async shortestPath(parent: NodeParent, args: { targetNodeId: string; maxDepth?: number }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
         BaseResolver.validationRules.required('targetNodeId', 'Target Node ID'),
         BaseResolver.validationRules.nonEmpty('targetNodeId', 'Target Node ID'),
       ],
-      'shortestPath'
+      'shortestPath',
     )
 
     return this.handleFieldResolution(
@@ -166,14 +162,14 @@ export class NodeFieldResolvers extends BaseResolver {
       },
       'shortestPath',
       'Node',
-      { sourceNodeId: parent.id, targetNodeId: args.targetNodeId }
+      { sourceNodeId: parent.id, targetNodeId: args.targetNodeId },
     )
   }
 
   async neighborsByRelationType(
     parent: NodeParent,
     args: { relationTypes: string[]; direction?: 'OUTGOING' | 'INCOMING' | 'BOTH' },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     this.validateArgs(
       args,
@@ -181,7 +177,7 @@ export class NodeFieldResolvers extends BaseResolver {
         BaseResolver.validationRules.required('relationTypes', 'Relation Types'),
         BaseResolver.validationRules.nonEmpty('relationTypes', 'Relation Types'),
       ],
-      'neighborsByRelationType'
+      'neighborsByRelationType',
     )
 
     const direction = args.direction || 'BOTH'
@@ -193,8 +189,7 @@ export class NodeFieldResolvers extends BaseResolver {
         // For each relation type, find neighbors
         for (const relationTypeIdentifier of args.relationTypes) {
           // Get relation type by identifier
-          const relationType =
-            await this.relationTypeRepository.findByIdentifier(relationTypeIdentifier)
+          const relationType = await this.relationTypeRepository.findByIdentifier(relationTypeIdentifier)
           if (!relationType) continue
 
           const relationTypeId = relationType.getId()
@@ -203,40 +198,30 @@ export class NodeFieldResolvers extends BaseResolver {
           if (direction === 'OUTGOING' || direction === 'BOTH') {
             const outgoing = await this.nodeRelationRepository.findBySourceNodeIdAndRelationType(
               parent.id,
-              relationTypeId
+              relationTypeId,
             )
-            neighborIds.push(
-              ...outgoing
-                .map((rel) => rel.getTargetNodeId())
-                .filter((id): id is string => id !== null)
-            )
+            neighborIds.push(...outgoing.map((rel) => rel.getTargetNodeId()).filter((id): id is string => id !== null))
           }
 
           // Get incoming relations
           if (direction === 'INCOMING' || direction === 'BOTH') {
             const incoming = await this.nodeRelationRepository.findByTargetNodeIdAndRelationType(
               parent.id,
-              relationTypeId
+              relationTypeId,
             )
-            neighborIds.push(
-              ...incoming
-                .map((rel) => rel.getSourceNodeId())
-                .filter((id): id is string => id !== null)
-            )
+            neighborIds.push(...incoming.map((rel) => rel.getSourceNodeId()).filter((id): id is string => id !== null))
           }
         }
 
         // Get unique neighbor IDs and fetch nodes
         const uniqueNeighborIds = [...new Set(neighborIds)]
-        const neighbors = await Promise.all(
-          uniqueNeighborIds.map((id) => this.nodeRepository.findById(id))
-        )
+        const neighbors = await Promise.all(uniqueNeighborIds.map((id) => this.nodeRepository.findById(id)))
 
         return neighbors.filter((node) => node !== null)
       },
       'neighborsByRelationType',
       'Node',
-      { nodeId: parent.id, relationTypes: args.relationTypes, direction }
+      { nodeId: parent.id, relationTypes: args.relationTypes, direction },
     )
   }
 
@@ -248,7 +233,7 @@ export class NodeFieldResolvers extends BaseResolver {
     relationTypes: string[] | undefined,
     visited: Set<string>,
     result: any[],
-    currentDepth: number
+    currentDepth: number,
   ): Promise<void> {
     if (remainingDepth <= 0 || visited.has(nodeId)) return
 
@@ -282,10 +267,7 @@ export class NodeFieldResolvers extends BaseResolver {
 
     // 다음 레벨 탐색
     for (const relation of filteredRelations) {
-      const nextNodeId =
-        relation.getSourceNodeId() === nodeId
-          ? relation.getTargetNodeId()
-          : relation.getSourceNodeId()
+      const nextNodeId = relation.getSourceNodeId() === nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
 
       await this._traverseGraph(
         nextNodeId,
@@ -294,7 +276,7 @@ export class NodeFieldResolvers extends BaseResolver {
         relationTypes,
         visited,
         result,
-        currentDepth + 1
+        currentDepth + 1,
       )
     }
   }
@@ -302,7 +284,7 @@ export class NodeFieldResolvers extends BaseResolver {
   private async _findShortestPath(
     sourceId: string,
     targetId: string,
-    maxDepth: number
+    maxDepth: number,
   ): Promise<{ nodes: any[]; relations: any[]; distance: number } | null> {
     const queue: Array<{ nodeId: string; path: string[]; relations: any[]; depth: number }> = [
       { nodeId: sourceId, path: [sourceId], relations: [], depth: 0 },
@@ -336,9 +318,7 @@ export class NodeFieldResolvers extends BaseResolver {
 
       for (const relation of allRelations) {
         const nextNodeId =
-          relation.getSourceNodeId() === current.nodeId
-            ? relation.getTargetNodeId()
-            : relation.getSourceNodeId()
+          relation.getSourceNodeId() === current.nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
 
         if (nextNodeId && !visited.has(nextNodeId) && !current.path.includes(nextNodeId)) {
           queue.push({

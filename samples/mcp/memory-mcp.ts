@@ -48,7 +48,7 @@ class KnowledgeGraphManager {
           if (item.type === 'relation') graph.relations.push(item as Relation)
           return graph
         },
-        { entities: [], relations: [] }
+        { entities: [], relations: [] },
       )
     } catch (error) {
       if (error instanceof Error && 'code' in error && (error as any).code === 'ENOENT') {
@@ -66,7 +66,7 @@ class KnowledgeGraphManager {
           name: e.name,
           entityType: e.entityType,
           observations: e.observations,
-        })
+        }),
       ),
       ...graph.relations.map((r) =>
         JSON.stringify({
@@ -74,7 +74,7 @@ class KnowledgeGraphManager {
           from: r.from,
           to: r.to,
           relationType: r.relationType,
-        })
+        }),
       ),
     ]
     await fs.writeFile(MEMORY_FILE_PATH, lines.join('\n'))
@@ -82,9 +82,7 @@ class KnowledgeGraphManager {
 
   async createEntities(entities: Entity[]): Promise<Entity[]> {
     const graph = await this.loadGraph()
-    const newEntities = entities.filter(
-      (e) => !graph.entities.some((existingEntity) => existingEntity.name === e.name)
-    )
+    const newEntities = entities.filter((e) => !graph.entities.some((existingEntity) => existingEntity.name === e.name))
     graph.entities.push(...newEntities)
     await this.saveGraph(graph)
     return newEntities
@@ -98,8 +96,8 @@ class KnowledgeGraphManager {
           (existingRelation) =>
             existingRelation.from === r.from &&
             existingRelation.to === r.to &&
-            existingRelation.relationType === r.relationType
-        )
+            existingRelation.relationType === r.relationType,
+        ),
     )
     graph.relations.push(...newRelations)
     await this.saveGraph(graph)
@@ -107,7 +105,7 @@ class KnowledgeGraphManager {
   }
 
   async addObservations(
-    observations: { entityName: string; contents: string[] }[]
+    observations: { entityName: string; contents: string[] }[],
   ): Promise<{ entityName: string; addedObservations: string[] }[]> {
     const graph = await this.loadGraph()
     const results = observations.map((o) => {
@@ -126,15 +124,11 @@ class KnowledgeGraphManager {
   async deleteEntities(entityNames: string[]): Promise<void> {
     const graph = await this.loadGraph()
     graph.entities = graph.entities.filter((e) => !entityNames.includes(e.name))
-    graph.relations = graph.relations.filter(
-      (r) => !entityNames.includes(r.from) && !entityNames.includes(r.to)
-    )
+    graph.relations = graph.relations.filter((r) => !entityNames.includes(r.from) && !entityNames.includes(r.to))
     await this.saveGraph(graph)
   }
 
-  async deleteObservations(
-    deletions: { entityName: string; observations: string[] }[]
-  ): Promise<void> {
+  async deleteObservations(deletions: { entityName: string; observations: string[] }[]): Promise<void> {
     const graph = await this.loadGraph()
     deletions.forEach((d) => {
       const entity = graph.entities.find((e) => e.name === d.entityName)
@@ -151,10 +145,8 @@ class KnowledgeGraphManager {
       (r) =>
         !relations.some(
           (delRelation) =>
-            r.from === delRelation.from &&
-            r.to === delRelation.to &&
-            r.relationType === delRelation.relationType
-        )
+            r.from === delRelation.from && r.to === delRelation.to && r.relationType === delRelation.relationType,
+        ),
     )
     await this.saveGraph(graph)
   }
@@ -172,7 +164,7 @@ class KnowledgeGraphManager {
       (e) =>
         e.name.toLowerCase().includes(query.toLowerCase()) ||
         e.entityType.toLowerCase().includes(query.toLowerCase()) ||
-        e.observations.some((o) => o.toLowerCase().includes(query.toLowerCase()))
+        e.observations.some((o) => o.toLowerCase().includes(query.toLowerCase())),
     )
 
     // Create a Set of filtered entity names for quick lookup
@@ -180,7 +172,7 @@ class KnowledgeGraphManager {
 
     // Filter relations to only include those between filtered entities
     const filteredRelations = graph.relations.filter(
-      (r) => filteredEntityNames.has(r.from) && filteredEntityNames.has(r.to)
+      (r) => filteredEntityNames.has(r.from) && filteredEntityNames.has(r.to),
     )
 
     const filteredGraph: KnowledgeGraph = {
@@ -202,7 +194,7 @@ class KnowledgeGraphManager {
 
     // Filter relations to only include those between filtered entities
     const filteredRelations = graph.relations.filter(
-      (r) => filteredEntityNames.has(r.from) && filteredEntityNames.has(r.to)
+      (r) => filteredEntityNames.has(r.from) && filteredEntityNames.has(r.to),
     )
 
     const filteredGraph: KnowledgeGraph = {
@@ -226,7 +218,7 @@ const server = new Server(
     capabilities: {
       tools: {},
     },
-  }
+  },
 )
 
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -323,8 +315,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'delete_entities',
-        description:
-          'Delete multiple entities and their associated relations from the knowledge graph',
+        description: 'Delete multiple entities and their associated relations from the knowledge graph',
         inputSchema: {
           type: 'object',
           properties: {
@@ -416,8 +407,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {
             query: {
               type: 'string',
-              description:
-                'The search query to match against entity names, types, and observation content',
+              description: 'The search query to match against entity names, types, and observation content',
             },
           },
           required: ['query'],
@@ -449,9 +439,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   if (name === 'read_graph') {
     return {
-      content: [
-        { type: 'text', text: JSON.stringify(await knowledgeGraphManager.readGraph(), null, 2) },
-      ],
+      content: [{ type: 'text', text: JSON.stringify(await knowledgeGraphManager.readGraph(), null, 2) }],
     }
   }
 
@@ -465,11 +453,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              await knowledgeGraphManager.createEntities(args.entities as Entity[]),
-              null,
-              2
-            ),
+            text: JSON.stringify(await knowledgeGraphManager.createEntities(args.entities as Entity[]), null, 2),
           },
         ],
       }
@@ -478,11 +462,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              await knowledgeGraphManager.createRelations(args.relations as Relation[]),
-              null,
-              2
-            ),
+            text: JSON.stringify(await knowledgeGraphManager.createRelations(args.relations as Relation[]), null, 2),
           },
         ],
       }
@@ -493,10 +473,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: 'text',
             text: JSON.stringify(
               await knowledgeGraphManager.addObservations(
-                args.observations as { entityName: string; contents: string[] }[]
+                args.observations as { entityName: string; contents: string[] }[],
               ),
               null,
-              2
+              2,
             ),
           },
         ],
@@ -505,9 +485,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       await knowledgeGraphManager.deleteEntities(args.entityNames as string[])
       return { content: [{ type: 'text', text: 'Entities deleted successfully' }] }
     case 'delete_observations':
-      await knowledgeGraphManager.deleteObservations(
-        args.deletions as { entityName: string; observations: string[] }[]
-      )
+      await knowledgeGraphManager.deleteObservations(args.deletions as { entityName: string; observations: string[] }[])
       return { content: [{ type: 'text', text: 'Observations deleted successfully' }] }
     case 'delete_relations':
       await knowledgeGraphManager.deleteRelations(args.relations as Relation[])
@@ -517,11 +495,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              await knowledgeGraphManager.searchNodes(args.query as string),
-              null,
-              2
-            ),
+            text: JSON.stringify(await knowledgeGraphManager.searchNodes(args.query as string), null, 2),
           },
         ],
       }
@@ -530,11 +504,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(
-              await knowledgeGraphManager.openNodes(args.names as string[]),
-              null,
-              2
-            ),
+            text: JSON.stringify(await knowledgeGraphManager.openNodes(args.names as string[]), null, 2),
           },
         ],
       }

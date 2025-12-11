@@ -231,9 +231,9 @@ describe('FormatMapperService', () => {
       expect(result.success).toBe(true)
       expect(result.patches).toBeDefined()
       expect(result.patches).toHaveLength(2)
-      expect(result.patches![0].id).toBe('1')
-      expect(result.patches![0].title).toBe('Alice Updated')
-      expect(result.patches![0].content).toBe('Senior Developer')
+      expect(result.patches?.[0].id).toBe('1')
+      expect(result.patches?.[0].title).toBe('Alice Updated')
+      expect(result.patches?.[0].content).toBe('Senior Developer')
     })
 
     it('should fail without ID mapping', () => {

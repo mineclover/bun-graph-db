@@ -75,11 +75,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
       })),
     } as any
 
-    useCase = new ExecuteTemplateWithGraphQLUseCase(
-      mockExecuteQueryTemplateUseCase,
-      testSchema,
-      mockLogger
-    )
+    useCase = new ExecuteTemplateWithGraphQLUseCase(mockExecuteQueryTemplateUseCase, testSchema, mockLogger)
   })
 
   describe('Template Preparation', () => {
@@ -110,7 +106,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
 
       expect(result.success).toBe(false)
       expect(result.errors).toBeDefined()
-      expect(result.errors![0].message).toContain('Template not found')
+      expect(result.errors?.[0].message).toContain('Template not found')
       expect(mockLogger.error).toHaveBeenCalled()
     })
   })
@@ -160,8 +156,8 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
 
       expect(result.success).toBe(false)
       expect(result.errors).toBeDefined()
-      expect(result.errors![0].message).toContain('Invalid GraphQL query')
-      expect(result.errors![0].extensions?.code).toBe('GRAPHQL_PARSE_ERROR')
+      expect(result.errors?.[0].message).toContain('Invalid GraphQL query')
+      expect(result.errors?.[0].extensions?.code).toBe('GRAPHQL_PARSE_ERROR')
       expect(mockLogger.error).toHaveBeenCalledWith('GraphQL query parse error', expect.any(Object))
     })
   })
@@ -191,10 +187,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
       expect(result.data.users).toBeDefined()
       expect(result.data.users.length).toBe(2)
       expect(result.data.users[0].name).toBe('User 1')
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Template executed successfully',
-        expect.any(Object)
-      )
+      expect(mockLogger.info).toHaveBeenCalledWith('Template executed successfully', expect.any(Object))
     })
 
     it('should return data even with partial errors in simple schema', async () => {
@@ -369,8 +362,8 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
 
       expect(result.success).toBe(false)
       expect(result.errors).toBeDefined()
-      expect(result.errors![0].message).toContain('Template preparation failed')
-      expect(result.errors![0].extensions?.code).toBe('TEMPLATE_EXECUTION_ERROR')
+      expect(result.errors?.[0].message).toContain('Template preparation failed')
+      expect(result.errors?.[0].extensions?.code).toBe('TEMPLATE_EXECUTION_ERROR')
       expect(result.metadata.templateId).toBe('unknown')
       expect(mockLogger.error).toHaveBeenCalledWith('Template execution failed', expect.any(Object))
     })
@@ -407,12 +400,9 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         expect.objectContaining({
           identifier: 'logged-execution',
           hasVariables: true,
-        })
+        }),
       )
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Template executed successfully',
-        expect.any(Object)
-      )
+      expect(mockLogger.info).toHaveBeenCalledWith('Template executed successfully', expect.any(Object))
     })
 
     it('should log parse errors with appropriate detail', async () => {
@@ -481,8 +471,8 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
 
       expect(result.success).toBe(false)
       expect(result.errors).toBeDefined()
-      expect(result.errors![0].message).toContain('Invalid GraphQL query')
-      expect(result.errors![0].extensions?.code).toBe('GRAPHQL_PARSE_ERROR')
+      expect(result.errors?.[0].message).toContain('Invalid GraphQL query')
+      expect(result.errors?.[0].extensions?.code).toBe('GRAPHQL_PARSE_ERROR')
     })
   })
 })

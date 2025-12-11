@@ -14,11 +14,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     this.logger = logger
   }
 
-  async query(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string> {
+  async query(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string> {
     try {
       return parent.getQueryText()
     } catch (error) {
@@ -30,11 +26,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async queryName(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string[]> {
+  async queryName(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string[]> {
     try {
       return parent.getQueryName()
     } catch (error) {
@@ -46,11 +38,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async operationType(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string> {
+  async operationType(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string> {
     try {
       return parent.getOperationType().toUpperCase()
     } catch (error) {
@@ -65,7 +53,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
   async variables(
     parent: QueryTemplateParent,
     _args?: any,
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<Record<string, unknown> | null> {
     try {
       return parent.getDefaultVariables()
@@ -81,7 +69,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
   async inputSchema(
     parent: QueryTemplateParent,
     _args?: any,
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<Record<string, unknown> | null> {
     try {
       const schema = parent.getInputSchema()
@@ -98,7 +86,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
   async defaultVariables(
     parent: QueryTemplateParent,
     _args?: any,
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<Record<string, unknown> | null> {
     try {
       return parent.getDefaultVariables()
@@ -114,7 +102,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
   async applicableTables(
     parent: QueryTemplateParent,
     _args?: any,
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<string[] | null> {
     try {
       return parent.getApplicableTables()
@@ -127,11 +115,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async complexityScore(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<number> {
+  async complexityScore(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<number> {
     try {
       return parent.getComplexityScore()
     } catch (error) {
@@ -143,11 +127,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async usageCount(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<number> {
+  async usageCount(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<number> {
     try {
       return parent.getUsageCount()
     } catch (error) {
@@ -159,11 +139,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async lastUsedAt(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string | null> {
+  async lastUsedAt(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string | null> {
     try {
       const lastUsed = parent.getLastUsedAt()
       return lastUsed ? lastUsed.toISOString() : null
@@ -176,11 +152,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async avgExecutionTimeMs(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<number> {
+  async avgExecutionTimeMs(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<number> {
     try {
       return parent.getAvgExecutionTimeMs()
     } catch (error) {
@@ -192,11 +164,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async version(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string> {
+  async version(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string> {
     try {
       return parent.getVersion()
     } catch (error) {
@@ -208,11 +176,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async isActive(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<boolean> {
+  async isActive(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<boolean> {
     try {
       return parent.getIsActive()
     } catch (error) {
@@ -224,11 +188,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async tags(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string[]> {
+  async tags(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string[]> {
     try {
       return parent.getTags()
     } catch (error) {
@@ -240,11 +200,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async createdBy(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string | null> {
+  async createdBy(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string | null> {
     try {
       return null // Not tracked in current implementation
     } catch (error) {
@@ -256,11 +212,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async createdAt(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string> {
+  async createdAt(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string> {
     try {
       return parent.getCreatedAt().toISOString()
     } catch (error) {
@@ -272,11 +224,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async updatedAt(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string> {
+  async updatedAt(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string> {
     try {
       return parent.getUpdatedAt().toISOString()
     } catch (error) {
@@ -288,11 +236,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async isValid(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<boolean> {
+  async isValid(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<boolean> {
     try {
       return this.validateQuery(parent.getQueryText())
     } catch (error) {
@@ -304,11 +248,7 @@ export class QueryTemplateFieldResolvers extends BaseResolver {
     }
   }
 
-  async validationErrors(
-    parent: QueryTemplateParent,
-    _args?: any,
-    _context?: GraphQLContext
-  ): Promise<string[]> {
+  async validationErrors(parent: QueryTemplateParent, _args?: any, _context?: GraphQLContext): Promise<string[]> {
     try {
       const errors: string[] = []
 

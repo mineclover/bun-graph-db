@@ -138,9 +138,7 @@ if (import.meta.main) {
   // 연결 테스트
   const isConnected = await runner.testConnection()
   if (!isConnected) {
-    console.error(
-      "❌ Cannot connect to server. Please check the server URL and ensure it's running."
-    )
+    console.error("❌ Cannot connect to server. Please check the server URL and ensure it's running.")
     process.exit(1)
   }
 

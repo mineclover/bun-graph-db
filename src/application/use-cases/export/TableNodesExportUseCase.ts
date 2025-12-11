@@ -1,5 +1,5 @@
-import * as fs from 'fs'
-import * as path from 'path'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
@@ -63,13 +63,10 @@ export class TableNodesExportUseCase {
     private readonly nodeRepository: INodeRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
-  async execute(
-    tableId: string,
-    options: TableNodesExportOptions
-  ): Promise<TableNodesExportResult> {
+  async execute(tableId: string, options: TableNodesExportOptions): Promise<TableNodesExportResult> {
     const startTime = Date.now()
 
     try {
@@ -398,15 +395,10 @@ export class TableNodesExportUseCase {
       },
     }
 
-    return options.prettyPrint
-      ? JSON.stringify(exportObject, null, 2)
-      : JSON.stringify(exportObject)
+    return options.prettyPrint ? JSON.stringify(exportObject, null, 2) : JSON.stringify(exportObject)
   }
 
-  private async exportToExcel(
-    data: ExportedNodeData[],
-    options: TableNodesExportOptions
-  ): Promise<Buffer> {
+  private async exportToExcel(data: ExportedNodeData[], options: TableNodesExportOptions): Promise<Buffer> {
     // This would require a library like 'xlsx' or 'exceljs'
     // For now, return JSON as buffer
     const jsonData = this.exportToJSON(data, options)
@@ -534,7 +526,7 @@ export class TableNodesExportUseCase {
   private async saveToFile(
     data: string | Buffer,
     options: TableNodesExportOptions,
-    tableIdentifier: string
+    tableIdentifier: string,
   ): Promise<string> {
     // Create output directory if it doesn't exist
     const outputDir = options.outputDirectory || './exports'

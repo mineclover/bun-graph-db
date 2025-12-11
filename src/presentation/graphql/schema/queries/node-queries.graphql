@@ -9,20 +9,12 @@ extend type Query {
   nodes(filter: NodesFilter, pagination: NodesPagination, sort: [SortInput!]): NodesConnection!
 
   # Advanced node search
-  searchNodes(
-    filter: SearchNodesFilter!
-    pagination: NodesPagination
-    sort: [SortInput!]
-  ): NodesConnection!
+  searchNodes(filter: SearchNodesFilter!, pagination: NodesPagination, sort: [SortInput!]): NodesConnection!
 
   # Basic advanced search is sufficient - removed redundant variants
 
   # Essential custom sort function queries only
-  customSortFunctions(
-    dataType: SortDataType
-    search: String
-    tags: [String!]
-  ): [CustomSortFunction!]!
+  customSortFunctions(dataType: SortDataType, search: String, tags: [String!]): [CustomSortFunction!]!
 
   customSortFunction(functionId: String!): CustomSortFunction
 }

@@ -3,7 +3,7 @@
   "description": "Execute node search with required table ID and optional filter",
   "domain": "node_management",
   "category": "advanced",
-  
+
   "templateExecution": {
     "templateIdentifier": "test-search-nodes",
     "variables": {
@@ -13,7 +13,7 @@
       }
     }
   },
-  
+
   "expectedResult": {
     "success": true,
     "dataShape": {
@@ -24,7 +24,7 @@
       }
     }
   },
-  
+
   "testConfig": {
     "shouldExport": true,
     "retryOnFailure": false

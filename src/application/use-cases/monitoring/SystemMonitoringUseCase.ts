@@ -142,7 +142,7 @@ export class SystemMonitoringUseCase {
 
   private getProcessMemoryDetails(
     memoryUsage: NodeJS.MemoryUsage,
-    systemMemoryPercentage: number
+    systemMemoryPercentage: number,
   ): ProcessMemoryDetails {
     const rssInMB = Math.round(memoryUsage.rss / 1024 / 1024)
     const heapUsedInMB = Math.round(memoryUsage.heapUsed / 1024 / 1024)

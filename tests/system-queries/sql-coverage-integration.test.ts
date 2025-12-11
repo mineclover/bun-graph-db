@@ -57,14 +57,7 @@ describe('SQL Coverage Integration Test', () => {
     expect(report.totalOperations).toBeGreaterThan(150) // Should find significant number of operations
 
     // Should find operations across all major tables
-    const _expectedTables = [
-      'tables',
-      'nodes',
-      'attributes',
-      'node_attributes',
-      'relations',
-      'templates',
-    ]
+    const _expectedTables = ['tables', 'nodes', 'attributes', 'node_attributes', 'relations', 'templates']
     // Note: This would be validated through the framework's operation extraction
   })
 
@@ -80,7 +73,7 @@ describe('SQL Coverage Integration Test', () => {
         if (test.testName.includes('Delete')) acc.delete++
         return acc
       },
-      { create: 0, read: 0, update: 0, delete: 0 }
+      { create: 0, read: 0, update: 0, delete: 0 },
     )
 
     expect(testsByType.create).toBeGreaterThan(0)
@@ -99,7 +92,7 @@ describe('SQL Coverage Integration Test', () => {
 
       // Should have specific recommendations
       const hasSpecificRecommendations = report.recommendations.some(
-        (rec) => rec.includes('Table') || rec.includes('API') || rec.includes('operation')
+        (rec) => rec.includes('Table') || rec.includes('API') || rec.includes('operation'),
       )
       expect(hasSpecificRecommendations).toBe(true)
     }
@@ -115,8 +108,7 @@ describe('SQL Coverage Integration Test', () => {
 
     // Individual test performance
     const avgTestTime =
-      report.testResults.reduce((sum, test) => sum + test.executionTime, 0) /
-      report.testResults.length
+      report.testResults.reduce((sum, test) => sum + test.executionTime, 0) / report.testResults.length
     expect(avgTestTime).toBeLessThan(1000) // 1 second average per test
 
     console.log(`\n⏱️  Performance Metrics:`)

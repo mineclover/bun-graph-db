@@ -5,17 +5,9 @@ import type {
   SortContext,
   SortStrategy,
 } from '@/domain/value-objects/SortStrategy.js'
-import {
-  type AdaptiveSortResult,
-  buildOptimizedSort,
-  createExecutionPlan,
-} from './AdaptiveSortEngine.js'
+import { type AdaptiveSortResult, buildOptimizedSort, createExecutionPlan } from './AdaptiveSortEngine.js'
 import { AggregateSortStrategy } from './AggregateSortStrategy.js'
-import {
-  type CachedSortOptions,
-  type CachedSortResult,
-  globalCachedSortEngine,
-} from './CachedSortEngine.js'
+import { type CachedSortOptions, type CachedSortResult, globalCachedSortEngine } from './CachedSortEngine.js'
 import type { CustomSortFunction, CustomSortUsageStats } from './CustomSortFunctionRegistry.js'
 import { CustomSortStrategy } from './CustomSortStrategy.js'
 import { DateTimeSortStrategy } from './DateTimeSortStrategy.js'
@@ -70,18 +62,13 @@ export function getStrategy(field: string, availableAttributes: AttributeTypeInf
   }
 
   // Return the strategy with highest priority
-  return applicableStrategies.reduce((best, current) =>
-    current.getPriority() > best.getPriority() ? current : best
-  )
+  return applicableStrategies.reduce((best, current) => (current.getPriority() > best.getPriority() ? current : best))
 }
 
 /**
  * Build sort clauses for multiple fields with proper priority handling
  */
-export function buildMultiCriteriaSort(
-  sortOptions: SortOption[],
-  context: SortContext
-): MultiCriteriaSortResult {
+export function buildMultiCriteriaSort(sortOptions: SortOption[], context: SortContext): MultiCriteriaSortResult {
   if (sortOptions.length === 0) {
     return {
       sqlClause: '',
@@ -122,7 +109,7 @@ export function buildMultiCriteriaSort(
  */
 export function validateSortOptions(
   sortOptions: SortOption[],
-  availableAttributes: AttributeTypeInfo[]
+  availableAttributes: AttributeTypeInfo[],
 ): { valid: SortOption[]; invalid: SortOption[] } {
   const systemFields = ['created_at', 'updated_at', 'title', 'content']
   const attributeIdentifiers = availableAttributes.map((attr) => attr.identifier)
@@ -205,7 +192,7 @@ export function resetToDefaults(): void {
     new RelevanceSortStrategy(),
     new NumericSortStrategy(),
     new DateTimeSortStrategy(),
-    new TextSortStrategy()
+    new TextSortStrategy(),
   )
 }
 
@@ -214,7 +201,7 @@ export function resetToDefaults(): void {
  */
 export function buildEnhancedMultiCriteriaSort(
   sortOptions: EnhancedSortOption[],
-  context: SortContext
+  context: SortContext,
 ): MultiCriteriaSortResult {
   if (sortOptions.length === 0) {
     return {
@@ -233,11 +220,7 @@ export function buildEnhancedMultiCriteriaSort(
       // Detect data type from enhanced option or context
       const dataType = sortOption.dataType || detectDataTypeFromContext(sortOption.field, context)
 
-      const strategy = getStrategyByDataType(
-        sortOption.field,
-        dataType,
-        context.availableAttributes
-      )
+      const strategy = getStrategyByDataType(sortOption.field, dataType, context.availableAttributes)
 
       // Use enhanced method if available, fallback to basic method
       const result = strategy.buildEnhancedSortClause
@@ -268,7 +251,7 @@ export function buildEnhancedMultiCriteriaSort(
 function getStrategyByDataType(
   field: string,
   dataType: string,
-  _availableAttributes: AttributeTypeInfo[]
+  _availableAttributes: AttributeTypeInfo[],
 ): SortStrategy {
   // Find the best strategy by priority
   const applicableStrategies = strategies.filter((strategy) => strategy.canHandle(field, dataType))
@@ -279,9 +262,7 @@ function getStrategyByDataType(
   }
 
   // Return the strategy with highest priority
-  return applicableStrategies.reduce((best, current) =>
-    current.getPriority() > best.getPriority() ? current : best
-  )
+  return applicableStrategies.reduce((best, current) => (current.getPriority() > best.getPriority() ? current : best))
 }
 
 /**
@@ -306,7 +287,7 @@ function detectDataTypeFromContext(field: string, context: SortContext): string 
  */
 export function validateEnhancedSortOptions(
   sortOptions: EnhancedSortOption[],
-  availableAttributes: AttributeTypeInfo[]
+  availableAttributes: AttributeTypeInfo[],
 ): { valid: EnhancedSortOption[]; invalid: EnhancedSortOption[] } {
   const systemFields = ['created_at', 'updated_at', 'title', 'content']
   const attributeIdentifiers = availableAttributes.map((attr) => attr.identifier)
@@ -336,7 +317,7 @@ export function buildOptimizedSortFactory(
     estimatedDataSize?: number
     performanceBudget?: 'interactive' | 'background' | 'batch'
     allowApproximateResults?: boolean
-  } = {}
+  } = {},
 ): AdaptiveSortResult {
   return buildOptimizedSort(sortOptions, context, options)
 }
@@ -347,7 +328,7 @@ export function buildOptimizedSortFactory(
 export function analyzeSortComplexity(
   sortOptions: EnhancedSortOption[],
   context: SortContext,
-  estimatedDataSize: number = 1000
+  estimatedDataSize: number = 1000,
 ) {
   return createExecutionPlan(sortOptions, context, estimatedDataSize)
 }
@@ -358,7 +339,7 @@ export function analyzeSortComplexity(
 export function getPerformanceRecommendations(
   sortOptions: EnhancedSortOption[],
   context: SortContext,
-  estimatedDataSize: number = 1000
+  estimatedDataSize: number = 1000,
 ): {
   complexity: 'low' | 'medium' | 'high' | 'extreme'
   recommendations: string[]
@@ -401,7 +382,7 @@ export function getPerformanceRecommendations(
 export function buildCachedOptimizedSort(
   sortOptions: EnhancedSortOption[],
   context: SortContext,
-  options: CachedSortOptions = {}
+  options: CachedSortOptions = {},
 ): CachedSortResult {
   return globalCachedSortEngine.buildOptimizedSort(sortOptions, context, options)
 }
@@ -414,7 +395,7 @@ export function buildMultipleCachedSorts(
     sortOptions: EnhancedSortOption[]
     context: SortContext
     options?: CachedSortOptions
-  }>
+  }>,
 ): CachedSortResult[] {
   return globalCachedSortEngine.buildMultipleSorts(requests)
 }
@@ -443,7 +424,7 @@ export function getCachePerformanceInsights(): {
 export async function prewarmTableCache(
   tableId: string,
   context: SortContext,
-  commonPatterns?: EnhancedSortOption[][]
+  commonPatterns?: EnhancedSortOption[][],
 ): Promise<{
   cached: number
   skipped: number
@@ -507,7 +488,7 @@ export function getCustomSortFunctionsByTag(tag: string): CustomSortFunction[] {
  * Get usage statistics for custom sort functions
  */
 export function getCustomSortFunctionStats(
-  functionId?: string
+  functionId?: string,
 ): CustomSortUsageStats | CustomSortUsageStats[] | undefined {
   return customSortStrategy.getCustomFunctionStats(functionId)
 }

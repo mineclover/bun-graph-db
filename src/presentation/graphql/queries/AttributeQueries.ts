@@ -16,7 +16,7 @@ export class AttributeQueries extends BaseResolver {
   constructor(
     private readonly attributeRepository: IAttributeRepository,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -29,7 +29,7 @@ export class AttributeQueries extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Attribute type ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Attribute type ID'),
       ],
-      'attributeType'
+      'attributeType',
     )
 
     return this.handleQuery(
@@ -52,22 +52,18 @@ export class AttributeQueries extends BaseResolver {
         }
       },
       'findAttributeTypeById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
-  async attributeTypeByIdentifier(
-    _: GraphQLParent,
-    args: AttributeByIdentifierArgs,
-    _context?: GraphQLContext
-  ) {
+  async attributeTypeByIdentifier(_: GraphQLParent, args: AttributeByIdentifierArgs, _context?: GraphQLContext) {
     this.validateArgs(
       args as any,
       [
         BaseResolver.validationRules.required('identifier', 'Attribute type identifier'),
         BaseResolver.validationRules.nonEmpty('identifier', 'Attribute type identifier'),
       ],
-      'attributeTypeByIdentifier'
+      'attributeTypeByIdentifier',
     )
 
     return this.handleQuery(
@@ -90,7 +86,7 @@ export class AttributeQueries extends BaseResolver {
         }
       },
       'findAttributeTypeByIdentifier',
-      { identifier: args.identifier }
+      { identifier: args.identifier },
     )
   }
 
@@ -121,7 +117,7 @@ export class AttributeQueries extends BaseResolver {
         }
       },
       'findAttributeTypes',
-      {}
+      {},
     )
   }
 
@@ -132,7 +128,7 @@ export class AttributeQueries extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Attribute ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Attribute ID'),
       ],
-      'attribute'
+      'attribute',
     )
 
     return this.handleQuery(
@@ -141,9 +137,7 @@ export class AttributeQueries extends BaseResolver {
         if (!attribute) return null
 
         // Get the associated AttributeType to resolve the name
-        const attributeType = await this.attributeTypeRepository.findById(
-          attribute.getAttributeTypeId()
-        )
+        const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
 
         // Map entity to GraphQL format
         return {
@@ -156,14 +150,14 @@ export class AttributeQueries extends BaseResolver {
         }
       },
       'findAttributeById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
   async attributeByIdentifier(
     _: GraphQLParent,
     args: AttributeByIdentifierArgs & { tableId: string },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     this.validateArgs(
       args as any,
@@ -173,7 +167,7 @@ export class AttributeQueries extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('identifier', 'Attribute identifier'),
         BaseResolver.validationRules.nonEmpty('tableId', 'Table ID'),
       ],
-      'attributeByIdentifier'
+      'attributeByIdentifier',
     )
 
     return this.handleQuery(
@@ -185,9 +179,7 @@ export class AttributeQueries extends BaseResolver {
         if (!attribute) return null
 
         // Get the associated AttributeType to resolve the name
-        const attributeType = await this.attributeTypeRepository.findById(
-          attribute.getAttributeTypeId()
-        )
+        const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
 
         // Map entity to GraphQL format
         return {
@@ -200,35 +192,29 @@ export class AttributeQueries extends BaseResolver {
         }
       },
       'findAttributeByIdentifier',
-      { identifier: args.identifier, tableId: args.tableId }
+      { identifier: args.identifier, tableId: args.tableId },
     )
   }
 
   async attributes(_: GraphQLParent, args: AttributesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        const result = await this.attributeRepository.findAll(
-          args.pagination || { limit: 10, offset: 0 }
-        )
+        const result = await this.attributeRepository.findAll(args.pagination || { limit: 10, offset: 0 })
 
         // Map entities to GraphQL format
-        const attributes = (result.items || result.nodes || result.data || []).map(
-          async (attribute) => {
-            // Get the associated AttributeType to resolve the name
-            const attributeType = await this.attributeTypeRepository.findById(
-              attribute.getAttributeTypeId()
-            )
+        const attributes = (result.items || result.nodes || result.data || []).map(async (attribute) => {
+          // Get the associated AttributeType to resolve the name
+          const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
 
-            return {
-              id: attribute.getId(),
-              identifier: attribute.getIdentifier(),
-              name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
-              description: attribute.getDescription(),
-              createdAt: attribute.getCreatedAt(),
-              updatedAt: attribute.getUpdatedAt(),
-            }
+          return {
+            id: attribute.getId(),
+            identifier: attribute.getIdentifier(),
+            name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
+            description: attribute.getDescription(),
+            createdAt: attribute.getCreatedAt(),
+            updatedAt: attribute.getUpdatedAt(),
           }
-        )
+        })
 
         return {
           attributes: await Promise.all(attributes),
@@ -238,7 +224,7 @@ export class AttributeQueries extends BaseResolver {
         }
       },
       'findAttributes',
-      { filter: args.filter, pagination: args.pagination, sort: args.sort }
+      { filter: args.filter, pagination: args.pagination, sort: args.sort },
     )
   }
 }

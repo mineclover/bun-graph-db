@@ -8,7 +8,7 @@ export class NodeAttribute {
     private readonly attributeId: AttributeId,
     private readonly value: string,
     private readonly createdAt: Date,
-    private readonly updatedAt: Date
+    private readonly updatedAt: Date,
   ) {
     this.validateValue(value)
   }
@@ -23,16 +23,9 @@ export class NodeAttribute {
     attributeId: string,
     value: string,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
   ): NodeAttribute {
-    return new NodeAttribute(
-      id,
-      nodeId as NodeId,
-      attributeId as AttributeId,
-      value,
-      createdAt,
-      updatedAt
-    )
+    return new NodeAttribute(id, nodeId as NodeId, attributeId as AttributeId, value, createdAt, updatedAt)
   }
 
   private validateValue(value: string): void {
@@ -84,14 +77,7 @@ export class NodeAttribute {
 
   updateValue(value: string): NodeAttribute {
     this.validateValue(value)
-    return new NodeAttribute(
-      this.id,
-      this.nodeId,
-      this.attributeId,
-      value,
-      this.createdAt,
-      new Date()
-    )
+    return new NodeAttribute(this.id, this.nodeId, this.attributeId, value, this.createdAt, new Date())
   }
 
   toDatabase(): {

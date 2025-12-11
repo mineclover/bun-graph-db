@@ -9,7 +9,7 @@ export class TablePackageResolver extends BaseResolver {
 
   constructor(
     private readonly tablePackageService: ITablePackageService,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -39,9 +39,7 @@ export class TablePackageResolver extends BaseResolver {
 
       return {
         success: true,
-        tablePackage: response.result?.tablePackage
-          ? this.mapTablePackageFormat(response.result.tablePackage)
-          : null,
+        tablePackage: response.result?.tablePackage ? this.mapTablePackageFormat(response.result.tablePackage) : null,
         dependencyOrder: response.result?.dependencyOrder || [],
         packagePath: response.exportPath || null,
         errors: response.result?.errors || [],
@@ -52,10 +50,7 @@ export class TablePackageResolver extends BaseResolver {
 
   async exportRelatedTablePackages(_: any, args: any): Promise<any> {
     return this.handleQuery(async () => {
-      const results = await this.tablePackageService.exportRelatedTables(
-        args.tableIdentifiers,
-        args.options || {}
-      )
+      const results = await this.tablePackageService.exportRelatedTables(args.tableIdentifiers, args.options || {})
 
       return results.map((result) => ({
         success: result.success,
@@ -88,9 +83,7 @@ export class TablePackageResolver extends BaseResolver {
   async validateTablePackage(_: any, args: any): Promise<any> {
     return this.handleQuery(async () => {
       const packageData = this.mapTablePackageInput(args.packageData)
-      const options = args.options
-        ? this.mapImportOptions(args.options)
-        : { conflictResolution: 'skip' }
+      const options = args.options ? this.mapImportOptions(args.options) : { conflictResolution: 'skip' }
 
       const conflicts = await this.tablePackageService.validatePackage(packageData, options)
       return conflicts.map(this.mapPackageConflict)
@@ -114,10 +107,7 @@ export class TablePackageResolver extends BaseResolver {
 
   async previewGeneratedTemplates(_: any, args: any): Promise<any> {
     return this.handleQuery(async () => {
-      const result = await this.tablePackageService.generateTableTemplates(
-        args.tableIdentifier,
-        args.options || {}
-      )
+      const result = await this.tablePackageService.generateTableTemplates(args.tableIdentifier, args.options || {})
 
       return {
         success: result.success,
@@ -137,9 +127,7 @@ export class TablePackageResolver extends BaseResolver {
   async importTablePackage(_: any, args: any): Promise<any> {
     try {
       const packageData = this.mapTablePackageInput(args.input.packageData)
-      const options = args.input.options
-        ? this.mapImportOptions(args.input.options)
-        : { conflictResolution: 'skip' }
+      const options = args.input.options ? this.mapImportOptions(args.input.options) : { conflictResolution: 'skip' }
 
       const result = await this.tablePackageService.importTablePackage(packageData, options)
 
@@ -176,9 +164,7 @@ export class TablePackageResolver extends BaseResolver {
   async importTablePackages(_: any, args: any): Promise<any> {
     return this.handleMutation(async () => {
       const packages = args.packages.map((pkg: any) => this.mapTablePackageInput(pkg))
-      const options = args.options
-        ? this.mapImportOptions(args.options)
-        : { conflictResolution: 'skip' }
+      const options = args.options ? this.mapImportOptions(args.options) : { conflictResolution: 'skip' }
 
       const results = await this.tablePackageService.importTablePackages(packages, options)
 
@@ -197,7 +183,7 @@ export class TablePackageResolver extends BaseResolver {
     return this.handleMutation(async () => {
       const results = await this.tablePackageService.exportRelatedTables(
         args.input.tableIdentifiers,
-        args.input.options || {}
+        args.input.options || {},
       )
 
       let exportedCount = 0
@@ -211,9 +197,7 @@ export class TablePackageResolver extends BaseResolver {
 
         return {
           success: result.success,
-          tablePackage: result.tablePackage
-            ? this.mapTablePackageFormat(result.tablePackage)
-            : null,
+          tablePackage: result.tablePackage ? this.mapTablePackageFormat(result.tablePackage) : null,
           dependencyOrder: result.dependencyOrder || [],
           packagePath: result.packagePath || null,
           errors: result.errors ?? [],
@@ -235,9 +219,7 @@ export class TablePackageResolver extends BaseResolver {
   async batchImportTablePackages(_: any, args: any): Promise<any> {
     try {
       const packages = args.input.packages.map((pkg: any) => this.mapTablePackageInput(pkg))
-      const options = args.input.options
-        ? this.mapImportOptions(args.input.options)
-        : { conflictResolution: 'skip' }
+      const options = args.input.options ? this.mapImportOptions(args.input.options) : { conflictResolution: 'skip' }
 
       // Create session if requested
       let session = null
@@ -318,10 +300,7 @@ export class TablePackageResolver extends BaseResolver {
 
   async generateTableTemplates(_: any, args: any): Promise<any> {
     return this.handleMutation(async () => {
-      const result = await this.tablePackageService.generateTableTemplates(
-        args.tableIdentifier,
-        args.options || {}
-      )
+      const result = await this.tablePackageService.generateTableTemplates(args.tableIdentifier, args.options || {})
 
       return {
         success: result.success,
@@ -359,9 +338,7 @@ export class TablePackageResolver extends BaseResolver {
 
       return {
         success: true,
-        tablePackage: response.result?.tablePackage
-          ? this.mapTablePackageFormat(response.result.tablePackage)
-          : null,
+        tablePackage: response.result?.tablePackage ? this.mapTablePackageFormat(response.result.tablePackage) : null,
         dependencyOrder: response.result?.dependencyOrder || [],
         packagePath: response.exportPath || null,
         errors: response.result?.errors || [],
@@ -379,9 +356,7 @@ export class TablePackageResolver extends BaseResolver {
         const fileContent = await fs.readFile(args.filePath, 'utf8')
         const packageData = JSON.parse(fileContent)
 
-        const options = args.options
-          ? this.mapImportOptions(args.options)
-          : { conflictResolution: 'skip' }
+        const options = args.options ? this.mapImportOptions(args.options) : { conflictResolution: 'skip' }
         const result = await this.tablePackageService.importTablePackage(packageData, options)
 
         return {

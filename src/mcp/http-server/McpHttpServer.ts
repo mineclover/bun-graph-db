@@ -91,12 +91,7 @@ export class McpHttpServer {
   async handleRequest(request: Request): Promise<Response> {
     // Validate HTTP method
     if (request.method !== 'POST' && request.method !== 'GET') {
-      return this.createErrorResponse(
-        null,
-        -32600,
-        'Invalid Request',
-        'Only POST and GET methods are supported'
-      )
+      return this.createErrorResponse(null, -32600, 'Invalid Request', 'Only POST and GET methods are supported')
     }
 
     // Validate protocol version header
@@ -109,7 +104,7 @@ export class McpHttpServer {
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
 
@@ -123,7 +118,7 @@ export class McpHttpServer {
         {
           status: 403,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
 
@@ -139,7 +134,7 @@ export class McpHttpServer {
         {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
 
@@ -161,12 +156,7 @@ export class McpHttpServer {
 
       // Validate JSON-RPC format
       if (jsonRpcRequest.jsonrpc !== '2.0') {
-        return this.createErrorResponse(
-          jsonRpcRequest.id,
-          -32600,
-          'Invalid Request',
-          'Invalid JSON-RPC version'
-        )
+        return this.createErrorResponse(jsonRpcRequest.id, -32600, 'Invalid Request', 'Invalid JSON-RPC version')
       }
 
       // Route the request based on method
@@ -185,7 +175,7 @@ export class McpHttpServer {
         null,
         -32603,
         'Internal error',
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? error.message : String(error),
       )
     }
   }
@@ -209,12 +199,7 @@ export class McpHttpServer {
           return await this.handleToolsCall(id, params)
 
         default:
-          return this.createErrorMcpResponse(
-            id,
-            -32601,
-            'Method not found',
-            `Unknown method: ${method}`
-          )
+          return this.createErrorMcpResponse(id, -32601, 'Method not found', `Unknown method: ${method}`)
       }
     } catch (error) {
       console.error(`Error handling method ${method}:`, error)
@@ -222,15 +207,12 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        error instanceof Error ? error.message : String(error)
+        error instanceof Error ? error.message : String(error),
       )
     }
   }
 
-  private async handleInitialize(
-    id: string | number | undefined,
-    params: McpInitializeParams
-  ): Promise<McpResponse> {
+  private async handleInitialize(id: string | number | undefined, params: McpInitializeParams): Promise<McpResponse> {
     if (!params) {
       return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'Initialize params required')
     }
@@ -238,12 +220,7 @@ export class McpHttpServer {
     // Validate protocol version
     const clientVersion = params.protocolVersion
     if (!this.isSupportedProtocolVersion(clientVersion)) {
-      return this.createErrorMcpResponse(
-        id,
-        -32602,
-        'Invalid params',
-        `Unsupported protocol version: ${clientVersion}`
-      )
+      return this.createErrorMcpResponse(id, -32602, 'Invalid params', `Unsupported protocol version: ${clientVersion}`)
     }
 
     // Use client's version if supported, otherwise use our latest compatible version
@@ -276,10 +253,7 @@ export class McpHttpServer {
     }
   }
 
-  private async handleToolsCall(
-    id: string | number | undefined,
-    params: any
-  ): Promise<McpResponse> {
+  private async handleToolsCall(id: string | number | undefined, params: any): Promise<McpResponse> {
     if (!params || !params.name) {
       return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'Tool name required')
     }
@@ -302,14 +276,8 @@ export class McpHttpServer {
 
         if (!valid) {
           const errors =
-            validate.errors?.map((err) => `${err.instancePath} ${err.message}`).join(', ') ||
-            'Unknown validation error'
-          return this.createErrorMcpResponse(
-            id,
-            -32602,
-            `Schema validation failed: ${errors}`,
-            undefined
-          )
+            validate.errors?.map((err) => `${err.instancePath} ${err.message}`).join(', ') || 'Unknown validation error'
+          return this.createErrorMcpResponse(id, -32602, `Schema validation failed: ${errors}`, undefined)
         }
       }
 
@@ -321,12 +289,7 @@ export class McpHttpServer {
 
       // Validate tool has GraphQL operation for non-custom tools
       if (!tool.graphqlOperation || !tool.graphqlOperation.query) {
-        return this.createErrorMcpResponse(
-          id,
-          -32603,
-          'Internal error',
-          `Tool ${name} has no valid GraphQL operation`
-        )
+        return this.createErrorMcpResponse(id, -32603, 'Internal error', `Tool ${name} has no valid GraphQL operation`)
       }
 
       // Call REST API instead of GraphQL
@@ -352,16 +315,12 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`
+        `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
 
-  private async handleCustomTool(
-    id: string | number | undefined,
-    toolName: string,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleCustomTool(id: string | number | undefined, toolName: string, args: any): Promise<McpResponse> {
     try {
       switch (toolName) {
         case 'getTableDocs':
@@ -417,12 +376,7 @@ export class McpHttpServer {
           return await this.handleSystemInitializationTool(id, toolName, args)
 
         default:
-          return this.createErrorMcpResponse(
-            id,
-            -32601,
-            'Method not found',
-            `Unknown custom tool: ${toolName}`
-          )
+          return this.createErrorMcpResponse(id, -32601, 'Method not found', `Unknown custom tool: ${toolName}`)
       }
     } catch (error) {
       console.error(`Custom tool execution error for ${toolName}:`, error)
@@ -430,15 +384,12 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Custom tool execution failed: ${error instanceof Error ? error.message : String(error)}`
+        `Custom tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
 
-  private async handleGetTableDocs(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleGetTableDocs(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const {
         tableId,
@@ -468,7 +419,7 @@ export class McpHttpServer {
                   includeUsageStats,
                 },
                 null,
-                2
+                2,
               ),
             },
           ],
@@ -481,25 +432,17 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Failed to generate table documentation: ${error instanceof Error ? error.message : String(error)}`
+        `Failed to generate table documentation: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
 
-  private async handleExportTableWithNodes(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleExportTableWithNodes(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const { tableId, flatFormat = true, outputPath = '' } = args
 
       if (!tableId) {
-        return this.createErrorMcpResponse(
-          id,
-          -32602,
-          'Invalid params',
-          'tableId parameter is required'
-        )
+        return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'tableId parameter is required')
       }
 
       // REST API 호출을 통해 table export 실행
@@ -514,7 +457,7 @@ export class McpHttpServer {
           id,
           -32603,
           'Internal error',
-          response.error || 'Export table with nodes failed'
+          response.error || 'Export table with nodes failed',
         )
       }
 
@@ -537,15 +480,12 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Failed to export table: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to export table: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   }
 
-  private async handleExportTableNodes(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleExportTableNodes(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const {
         tableId,
@@ -558,12 +498,7 @@ export class McpHttpServer {
       } = args
 
       if (!tableId) {
-        return this.createErrorMcpResponse(
-          id,
-          -32602,
-          'Invalid params',
-          'tableId parameter is required'
-        )
+        return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'tableId parameter is required')
       }
 
       // Call REST API to execute export with improved formatting
@@ -578,17 +513,11 @@ export class McpHttpServer {
       })
 
       if (!response.success) {
-        return this.createErrorMcpResponse(
-          id,
-          -32603,
-          'Internal error',
-          response.error || 'Export table nodes failed'
-        )
+        return this.createErrorMcpResponse(id, -32603, 'Internal error', response.error || 'Export table nodes failed')
       }
 
       const exportData = response.data
-      const formatDesc =
-        format === 'CSV' ? 'CSV with column-based attributes' : 'JSON with key-value arrays'
+      const formatDesc = format === 'CSV' ? 'CSV with column-based attributes' : 'JSON with key-value arrays'
 
       return {
         jsonrpc: '2.0',
@@ -610,57 +539,30 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Failed to export table nodes: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to export table nodes: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   }
 
-  private async handleSetNodeAttribute(
-    id: string | number | undefined,
-    _args: any
-  ): Promise<McpResponse> {
+  private async handleSetNodeAttribute(id: string | number | undefined, _args: any): Promise<McpResponse> {
     // Implementation for setNodeAttribute
-    return this.createErrorMcpResponse(
-      id,
-      -32601,
-      'Method not found',
-      'setNodeAttribute not implemented yet'
-    )
+    return this.createErrorMcpResponse(id, -32601, 'Method not found', 'setNodeAttribute not implemented yet')
   }
 
-  private async handleRemoveNodeAttribute(
-    id: string | number | undefined,
-    _args: any
-  ): Promise<McpResponse> {
+  private async handleRemoveNodeAttribute(id: string | number | undefined, _args: any): Promise<McpResponse> {
     // Implementation for removeNodeAttribute
-    return this.createErrorMcpResponse(
-      id,
-      -32601,
-      'Method not found',
-      'removeNodeAttribute not implemented yet'
-    )
+    return this.createErrorMcpResponse(id, -32601, 'Method not found', 'removeNodeAttribute not implemented yet')
   }
 
-  private async handleUpdateNodeAttributeValue(
-    id: string | number | undefined,
-    _args: any
-  ): Promise<McpResponse> {
+  private async handleUpdateNodeAttributeValue(id: string | number | undefined, _args: any): Promise<McpResponse> {
     // Implementation for updateNodeAttributeValue
-    return this.createErrorMcpResponse(
-      id,
-      -32601,
-      'Method not found',
-      'updateNodeAttributeValue not implemented yet'
-    )
+    return this.createErrorMcpResponse(id, -32601, 'Method not found', 'updateNodeAttributeValue not implemented yet')
   }
 
   /**
    * Handle bulk template import - parallel processing of JSON files
    */
-  private async handleBulkImportTemplates(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleBulkImportTemplates(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const {
         filePaths = [],
@@ -675,7 +577,7 @@ export class McpHttpServer {
           id,
           -32602,
           'Invalid params',
-          'filePaths array is required and must not be empty'
+          'filePaths array is required and must not be empty',
         )
       }
 
@@ -691,9 +593,7 @@ export class McpHttpServer {
       // Process files in parallel batches
       for (let i = 0; i < filePaths.length; i += batchSize) {
         const batch = filePaths.slice(i, i + batchSize)
-        console.log(
-          `📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filePaths.length / batchSize)}`
-        )
+        console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filePaths.length / batchSize)}`)
 
         const batchResults = await Promise.allSettled(
           batch.map((filePath) =>
@@ -701,8 +601,8 @@ export class McpHttpServer {
               overwriteExisting,
               generateNewIdentifier,
               dryRun,
-            })
-          )
+            }),
+          ),
         )
 
         for (const result of batchResults) {
@@ -760,7 +660,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Bulk import failed: ${error instanceof Error ? error.message : String(error)}`
+        `Bulk import failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -770,7 +670,7 @@ export class McpHttpServer {
    */
   private async importSingleTemplate(
     filePath: string,
-    options: { overwriteExisting: boolean; generateNewIdentifier: boolean; dryRun: boolean }
+    options: { overwriteExisting: boolean; generateNewIdentifier: boolean; dryRun: boolean },
   ): Promise<{
     identifier: string
     success: boolean
@@ -854,10 +754,7 @@ export class McpHttpServer {
   /**
    * List available templates in exported-templates directory
    */
-  private async handleListAvailableTemplates(
-    id: string | number | undefined,
-    _args: any
-  ): Promise<McpResponse> {
+  private async handleListAvailableTemplates(id: string | number | undefined, _args: any): Promise<McpResponse> {
     try {
       const { readdir } = await import('node:fs/promises')
       const { join } = await import('node:path')
@@ -866,7 +763,7 @@ export class McpHttpServer {
       try {
         const files = await readdir(templatesPath)
         const templateFiles = files.filter(
-          (file) => file.endsWith('.json') && !file.startsWith('.') && file !== 'INDEX.json'
+          (file) => file.endsWith('.json') && !file.startsWith('.') && file !== 'INDEX.json',
         )
 
         const templates = []
@@ -905,7 +802,7 @@ export class McpHttpServer {
                     directory: templatesPath,
                   },
                   null,
-                  2
+                  2,
                 ),
               },
             ],
@@ -917,7 +814,7 @@ export class McpHttpServer {
           id,
           -32603,
           'Internal error',
-          `Failed to read templates directory: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Failed to read templates directory: ${error instanceof Error ? error.message : 'Unknown error'}`,
         )
       }
     } catch (error) {
@@ -925,7 +822,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `List templates failed: ${error instanceof Error ? error.message : String(error)}`
+        `List templates failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -933,10 +830,7 @@ export class McpHttpServer {
   /**
    * Get import status and estimation
    */
-  private async handleGetImportStatus(
-    id: string | number | undefined,
-    _args: any
-  ): Promise<McpResponse> {
+  private async handleGetImportStatus(id: string | number | undefined, _args: any): Promise<McpResponse> {
     try {
       const { readdir, stat } = await import('node:fs/promises')
       const { join } = await import('node:path')
@@ -950,7 +844,7 @@ export class McpHttpServer {
 
         const files = await readdir(templatesPath)
         const templateFiles = files.filter(
-          (file) => file.endsWith('.json') && !file.startsWith('.') && file !== 'INDEX.json'
+          (file) => file.endsWith('.json') && !file.startsWith('.') && file !== 'INDEX.json',
         )
 
         const status = {
@@ -978,7 +872,7 @@ export class McpHttpServer {
           id,
           -32603,
           'Internal error',
-          `Failed to get import status: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Failed to get import status: ${error instanceof Error ? error.message : 'Unknown error'}`,
         )
       }
     } catch (error) {
@@ -986,7 +880,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Get import status failed: ${error instanceof Error ? error.message : String(error)}`
+        `Get import status failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -995,7 +889,7 @@ export class McpHttpServer {
     id: string | number | undefined | null,
     code: number,
     message: string,
-    data?: any
+    data?: any,
   ): Response {
     const errorResponse = this.createErrorMcpResponse(id, code, message, data)
     let status = 500
@@ -1027,7 +921,7 @@ export class McpHttpServer {
     id: string | number | undefined | null,
     code: number,
     message: string,
-    data?: any
+    data?: any,
   ): McpResponse {
     return {
       jsonrpc: '2.0',
@@ -1080,10 +974,7 @@ export class McpHttpServer {
   /**
    * Handle create template - proxy to REST API
    */
-  private async handleCreateTemplate(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleCreateTemplate(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const { identifier, name, query, description = '', tags = [], targetTableId } = args
 
@@ -1092,7 +983,7 @@ export class McpHttpServer {
           id,
           -32602,
           'Invalid params',
-          'identifier, name, and query parameters are required'
+          'identifier, name, and query parameters are required',
         )
       }
 
@@ -1124,7 +1015,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Create template failed: ${error instanceof Error ? error.message : String(error)}`
+        `Create template failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -1132,20 +1023,12 @@ export class McpHttpServer {
   /**
    * Handle update template - proxy to REST API
    */
-  private async handleUpdateTemplate(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleUpdateTemplate(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const { identifier, name, query, description, tags } = args
 
       if (!identifier) {
-        return this.createErrorMcpResponse(
-          id,
-          -32602,
-          'Invalid params',
-          'identifier parameter is required'
-        )
+        return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'identifier parameter is required')
       }
 
       // Proxy to REST API
@@ -1175,7 +1058,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Update template failed: ${error instanceof Error ? error.message : String(error)}`
+        `Update template failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -1183,20 +1066,12 @@ export class McpHttpServer {
   /**
    * Handle delete template - proxy to REST API
    */
-  private async handleDeleteTemplate(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleDeleteTemplate(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const { identifier, force = false } = args
 
       if (!identifier) {
-        return this.createErrorMcpResponse(
-          id,
-          -32602,
-          'Invalid params',
-          'identifier parameter is required'
-        )
+        return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'identifier parameter is required')
       }
 
       // Proxy to REST API
@@ -1223,7 +1098,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Delete template failed: ${error instanceof Error ? error.message : String(error)}`
+        `Delete template failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -1231,20 +1106,12 @@ export class McpHttpServer {
   /**
    * Handle validate template - proxy to REST API
    */
-  private async handleValidateTemplate(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleValidateTemplate(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const { query, variables } = args
 
       if (!query) {
-        return this.createErrorMcpResponse(
-          id,
-          -32602,
-          'Invalid params',
-          'query parameter is required'
-        )
+        return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'query parameter is required')
       }
 
       // Proxy to REST API
@@ -1271,7 +1138,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Validate template failed: ${error instanceof Error ? error.message : String(error)}`
+        `Validate template failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -1279,10 +1146,7 @@ export class McpHttpServer {
   /**
    * Handle search templates - proxy to REST API
    */
-  private async handleSearchTemplates(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleSearchTemplates(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const { query, tags, tableId, operationType, limit = 50 } = args
 
@@ -1313,7 +1177,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Search templates failed: ${error instanceof Error ? error.message : String(error)}`
+        `Search templates failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -1321,20 +1185,12 @@ export class McpHttpServer {
   /**
    * Handle get template metadata - proxy to REST API
    */
-  private async handleGetTemplateMetadata(
-    id: string | number | undefined,
-    args: any
-  ): Promise<McpResponse> {
+  private async handleGetTemplateMetadata(id: string | number | undefined, args: any): Promise<McpResponse> {
     try {
       const { identifier, includeUsageStats = true, includeDependencies = true } = args
 
       if (!identifier) {
-        return this.createErrorMcpResponse(
-          id,
-          -32602,
-          'Invalid params',
-          'identifier parameter is required'
-        )
+        return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'identifier parameter is required')
       }
 
       // Proxy to REST API
@@ -1362,7 +1218,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `Get template metadata failed: ${error instanceof Error ? error.message : String(error)}`
+        `Get template metadata failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }
@@ -1373,7 +1229,7 @@ export class McpHttpServer {
   private async handleSystemInitializationTool(
     id: string | number | undefined,
     toolName: string,
-    args: any
+    args: any,
   ): Promise<McpResponse> {
     try {
       // Proxy to REST API
@@ -1397,7 +1253,7 @@ export class McpHttpServer {
         id,
         -32603,
         'Internal error',
-        `System initialization tool failed: ${error instanceof Error ? error.message : String(error)}`
+        `System initialization tool failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
   }

@@ -50,11 +50,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
     }
   })
 
-  async function callMcpTool(
-    toolName: string,
-    args: any = {},
-    id: string | number = Date.now()
-  ): Promise<McpResponse> {
+  async function callMcpTool(toolName: string, args: any = {}, id: string | number = Date.now()): Promise<McpResponse> {
     const request: McpRequest = {
       jsonrpc: '2.0',
       method: 'tools/call',
@@ -431,9 +427,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       console.log('E2E Performance: Testing concurrent requests...')
 
       // Create 20 concurrent health check requests
-      const concurrentRequests = Array.from({ length: 20 }, (_, i) =>
-        callMcpTool('healthCheck', {}, `concurrent-${i}`)
-      )
+      const concurrentRequests = Array.from({ length: 20 }, (_, i) => callMcpTool('healthCheck', {}, `concurrent-${i}`))
 
       const startTime = Date.now()
       const responses = await Promise.allSettled(concurrentRequests)
@@ -442,9 +436,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       const successful = responses.filter((r) => r.status === 'fulfilled').length
       const failed = responses.filter((r) => r.status === 'rejected').length
 
-      console.log(
-        `E2E Performance Results: ${successful} successful, ${failed} failed, ${endTime - startTime}ms total`
-      )
+      console.log(`E2E Performance Results: ${successful} successful, ${failed} failed, ${endTime - startTime}ms total`)
 
       // At least 80% should succeed
       expect(successful / responses.length).toBeGreaterThanOrEqual(0.8)
@@ -464,9 +456,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       // Create a large metadata object
       const largeMetadata = {
         description: 'A'.repeat(1000), // 1KB string
-        properties: Object.fromEntries(
-          Array.from({ length: 100 }, (_, i) => [`prop${i}`, `value${i}`.repeat(10)])
-        ),
+        properties: Object.fromEntries(Array.from({ length: 100 }, (_, i) => [`prop${i}`, `value${i}`.repeat(10)])),
         tags: Array.from({ length: 50 }, (_, i) => `tag-${i}`),
       }
 
@@ -538,13 +528,7 @@ describe('MCP-to-REST API Proxy E2E Tests', () => {
       expect(toolsResponse.result.tools.length).toBe(27)
 
       // Test a few representative tools from different categories
-      const sampleTools = [
-        'healthCheck',
-        'createTable',
-        'searchNodes',
-        'createAttribute',
-        'getConnectedNodes',
-      ]
+      const sampleTools = ['healthCheck', 'createTable', 'searchNodes', 'createAttribute', 'getConnectedNodes']
 
       for (const toolName of sampleTools) {
         try {

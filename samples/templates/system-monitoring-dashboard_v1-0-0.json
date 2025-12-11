@@ -1,5 +1,5 @@
 {
-  "identifier": "system-monitoring-dashboard_v1-0-0", 
+  "identifier": "system-monitoring-dashboard_v1-0-0",
   "name": "System Monitoring Dashboard",
   "description": "Complete monitoring dashboard query that combines health check, system statistics, and memory monitoring into a single comprehensive query for real-time system monitoring dashboards.",
   "version": "1.0.0",
@@ -31,13 +31,13 @@
     "frequency": "Recommended for periodic dashboard updates (every 60-120 seconds)",
     "data_structure": {
       "healthCheck": "Overall system health and status indicators",
-      "systemStats": "Comprehensive system, process, and database metrics", 
+      "systemStats": "Comprehensive system, process, and database metrics",
       "memoryStats": "Detailed memory usage breakdown"
     },
     "dashboard_widgets": [
       "Health Status Indicator",
       "Memory Usage Chart",
-      "CPU Usage Meter", 
+      "CPU Usage Meter",
       "Process Information Panel",
       "Database Performance Metrics",
       "System Uptime Display",

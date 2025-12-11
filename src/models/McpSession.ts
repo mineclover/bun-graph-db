@@ -264,14 +264,8 @@ export class McpSessionManager {
     return {
       total: sessions.length,
       byState,
-      oldestSession:
-        creationTimes.length > 0
-          ? new Date(Math.min(...creationTimes.map((d) => d.getTime())))
-          : null,
-      newestSession:
-        creationTimes.length > 0
-          ? new Date(Math.max(...creationTimes.map((d) => d.getTime())))
-          : null,
+      oldestSession: creationTimes.length > 0 ? new Date(Math.min(...creationTimes.map((d) => d.getTime()))) : null,
+      newestSession: creationTimes.length > 0 ? new Date(Math.max(...creationTimes.map((d) => d.getTime()))) : null,
     }
   }
 
@@ -296,7 +290,7 @@ export function createMcpSession(
   clientInfo: ClientInfo,
   capabilities: ClientCapabilities,
   protocolVersion?: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, any>,
 ): McpSession {
   return new McpSessionBuilder()
     .withSessionId(generateMcpSessionId())
@@ -312,19 +306,11 @@ export function validateMcpClientInfo(clientInfo: any): ClientInfo {
     throw new Error('Client info must be an object')
   }
 
-  if (
-    !clientInfo.name ||
-    typeof clientInfo.name !== 'string' ||
-    clientInfo.name.trim().length === 0
-  ) {
+  if (!clientInfo.name || typeof clientInfo.name !== 'string' || clientInfo.name.trim().length === 0) {
     throw new Error('Client name is required and must be a non-empty string')
   }
 
-  if (
-    !clientInfo.version ||
-    typeof clientInfo.version !== 'string' ||
-    clientInfo.version.trim().length === 0
-  ) {
+  if (!clientInfo.version || typeof clientInfo.version !== 'string' || clientInfo.version.trim().length === 0) {
     throw new Error('Client version is required and must be a non-empty string')
   }
 

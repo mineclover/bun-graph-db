@@ -1,8 +1,4 @@
-import {
-  calculateComplexityScore,
-  extractOperationInfo,
-  extractSystemQueries,
-} from '@/core/utils/GraphQLParser.js'
+import { calculateComplexityScore, extractOperationInfo, extractSystemQueries } from '@/core/utils/GraphQLParser.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 /**
@@ -88,7 +84,7 @@ export class QueryTemplate {
     private readonly isActive: boolean,
     private readonly tags: string[],
     private readonly createdAt: Date,
-    private readonly updatedAt: Date
+    private readonly updatedAt: Date,
   ) {
     this.validateIdentifier(identifier)
     this.validateQueryText(queryText)
@@ -109,7 +105,7 @@ export class QueryTemplate {
       templateType?: TemplateType // Legacy, will be overridden by parsed operationType
       complexityScore?: number
       version?: string
-    }
+    },
   ): QueryTemplate {
     const now = new Date()
 
@@ -138,7 +134,7 @@ export class QueryTemplate {
       true,
       tags,
       now,
-      now
+      now,
     )
   }
 
@@ -162,15 +158,11 @@ export class QueryTemplate {
     isActive: boolean,
     tags: string | null,
     createdAt: string,
-    updatedAt: string
+    updatedAt: string,
   ): QueryTemplate {
     const parsedInputSchema = inputSchema ? (JSON.parse(inputSchema) as QueryVariablesSchema) : null
-    const parsedDefaultVariables = defaultVariables
-      ? (JSON.parse(defaultVariables) as Record<string, unknown>)
-      : null
-    const parsedApplicableTables = applicableTables
-      ? (JSON.parse(applicableTables) as string[])
-      : null
+    const parsedDefaultVariables = defaultVariables ? (JSON.parse(defaultVariables) as Record<string, unknown>) : null
+    const parsedApplicableTables = applicableTables ? (JSON.parse(applicableTables) as string[]) : null
     const parsedTags = tags ? parseJsonSafely<string[]>(tags, []) : []
 
     // Parse queryName field - support both legacy single string and new array format
@@ -233,7 +225,7 @@ export class QueryTemplate {
       isActive,
       parsedTags,
       new Date(createdAt),
-      new Date(updatedAt)
+      new Date(updatedAt),
     )
   }
 
@@ -247,7 +239,7 @@ export class QueryTemplate {
     if (!/^[a-z0-9-_]+$/.test(identifier)) {
       throw new DomainException(
         'Query template identifier must contain only lowercase letters, numbers, hyphens, and underscores',
-        { code: 'VALIDATION_ERROR' }
+        { code: 'VALIDATION_ERROR' },
       )
     }
   }
@@ -358,7 +350,7 @@ export class QueryTemplate {
       this.isActive,
       this.tags,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 
@@ -368,9 +360,7 @@ export class QueryTemplate {
 
     const newAvgTime =
       this.usageCount > 0
-        ? Math.floor(
-            (this.avgExecutionTimeMs * this.usageCount + validExecutionTime) / (this.usageCount + 1)
-          )
+        ? Math.floor((this.avgExecutionTimeMs * this.usageCount + validExecutionTime) / (this.usageCount + 1))
         : Math.floor(validExecutionTime)
 
     return new QueryTemplate(
@@ -393,7 +383,7 @@ export class QueryTemplate {
       this.isActive,
       this.tags,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 
@@ -418,7 +408,7 @@ export class QueryTemplate {
       true,
       this.tags,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 
@@ -443,7 +433,7 @@ export class QueryTemplate {
       false,
       this.tags,
       this.createdAt,
-      new Date()
+      new Date(),
     )
   }
 
@@ -457,8 +447,7 @@ export class QueryTemplate {
     // Check required fields
     if (this.inputSchema.required) {
       const missingRequired = this.inputSchema.required.filter(
-        (requiredField) =>
-          !Object.hasOwn(variables, requiredField) || variables[requiredField] === undefined
+        (requiredField) => !Object.hasOwn(variables, requiredField) || variables[requiredField] === undefined,
       )
       if (missingRequired.length > 0) {
         errors.push(`Missing required variables: ${missingRequired.join(', ')}`)
@@ -473,16 +462,12 @@ export class QueryTemplate {
 
           // Type checking
           if (!this.validateVariableType(value, propSchema.type)) {
-            errors.push(
-              `Variable '${key}' expected type '${propSchema.type}' but got '${typeof value}'`
-            )
+            errors.push(`Variable '${key}' expected type '${propSchema.type}' but got '${typeof value}'`)
           }
 
           // Enum validation
           if (propSchema.enum && !propSchema.enum.includes(value)) {
-            errors.push(
-              `Variable '${key}' must be one of: ${propSchema.enum.join(', ')}. Got: ${value}`
-            )
+            errors.push(`Variable '${key}' must be one of: ${propSchema.enum.join(', ')}. Got: ${value}`)
           }
         }
       }

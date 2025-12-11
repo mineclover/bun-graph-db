@@ -93,11 +93,7 @@
     "resultType": "success",
     "dataSize": 1128,
     "hasData": true,
-    "dataFields": [
-      "success",
-      "data",
-      "metadata"
-    ],
+    "dataFields": ["success", "data", "metadata"],
     "serverUrl": "http://localhost:4000/graphql",
     "generatedBy": "curl-template-tester"
   }

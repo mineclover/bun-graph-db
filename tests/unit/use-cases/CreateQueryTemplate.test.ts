@@ -49,9 +49,7 @@ describe('CreateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(DomainException)
-      await expect(useCase.execute(request)).rejects.toThrow(
-        'Query template identifier cannot be empty'
-      )
+      await expect(useCase.execute(request)).rejects.toThrow('Query template identifier cannot be empty')
     })
 
     it('should throw DomainException when identifier contains uppercase letters', async () => {
@@ -64,7 +62,7 @@ describe('CreateQueryTemplate', () => {
 
       await expect(useCase.execute(request)).rejects.toThrow(DomainException)
       await expect(useCase.execute(request)).rejects.toThrow(
-        'Query template identifier must contain only lowercase letters'
+        'Query template identifier must contain only lowercase letters',
       )
     })
 
@@ -78,7 +76,7 @@ describe('CreateQueryTemplate', () => {
 
       await expect(useCase.execute(request)).rejects.toThrow(DomainException)
       await expect(useCase.execute(request)).rejects.toThrow(
-        'Query template identifier must contain only lowercase letters'
+        'Query template identifier must contain only lowercase letters',
       )
     })
 
@@ -119,9 +117,7 @@ describe('CreateQueryTemplate', () => {
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(DomainException)
-      await expect(useCase.execute(request)).rejects.toThrow(
-        'Complexity score must be between 1 and 10'
-      )
+      await expect(useCase.execute(request)).rejects.toThrow('Complexity score must be between 1 and 10')
     })
   })
 
@@ -146,7 +142,7 @@ describe('CreateQueryTemplate', () => {
         expect.objectContaining({
           identifier: 'simple-query',
           name: 'Simple Query',
-        })
+        }),
       )
     })
 
@@ -193,8 +189,7 @@ describe('CreateQueryTemplate', () => {
       const request: CreateQueryTemplateRequest = {
         identifier: 'users-paginated',
         name: 'Get Users Paginated',
-        queryText:
-          'query GetUsers($limit: Int, $offset: Int) { users(limit: $limit, offset: $offset) { id } }',
+        queryText: 'query GetUsers($limit: Int, $offset: Int) { users(limit: $limit, offset: $offset) { id } }',
         tags: ['users', 'pagination'],
         defaultVariables: {
           limit: 10,
@@ -383,7 +378,7 @@ describe('CreateQueryTemplate', () => {
         'Failed to create query template',
         expect.objectContaining({
           error: 'Database connection failed',
-        })
+        }),
       )
     })
   })
@@ -404,13 +399,13 @@ describe('CreateQueryTemplate', () => {
         expect.objectContaining({
           identifier: 'logged-template',
           name: 'Logged Template',
-        })
+        }),
       )
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Query template created successfully',
         expect.objectContaining({
           identifier: 'logged-template',
-        })
+        }),
       )
     })
   })

@@ -8,11 +8,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import {
-  ConflictException,
-  NotFoundException,
-  ValidationException,
-} from '@/shared/exceptions/DomainException.js'
+import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { createTestAttribute, createTestNode, createTestTable } from './test-helpers.js'
 
 describe('CreateNodeUseCase', () => {
@@ -74,7 +70,7 @@ describe('CreateNodeUseCase', () => {
       mockNodeAttributeRepository,
       mockTableRepository,
       mockAttributeRepository,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -130,9 +126,7 @@ describe('CreateNodeUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow(
-        "Table with id 'non-existent-table' not found"
-      )
+      await expect(useCase.execute(input)).rejects.toThrow("Table with id 'non-existent-table' not found")
       expect(mockTableRepository.findById).toHaveBeenCalledWith('non-existent-table')
     })
   })
@@ -152,7 +146,7 @@ describe('CreateNodeUseCase', () => {
 
       await expect(useCase.execute(input)).rejects.toThrow(ConflictException)
       await expect(useCase.execute(input)).rejects.toThrow(
-        "Node with content 'Duplicate Content' already exists in table 'test-table'"
+        "Node with content 'Duplicate Content' already exists in table 'test-table'",
       )
     })
   })
@@ -167,13 +161,7 @@ describe('CreateNodeUseCase', () => {
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
-      const createdNode = createTestNode(
-        'node-1',
-        'table-1',
-        'Test Content',
-        'Test Title',
-        'Test Description'
-      )
+      const createdNode = createTestNode('node-1', 'table-1', 'Test Content', 'Test Title', 'Test Description')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockNodeRepository.findByTableIdAndContent = mock()
@@ -205,25 +193,11 @@ describe('CreateNodeUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const createdNode = createTestNode('node-1', 'table-1', 'Test Content')
-      const testAttribute = createTestAttribute(
-        'attr-1',
-        'table-1',
-        'test_attr',
-        'Test Attribute',
-        '1'
-      )
-      const numberAttribute = createTestAttribute(
-        'attr-2',
-        'table-1',
-        'number_attr',
-        'Number Attribute',
-        '1'
-      )
+      const testAttribute = createTestAttribute('attr-1', 'table-1', 'test_attr', 'Test Attribute', '1')
+      const numberAttribute = createTestAttribute('attr-2', 'table-1', 'number_attr', 'Number Attribute', '1')
 
       mockTableRepository.findById = mock(async () => table as any)
-      mockNodeRepository.findByTableIdAndContent = mock()
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(createdNode)
+      mockNodeRepository.findByTableIdAndContent = mock().mockResolvedValueOnce(null).mockResolvedValueOnce(createdNode)
       mockAttributeRepository.findByTableId = mock(async () => ({
         data: [testAttribute, numberAttribute],
         metadata: {},
@@ -240,7 +214,7 @@ describe('CreateNodeUseCase', () => {
           id: 'node-1',
           content: 'Test Content',
           attributeCount: 2,
-        })
+        }),
       )
     })
 
@@ -257,9 +231,7 @@ describe('CreateNodeUseCase', () => {
       const createdNode = createTestNode('node-1', 'table-1', 'Test Content')
 
       mockTableRepository.findById = mock(async () => table as any)
-      mockNodeRepository.findByTableIdAndContent = mock()
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(createdNode)
+      mockNodeRepository.findByTableIdAndContent = mock().mockResolvedValueOnce(null).mockResolvedValueOnce(createdNode)
       mockAttributeRepository.findByTableId = mock(async () => ({
         data: [],
         metadata: {},
@@ -269,9 +241,7 @@ describe('CreateNodeUseCase', () => {
 
       expect(result.node).toBeDefined()
       expect(mockNodeAttributeRepository.save).not.toHaveBeenCalled()
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        "Attribute 'non-existent-attr' not found for table, skipping"
-      )
+      expect(mockLogger.warn).toHaveBeenCalledWith("Attribute 'non-existent-attr' not found for table, skipping")
     })
   })
 
@@ -298,7 +268,7 @@ describe('CreateNodeUseCase', () => {
           content: input.content,
           tableId: input.tableId,
           error: 'Database connection failed',
-        })
+        }),
       )
     })
 
@@ -330,9 +300,7 @@ describe('CreateNodeUseCase', () => {
       const createdNode = createTestNode('node-1', 'table-1', 'Test Content')
 
       mockTableRepository.findById = mock(async () => table as any)
-      mockNodeRepository.findByTableIdAndContent = mock()
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce(createdNode)
+      mockNodeRepository.findByTableIdAndContent = mock().mockResolvedValueOnce(null).mockResolvedValueOnce(createdNode)
 
       await useCase.execute(input)
 
@@ -345,7 +313,7 @@ describe('CreateNodeUseCase', () => {
         expect.objectContaining({
           id: 'node-1',
           content: 'Test Content',
-        })
+        }),
       )
     })
   })

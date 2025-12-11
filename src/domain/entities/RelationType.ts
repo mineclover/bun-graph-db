@@ -8,7 +8,7 @@ export class RelationType {
     private readonly description: string | null,
     private readonly category: string | null,
     private readonly createdAt: Date,
-    private readonly updatedAt: Date
+    private readonly updatedAt: Date,
   ) {
     this.validateIdentifier(identifier)
   }
@@ -20,7 +20,7 @@ export class RelationType {
       description || null,
       category || null,
       new Date(),
-      new Date()
+      new Date(),
     )
   }
 
@@ -30,16 +30,9 @@ export class RelationType {
     description: string | null,
     category: string | null,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
   ): RelationType {
-    return new RelationType(
-      id as RelationTypeId,
-      identifier,
-      description,
-      category,
-      createdAt,
-      updatedAt
-    )
+    return new RelationType(id as RelationTypeId, identifier, description, category, createdAt, updatedAt)
   }
 
   private validateIdentifier(identifier: string): void {
@@ -54,32 +47,18 @@ export class RelationType {
     // Only allow alphanumeric characters, underscores, and hyphens
     if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(identifier)) {
       throw new DomainException(
-        'RelationType identifier must start with a letter and contain only alphanumeric characters, underscores, and hyphens'
+        'RelationType identifier must start with a letter and contain only alphanumeric characters, underscores, and hyphens',
       )
     }
   }
 
   // Update methods
   updateDescription(description: string | null): RelationType {
-    return new RelationType(
-      this.id,
-      this.identifier,
-      description,
-      this.category,
-      this.createdAt,
-      new Date()
-    )
+    return new RelationType(this.id, this.identifier, description, this.category, this.createdAt, new Date())
   }
 
   updateCategory(category: string | null): RelationType {
-    return new RelationType(
-      this.id,
-      this.identifier,
-      this.description,
-      category,
-      this.createdAt,
-      new Date()
-    )
+    return new RelationType(this.id, this.identifier, this.description, category, this.createdAt, new Date())
   }
 
   // Getters

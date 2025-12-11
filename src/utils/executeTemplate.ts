@@ -37,7 +37,7 @@ export interface ExecuteTemplateResult {
 export async function executeTemplate(
   templateIdentifier: string,
   variables: any = {},
-  options: ExecuteTemplateOptions = {}
+  options: ExecuteTemplateOptions = {},
 ): Promise<ExecuteTemplateResult> {
   const startTime = Date.now()
   const endpoint = options.endpoint || GRAPHQL_ENDPOINT
@@ -143,7 +143,7 @@ export async function executeTemplate(
  */
 export async function executeTemplates(
   templates: Array<{ identifier: string; variables?: any }>,
-  options: ExecuteTemplateOptions = {}
+  options: ExecuteTemplateOptions = {},
 ): Promise<ExecuteTemplateResult[]> {
   const results: ExecuteTemplateResult[] = []
 
@@ -193,18 +193,13 @@ export const TemplateHelpers = {
   },
 
   // 노드 생성
-  async createNode(
-    content: string,
-    tableId: string,
-    attributes: any[] = [],
-    options?: ExecuteTemplateOptions
-  ) {
+  async createNode(content: string, tableId: string, attributes: any[] = [], options?: ExecuteTemplateOptions) {
     return executeTemplate(
       'create-node-simple',
       {
         input: { content, tableId, attributes },
       },
-      options
+      options,
     )
   },
 
@@ -216,24 +211,19 @@ export const TemplateHelpers = {
         id,
         input: { content },
       },
-      options
+      options,
     )
   },
 
   // 노드 검색
-  async searchNodes(
-    tableId: string,
-    search?: string,
-    limit: number = 20,
-    options?: ExecuteTemplateOptions
-  ) {
+  async searchNodes(tableId: string, search?: string, limit: number = 20, options?: ExecuteTemplateOptions) {
     return executeTemplate(
       'search-nodes-advanced',
       {
         filter: { tableId, search },
         pagination: { limit, offset: 0 },
       },
-      options
+      options,
     )
   },
 
@@ -252,7 +242,7 @@ export const TemplateHelpers = {
     content: string,
     attributeId: string,
     attributeValue: string,
-    options?: ExecuteTemplateOptions
+    options?: ExecuteTemplateOptions,
   ) {
     return executeTemplate(
       'update-todo-with-attributes',
@@ -262,7 +252,7 @@ export const TemplateHelpers = {
         attributeId,
         attributeValue,
       },
-      options
+      options,
     )
   },
 
@@ -271,7 +261,7 @@ export const TemplateHelpers = {
     nodeId2: string,
     content1: string,
     content2: string,
-    options?: ExecuteTemplateOptions
+    options?: ExecuteTemplateOptions,
   ) {
     return executeTemplate(
       'bulk-update-nodes-content',
@@ -281,7 +271,7 @@ export const TemplateHelpers = {
         content1,
         content2,
       },
-      options
+      options,
     )
   },
 }
@@ -306,10 +296,7 @@ async function demo() {
 
     // 4. 업데이트 테스트
     console.log('\n✏️ 4. 노드 업데이트 테스트')
-    const updateResult = await TemplateHelpers.updateTodoContent(
-      '80',
-      `데모 업데이트 ${Date.now()}`
-    )
+    const updateResult = await TemplateHelpers.updateTodoContent('80', `데모 업데이트 ${Date.now()}`)
 
     // 통계 계산
     const results = [nodeResult, statsResult, searchResult, updateResult]

@@ -5,12 +5,7 @@ import type { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js
 import type { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
 import type { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
 import type { DocId, TableId } from '@/core/types/CommonTypes.js'
-import type {
-  CreateDocInput,
-  DocsFilter,
-  GraphQLContext,
-  UpdateDocInput,
-} from '@/core/types/GraphQLTypes.js'
+import type { CreateDocInput, DocsFilter, GraphQLContext, UpdateDocInput } from '@/core/types/GraphQLTypes.js'
 import { DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
@@ -26,7 +21,7 @@ export class DocResolver extends BaseResolver {
     private readonly deleteDocUseCase: DeleteDocUseCase,
     private readonly activateDocUseCase: ActivateDocUseCase,
     private readonly docRepository: IDocRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -47,11 +42,8 @@ export class DocResolver extends BaseResolver {
   async getDoc(args: { id: string }, _context?: GraphQLContext): Promise<DocDto | null> {
     this.validateArgs(
       args,
-      [
-        BaseResolver.validationRules.required('id', 'Doc ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Doc ID'),
-      ],
-      'getDoc'
+      [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
+      'getDoc',
     )
 
     return this.handleQuery(
@@ -60,13 +52,13 @@ export class DocResolver extends BaseResolver {
         return doc ? DocDto.fromEntity(doc) : null
       },
       'findDocById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
   async getActiveDoc(
     args: { tableId: string; category: DocCategory },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<DocDto | null> {
     this.validateArgs(
       args,
@@ -75,19 +67,16 @@ export class DocResolver extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('tableId', 'Table ID'),
         BaseResolver.validationRules.required('category', 'Doc Category'),
       ],
-      'getActiveDoc'
+      'getActiveDoc',
     )
 
     return this.handleQuery(
       async () => {
-        const doc = await this.docRepository.findActiveByTableAndCategory(
-          args.tableId as TableId,
-          args.category
-        )
+        const doc = await this.docRepository.findActiveByTableAndCategory(args.tableId as TableId, args.category)
         return doc ? DocDto.fromEntity(doc) : null
       },
       'findActiveDoc',
-      { tableId: args.tableId, category: args.category }
+      { tableId: args.tableId, category: args.category },
     )
   }
 
@@ -109,7 +98,7 @@ export class DocResolver extends BaseResolver {
         BaseResolver.validationRules.required('tableId', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('tableId', 'Table ID'),
       ],
-      'getDocs'
+      'getDocs',
     )
 
     try {
@@ -146,10 +135,7 @@ export class DocResolver extends BaseResolver {
     }
   }
 
-  async getDocVersions(
-    args: { tableId: string; category: DocCategory },
-    _context?: GraphQLContext
-  ): Promise<DocDto[]> {
+  async getDocVersions(args: { tableId: string; category: DocCategory }, _context?: GraphQLContext): Promise<DocDto[]> {
     this.validateArgs(
       args,
       [
@@ -157,19 +143,16 @@ export class DocResolver extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('tableId', 'Table ID'),
         BaseResolver.validationRules.required('category', 'Doc Category'),
       ],
-      'getDocVersions'
+      'getDocVersions',
     )
 
     return this.handleQuery(
       async () => {
-        const docs = await this.docRepository.findVersionsByTableAndCategory(
-          args.tableId as TableId,
-          args.category
-        )
+        const docs = await this.docRepository.findVersionsByTableAndCategory(args.tableId as TableId, args.category)
         return docs.map((doc) => DocDto.fromEntity(doc))
       },
       'findDocVersions',
-      { tableId: args.tableId, category: args.category }
+      { tableId: args.tableId, category: args.category },
     )
   }
 
@@ -183,11 +166,7 @@ export class DocResolver extends BaseResolver {
     hasNextPage: boolean
     hasPreviousPage: boolean
   }> {
-    this.validateArgs(
-      args,
-      [BaseResolver.validationRules.required('filter', 'Search Filter')],
-      'searchDocs'
-    )
+    this.validateArgs(args, [BaseResolver.validationRules.required('filter', 'Search Filter')], 'searchDocs')
 
     try {
       const { pagination = { limit: 10, offset: 0 }, filter, sort } = args
@@ -222,7 +201,7 @@ export class DocResolver extends BaseResolver {
   // Mutation resolvers
   async createDoc(
     args: { input: CreateDocInput },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ): Promise<{
     success: boolean
     doc?: DocDto | null
@@ -237,7 +216,7 @@ export class DocResolver extends BaseResolver {
         BaseResolver.validationRules.required('content', 'Doc Content'),
         BaseResolver.validationRules.nonEmpty('content', 'Doc Content'),
       ],
-      'createDoc'
+      'createDoc',
     )
 
     const result = await this.handleMutation(
@@ -251,7 +230,7 @@ export class DocResolver extends BaseResolver {
         return useCaseResult.doc
       },
       'createDoc',
-      { input: args.input }
+      { input: args.input },
     )
 
     return {
@@ -268,11 +247,8 @@ export class DocResolver extends BaseResolver {
   }> {
     this.validateArgs(
       { id: args.id },
-      [
-        BaseResolver.validationRules.required('id', 'Doc ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Doc ID'),
-      ],
-      'updateDoc'
+      [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
+      'updateDoc',
     )
 
     try {
@@ -324,11 +300,8 @@ export class DocResolver extends BaseResolver {
   }> {
     this.validateArgs(
       args,
-      [
-        BaseResolver.validationRules.required('id', 'Doc ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Doc ID'),
-      ],
-      'deleteDoc'
+      [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
+      'deleteDoc',
     )
 
     try {
@@ -360,11 +333,8 @@ export class DocResolver extends BaseResolver {
   }> {
     this.validateArgs(
       args,
-      [
-        BaseResolver.validationRules.required('id', 'Doc ID'),
-        BaseResolver.validationRules.nonEmpty('id', 'Doc ID'),
-      ],
-      'activateDoc'
+      [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
+      'activateDoc',
     )
 
     try {
@@ -391,11 +361,7 @@ export class DocResolver extends BaseResolver {
     }
   }
 
-  async createDocVersion(args: {
-    tableId: string
-    category: DocCategory
-    content: string
-  }): Promise<{
+  async createDocVersion(args: { tableId: string; category: DocCategory; content: string }): Promise<{
     success: boolean
     doc?: DocDto | null
     errors: Array<{ message: string; code: string; field?: string }>
@@ -409,16 +375,13 @@ export class DocResolver extends BaseResolver {
         BaseResolver.validationRules.required('content', 'Doc Content'),
         BaseResolver.validationRules.nonEmpty('content', 'Doc Content'),
       ],
-      'createDocVersion'
+      'createDocVersion',
     )
 
     const result = await this.handleMutation(
       async () => {
         // Get the latest version number
-        const latestVersion = await this.docRepository.getLatestVersion(
-          args.tableId as TableId,
-          args.category
-        )
+        const latestVersion = await this.docRepository.getLatestVersion(args.tableId as TableId, args.category)
 
         const useCaseResult = await this.createDocUseCase.execute({
           tableId: args.tableId as TableId,
@@ -429,7 +392,7 @@ export class DocResolver extends BaseResolver {
         return useCaseResult.doc
       },
       'createDocVersion',
-      { tableId: args.tableId, category: args.category }
+      { tableId: args.tableId, category: args.category },
     )
 
     return {

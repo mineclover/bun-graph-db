@@ -1,10 +1,4 @@
-import {
-  buildSchema,
-  getIntrospectionQuery,
-  graphqlSync,
-  type OperationDefinitionNode,
-  parse,
-} from 'graphql'
+import { buildSchema, getIntrospectionQuery, graphqlSync, type OperationDefinitionNode, parse } from 'graphql'
 
 export interface GraphQLOperationInfo {
   queryName: string | null
@@ -20,9 +14,9 @@ export function extractOperationInfo(queryText: string): GraphQLOperationInfo {
     const document = parse(queryText.trim())
 
     // Find the first operation definition
-    const operationDefinition = document.definitions.find(
-      (def) => def.kind === 'OperationDefinition'
-    ) as OperationDefinitionNode | undefined
+    const operationDefinition = document.definitions.find((def) => def.kind === 'OperationDefinition') as
+      | OperationDefinitionNode
+      | undefined
 
     if (!operationDefinition) {
       throw new Error('No operation definition found in query text')
@@ -33,9 +27,7 @@ export function extractOperationInfo(queryText: string): GraphQLOperationInfo {
       operationType: operationDefinition.operation,
     }
   } catch (error) {
-    throw new Error(
-      `Failed to parse GraphQL operation: ${error instanceof Error ? error.message : 'Unknown error'}`
-    )
+    throw new Error(`Failed to parse GraphQL operation: ${error instanceof Error ? error.message : 'Unknown error'}`)
   }
 }
 
@@ -61,9 +53,9 @@ export function extractVariableDefinitions(queryText: string): string[] {
   try {
     const document = parse(queryText.trim())
 
-    const operationDefinition = document.definitions.find(
-      (def) => def.kind === 'OperationDefinition'
-    ) as OperationDefinitionNode | undefined
+    const operationDefinition = document.definitions.find((def) => def.kind === 'OperationDefinition') as
+      | OperationDefinitionNode
+      | undefined
 
     if (!operationDefinition || !operationDefinition.variableDefinitions) {
       return []
@@ -80,7 +72,7 @@ export function extractVariableDefinitions(queryText: string): string[] {
  */
 export function validateAgainstSchema(
   queryText: string,
-  baseSchemaSDL: string
+  baseSchemaSDL: string,
 ): {
   isValid: boolean
   errors: string[]
@@ -146,9 +138,9 @@ export function calculateComplexityScore(queryText: string): number {
       }
     }
 
-    const operationDefinition = document.definitions.find(
-      (def) => def.kind === 'OperationDefinition'
-    ) as OperationDefinitionNode | undefined
+    const operationDefinition = document.definitions.find((def) => def.kind === 'OperationDefinition') as
+      | OperationDefinitionNode
+      | undefined
 
     if (operationDefinition?.selectionSet) {
       countComplexity(operationDefinition.selectionSet.selections)
@@ -186,9 +178,9 @@ export function extractFieldNames(queryText: string): string[] {
       }
     }
 
-    const operationDefinition = document.definitions.find(
-      (def) => def.kind === 'OperationDefinition'
-    ) as OperationDefinitionNode | undefined
+    const operationDefinition = document.definitions.find((def) => def.kind === 'OperationDefinition') as
+      | OperationDefinitionNode
+      | undefined
 
     if (operationDefinition?.selectionSet) {
       extractFields(operationDefinition.selectionSet.selections)
@@ -209,9 +201,9 @@ export function extractSystemQueries(queryText: string): string[] {
     const document = parse(queryText.trim())
     const systemQueries: string[] = []
 
-    const operationDefinition = document.definitions.find(
-      (def) => def.kind === 'OperationDefinition'
-    ) as OperationDefinitionNode | undefined
+    const operationDefinition = document.definitions.find((def) => def.kind === 'OperationDefinition') as
+      | OperationDefinitionNode
+      | undefined
 
     if (operationDefinition?.selectionSet) {
       // Only extract top-level selections (root queries/mutations)

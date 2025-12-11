@@ -12,10 +12,7 @@ interface TableRow {
   updated_at: string
 }
 
-export class SqliteTableRepository
-  extends BaseSqliteRepository<Table, TableId>
-  implements ITableRepository
-{
+export class SqliteTableRepository extends BaseSqliteRepository<Table, TableId> implements ITableRepository {
   protected get tableName(): string {
     return 'tables'
   }
@@ -46,7 +43,7 @@ export class SqliteTableRepository
           tableData.identifier,
           tableData.description,
           new Date(tableData.created_at),
-          new Date(tableData.updated_at)
+          new Date(tableData.updated_at),
         )
       } catch (error) {
         console.error('Save error:', error)
@@ -61,12 +58,7 @@ export class SqliteTableRepository
       `
 
       try {
-        this.db.run(query, [
-          tableData.identifier,
-          tableData.description,
-          tableData.updated_at,
-          tableData.id,
-        ])
+        this.db.run(query, [tableData.identifier, tableData.description, tableData.updated_at, tableData.id])
 
         // Return the same table for updates
         return table
@@ -178,7 +170,7 @@ export class SqliteTableRepository
             tableData.identifier,
             tableData.description,
             tableData.created_at,
-            tableData.updated_at
+            tableData.updated_at,
           )
         }
       })()
@@ -241,7 +233,7 @@ export class SqliteTableRepository
       row.identifier,
       row.description,
       new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.updated_at),
     )
   }
 

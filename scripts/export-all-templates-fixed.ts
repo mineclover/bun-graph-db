@@ -9,8 +9,8 @@
  * - import 가능한 형태로 JSON 파일 생성
  */
 
-import { promises as fs } from 'fs'
-import { join } from 'path'
+import { promises as fs } from 'node:fs'
+import { join } from 'node:path'
 
 interface FullTemplate {
   id: string
@@ -162,7 +162,7 @@ async function exportAllTemplatesFixed(templates: FullTemplate[]): Promise<Expor
   for (let i = 0; i < templates.length; i += batchSize) {
     const batch = templates.slice(i, i + batchSize)
     console.log(
-      `\n📦 배치 ${Math.floor(i / batchSize) + 1}/${Math.ceil(templates.length / batchSize)} 처리 중... (${i + 1}-${Math.min(i + batchSize, templates.length)}/${templates.length})`
+      `\n📦 배치 ${Math.floor(i / batchSize) + 1}/${Math.ceil(templates.length / batchSize)} 처리 중... (${i + 1}-${Math.min(i + batchSize, templates.length)}/${templates.length})`,
     )
 
     // 배치 단위로 병렬 처리 (순위 번호 제거)
@@ -258,8 +258,7 @@ function getCategory(template: FullTemplate): string {
   if (query.includes('relation') || name.includes('relation')) return 'relation'
   if (query.includes('attribute') || name.includes('attribute')) return 'attribute'
   if (identifier.includes('test')) return 'test'
-  if (query.includes('subscription') || template.operationType === 'subscription')
-    return 'subscription'
+  if (query.includes('subscription') || template.operationType === 'subscription') return 'subscription'
 
   return 'general'
 }
@@ -310,8 +309,7 @@ ${successful
     const template = result.template!
     const category = getCategory(template)
     const description = template.description || '설명 없음'
-    const truncatedDesc =
-      description.length > 50 ? `${description.substring(0, 50)}...` : description
+    const truncatedDesc = description.length > 50 ? `${description.substring(0, 50)}...` : description
     return `| \`${result.filename}\` | ${template.name} | ${truncatedDesc} | ${template.usageCount}회 | ${category} | ${template.operationType} |`
   })
   .join('\n')}
@@ -325,7 +323,7 @@ ${(() => {
       acc[category] = (acc[category] || 0) + 1
       return acc
     },
-    {} as Record<string, number>
+    {} as Record<string, number>,
   )
 
   return Object.entries(categories)

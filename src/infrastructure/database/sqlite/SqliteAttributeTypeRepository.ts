@@ -1,8 +1,4 @@
-import type {
-  AttributeTypeId,
-  PaginatedResult,
-  PaginationOptions,
-} from '@/core/types/CommonTypes.js'
+import type { AttributeTypeId, PaginatedResult, PaginationOptions } from '@/core/types/CommonTypes.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
 import type {
   AttributeTypeUpdateData,
@@ -95,10 +91,7 @@ export class SqliteAttributeTypeRepository
 
   // findAll() - inherited from BaseSqliteRepository
 
-  async findByJsonType(
-    jsonType: string,
-    options: PaginationOptions = {}
-  ): Promise<PaginatedResult<AttributeType>> {
+  async findByJsonType(jsonType: string, options: PaginationOptions = {}): Promise<PaginatedResult<AttributeType>> {
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
@@ -112,9 +105,7 @@ export class SqliteAttributeTypeRepository
     const countQuery = `SELECT COUNT(*) as count FROM attribute_types WHERE json_type = ?`
 
     try {
-      const rows = this.db
-        .query<AttributeTypeRow, [string, number, number]>(dataQuery)
-        .all(jsonType, limit, offset)
+      const rows = this.db.query<AttributeTypeRow, [string, number, number]>(dataQuery).all(jsonType, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(jsonType)
       const total = countResult?.count || 0
 
@@ -165,7 +156,7 @@ export class SqliteAttributeTypeRepository
             attributeTypeData.default_value,
             attributeTypeData.examples,
             attributeTypeData.created_at,
-            attributeTypeData.updated_at
+            attributeTypeData.updated_at,
           )
         }
       })()
@@ -189,14 +180,12 @@ export class SqliteAttributeTypeRepository
       updates.jsonType ?? existing.getJsonType(),
       updates.format ?? existing.getFormat(),
       updates.description ?? existing.getDescription(),
-      updates.validationSchema
-        ? JSON.stringify(updates.validationSchema)
-        : existing.getValidationSchema(),
+      updates.validationSchema ? JSON.stringify(updates.validationSchema) : existing.getValidationSchema(),
       existing.getReferenceConfig(), // No update available for this
       updates.defaultValue ?? existing.getDefaultValue(),
       existing.getExamples(), // No update available for this
       existing.getCreatedAt(),
-      existing.getUpdatedAt()
+      existing.getUpdatedAt(),
     )
 
     const data = updatedAttributeType.toDatabase()
@@ -241,7 +230,7 @@ export class SqliteAttributeTypeRepository
       row.default_value,
       row.examples,
       new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.updated_at),
     )
   }
 }

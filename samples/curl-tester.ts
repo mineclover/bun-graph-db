@@ -121,7 +121,7 @@ class CurlTemplateTester {
             false,
             executeResult.error,
             executionTime,
-            dataset
+            dataset,
           )
           if (resultSaveResult.success) {
             console.log(`✅ Execution error saved: ${resultSaveResult.filename}`)
@@ -152,7 +152,7 @@ class CurlTemplateTester {
             executeResult.success,
             executeResult.error,
             executionTime,
-            dataset
+            dataset,
           )
           if (resultSaveResult.success) {
             console.log(`✅ Execution result saved: ${resultSaveResult.filename}`)
@@ -189,16 +189,12 @@ class CurlTemplateTester {
   }
 
   private async loadDataset(datasetPath: string): Promise<TemplateDataset> {
-    const fullPath = datasetPath.startsWith('/')
-      ? datasetPath
-      : join(process.cwd(), 'demo', 'datasets', datasetPath)
+    const fullPath = datasetPath.startsWith('/') ? datasetPath : join(process.cwd(), 'demo', 'datasets', datasetPath)
     const content = await fs.readFile(fullPath, 'utf8')
     return JSON.parse(content) as TemplateDataset
   }
 
-  private async createTemplate(
-    templateSpec: any
-  ): Promise<{ success: boolean; error?: string; identifier?: string }> {
+  private async createTemplate(templateSpec: any): Promise<{ success: boolean; error?: string; identifier?: string }> {
     const mutation = `
       mutation CreateTemplate($input: CreateQueryTemplateInput!) {
         createTemplate(input: $input) {
@@ -239,15 +235,14 @@ class CurlTemplateTester {
       return { success: true, identifier: uniqueIdentifier }
     } else {
       const errors = result.data?.createTemplate?.errors || []
-      const errorMessages =
-        errors.map((e: any) => e.message || e).join(', ') || result.error || 'Unknown error'
+      const errorMessages = errors.map((e: any) => e.message || e).join(', ') || result.error || 'Unknown error'
       return { success: false, error: errorMessages }
     }
   }
 
   private async executeTemplate(
     identifier: string,
-    variables?: Record<string, any>
+    variables?: Record<string, any>,
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     const mutation = `
       mutation ExecuteTemplateWithGraphQL($templateIdentifier: String!, $variables: JSON) {
@@ -274,15 +269,12 @@ class CurlTemplateTester {
       }
     } else {
       const errors = result.data?.executeTemplateWithGraphQL?.errors || []
-      const errorMessages =
-        errors.map((e: any) => e.message || e).join(', ') || result.error || 'Unknown error'
+      const errorMessages = errors.map((e: any) => e.message || e).join(', ') || result.error || 'Unknown error'
       return { success: false, error: errorMessages }
     }
   }
 
-  private async exportTemplate(
-    identifier: string
-  ): Promise<{ success: boolean; filename?: string; error?: string }> {
+  private async exportTemplate(identifier: string): Promise<{ success: boolean; filename?: string; error?: string }> {
     const mutation = `
       mutation ExportTemplate($templateIdentifier: String, $includeStatistics: Boolean) {
         exportTemplate(templateIdentifier: $templateIdentifier, includeStatistics: $includeStatistics) {
@@ -317,15 +309,14 @@ class CurlTemplateTester {
       return { success: true, filename }
     } else {
       const errors = result.data?.exportTemplate?.errors || []
-      const errorMessages =
-        errors.map((e: any) => e.message || e).join(', ') || result.error || 'Unknown error'
+      const errorMessages = errors.map((e: any) => e.message || e).join(', ') || result.error || 'Unknown error'
       return { success: false, error: errorMessages }
     }
   }
 
   private async executeCurl(
     query: string,
-    variables: Record<string, any>
+    variables: Record<string, any>,
   ): Promise<{ success: boolean; data?: any; error?: string }> {
     return new Promise((resolve) => {
       const payload = JSON.stringify({ query, variables })
@@ -426,9 +417,7 @@ class CurlTemplateTester {
         // 타입 체크
         const actualType = Array.isArray(actualValue) ? 'array' : typeof actualValue
         if (expectedType !== actualType && actualValue !== null) {
-          errors.push(
-            `Type mismatch at ${currentPath}: expected ${expectedType}, got ${actualType}`
-          )
+          errors.push(`Type mismatch at ${currentPath}: expected ${expectedType}, got ${actualType}`)
         }
       } else if (typeof expectedType === 'object') {
         // 중첩 객체 검증
@@ -461,7 +450,7 @@ class CurlTemplateTester {
     success: boolean,
     error?: string,
     executionTime?: number,
-    dataset?: TemplateDataset
+    dataset?: TemplateDataset,
   ): Promise<{ success: boolean; filename?: string; error?: string }> {
     try {
       await this.ensureResultDirectory()
@@ -511,12 +500,8 @@ class CurlTemplateTester {
         metadata: {
           resultType: success ? 'success' : 'error',
           dataSize: executionData ? JSON.stringify(executionData).length : 0,
-          hasData:
-            !!executionData &&
-            typeof executionData === 'object' &&
-            Object.keys(executionData).length > 0,
-          dataFields:
-            executionData && typeof executionData === 'object' ? Object.keys(executionData) : [],
+          hasData: !!executionData && typeof executionData === 'object' && Object.keys(executionData).length > 0,
+          dataFields: executionData && typeof executionData === 'object' ? Object.keys(executionData) : [],
           serverUrl: this.serverUrl,
           generatedBy: 'curl-template-tester',
         },

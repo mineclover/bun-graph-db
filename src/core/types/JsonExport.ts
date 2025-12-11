@@ -479,21 +479,11 @@ export interface JsonPatchResult {
 // =============================================================================
 
 export function isPathRef(value: unknown): value is PathRef {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    '$path' in value &&
-    typeof (value as PathRef).$path === 'string'
-  )
+  return typeof value === 'object' && value !== null && '$path' in value && typeof (value as PathRef).$path === 'string'
 }
 
 export function isExprRef(value: unknown): value is ExprRef {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    '$expr' in value &&
-    typeof (value as ExprRef).$expr === 'string'
-  )
+  return typeof value === 'object' && value !== null && '$expr' in value && typeof (value as ExprRef).$expr === 'string'
 }
 
 export function isQueryNode(node: FlowNode): node is QueryNode {
@@ -528,8 +518,6 @@ export function isFlatJsonPatchRequest(request: JsonPatchRequest): request is Fl
   return request.format === 'flat'
 }
 
-export function isHFIProtocolPatchRequest(
-  request: JsonPatchRequest
-): request is HFIProtocolPatchRequest {
+export function isHFIProtocolPatchRequest(request: JsonPatchRequest): request is HFIProtocolPatchRequest {
   return request.format === 'hfi'
 }

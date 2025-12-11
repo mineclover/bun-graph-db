@@ -3,7 +3,7 @@
   "description": "Execute node search using existing template with variables",
   "domain": "node_management",
   "category": "basic",
-  
+
   "templateExecution": {
     "templateIdentifier": "test-search-nodes",
     "variables": {
@@ -11,7 +11,7 @@
       "limit": 5
     }
   },
-  
+
   "expectedResult": {
     "success": true,
     "dataShape": {
@@ -21,7 +21,7 @@
       }
     }
   },
-  
+
   "testConfig": {
     "shouldExport": true,
     "retryOnFailure": false

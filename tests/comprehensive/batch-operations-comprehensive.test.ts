@@ -158,7 +158,7 @@ describe('Batch Operations Comprehensive Tests', () => {
             }
           `)
           return response.data.createTable.table
-        })
+        }),
       )
 
       const batchDeleteQuery = `
@@ -310,7 +310,7 @@ describe('Batch Operations Comprehensive Tests', () => {
             }
           `)
           return response.data.createNode.node
-        })
+        }),
       )
 
       const batchUpdateQuery = `
@@ -442,7 +442,7 @@ describe('Batch Operations Comprehensive Tests', () => {
             }
           `)
           return response.data.createNode.node
-        })
+        }),
       )
 
       const batchSetQuery = `
@@ -514,7 +514,7 @@ describe('Batch Operations Comprehensive Tests', () => {
             }
           `)
           return response.data.createNode.node
-        })
+        }),
       )
     })
 

@@ -38,22 +38,13 @@
         },
         "sortBy": {
           "type": "string",
-          "enum": [
-            "createdAt",
-            "updatedAt",
-            "name",
-            "nodeCount",
-            "attributeCount"
-          ],
+          "enum": ["createdAt", "updatedAt", "name", "nodeCount", "attributeCount"],
           "default": "createdAt",
           "description": "정렬 기준 필드"
         },
         "sortOrder": {
           "type": "string",
-          "enum": [
-            "ASC",
-            "DESC"
-          ],
+          "enum": ["ASC", "DESC"],
           "default": "DESC",
           "description": "정렬 순서"
         },
@@ -73,9 +64,7 @@
     "applicableTables": null,
     "complexityScore": 4,
     "version": "1.0.0",
-    "tags": [
-      "general"
-    ],
+    "tags": ["general"],
     "isActive": true,
     "statistics": {
       "usageCount": 25,

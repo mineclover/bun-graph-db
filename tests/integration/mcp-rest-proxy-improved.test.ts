@@ -25,13 +25,13 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
     testEnvironment = await manager.setupTest(config)
 
     // Create helpers using the allocated server
-    const baseUrl = `http://localhost:${testEnvironment.server!.port}`
+    const baseUrl = `http://localhost:${testEnvironment.server?.port}`
     mcpHelper = new McpHelper(baseUrl)
     restHelper = new RestApiHelper(baseUrl)
 
     console.log(`🚀 Integration Test Environment Ready:`)
-    console.log(`   - Server Port: ${testEnvironment.server!.port}`)
-    console.log(`   - GraphQL: ${testEnvironment.server!.url}`)
+    console.log(`   - Server Port: ${testEnvironment.server?.port}`)
+    console.log(`   - GraphQL: ${testEnvironment.server?.url}`)
     console.log(`   - REST API: ${baseUrl}/api`)
     console.log(`   - MCP: ${baseUrl}/mcp`)
   }, 30000)
@@ -142,7 +142,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
           id: 'error-test',
         }
 
-        const response = await fetch(`http://localhost:${testEnvironment.server!.port}/mcp`, {
+        const response = await fetch(`http://localhost:${testEnvironment.server?.port}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(request),
@@ -184,12 +184,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
       expect(typeof mcpResult).toBe(typeof restResult)
 
       // If both succeed, they should have similar data structure
-      if (
-        mcpResult &&
-        restResult &&
-        typeof mcpResult === 'object' &&
-        typeof restResult === 'object'
-      ) {
+      if (mcpResult && restResult && typeof mcpResult === 'object' && typeof restResult === 'object') {
         if ('success' in mcpResult && 'success' in restResult) {
           expect(typeof mcpResult.success).toBe(typeof restResult.success)
         }
@@ -302,7 +297,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
   describe('Error Handling and Edge Cases', () => {
     test('should handle malformed JSON in MCP requests', async () => {
       try {
-        const response = await fetch(`http://localhost:${testEnvironment.server!.port}/mcp`, {
+        const response = await fetch(`http://localhost:${testEnvironment.server?.port}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: '{"invalid": json}', // Malformed JSON
@@ -329,7 +324,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
           params: { name: 'healthCheck', arguments: {} },
         }
 
-        const response = await fetch(`http://localhost:${testEnvironment.server!.port}/mcp`, {
+        const response = await fetch(`http://localhost:${testEnvironment.server?.port}/mcp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(request),
@@ -377,7 +372,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
 
       // Create 15 concurrent health check requests
       const concurrentRequests = Array.from({ length: 15 }, (_, i) =>
-        mcpHelper.callTool('healthCheck', {}, `concurrent-${i}`)
+        mcpHelper.callTool('healthCheck', {}, `concurrent-${i}`),
       )
 
       const startTime = Date.now()
@@ -387,9 +382,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
       const successful = results.filter((r) => r.status === 'fulfilled').length
       const failed = results.filter((r) => r.status === 'rejected').length
 
-      console.log(
-        `🏁 Concurrent Results: ${successful} successful, ${failed} failed, ${duration}ms total`
-      )
+      console.log(`🏁 Concurrent Results: ${successful} successful, ${failed} failed, ${duration}ms total`)
 
       // Most requests should succeed
       expect(successful).toBeGreaterThanOrEqual(10) // At least 10 out of 15
@@ -423,7 +416,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
       const avgTime = duration / results.length
 
       console.log(
-        `📈 Load Test Results: ${successful}/${results.length} successful, avg ${avgTime.toFixed(2)}ms per request`
+        `📈 Load Test Results: ${successful}/${results.length} successful, avg ${avgTime.toFixed(2)}ms per request`,
       )
 
       // Should handle mixed load well
@@ -475,7 +468,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
 describe('Integration Tests with Auto Server Pattern', () => {
   test('should work with auto server management', async () => {
     await withAutoServer(createIntegrationConfig('auto-integration-test'), async (env) => {
-      const mcpHelper = new McpHelper(`http://localhost:${env.server!.port}`)
+      const mcpHelper = new McpHelper(`http://localhost:${env.server?.port}`)
 
       const result = await mcpHelper.callTool('healthCheck', {})
       expect(result).toBeDefined()
@@ -491,7 +484,7 @@ describe('Integration Tests with Auto Server Pattern', () => {
     // Test rapid creation and cleanup
     for (let i = 0; i < 3; i++) {
       await withAutoServer(createIntegrationConfig(`quick-test-${i}`), async (env) => {
-        const mcpHelper = new McpHelper(`http://localhost:${env.server!.port}`)
+        const mcpHelper = new McpHelper(`http://localhost:${env.server?.port}`)
 
         const result = await mcpHelper.callTool('healthCheck', {})
         expect(result).toBeDefined()

@@ -21,7 +21,7 @@ export class ExportTemplateUseCase {
 
   constructor(
     readonly templateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {
     this.importExportService = new TemplateImportExportService(templateRepository)
   }
@@ -59,10 +59,7 @@ export class ExportTemplateUseCase {
 
       // 식별자로 내보내기
       if (templateIdentifier) {
-        const result = await this.importExportService.exportTemplateByIdentifier(
-          templateIdentifier,
-          options
-        )
+        const result = await this.importExportService.exportTemplateByIdentifier(templateIdentifier, options)
 
         if (result.success) {
           this.logger.info('Template exported successfully', {

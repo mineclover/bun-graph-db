@@ -19,9 +19,24 @@
   "variablesSchema": {
     "title": { "type": "String", "required": true, "description": "할일 제목" },
     "description": { "type": "String", "required": false, "description": "할일 상세 설명" },
-    "status": { "type": "String", "required": false, "default": "TODO", "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"] },
-    "priority": { "type": "String", "required": false, "default": "MEDIUM", "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"] },
-    "category": { "type": "String", "required": false, "default": "PERSONAL", "enum": ["WORK", "PERSONAL", "SHOPPING", "HEALTH", "LEARNING", "OTHER"] },
+    "status": {
+      "type": "String",
+      "required": false,
+      "default": "TODO",
+      "enum": ["TODO", "IN_PROGRESS", "DONE", "CANCELLED"]
+    },
+    "priority": {
+      "type": "String",
+      "required": false,
+      "default": "MEDIUM",
+      "enum": ["LOW", "MEDIUM", "HIGH", "URGENT"]
+    },
+    "category": {
+      "type": "String",
+      "required": false,
+      "default": "PERSONAL",
+      "enum": ["WORK", "PERSONAL", "SHOPPING", "HEALTH", "LEARNING", "OTHER"]
+    },
     "dueDate": { "type": "String", "required": false, "description": "마감일 (YYYY-MM-DD 형식)" }
   },
   "version": "1.0.0"

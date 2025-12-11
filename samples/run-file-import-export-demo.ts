@@ -1,9 +1,6 @@
 #!/usr/bin/env bun
 
-import {
-  cleanupExportedFiles,
-  runFileImportExportDemo,
-} from './template-queries/file-import-export-demo.js'
+import { cleanupExportedFiles, runFileImportExportDemo } from './template-queries/file-import-export-demo.js'
 import { DemoRunner, parseCliArgs } from './utils/demo-runner.js'
 
 async function main() {

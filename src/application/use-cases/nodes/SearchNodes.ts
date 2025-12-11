@@ -1,9 +1,6 @@
 import { type NodeDto, fromEntity as nodeFromEntity } from '@/application/dtos/NodeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import {
-  type AttributeTypeInfo,
-  SearchQueryParser,
-} from '@/application/services/SearchQueryParser.js'
+import { type AttributeTypeInfo, SearchQueryParser } from '@/application/services/SearchQueryParser.js'
 import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
@@ -39,7 +36,7 @@ export interface INodeSearchRepository {
   searchNodes(
     tableId: TableId,
     searchQuery: SearchQuery,
-    availableAttributes: AttributeTypeInfo[]
+    availableAttributes: AttributeTypeInfo[],
   ): Promise<PaginatedResult<any>>
 }
 
@@ -49,7 +46,7 @@ export class SearchNodesUseCase {
     private readonly nodeSearchRepository: INodeSearchRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(input: SearchNodesInput): Promise<SearchNodesOutput> {
@@ -76,10 +73,8 @@ export class SearchNodesUseCase {
         (attributes.data || []).map(async (attr: any) => ({
           identifier: attr.getIdentifier(),
           dataType:
-            (
-              await this.attributeRepository.getAttributeTypeForAttribute(attr.getId())
-            )?.getIdentifier() || 'string',
-        }))
+            (await this.attributeRepository.getAttributeTypeForAttribute(attr.getId()))?.getIdentifier() || 'string',
+        })),
       )
 
       // Parse search query if provided
@@ -103,16 +98,10 @@ export class SearchNodesUseCase {
       }
 
       // Execute search
-      const result = await this.nodeSearchRepository.searchNodes(
-        input.tableId as TableId,
-        searchQuery,
-        attributeInfo
-      )
+      const result = await this.nodeSearchRepository.searchNodes(input.tableId as TableId, searchQuery, attributeInfo)
 
       // Convert to DTOs
-      const nodeDtos = (result.data || []).map((nodeData) =>
-        nodeFromEntity(nodeData.node, nodeData.attributes || {})
-      )
+      const nodeDtos = (result.data || []).map((nodeData) => nodeFromEntity(nodeData.node, nodeData.attributes || {}))
 
       this.logger.info('Node search completed', {
         tableId: input.tableId,

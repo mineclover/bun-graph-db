@@ -19,7 +19,7 @@ export class RelationQueries extends BaseResolver {
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase | null,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -32,7 +32,7 @@ export class RelationQueries extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Relation Type ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Relation Type ID'),
       ],
-      'relationType'
+      'relationType',
     )
 
     return this.handleQuery(
@@ -40,7 +40,7 @@ export class RelationQueries extends BaseResolver {
         return await this.relationTypeRepository.findById(args.id)
       },
       'findRelationTypeById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
@@ -58,7 +58,7 @@ export class RelationQueries extends BaseResolver {
         BaseResolver.validationRules.required('id', 'Node Relation ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Node Relation ID'),
       ],
-      'nodeRelation'
+      'nodeRelation',
     )
 
     return this.handleQuery(
@@ -66,7 +66,7 @@ export class RelationQueries extends BaseResolver {
         return await this.nodeRelationRepository.findById(args.id)
       },
       'findNodeRelationById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
@@ -75,9 +75,7 @@ export class RelationQueries extends BaseResolver {
       async () => {
         // Note: The repository only accepts PaginationOptions, filter/sort are not supported here
         // Repository-level filtering may be implemented for performance optimization in future
-        const result = await this.nodeRelationRepository.findAll(
-          args.pagination || { limit: 10, offset: 0 }
-        )
+        const result = await this.nodeRelationRepository.findAll(args.pagination || { limit: 10, offset: 0 })
 
         return {
           nodes: result.nodes,
@@ -87,24 +85,18 @@ export class RelationQueries extends BaseResolver {
         }
       },
       'findAllNodeRelations',
-      { args }
+      { args },
     )
   }
 
-  async searchRelatedNodes(
-    _: GraphQLParent,
-    args: SearchRelatedNodesArgs,
-    _context?: GraphQLContext
-  ) {
+  async searchRelatedNodes(_: GraphQLParent, args: SearchRelatedNodesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         // Temporary fallback when SearchRelatedNodesUseCase is not available
         // Full search functionality disabled pending resolution of circular dependency
         if (!this.searchRelatedNodesUseCase) {
           this.logger.warn('SearchRelatedNodesUseCase not available, using basic relation listing')
-          const result = await this.nodeRelationRepository.findAll(
-            args.pagination || { limit: 10, offset: 0 }
-          )
+          const result = await this.nodeRelationRepository.findAll(args.pagination || { limit: 10, offset: 0 })
 
           return {
             nodes: [],
@@ -134,7 +126,7 @@ export class RelationQueries extends BaseResolver {
         }
       },
       'searchRelatedNodes',
-      { args }
+      { args },
     )
   }
 
@@ -143,7 +135,7 @@ export class RelationQueries extends BaseResolver {
     args: {
       input: { nodeId: string; direction?: string; maxDepth?: number; relationTypeIds?: string[] }
     },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     this.validateArgs(
       args.input as any,
@@ -151,7 +143,7 @@ export class RelationQueries extends BaseResolver {
         BaseResolver.validationRules.required('nodeId', 'Node ID'),
         BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),
       ],
-      'getDependencyChain'
+      'getDependencyChain',
     )
 
     return this.handleQuery(
@@ -185,8 +177,7 @@ export class RelationQueries extends BaseResolver {
               continue
             }
 
-            const nextNodeId =
-              direction === 'OUTGOING' ? relation.getTargetNodeId() : relation.getSourceNodeId()
+            const nextNodeId = direction === 'OUTGOING' ? relation.getTargetNodeId() : relation.getSourceNodeId()
 
             if (nextNodeId && !visitedNodes.has(nextNodeId)) {
               dependencyNodes.push({ id: nextNodeId })
@@ -203,7 +194,7 @@ export class RelationQueries extends BaseResolver {
         }
       },
       'getDependencyChain',
-      { input: args.input }
+      { input: args.input },
     )
   }
 
@@ -217,7 +208,7 @@ export class RelationQueries extends BaseResolver {
         relationTypeIds?: string[]
       }
     },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     this.validateArgs(
       args.input as any,
@@ -227,7 +218,7 @@ export class RelationQueries extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('sourceNodeId', 'Source Node ID'),
         BaseResolver.validationRules.nonEmpty('targetNodeId', 'Target Node ID'),
       ],
-      'findPathsBetweenNodes'
+      'findPathsBetweenNodes',
     )
 
     return this.handleQuery(
@@ -279,9 +270,7 @@ export class RelationQueries extends BaseResolver {
           }
 
           // Find outgoing relations from current node
-          const relations = await this.nodeRelationRepository.findBySourceNodeId(
-            state.currentNodeId as any
-          )
+          const relations = await this.nodeRelationRepository.findBySourceNodeId(state.currentNodeId as any)
 
           for (const relation of relations) {
             const nextNodeId = relation.getTargetNodeId()
@@ -317,7 +306,7 @@ export class RelationQueries extends BaseResolver {
         return paths.sort((a, b) => a.length - b.length)
       },
       'findPathsBetweenNodes',
-      { input: args.input }
+      { input: args.input },
     )
   }
 }

@@ -61,20 +61,13 @@ describe('CreateRelationTypeUseCase', () => {
         identifier: 'existing_relation',
       }
 
-      const existingRelationType = createTestRelationType(
-        'rel-type-1',
-        'existing_relation',
-        'Existing Relation'
-      )
+      const existingRelationType = createTestRelationType('rel-type-1', 'existing_relation', 'Existing Relation')
 
-      mockRelationTypeRepository.findByIdentifier =
-        mock().mockResolvedValueOnce(existingRelationType)
+      mockRelationTypeRepository.findByIdentifier = mock().mockResolvedValueOnce(existingRelationType)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
-      await expect(promise).rejects.toThrow(
-        "RelationType with identifier 'existing_relation' already exists"
-      )
+      await expect(promise).rejects.toThrow("RelationType with identifier 'existing_relation' already exists")
     })
   })
 
@@ -84,11 +77,7 @@ describe('CreateRelationTypeUseCase', () => {
         identifier: 'new_relation',
       }
 
-      const createdRelationType = createTestRelationType(
-        'rel-type-1',
-        'new_relation',
-        'New Relation'
-      )
+      const createdRelationType = createTestRelationType('rel-type-1', 'new_relation', 'New Relation')
 
       mockRelationTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null) // First call for duplicate check
@@ -103,7 +92,7 @@ describe('CreateRelationTypeUseCase', () => {
         'Creating new relation type',
         expect.objectContaining({
           identifier: input.identifier,
-        })
+        }),
       )
     })
 
@@ -118,7 +107,7 @@ describe('CreateRelationTypeUseCase', () => {
         'rel-type-1',
         'described_relation',
         'Described Relation',
-        'A relation with description'
+        'A relation with description',
       )
 
       mockRelationTypeRepository.findByIdentifier = mock()
@@ -140,11 +129,7 @@ describe('CreateRelationTypeUseCase', () => {
         category: 'social',
       }
 
-      const createdRelationType = createTestRelationType(
-        'rel-type-1',
-        'categorized_relation',
-        'Categorized Relation'
-      )
+      const createdRelationType = createTestRelationType('rel-type-1', 'categorized_relation', 'Categorized Relation')
 
       mockRelationTypeRepository.findByIdentifier = mock()
         .mockResolvedValueOnce(null)
@@ -168,7 +153,7 @@ describe('CreateRelationTypeUseCase', () => {
         'rel-type-1',
         'complete_relation',
         'Complete Relation',
-        'A complete relation type'
+        'A complete relation type',
       )
 
       mockRelationTypeRepository.findByIdentifier = mock()
@@ -185,7 +170,7 @@ describe('CreateRelationTypeUseCase', () => {
         expect.objectContaining({
           id: 'rel-type-1',
           identifier: 'complete_relation',
-        })
+        }),
       )
     })
   })
@@ -209,7 +194,7 @@ describe('CreateRelationTypeUseCase', () => {
         expect.objectContaining({
           identifier: input.identifier,
           error: 'Database connection failed',
-        })
+        }),
       )
     })
 

@@ -7,7 +7,7 @@ export class Table implements TimestampedEntity {
     private readonly _identifier: string,
     private _description: string | null,
     private readonly _createdAt: Date,
-    private _updatedAt: Date
+    private _updatedAt: Date,
   ) {}
 
   // Factory method for creating new tables
@@ -23,7 +23,7 @@ export class Table implements TimestampedEntity {
     // Simple validation for identifier format
     if (!/^[a-zA-Z][a-zA-Z0-9_-]*$/.test(identifier)) {
       throw new DomainException(
-        'Table identifier must start with a letter and contain only alphanumeric characters, underscores, and hyphens'
+        'Table identifier must start with a letter and contain only alphanumeric characters, underscores, and hyphens',
       )
     }
 
@@ -33,7 +33,7 @@ export class Table implements TimestampedEntity {
       identifier,
       description || null,
       new Date(),
-      new Date()
+      new Date(),
     )
   }
 
@@ -43,7 +43,7 @@ export class Table implements TimestampedEntity {
     identifier: string,
     description: string | null,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
   ): Table {
     return new Table(id as TableId, identifier, description, createdAt, updatedAt)
   }

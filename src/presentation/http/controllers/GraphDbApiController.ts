@@ -1,10 +1,6 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type {
-  ExportTemplateData,
-  HealthCheckData,
-  ImportTemplateData,
-} from '../types/ApiResponseTypes.js'
+import type { ExportTemplateData, HealthCheckData, ImportTemplateData } from '../types/ApiResponseTypes.js'
 import { sendHandleError, sendSuccess, sendValidationError } from '../utils/responseHelpers.js'
 
 export class GraphDbApiController {
@@ -31,9 +27,7 @@ export class GraphDbApiController {
         memory: {
           used: process.memoryUsage().heapUsed,
           total: process.memoryUsage().heapTotal,
-          percentage: Math.round(
-            (process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100
-          ),
+          percentage: Math.round((process.memoryUsage().heapUsed / process.memoryUsage().heapTotal) * 100),
         },
         process: {
           pid: process.pid,

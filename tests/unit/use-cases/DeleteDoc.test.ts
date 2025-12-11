@@ -12,18 +12,9 @@ function createTestDoc(
   category: DocCategory,
   content: string,
   version: number = 1,
-  isActive: boolean = true
+  isActive: boolean = true,
 ): Doc {
-  return Doc.fromDatabase(
-    id,
-    tableId,
-    category as string,
-    version,
-    content,
-    isActive,
-    new Date(),
-    new Date()
-  )
+  return Doc.fromDatabase(id, tableId, category as string, version, content, isActive, new Date(), new Date())
 }
 
 describe('DeleteDocUseCase', () => {
@@ -75,9 +66,7 @@ describe('DeleteDocUseCase', () => {
       mockDocRepository.findById = mock(async () => null)
 
       await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow(
-        "Doc with id 'nonexistent-doc' not found"
-      )
+      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow("Doc with id 'nonexistent-doc' not found")
     })
   })
 
@@ -122,7 +111,7 @@ describe('DeleteDocUseCase', () => {
           id: 'doc-1',
           tableId: 'table-1',
           category: 'usage',
-        })
+        }),
       )
     })
 
@@ -171,14 +160,7 @@ describe('DeleteDocUseCase', () => {
     })
 
     it('should delete inactive doc', async () => {
-      const existingDoc = createTestDoc(
-        'doc-6',
-        'table-1',
-        DocCategory.USAGE,
-        'Inactive doc',
-        1,
-        false
-      )
+      const existingDoc = createTestDoc('doc-6', 'table-1', DocCategory.USAGE, 'Inactive doc', 1, false)
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
@@ -189,14 +171,7 @@ describe('DeleteDocUseCase', () => {
     })
 
     it('should delete doc with specific version', async () => {
-      const existingDoc = createTestDoc(
-        'doc-7',
-        'table-1',
-        DocCategory.USAGE,
-        'Version 3 doc',
-        3,
-        true
-      )
+      const existingDoc = createTestDoc('doc-7', 'table-1', DocCategory.USAGE, 'Version 3 doc', 3, true)
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
@@ -250,7 +225,7 @@ describe('DeleteDocUseCase', () => {
         'Deleting doc',
         expect.objectContaining({
           id: 'doc-123',
-        })
+        }),
       )
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Doc deleted successfully',
@@ -258,7 +233,7 @@ describe('DeleteDocUseCase', () => {
           id: 'doc-123',
           tableId: 'table-1',
           category: 'usage',
-        })
+        }),
       )
     })
 
@@ -283,7 +258,7 @@ describe('DeleteDocUseCase', () => {
         'Failed to delete doc',
         expect.objectContaining({
           id: 'doc-1',
-        })
+        }),
       )
     })
   })

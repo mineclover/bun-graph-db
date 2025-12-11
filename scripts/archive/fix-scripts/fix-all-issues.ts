@@ -326,9 +326,7 @@ async function insertFixedTemplate(template: FixedTemplate): Promise<void> {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
     `
 
-    const operationType = template.query.trim().toLowerCase().startsWith('mutation')
-      ? 'mutation'
-      : 'query'
+    const operationType = template.query.trim().toLowerCase().startsWith('mutation') ? 'mutation' : 'query'
 
     db.run(insertQuery, [
       template.identifier,
@@ -440,9 +438,7 @@ async function createValidTestTable(): Promise<{ tableId: string; attributeIds: 
     const tableResult = await tableResponse.json()
 
     if (!tableResult.data?.createTable?.success) {
-      throw new Error(
-        `Table creation failed: ${JSON.stringify(tableResult.data?.createTable?.errors)}`
-      )
+      throw new Error(`Table creation failed: ${JSON.stringify(tableResult.data?.createTable?.errors)}`)
     }
 
     const tableId = tableResult.data.createTable.table.id
@@ -496,10 +492,7 @@ async function createValidTestTable(): Promise<{ tableId: string; attributeIds: 
         attributeIds.push(attrResult.data.createAttributeType.attributeType.id)
         console.log(`✅ Created attribute: ${attr.identifier}`)
       } else {
-        console.log(
-          `❌ Failed to create attribute: ${attr.identifier}`,
-          attrResult.data?.createAttributeType?.errors
-        )
+        console.log(`❌ Failed to create attribute: ${attr.identifier}`, attrResult.data?.createAttributeType?.errors)
       }
     }
 

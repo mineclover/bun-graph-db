@@ -1,11 +1,7 @@
 // Search query parser for converting query strings to SearchQuery objects
 
 import type { RangeValue, SearchFilter, SearchQuery } from '@/domain/value-objects/SearchFilter.js'
-import {
-  LogicalOperator,
-  SearchOperator,
-  SearchQueryBuilder,
-} from '@/domain/value-objects/SearchFilter.js'
+import { LogicalOperator, SearchOperator, SearchQueryBuilder } from '@/domain/value-objects/SearchFilter.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface AttributeTypeInfo {
@@ -114,11 +110,7 @@ export class SearchQueryParser {
     return this.parseValueAndOperator(field, valueString, attributeInfo.dataType)
   }
 
-  private parseValueAndOperator(
-    field: string,
-    valueString: string,
-    dataType: string
-  ): SearchFilter {
+  private parseValueAndOperator(field: string, valueString: string, dataType: string): SearchFilter {
     // Handle comparison operators for numbers and dates
     if (dataType === 'number' || dataType === 'datetime') {
       if (valueString.startsWith('>=')) {

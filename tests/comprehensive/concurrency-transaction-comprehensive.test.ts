@@ -194,8 +194,8 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
                 node { id }
               }
             }
-          `)
-        )
+          `),
+        ),
       )
 
       const concurrencyTester = new ConcurrencyTester()
@@ -284,9 +284,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
         }
       `)
 
-      const writeSuccessCount = results.filter(
-        (r) => r.success && r.operationId.startsWith('write')
-      ).length
+      const writeSuccessCount = results.filter((r) => r.success && r.operationId.startsWith('write')).length
       expect(finalQuery.data.searchNodes.totalCount).toBe(writeSuccessCount)
     })
   })
@@ -332,7 +330,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
               }
             }
           `,
-            { nodes }
+            { nodes },
           )
         })
       }
@@ -421,7 +419,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
               }
             }
           `,
-            { nodes: [...validNodes, invalidNode] }
+            { nodes: [...validNodes, invalidNode] },
           )
         })
       }
@@ -680,7 +678,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
               node { id }
             }
           }
-        `)
+        `),
       )
 
       const nodeResults = await Promise.all(nodeCreationPromises)
@@ -834,7 +832,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
           if (readResult.errors) return readResult
 
           const counterAttr = readResult.data.getNodeAttributes.attributes.find(
-            (attr: any) => attr.attributeId === attributeId
+            (attr: any) => attr.attributeId === attributeId,
           )
           const currentValue = parseInt(counterAttr?.value || '0', 10)
 
@@ -871,7 +869,7 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       `)
 
       const finalCounterAttr = finalQuery.data.getNodeAttributes.attributes.find(
-        (attr: any) => attr.attributeId === attributeId
+        (attr: any) => attr.attributeId === attributeId,
       )
       const finalValue = parseInt(finalCounterAttr?.value || '0', 10)
 

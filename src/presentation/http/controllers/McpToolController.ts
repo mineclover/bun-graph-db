@@ -15,7 +15,7 @@ export class McpToolController {
 
   constructor(
     private readonly logger: ILogger,
-    port?: number
+    port?: number,
   ) {
     // Initialize the REST client pointing to our GraphQL server
     const serverPort = port || 4000
@@ -610,8 +610,7 @@ export class McpToolController {
         },
         {
           name: 'list-available-templates',
-          description:
-            'List all available template files in exported-templates directory with metadata.',
+          description: 'List all available template files in exported-templates directory with metadata.',
           operationType: 'query',
           parameters: {},
         },
@@ -629,8 +628,7 @@ export class McpToolController {
           parameters: {
             tableId: 'string (required) - ID of the table to export nodes from',
             format: 'string (default: CSV) - Export format: CSV or JSON',
-            outputDirectory:
-              'string (default: {project_root}/exports) - Directory to save the exported file',
+            outputDirectory: 'string (default: {project_root}/exports) - Directory to save the exported file',
             filename: 'string (optional) - Custom filename for the export',
             includeAttributes: 'array (default: []) - Specific attribute names to include',
             limit: 'number (default: 1000) - Maximum number of nodes to export',
@@ -693,8 +691,7 @@ export class McpToolController {
 
       // Generate filename with timestamp if not provided
       const finalFilename =
-        filename ||
-        `table_${tableId}_export_${new Date().toISOString().replace(/[:.]/g, '-')}.${format.toLowerCase()}`
+        filename || `table_${tableId}_export_${new Date().toISOString().replace(/[:.]/g, '-')}.${format.toLowerCase()}`
 
       // Prepare GraphQL mutation
       const query = `
@@ -738,9 +735,7 @@ export class McpToolController {
       const exportResult = result.exportTableNodes
 
       if (!exportResult.success) {
-        throw new Error(
-          `Export failed: ${exportResult.errors ? exportResult.errors.join(', ') : 'Unknown error'}`
-        )
+        throw new Error(`Export failed: ${exportResult.errors ? exportResult.errors.join(', ') : 'Unknown error'}`)
       }
 
       res.json({

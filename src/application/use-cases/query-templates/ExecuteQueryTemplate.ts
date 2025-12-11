@@ -24,7 +24,7 @@ export interface ExecuteQueryTemplateOutput {
 export class ExecuteQueryTemplateUseCase {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(input: ExecuteQueryTemplateInput): Promise<ExecuteQueryTemplateOutput> {
@@ -47,9 +47,7 @@ export class ExecuteQueryTemplateUseCase {
     // 4. Variables 유효성 검사
     const validationResult = template.validateVariables(variables)
     if (!validationResult.isValid) {
-      throw new ValidationException(
-        `Variable validation failed: ${validationResult.errors.join('; ')}`
-      )
+      throw new ValidationException(`Variable validation failed: ${validationResult.errors.join('; ')}`)
     }
 
     // 5. 사용 통계 업데이트 (선택적)

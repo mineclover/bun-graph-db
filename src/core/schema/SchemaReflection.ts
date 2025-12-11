@@ -193,7 +193,7 @@ export class SchemaReflection {
         (f) =>
           !f.sqliteColumn.includes('id') &&
           !f.sqliteColumn.includes('created_at') &&
-          !f.sqliteColumn.includes('updated_at')
+          !f.sqliteColumn.includes('updated_at'),
       )
       .map((f) => `  ${f.graphqlField}: ${f.graphqlType.replace('!', '')}`)
       .join('\n')}\n}`
@@ -203,7 +203,7 @@ export class SchemaReflection {
         (f) =>
           !f.sqliteColumn.includes('id') &&
           !f.sqliteColumn.includes('created_at') &&
-          !f.sqliteColumn.includes('updated_at')
+          !f.sqliteColumn.includes('updated_at'),
       )
       .map((f) => `  ${f.graphqlField}: ${f.graphqlType.replace('!', '')}`)
       .join('\n')}\n}`
@@ -274,7 +274,7 @@ export class SchemaReflection {
   async validateQueryTemplateCompatibility(
     _templateId: string,
     queryText: string,
-    _schemas: TableSchema[]
+    _schemas: TableSchema[],
   ): Promise<ValidationResult> {
     // GraphQL 쿼리 파싱 및 스키마 검증
     const usedTypes = this.extractTypesFromQuery(queryText)
@@ -331,11 +331,7 @@ export class SchemaReflection {
     return null
   }
 
-  private calculateQueryComplexity(
-    _query: string,
-    typeCount: number,
-    fields: Record<string, string[]>
-  ): number {
+  private calculateQueryComplexity(_query: string, typeCount: number, fields: Record<string, string[]>): number {
     // 복잡도 계산 로직
     const fieldCount = Object.values(fields).flat().length
     return Math.min(typeCount * 2 + fieldCount * 0.5, 10)

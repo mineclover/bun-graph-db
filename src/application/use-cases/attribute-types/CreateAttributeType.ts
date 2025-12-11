@@ -1,7 +1,4 @@
-import type {
-  CreateAttributeTypeInput,
-  CreateAttributeTypeOutput,
-} from '@/application/dtos/AttributeTypeDto.js'
+import type { CreateAttributeTypeInput, CreateAttributeTypeOutput } from '@/application/dtos/AttributeTypeDto.js'
 import { fromEntity as attributeTypeFromEntity } from '@/application/dtos/AttributeTypeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
@@ -11,7 +8,7 @@ import { ConflictException, ValidationException } from '@/shared/exceptions/Doma
 export class CreateAttributeTypeUseCase {
   constructor(
     private readonly attributeTypeRepository: IAttributeTypeRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(input: CreateAttributeTypeInput): Promise<CreateAttributeTypeOutput> {
@@ -27,25 +24,16 @@ export class CreateAttributeTypeUseCase {
     }
 
     // Check if attribute type already exists
-    const existingAttributeType = await this.attributeTypeRepository.findByIdentifier(
-      input.identifier
-    )
+    const existingAttributeType = await this.attributeTypeRepository.findByIdentifier(input.identifier)
     if (existingAttributeType) {
-      throw new ConflictException(
-        `Attribute type with identifier '${input.identifier}' already exists`
-      )
+      throw new ConflictException(`Attribute type with identifier '${input.identifier}' already exists`)
     }
 
     try {
       // Convert input objects to JSON strings for domain entity
-      const validationSchemaJson = input.validationSchema
-        ? JSON.stringify(input.validationSchema)
-        : undefined
-      const referenceConfigJson = input.referenceConfig
-        ? JSON.stringify(input.referenceConfig)
-        : undefined
-      const defaultValueJson =
-        input.defaultValue !== undefined ? JSON.stringify(input.defaultValue) : undefined
+      const validationSchemaJson = input.validationSchema ? JSON.stringify(input.validationSchema) : undefined
+      const referenceConfigJson = input.referenceConfig ? JSON.stringify(input.referenceConfig) : undefined
+      const defaultValueJson = input.defaultValue !== undefined ? JSON.stringify(input.defaultValue) : undefined
       const examplesJson = input.examples ? JSON.stringify(input.examples) : undefined
 
       // Create domain entity
@@ -57,16 +45,14 @@ export class CreateAttributeTypeUseCase {
         validationSchemaJson,
         referenceConfigJson,
         defaultValueJson,
-        examplesJson
+        examplesJson,
       )
 
       // Save to repository
       await this.attributeTypeRepository.save(attributeType)
 
       // Retrieve the saved attribute type with the generated ID
-      const savedAttributeType = await this.attributeTypeRepository.findByIdentifier(
-        input.identifier
-      )
+      const savedAttributeType = await this.attributeTypeRepository.findByIdentifier(input.identifier)
       if (!savedAttributeType) {
         throw new Error('Failed to retrieve saved attribute type')
       }

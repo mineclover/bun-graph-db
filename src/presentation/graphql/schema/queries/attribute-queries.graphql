@@ -13,9 +13,5 @@ extend type Query {
   # Attribute queries
   attribute(id: ID!): Attribute
   attributeByIdentifier(identifier: String!, tableId: ID!): Attribute
-  attributes(
-    filter: AttributesFilter
-    pagination: PaginationInput
-    sort: [SortInput!]
-  ): AttributesConnection!
+  attributes(filter: AttributesFilter, pagination: PaginationInput, sort: [SortInput!]): AttributesConnection!
 }

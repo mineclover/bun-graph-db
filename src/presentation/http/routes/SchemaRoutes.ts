@@ -106,7 +106,7 @@ export class SchemaRoutes {
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
   }
@@ -147,7 +147,7 @@ export class SchemaRoutes {
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
   }
@@ -181,7 +181,7 @@ export class SchemaRoutes {
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
   }
@@ -227,7 +227,7 @@ export class SchemaRoutes {
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
   }
@@ -272,7 +272,7 @@ export class SchemaRoutes {
         {
           status: 500,
           headers: { 'Content-Type': 'application/json' },
-        }
+        },
       )
     }
   }

@@ -62,10 +62,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestServer
   })
 
   // Create MCP HTTP server
-  const mcpServer = new McpHttpServer(
-    `http://127.0.0.1:${port}/graphql`,
-    `http://127.0.0.1:${port}/api`
-  )
+  const mcpServer = new McpHttpServer(`http://127.0.0.1:${port}/graphql`, `http://127.0.0.1:${port}/api`)
   await mcpServer.initialize()
 
   // Combined request handler for both GraphQL and MCP
@@ -142,9 +139,7 @@ export function getServerForSuite(suiteName: string): TestServerInstance | null 
 /**
  * Create GraphQL request helper for test suite
  */
-export function createRequestHelper(
-  suiteName: string
-): (query: string, variables?: any) => Promise<any> {
+export function createRequestHelper(suiteName: string): (query: string, variables?: any) => Promise<any> {
   const instance = serverInstances.get(suiteName)
   if (!instance) {
     throw new Error(`No server instance found for suite: ${suiteName}`)

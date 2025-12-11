@@ -20,10 +20,7 @@ export class TemplateImportExportService {
   /**
    * 템플릿을 JSON 형태로 내보내기
    */
-  async exportTemplate(
-    templateId: string,
-    options: TemplateExportOptions = {}
-  ): Promise<TemplateExportResult> {
+  async exportTemplate(templateId: string, options: TemplateExportOptions = {}): Promise<TemplateExportResult> {
     try {
       const template = await this.templateRepository.findById(templateId)
 
@@ -96,7 +93,7 @@ export class TemplateImportExportService {
    */
   async exportTemplateByIdentifier(
     identifier: string,
-    options: TemplateExportOptions = {}
+    options: TemplateExportOptions = {},
   ): Promise<TemplateExportResult> {
     try {
       const template = await this.templateRepository.findByIdentifier(identifier)
@@ -122,7 +119,7 @@ export class TemplateImportExportService {
    */
   async importTemplate(
     exportData: TemplateExportFormat,
-    options: TemplateImportOptions = {}
+    options: TemplateImportOptions = {},
   ): Promise<TemplateImportResult> {
     const errors: string[] = []
     const warnings: string[] = []
@@ -150,10 +147,7 @@ export class TemplateImportExportService {
         if (options.overwriteExisting) {
           warnings.push(`Overwriting existing template: ${finalIdentifier}`)
         } else if (options.generateNewIdentifier) {
-          finalIdentifier = this.generateUniqueIdentifier(
-            exportData.template.identifier,
-            options.newIdentifierPrefix
-          )
+          finalIdentifier = this.generateUniqueIdentifier(exportData.template.identifier, options.newIdentifierPrefix)
           warnings.push(`Generated new identifier: ${finalIdentifier}`)
         } else {
           errors.push(`Template with identifier '${finalIdentifier}' already exists`)
@@ -174,7 +168,7 @@ export class TemplateImportExportService {
           applicableTables: exportData.template.applicableTables || undefined,
           complexityScore: exportData.template.complexityScore,
           version: exportData.template.version,
-        }
+        },
       )
 
       // Handle isActive field (if imported template should be inactive, deactivate it)
@@ -214,10 +208,7 @@ export class TemplateImportExportService {
   /**
    * JSON 문자열로부터 템플릿 가져오기
    */
-  async importTemplateFromJSON(
-    jsonString: string,
-    options: TemplateImportOptions = {}
-  ): Promise<TemplateImportResult> {
+  async importTemplateFromJSON(jsonString: string, options: TemplateImportOptions = {}): Promise<TemplateImportResult> {
     try {
       const exportData = JSON.parse(jsonString) as TemplateExportFormat
       return this.importTemplate(exportData, options)
@@ -264,10 +255,7 @@ export class TemplateImportExportService {
       errors.push('Template query is required')
     }
 
-    if (
-      !template.operationType ||
-      !['query', 'mutation', 'subscription'].includes(template.operationType)
-    ) {
+    if (!template.operationType || !['query', 'mutation', 'subscription'].includes(template.operationType)) {
       errors.push('Valid operation type is required (query, mutation, subscription)')
     }
 
@@ -277,9 +265,7 @@ export class TemplateImportExportService {
 
     // identifier 형식 검증
     if (template.identifier && !/^[a-z0-9-_]+$/.test(template.identifier)) {
-      errors.push(
-        'Template identifier must contain only lowercase letters, numbers, hyphens, and underscores'
-      )
+      errors.push('Template identifier must contain only lowercase letters, numbers, hyphens, and underscores')
     }
 
     return errors

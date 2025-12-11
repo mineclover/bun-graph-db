@@ -1,9 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import type { AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
-import {
-  buildMultiCriteriaSort,
-  type SortOption,
-} from '@/application/services/sorting/SortStrategyFactory.js'
+import { buildMultiCriteriaSort, type SortOption } from '@/application/services/sorting/SortStrategyFactory.js'
 import type { INodeSearchRepository } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
@@ -36,7 +33,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
   async searchNodes(
     tableId: TableId,
     searchQuery: SearchQuery,
-    availableAttributes: AttributeTypeInfo[]
+    availableAttributes: AttributeTypeInfo[],
   ): Promise<PaginatedResult<NodeSearchResult>> {
     try {
       // Build the SQL query from the search query
@@ -44,14 +41,14 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
         tableId,
         searchQuery,
         availableAttributes,
-        false
+        false,
       )
 
       const { query: countQuery, params: countParams } = this.buildSearchQuery(
         tableId,
         searchQuery,
         availableAttributes,
-        true
+        true,
       )
 
       // Execute count query
@@ -74,7 +71,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
               row.node_title,
               row.node_description,
               new Date(row.node_created_at),
-              new Date(row.node_updated_at)
+              new Date(row.node_updated_at),
             ),
             attributes: {},
           })
@@ -86,7 +83,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
         if (row.attribute_identifier && row.attribute_value !== null) {
           nodeResult.attributes[row.attribute_identifier] = this.parseAttributeValue(
             row.attribute_value,
-            row.attribute_data_type || 'string'
+            row.attribute_data_type || 'string',
           )
         }
       }
@@ -113,7 +110,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     tableId: TableId,
     searchQuery: SearchQuery,
     availableAttributes: AttributeTypeInfo[],
-    isCountQuery: boolean
+    isCountQuery: boolean,
   ): { query: string; params: any[] } {
     const params: any[] = [tableId]
 
@@ -190,11 +187,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     return { query, params }
   }
 
-  private buildFilterClause(
-    filter: any,
-    availableAttributes: AttributeTypeInfo[],
-    params: any[]
-  ): string {
+  private buildFilterClause(filter: any, availableAttributes: AttributeTypeInfo[], params: any[]): string {
     // Handle text search - search both content and attribute values
     if (filter.field === '_text_search') {
       params.push(`%${filter.value}%`, `%${filter.value}%`)

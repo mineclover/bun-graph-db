@@ -203,9 +203,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
           console.log('GraphQL errors:', data.errors)
           // Check if errors are about missing fields vs syntax errors
           const hasSchemaErrors = data.errors.some(
-            (error: any) =>
-              error.message.includes('Cannot query field') ||
-              error.message.includes('Unknown field')
+            (error: any) => error.message.includes('Cannot query field') || error.message.includes('Unknown field'),
           )
 
           if (hasSchemaErrors) {
@@ -256,7 +254,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
             (error: any) =>
               error.message.includes('Cannot query field') ||
               error.message.includes('Unknown field') ||
-              error.message.includes('Unknown type')
+              error.message.includes('Unknown type'),
           )
 
           if (hasSchemaErrors) {
@@ -302,9 +300,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
         // Check for schema compatibility
         if (data.errors) {
           const hasSchemaErrors = data.errors.some(
-            (error: any) =>
-              error.message.includes('Cannot query field') ||
-              error.message.includes('Unknown field')
+            (error: any) => error.message.includes('Cannot query field') || error.message.includes('Unknown field'),
           )
 
           if (hasSchemaErrors) {
@@ -371,9 +367,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
 
             // For mutation operations, usually have an $input variable
             if (tool.graphqlOperation.type === 'mutation') {
-              const hasInputVar = operation.variableDefinitions?.some(
-                (v: any) => v.variable.name.value === 'input'
-              )
+              const hasInputVar = operation.variableDefinitions?.some((v: any) => v.variable.name.value === 'input')
               // Most mutations should use input variable pattern
               // Some mutations use individual variables instead of input object
               if (
@@ -437,7 +431,7 @@ describe('GraphQL Operation Mapping Contract Tests', () => {
         expect(
           operationName === expectedPattern ||
             operationName.includes(expectedPattern) ||
-            operationName.toLowerCase().includes(tool.name.toLowerCase())
+            operationName.toLowerCase().includes(tool.name.toLowerCase()),
         ).toBe(true)
       })
     })

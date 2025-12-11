@@ -1,11 +1,5 @@
-import {
-  type AttributeDto,
-  fromEntity as attributeFromEntity,
-} from '@/application/dtos/AttributeDto.js'
-import {
-  type AttributeTypeDto,
-  fromEntity as attributeTypeFromEntity,
-} from '@/application/dtos/AttributeTypeDto.js'
+import { type AttributeDto, fromEntity as attributeFromEntity } from '@/application/dtos/AttributeDto.js'
+import { type AttributeTypeDto, fromEntity as attributeTypeFromEntity } from '@/application/dtos/AttributeTypeDto.js'
 import type { NodeAttributeDto } from '@/application/dtos/NodeDto.js'
 import { type TableDto, fromEntity as tableFromEntity } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
@@ -18,11 +12,7 @@ import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeT
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
-import {
-  ConflictException,
-  NotFoundException,
-  ValidationException,
-} from '@/shared/exceptions/DomainException.js'
+import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 // Input types matching GraphQL schema
 interface CreateAttributeTypeInput {
@@ -60,35 +50,30 @@ export class AttributeResolver extends BaseResolver {
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly tableRepository: ITableRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
   }
 
   // Query resolvers - Attribute Types
-  async attributeType(
-    args: { id: string },
-    _context?: GraphQLContext
-  ): Promise<AttributeTypeDto | null> {
+  async attributeType(args: { id: string }, _context?: GraphQLContext): Promise<AttributeTypeDto | null> {
     this.validateArgs(
       args,
       [
         BaseResolver.validationRules.required('id', 'Attribute Type ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Attribute Type ID'),
       ],
-      'attributeType'
+      'attributeType',
     )
 
     return this.handleQuery(
       async () => {
-        const attributeType = await this.attributeTypeRepository.findById(
-          args.id as AttributeTypeId
-        )
+        const attributeType = await this.attributeTypeRepository.findById(args.id as AttributeTypeId)
         return attributeType ? attributeTypeFromEntity(attributeType) : null
       },
       'findAttributeTypeById',
-      { id: args.id }
+      { id: args.id },
     )
   }
 
@@ -232,10 +217,7 @@ export class AttributeResolver extends BaseResolver {
         defaultValue: args.input.defaultValue !== undefined ? args.input.defaultValue : null,
       }
 
-      const updatedAttributeType = await this.attributeTypeRepository.update(
-        args.id as AttributeTypeId,
-        updates
-      )
+      const updatedAttributeType = await this.attributeTypeRepository.update(args.id as AttributeTypeId, updates)
 
       return {
         attributeType: attributeTypeFromEntity(updatedAttributeType),
@@ -446,20 +428,15 @@ export class AttributeResolver extends BaseResolver {
   }
 
   // Field resolvers for Attribute type
-  async attributeType_field(
-    attribute: AttributeDto,
-    _context?: GraphQLContext
-  ): Promise<AttributeTypeDto | null> {
+  async attributeType_field(attribute: AttributeDto, _context?: GraphQLContext): Promise<AttributeTypeDto | null> {
     return this.handleFieldResolution(
       async () => {
-        const attributeType = await this.attributeTypeRepository.findById(
-          attribute.attributeTypeId as AttributeTypeId
-        )
+        const attributeType = await this.attributeTypeRepository.findById(attribute.attributeTypeId as AttributeTypeId)
         return attributeType ? attributeTypeFromEntity(attributeType) : null
       },
       'attributeType',
       'Attribute',
-      { attributeId: attribute.id }
+      { attributeId: attribute.id },
     )
   }
 
@@ -471,18 +448,14 @@ export class AttributeResolver extends BaseResolver {
       },
       'table',
       'Attribute',
-      { attributeId: attribute.id }
+      { attributeId: attribute.id },
     )
   }
 
   // Field resolver for NodeAttribute type
-  async nodeAttribute_attribute_field(
-    nodeAttribute: NodeAttributeDto
-  ): Promise<AttributeDto | null> {
+  async nodeAttribute_attribute_field(nodeAttribute: NodeAttributeDto): Promise<AttributeDto | null> {
     try {
-      const attribute = await this.attributeRepository.findById(
-        nodeAttribute.attributeId as AttributeId
-      )
+      const attribute = await this.attributeRepository.findById(nodeAttribute.attributeId as AttributeId)
       return attribute ? attributeFromEntity(attribute) : null
     } catch (error) {
       this.logger.error('Failed to resolve attribute field for NodeAttribute', {

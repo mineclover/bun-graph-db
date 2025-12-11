@@ -41,7 +41,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.data).toBeDefined()
       expect(result.data.__schema).toBeDefined()
@@ -53,9 +53,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
       // Check for expected system query fields (these would be defined in your schema)
       const expectedFields = ['systemStats', 'memoryStats', 'healthCheck']
       const availableSystemFields = fieldNames.filter((name: string) =>
-        expectedFields.some(
-          (expected) => name.includes(expected.toLowerCase()) || expected.includes(name)
-        )
+        expectedFields.some((expected) => name.includes(expected.toLowerCase()) || expected.includes(name)),
       )
 
       // At least some system-related fields should exist
@@ -75,7 +73,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.data).toBeDefined()
       expect(result.data.__type).toBeDefined()
@@ -96,7 +94,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.data).toBeDefined()
       expect(result.data.__schema).toBeDefined()
@@ -105,7 +103,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
     })
 
     test('should handle database operations through GraphQL', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Insert test data directly
       db.exec(`
@@ -139,7 +137,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.data).toBeDefined()
       expect(result.data.__schema).toBeDefined()
@@ -155,7 +153,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       // Should return errors for non-existent fields
       expect(result.errors).toBeDefined()
@@ -179,7 +177,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
       const startTime = performance.now()
 
       // Send 10 concurrent requests
-      const promises = Array.from({ length: 10 }, () => testContext.graphqlRequest!(query))
+      const promises = Array.from({ length: 10 }, () => testContext.graphqlRequest?.(query))
 
       const results = await Promise.all(promises)
       const duration = performance.now() - startTime
@@ -195,7 +193,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
     })
 
     test('should maintain database consistency under load', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Create multiple concurrent database operations
       const operations = Array.from({ length: 20 }, (_, i) => {
@@ -225,7 +223,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
       // Test basic connectivity
       const query = `query { __typename }`
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
       expect(result.data).toBeDefined()
       expect(result.data.__typename).toBe('Query')
     })
@@ -242,7 +240,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
       `
 
       try {
-        await testContext.graphqlRequest!(malformedQuery)
+        await testContext.graphqlRequest?.(malformedQuery)
         // Should not reach here
         expect(true).toBe(false)
       } catch (error) {
@@ -253,7 +251,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
 
     test('should handle empty requests', async () => {
       try {
-        await testContext.graphqlRequest!('')
+        await testContext.graphqlRequest?.('')
         expect(true).toBe(false) // Should not succeed
       } catch (error) {
         expect(error).toBeDefined()
@@ -267,7 +265,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
         }
       `
 
-      const result = await testContext.graphqlRequest!(query)
+      const result = await testContext.graphqlRequest?.(query)
 
       expect(result.errors).toBeDefined()
       expect(result.errors[0].message).toContain('fieldThatDoesNotExist')
@@ -276,7 +274,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
 
   describe('Database Schema Validation', () => {
     test('should have required system tables', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       const tables = db
         .prepare(`
@@ -294,7 +292,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
     })
 
     test('should have required indexes', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       const indexes = db
         .prepare(`
@@ -312,7 +310,7 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
     })
 
     test('should support schema migrations', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Test adding a new column (migration-like operation)
       db.exec('ALTER TABLE system_stats ADD COLUMN test_column TEXT DEFAULT NULL')

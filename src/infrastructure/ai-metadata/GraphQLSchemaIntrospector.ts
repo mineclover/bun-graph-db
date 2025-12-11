@@ -61,11 +61,7 @@ export class GraphQLSchemaIntrospector {
   /**
    * Extract field definitions from a specific type
    */
-  private extractFieldsFromType(
-    introspection: any,
-    typeName: string,
-    operationType: 'query' | 'mutation'
-  ): any[] {
+  private extractFieldsFromType(introspection: any, typeName: string, operationType: 'query' | 'mutation'): any[] {
     const types = introspection.data.__schema.types
     const targetType = types.find((type: any) => type.name === typeName)
 

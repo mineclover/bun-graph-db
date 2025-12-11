@@ -59,10 +59,7 @@ export class TextSortStrategy extends SortStrategy {
     return 50 // Medium priority, used as fallback for unknown types
   }
 
-  override buildEnhancedSortClause(
-    sortOption: EnhancedSortOption,
-    context: SortContext
-  ): SortResult {
+  override buildEnhancedSortClause(sortOption: EnhancedSortOption, context: SortContext): SortResult {
     const field = sortOption.field
     const direction = sortOption.direction
     const attribute = context.availableAttributes.find((attr) => attr.identifier === field)
@@ -150,11 +147,7 @@ export class TextSortStrategy extends SortStrategy {
   /**
    * Sorts an array of strings using natural comparison
    */
-  static sortTextArray(
-    values: string[],
-    direction: 'asc' | 'desc' = 'asc',
-    natural: boolean = true
-  ): string[] {
+  static sortTextArray(values: string[], direction: 'asc' | 'desc' = 'asc', natural: boolean = true): string[] {
     const compareFunction = natural ? TextSortStrategy.naturalCompare : TextSortStrategy.compareText
 
     return [...values].sort((a, b) => compareFunction(a, b, direction))

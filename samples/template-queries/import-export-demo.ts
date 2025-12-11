@@ -48,10 +48,7 @@ export async function runImportExportDemo(runner: DemoRunner) {
 
     const exportByIdResult = exportByIdResponse.data?.exportTemplate
     if (!exportByIdResult?.success || !exportByIdResult?.exportData) {
-      console.error(
-        '❌ 템플릿 내보내기 실패 (ID):',
-        exportByIdResult?.errors || exportByIdResponse.errors
-      )
+      console.error('❌ 템플릿 내보내기 실패 (ID):', exportByIdResult?.errors || exportByIdResponse.errors)
       return
     }
 
@@ -78,7 +75,7 @@ export async function runImportExportDemo(runner: DemoRunner) {
     if (!exportByIdentifierData?.success || !exportByIdentifierData.exportData) {
       console.error(
         '❌ 템플릿 내보내기 실패 (식별자):',
-        exportByIdentifierData?.errors || exportByIdentifierResult.errors
+        exportByIdentifierData?.errors || exportByIdentifierResult.errors,
       )
       return
     }
@@ -126,9 +123,7 @@ export async function runImportExportDemo(runner: DemoRunner) {
     }
 
     console.log('✅ 가져온 템플릿 실행 완료')
-    console.log(
-      `📊 실행 결과: ${executeResult.data ? Object.keys(executeResult.data).length : 0}개 필드`
-    )
+    console.log(`📊 실행 결과: ${executeResult.data ? Object.keys(executeResult.data).length : 0}개 필드`)
 
     // 6. 중복 가져오기 테스트 (덮어쓰기 없이)
     console.log('\n📥 6. 중복 가져오기 테스트 (덮어쓰기 없음)')

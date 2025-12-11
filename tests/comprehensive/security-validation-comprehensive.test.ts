@@ -52,9 +52,7 @@ class SecurityTester {
           result,
           hasErrors,
           passed: testCase.expectedError === hasErrors,
-          errorMatch: testCase.expectedErrorPattern
-            ? testCase.expectedErrorPattern.test(JSON.stringify(result))
-            : true,
+          errorMatch: testCase.expectedErrorPattern ? testCase.expectedErrorPattern.test(JSON.stringify(result)) : true,
         })
       } catch (error) {
         results.push({
@@ -193,7 +191,7 @@ describe('Security and Validation Comprehensive Tests', () => {
             }
           }
         `,
-          { input }
+          { input },
         )
       })
 
@@ -287,7 +285,7 @@ describe('Security and Validation Comprehensive Tests', () => {
             }
           }
         `,
-          { input }
+          { input },
         )
       })
 
@@ -459,7 +457,7 @@ describe('Security and Validation Comprehensive Tests', () => {
             }
           }
         `,
-          { input }
+          { input },
         )
       })
 
@@ -523,7 +521,7 @@ describe('Security and Validation Comprehensive Tests', () => {
           {
             tableId,
             search: injection,
-          }
+          },
         )
 
         // Should not cause errors or return unexpected results
@@ -582,7 +580,7 @@ describe('Security and Validation Comprehensive Tests', () => {
           {
             templateIdentifier: 'sql-injection-template',
             variables: { search: injection },
-          }
+          },
         )
 
         // Should execute safely without SQL injection
@@ -602,7 +600,7 @@ describe('Security and Validation Comprehensive Tests', () => {
 
         expect(templateCheck.errors).toBeUndefined()
         const template = templateCheck.data.searchTemplates.templates.find(
-          (t: any) => t.identifier === 'sql-injection-template'
+          (t: any) => t.identifier === 'sql-injection-template',
         )
         expect(template.query).not.toBe('malicious')
       }
@@ -685,9 +683,7 @@ describe('Security and Validation Comprehensive Tests', () => {
       const startTime = Date.now()
 
       // Send 50 rapid requests
-      const rapidRequests = Array.from({ length: 50 }, () =>
-        graphqlExecute(`query { healthCheck { status } }`)
-      )
+      const rapidRequests = Array.from({ length: 50 }, () => graphqlExecute(`query { healthCheck { status } }`))
 
       const responses = await Promise.all(rapidRequests)
       const endTime = Date.now()
@@ -699,7 +695,7 @@ describe('Security and Validation Comprehensive Tests', () => {
       // Check for rate limiting indicators
       const errors = responses.filter((r) => r.errors && r.errors.length > 0)
       const rateLimitErrors = errors.filter((r) =>
-        JSON.stringify(r.errors).match(/rate.*limit|too.*many.*requests|throttle/i)
+        JSON.stringify(r.errors).match(/rate.*limit|too.*many.*requests|throttle/i),
       )
 
       if (rateLimitErrors.length > 0) {
@@ -729,14 +725,12 @@ describe('Security and Validation Comprehensive Tests', () => {
         {
           tableId: 'dummy',
           content: largeContent,
-        }
+        },
       )
 
       // Should either accept or reject gracefully
       if (largePayloadResult.errors) {
-        expect(JSON.stringify(largePayloadResult.errors)).toMatch(
-          /payload.*too.*large|size.*limit/i
-        )
+        expect(JSON.stringify(largePayloadResult.errors)).toMatch(/payload.*too.*large|size.*limit/i)
       } else {
         expect(largePayloadResult.data).toBeDefined()
       }
@@ -809,7 +803,7 @@ describe('Security and Validation Comprehensive Tests', () => {
           {
             tableId,
             metadata: testCase.metadata,
-          }
+          },
         )
 
         if (testCase.expectedError) {
@@ -859,7 +853,7 @@ describe('Security and Validation Comprehensive Tests', () => {
           {
             tableId,
             metadata: attempt,
-          }
+          },
         )
 
         // Should either reject or sanitize the input

@@ -17,15 +17,7 @@ export class DatabaseCleaner {
     const database = await this.container.resolve<Database>(DatabaseTokens.DATABASE_CONNECTION)
 
     // Clear tables in dependency order (referencing tables first)
-    const tablesToClear = [
-      'node_attributes',
-      'relations',
-      'nodes',
-      'attributes',
-      'tables',
-      'templates',
-      'docs',
-    ]
+    const tablesToClear = ['node_attributes', 'relations', 'nodes', 'attributes', 'tables', 'templates', 'docs']
 
     // Use transaction to ensure atomicity
     database.transaction(() => {

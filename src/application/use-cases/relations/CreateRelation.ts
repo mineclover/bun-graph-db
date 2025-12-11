@@ -5,11 +5,7 @@ import type { INodeRelationRepository } from '@/domain/repositories/INodeRelatio
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import {
-  ConflictException,
-  NotFoundException,
-  ValidationException,
-} from '@/shared/exceptions/DomainException.js'
+import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface CreateRelationInput {
   tableId: string
@@ -46,7 +42,7 @@ export class CreateRelationUseCase {
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly tableRepository: ITableRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(input: CreateRelationInput): Promise<CreateRelationOutput> {
@@ -69,9 +65,7 @@ export class CreateRelationUseCase {
     }
 
     // Check if relation type exists
-    const relationType = await this.relationTypeRepository.findById(
-      input.relationTypeId as RelationTypeId
-    )
+    const relationType = await this.relationTypeRepository.findById(input.relationTypeId as RelationTypeId)
     if (!relationType) {
       throw new NotFoundException(`RelationType with id '${input.relationTypeId}' not found`)
     }
@@ -83,20 +77,14 @@ export class CreateRelationUseCase {
     // Check for existing relation (prevent duplicates)
     let existingRelation = false
 
-    if (
-      sourceExternalId === 'internal' &&
-      targetExternalId === 'internal' &&
-      sourceNodeId &&
-      targetNodeId
-    ) {
+    if (sourceExternalId === 'internal' && targetExternalId === 'internal' && sourceNodeId && targetNodeId) {
       // For internal-to-internal relations, check by node IDs and relation type
       const existingRelations = await this.nodeRelationRepository.findBySourceNodeIdAndRelationType(
         sourceNodeId,
-        input.relationTypeId as RelationTypeId
+        input.relationTypeId as RelationTypeId,
       )
       existingRelation = existingRelations.some(
-        (relation) =>
-          relation.getTargetNodeId() === targetNodeId && relation.getTableId() === input.tableId
+        (relation) => relation.getTargetNodeId() === targetNodeId && relation.getTableId() === input.tableId,
       )
     } else {
       // For external relations, use the original exists method
@@ -104,7 +92,7 @@ export class CreateRelationUseCase {
         sourceExternalId,
         targetExternalId,
         input.tableId as TableId,
-        input.relationTypeId as RelationTypeId
+        input.relationTypeId as RelationTypeId,
       )
     }
 
@@ -112,7 +100,7 @@ export class CreateRelationUseCase {
       const sourceIdentifier = sourceNodeId ? `node:${sourceNodeId}` : sourceExternalId
       const targetIdentifier = targetNodeId ? `node:${targetNodeId}` : targetExternalId
       throw new ConflictException(
-        `Relation of type '${relationType.getIdentifier()}' already exists between '${sourceIdentifier}' and '${targetIdentifier}'`
+        `Relation of type '${relationType.getIdentifier()}' already exists between '${sourceIdentifier}' and '${targetIdentifier}'`,
       )
     }
 
@@ -126,7 +114,7 @@ export class CreateRelationUseCase {
         targetExternalId,
         input.relationTypeId as RelationTypeId,
         input.properties,
-        input.strength
+        input.strength,
       )
 
       // Save to repository
@@ -136,7 +124,7 @@ export class CreateRelationUseCase {
       const savedRelation = await this.nodeRelationRepository.findByExternalIds(
         sourceExternalId,
         targetExternalId,
-        input.tableId as TableId
+        input.tableId as TableId,
       )
 
       if (!savedRelation) {
@@ -223,7 +211,7 @@ export class CreateRelationUseCase {
       // Try to find node by external ID (content)
       const sourceNode = await this.nodeRepository.findByTableIdAndContent(
         input.tableId as TableId,
-        input.sourceExternalId
+        input.sourceExternalId,
       )
       if (sourceNode) {
         // Found internal node, treat as internal reference
@@ -249,7 +237,7 @@ export class CreateRelationUseCase {
       // Try to find node by external ID (content)
       const targetNode = await this.nodeRepository.findByTableIdAndContent(
         input.tableId as TableId,
-        input.targetExternalId
+        input.targetExternalId,
       )
       if (targetNode) {
         // Found internal node, treat as internal reference
@@ -266,12 +254,8 @@ export class CreateRelationUseCase {
     // Prevent self-referencing relations
     // For internal nodes, compare node IDs; for external nodes, compare external IDs
     const isSelfReferencing =
-      (sourceExternalId === 'internal' &&
-        targetExternalId === 'internal' &&
-        sourceNodeId === targetNodeId) ||
-      (sourceExternalId !== 'internal' &&
-        targetExternalId !== 'internal' &&
-        sourceExternalId === targetExternalId)
+      (sourceExternalId === 'internal' && targetExternalId === 'internal' && sourceNodeId === targetNodeId) ||
+      (sourceExternalId !== 'internal' && targetExternalId !== 'internal' && sourceExternalId === targetExternalId)
 
     if (isSelfReferencing) {
       throw new ValidationException('Source and target cannot be the same')

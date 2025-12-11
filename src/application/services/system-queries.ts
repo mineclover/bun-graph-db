@@ -1,6 +1,6 @@
 import type { Database } from 'bun:sqlite'
+import * as fs from 'node:fs'
 import * as os from 'node:os'
-import * as fs from 'fs'
 
 export interface Logger {
   log: (message: string) => void
@@ -139,8 +139,7 @@ export class SystemQueries {
       const totalMem = this.getTotalMemory()
       const freeMem = this.getFreeMemory()
 
-      const heapUsagePercent =
-        memUsage.heapTotal > 0 ? (memUsage.heapUsed / memUsage.heapTotal) * 100 : 0
+      const heapUsagePercent = memUsage.heapTotal > 0 ? (memUsage.heapUsed / memUsage.heapTotal) * 100 : 0
 
       const memoryUsagePercent = totalMem > 0 ? (memUsage.rss / totalMem) * 100 : 0
 
@@ -471,7 +470,7 @@ export class SystemQueries {
     const squaredDiffs = values.map((v) => (v - mean) ** 2)
     const avgSquaredDiff = this.safeDivide(
       squaredDiffs.reduce((a, b) => a + b, 0),
-      values.length
+      values.length,
     )
     return Math.sqrt(avgSquaredDiff)
   }
@@ -480,7 +479,7 @@ export class SystemQueries {
     if (values.length === 0) return 0
     return this.safeDivide(
       values.reduce((a, b) => a + b, 0),
-      values.length
+      values.length,
     )
   }
 

@@ -58,7 +58,7 @@ export class NodeMutations extends BaseResolver {
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly tableRepository: ITableRepository,
     private readonly attributeRepository: IAttributeRepository,
-    logger: ILogger
+    logger: ILogger,
   ) {
     super()
     this.logger = logger
@@ -75,7 +75,7 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.nonEmpty('input.content', 'Node content'),
           BaseResolver.validationRules.nonEmpty('input.tableId', 'Table ID'),
         ],
-        'createNode'
+        'createNode',
       )
 
       this.logger.info('Executing mutation: createNode', { input: args.input })
@@ -96,17 +96,14 @@ export class NodeMutations extends BaseResolver {
         // Create the node directly using the repository
         const node = Node.create(
           args.input.tableId, // tableId first
-          args.input.content // content second
+          args.input.content, // content second
         )
 
         // Save the node
         await this.nodeRepository.save(node)
 
         // Fetch the saved node back to get the ID
-        const savedNode = await this.nodeRepository.findByTableIdAndContent(
-          args.input.tableId,
-          args.input.content
-        )
+        const savedNode = await this.nodeRepository.findByTableIdAndContent(args.input.tableId, args.input.content)
 
         if (!savedNode) {
           throw new Error('Failed to retrieve saved node')
@@ -161,7 +158,7 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
           BaseResolver.validationRules.nonEmpty('input.content', 'Node content'),
         ],
-        'updateNode'
+        'updateNode',
       )
 
       this.logger.info('Executing mutation: updateNode', { id: args.id, input: args.input })
@@ -215,7 +212,7 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.required('id', 'Node ID'),
           BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
         ],
-        'deleteNode'
+        'deleteNode',
       )
 
       this.logger.info('Executing mutation: deleteNode', { id: args.id })
@@ -257,7 +254,7 @@ export class NodeMutations extends BaseResolver {
         BaseResolver.validationRules.nonEmpty('input.nodeId', 'Node ID'),
         BaseResolver.validationRules.nonEmpty('input.attributeId', 'Attribute ID'),
       ],
-      'setNodeAttribute'
+      'setNodeAttribute',
     )
 
     const mutationResult = await this.handleMutation(
@@ -265,7 +262,7 @@ export class NodeMutations extends BaseResolver {
         const result = await this.nodeAttributeRepository.setNodeAttribute(
           args.input.nodeId,
           args.input.attributeId,
-          args.input.value
+          args.input.value,
         )
 
         // Transform domain entity to DTO
@@ -273,7 +270,7 @@ export class NodeMutations extends BaseResolver {
         return nodeAttributeFromEntity(result)
       },
       'setNodeAttribute',
-      { input: args.input }
+      { input: args.input },
     )
 
     // Transform handleMutation result to GraphQL schema format
@@ -287,7 +284,7 @@ export class NodeMutations extends BaseResolver {
   async removeNodeAttribute(
     _: GraphQLParent,
     args: { nodeId: string; attributeId: string },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     try {
       this.validateArgs(
@@ -298,7 +295,7 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),
           BaseResolver.validationRules.nonEmpty('attributeId', 'Attribute ID'),
         ],
-        'removeNodeAttribute'
+        'removeNodeAttribute',
       )
 
       this.logger.info('Executing mutation: removeNodeAttribute', {
@@ -309,7 +306,7 @@ export class NodeMutations extends BaseResolver {
       // Check if the node attribute exists
       const existingNodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
         args.nodeId,
-        args.attributeId
+        args.attributeId,
       )
 
       if (!existingNodeAttribute) {
@@ -373,7 +370,7 @@ export class NodeMutations extends BaseResolver {
   async updateNodeAttributeValue(
     _: GraphQLParent,
     args: { nodeId: string; attributeId: string; value: string },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     try {
       this.validateArgs(
@@ -385,7 +382,7 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),
           BaseResolver.validationRules.nonEmpty('attributeId', 'Attribute ID'),
         ],
-        'updateNodeAttributeValue'
+        'updateNodeAttributeValue',
       )
 
       this.logger.info('Executing mutation: updateNodeAttributeValue', {
@@ -397,7 +394,7 @@ export class NodeMutations extends BaseResolver {
       // Check if the node attribute exists
       const existingNodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
         args.nodeId,
-        args.attributeId
+        args.attributeId,
       )
 
       if (!existingNodeAttribute) {
@@ -407,11 +404,7 @@ export class NodeMutations extends BaseResolver {
         })
 
         // If it doesn't exist, create it (set operation)
-        const result = await this.nodeAttributeRepository.setNodeAttribute(
-          args.nodeId,
-          args.attributeId,
-          args.value
-        )
+        const result = await this.nodeAttributeRepository.setNodeAttribute(args.nodeId, args.attributeId, args.value)
 
         return {
           success: true,
@@ -450,11 +443,7 @@ export class NodeMutations extends BaseResolver {
     }
   }
 
-  async createPersonNode(
-    _: GraphQLParent,
-    args: { input: CreatePersonNodeInput },
-    _context?: GraphQLContext
-  ) {
+  async createPersonNode(_: GraphQLParent, args: { input: CreatePersonNodeInput }, _context?: GraphQLContext) {
     try {
       this.validateArgs(
         args as any,
@@ -467,7 +456,7 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.nonEmpty('input.name', 'Person name'),
           BaseResolver.validationRules.nonEmpty('input.age', 'Person age'),
         ],
-        'createPersonNode'
+        'createPersonNode',
       )
 
       this.logger.info('Executing mutation: createPersonNode', { input: args.input })
@@ -485,10 +474,7 @@ export class NodeMutations extends BaseResolver {
       await this.nodeRepository.save(node)
 
       // Fetch the saved node back to get the ID
-      const savedNode = await this.nodeRepository.findByTableIdAndContent(
-        tableId,
-        args.input.content
-      )
+      const savedNode = await this.nodeRepository.findByTableIdAndContent(tableId, args.input.content)
 
       if (!savedNode) {
         throw new Error('Failed to retrieve saved node')
@@ -527,7 +513,7 @@ export class NodeMutations extends BaseResolver {
               const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
                 nodeId,
                 nameAttrId,
-                args.input.name
+                args.input.name,
               )
               this.logger.info('Set name attribute', { nodeAttribute: nodeAttribute.getId() })
               attributes.push(nodeAttribute)
@@ -544,7 +530,7 @@ export class NodeMutations extends BaseResolver {
               const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
                 nodeId,
                 ageAttrId,
-                args.input.age
+                args.input.age,
               )
               attributes.push(nodeAttribute)
             }
@@ -559,7 +545,7 @@ export class NodeMutations extends BaseResolver {
                 const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
                   nodeId,
                   testNameAttrId,
-                  args.input.testName
+                  args.input.testName,
                 )
                 attributes.push(nodeAttribute)
               }
@@ -571,9 +557,7 @@ export class NodeMutations extends BaseResolver {
       }
 
       // Import the NodeDto for proper formatting
-      const { fromEntity: nodeFromEntity, nodeAttributeFromEntity } = await import(
-        '@/application/dtos/NodeDto.js'
-      )
+      const { fromEntity: nodeFromEntity, nodeAttributeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
       // Return the expected GraphQL structure
       return {
@@ -605,7 +589,7 @@ export class NodeMutations extends BaseResolver {
   async createNodeWithAttributes(
     _: GraphQLParent,
     args: { input: CreateNodeWithAttributesInput },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     try {
       this.validateArgs(
@@ -614,14 +598,11 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.required('input', 'Create node with attributes input'),
           BaseResolver.validationRules.required('input.content', 'Node content'),
           BaseResolver.validationRules.required('input.tableId', 'Table ID'),
-          BaseResolver.validationRules.required(
-            'input.attributesByIdentifier',
-            'Attributes by identifier'
-          ),
+          BaseResolver.validationRules.required('input.attributesByIdentifier', 'Attributes by identifier'),
           BaseResolver.validationRules.nonEmpty('input.content', 'Node content'),
           BaseResolver.validationRules.nonEmpty('input.tableId', 'Table ID'),
         ],
-        'createNodeWithAttributes'
+        'createNodeWithAttributes',
       )
 
       this.logger.info('Executing mutation: createNodeWithAttributes', { input: args.input })
@@ -638,10 +619,7 @@ export class NodeMutations extends BaseResolver {
       await this.nodeRepository.save(node)
 
       // Step 3: Fetch the saved node back to get the ID
-      const savedNode = await this.nodeRepository.findByTableIdAndContent(
-        args.input.tableId,
-        args.input.content
-      )
+      const savedNode = await this.nodeRepository.findByTableIdAndContent(args.input.tableId, args.input.content)
 
       if (!savedNode) {
         throw new Error('Failed to retrieve saved node')
@@ -668,9 +646,7 @@ export class NodeMutations extends BaseResolver {
 
         // Map each input attribute by identifier
         for (const inputAttr of args.input.attributesByIdentifier) {
-          const foundAttribute = availableAttributes.find(
-            (attr) => attr.getIdentifier() === inputAttr.identifier
-          )
+          const foundAttribute = availableAttributes.find((attr) => attr.getIdentifier() === inputAttr.identifier)
 
           if (foundAttribute) {
             const attrId = foundAttribute.getId()
@@ -681,11 +657,7 @@ export class NodeMutations extends BaseResolver {
                 attributeId: attrId,
               })
 
-              const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
-                nodeId,
-                attrId,
-                inputAttr.value
-              )
+              const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(nodeId, attrId, inputAttr.value)
               attributes.push(nodeAttribute)
             }
           } else {
@@ -700,9 +672,7 @@ export class NodeMutations extends BaseResolver {
       }
 
       // Step 5: Format response
-      const { fromEntity: nodeFromEntity, nodeAttributeFromEntity } = await import(
-        '@/application/dtos/NodeDto.js'
-      )
+      const { fromEntity: nodeFromEntity, nodeAttributeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
       return {
         success: true,
@@ -730,11 +700,7 @@ export class NodeMutations extends BaseResolver {
     }
   }
 
-  async setNodeAttributes(
-    _: GraphQLParent,
-    args: { input: SetNodeAttributesInput },
-    _context?: GraphQLContext
-  ) {
+  async setNodeAttributes(_: GraphQLParent, args: { input: SetNodeAttributesInput }, _context?: GraphQLContext) {
     try {
       this.validateArgs(
         args as any,
@@ -744,7 +710,7 @@ export class NodeMutations extends BaseResolver {
           BaseResolver.validationRules.required('input.attributes', 'Attributes'),
           BaseResolver.validationRules.nonEmpty('input.nodeId', 'Node ID'),
         ],
-        'setNodeAttributes'
+        'setNodeAttributes',
       )
 
       this.logger.info('Executing mutation: setNodeAttributes', { input: args.input })
@@ -763,7 +729,7 @@ export class NodeMutations extends BaseResolver {
           const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
             args.input.nodeId,
             attr.attributeId,
-            attr.value
+            attr.value,
           )
           nodeAttributes.push(nodeAttribute)
 
@@ -811,7 +777,7 @@ export class NodeMutations extends BaseResolver {
   async setNodeAttributesByIdentifier(
     _: GraphQLParent,
     args: { input: SetNodeAttributesByIdentifierInput },
-    _context?: GraphQLContext
+    _context?: GraphQLContext,
   ) {
     try {
       this.validateArgs(
@@ -819,13 +785,10 @@ export class NodeMutations extends BaseResolver {
         [
           BaseResolver.validationRules.required('input', 'Set node attributes by identifier input'),
           BaseResolver.validationRules.required('input.nodeId', 'Node ID'),
-          BaseResolver.validationRules.required(
-            'input.attributesByIdentifier',
-            'Attributes by identifier'
-          ),
+          BaseResolver.validationRules.required('input.attributesByIdentifier', 'Attributes by identifier'),
           BaseResolver.validationRules.nonEmpty('input.nodeId', 'Node ID'),
         ],
-        'setNodeAttributesByIdentifier'
+        'setNodeAttributesByIdentifier',
       )
 
       this.logger.info('Executing mutation: setNodeAttributesByIdentifier', { input: args.input })
@@ -853,9 +816,7 @@ export class NodeMutations extends BaseResolver {
 
       // Process each attribute by identifier
       for (const inputAttr of args.input.attributesByIdentifier) {
-        const foundAttribute = availableAttributes.find(
-          (attr) => attr.getIdentifier() === inputAttr.identifier
-        )
+        const foundAttribute = availableAttributes.find((attr) => attr.getIdentifier() === inputAttr.identifier)
 
         if (foundAttribute) {
           const attrId = foundAttribute.getId()
@@ -864,7 +825,7 @@ export class NodeMutations extends BaseResolver {
               const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
                 args.input.nodeId,
                 attrId,
-                inputAttr.value
+                inputAttr.value,
               )
               nodeAttributes.push(nodeAttribute)
 

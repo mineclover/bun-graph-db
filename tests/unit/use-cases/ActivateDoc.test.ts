@@ -12,18 +12,9 @@ function createTestDoc(
   category: DocCategory,
   content: string,
   version: number = 1,
-  isActive: boolean = false
+  isActive: boolean = false,
 ): Doc {
-  return Doc.fromDatabase(
-    id,
-    tableId,
-    category as string,
-    version,
-    content,
-    isActive,
-    new Date(),
-    new Date()
-  )
+  return Doc.fromDatabase(id, tableId, category as string, version, content, isActive, new Date(), new Date())
 }
 
 describe('ActivateDocUseCase', () => {
@@ -75,9 +66,7 @@ describe('ActivateDocUseCase', () => {
       mockDocRepository.findById = mock(async () => null)
 
       await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow(
-        "Doc with id 'nonexistent-doc' not found"
-      )
+      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow("Doc with id 'nonexistent-doc' not found")
     })
   })
 
@@ -91,11 +80,7 @@ describe('ActivateDocUseCase', () => {
 
       expect(result.doc).toBeDefined()
       expect(result.doc.isActive).toBe(true)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-1',
-        DocCategory.USAGE,
-        'doc-1'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.USAGE, 'doc-1')
       expect(mockDocRepository.save).toHaveBeenCalled()
     })
 
@@ -108,11 +93,7 @@ describe('ActivateDocUseCase', () => {
 
       expect(result.doc).toBeDefined()
       expect(result.doc.isActive).toBe(true)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-1',
-        DocCategory.USAGE,
-        'doc-1'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.USAGE, 'doc-1')
       expect(mockDocRepository.save).toHaveBeenCalled()
     })
 
@@ -123,11 +104,7 @@ describe('ActivateDocUseCase', () => {
 
       await useCase.execute('doc-1' as any)
 
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-1',
-        DocCategory.GUIDE,
-        'doc-1'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.GUIDE, 'doc-1')
       expect(mockDocRepository.save).toHaveBeenCalled()
     })
   })
@@ -143,11 +120,7 @@ describe('ActivateDocUseCase', () => {
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('usage')
       expect(result.doc.isActive).toBe(true)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-1',
-        DocCategory.USAGE,
-        'doc-1'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.USAGE, 'doc-1')
     })
 
     it('should activate GUIDE category doc', async () => {
@@ -160,22 +133,11 @@ describe('ActivateDocUseCase', () => {
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('guide')
       expect(result.doc.isActive).toBe(true)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-2',
-        DocCategory.GUIDE,
-        'doc-2'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-2', DocCategory.GUIDE, 'doc-2')
     })
 
     it('should activate EXAMPLE category doc', async () => {
-      const doc = createTestDoc(
-        'doc-3',
-        'table-3',
-        DocCategory.EXAMPLE,
-        'Example content',
-        1,
-        false
-      )
+      const doc = createTestDoc('doc-3', 'table-3', DocCategory.EXAMPLE, 'Example content', 1, false)
 
       mockDocRepository.findById = mock(async () => doc)
 
@@ -184,11 +146,7 @@ describe('ActivateDocUseCase', () => {
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('example')
       expect(result.doc.isActive).toBe(true)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-3',
-        DocCategory.EXAMPLE,
-        'doc-3'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-3', DocCategory.EXAMPLE, 'doc-3')
     })
 
     it('should activate SPEC category doc', async () => {
@@ -201,22 +159,11 @@ describe('ActivateDocUseCase', () => {
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('spec')
       expect(result.doc.isActive).toBe(true)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-4',
-        DocCategory.SPEC,
-        'doc-4'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-4', DocCategory.SPEC, 'doc-4')
     })
 
     it('should activate GENERAL category doc', async () => {
-      const doc = createTestDoc(
-        'doc-5',
-        'table-5',
-        DocCategory.GENERAL,
-        'General content',
-        1,
-        false
-      )
+      const doc = createTestDoc('doc-5', 'table-5', DocCategory.GENERAL, 'General content', 1, false)
 
       mockDocRepository.findById = mock(async () => doc)
 
@@ -225,11 +172,7 @@ describe('ActivateDocUseCase', () => {
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('general')
       expect(result.doc.isActive).toBe(true)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-5',
-        DocCategory.GENERAL,
-        'doc-5'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-5', DocCategory.GENERAL, 'doc-5')
     })
   })
 
@@ -315,7 +258,7 @@ describe('ActivateDocUseCase', () => {
         'Activating doc',
         expect.objectContaining({
           id: 'doc-123',
-        })
+        }),
       )
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Doc activated successfully',
@@ -324,7 +267,7 @@ describe('ActivateDocUseCase', () => {
           tableId: 'table-456',
           category: 'guide',
           version: 2,
-        })
+        }),
       )
     })
 
@@ -349,7 +292,7 @@ describe('ActivateDocUseCase', () => {
         'Failed to activate doc',
         expect.objectContaining({
           id: 'doc-1',
-        })
+        }),
       )
     })
   })
@@ -386,20 +329,12 @@ describe('ActivateDocUseCase', () => {
       // Activate doc in table-1
       mockDocRepository.findById = mock(async () => doc1)
       await useCase.execute('doc-1' as any)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-1',
-        DocCategory.USAGE,
-        'doc-1'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.USAGE, 'doc-1')
 
       // Activate doc in table-2 (should not affect table-1)
       mockDocRepository.findById = mock(async () => doc2)
       await useCase.execute('doc-2' as any)
-      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith(
-        'table-2',
-        DocCategory.USAGE,
-        'doc-2'
-      )
+      expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-2', DocCategory.USAGE, 'doc-2')
     })
 
     it('should handle activation with long content', async () => {

@@ -126,7 +126,7 @@ describe('EnhancedDependencyAnalyzer', () => {
       createMockRepo() as any,
       createMockRepo() as any,
       createMockRepo() as any,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -161,11 +161,7 @@ describe('EnhancedTemplateGenerator', () => {
 
   beforeEach(() => {
     mockLogger = new MockLogger()
-    generator = new EnhancedTemplateGenerator(
-      createMockRepo() as any,
-      createMockRepo() as any,
-      mockLogger
-    )
+    generator = new EnhancedTemplateGenerator(createMockRepo() as any, createMockRepo() as any, mockLogger)
   })
 
   test('should generate table templates', async () => {
@@ -213,7 +209,7 @@ describe('TablePackageValidator', () => {
       createMockRepo() as any,
       createMockRepo() as any,
       createMockRepo() as any,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -313,7 +309,7 @@ describe('TablePackageRecoveryManager', () => {
       createMockRepo() as any,
       createMockRepo() as any,
       createMockRepo() as any,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -432,20 +428,16 @@ describe('Enhanced Services Integration', () => {
       createMockRepo() as any,
       createMockRepo() as any,
       createMockRepo() as any,
-      mockLogger
+      mockLogger,
     )
 
-    const generator = new EnhancedTemplateGenerator(
-      createMockRepo() as any,
-      createMockRepo() as any,
-      mockLogger
-    )
+    const generator = new EnhancedTemplateGenerator(createMockRepo() as any, createMockRepo() as any, mockLogger)
 
     const validator = new TablePackageValidator(
       createMockRepo() as any,
       createMockRepo() as any,
       createMockRepo() as any,
-      mockLogger
+      mockLogger,
     )
 
     // Test that services can be instantiated together

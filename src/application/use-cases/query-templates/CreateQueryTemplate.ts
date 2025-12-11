@@ -28,7 +28,7 @@ export interface CreateQueryTemplateResponse {
 export class CreateQueryTemplate {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(request: CreateQueryTemplateRequest): Promise<QueryTemplate> {
@@ -39,21 +39,15 @@ export class CreateQueryTemplate {
       })
 
       // Create the template entity
-      const template = QueryTemplate.create(
-        request.identifier,
-        request.name,
-        request.queryText,
-        request.tags,
-        {
-          description: request.description,
-          inputSchema: request.inputSchema,
-          defaultVariables: request.defaultVariables,
-          applicableTables: request.applicableTables,
-          templateType: request.templateType,
-          complexityScore: request.complexityScore,
-          version: request.version,
-        }
-      )
+      const template = QueryTemplate.create(request.identifier, request.name, request.queryText, request.tags, {
+        description: request.description,
+        inputSchema: request.inputSchema,
+        defaultVariables: request.defaultVariables,
+        applicableTables: request.applicableTables,
+        templateType: request.templateType,
+        complexityScore: request.complexityScore,
+        version: request.version,
+      })
 
       // Save the template
       const saved = await this.queryTemplateRepository.create(template)

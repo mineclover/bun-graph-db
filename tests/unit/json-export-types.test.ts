@@ -380,9 +380,7 @@ describe('HFI Protocol Patch Types', () => {
             add: { sourceNodeId: 'node-1', targetNodeId: 'node-3', relationTypeIdentifier: 'next' },
           },
         ],
-        stateConnections: [
-          { add: { from: 'node-1', fromField: 'output', to: 'node-2', toField: 'input' } },
-        ],
+        stateConnections: [{ add: { from: 'node-1', fromField: 'output', to: 'node-2', toField: 'input' } }],
       }
 
       expect(request.format).toBe('hfi')

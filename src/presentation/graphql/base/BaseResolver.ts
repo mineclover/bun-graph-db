@@ -17,7 +17,7 @@ export abstract class BaseResolver {
   protected async handleQuery<T>(
     operation: () => Promise<T>,
     context: string,
-    operationDetails?: Record<string, unknown>
+    operationDetails?: Record<string, unknown>,
   ): Promise<T> {
     const startTime = Date.now()
     let _success = true
@@ -73,7 +73,7 @@ export abstract class BaseResolver {
   protected async handleMutation<T>(
     operation: () => Promise<T>,
     context: string,
-    operationDetails?: Record<string, unknown>
+    operationDetails?: Record<string, unknown>,
   ): Promise<StandardMutationResult<T>> {
     try {
       this.logger.info(`Executing mutation: ${context}`, operationDetails)
@@ -113,7 +113,7 @@ export abstract class BaseResolver {
     operation: () => Promise<T>,
     fieldName: string,
     parentType: string,
-    operationDetails?: Record<string, unknown>
+    operationDetails?: Record<string, unknown>,
   ): Promise<T | null> {
     try {
       const context = `${parentType}.${fieldName}`
@@ -138,11 +138,7 @@ export abstract class BaseResolver {
   /**
    * Validate GraphQL arguments with detailed error reporting
    */
-  protected validateArgs<T>(
-    args: T,
-    validationRules: Array<(args: T) => void>,
-    context: string
-  ): void {
+  protected validateArgs<T>(args: T, validationRules: Array<(args: T) => void>, context: string): void {
     for (const rule of validationRules) {
       try {
         rule(args)
@@ -150,7 +146,7 @@ export abstract class BaseResolver {
         this.logger.warn(`Argument validation failed: ${context}`, { error, args })
         throw new ValidationException(
           `Invalid arguments for ${context}: ${error instanceof Error ? error.message : 'Unknown validation error'}`,
-          { code: 'INVALID_ARGUMENTS', context, args }
+          { code: 'INVALID_ARGUMENTS', context, args },
         )
       }
     }

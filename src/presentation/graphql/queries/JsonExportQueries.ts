@@ -7,12 +7,7 @@
 import type { GraphQLResolveInfo } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
-import type {
-  FlatJsonExport,
-  HFIProtocolExport,
-  JsonExportFormat,
-  JsonExportOptions,
-} from '@/core/types/JsonExport.js'
+import type { FlatJsonExport, HFIProtocolExport, JsonExportFormat, JsonExportOptions } from '@/core/types/JsonExport.js'
 import type { JsonExportService } from '@/domain/services/JsonExportService.js'
 
 /** GraphQL enum format values */
@@ -72,7 +67,7 @@ export class JsonExportQueries {
     _parent: unknown,
     args: ExportTableJsonArgs,
     context: JsonExportQueriesContext,
-    _info: GraphQLResolveInfo
+    _info: GraphQLResolveInfo,
   ): Promise<JsonExportResponse> {
     const { jsonExportService, logger } = context
 

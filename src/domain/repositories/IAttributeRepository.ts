@@ -27,7 +27,7 @@ export interface IAttributeRepository
 
   findByAttributeTypeId(
     attributeTypeId: AttributeTypeId,
-    options?: PaginationOptions
+    options?: PaginationOptions,
   ): Promise<PaginatedResult<Attribute>>
 
   findRequiredByTableId(tableId: TableId): Promise<Attribute[]>

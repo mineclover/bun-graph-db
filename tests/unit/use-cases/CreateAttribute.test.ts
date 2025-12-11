@@ -6,11 +6,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import {
-  ConflictException,
-  NotFoundException,
-  ValidationException,
-} from '@/shared/exceptions/DomainException.js'
+import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { createTestAttribute, createTestAttributeType, createTestTable } from './test-helpers.js'
 
 describe('CreateAttributeUseCase', () => {
@@ -114,7 +110,7 @@ describe('CreateAttributeUseCase', () => {
       mockAttributeTypeRepository,
       mockTableRepository,
       mockQueryTemplateRepository,
-      mockLogger
+      mockLogger,
     )
   })
 
@@ -164,9 +160,7 @@ describe('CreateAttributeUseCase', () => {
       mockTableRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow(
-        "Table with id 'non-existent-table' not found"
-      )
+      await expect(useCase.execute(input)).rejects.toThrow("Table with id 'non-existent-table' not found")
     })
 
     it('should throw NotFoundException when attribute type does not exist', async () => {
@@ -182,9 +176,7 @@ describe('CreateAttributeUseCase', () => {
       mockAttributeTypeRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute(input)).rejects.toThrow(
-        "Attribute type with id 'non-existent-type' not found"
-      )
+      await expect(useCase.execute(input)).rejects.toThrow("Attribute type with id 'non-existent-type' not found")
     })
   })
 
@@ -203,18 +195,17 @@ describe('CreateAttributeUseCase', () => {
         'table-1',
         'existing_attr',
         'Existing Attribute',
-        'attr-type-1'
+        'attr-type-1',
       )
 
       mockTableRepository.findById = mock(async () => table as any)
       mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
-      mockAttributeRepository.findByTableIdAndIdentifier =
-        mock().mockResolvedValueOnce(existingAttribute)
+      mockAttributeRepository.findByTableIdAndIdentifier = mock().mockResolvedValueOnce(existingAttribute)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
       await expect(promise).rejects.toThrow(
-        "Attribute with identifier 'existing_attr' already exists for table 'test-table'"
+        "Attribute with identifier 'existing_attr' already exists for table 'test-table'",
       )
     })
   })
@@ -231,13 +222,7 @@ describe('CreateAttributeUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
-      const createdAttribute = createTestAttribute(
-        'attr-1',
-        'table-1',
-        'test_attr',
-        'Test Attribute',
-        'attr-type-1'
-      )
+      const createdAttribute = createTestAttribute('attr-1', 'table-1', 'test_attr', 'Test Attribute', 'attr-type-1')
 
       mockTableRepository.findById = mock(async () => table as any)
       mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
@@ -256,7 +241,7 @@ describe('CreateAttributeUseCase', () => {
         expect.objectContaining({
           identifier: input.identifier,
           tableId: input.tableId,
-        })
+        }),
       )
     })
 
@@ -276,7 +261,7 @@ describe('CreateAttributeUseCase', () => {
         'table-1',
         'required_attr',
         'Required Attribute',
-        'attr-type-1'
+        'attr-type-1',
       )
 
       mockTableRepository.findById = mock(async () => table as any)
@@ -308,7 +293,7 @@ describe('CreateAttributeUseCase', () => {
         'table-1',
         'meta_attr',
         'Metadata Attribute',
-        'attr-type-1'
+        'attr-type-1',
       )
 
       mockTableRepository.findById = mock(async () => table as any)
@@ -351,7 +336,7 @@ describe('CreateAttributeUseCase', () => {
           identifier: input.identifier,
           tableId: input.tableId,
           error: 'Database connection failed',
-        })
+        }),
       )
     })
 

@@ -47,11 +47,7 @@
       "identifier": "create-user-profile",
       "name": "Create User Profile",
       "query": "mutation CreateUserProfile($username: String!, $email: String!) { createNode(input: { tableId: \"1\", content: $username, metadata: { email: $email } }) { id } }",
-      "tags": [
-        "user",
-        "creation",
-        "profile"
-      ],
+      "tags": ["user", "creation", "profile"],
       "category": "NODE_MANAGEMENT",
       "complexity": "LOW",
       "usagePattern": "Basic user creation with email validation"
@@ -60,11 +56,7 @@
       "identifier": "update-user-preferences",
       "name": "Update User Preferences",
       "query": "mutation UpdateUserPrefs($userId: String!, $preferences: JSON!) { updateNodeAttribute(input: { nodeId: $userId, attributeId: \"attr_prefs\", value: $preferences }) { success } }",
-      "tags": [
-        "user",
-        "update",
-        "preferences"
-      ],
+      "tags": ["user", "update", "preferences"],
       "category": "ATTRIBUTE_MANAGEMENT",
       "complexity": "MEDIUM",
       "usagePattern": "Preference updates with JSON validation"
@@ -78,40 +70,28 @@
         "type": "text",
         "description": "Unique user identifier",
         "required": true,
-        "examples": [
-          "example_value",
-          "another_example"
-        ]
+        "examples": ["example_value", "another_example"]
       },
       {
         "name": "Email Address",
         "type": "text",
         "description": "User email for communication",
         "required": true,
-        "examples": [
-          "example_value",
-          "another_example"
-        ]
+        "examples": ["example_value", "another_example"]
       },
       {
         "name": "Created Date",
         "type": "date",
         "description": "Account creation timestamp",
         "required": false,
-        "examples": [
-          "2024-12-20",
-          "2024-01-15T10:30:00Z"
-        ]
+        "examples": ["2024-12-20", "2024-01-15T10:30:00Z"]
       },
       {
         "name": "Active Status",
         "type": "boolean",
         "description": "Account activation status",
         "required": false,
-        "examples": [
-          "true",
-          "false"
-        ]
+        "examples": ["true", "false"]
       }
     ],
     "usageExamples": [

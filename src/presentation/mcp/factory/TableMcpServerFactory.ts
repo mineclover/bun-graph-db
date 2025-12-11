@@ -76,9 +76,7 @@ export class TableMcpServerFactory {
       // Cache the server
       this.servers.set(tableId, server)
 
-      this.logger?.info(
-        `MCP server created for table ${tableId} with ${server.getTableToolsCount()} tools`
-      )
+      this.logger?.info(`MCP server created for table ${tableId} with ${server.getTableToolsCount()} tools`)
 
       return server
     } catch (error) {
@@ -167,7 +165,7 @@ export class TableMcpServerFactory {
             t.id === tableId ||
             t.identifier === tableId ||
             String(t.id) === tableId ||
-            String(t.identifier) === tableId
+            String(t.identifier) === tableId,
         )
 
         if (table) {
@@ -301,7 +299,7 @@ export class TableMcpServerFactory {
           } else {
             throw new Error('Server creation failed')
           }
-        })
+        }),
       )
 
       results.forEach((result, index) => {
@@ -322,9 +320,7 @@ export class TableMcpServerFactory {
       }
     }
 
-    this.logger?.info(
-      `Preloading complete: ${successful.length} successful, ${failed.length} failed`
-    )
+    this.logger?.info(`Preloading complete: ${successful.length} successful, ${failed.length} failed`)
 
     return { successful, failed }
   }
@@ -382,9 +378,7 @@ export class TableMcpServerFactory {
       return { refreshed, failed }
     }
 
-    this.logger?.info(
-      `Refreshing MCP servers for ${tableIds.length} tables: ${tableIds.join(', ')}`
-    )
+    this.logger?.info(`Refreshing MCP servers for ${tableIds.length} tables: ${tableIds.join(', ')}`)
 
     for (const tableId of tableIds) {
       try {

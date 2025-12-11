@@ -9,22 +9,14 @@ export class Node {
     private readonly title: string | null,
     private readonly description: string | null,
     private readonly createdAt: Date,
-    private readonly updatedAt: Date
+    private readonly updatedAt: Date,
   ) {
     this.validateContent(content)
     this.validateTitle(title)
   }
 
   static create(tableId: TableId, content: string, title?: string, description?: string): Node {
-    return new Node(
-      null as any as NodeId,
-      tableId,
-      content,
-      title || null,
-      description || null,
-      new Date(),
-      new Date()
-    )
+    return new Node(null as any as NodeId, tableId, content, title || null, description || null, new Date(), new Date())
   }
 
   static fromDatabase(
@@ -34,17 +26,9 @@ export class Node {
     title: string | null,
     description: string | null,
     createdAt: Date,
-    updatedAt: Date
+    updatedAt: Date,
   ): Node {
-    return new Node(
-      id as NodeId,
-      tableId as TableId,
-      content,
-      title,
-      description,
-      createdAt,
-      updatedAt
-    )
+    return new Node(id as NodeId, tableId as TableId, content, title, description, createdAt, updatedAt)
   }
 
   private validateContent(content: string): void {
@@ -95,40 +79,16 @@ export class Node {
 
   updateTitle(title: string | null): Node {
     this.validateTitle(title)
-    return new Node(
-      this.id,
-      this.tableId,
-      this.content,
-      title,
-      this.description,
-      this.createdAt,
-      new Date()
-    )
+    return new Node(this.id, this.tableId, this.content, title, this.description, this.createdAt, new Date())
   }
 
   updateDescription(description: string | null): Node {
-    return new Node(
-      this.id,
-      this.tableId,
-      this.content,
-      this.title,
-      description,
-      this.createdAt,
-      new Date()
-    )
+    return new Node(this.id, this.tableId, this.content, this.title, description, this.createdAt, new Date())
   }
 
   updateContent(content: string): Node {
     this.validateContent(content)
-    return new Node(
-      this.id,
-      this.tableId,
-      content,
-      this.title,
-      this.description,
-      this.createdAt,
-      new Date()
-    )
+    return new Node(this.id, this.tableId, content, this.title, this.description, this.createdAt, new Date())
   }
 
   toDatabase(): {

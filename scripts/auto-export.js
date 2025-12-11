@@ -6,7 +6,7 @@
  * Usage: node scripts/auto-export.js [tableId] [format] [outputDir]
  */
 
-import http from 'http'
+import http from 'node:http'
 
 // Default configuration
 const DEFAULT_CONFIG = {
@@ -112,9 +112,7 @@ async function main() {
 
   // Validate format
   if (!FORMATS.includes(config.format)) {
-    console.error(
-      `❌ Error: Invalid format '${config.format}'. Available formats: ${FORMATS.join(', ')}`
-    )
+    console.error(`❌ Error: Invalid format '${config.format}'. Available formats: ${FORMATS.join(', ')}`)
     process.exit(1)
   }
 
@@ -140,9 +138,7 @@ async function main() {
     if (result.success) {
       console.log('✅ Export completed successfully!')
       console.log(`📁 File saved to: ${result.filePath}`)
-      console.log(
-        `📊 Exported ${result.metadata.exportedNodes} of ${result.metadata.totalNodes} nodes`
-      )
+      console.log(`📊 Exported ${result.metadata.exportedNodes} of ${result.metadata.totalNodes} nodes`)
       console.log(`🕒 Export time: ${result.metadata.exportedAt}`)
     } else {
       console.error('❌ Export failed:')

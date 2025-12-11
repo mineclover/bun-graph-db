@@ -32,11 +32,7 @@ extend type Mutation {
   ): UpdateTemplateQueryPayload!
 
   # Template import/export
-  exportTemplate(
-    templateId: ID
-    templateIdentifier: String
-    includeStatistics: Boolean
-  ): ExportTemplatePayload!
+  exportTemplate(templateId: ID, templateIdentifier: String, includeStatistics: Boolean): ExportTemplatePayload!
 
   # Batch export templates with filters
   exportTemplates(

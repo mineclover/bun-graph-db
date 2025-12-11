@@ -1,8 +1,4 @@
-import type {
-  EnhancedSortOption,
-  SortContext,
-  SortResult,
-} from '@/domain/value-objects/SortStrategy.js'
+import type { EnhancedSortOption, SortContext, SortResult } from '@/domain/value-objects/SortStrategy.js'
 import { SortStrategy } from '@/domain/value-objects/SortStrategy.js'
 import {
   type CustomSortFunction,
@@ -37,15 +33,12 @@ export class CustomSortStrategy extends SortStrategy {
       return this.registry.execute(customFunction.id, field, direction, context)
     } catch (error) {
       throw new Error(
-        `Custom sort function '${customFunction.id}' failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Custom sort function '${customFunction.id}' failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   }
 
-  override buildEnhancedSortClause(
-    sortOption: EnhancedSortOption,
-    context: SortContext
-  ): SortResult {
+  override buildEnhancedSortClause(sortOption: EnhancedSortOption, context: SortContext): SortResult {
     const { field, direction, customComparator } = sortOption
 
     // If customComparator is provided, it should contain the custom function identifier and parameters
@@ -54,8 +47,7 @@ export class CustomSortStrategy extends SortStrategy {
 
     if (customComparator) {
       try {
-        const customConfig =
-          typeof customComparator === 'string' ? JSON.parse(customComparator) : customComparator
+        const customConfig = typeof customComparator === 'string' ? JSON.parse(customComparator) : customComparator
 
         if (typeof customConfig === 'object' && customConfig.functionId) {
           functionId = customConfig.functionId
@@ -65,7 +57,7 @@ export class CustomSortStrategy extends SortStrategy {
         }
       } catch (error) {
         throw new Error(
-          `Failed to parse custom comparator: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Failed to parse custom comparator: ${error instanceof Error ? error.message : 'Unknown error'}`,
         )
       }
     } else {
@@ -81,7 +73,7 @@ export class CustomSortStrategy extends SortStrategy {
       return this.registry.execute(functionId, field, direction, context, parameters)
     } catch (error) {
       throw new Error(
-        `Custom sort function '${functionId}' failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Custom sort function '${functionId}' failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       )
     }
   }
@@ -97,7 +89,7 @@ export class CustomSortStrategy extends SortStrategy {
   private findBestCustomFunction(
     field: string,
     context: SortContext,
-    _parameters: Record<string, any>
+    _parameters: Record<string, any>,
   ): CustomSortFunction | null {
     // First, try to find by exact field name match in function tags
     let candidates = this.registry.search(field)
@@ -186,7 +178,7 @@ export class CustomSortStrategy extends SortStrategy {
  * Register all built-in custom sort functions
  */
 export function registerAllBuiltInCustomSortFunctions(
-  registry: CustomSortFunctionRegistry = globalCustomSortRegistry
+  registry: CustomSortFunctionRegistry = globalCustomSortRegistry,
 ): void {
   // Natural string sorting (alphanumeric)
   registry.register({
@@ -384,7 +376,7 @@ export function registerAllBuiltInCustomSortFunctions(
  */
 export function registerBuiltInCustomSortFunction(
   functionName: 'natural-string' | 'length-sort' | 'relevance-score' | 'seeded-random',
-  registry: CustomSortFunctionRegistry = globalCustomSortRegistry
+  registry: CustomSortFunctionRegistry = globalCustomSortRegistry,
 ): void {
   // First register all, then keep only the requested one
   const tempRegistry = new CustomSortFunctionRegistry({ enableStats: false })

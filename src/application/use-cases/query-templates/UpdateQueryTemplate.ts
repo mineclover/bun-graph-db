@@ -33,7 +33,7 @@ export interface UpdateQueryTemplateResponse {
 export class UpdateQueryTemplate {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   async execute(request: UpdateQueryTemplateRequest): Promise<UpdateQueryTemplateResponse> {
@@ -65,13 +65,10 @@ export class UpdateQueryTemplate {
       if (request.description !== undefined) updateData.description = request.description
       if (request.queryText !== undefined) updateData.queryText = request.queryText
       if (request.inputSchema !== undefined) updateData.inputSchema = request.inputSchema
-      if (request.defaultVariables !== undefined)
-        updateData.defaultVariables = request.defaultVariables
-      if (request.applicableTables !== undefined)
-        updateData.applicableTables = request.applicableTables
+      if (request.defaultVariables !== undefined) updateData.defaultVariables = request.defaultVariables
+      if (request.applicableTables !== undefined) updateData.applicableTables = request.applicableTables
       if (request.templateType !== undefined) updateData.templateType = request.templateType
-      if (request.complexityScore !== undefined)
-        updateData.complexityScore = request.complexityScore
+      if (request.complexityScore !== undefined) updateData.complexityScore = request.complexityScore
       if (request.version !== undefined) updateData.version = request.version
       if (request.isActive !== undefined) updateData.isActive = request.isActive
       if (request.tags !== undefined) updateData.tags = request.tags
@@ -88,14 +85,10 @@ export class UpdateQueryTemplate {
       // If updating input schema or default variables, validate compatibility
       if (request.inputSchema !== undefined || request.defaultVariables !== undefined) {
         const updatedSchema =
-          request.inputSchema !== undefined
-            ? request.inputSchema
-            : existingTemplate.getInputSchema()
+          request.inputSchema !== undefined ? request.inputSchema : existingTemplate.getInputSchema()
 
         const updatedDefaults =
-          request.defaultVariables !== undefined
-            ? request.defaultVariables
-            : existingTemplate.getDefaultVariables()
+          request.defaultVariables !== undefined ? request.defaultVariables : existingTemplate.getDefaultVariables()
 
         if (updatedSchema && updatedDefaults) {
           // Create a temporary template to validate variables
@@ -163,10 +156,7 @@ export class UpdateQueryTemplate {
     }
 
     // Validate template type if provided
-    if (
-      request.templateType &&
-      !['query', 'mutation', 'subscription'].includes(request.templateType)
-    ) {
+    if (request.templateType && !['query', 'mutation', 'subscription'].includes(request.templateType)) {
       throw new ValidationException('Template type must be query, mutation, or subscription')
     }
 

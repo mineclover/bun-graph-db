@@ -52,7 +52,7 @@ export class GraphApiController {
     private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase,
     private readonly tableRepository: ITableRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
-    port?: number
+    port?: number,
   ) {
     // Use the same port as the server instance
     const serverPort = port || 4000
@@ -62,14 +62,7 @@ export class GraphApiController {
 
   async getTables(req: Request, res: Response): Promise<void> {
     try {
-      const {
-        hasNodes,
-        limit = 50,
-        offset = 0,
-        search = '',
-        sortBy = 'createdAt',
-        sortOrder = 'desc',
-      } = req.query
+      const { hasNodes, limit = 50, offset = 0, search = '', sortBy = 'createdAt', sortOrder = 'desc' } = req.query
 
       // Use tableRepository to get tables with search and pagination
       const searchOptions = {
@@ -125,15 +118,9 @@ export class GraphApiController {
         tableId: tableId as string,
         identifier: identifier as string,
         includeSampleNodes:
-          typeof includeSampleNodes === 'string'
-            ? includeSampleNodes === 'true'
-            : !!includeSampleNodes,
-        includeUsageStats:
-          typeof includeUsageStats === 'string'
-            ? includeUsageStats === 'true'
-            : !!includeUsageStats,
-        includeRelatedTemplates:
-          includeRelatedTemplates === 'true' || includeRelatedTemplates === true,
+          typeof includeSampleNodes === 'string' ? includeSampleNodes === 'true' : !!includeSampleNodes,
+        includeUsageStats: typeof includeUsageStats === 'string' ? includeUsageStats === 'true' : !!includeUsageStats,
+        includeRelatedTemplates: includeRelatedTemplates === 'true' || includeRelatedTemplates === true,
         sampleLimit: parseInt(sampleLimit as string, 10) || 3,
       })
 
@@ -215,7 +202,7 @@ export class GraphApiController {
           res,
           500,
           `GraphQL error: ${graphqlResult.errors.map((e) => e.message).join(', ')}`,
-          'Export table with nodes'
+          'Export table with nodes',
         )
         return
       }
@@ -283,7 +270,7 @@ export class GraphApiController {
         const relation = await this.nodeRelationRepository.findByExternalIds(
           sourceNodeId as string,
           targetNodeId as string,
-          tableId as TableId
+          tableId as TableId,
         )
         relationsResult = {
           data: relation ? [relation] : [],
@@ -295,27 +282,21 @@ export class GraphApiController {
         relationsResult = await this.nodeRelationRepository.findBySourceExternalId(
           sourceNodeId as string,
           tableId as TableId,
-          searchOptions
+          searchOptions,
         )
       } else if (targetNodeId) {
         // Search relations by target node
         relationsResult = await this.nodeRelationRepository.findByTargetExternalId(
           targetNodeId as string,
           tableId as TableId,
-          searchOptions
+          searchOptions,
         )
       } else if (relationTypeId) {
         // Search relations by type
-        relationsResult = await this.nodeRelationRepository.findByRelationType(
-          relationTypeId as string,
-          searchOptions
-        )
+        relationsResult = await this.nodeRelationRepository.findByRelationType(relationTypeId as string, searchOptions)
       } else {
         // Search all relations for the table
-        relationsResult = await this.nodeRelationRepository.findByTableId(
-          tableId as TableId,
-          searchOptions
-        )
+        relationsResult = await this.nodeRelationRepository.findByTableId(tableId as TableId, searchOptions)
       }
 
       const result = {
@@ -353,11 +334,7 @@ export class GraphApiController {
         return
       }
 
-      const relationTypesArray = Array.isArray(relationTypes)
-        ? relationTypes
-        : relationTypes
-          ? [relationTypes]
-          : []
+      const relationTypesArray = Array.isArray(relationTypes) ? relationTypes : relationTypes ? [relationTypes] : []
 
       // Use SearchRelatedNodesUseCase to find connected nodes
       const searchInput = {
@@ -436,8 +413,7 @@ export class GraphApiController {
       const searchResult = await this.searchRelatedNodesUseCase.execute(searchInput)
 
       // Extract the path from the search result
-      const path =
-        searchResult.paths && searchResult.paths.length > 0 ? searchResult.paths[0] : null
+      const path = searchResult.paths && searchResult.paths.length > 0 ? searchResult.paths[0] : null
 
       const result = {
         fromNodeId,
@@ -464,16 +440,12 @@ export class GraphApiController {
         return
       }
 
-      const relationTypesArray = Array.isArray(relationTypes)
-        ? relationTypes
-        : relationTypes
-          ? [relationTypes]
-          : []
+      const relationTypesArray = Array.isArray(relationTypes) ? relationTypes : relationTypes ? [relationTypes] : []
 
       // Use nodeRelationRepository to get node relations
       const relations = await this.nodeRelationRepository.findByNodeId(
         nodeId as NodeId,
-        { limit: 1000 } // Default limit for relations
+        { limit: 1000 }, // Default limit for relations
       )
 
       // Filter relations by type if specified
@@ -482,10 +454,10 @@ export class GraphApiController {
 
       if (relationTypesArray.length > 0) {
         incomingRelations = incomingRelations.filter((relation) =>
-          relationTypesArray.includes(relation.getRelationTypeId())
+          relationTypesArray.includes(relation.getRelationTypeId()),
         )
         outgoingRelations = outgoingRelations.filter((relation) =>
-          relationTypesArray.includes(relation.getRelationTypeId())
+          relationTypesArray.includes(relation.getRelationTypeId()),
         )
       }
 

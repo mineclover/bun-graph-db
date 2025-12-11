@@ -305,10 +305,7 @@ describe('SystemQueries', () => {
     describe('calculateStandardDeviation', () => {
       it('should calculate standard deviation', () => {
         expect(systemQueries.calculateStandardDeviation([1, 2, 3, 4, 5])).toBeCloseTo(1.41, 1)
-        expect(systemQueries.calculateStandardDeviation([2, 4, 4, 4, 5, 5, 7, 9])).toBeCloseTo(
-          2.0,
-          1
-        )
+        expect(systemQueries.calculateStandardDeviation([2, 4, 4, 4, 5, 5, 7, 9])).toBeCloseTo(2.0, 1)
       })
 
       it('should handle edge cases', () => {
@@ -349,14 +346,10 @@ describe('SystemQueries', () => {
 
     describe('categorizeError', () => {
       it('should categorize errors correctly', () => {
-        expect(systemQueries.categorizeError(new Error('EACCES: permission denied'))).toBe(
-          'permission'
-        )
+        expect(systemQueries.categorizeError(new Error('EACCES: permission denied'))).toBe('permission')
         expect(systemQueries.categorizeError(new Error('ENOENT: file not found'))).toBe('not_found')
         expect(systemQueries.categorizeError(new Error('ENOMEM: out of memory'))).toBe('resource')
-        expect(systemQueries.categorizeError(new Error('SQLITE_ERROR: syntax error'))).toBe(
-          'database'
-        )
+        expect(systemQueries.categorizeError(new Error('SQLITE_ERROR: syntax error'))).toBe('database')
         expect(systemQueries.categorizeError(new Error('Unknown error'))).toBe('unknown')
       })
 

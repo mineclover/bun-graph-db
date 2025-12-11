@@ -35,10 +35,7 @@
               },
               "tagMatchMode": {
                 "type": "string",
-                "enum": [
-                  "ANY",
-                  "ALL"
-                ],
+                "enum": ["ANY", "ALL"],
                 "default": "ANY",
                 "description": "태그 매칭 모드"
               },
@@ -98,28 +95,17 @@
               "properties": {
                 "field": {
                   "type": "string",
-                  "enum": [
-                    "name",
-                    "createdAt",
-                    "usageCount",
-                    "complexityScore",
-                    "lastUsedAt"
-                  ],
+                  "enum": ["name", "createdAt", "usageCount", "complexityScore", "lastUsedAt"],
                   "description": "정렬 필드"
                 },
                 "direction": {
                   "type": "string",
-                  "enum": [
-                    "ASC",
-                    "DESC"
-                  ],
+                  "enum": ["ASC", "DESC"],
                   "default": "DESC",
                   "description": "정렬 방향"
                 }
               },
-              "required": [
-                "field"
-              ]
+              "required": ["field"]
             },
             "description": "정렬 조건"
           }
@@ -146,9 +132,7 @@
     "applicableTables": null,
     "complexityScore": 4,
     "version": "1.0.0",
-    "tags": [
-      "general"
-    ],
+    "tags": ["general"],
     "isActive": true,
     "statistics": {
       "usageCount": 74,

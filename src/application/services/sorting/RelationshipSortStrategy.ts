@@ -30,10 +30,7 @@ export class RelationshipSortStrategy extends SortStrategy {
     return this.buildRelationshipCountSort(field, direction, context)
   }
 
-  override buildEnhancedSortClause(
-    sortOption: EnhancedSortOption,
-    context: SortContext
-  ): SortResult {
+  override buildEnhancedSortClause(sortOption: EnhancedSortOption, context: SortContext): SortResult {
     const field = sortOption.field
     const direction = sortOption.direction
     const params = this.parseRelationshipParameters(sortOption)
@@ -84,7 +81,7 @@ export class RelationshipSortStrategy extends SortStrategy {
     _field: string,
     direction: 'asc' | 'desc',
     _context: SortContext,
-    params?: RelationshipParameters
+    params?: RelationshipParameters,
   ): SortResult {
     const parameters: any[] = []
     let relationTypeFilter = ''
@@ -129,7 +126,7 @@ export class RelationshipSortStrategy extends SortStrategy {
   private buildConnectionStrengthSort(
     direction: 'asc' | 'desc',
     _context: SortContext,
-    params: RelationshipParameters
+    params: RelationshipParameters,
   ): SortResult {
     const parameters: any[] = []
     let relationTypeFilter = ''
@@ -156,9 +153,7 @@ export class RelationshipSortStrategy extends SortStrategy {
     }
 
     // Use a weight attribute or default to 1.0
-    const weightExpression = params.weightAttribute
-      ? `COALESCE(CAST(weight_attr.value AS REAL), 1.0)`
-      : '1.0'
+    const weightExpression = params.weightAttribute ? `COALESCE(CAST(weight_attr.value AS REAL), 1.0)` : '1.0'
 
     let weightJoin = ''
     if (params.weightAttribute) {
@@ -187,7 +182,7 @@ export class RelationshipSortStrategy extends SortStrategy {
   private buildCentralitySort(
     direction: 'asc' | 'desc',
     context: SortContext,
-    params: RelationshipParameters
+    params: RelationshipParameters,
   ): SortResult {
     const algorithm = params.algorithm || 'degree'
 
@@ -210,7 +205,7 @@ export class RelationshipSortStrategy extends SortStrategy {
   private buildDegreeCalculation(
     direction: 'asc' | 'desc',
     context: SortContext,
-    params: RelationshipParameters
+    params: RelationshipParameters,
   ): SortResult {
     // Degree centrality is just the relationship count
     return this.buildRelationshipCountSort('_degree', direction, context, params)
@@ -219,7 +214,7 @@ export class RelationshipSortStrategy extends SortStrategy {
   private buildBetweennessCentrality(
     direction: 'asc' | 'desc',
     _context: SortContext,
-    _params: RelationshipParameters
+    _params: RelationshipParameters,
   ): SortResult {
     // Simplified betweenness centrality approximation
     // This is a complex calculation that would normally require iterative algorithms
@@ -252,7 +247,7 @@ export class RelationshipSortStrategy extends SortStrategy {
   private buildPageRankApproximation(
     direction: 'asc' | 'desc',
     _context: SortContext,
-    _params: RelationshipParameters
+    _params: RelationshipParameters,
   ): SortResult {
     // Simplified PageRank approximation using weighted degree
     // In a real implementation, this would require iterative calculation
@@ -287,7 +282,7 @@ export class RelationshipSortStrategy extends SortStrategy {
   static createRelationshipCountSort(
     relationshipTypes: string[] = [],
     direction: 'incoming' | 'outgoing' | 'both' = 'both',
-    sortDirection: SortDirection = SortDirection.DESC
+    sortDirection: SortDirection = SortDirection.DESC,
   ): EnhancedSortOption {
     const parameters: RelationshipParameters = {
       relationshipTypes,
@@ -306,7 +301,7 @@ export class RelationshipSortStrategy extends SortStrategy {
   static createConnectionStrengthSort(
     relationshipTypes: string[] = [],
     weightAttribute?: string,
-    sortDirection: SortDirection = SortDirection.DESC
+    sortDirection: SortDirection = SortDirection.DESC,
   ): EnhancedSortOption {
     const parameters: RelationshipParameters = {
       relationshipTypes,
@@ -325,7 +320,7 @@ export class RelationshipSortStrategy extends SortStrategy {
 
   static createCentralitySort(
     algorithm: 'degree' | 'betweenness' | 'pagerank' = 'degree',
-    sortDirection: SortDirection = SortDirection.DESC
+    sortDirection: SortDirection = SortDirection.DESC,
   ): EnhancedSortOption {
     const parameters: RelationshipParameters = {
       direction: 'both',

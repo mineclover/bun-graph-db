@@ -1,9 +1,4 @@
-import type {
-  AttributeId,
-  NodeId,
-  PaginatedResult,
-  PaginationOptions,
-} from '@/core/types/CommonTypes.js'
+import type { AttributeId, NodeId, PaginatedResult, PaginationOptions } from '@/core/types/CommonTypes.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
@@ -59,10 +54,7 @@ export class SqliteNodeAttributeRepository
 
   // findById() - inherited from BaseSqliteRepository
 
-  async findByNodeIdAndAttributeId(
-    nodeId: NodeId,
-    attributeId: AttributeId
-  ): Promise<NodeAttribute | null> {
+  async findByNodeIdAndAttributeId(nodeId: NodeId, attributeId: AttributeId): Promise<NodeAttribute | null> {
     const query = `
       SELECT id, node_id, attribute_id, value, created_at, updated_at
       FROM node_attributes
@@ -95,7 +87,7 @@ export class SqliteNodeAttributeRepository
 
   async findByAttributeId(
     attributeId: AttributeId,
-    options: PaginationOptions = {}
+    options: PaginationOptions = {},
   ): Promise<PaginatedResult<NodeAttribute>> {
     const { limit = 10, offset = 0 } = options
 
@@ -110,9 +102,7 @@ export class SqliteNodeAttributeRepository
     const countQuery = `SELECT COUNT(*) as count FROM node_attributes WHERE attribute_id = ?`
 
     try {
-      const rows = this.db
-        .query<NodeAttributeRow, [string, number, number]>(dataQuery)
-        .all(attributeId, limit, offset)
+      const rows = this.db.query<NodeAttributeRow, [string, number, number]>(dataQuery).all(attributeId, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(attributeId)
       const total = countResult?.count || 0
 
@@ -142,12 +132,7 @@ export class SqliteNodeAttributeRepository
     `
 
     try {
-      const result = this.db.run(query, [
-        data.value,
-        data.updated_at,
-        data.node_id,
-        data.attribute_id,
-      ])
+      const result = this.db.run(query, [data.value, data.updated_at, data.node_id, data.attribute_id])
 
       if (result.changes === 0) {
         throw new DatabaseException(`NodeAttribute not found for update`)
@@ -247,11 +232,7 @@ export class SqliteNodeAttributeRepository
     }
   }
 
-  async setNodeAttribute(
-    nodeId: NodeId,
-    attributeId: AttributeId,
-    value: any
-  ): Promise<NodeAttribute> {
+  async setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: any): Promise<NodeAttribute> {
     try {
       const existing = await this.findByNodeIdAndAttributeId(nodeId, attributeId)
 
@@ -266,7 +247,7 @@ export class SqliteNodeAttributeRepository
           existing.getAttributeId(),
           value,
           existing.getCreatedAt(),
-          new Date()
+          new Date(),
         )
         await this.update(updated)
         return updated
@@ -293,7 +274,7 @@ export class SqliteNodeAttributeRepository
       row.attribute_id.toString(),
       row.value,
       new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.updated_at),
     )
   }
 }

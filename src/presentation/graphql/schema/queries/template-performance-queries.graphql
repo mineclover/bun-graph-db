@@ -9,11 +9,7 @@ extend type Query {
   ): TemplatePerformanceAnalytics!
 
   # Hot Queries - High usage, good performance templates
-  getHotQueries(
-    limit: Int = 10
-    performanceThreshold: Int = 150
-    usageThreshold: Int = 100
-  ): [HotQueryTemplate!]!
+  getHotQueries(limit: Int = 10, performanceThreshold: Int = 150, usageThreshold: Int = 100): [HotQueryTemplate!]!
 
   # Template Execution History - Detailed performance logs
   getTemplateExecutionHistory(
@@ -30,17 +26,10 @@ extend type Query {
   ): [TemplatePerformanceTrend!]!
 
   # Slow Query Analysis - Identify performance bottlenecks
-  getSlowQueries(
-    threshold: Int = 500
-    limit: Int = 20
-    timeRange: TimeRangeInput
-  ): [SlowQueryAnalysis!]!
+  getSlowQueries(threshold: Int = 500, limit: Int = 20, timeRange: TimeRangeInput): [SlowQueryAnalysis!]!
 
   # Template Recommendations - Based on usage patterns
-  getTemplateRecommendations(
-    context: RecommendationContext!
-    limit: Int = 5
-  ): [TemplateRecommendation!]!
+  getTemplateRecommendations(context: RecommendationContext!, limit: Int = 5): [TemplateRecommendation!]!
 }
 
 # Performance analytics types

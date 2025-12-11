@@ -47,11 +47,7 @@
       "identifier": "create-task-with-priority",
       "name": "Create Task with Priority",
       "query": "mutation CreateTask($title: String!, $priority: Int!, $dueDate: String!) { createNode(input: { tableId: \"2\", content: $title, metadata: { priority: $priority, dueDate: $dueDate } }) { id } }",
-      "tags": [
-        "task",
-        "creation",
-        "priority"
-      ],
+      "tags": ["task", "creation", "priority"],
       "category": "NODE_MANAGEMENT",
       "complexity": "LOW",
       "usagePattern": "Task creation with priority and deadline"
@@ -60,11 +56,7 @@
       "identifier": "bulk-task-status-update",
       "name": "Bulk Task Status Update",
       "query": "mutation BulkUpdateTasks($nodeIds: [String!]!, $status: String!) { bulkUpdateNodes(input: { nodeIds: $nodeIds, updates: { status: $status } }) { success count } }",
-      "tags": [
-        "task",
-        "bulk",
-        "status"
-      ],
+      "tags": ["task", "bulk", "status"],
       "category": "BATCH_OPERATIONS",
       "complexity": "HIGH",
       "usagePattern": "Mass status updates with transaction safety"
@@ -78,41 +70,28 @@
         "type": "text",
         "description": "Descriptive task name",
         "required": true,
-        "examples": [
-          "example_value",
-          "another_example"
-        ]
+        "examples": ["example_value", "another_example"]
       },
       {
         "name": "Priority Level",
         "type": "integer",
         "description": "Task priority (1-5)",
         "required": false,
-        "examples": [
-          "1",
-          "5",
-          "100"
-        ]
+        "examples": ["1", "5", "100"]
       },
       {
         "name": "Due Date",
         "type": "date",
         "description": "Task completion deadline",
         "required": false,
-        "examples": [
-          "2024-12-20",
-          "2024-01-15T10:30:00Z"
-        ]
+        "examples": ["2024-12-20", "2024-01-15T10:30:00Z"]
       },
       {
         "name": "Status",
         "type": "text",
         "description": "Current task status",
         "required": false,
-        "examples": [
-          "example_value",
-          "another_example"
-        ]
+        "examples": ["example_value", "another_example"]
       }
     ],
     "usageExamples": [

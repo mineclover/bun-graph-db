@@ -78,7 +78,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
   beforeAll(async () => {
     console.log('🚀 Setting up unit test environment for template creation...')
     testContext = await setupUnitTest(SUITE_NAME)
-    templateService = new MockTemplateService(testContext.database!.database.getConnection())
+    templateService = new MockTemplateService(testContext.database?.database.getConnection())
     console.log('✅ Unit test environment ready')
   })
 
@@ -105,8 +105,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
 
     test('should create mutation template', async () => {
       const identifier = 'create-todo'
-      const queryText =
-        'mutation CreateTodo($input: TodoInput!) { createTodo(input: $input) { id title } }'
+      const queryText = 'mutation CreateTodo($input: TodoInput!) { createTodo(input: $input) { id title } }'
       const operationType = 'mutation'
 
       const template = await templateService.createTemplate(identifier, queryText, operationType)
@@ -151,8 +150,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
     })
 
     test('should validate correct GraphQL mutation', async () => {
-      const queryText =
-        'mutation ValidMutation($input: TodoInput!) { createTodo(input: $input) { id } }'
+      const queryText = 'mutation ValidMutation($input: TodoInput!) { createTodo(input: $input) { id } }'
 
       const result = await templateService.validateGraphQL(queryText)
 
@@ -204,38 +202,30 @@ describe('Template Creation - Isolated Unit Tests', () => {
 
   describe('Database Integration', () => {
     test('should persist templates in isolated database', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       // Create template via service
-      await templateService.createTemplate(
-        'persistence-test',
-        'query Test { todos { id } }',
-        'query'
-      )
+      await templateService.createTemplate('persistence-test', 'query Test { todos { id } }', 'query')
 
       // Verify direct database access
       const result = db.prepare('SELECT COUNT(*) as count FROM templates').get()
       expect(result.count).toBeGreaterThan(0)
 
       // Verify specific template
-      const template = db
-        .prepare('SELECT * FROM templates WHERE identifier = ?')
-        .get('persistence-test')
+      const template = db.prepare('SELECT * FROM templates WHERE identifier = ?').get('persistence-test')
       expect(template).toBeDefined()
       expect(template.identifier).toBe('persistence-test')
     })
 
     test('should handle database transactions', async () => {
-      const db = testContext.database!.database.getConnection()
+      const db = testContext.database?.database.getConnection()
 
       const result = db.transaction(() => {
         // Create multiple templates in transaction
         templateService.createTemplate('tx-test-1', 'query TxTest1 { todos { id } }', 'query')
         templateService.createTemplate('tx-test-2', 'query TxTest2 { todos { title } }', 'query')
 
-        return db
-          .prepare('SELECT COUNT(*) as count FROM templates WHERE identifier LIKE ?')
-          .get('tx-test-%')
+        return db.prepare('SELECT COUNT(*) as count FROM templates WHERE identifier LIKE ?').get('tx-test-%')
       })()
 
       expect(result.count).toBe(2)
@@ -248,11 +238,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
 
       // Create multiple templates
       const promises = Array.from({ length: 10 }, (_, i) =>
-        templateService.createTemplate(
-          `perf-test-${i}`,
-          `query PerfTest${i} { todos { id } }`,
-          'query'
-        )
+        templateService.createTemplate(`perf-test-${i}`, `query PerfTest${i} { todos { id } }`, 'query'),
       )
 
       await Promise.all(promises)
@@ -266,7 +252,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
 
       // Validate multiple queries
       const promises = Array.from({ length: 20 }, (_, i) =>
-        templateService.validateGraphQL(`query FastValidation${i} { todos { id title } }`)
+        templateService.validateGraphQL(`query FastValidation${i} { todos { id title } }`),
       )
 
       await Promise.all(promises)

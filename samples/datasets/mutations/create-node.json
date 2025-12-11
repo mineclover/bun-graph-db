@@ -3,7 +3,7 @@
   "description": "Execute node creation with required input parameters",
   "domain": "node_management",
   "category": "mutations",
-  
+
   "templateExecution": {
     "templateIdentifier": "test-create-node",
     "variables": {
@@ -15,7 +15,7 @@
       }
     }
   },
-  
+
   "expectedResult": {
     "success": true,
     "dataShape": {
@@ -29,7 +29,7 @@
       }
     }
   },
-  
+
   "testConfig": {
     "shouldExport": true,
     "retryOnFailure": false

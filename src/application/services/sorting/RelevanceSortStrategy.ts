@@ -26,10 +26,7 @@ export class RelevanceSortStrategy extends SortStrategy {
     }
   }
 
-  override buildEnhancedSortClause(
-    sortOption: EnhancedSortOption,
-    context: SortContext
-  ): SortResult {
+  override buildEnhancedSortClause(sortOption: EnhancedSortOption, context: SortContext): SortResult {
     const _field = sortOption.field
     const direction = sortOption.direction
     const params = this.parseRelevanceParameters(sortOption)
@@ -74,7 +71,7 @@ export class RelevanceSortStrategy extends SortStrategy {
   private buildLevenshteinRelevance(
     searchTerms: string[],
     direction: 'asc' | 'desc',
-    _context: SortContext
+    _context: SortContext,
   ): SortResult {
     if (searchTerms.length === 0) {
       return { sqlClause: '', parameters: [] }
@@ -106,7 +103,7 @@ export class RelevanceSortStrategy extends SortStrategy {
   private buildSimpleMatchRelevance(
     searchTerms: string[],
     direction: 'asc' | 'desc',
-    _context: SortContext
+    _context: SortContext,
   ): SortResult {
     if (searchTerms.length === 0) {
       return { sqlClause: '', parameters: [] }
@@ -149,11 +146,7 @@ export class RelevanceSortStrategy extends SortStrategy {
     }
   }
 
-  private buildFuzzyRelevance(
-    searchTerms: string[],
-    direction: 'asc' | 'desc',
-    _context: SortContext
-  ): SortResult {
+  private buildFuzzyRelevance(searchTerms: string[], direction: 'asc' | 'desc', _context: SortContext): SortResult {
     if (searchTerms.length === 0) {
       return { sqlClause: '', parameters: [] }
     }
@@ -188,11 +181,7 @@ export class RelevanceSortStrategy extends SortStrategy {
     }
   }
 
-  private buildTfIdfRelevance(
-    searchTerms: string[],
-    direction: 'asc' | 'desc',
-    _context: SortContext
-  ): SortResult {
+  private buildTfIdfRelevance(searchTerms: string[], direction: 'asc' | 'desc', _context: SortContext): SortResult {
     if (searchTerms.length === 0) {
       return { sqlClause: '', parameters: [] }
     }
@@ -255,7 +244,7 @@ export class RelevanceSortStrategy extends SortStrategy {
   static createRelevanceSort(
     searchTerms: string[],
     algorithm: 'levenshtein' | 'tf-idf' | 'simple-match' | 'fuzzy' = 'simple-match',
-    direction: SortDirection = SortDirection.DESC
+    direction: SortDirection = SortDirection.DESC,
   ): EnhancedSortOption {
     const parameters: RelevanceParameters = {
       searchTerms,

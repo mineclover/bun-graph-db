@@ -3,7 +3,7 @@
   "description": "Execute table listing with pagination variables",
   "domain": "table_management",
   "category": "advanced",
-  
+
   "templateExecution": {
     "templateIdentifier": "test-list-tables",
     "variables": {
@@ -13,7 +13,7 @@
       }
     }
   },
-  
+
   "expectedResult": {
     "success": true,
     "dataShape": {
@@ -25,7 +25,7 @@
       }
     }
   },
-  
+
   "testConfig": {
     "shouldExport": true,
     "retryOnFailure": false

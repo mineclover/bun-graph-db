@@ -14,8 +14,8 @@
  */
 
 import { Database } from 'bun:sqlite'
-import { copyFileSync, existsSync } from 'fs'
-import path from 'path'
+import { copyFileSync, existsSync } from 'node:fs'
+import path from 'node:path'
 
 interface TemplateUpdate {
   id: number
@@ -102,9 +102,7 @@ class TemplateFixService {
 
     for (const [key, expectedValue] of Object.entries(expectedChanges)) {
       if (template[key] !== expectedValue) {
-        console.error(
-          `❌ Validation failed for template ${id}: ${key} = ${template[key]}, expected ${expectedValue}`
-        )
+        console.error(`❌ Validation failed for template ${id}: ${key} = ${template[key]}, expected ${expectedValue}`)
         return false
       }
     }
@@ -120,8 +118,7 @@ class TemplateFixService {
       {
         id: 870,
         identifier: 'create-table',
-        description:
-          "template_type을 'mutation'으로 변경, variables_schema와 default_variables 추가",
+        description: "template_type을 'mutation'으로 변경, variables_schema와 default_variables 추가",
         updates: {
           template_type: 'mutation',
           variables_schema: JSON.stringify({

@@ -1,9 +1,4 @@
-import type {
-  NodeId,
-  PaginatedResult,
-  PaginationOptions,
-  TableId,
-} from '@/core/types/CommonTypes.js'
+import type { NodeId, PaginatedResult, PaginationOptions, TableId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
@@ -19,10 +14,7 @@ interface NodeRow {
   updated_at: string
 }
 
-export class SqliteNodeRepository
-  extends BaseSqliteRepository<Node, NodeId>
-  implements INodeRepository
-{
+export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> implements INodeRepository {
   protected get tableName(): string {
     return 'nodes'
   }
@@ -93,10 +85,7 @@ export class SqliteNodeRepository
     }
   }
 
-  async findByTableId(
-    tableId: TableId,
-    options: PaginationOptions = {}
-  ): Promise<PaginatedResult<Node>> {
+  async findByTableId(tableId: TableId, options: PaginationOptions = {}): Promise<PaginatedResult<Node>> {
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
@@ -110,9 +99,7 @@ export class SqliteNodeRepository
     const countQuery = `SELECT COUNT(*) as count FROM nodes WHERE table_id = ?`
 
     try {
-      const rows = this.db
-        .query<NodeRow, [string, number, number]>(dataQuery)
-        .all(tableId, limit, offset)
+      const rows = this.db.query<NodeRow, [string, number, number]>(dataQuery).all(tableId, limit, offset)
       const countResult = this.db.query<{ count: number }, [string]>(countQuery).get(tableId)
       const total = countResult?.count || 0
 
@@ -223,7 +210,7 @@ export class SqliteNodeRepository
             nodeData.title,
             nodeData.description,
             nodeData.created_at,
-            nodeData.updated_at
+            nodeData.updated_at,
           )
         }
       })()
@@ -237,7 +224,7 @@ export class SqliteNodeRepository
   async searchByContent(
     tableId: TableId,
     searchTerm: string,
-    options: PaginationOptions = {}
+    options: PaginationOptions = {},
   ): Promise<PaginatedResult<Node>> {
     const { limit = 10, offset = 0 } = options
 
@@ -292,7 +279,7 @@ export class SqliteNodeRepository
 
   async update(
     id: NodeId,
-    updates: { content?: string; title?: string | null; description?: string | null }
+    updates: { content?: string; title?: string | null; description?: string | null },
   ): Promise<Node> {
     try {
       const existingNode = await this.findById(id)
@@ -351,7 +338,7 @@ export class SqliteNodeRepository
       row.title,
       row.description,
       new Date(row.created_at),
-      new Date(row.updated_at)
+      new Date(row.updated_at),
     )
   }
 }

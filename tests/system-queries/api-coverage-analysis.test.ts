@@ -72,7 +72,7 @@ describe('API Coverage Analysis', () => {
         acc[op.operation] = (acc[op.operation] || 0) + 1
         return acc
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     )
 
     console.log('Operations by type:', operationsByType)
@@ -91,7 +91,7 @@ describe('API Coverage Analysis', () => {
         acc[op.type] = (acc[op.type] || 0) + 1
         return acc
       },
-      {} as Record<string, number>
+      {} as Record<string, number>,
     )
 
     console.log('Operations by type:', operationsByType)
@@ -139,23 +139,20 @@ describe('API Coverage Analysis', () => {
 
       // Check for basic CRUD operations
       const hasCreate = apiOperations.some(
-        (op) =>
-          op.type === 'Mutation' && op.name.toLowerCase().includes(`create${entity.toLowerCase()}`)
+        (op) => op.type === 'Mutation' && op.name.toLowerCase().includes(`create${entity.toLowerCase()}`),
       )
       const hasRead = apiOperations.some(
         (op) =>
           op.type === 'Query' &&
           (op.name.toLowerCase().includes(entity.toLowerCase()) ||
             op.name.toLowerCase().includes(`get${entity.toLowerCase()}`) ||
-            op.name.toLowerCase().includes(`search${entity.toLowerCase()}`))
+            op.name.toLowerCase().includes(`search${entity.toLowerCase()}`)),
       )
       const hasUpdate = apiOperations.some(
-        (op) =>
-          op.type === 'Mutation' && op.name.toLowerCase().includes(`update${entity.toLowerCase()}`)
+        (op) => op.type === 'Mutation' && op.name.toLowerCase().includes(`update${entity.toLowerCase()}`),
       )
       const hasDelete = apiOperations.some(
-        (op) =>
-          op.type === 'Mutation' && op.name.toLowerCase().includes(`delete${entity.toLowerCase()}`)
+        (op) => op.type === 'Mutation' && op.name.toLowerCase().includes(`delete${entity.toLowerCase()}`),
       )
 
       if (!hasCreate) missing.push('CREATE')
@@ -179,8 +176,7 @@ describe('API Coverage Analysis', () => {
 
   it('should validate template execution coverage', () => {
     const templateOperations = apiOperations.filter(
-      (op) =>
-        op.name.toLowerCase().includes('template') || op.name.toLowerCase().includes('execute')
+      (op) => op.name.toLowerCase().includes('template') || op.name.toLowerCase().includes('execute'),
     )
 
     console.log('\n=== Template Execution Operations ===')
@@ -192,7 +188,7 @@ describe('API Coverage Analysis', () => {
     const hasExecuteTemplate = templateOperations.some((op) => op.name.includes('executeTemplate'))
     const hasCreateTemplate = templateOperations.some((op) => op.name.includes('createTemplate'))
     const hasSearchTemplates = templateOperations.some(
-      (op) => op.name.includes('searchTemplate') || op.name.includes('getTemplate')
+      (op) => op.name.includes('searchTemplate') || op.name.includes('getTemplate'),
     )
 
     expect(hasExecuteTemplate).toBe(true)
@@ -252,9 +248,7 @@ function extractAPIOperations(introspection: IntrospectionQuery): APIOperation[]
   const types = ['Query', 'Mutation', 'Subscription']
 
   types.forEach((typeName) => {
-    const type = introspection.__schema.types.find(
-      (t) => t.name === typeName
-    ) as IntrospectionObjectType
+    const type = introspection.__schema.types.find((t) => t.name === typeName) as IntrospectionObjectType
     if (type?.fields) {
       type.fields.forEach((field: IntrospectionField) => {
         operations.push({
@@ -307,7 +301,7 @@ function analyzeCoverage(sqlOps: SQLOperation[], apiOps: APIOperation[]): Covera
   Object.entries(uncoveredByTable).forEach(([table, ops]) => {
     if (ops.length > 2) {
       recommendations.push(
-        `Table '${table}' has ${ops.length} uncovered operations - consider adding comprehensive API for this entity`
+        `Table '${table}' has ${ops.length} uncovered operations - consider adding comprehensive API for this entity`,
       )
     }
   })
@@ -356,8 +350,7 @@ function checkOperationCoverage(sqlOp: SQLOperation, apiOps: APIOperation[]): bo
 
       return entityNames.some(
         (entityName) =>
-          apiOp.name.toLowerCase().includes(entityName) ||
-          apiOp.returnType.toLowerCase().includes(entityName)
+          apiOp.name.toLowerCase().includes(entityName) || apiOp.returnType.toLowerCase().includes(entityName),
       )
     }
 
@@ -365,10 +358,7 @@ function checkOperationCoverage(sqlOp: SQLOperation, apiOps: APIOperation[]): bo
   })
 }
 
-function groupBy<T, K extends string | number | symbol>(
-  array: T[],
-  keyFn: (item: T) => K
-): Record<K, T[]> {
+function groupBy<T, K extends string | number | symbol>(array: T[], keyFn: (item: T) => K): Record<K, T[]> {
   return array.reduce(
     (groups, item) => {
       const key = keyFn(item)
@@ -378,6 +368,6 @@ function groupBy<T, K extends string | number | symbol>(
       groups[key].push(item)
       return groups
     },
-    {} as Record<K, T[]>
+    {} as Record<K, T[]>,
   )
 }

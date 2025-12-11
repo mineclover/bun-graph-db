@@ -47,19 +47,13 @@ export class LegacyAIMetadataAdapter {
         },
       }
 
-      this.metadataGenerator = new EnhancedAIMetadataGenerator(
-        this.schemaIntrospector,
-        tableAttributeProvider
-      )
+      this.metadataGenerator = new EnhancedAIMetadataGenerator(this.schemaIntrospector, tableAttributeProvider)
 
       this.logger.info('✅ Enhanced AI metadata system initialized')
     } catch (error) {
-      this.logger.warn(
-        '⚠️ Enhanced AI metadata system initialization failed, falling back to legacy',
-        {
-          error: error instanceof Error ? error.message : 'Unknown error',
-        }
-      )
+      this.logger.warn('⚠️ Enhanced AI metadata system initialization failed, falling back to legacy', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+      })
     }
   }
 
@@ -70,7 +64,7 @@ export class LegacyAIMetadataAdapter {
     table: any,
     attributes: any[],
     relatedTemplates: any[] = [],
-    sampleLimit: number = 5
+    sampleLimit: number = 5,
   ): Promise<any> {
     // Try enhanced system first
     if (this.metadataGenerator && this.schemaIntrospector) {
@@ -88,15 +82,11 @@ export class LegacyAIMetadataAdapter {
             relationshipCapabilities: [],
           },
           usagePatterns: {
-            commonQueries: this.convertToLegacyQueries(
-              enhancedMetadata.usagePatterns.commonQueries
-            ),
-            templateRecommendations: enhancedMetadata.usagePatterns.templateRecommendations.map(
-              (rec) => ({
-                templateId: rec.name,
-                useCase: rec.description,
-              })
-            ),
+            commonQueries: this.convertToLegacyQueries(enhancedMetadata.usagePatterns.commonQueries),
+            templateRecommendations: enhancedMetadata.usagePatterns.templateRecommendations.map((rec) => ({
+              templateId: rec.name,
+              useCase: rec.description,
+            })),
             queryComplexity: 'moderate',
             // Add enhanced schema information
             validExamples: enhancedMetadata.usagePatterns.validExamples || [],
@@ -131,7 +121,7 @@ export class LegacyAIMetadataAdapter {
   private generateLegacyAiMetadataWithCorrections(
     attributes: any[],
     relatedTemplates: any[] = [],
-    _sampleLimit: number = 5
+    _sampleLimit: number = 5,
   ): any {
     const schemaInfo = {
       dataTypes: this.extractDataTypes(attributes),
@@ -146,8 +136,7 @@ export class LegacyAIMetadataAdapter {
         pattern: 'Basic node search',
         description: 'Search nodes by content or attributes',
         // CORRECTED: Use 'filter' instead of 'searchQuery'
-        example:
-          'searchNodes(filter: { tableId: $tableId, searchTerm: "keyword" }, pagination: { limit: 10 })',
+        example: 'searchNodes(filter: { tableId: $tableId, searchTerm: "keyword" }, pagination: { limit: 10 })',
       },
       {
         pattern: 'Create node with attributes',

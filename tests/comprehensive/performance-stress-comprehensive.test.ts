@@ -250,7 +250,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
           tableId,
           offset: page * 100,
           limit: 100,
-        })
+        }),
       )
       const responses = await Promise.all(promises)
 
@@ -301,9 +301,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
       performanceMonitor.start()
 
       // Execute searches in parallel
-      const promises = searchTerms.map((term) =>
-        graphqlExecute(searchQuery, { tableId, searchTerm: term })
-      )
+      const promises = searchTerms.map((term) => graphqlExecute(searchQuery, { tableId, searchTerm: term }))
       const responses = await Promise.all(promises)
 
       const metrics = performanceMonitor.stop(searchTerms.length)
@@ -530,7 +528,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
             }
           }
         `,
-          { nodes }
+          { nodes },
         )
 
         expect(createResponse.data.batchCreateNodes.success).toBe(true)
@@ -615,7 +613,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
             }
           }
         `,
-          { nodes }
+          { nodes },
         )
 
         // Set attributes for indexing
@@ -634,7 +632,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
             }
           }
         `,
-          { attributeUpdates }
+          { attributeUpdates },
         )
       }
 
@@ -662,7 +660,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
         graphqlExecute(indexedSearchQuery, {
           tableId,
           attributeValue: `IndexValue_${i * 5}`,
-        })
+        }),
       )
 
       const searchResponses = await Promise.all(searchPromises)
@@ -710,7 +708,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
           }
         }
       `,
-        { nodes }
+        { nodes },
       )
 
       performanceMonitor.start()
@@ -721,23 +719,19 @@ describe('Performance and Stress Comprehensive Tests', () => {
         ...Array.from({ length: 10 }, () => graphqlExecute('query { healthCheck { status } }')),
         // Table searches
         ...Array.from({ length: 10 }, () =>
-          graphqlExecute('query { getTables(input: { limit: 10 }) { tables { id identifier } } }')
+          graphqlExecute('query { getTables(input: { limit: 10 }) { tables { id identifier } } }'),
         ),
         // Node searches
         ...Array.from({ length: 15 }, () =>
-          graphqlExecute(
-            `query { searchNodes(input: { tableId: "${tableId}", limit: 10 }) { nodes { id content } } }`
-          )
+          graphqlExecute(`query { searchNodes(input: { tableId: "${tableId}", limit: 10 }) { nodes { id content } } }`),
         ),
         // System stats
         ...Array.from({ length: 10 }, () =>
-          graphqlExecute('query { systemStats { memory { used total } process { cpu } } }')
+          graphqlExecute('query { systemStats { memory { used total } process { cpu } } }'),
         ),
         // Template searches
         ...Array.from({ length: 5 }, () =>
-          graphqlExecute(
-            'query { searchTemplates(input: { limit: 5 }) { templates { identifier name } } }'
-          )
+          graphqlExecute('query { searchTemplates(input: { limit: 5 }) { templates { identifier name } } }'),
         ),
       ]
 
@@ -772,7 +766,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
               }
             }
           }
-        `)
+        `),
       )
 
       const responses = await Promise.all(tableCreations)
@@ -833,8 +827,8 @@ describe('Performance and Stress Comprehensive Tests', () => {
           {
             templateIdentifier,
             variables: { limit: (i % 10) + 1 },
-          }
-        )
+          },
+        ),
       )
 
       const responses = await Promise.all(executions)
@@ -853,8 +847,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
 
       // Calculate average execution time
       const executionTimes = responses.map((r) => r.data.executeTemplateWithGraphQL.executionTime)
-      const avgExecutionTime =
-        executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length
+      const avgExecutionTime = executionTimes.reduce((sum, time) => sum + time, 0) / executionTimes.length
       expect(avgExecutionTime).toBeLessThan(200) // < 200ms average execution time
     }, 30000)
   })
@@ -917,7 +910,7 @@ describe('Performance and Stress Comprehensive Tests', () => {
             batchCreateNodes(nodes: $nodes) { success }
           }
         `,
-          { nodes }
+          { nodes },
         )
 
         // Monitor resources during operation

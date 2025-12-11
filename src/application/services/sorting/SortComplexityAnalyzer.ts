@@ -52,7 +52,7 @@ const COMPLEXITY_THRESHOLDS = {
 export function analyzeSortComplexity(
   sortOptions: EnhancedSortOption[],
   context: SortContext,
-  estimatedDataSize: number = 1000
+  estimatedDataSize: number = 1000,
 ): ComplexityMetrics {
   const dataSize = estimatedDataSize
   const sortOptionsCount = sortOptions.length
@@ -138,10 +138,7 @@ export function generatePerformanceHints(metrics: ComplexityMetrics): Performanc
 /**
  * Generate optimization configuration for sort execution
  */
-export function generateOptimization(
-  metrics: ComplexityMetrics,
-  hint: PerformanceHint
-): SortOptimization {
+export function generateOptimization(metrics: ComplexityMetrics, hint: PerformanceHint): SortOptimization {
   const useIndex = metrics.indexUtilization > 0.5
   const cacheResults = hint.cacheRecommended
 
@@ -195,8 +192,8 @@ function countComputedFields(sortOptions: EnhancedSortOption[]): number {
       option.field.startsWith('_') ||
       option.customComparator ||
       ['_relevance', '_relationship', '_aggregate', '_count', '_sum', '_avg'].some((prefix) =>
-        option.field.startsWith(prefix)
-      )
+        option.field.startsWith(prefix),
+      ),
   ).length
 }
 
@@ -300,9 +297,8 @@ function calculateTextSearchComplexity(sortOptions: EnhancedSortOption[]): numbe
 
           // Search terms length complexity
           const termsComplexity = searchTerms.reduce(
-            (sum: number, term: string) =>
-              sum + Math.min(3, term.length / COMPLEXITY_THRESHOLDS.textSearch.basic),
-            0
+            (sum: number, term: string) => sum + Math.min(3, term.length / COMPLEXITY_THRESHOLDS.textSearch.basic),
+            0,
           )
 
           complexity += algorithmComplexity + termsComplexity
@@ -321,10 +317,7 @@ function calculateTextSearchComplexity(sortOptions: EnhancedSortOption[]): numbe
 /**
  * Calculate index utilization score
  */
-function calculateIndexUtilization(
-  sortOptions: EnhancedSortOption[],
-  context: SortContext
-): number {
+function calculateIndexUtilization(sortOptions: EnhancedSortOption[], context: SortContext): number {
   const systemFields = ['created_at', 'updated_at', 'title', 'content']
   const totalFields = sortOptions.length
 
@@ -426,9 +419,7 @@ function calculateOverallComplexity(params: {
  * Cost estimation methods
  */
 function estimateDatabaseCost(metrics: ComplexityMetrics): number {
-  return (
-    Math.log2(metrics.dataSize) * metrics.sortOptionsCount * (1 / (metrics.indexUtilization + 0.1))
-  )
+  return Math.log2(metrics.dataSize) * metrics.sortOptionsCount * (1 / (metrics.indexUtilization + 0.1))
 }
 
 function estimateMemoryCost(metrics: ComplexityMetrics): number {
@@ -451,7 +442,7 @@ function estimateLazyCost(metrics: ComplexityMetrics): number {
 export function getOptimizationRecommendation(
   sortOptions: EnhancedSortOption[],
   context: SortContext,
-  estimatedDataSize: number = 1000
+  estimatedDataSize: number = 1000,
 ): {
   metrics: ComplexityMetrics
   hint: PerformanceHint

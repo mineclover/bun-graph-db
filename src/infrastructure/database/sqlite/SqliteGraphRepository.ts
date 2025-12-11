@@ -38,17 +38,10 @@ interface DependencyResult {
 export class SqliteGraphRepository implements IGraphRepository {
   constructor(private readonly db: Database) {}
 
-  async searchRelatedNodes(
-    tableId: TableId,
-    graphQuery: GraphQuery
-  ): Promise<PaginatedResult<any>> {
+  async searchRelatedNodes(tableId: TableId, graphQuery: GraphQuery): Promise<PaginatedResult<any>> {
     try {
       const { query, params } = this.buildRelatedNodesQuery(tableId, graphQuery, false)
-      const { query: countQuery, params: countParams } = this.buildRelatedNodesQuery(
-        tableId,
-        graphQuery,
-        true
-      )
+      const { query: countQuery, params: countParams } = this.buildRelatedNodesQuery(tableId, graphQuery, true)
 
       // Get total count
       const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...countParams)
@@ -82,9 +75,7 @@ export class SqliteGraphRepository implements IGraphRepository {
 
         // Add attribute if present
         if (row.attribute_identifier && row.attribute_value !== null) {
-          nodeData.attributes[row.attribute_identifier] = this.parseAttributeValue(
-            row.attribute_value
-          )
+          nodeData.attributes[row.attribute_identifier] = this.parseAttributeValue(row.attribute_value)
         }
 
         // Add relation if present
@@ -102,7 +93,7 @@ export class SqliteGraphRepository implements IGraphRepository {
         targetNodeId: rows.find((r) => r.node_id === item.node.id)?.target_node_id,
         relationTypeId: rows.find((r) => r.node_id === item.node.id)?.relation_type_id,
         properties: rows.find((r) => r.node_id === item.node.id)?.relation_properties
-          ? JSON.parse(rows.find((r) => r.node_id === item.node.id)!.relation_properties!)
+          ? JSON.parse(rows.find((r) => r.node_id === item.node.id)?.relation_properties!)
           : null,
         strength: rows.find((r) => r.node_id === item.node.id)?.relation_strength,
       }))
@@ -129,7 +120,7 @@ export class SqliteGraphRepository implements IGraphRepository {
     startNodeIds: string[],
     endNodeIds: string[],
     maxDepth: number = 3,
-    relationTypes?: string[]
+    relationTypes?: string[],
   ): Promise<PathResult[]> {
     try {
       if (!startNodeIds.length || !endNodeIds.length) {
@@ -209,7 +200,7 @@ export class SqliteGraphRepository implements IGraphRepository {
     tableId: TableId,
     nodeId: string,
     direction: RelationDirection = RelationDirection.INCOMING,
-    relationTypes?: string[]
+    relationTypes?: string[],
   ): Promise<DependencyResult[]> {
     try {
       const relationFilter =
@@ -299,7 +290,7 @@ export class SqliteGraphRepository implements IGraphRepository {
   private buildRelatedNodesQuery(
     tableId: TableId,
     graphQuery: GraphQuery,
-    isCountQuery: boolean
+    isCountQuery: boolean,
   ): { query: string; params: any[] } {
     const params: any[] = [tableId]
 

@@ -4,11 +4,7 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import {
-  createRequestHelper,
-  startServerForSuite,
-  stopServerForSuite,
-} from './fixtures/test-graphql-server'
+import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'node-queries-isolated'
 const TEST_TIMEOUT = 15000
@@ -135,9 +131,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
       // This might return null if no node exists, which is expected
       expect(result.errors).toBeUndefined()
       // Either returns a node or null, both are valid
-      expect(
-        result.data.nodeByContent === null || typeof result.data.nodeByContent === 'object'
-      ).toBe(true)
+      expect(result.data.nodeByContent === null || typeof result.data.nodeByContent === 'object').toBe(true)
     })
 
     test('searchNodes - Search nodes with filters', async () => {
@@ -167,10 +161,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
       // SearchNodesUseCase might not be available (dependency issue mentioned in code)
       // So we accept either successful search or fallback behavior
       if (result.errors) {
-        console.log(
-          'ℹ️ SearchNodes not fully implemented, this is expected:',
-          result.errors[0]?.message
-        )
+        console.log('ℹ️ SearchNodes not fully implemented, this is expected:', result.errors[0]?.message)
       } else {
         expect(result.data.searchNodes).toBeDefined()
         expect(Array.isArray(result.data.searchNodes.nodes)).toBe(true)

@@ -581,7 +581,7 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
           identifier: config.identifier,
           description: config.description,
         },
-      }
+      },
     )
 
     if (!tableResult.createTable.success) {
@@ -621,7 +621,7 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
             description: attr.description,
             dataType: attr.dataType,
           },
-        }
+        },
       )
 
       if (attrTypeResult.createAttributeType.success) {
@@ -630,7 +630,7 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
       } else {
         console.log(
           `  ❌ Failed to create attribute type ${attr.identifier}:`,
-          attrTypeResult.createAttributeType.errors
+          attrTypeResult.createAttributeType.errors,
         )
       }
     }
@@ -670,17 +670,14 @@ async function createCompleteTable(config: TableConfig): Promise<boolean> {
             name: attr.name,
             description: attr.description,
           },
-        }
+        },
       )
 
       if (attrResult.createAttribute.success) {
         attributeIds[attr.identifier] = attrResult.createAttribute.attribute.id
         console.log(`  ✅ Attribute created: ${attr.identifier}`)
       } else {
-        console.log(
-          `  ❌ Failed to create attribute ${attr.identifier}:`,
-          attrResult.createAttribute.errors
-        )
+        console.log(`  ❌ Failed to create attribute ${attr.identifier}:`, attrResult.createAttribute.errors)
       }
     }
 
@@ -764,7 +761,7 @@ async function testCRUDWorkflow(): Promise<boolean> {
         filter: {
           identifiers: [testTableConfig.identifier],
         },
-      }
+      },
     )
 
     if (searchResult.tables.nodes.length === 0) {
@@ -824,7 +821,7 @@ async function testCRUDWorkflow(): Promise<boolean> {
             content: nodeData.content,
             attributes: nodeData.attributes,
           },
-        }
+        },
       )
 
       if (nodeResult.createNode.success) {
@@ -858,7 +855,7 @@ async function testCRUDWorkflow(): Promise<boolean> {
         filter: {
           tableId: testTable.id,
         },
-      }
+      },
     )
 
     console.log(`✅ Found ${nodesResult.nodes.totalCount} nodes in test table`)
@@ -928,10 +925,4 @@ if (import.meta.main) {
   main()
 }
 
-export {
-  createAllTemplates,
-  createCompleteTable,
-  testCRUDWorkflow,
-  type TableConfig,
-  type AttributeConfig,
-}
+export { createAllTemplates, createCompleteTable, testCRUDWorkflow, type TableConfig, type AttributeConfig }

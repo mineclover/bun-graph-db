@@ -9,18 +9,14 @@
  */
 
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type {
-  BackupRetentionPolicy,
-  SQLiteBackupOptions,
-  SQLiteRestoreOptions,
-} from '@/core/types/DatabaseBackup.js'
+import type { BackupRetentionPolicy, SQLiteBackupOptions, SQLiteRestoreOptions } from '@/core/types/DatabaseBackup.js'
 import type { SQLiteBackupService } from '@/domain/services/SQLiteBackupService.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 
 export class BackupCommands {
   constructor(
     private readonly backupService: SQLiteBackupService,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -147,9 +143,7 @@ export class BackupCommands {
         console.log(`   - Tables: ${result.verification.tablesCount}`)
         console.log(`   - Nodes: ${result.verification.nodesCount}`)
         console.log(`   - Relations: ${result.verification.relationsCount}`)
-        console.log(
-          `   - Checksum: ${result.verification.checksumMatch ? '✅ Match' : '❌ Mismatch'}`
-        )
+        console.log(`   - Checksum: ${result.verification.checksumMatch ? '✅ Match' : '❌ Mismatch'}`)
       }
 
       if (result.warnings.length > 0) {
@@ -229,10 +223,7 @@ export class BackupCommands {
       console.log(`   Table Backups: ${result.tableBackups.length}`)
     } catch (error) {
       this.logger.error('List backups command failed', toErrorMeta(error))
-      console.error(
-        '❌ Failed to list backups:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
+      console.error('❌ Failed to list backups:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
   }
@@ -358,10 +349,7 @@ export class BackupCommands {
       console.log('\n💡 Tip: Run "bun run db:list-backups" to see all backups')
     } catch (error) {
       this.logger.error('Backup stats command failed', toErrorMeta(error))
-      console.error(
-        '❌ Failed to get stats:',
-        error instanceof Error ? error.message : 'Unknown error'
-      )
+      console.error('❌ Failed to get stats:', error instanceof Error ? error.message : 'Unknown error')
       process.exit(1)
     }
   }

@@ -60,9 +60,7 @@ async function listAllTemplates() {
   }
 
   const templates = result.data.searchTemplates.nodes
-  console.log(
-    `총 ${result.data.searchTemplates.totalCount}개 템플릿 중 ${templates.length}개 조회:`
-  )
+  console.log(`총 ${result.data.searchTemplates.totalCount}개 템플릿 중 ${templates.length}개 조회:`)
 
   templates.forEach((template, index) => {
     console.log(`${index + 1}. ${template.identifier}`)

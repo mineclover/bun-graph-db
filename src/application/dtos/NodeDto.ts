@@ -1,9 +1,4 @@
-import type {
-  BaseEntityDto,
-  DeleteOutput,
-  GetManyInput,
-  WithDescription,
-} from '@/core/types/UseCaseTypes.js'
+import type { BaseEntityDto, DeleteOutput, GetManyInput, WithDescription } from '@/core/types/UseCaseTypes.js'
 import type { Node } from '@/domain/entities/Node.js'
 import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 

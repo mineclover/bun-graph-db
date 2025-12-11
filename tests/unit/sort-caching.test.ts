@@ -1,20 +1,13 @@
 import { beforeEach, describe, expect, it } from 'bun:test'
 import { CachedSortEngine } from '../../src/application/services/sorting/CachedSortEngine'
-import {
-  type CacheEntryMetadata,
-  SortResultCache,
-} from '../../src/application/services/sorting/SortResultCache'
+import { type CacheEntryMetadata, SortResultCache } from '../../src/application/services/sorting/SortResultCache'
 import {
   buildCachedOptimizedSort,
   cleanupSortCache,
   clearSortCache,
   getCacheStats,
 } from '../../src/application/services/sorting/SortStrategyFactory'
-import {
-  type EnhancedSortOption,
-  type SortContext,
-  SortDirection,
-} from '../../src/domain/value-objects/SortStrategy'
+import { type EnhancedSortOption, type SortContext, SortDirection } from '../../src/domain/value-objects/SortStrategy'
 
 describe('Sort Result Caching System', () => {
   const mockContext: SortContext = {
@@ -159,7 +152,7 @@ describe('Sort Result Caching System', () => {
           sortFieldsCount: 1,
           computedFieldsCount: 0,
           indexUtilization: 0.8,
-        })
+        }),
       ).toBe(true)
 
       // Should cache operations with computed fields
@@ -171,7 +164,7 @@ describe('Sort Result Caching System', () => {
           sortFieldsCount: 2,
           computedFieldsCount: 1,
           indexUtilization: 0.8,
-        })
+        }),
       ).toBe(true)
 
       // Should cache operations with low index utilization
@@ -183,7 +176,7 @@ describe('Sort Result Caching System', () => {
           sortFieldsCount: 1,
           computedFieldsCount: 0,
           indexUtilization: 0.3,
-        })
+        }),
       ).toBe(true)
 
       // Should not cache simple operations
@@ -195,7 +188,7 @@ describe('Sort Result Caching System', () => {
           sortFieldsCount: 1,
           computedFieldsCount: 0,
           indexUtilization: 0.9,
-        })
+        }),
       ).toBe(false)
     })
 
@@ -366,9 +359,7 @@ describe('Sort Result Caching System', () => {
 
     it('should provide performance insights', () => {
       // Add some cache entries with different complexities
-      const highComplexityOptions: EnhancedSortOption[] = [
-        { field: '_aggregate_sum', direction: SortDirection.DESC },
-      ]
+      const highComplexityOptions: EnhancedSortOption[] = [{ field: '_aggregate_sum', direction: SortDirection.DESC }]
 
       cachedEngine.buildOptimizedSort(highComplexityOptions, mockContext, {
         estimatedDataSize: 10000,
@@ -398,11 +389,10 @@ describe('Sort Result Caching System', () => {
       const tableId = 'test-table'
 
       // Add some cached entries
-      cachedEngine.buildOptimizedSort(
-        [{ field: 'name', direction: SortDirection.ASC }],
-        mockContext,
-        { tableId, enableCaching: true }
-      )
+      cachedEngine.buildOptimizedSort([{ field: 'name', direction: SortDirection.ASC }], mockContext, {
+        tableId,
+        enableCaching: true,
+      })
 
       const invalidated = cachedEngine.invalidateTableCache(tableId)
       expect(invalidated).toBeGreaterThanOrEqual(0)
@@ -479,9 +469,7 @@ describe('Sort Result Caching System', () => {
     })
 
     it('should handle cache disabled scenarios', () => {
-      const sortOptions: EnhancedSortOption[] = [
-        { field: '_complex_operation', direction: SortDirection.DESC },
-      ]
+      const sortOptions: EnhancedSortOption[] = [{ field: '_complex_operation', direction: SortDirection.DESC }]
 
       const result = cachedEngine.buildOptimizedSort(sortOptions, mockContext, {
         enableCaching: false,

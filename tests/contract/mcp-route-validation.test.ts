@@ -30,13 +30,7 @@ describe('MCP Route Contract Tests', () => {
 
   describe('Valid Table ID Route Acceptance', () => {
     it('should accept valid alphanumeric table IDs', async () => {
-      const validIds = [
-        'table123',
-        'test-table-456',
-        'Table_123',
-        'a1b2c3',
-        'table-with-dashes-123',
-      ]
+      const validIds = ['table123', 'test-table-456', 'Table_123', 'a1b2c3', 'table-with-dashes-123']
 
       for (const tableId of validIds) {
         const request = {

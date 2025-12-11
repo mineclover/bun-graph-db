@@ -2,11 +2,7 @@ import type { EnhancedSortOption, SortContext } from '@/domain/value-objects/Sor
 import { SortDirection } from '@/domain/value-objects/SortStrategy.js'
 import { type AdaptiveSortResult, buildOptimizedSort } from './AdaptiveSortEngine.js'
 import { analyzeSortComplexity } from './SortComplexityAnalyzer.js'
-import {
-  type CacheEntryMetadata,
-  globalSortCache,
-  type SortResultCache,
-} from './SortResultCache.js'
+import { type CacheEntryMetadata, globalSortCache, type SortResultCache } from './SortResultCache.js'
 
 /**
  * Cached version of AdaptiveSortEngine that leverages intelligent caching
@@ -41,7 +37,7 @@ export class CachedSortEngine {
   buildOptimizedSort(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    options: CachedSortOptions = {}
+    options: CachedSortOptions = {},
   ): CachedSortResult {
     const {
       estimatedDataSize = 1000,
@@ -117,7 +113,7 @@ export class CachedSortEngine {
         context: SortContext
         options?: CachedSortOptions
       }>
-    } = {}
+    } = {},
   ): Promise<CachedSortResult> {
     const { warmupQueries = [], ...baseOptions } = options
 
@@ -142,10 +138,10 @@ export class CachedSortEngine {
       sortOptions: EnhancedSortOption[]
       context: SortContext
       options?: CachedSortOptions
-    }>
+    }>,
   ): CachedSortResult[] {
     return requests.map((request) =>
-      this.buildOptimizedSort(request.sortOptions, request.context, request.options || {})
+      this.buildOptimizedSort(request.sortOptions, request.context, request.options || {}),
     )
   }
 
@@ -176,7 +172,7 @@ export class CachedSortEngine {
   async prewarmTableCache(
     tableId: string,
     context: SortContext,
-    commonPatterns: EnhancedSortOption[][] = []
+    commonPatterns: EnhancedSortOption[][] = [],
   ): Promise<{
     cached: number
     skipped: number
@@ -242,16 +238,14 @@ export class CachedSortEngine {
 
     // Analyze expensive queries
     const expensiveQueries = entries
-      .filter(
-        (entry) => entry.metadata.complexity === 'high' || entry.metadata.complexity === 'extreme'
-      )
+      .filter((entry) => entry.metadata.complexity === 'high' || entry.metadata.complexity === 'extreme')
       .reduce(
         (acc, entry) => {
           const key = `${entry.metadata.complexity}-${Math.floor(entry.metadata.estimatedCost / 100) * 100}`
           acc[key] = (acc[key] || 0) + entry.accessCount
           return acc
         },
-        {} as Record<string, number>
+        {} as Record<string, number>,
       )
 
     const mostExpensiveQueries = Object.entries(expensiveQueries)
@@ -300,7 +294,7 @@ export class CachedSortEngine {
     cacheKey: string,
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    options: CachedSortOptions
+    options: CachedSortOptions,
   ): CachedSortResult | null {
     const cachedResult = this.cache.get(cacheKey)
 
@@ -348,7 +342,7 @@ export class CachedSortEngine {
       sortOptions: EnhancedSortOption[]
       context: SortContext
       options?: CachedSortOptions
-    }>
+    }>,
   ): Promise<void> {
     for (const query of queries) {
       try {

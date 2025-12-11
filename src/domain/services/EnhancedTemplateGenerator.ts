@@ -22,7 +22,7 @@ export class EnhancedTemplateGenerator {
     private readonly attributeRepository: IAttributeRepository,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly queryTemplateRepository: IQueryTemplateRepository,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
   ) {}
 
   /**
@@ -40,7 +40,7 @@ export class EnhancedTemplateGenerator {
       includeRelations?: boolean
       includeValidation?: boolean
       includeSubscriptions?: boolean
-    } = {}
+    } = {},
   ): Promise<{
     success: boolean
     templates: Array<{
@@ -95,26 +95,16 @@ export class EnhancedTemplateGenerator {
             tableNameCamel,
             tableNamePascal,
             tableSchema,
-            defaults.includeValidation
-          )
+            defaults.includeValidation,
+          ),
         )
       }
 
       // 2. Read operations (single and list)
       if (defaults.includeRead) {
         templates.push(
-          await this.generateGetByIdTemplate(
-            tableIdentifier,
-            tableNameCamel,
-            tableNamePascal,
-            tableSchema
-          ),
-          await this.generateListTemplate(
-            tableIdentifier,
-            tableNameCamel,
-            tableNamePascal,
-            tableSchema
-          )
+          await this.generateGetByIdTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
+          await this.generateListTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
         )
       }
 
@@ -126,8 +116,8 @@ export class EnhancedTemplateGenerator {
             tableNameCamel,
             tableNamePascal,
             tableSchema,
-            defaults.includeValidation
-          )
+            defaults.includeValidation,
+          ),
         )
       }
 
@@ -135,44 +125,24 @@ export class EnhancedTemplateGenerator {
       if (defaults.includeDelete) {
         templates.push(
           await this.generateDeleteTemplate(tableIdentifier, tableNameCamel, tableNamePascal),
-          await this.generateDeleteCascadeTemplate(tableIdentifier, tableNameCamel, tableNamePascal)
+          await this.generateDeleteCascadeTemplate(tableIdentifier, tableNameCamel, tableNamePascal),
         )
       }
 
       // 5. Advanced search with filtering and sorting
       if (defaults.includeSearch) {
         templates.push(
-          await this.generateSearchTemplate(
-            tableIdentifier,
-            tableNameCamel,
-            tableNamePascal,
-            tableSchema
-          ),
-          await this.generateFilterTemplate(
-            tableIdentifier,
-            tableNameCamel,
-            tableNamePascal,
-            tableSchema
-          )
+          await this.generateSearchTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
+          await this.generateFilterTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
         )
       }
 
       // 6. Batch operations
       if (defaults.includeBatch) {
         templates.push(
-          await this.generateBatchCreateTemplate(
-            tableIdentifier,
-            tableNameCamel,
-            tableNamePascal,
-            tableSchema
-          ),
-          await this.generateBatchUpdateTemplate(
-            tableIdentifier,
-            tableNameCamel,
-            tableNamePascal,
-            tableSchema
-          ),
-          await this.generateBatchDeleteTemplate(tableIdentifier, tableNameCamel, tableNamePascal)
+          await this.generateBatchCreateTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
+          await this.generateBatchUpdateTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
+          await this.generateBatchDeleteTemplate(tableIdentifier, tableNameCamel, tableNamePascal),
         )
       }
 
@@ -180,12 +150,7 @@ export class EnhancedTemplateGenerator {
       if (defaults.includeRelations) {
         templates.push(
           await this.generateRelationshipTemplate(tableIdentifier, tableNameCamel, tableNamePascal),
-          await this.generateNestedQueryTemplate(
-            tableIdentifier,
-            tableNameCamel,
-            tableNamePascal,
-            tableSchema
-          )
+          await this.generateNestedQueryTemplate(tableIdentifier, tableNameCamel, tableNamePascal, tableSchema),
         )
       }
 
@@ -193,7 +158,7 @@ export class EnhancedTemplateGenerator {
       if (defaults.includeSubscriptions) {
         templates.push(
           await this.generateSubscriptionTemplate(tableIdentifier, tableNameCamel, tableNamePascal),
-          await this.generateChangeStreamTemplate(tableIdentifier, tableNameCamel, tableNamePascal)
+          await this.generateChangeStreamTemplate(tableIdentifier, tableNameCamel, tableNamePascal),
         )
       }
 
@@ -209,8 +174,7 @@ export class EnhancedTemplateGenerator {
             [tableIdentifier, template.operationType, 'export-import', 'table-package', 'enhanced'],
             {
               description:
-                template.description ||
-                `Enhanced ${template.operationType} template for ${tableIdentifier} table`,
+                template.description || `Enhanced ${template.operationType} template for ${tableIdentifier} table`,
               complexityScore: this.calculateComplexityScore(template.query),
               applicableTables: [tableIdentifier],
               inputSchema: template.variables
@@ -220,13 +184,13 @@ export class EnhancedTemplateGenerator {
                     required: this.extractRequiredVariables(template.query),
                   }
                 : undefined,
-            }
+            },
           )
 
           await this.queryTemplateRepository.create(queryTemplate)
         } catch (error) {
           errors.push(
-            `Failed to create template '${template.identifier}': ${error instanceof Error ? error.message : 'Unknown error'}`
+            `Failed to create template '${template.identifier}': ${error instanceof Error ? error.message : 'Unknown error'}`,
           )
         }
       }
@@ -263,7 +227,7 @@ export class EnhancedTemplateGenerator {
     tableNameCamel: string,
     tableNamePascal: string,
     tableSchema: any,
-    includeValidation: boolean
+    includeValidation: boolean,
   ) {
     const _inputFields = this.generateInputFields(tableSchema, 'create')
     const outputFields = this.generateOutputFields(tableSchema)
@@ -315,7 +279,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any
+    tableSchema: any,
   ) {
     const outputFields = this.generateOutputFields(tableSchema)
 
@@ -395,7 +359,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any
+    tableSchema: any,
   ) {
     const outputFields = this.generateOutputFields(tableSchema, true) // Simplified for list view
 
@@ -503,7 +467,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     _tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any
+    tableSchema: any,
   ) {
     return {
       identifier: `search-${tableIdentifier}-enhanced`,
@@ -593,7 +557,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any
+    tableSchema: any,
   ) {
     return {
       identifier: `batch-create-${tableIdentifier}-enhanced`,
@@ -669,11 +633,7 @@ export class EnhancedTemplateGenerator {
   /**
    * Generate subscription template for real-time updates
    */
-  private async generateSubscriptionTemplate(
-    tableIdentifier: string,
-    tableNameCamel: string,
-    tableNamePascal: string
-  ) {
+  private async generateSubscriptionTemplate(tableIdentifier: string, tableNameCamel: string, tableNamePascal: string) {
     return {
       identifier: `subscribe-${tableIdentifier}-changes`,
       name: `Subscribe to ${tableNamePascal} Changes`,
@@ -822,10 +782,7 @@ export class EnhancedTemplateGenerator {
       suggestions`
   }
 
-  private generateVariableProperties(
-    tableSchema: any,
-    _operation: 'create' | 'update'
-  ): Record<string, any> {
+  private generateVariableProperties(tableSchema: any, _operation: 'create' | 'update'): Record<string, any> {
     const properties: Record<string, any> = {}
 
     if (tableSchema.attributes) {
@@ -884,10 +841,7 @@ export class EnhancedTemplateGenerator {
     const baseFields = ['id', 'createdAt', 'updatedAt']
 
     if (tableSchema.attributes) {
-      return [
-        ...baseFields,
-        ...tableSchema.attributes.map((attr: any) => this.sanitizeFieldName(attr.identifier)),
-      ]
+      return [...baseFields, ...tableSchema.attributes.map((attr: any) => this.sanitizeFieldName(attr.identifier))]
     }
 
     return baseFields
@@ -955,7 +909,7 @@ export class EnhancedTemplateGenerator {
     tableNameCamel: string,
     tableNamePascal: string,
     tableSchema: any,
-    _includeValidation: boolean
+    _includeValidation: boolean,
   ) {
     return {
       identifier: `update-${tableIdentifier}-enhanced`,
@@ -1008,11 +962,7 @@ export class EnhancedTemplateGenerator {
     }
   }
 
-  private async generateDeleteTemplate(
-    tableIdentifier: string,
-    _tableNameCamel: string,
-    tableNamePascal: string
-  ) {
+  private async generateDeleteTemplate(tableIdentifier: string, _tableNameCamel: string, tableNamePascal: string) {
     return {
       identifier: `delete-${tableIdentifier}-enhanced`,
       name: `Delete ${tableNamePascal} (Enhanced)`,
@@ -1052,7 +1002,7 @@ export class EnhancedTemplateGenerator {
   private async generateDeleteCascadeTemplate(
     tableIdentifier: string,
     _tableNameCamel: string,
-    tableNamePascal: string
+    tableNamePascal: string,
   ) {
     return {
       identifier: `delete-cascade-${tableIdentifier}-enhanced`,
@@ -1107,7 +1057,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any
+    tableSchema: any,
   ) {
     return {
       identifier: `filter-${tableIdentifier}-enhanced`,
@@ -1179,7 +1129,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     _tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any
+    tableSchema: any,
   ) {
     return {
       identifier: `batch-update-${tableIdentifier}-enhanced`,
@@ -1245,11 +1195,7 @@ export class EnhancedTemplateGenerator {
     }
   }
 
-  private async generateBatchDeleteTemplate(
-    tableIdentifier: string,
-    _tableNameCamel: string,
-    tableNamePascal: string
-  ) {
+  private async generateBatchDeleteTemplate(tableIdentifier: string, _tableNameCamel: string, tableNamePascal: string) {
     return {
       identifier: `batch-delete-${tableIdentifier}-enhanced`,
       name: `Batch Delete ${tableNamePascal} (Enhanced)`,
@@ -1305,11 +1251,7 @@ export class EnhancedTemplateGenerator {
     }
   }
 
-  private async generateRelationshipTemplate(
-    tableIdentifier: string,
-    tableNameCamel: string,
-    tableNamePascal: string
-  ) {
+  private async generateRelationshipTemplate(tableIdentifier: string, tableNameCamel: string, tableNamePascal: string) {
     return {
       identifier: `${tableIdentifier}-relationships-enhanced`,
       name: `${tableNamePascal} Relationships (Enhanced)`,
@@ -1394,7 +1336,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any
+    tableSchema: any,
   ) {
     return {
       identifier: `${tableIdentifier}-nested-query-enhanced`,
@@ -1486,11 +1428,7 @@ export class EnhancedTemplateGenerator {
     }
   }
 
-  private async generateChangeStreamTemplate(
-    tableIdentifier: string,
-    tableNameCamel: string,
-    tableNamePascal: string
-  ) {
+  private async generateChangeStreamTemplate(tableIdentifier: string, tableNameCamel: string, tableNamePascal: string) {
     return {
       identifier: `${tableIdentifier}-change-stream-enhanced`,
       name: `${tableNamePascal} Change Stream (Enhanced)`,

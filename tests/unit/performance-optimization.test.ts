@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import {
-  buildOptimizedSort,
-  createExecutionPlan,
-} from '../../src/application/services/sorting/AdaptiveSortEngine'
+import { buildOptimizedSort, createExecutionPlan } from '../../src/application/services/sorting/AdaptiveSortEngine'
 import {
   analyzeSortComplexity,
   generatePerformanceHints,
@@ -13,11 +10,7 @@ import {
   buildOptimizedSortFactory,
   getPerformanceRecommendations,
 } from '../../src/application/services/sorting/SortStrategyFactory'
-import {
-  type EnhancedSortOption,
-  type SortContext,
-  SortDirection,
-} from '../../src/domain/value-objects/SortStrategy'
+import { type EnhancedSortOption, type SortContext, SortDirection } from '../../src/domain/value-objects/SortStrategy'
 
 describe('Performance Optimization Engine', () => {
   const mockContext: SortContext = {
@@ -145,9 +138,7 @@ describe('Performance Optimization Engine', () => {
       // Interactive should be more aggressive in optimization
       expect(interactiveResult.performance.optimization.approximateResults).toBe(true)
       expect(interactiveResult.performance.optimization.parallelization).toBe(true)
-      expect(interactiveResult.performance.estimatedCost).toBeLessThanOrEqual(
-        batchResult.performance.estimatedCost
-      )
+      expect(interactiveResult.performance.estimatedCost).toBeLessThanOrEqual(batchResult.performance.estimatedCost)
     })
 
     it('should create detailed execution plans for complex operations', () => {
@@ -173,8 +164,8 @@ describe('Performance Optimization Engine', () => {
             name.includes('comprehensive') ||
             name.includes('relationship') ||
             name.includes('complex') ||
-            name.includes('unified')
-        )
+            name.includes('unified'),
+        ),
       ).toBe(true)
     })
 
@@ -197,7 +188,7 @@ describe('Performance Optimization Engine', () => {
 
       // Should warn about high complexity
       const hasComplexityWarning = result.warnings.some(
-        (w) => w.includes('complex') || w.includes('performance') || w.includes('budget')
+        (w) => w.includes('complex') || w.includes('performance') || w.includes('budget'),
       )
       expect(hasComplexityWarning).toBe(true)
     })
@@ -216,9 +207,7 @@ describe('Performance Optimization Engine', () => {
 
       expect(optimizedResult.sqlClause).toBeTruthy()
       expect(optimizedResult.performance).toBeDefined()
-      expect(optimizedResult.performance.metrics.overallComplexity).toMatch(
-        /low|medium|high|extreme/
-      )
+      expect(optimizedResult.performance.metrics.overallComplexity).toMatch(/low|medium|high|extreme/)
     })
 
     it('should analyze sort complexity without execution', () => {
