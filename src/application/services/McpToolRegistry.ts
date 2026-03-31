@@ -13,10 +13,17 @@
 //   validateMcpToolDefinition,
 // } from '../models/McpToolDefinition.ts'
 
+export interface McpToolInputSchema {
+  type?: unknown
+  properties?: object
+  required?: unknown
+  additionalProperties?: unknown
+}
+
 export interface McpToolDefinition {
   name: string
   description: string
-  inputSchema: any
+  inputSchema: McpToolInputSchema
   operationType?: 'query' | 'mutation'
   graphqlOperation?: {
     operationType?: string
@@ -28,7 +35,7 @@ export interface ToolDiscoveryResult {
   tools: Array<{
     name: string
     description: string
-    inputSchema: any
+    inputSchema: McpToolInputSchema
   }>
 }
 
@@ -237,6 +244,188 @@ export class McpToolRegistry {
    * Register built-in MCP tools
    */
   private async registerBuiltInTools(): Promise<void> {
+    const healthCheckTool: McpToolDefinition = {
+      name: 'healthCheck',
+      description: 'Check GraphQL server health status and runtime readiness.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {},
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+      },
+    }
+
+    const createTableTool: McpToolDefinition = {
+      name: 'createTable',
+      description: 'Create a new table in the graph database.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['identifier'],
+        properties: {
+          identifier: {
+            type: 'string',
+            minLength: 1,
+            description: 'Unique table identifier',
+          },
+          name: {
+            type: 'string',
+            description: 'Optional display name for compatibility with older clients',
+          },
+          description: {
+            type: 'string',
+            description: 'Optional table description',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+      },
+    }
+
+    const searchNodesTool: McpToolDefinition = {
+      name: 'searchNodes',
+      description: 'Search nodes inside a table by free-text content.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableId'],
+        properties: {
+          tableId: {
+            type: 'string',
+            minLength: 1,
+            description: 'Table ID to search within',
+          },
+          search: {
+            type: 'string',
+            description: 'Optional free-text search term',
+            default: '',
+          },
+          limit: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 100,
+            default: 10,
+            description: 'Maximum number of nodes to return',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+      },
+    }
+
+    this.register(healthCheckTool)
+    this.register(createTableTool)
+    this.register(searchNodesTool)
+
+    const systemStatsTool: McpToolDefinition = {
+      name: 'systemStats',
+      description: 'Get system statistics through the REST API proxy.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {},
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: 'query SystemStatsPlaceholder { _schema }',
+      },
+    }
+
+    const searchTablesTool: McpToolDefinition = {
+      name: 'searchTables',
+      description: 'Search tables through the REST API proxy.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          searchTerm: { type: 'string', default: '' },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: 'query SearchTablesPlaceholder { _schema }',
+      },
+    }
+
+    const getTablesTool: McpToolDefinition = {
+      name: 'getTables',
+      description: 'List tables through the REST API proxy.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 50 },
+          offset: { type: 'integer', minimum: 0, default: 0 },
+          search: { type: 'string', default: '' },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: 'query GetTablesPlaceholder { _schema }',
+      },
+    }
+
+    const createAttributeTool: McpToolDefinition = {
+      name: 'createAttribute',
+      description: 'Create an attribute through the REST API proxy.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableId', 'identifier', 'name'],
+        properties: {
+          tableId: { type: 'string', minLength: 1 },
+          identifier: { type: 'string', minLength: 1 },
+          name: { type: 'string', minLength: 1 },
+          attributeTypeId: { type: 'string' },
+          description: { type: 'string' },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: 'mutation CreateAttributePlaceholder { _schema }',
+      },
+    }
+
+    const searchTemplatesToolCompat: McpToolDefinition = {
+      name: 'searchTemplates',
+      description: 'Search templates through the REST API proxy.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          searchTerm: { type: 'string', default: '' },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
+          tags: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: 'query SearchTemplatesPlaceholder { _schema }',
+      },
+    }
+
+    this.register(systemStatsTool)
+    this.register(searchTablesTool)
+    this.register(getTablesTool)
+    this.register(createAttributeTool)
+    this.register(searchTemplatesToolCompat)
+
     // Register bulk template import tool - file path based with parallel processing
     const bulkImportTool: McpToolDefinition = {
       name: 'bulk-import-templates',
@@ -804,6 +993,391 @@ export class McpToolRegistry {
     }
 
     this.register(demoSetupTool)
+
+    // Register tabular sync config list tool
+    const listTabularSyncConfigsTool: McpToolDefinition = {
+      name: 'list-tabular-sync-configs',
+      description: 'List saved tabular sync configurations and their active state.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {},
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: `
+          query ListTabularSyncConfigs {
+            tabularSyncConfigs {
+              configKey
+              isActive
+              createdAt
+              updatedAt
+              config
+            }
+          }
+        `,
+      },
+    }
+    this.register(listTabularSyncConfigsTool)
+
+    const getTabularSyncConfigTool: McpToolDefinition = {
+      name: 'get-tabular-sync-config',
+      description: 'Get one tabular sync configuration by key, or the active config when no key is provided.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          configKey: {
+            type: 'string',
+            description: 'Optional config key. Omit to fetch the active config.',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: `
+          query GetTabularSyncConfig($configKey: String) {
+            tabularSyncConfig(configKey: $configKey) {
+              configKey
+              isActive
+              createdAt
+              updatedAt
+              config
+            }
+          }
+        `,
+      },
+    }
+    this.register(getTabularSyncConfigTool)
+
+    const saveTabularSyncConfigTool: McpToolDefinition = {
+      name: 'save-tabular-sync-config',
+      description: 'Save a tabular sync configuration and optionally activate it.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['configKey', 'config'],
+        properties: {
+          configKey: {
+            type: 'string',
+            description: 'Config identifier key.',
+          },
+          config: {
+            type: 'object',
+            description: 'Full tabular sync config JSON.',
+          },
+          active: {
+            type: 'boolean',
+            description: 'Whether to activate the config immediately.',
+            default: true,
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation SaveTabularSyncConfig($input: SaveTabularSyncConfigInput!) {
+            saveTabularSyncConfig(input: $input) {
+              success
+              config {
+                configKey
+                isActive
+                createdAt
+                updatedAt
+                config
+              }
+              errors {
+                message
+                code
+              }
+            }
+          }
+        `,
+      },
+    }
+    this.register(saveTabularSyncConfigTool)
+
+    const activateTabularSyncConfigTool: McpToolDefinition = {
+      name: 'activate-tabular-sync-config',
+      description: 'Activate an existing tabular sync configuration by key.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['configKey'],
+        properties: {
+          configKey: {
+            type: 'string',
+            description: 'Config identifier key to activate.',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation ActivateTabularSyncConfig($configKey: String!) {
+            activateTabularSyncConfig(configKey: $configKey) {
+              success
+              config {
+                configKey
+                isActive
+                createdAt
+                updatedAt
+                config
+              }
+              errors {
+                message
+                code
+              }
+            }
+          }
+        `,
+      },
+    }
+    this.register(activateTabularSyncConfigTool)
+
+    const getTabularSyncStatusTool: McpToolDefinition = {
+      name: 'get-tabular-sync-status',
+      description: 'Get current tabular sync queue status, per-table metrics, and recent failures.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          limit: {
+            type: 'number',
+            description: 'Maximum number of persisted events to return.',
+          },
+          tableIdentifier: {
+            type: 'string',
+            description: 'Optional table identifier filter for persisted events.',
+          },
+          status: {
+            type: 'string',
+            description: 'Optional persisted event status filter (e.g. success or failure).',
+          },
+          mode: {
+            type: 'string',
+            description: 'Optional persisted event mode filter (e.g. sync or clear).',
+          },
+          windowPreset: {
+            type: 'string',
+            description: 'Optional preset window filter (1h, 24h, 7d).',
+          },
+          createdAfter: {
+            type: 'string',
+            description: 'Optional lower bound ISO timestamp for persisted events.',
+          },
+          createdBefore: {
+            type: 'string',
+            description: 'Optional upper bound ISO timestamp for persisted events.',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: `
+          query GetTabularSyncStatus(
+            $limit: Int
+            $tableIdentifier: String
+            $status: String
+            $mode: String
+            $windowPreset: String
+            $createdAfter: String
+            $createdBefore: String
+          ) {
+            tabularSyncStatus(
+              limit: $limit
+              tableIdentifier: $tableIdentifier
+              status: $status
+              mode: $mode
+              windowPreset: $windowPreset
+              createdAfter: $createdAfter
+              createdBefore: $createdBefore
+            ) {
+              enabled
+              configSource
+              syncDebounceMs
+              pendingCount
+              pendingTables
+              totalNotifications
+              totalExecutions
+              totalSucceeded
+              totalFailed
+              lastSuccessAt
+              lastFailureAt
+              recentFailures {
+                tableIdentifier
+                mode
+                error
+                occurredAt
+              }
+              tables {
+                tableIdentifier
+                pending
+                notifications
+                executions
+                successes
+                failures
+                lastMode
+                lastScheduledAt
+                lastStartedAt
+                lastCompletedAt
+                lastSuccessAt
+                lastFailureAt
+                lastError
+              }
+              persistedEvents {
+                id
+                tableIdentifier
+                mode
+                status
+                errorMessage
+                createdAt
+              }
+            }
+          }
+        `,
+      },
+    }
+    this.register(getTabularSyncStatusTool)
+
+    const getTabularSyncSummaryTool: McpToolDefinition = {
+      name: 'get-tabular-sync-summary',
+      description: 'Get aggregated persisted sync event counts grouped by table, mode, and status.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          limit: {
+            type: 'number',
+            description: 'Maximum number of summary groups to return.',
+          },
+          tableIdentifier: {
+            type: 'string',
+            description: 'Optional table identifier filter.',
+          },
+          status: {
+            type: 'string',
+            description: 'Optional event status filter.',
+          },
+          mode: {
+            type: 'string',
+            description: 'Optional event mode filter.',
+          },
+          windowPreset: {
+            type: 'string',
+            description: 'Optional preset window filter (1h, 24h, 7d).',
+          },
+          createdAfter: {
+            type: 'string',
+            description: 'Optional lower bound ISO timestamp.',
+          },
+          createdBefore: {
+            type: 'string',
+            description: 'Optional upper bound ISO timestamp.',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: `
+          query GetTabularSyncSummary(
+            $limit: Int
+            $tableIdentifier: String
+            $status: String
+            $mode: String
+            $windowPreset: String
+            $createdAfter: String
+            $createdBefore: String
+          ) {
+            tabularSyncSummary(
+              limit: $limit
+              tableIdentifier: $tableIdentifier
+              status: $status
+              mode: $mode
+              windowPreset: $windowPreset
+              createdAfter: $createdAfter
+              createdBefore: $createdBefore
+            ) {
+              tableIdentifier
+              mode
+              eventCount
+              successCount
+              failureCount
+              successRate
+              lastCreatedAt
+              latestErrorMessage
+            }
+          }
+        `,
+      },
+    }
+    this.register(getTabularSyncSummaryTool)
+
+    const resyncTabularSyncTableTool: McpToolDefinition = {
+      name: 'resync-tabular-sync-table',
+      description: 'Trigger an immediate resync for one table identifier and return updated sync status.',
+      operationType: 'mutation',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableIdentifier'],
+        properties: {
+          tableIdentifier: {
+            type: 'string',
+            description: 'Table identifier to resync immediately.',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation ResyncTabularSyncTable($tableIdentifier: String!) {
+            resyncTabularSyncTable(tableIdentifier: $tableIdentifier) {
+              success
+              tableIdentifier
+              status {
+                enabled
+                configSource
+                syncDebounceMs
+                pendingCount
+                pendingTables
+                totalNotifications
+                totalExecutions
+                totalSucceeded
+                totalFailed
+                lastSuccessAt
+                lastFailureAt
+                recentFailures {
+                  tableIdentifier
+                  mode
+                  error
+                  occurredAt
+                }
+                persistedEvents {
+                  id
+                  tableIdentifier
+                  mode
+                  status
+                  errorMessage
+                  createdAt
+                }
+              }
+              errors {
+                message
+                code
+              }
+            }
+          }
+        `,
+      },
+    }
+    this.register(resyncTabularSyncTableTool)
 
     // ========== BACKUP & RESTORE TOOLS ==========
 

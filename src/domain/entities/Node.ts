@@ -1,5 +1,6 @@
 import type { NodeId, TableId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
+import { parseSafeJson, stringifySafeJson, type SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export class Node {
   constructor(
@@ -8,15 +9,26 @@ export class Node {
     private readonly content: string,
     private readonly title: string | null,
     private readonly description: string | null,
+    private readonly metadata: string | null,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
   ) {
     this.validateContent(content)
     this.validateTitle(title)
+    this.validateMetadata(metadata)
   }
 
-  static create(tableId: TableId, content: string, title?: string, description?: string): Node {
-    return new Node(null as any as NodeId, tableId, content, title || null, description || null, new Date(), new Date())
+  static create(tableId: TableId, content: string, title?: string, description?: string, metadata?: unknown): Node {
+    return new Node(
+      '' as NodeId,
+      tableId,
+      content,
+      title || null,
+      description || null,
+      stringifySafeJson(metadata),
+      new Date(),
+      new Date(),
+    )
   }
 
   static fromDatabase(
@@ -25,10 +37,21 @@ export class Node {
     content: string,
     title: string | null,
     description: string | null,
-    createdAt: Date,
-    updatedAt: Date,
+    metadataOrCreatedAt: string | null | Date,
+    createdAtOrUpdatedAt: Date,
+    updatedAtMaybe?: Date,
   ): Node {
-    return new Node(id as NodeId, tableId as TableId, content, title, description, createdAt, updatedAt)
+    const metadata = metadataOrCreatedAt instanceof Date ? null : metadataOrCreatedAt
+    const createdAt = metadataOrCreatedAt instanceof Date ? metadataOrCreatedAt : createdAtOrUpdatedAt
+    const updatedAt = metadataOrCreatedAt instanceof Date ? createdAtOrUpdatedAt : updatedAtMaybe
+
+    if (!updatedAt) {
+      throw new DomainException('Updated timestamp is required when restoring a node from storage', {
+        code: 'DOMAIN_ERROR',
+      })
+    }
+
+    return new Node(id as NodeId, tableId as TableId, content, title, description, metadata, createdAt, updatedAt)
   }
 
   private validateContent(content: string): void {
@@ -36,8 +59,8 @@ export class Node {
       throw new DomainException('Node content cannot be empty', { code: 'DOMAIN_ERROR' })
     }
 
-    if (content.length > 1000) {
-      throw new DomainException('Node content cannot exceed 1000 characters', {
+    if (content.length > 20000) {
+      throw new DomainException('Node content cannot exceed 20000 characters', {
         code: 'DOMAIN_ERROR',
       })
     }
@@ -46,6 +69,18 @@ export class Node {
   private validateTitle(title: string | null): void {
     if (title && title.length > 255) {
       throw new DomainException('Node title cannot exceed 255 characters', { code: 'DOMAIN_ERROR' })
+    }
+  }
+
+  private validateMetadata(metadata: string | null): void {
+    if (!metadata) {
+      return
+    }
+
+    try {
+      parseSafeJson(metadata)
+    } catch {
+      throw new DomainException('Node metadata must be valid JSON', { code: 'DOMAIN_ERROR' })
     }
   }
 
@@ -69,6 +104,14 @@ export class Node {
     return this.description
   }
 
+  getMetadata(): string | null {
+    return this.metadata
+  }
+
+  getParsedMetadata(): SafeJsonValue | null {
+    return parseSafeJson(this.metadata)
+  }
+
   getCreatedAt(): Date {
     return this.createdAt
   }
@@ -79,16 +122,29 @@ export class Node {
 
   updateTitle(title: string | null): Node {
     this.validateTitle(title)
-    return new Node(this.id, this.tableId, this.content, title, this.description, this.createdAt, new Date())
+    return new Node(this.id, this.tableId, this.content, title, this.description, this.metadata, this.createdAt, new Date())
   }
 
   updateDescription(description: string | null): Node {
-    return new Node(this.id, this.tableId, this.content, this.title, description, this.createdAt, new Date())
+    return new Node(this.id, this.tableId, this.content, this.title, description, this.metadata, this.createdAt, new Date())
   }
 
   updateContent(content: string): Node {
     this.validateContent(content)
-    return new Node(this.id, this.tableId, content, this.title, this.description, this.createdAt, new Date())
+    return new Node(this.id, this.tableId, content, this.title, this.description, this.metadata, this.createdAt, new Date())
+  }
+
+  updateMetadata(metadata: unknown): Node {
+    return new Node(
+      this.id,
+      this.tableId,
+      this.content,
+      this.title,
+      this.description,
+      stringifySafeJson(metadata),
+      this.createdAt,
+      new Date(),
+    )
   }
 
   toDatabase(): {
@@ -97,6 +153,7 @@ export class Node {
     content: string
     title: string | null
     description: string | null
+    metadata: string | null
     created_at: string
     updated_at: string
   } {
@@ -106,6 +163,7 @@ export class Node {
       content: this.content,
       title: this.title,
       description: this.description,
+      metadata: this.metadata,
       created_at: this.createdAt.toISOString(),
       updated_at: this.updatedAt.toISOString(),
     }

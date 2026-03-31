@@ -21,7 +21,10 @@ export class SqliteConnection {
     if (!this.db) {
       this.connect()
     }
-    return this.db!
+    if (!this.db) {
+      throw new DatabaseException('Database connection could not be established')
+    }
+    return this.db
   }
 
   private connect(): void {

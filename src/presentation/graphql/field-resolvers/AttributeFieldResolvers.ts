@@ -5,6 +5,22 @@ import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeT
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
+type EmptyResolverArgs = Record<string, never>
+
+interface AttributeFlagParent extends AttributeParent {
+  required?: boolean
+  searchable?: boolean
+  metadata?: {
+    searchable?: boolean
+  }
+}
+
+interface NodeAttributeParent {
+  id: string
+  attributeId: string
+  value: unknown
+}
+
 export class AttributeFieldResolvers extends BaseResolver {
   protected logger: ILogger
 
@@ -18,14 +34,16 @@ export class AttributeFieldResolvers extends BaseResolver {
     this.logger = logger
   }
 
-  async attributeType(parent: AttributeParent, _args?: any, _context?: GraphQLContext) {
+  async attributeType(parent: AttributeParent, _args?: EmptyResolverArgs, context?: GraphQLContext) {
     try {
       this.logger.debug(`Resolving field: Attribute.attributeType`, {
         attributeId: parent.id,
         attributeTypeId: parent.attributeTypeId,
       })
 
-      const attributeType = await this.attributeTypeRepository.findById(parent.attributeTypeId)
+      const attributeType = await this.withRequestCache(context, 'attributeTypeById', parent.attributeTypeId, () =>
+        this.attributeTypeRepository.findById(parent.attributeTypeId),
+      )
 
       if (!attributeType) {
         this.logger.warn('AttributeType not found for Attribute', {
@@ -97,14 +115,16 @@ export class AttributeFieldResolvers extends BaseResolver {
     }
   }
 
-  async table(parent: AttributeParent, _args?: any, _context?: GraphQLContext) {
+  async table(parent: AttributeParent, _args?: EmptyResolverArgs, context?: GraphQLContext) {
     try {
       this.logger.debug(`Resolving field: Attribute.table`, {
         attributeId: parent.id,
         tableId: parent.tableId,
       })
 
-      const table = await this.tableRepository.findById(parent.tableId)
+      const table = await this.withRequestCache(context, 'tableById', parent.tableId, () =>
+        this.tableRepository.findById(parent.tableId),
+      )
 
       if (!table) {
         this.logger.warn('Table not found for Attribute', {
@@ -155,14 +175,32 @@ export class AttributeFieldResolvers extends BaseResolver {
     }
   }
 
-  async nodeAttribute_attribute_field(parent: any, _args?: any, _context?: GraphQLContext) {
+  async required(parent: AttributeFlagParent, _args?: EmptyResolverArgs, _context?: GraphQLContext): Promise<boolean> {
+    return parent.required ?? parent.isRequired ?? false
+  }
+
+  async searchable(
+    parent: AttributeFlagParent,
+    _args?: EmptyResolverArgs,
+    _context?: GraphQLContext,
+  ): Promise<boolean> {
+    return parent.searchable ?? parent.metadata?.searchable ?? false
+  }
+
+  async nodeAttribute_attribute_field(
+    parent: NodeAttributeParent,
+    _args?: EmptyResolverArgs,
+    context?: GraphQLContext,
+  ) {
     try {
       this.logger.debug(`Resolving field: NodeAttribute.attribute`, {
         nodeAttributeId: parent.id,
         attributeId: parent.attributeId,
       })
 
-      const attribute = await this.attributeRepository.findById(parent.attributeId)
+      const attribute = await this.withRequestCache(context, 'attributeById', parent.attributeId, () =>
+        this.attributeRepository.findById(parent.attributeId),
+      )
 
       if (!attribute) {
         this.logger.warn('Attribute not found for NodeAttribute', {
@@ -183,7 +221,9 @@ export class AttributeFieldResolvers extends BaseResolver {
       }
 
       // Get the associated AttributeType to resolve the name
-      const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
+      const attributeType = await this.withRequestCache(context, 'attributeTypeById', attribute.getAttributeTypeId(), () =>
+        this.attributeTypeRepository.findById(attribute.getAttributeTypeId()),
+      )
 
       // Transform the domain entity to a GraphQL-compatible object
       const graphqlAttribute = {
@@ -227,7 +267,11 @@ export class AttributeFieldResolvers extends BaseResolver {
   }
 
   // Field resolver for NodeAttribute formattedValue field
-  async nodeAttribute_formattedValue_field(parent: any, _args?: any, _context?: GraphQLContext): Promise<string> {
+  async nodeAttribute_formattedValue_field(
+    parent: NodeAttributeParent,
+    _args?: EmptyResolverArgs,
+    _context?: GraphQLContext,
+  ): Promise<string> {
     try {
       this.logger.debug(`Resolving field: NodeAttribute.formattedValue`, {
         nodeAttributeId: parent.id,

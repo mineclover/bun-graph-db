@@ -405,7 +405,8 @@ export class FormatMapperService {
           } else if (sourceField === 'content') {
             patch.content = String(transformedValue)
           } else {
-            patch.attributes![sourceField] = transformedValue
+            patch.attributes = patch.attributes || {}
+            patch.attributes[sourceField] = transformedValue
           }
 
           stats.mappedFields++
@@ -581,8 +582,11 @@ export class FormatMapperService {
     let current: Record<string, unknown> = obj
 
     for (let i = 0; i < segments.length - 1; i++) {
-      const segment = segments[i]!
-      const nextSegment = segments[i + 1]!
+      const segment = segments[i]
+      const nextSegment = segments[i + 1]
+      if (!segment || !nextSegment) {
+        return
+      }
 
       if (segment.type === 'property') {
         if (current[segment.key] === undefined) {

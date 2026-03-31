@@ -18,44 +18,41 @@ export class RelationFieldResolvers extends BaseResolver {
     this.logger = logger
   }
 
-  async table(parent: NodeRelationParent, _args?: any, _context?: GraphQLContext) {
+  async table(parent: NodeRelationParent, _args?: Record<string, never>, context?: GraphQLContext) {
     return this.handleFieldResolution(
-      async () => {
-        return await this.tableRepository.findById(parent.tableId)
-      },
+      async () => await this.withRequestCache(context, 'tableById', parent.tableId, () => this.tableRepository.findById(parent.tableId)),
       'table',
       'NodeRelation',
       { relationId: parent.id, tableId: parent.tableId },
     )
   }
 
-  async sourceNode(parent: NodeRelationParent, _args?: any, _context?: GraphQLContext) {
+  async sourceNode(parent: NodeRelationParent, _args?: Record<string, never>, context?: GraphQLContext) {
     return this.handleFieldResolution(
-      async () => {
-        return await this.nodeRepository.findById(parent.sourceNodeId)
-      },
+      async () =>
+        await this.withRequestCache(context, 'nodeById', parent.sourceNodeId, () => this.nodeRepository.findById(parent.sourceNodeId)),
       'sourceNode',
       'NodeRelation',
       { relationId: parent.id, sourceNodeId: parent.sourceNodeId },
     )
   }
 
-  async targetNode(parent: NodeRelationParent, _args?: any, _context?: GraphQLContext) {
+  async targetNode(parent: NodeRelationParent, _args?: Record<string, never>, context?: GraphQLContext) {
     return this.handleFieldResolution(
-      async () => {
-        return await this.nodeRepository.findById(parent.targetNodeId)
-      },
+      async () =>
+        await this.withRequestCache(context, 'nodeById', parent.targetNodeId, () => this.nodeRepository.findById(parent.targetNodeId)),
       'targetNode',
       'NodeRelation',
       { relationId: parent.id, targetNodeId: parent.targetNodeId },
     )
   }
 
-  async relationType(parent: NodeRelationParent, _args?: any, _context?: GraphQLContext) {
+  async relationType(parent: NodeRelationParent, _args?: Record<string, never>, context?: GraphQLContext) {
     return this.handleFieldResolution(
-      async () => {
-        return await this.relationTypeRepository.findById(parent.relationTypeId)
-      },
+      async () =>
+        await this.withRequestCache(context, 'relationTypeById', parent.relationTypeId, () =>
+          this.relationTypeRepository.findById(parent.relationTypeId),
+        ),
       'relationType',
       'NodeRelation',
       { relationId: parent.id, relationTypeId: parent.relationTypeId },

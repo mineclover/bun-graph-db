@@ -232,9 +232,10 @@ export class SqliteNodeAttributeRepository
     }
   }
 
-  async setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: any): Promise<NodeAttribute> {
+  async setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: unknown): Promise<NodeAttribute> {
     try {
       const existing = await this.findByNodeIdAndAttributeId(nodeId, attributeId)
+      const serializedValue = typeof value === 'string' ? value : JSON.stringify(value)
 
       if (existing) {
         const existingId = existing.getId()
@@ -245,14 +246,14 @@ export class SqliteNodeAttributeRepository
           existingId,
           existing.getNodeId(),
           existing.getAttributeId(),
-          value,
+          serializedValue,
           existing.getCreatedAt(),
           new Date(),
         )
         await this.update(updated)
         return updated
       } else {
-        const newNodeAttribute = NodeAttribute.create(nodeId, attributeId, value)
+        const newNodeAttribute = NodeAttribute.create(nodeId, attributeId, serializedValue)
         await this.save(newNodeAttribute)
 
         // After saving, fetch the saved entity with the database-assigned ID

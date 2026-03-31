@@ -15,7 +15,7 @@ export enum RelationDepth {
 
 export interface RelationFilter {
   relationTypes?: string[]
-  properties?: Record<string, any>
+  properties?: Record<string, unknown>
   direction: RelationDirection
   depth: RelationDepth
 }
@@ -35,7 +35,7 @@ export interface RelationAggregation {
 }
 
 export interface GraphQuery {
-  nodeFilters?: Record<string, any>
+  nodeFilters?: Record<string, unknown>
   relationFilters?: RelationFilter[]
   pathQueries?: PathQuery[]
   aggregations?: RelationAggregation[]
@@ -50,7 +50,7 @@ export class GraphQueryBuilder {
     return new GraphQueryBuilder()
   }
 
-  addNodeFilter(field: string, value: any): this {
+  addNodeFilter(field: string, value: unknown): this {
     if (!this.query.nodeFilters) {
       this.query.nodeFilters = {}
     }

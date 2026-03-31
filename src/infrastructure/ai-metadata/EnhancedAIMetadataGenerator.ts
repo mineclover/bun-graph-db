@@ -1,4 +1,11 @@
-import type { GraphQLSchemaIntrospector, QueryPattern } from './GraphQLSchemaIntrospector'
+import type {
+  GraphQLSchemaIntrospector,
+  MutationFieldDefinition,
+  QueryFieldDefinition,
+  QueryPattern,
+  TypeDefinition,
+  TypeInfo,
+} from './GraphQLSchemaIntrospector'
 
 /**
  * Enhanced AI Metadata Generator
@@ -78,6 +85,7 @@ export class EnhancedAIMetadataGenerator {
    */
   private generateValidCommonQueries(queryPatterns: QueryPattern[], tableAttributes: TableAttribute[]): CommonQuery[] {
     const queries: CommonQuery[] = []
+    const searchableAttributes = tableAttributes.filter((attribute) => this.isSearchableAttribute(attribute))
 
     // Basic node search (schema-compliant)
     const searchPattern = queryPatterns.find((p) => p.operationName === 'searchNodes')
@@ -87,20 +95,47 @@ export class EnhancedAIMetadataGenerator {
         description: 'Search nodes using actual GraphQL schema',
         example: `searchNodes(filter: { searchTerm: "keyword", tableId: "$tableId" }, pagination: { limit: 10 })`,
         schemaCompliant: true,
-        parameters: searchPattern.parameters,
+        parameters: this.mapPatternParameters(searchPattern),
+      })
+
+      queries.push({
+        pattern: 'Paginated node listing',
+        description: 'List nodes from a table with explicit pagination',
+        example: 'searchNodes(filter: { tableId: "$tableId" }, pagination: { limit: 20, offset: 0 })',
+        schemaCompliant: true,
+        parameters: this.mapPatternParameters(searchPattern),
+      })
+
+      queries.push({
+        pattern: 'Sorted node listing',
+        description: 'List nodes from a table with sorting applied',
+        example:
+          'searchNodes(filter: { tableId: "$tableId" }, pagination: { limit: 20, offset: 0 }, sort: [{ field: "createdAt", direction: "DESC" }])',
+        schemaCompliant: true,
+        parameters: this.mapPatternParameters(searchPattern),
       })
     }
 
     // Attribute-based filtering
-    if (tableAttributes.length > 0) {
-      const firstAttribute = tableAttributes[0]
+    if (searchPattern && searchableAttributes.length > 0) {
+      const firstAttribute = searchableAttributes[0]
       if (firstAttribute) {
         queries.push({
           pattern: 'Attribute-based filtering',
           description: 'Filter nodes by specific attributes',
-          example: `searchNodes(filter: { tableId: "$tableId", attributeFilters: [{ attributeId: "${firstAttribute.identifier}", value: "example" }] })`,
+          example: `searchNodes(filter: { tableId: "$tableId", attributeFilters: [{ identifier: "${firstAttribute.identifier}", value: "example" }] })`,
           schemaCompliant: true,
-          parameters: searchPattern?.parameters || [],
+          parameters: this.mapPatternParameters(searchPattern),
+        })
+      }
+
+      for (const attribute of searchableAttributes.slice(0, 3)) {
+        queries.push({
+          pattern: `Search by ${attribute.identifier}`,
+          description: `Find records using the ${attribute.identifier} field`,
+          example: `searchNodes(filter: { tableId: "$tableId", attributeFilters: [{ identifier: "${attribute.identifier}", value: "example" }] }, pagination: { limit: 10, offset: 0 })`,
+          schemaCompliant: true,
+          parameters: this.mapPatternParameters(searchPattern),
         })
       }
     }
@@ -113,11 +148,20 @@ export class EnhancedAIMetadataGenerator {
         description: 'Create a new node with proper schema compliance',
         example: `createNode(input: { tableId: "$tableId", title: "Example", content: "Content" })`,
         schemaCompliant: true,
-        parameters: createPattern.parameters,
+        parameters: this.mapPatternParameters(createPattern),
       })
     }
 
     return queries
+  }
+
+  private mapPatternParameters(pattern: QueryPattern): CommonQuery['parameters'] {
+    return pattern.parameters.map((parameter) => ({
+      name: parameter.name,
+      type: typeof parameter.type === 'string' ? parameter.type : parameter.type.name || parameter.type.kind,
+      description: parameter.description,
+      required: typeof parameter.type === 'string' ? undefined : parameter.type.isRequired,
+    }))
   }
 
   /**
@@ -251,6 +295,10 @@ export class EnhancedAIMetadataGenerator {
     return attributes.filter((attr) => attr.attributeType.dataType === 'string').map((attr) => attr.identifier)
   }
 
+  private isSearchableAttribute(attribute: TableAttribute): boolean {
+    return ['string', 'text', 'email', 'url', 'select', 'multiselect'].includes(attribute.attributeType.dataType)
+  }
+
   private assessComplexity(attributes: TableAttribute[], patterns: QueryPattern[]): 'simple' | 'moderate' | 'complex' {
     const attributeComplexity = attributes.length > 5 ? 'high' : attributes.length > 2 ? 'medium' : 'simple'
     const patternComplexity = patterns.some((p) => p.complexity === 'complex') ? 'complex' : 'medium'
@@ -260,7 +308,10 @@ export class EnhancedAIMetadataGenerator {
     return 'simple'
   }
 
-  private formatTypeInfo(typeInfo: any): string {
+  private formatTypeInfo(typeInfo: TypeInfo | null | undefined): string {
+    if (!typeInfo) {
+      return 'Unknown'
+    }
     if (typeInfo.kind === 'NON_NULL' && typeInfo.ofType) {
       return `${this.formatTypeInfo(typeInfo.ofType)}!`
     }
@@ -282,9 +333,9 @@ export interface EnhancedAIMetadata {
 
     // Enhanced schema integration
     graphqlSchema: {
-      queries: any[]
-      mutations: any[]
-      types: any[]
+      queries: QueryFieldDefinition[]
+      mutations: MutationFieldDefinition[]
+      types: TypeDefinition[]
     }
     actualParameters: Record<string, ParameterDefinition[]>
     schemaCompliantExamples: Record<string, string>
@@ -315,7 +366,12 @@ export interface CommonQuery {
   description: string
   example: string
   schemaCompliant: boolean
-  parameters: any[]
+  parameters: Array<{
+    name: string
+    type: string
+    description?: string
+    required?: boolean
+  }>
 }
 
 export interface TemplateRecommendation {
@@ -325,14 +381,14 @@ export interface TemplateRecommendation {
   estimatedComplexity: number
   requiredParameters: string[]
   optionalParameters: string[]
-  schemaPattern: any
+  schemaPattern: QueryPattern
 }
 
 export interface WorkingExample {
   name: string
   description: string
   query: string
-  variables: Record<string, any>
+  variables: Record<string, unknown>
   expectedResult: string
   verified: boolean
   lastTested: string
@@ -343,7 +399,7 @@ export interface ParameterDefinition {
   type: string
   required: boolean
   description: string
-  defaultValue?: any
+  defaultValue?: unknown
 }
 
 export interface AttributeInfo {

@@ -139,6 +139,7 @@ async function initializeAppSchema(db: Database): Promise<void> {
         content TEXT NOT NULL,
         title TEXT,
         description TEXT,
+        metadata TEXT,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,

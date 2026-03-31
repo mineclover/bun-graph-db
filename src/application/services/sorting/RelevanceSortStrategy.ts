@@ -109,7 +109,7 @@ export class RelevanceSortStrategy extends SortStrategy {
       return { sqlClause: '', parameters: [] }
     }
 
-    const parameters: any[] = []
+    const parameters: unknown[] = []
     const matchCases: string[] = []
 
     searchTerms.forEach((term) => {
@@ -151,7 +151,7 @@ export class RelevanceSortStrategy extends SortStrategy {
       return { sqlClause: '', parameters: [] }
     }
 
-    const parameters: any[] = []
+    const parameters: unknown[] = []
     const fuzzyScores: string[] = []
 
     searchTerms.forEach((term) => {
@@ -187,7 +187,7 @@ export class RelevanceSortStrategy extends SortStrategy {
     }
 
     // Simplified TF-IDF approach using SQLite functions
-    const parameters: any[] = []
+    const parameters: unknown[] = []
     const termScores: string[] = []
 
     searchTerms.forEach((term) => {

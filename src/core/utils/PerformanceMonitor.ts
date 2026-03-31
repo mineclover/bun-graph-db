@@ -199,7 +199,10 @@ export class PerformanceMonitor {
       this.metrics.set(operation, [])
     }
 
-    const operationMetrics = this.metrics.get(operation)!
+    const operationMetrics = this.metrics.get(operation)
+    if (!operationMetrics) {
+      return
+    }
     operationMetrics.push(metric)
 
     // Enforce retention limit
@@ -424,7 +427,10 @@ export function measured(operationName?: string) {
     propertyKey: string,
     descriptor: TypedPropertyDescriptor<T>,
   ): TypedPropertyDescriptor<T> => {
-    const originalMethod = descriptor.value!
+    const originalMethod = descriptor.value
+    if (!originalMethod) {
+      return descriptor
+    }
     const name = operationName || `${target.constructor.name}.${propertyKey}`
 
     descriptor.value = async function (this: unknown, ...args: unknown[]) {

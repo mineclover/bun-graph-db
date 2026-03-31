@@ -3,7 +3,9 @@
  * Starts isolated GraphQL server with test database for each test suite
  */
 
+import type { GraphQLExecutionResult, GraphQLVariables } from '../../src/core/types/GraphQLTypes.js'
 import { spawn } from 'bun'
+import { createServer } from 'node:net'
 import { createTestEnvironment, type TestEnvironment } from './test-database-factory'
 
 export interface TestGraphQLServer {
@@ -13,9 +15,19 @@ export interface TestGraphQLServer {
   cleanup: () => Promise<void>
 }
 
+export type GraphQLRequestHelper = <TData = unknown>(
+  query: string,
+  variables?: GraphQLVariables,
+) => Promise<GraphQLExecutionResult<TData>>
+
 // Module state for GraphQL test server management
 const servers: Map<string, TestGraphQLServer> = new Map()
-let portCounter = 5500 // Start from 5500 within test range (5000-5999)
+const reservedPorts = new Set<number>()
+const TEST_PORT_START = 5500
+const TEST_PORT_END = 5999
+const PORT_BLOCK_SIZE = 20
+const PORT_BLOCK_COUNT = Math.floor((TEST_PORT_END - TEST_PORT_START + 1) / PORT_BLOCK_SIZE)
+let nextPort = getInitialPortForProcess()
 
 /**
  * Start GraphQL server with isolated database for test suite
@@ -29,11 +41,8 @@ export async function startServerForSuite(suiteName: string): Promise<TestGraphQ
   // Create isolated database
   const database = await createTestEnvironment(suiteName)
 
-  // Assign unique port within test range (5000-5999)
-  const port = portCounter++
-  if (port > 5999) {
-    throw new Error('Test port range exhausted (5500-5999). Too many concurrent test servers.')
-  }
+  // Assign a machine-wide free port within the test range.
+  const port = await allocatePort()
   const url = `http://localhost:${port}/graphql`
 
   // Start server with custom database path
@@ -50,7 +59,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestGraphQ
 
   // Wait for server to be ready
   try {
-    await waitForServer(url, 10000) // 10 second timeout
+    await waitForServer(url, 60000) // 60 second timeout for long serial test lanes
   } catch (error) {
     // Capture server output for debugging
     const stdout = await new Response(serverProcess.stdout).text()
@@ -81,6 +90,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestGraphQ
 
       // Remove from registry
       servers.delete(suiteName)
+      reservedPorts.delete(port)
     },
   }
 
@@ -129,6 +139,50 @@ async function waitForServer(url: string, timeoutMs: number): Promise<void> {
   throw new Error(`GraphQL server did not become ready within ${timeoutMs}ms`)
 }
 
+async function allocatePort(): Promise<number> {
+  for (let i = 0; i <= TEST_PORT_END - TEST_PORT_START; i++) {
+    const candidate = TEST_PORT_START + ((nextPort - TEST_PORT_START + i) % (TEST_PORT_END - TEST_PORT_START + 1))
+    if (reservedPorts.has(candidate)) {
+      continue
+    }
+
+    if (await isPortAvailable(candidate)) {
+      reservedPorts.add(candidate)
+      nextPort = candidate + 1 > TEST_PORT_END ? TEST_PORT_START : candidate + 1
+      return candidate
+    }
+  }
+
+  throw new Error('Test port range exhausted (5500-5999). Too many concurrent test servers.')
+}
+
+function getInitialPortForProcess(): number {
+  const processBlock = (process.pid % PORT_BLOCK_COUNT) * PORT_BLOCK_SIZE
+  return TEST_PORT_START + processBlock
+}
+
+async function isPortAvailable(port: number): Promise<boolean> {
+  return await new Promise((resolve) => {
+    const server = createServer()
+    server.unref()
+    server.once('error', () => resolve(false))
+    server.listen(port, '127.0.0.1', () => {
+      server.close(() => resolve(true))
+    })
+  })
+}
+
+/**
+ * Stop all test servers
+ */
+export async function stopAllServers(): Promise<void> {
+  const cleanupPromises = Array.from(servers.values()).map((server) => server.cleanup())
+  await Promise.all(cleanupPromises)
+  servers.clear()
+  reservedPorts.clear()
+  nextPort = getInitialPortForProcess()
+}
+
 /**
  * Get existing server for suite
  */
@@ -147,15 +201,6 @@ export async function stopServerForSuite(suiteName: string): Promise<void> {
 }
 
 /**
- * Stop all test servers
- */
-export async function stopAllServers(): Promise<void> {
-  const cleanupPromises = Array.from(servers.values()).map((server) => server.cleanup())
-  await Promise.all(cleanupPromises)
-  servers.clear()
-}
-
-/**
  * Create GraphQL request helper for test suite
  */
 export function createRequestHelper(suiteName: string) {
@@ -164,7 +209,7 @@ export function createRequestHelper(suiteName: string) {
     throw new Error(`No server found for suite: ${suiteName}`)
   }
 
-  return async function graphqlRequest(query: string, variables?: Record<string, any>) {
+  return async function graphqlRequest<TData = unknown>(query: string, variables?: GraphQLVariables) {
     const response = await fetch(server.url, {
       method: 'POST',
       headers: {
@@ -176,7 +221,7 @@ export function createRequestHelper(suiteName: string) {
       }),
     })
 
-    const result = await response.json()
+    const result = (await response.json()) as GraphQLExecutionResult<TData>
 
     if (!response.ok) {
       console.error('GraphQL Request Failed:', result)
@@ -192,6 +237,14 @@ export function createRequestHelper(suiteName: string) {
 
     return result
   }
+}
+
+export function requireGraphQLData<TData>(result: GraphQLExecutionResult<TData>): TData {
+  if (result.data === undefined) {
+    throw new Error('GraphQL response did not include data')
+  }
+
+  return result.data
 }
 
 // Global cleanup on process exit

@@ -1,13 +1,26 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { type CreateRelationInput, CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
+import type { Node } from '@/domain/entities/Node.js'
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
+import type { RelationType } from '@/domain/entities/RelationType.js'
+import type { Table } from '@/domain/entities/Table.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { createTestNode, createTestNodeRelation, createTestRelationType, createTestTable } from './test-helpers.js'
+
+function emptyPage<T>() {
+  return {
+    data: [] as T[],
+    nodes: [] as T[],
+    totalCount: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  }
+}
 
 describe('CreateRelationUseCase', () => {
   let useCase: CreateRelationUseCase
@@ -30,14 +43,29 @@ describe('CreateRelationUseCase', () => {
     mockNodeRelationRepository = {
       save: mock(async (relation: NodeRelation) => relation),
       findById: mock(async () => null),
+      findByTableId: mock(async () => emptyPage<NodeRelation>()),
+      findBySourceNodeIdPaginated: mock(async () => emptyPage<NodeRelation>()),
+      findByTargetNodeIdPaginated: mock(async () => emptyPage<NodeRelation>()),
       findByExternalIds: mock(async () => null),
+      findBySourceExternalId: mock(async () => emptyPage<NodeRelation>()),
+      findByTargetExternalId: mock(async () => emptyPage<NodeRelation>()),
+      findByRelationType: mock(async () => emptyPage<NodeRelation>()),
+      findByNodeId: mock(async () => ({ incoming: [], outgoing: [] })),
       findBySourceNodeIdAndRelationType: mock(async () => []),
       findByTargetNodeIdAndRelationType: mock(async () => []),
+      findBySourceNodeId: mock(async () => []),
+      findByTargetNodeId: mock(async () => []),
       exists: mock(async () => false),
       update: mock(async (relation: NodeRelation) => relation),
       delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-    } as any
+      deleteByTableId: mock(async () => {}),
+      deleteBySourceNodeId: mock(async () => {}),
+      deleteByTargetNodeId: mock(async () => {}),
+      count: mock(async () => 0),
+      countBySourceNodeId: mock(async () => 0),
+      countByTargetNodeId: mock(async () => 0),
+      findAll: mock(async () => emptyPage<NodeRelation>()),
+    } as unknown as INodeRelationRepository
 
     mockRelationTypeRepository = {
       save: mock(async (relationType: RelationType) => relationType),
@@ -45,18 +73,32 @@ describe('CreateRelationUseCase', () => {
       findByIdentifier: mock(async () => null),
       update: mock(async (relationType: RelationType) => relationType),
       delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-    } as any
+      findAll: mock(async () => emptyPage<RelationType>()),
+      count: mock(async () => 0),
+      exists: mock(async () => false),
+      saveMany: mock(async () => {}),
+      findByIds: mock(async () => []),
+      deleteMany: mock(async () => {}),
+    } as unknown as IRelationTypeRepository
 
     mockNodeRepository = {
       save: mock(async (node: Node) => node),
       findById: mock(async () => null),
       findByTableIdAndContent: mock(async () => null),
-      findByTableId: mock(async () => ({ data: [], metadata: {} })),
+      findByTableId: mock(async () => emptyPage<Node>()),
       update: mock(async (node: Node) => node),
       delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-    } as any
+      findAll: mock(async () => emptyPage<Node>()),
+      deleteByTableId: mock(async () => {}),
+      exists: mock(async () => false),
+      count: mock(async () => 0),
+      countByTableId: mock(async () => 0),
+      saveMany: mock(async () => {}),
+      findByIds: mock(async () => []),
+      existsByTableIdAndContent: mock(async () => false),
+      executeRawQuery: mock(async () => []),
+      searchByContent: mock(async () => emptyPage<Node>()),
+    } as unknown as INodeRepository
 
     mockTableRepository = {
       save: mock(async (table: Table) => table),
@@ -64,8 +106,13 @@ describe('CreateRelationUseCase', () => {
       findByIdentifier: mock(async () => null),
       update: mock(async (table: Table) => table),
       delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-    } as any
+      findAll: mock(async () => emptyPage<Table>()),
+      count: mock(async () => 0),
+      exists: mock(async () => false),
+      saveMany: mock(async () => {}),
+      findByIds: mock(async () => []),
+      deleteMany: mock(async () => {}),
+    } as unknown as ITableRepository
 
     useCase = new CreateRelationUseCase(
       mockNodeRelationRepository,
@@ -192,7 +239,7 @@ describe('CreateRelationUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockRelationTypeRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
@@ -213,8 +260,8 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
@@ -235,8 +282,8 @@ describe('CreateRelationUseCase', () => {
 
       const sourceNode = createTestNode('node-1', 'table-1', 'Source Node')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(null)
 
       const promise = useCase.execute(input)
@@ -258,8 +305,8 @@ describe('CreateRelationUseCase', () => {
 
       const node = createTestNode('node-1', 'table-1', 'Test Node')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findById = mock(async () => node)
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
@@ -278,8 +325,8 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findByTableIdAndContent = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
@@ -314,8 +361,8 @@ describe('CreateRelationUseCase', () => {
         'rel-type-1',
       )
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [existingRelation])
 
@@ -338,8 +385,8 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findByTableIdAndContent = mock(async () => null)
       mockNodeRelationRepository.exists = mock(async () => true)
 
@@ -368,8 +415,8 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
       mockNodeRelationRepository.findByExternalIds = mock(async () =>
@@ -409,8 +456,8 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findByTableIdAndContent = mock(async () => null)
       mockNodeRelationRepository.exists = mock(async () => false)
       mockNodeRelationRepository.findByExternalIds = mock(async () =>
@@ -451,8 +498,8 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node Content')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findByTableIdAndContent = mock()
         .mockResolvedValueOnce(sourceNode)
         .mockResolvedValueOnce(targetNode)
@@ -490,8 +537,8 @@ describe('CreateRelationUseCase', () => {
 
       const saveError = new Error('Database connection failed')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
       mockNodeRelationRepository.save = mock(async () => {
@@ -524,8 +571,8 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
       mockNodeRelationRepository.findByExternalIds = mock(async () => null)
@@ -551,8 +598,8 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockRelationTypeRepository.findById = mock(async () => relationType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockRelationTypeRepository.findById = mock(async () => relationType)
       mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
       mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
       mockNodeRelationRepository.findByExternalIds = mock(async () =>

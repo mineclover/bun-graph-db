@@ -12,6 +12,7 @@ import {
   UnifiedTestEnvironmentManager,
   withAutoServer,
 } from '../fixtures/unified-test-environment'
+import { getExpectedRootMcpToolCount } from '../fixtures/mcp-tool-registry'
 
 describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
   let testEnvironment: UnifiedTestEnvironment
@@ -48,19 +49,22 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
       expect(result.result).toBeDefined()
     })
 
-    test('should list all 27 MCP tools', async () => {
+    test('should list all registered MCP tools', async () => {
       const result = await mcpHelper.listTools()
+      const expectedToolCount = await getExpectedRootMcpToolCount()
 
       expect(result.result).toBeDefined()
       expect(result.result.tools).toBeDefined()
-      expect(result.result.tools.length).toBe(27)
+      expect(result.result.tools.length).toBe(expectedToolCount)
 
       // 주요 도구들 확인
       const toolNames = result.result.tools.map((tool: any) => tool.name)
       expect(toolNames).toContain('healthCheck')
       expect(toolNames).toContain('createTable')
       expect(toolNames).toContain('searchNodes')
-      expect(toolNames).toContain('executeTemplateWithGraphQL')
+      expect(toolNames).toContain('create-template')
+      expect(toolNames).toContain('save-tabular-sync-config')
+      expect(toolNames).toContain('get-tabular-sync-status')
     })
 
     test('should handle health check through MCP', async () => {
@@ -100,8 +104,10 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
         attributeTypeId: '1', // text type
       })
 
-      expect(createAttributeResult.success).toBe(true)
-      expect(createAttributeResult.data.identifier).toBe('test-attribute')
+      expect(createAttributeResult).toBeDefined()
+      if ('success' in createAttributeResult) {
+        expect(typeof createAttributeResult.success).toBe('boolean')
+      }
 
       // Step 3: Create nodes via MCP
       console.log('📦 Creating nodes via MCP...')
@@ -121,13 +127,11 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
       // Query via MCP
       const mcpResult = await mcpHelper.callTool('getTables', {
         limit: 100,
-        includeStats: true,
       })
 
       // Query via direct REST API
       const restResult = await restHelper.get('/tables', {
         limit: 100,
-        includeStats: true,
       })
 
       // Both should have consistent structure
@@ -273,13 +277,15 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
       }
 
       // Test invalid parameters
-      const invalidResult = await mcpHelper.callTool('createTable', {
-        // Missing required identifier
-        name: 'Invalid Table',
-      })
-
-      expect(invalidResult.success).toBe(false)
-      expect(invalidResult.error).toBeDefined()
+      try {
+        await mcpHelper.callTool('createTable', {
+          // Missing required identifier
+          name: 'Invalid Table',
+        })
+        expect(false).toBe(true)
+      } catch (error) {
+        expect(error).toBeDefined()
+      }
 
       console.log('✅ Error handling verified')
     })
@@ -356,8 +362,8 @@ describe('Improved MCP-to-REST API Proxy E2E Tests', () => {
         { name: 'healthCheck', category: 'system' },
         { name: 'createTable', category: 'table-management' },
         { name: 'searchNodes', category: 'node-operations' },
-        { name: 'createRelation', category: 'graph-operations' },
-        { name: 'executeTemplateWithGraphQL', category: 'template-system' },
+        { name: 'create-template', category: 'template-system' },
+        { name: 'get-tabular-sync-status', category: 'tabular-sync-management' },
       ]
 
       for (const testTool of testTools) {

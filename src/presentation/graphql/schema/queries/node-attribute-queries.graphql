@@ -14,9 +14,10 @@ extend type Query {
 
   # Cross-table attribute search - Utilize the relationship between tables
   searchNodesByAttribute(
-    filter: NodeAttributeSearchFilter!
+    filter: NodeAttributeSearchFilter
     pagination: PaginationInput
     sort: [SortInput!]
+    input: SearchNodesByAttributeLegacyInput
   ): NodesConnection!
 
   # Attribute completeness analysis - Schema utilization metrics
@@ -120,6 +121,14 @@ input NodeAttributeSearchFilter {
   tableIds: [ID!]
   attributeFilters: [SingleAttributeFilter!]!
   logicalOperator: LogicalOperator = AND
+}
+
+input SearchNodesByAttributeLegacyInput {
+  tableId: ID!
+  attributeId: ID
+  attributeIdentifier: String
+  value: String!
+  operator: AttributeFilterOperator = EQUALS
 }
 
 input SingleAttributeFilter {

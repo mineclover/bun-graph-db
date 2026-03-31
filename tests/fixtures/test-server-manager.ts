@@ -5,6 +5,7 @@
 
 import type { YogaServerInstance } from 'graphql-yoga'
 import { createYoga } from 'graphql-yoga'
+import { createServer } from 'node:net'
 import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import { McpHttpServer } from '../../src/mcp/http-server/McpHttpServer'
 import { GraphQLSchemaBuilder } from '../../src/presentation/graphql/GraphQLSchemaBuilder'
@@ -22,7 +23,12 @@ export interface TestServerInstance {
 
 // Module-level state for test server instances
 const serverInstances: Map<string, TestServerInstance> = new Map()
-let portCounter = 5500 // Test port range: 5500-5999
+const reservedPorts = new Set<number>()
+const TEST_PORT_START = 5500
+const TEST_PORT_END = 5999
+const PORT_BLOCK_SIZE = 20
+const PORT_BLOCK_COUNT = Math.floor((TEST_PORT_END - TEST_PORT_START + 1) / PORT_BLOCK_SIZE)
+let nextPort = getInitialPortForProcess()
 
 /**
  * Start isolated GraphQL server for test suite
@@ -37,7 +43,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestServer
   const testEnvironment = await createTestEnvironment(`server-${suiteName}`, 'integration')
 
   // Allocate unique port
-  const port = allocatePort()
+  const port = await allocatePort()
 
   // Set database path for this test server
   process.env.DATABASE_PATH = testEnvironment.databasePath
@@ -102,6 +108,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestServer
       server.stop()
       await testEnvironment.cleanup()
       serverInstances.delete(suiteName)
+      reservedPorts.delete(port)
     },
   }
 
@@ -126,7 +133,8 @@ export async function stopAllServers(): Promise<void> {
   const cleanupPromises = Array.from(serverInstances.values()).map((instance) => instance.cleanup())
   await Promise.all(cleanupPromises)
   serverInstances.clear()
-  portCounter = 5500 // Reset port counter
+  reservedPorts.clear()
+  nextPort = getInitialPortForProcess()
 }
 
 /**
@@ -165,11 +173,37 @@ export function createRequestHelper(suiteName: string): (query: string, variable
 /**
  * Allocate unique port for test server
  */
-function allocatePort(): number {
-  if (portCounter > 5999) {
-    throw new Error('Test server port range exhausted (5500-5999)')
+async function allocatePort(): Promise<number> {
+  for (let i = 0; i <= TEST_PORT_END - TEST_PORT_START; i++) {
+    const candidate = TEST_PORT_START + ((nextPort - TEST_PORT_START + i) % (TEST_PORT_END - TEST_PORT_START + 1))
+    if (reservedPorts.has(candidate)) {
+      continue
+    }
+
+    if (await isPortAvailable(candidate)) {
+      reservedPorts.add(candidate)
+      nextPort = candidate + 1 > TEST_PORT_END ? TEST_PORT_START : candidate + 1
+      return candidate
+    }
   }
-  return portCounter++
+
+  throw new Error('Test server port range exhausted (5500-5999)')
+}
+
+function getInitialPortForProcess(): number {
+  const processBlock = (process.pid % PORT_BLOCK_COUNT) * PORT_BLOCK_SIZE
+  return TEST_PORT_START + processBlock
+}
+
+async function isPortAvailable(port: number): Promise<boolean> {
+  return await new Promise((resolve) => {
+    const server = createServer()
+    server.unref()
+    server.once('error', () => resolve(false))
+    server.listen(port, '127.0.0.1', () => {
+      server.close(() => resolve(true))
+    })
+  })
 }
 
 /**

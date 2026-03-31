@@ -15,11 +15,16 @@ type NodeRelation implements Node {
   updatedAt: DateTime!
 
   # Properties
+  fromNodeId: ID
+  toNodeId: ID
+  relationshipType: String!
   properties: JSON
   strength: Float
 
   # Relationships
   table: Table!
+  fromNode: TableNode!
+  toNode: TableNode!
   sourceNode: TableNode!
   targetNode: TableNode!
   relationType: RelationType!
@@ -28,7 +33,7 @@ type NodeRelation implements Node {
 # Input types for relation type operations
 input CreateRelationTypeInput {
   identifier: String!
-  name: String!
+  name: String
   description: String
 }
 
@@ -39,10 +44,13 @@ input UpdateRelationTypeInput {
 
 # Input types for relation operations
 input CreateRelationInput {
-  tableId: ID!
-  sourceNodeId: ID!
-  targetNodeId: ID!
-  relationTypeId: ID!
+  tableId: ID
+  sourceNodeId: ID
+  fromNodeId: ID
+  targetNodeId: ID
+  toNodeId: ID
+  relationTypeId: ID
+  relationshipType: String
   properties: JSON
   strength: Float
   confidence: Float
@@ -104,6 +112,7 @@ type RelatedNodesConnection implements Connection {
   nodes: [TableNode!]!
   relations: [NodeRelation!]!
   totalCount: Int!
+  totalConnections: Int!
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
 }

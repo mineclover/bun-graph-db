@@ -9,7 +9,7 @@
 # 1. 문서화 시스템 개요 - 활성화된 문서 시스템 전체 현황
 query DocumentationSystemOverview {
   # 전체 문서 현황 - 2개에서 31개로 증가
-  searchDocs(
+  usageDocs: searchDocs(
     filter: {
       isActive: true
     }
@@ -36,12 +36,12 @@ query DocumentationSystemOverview {
 # ===================================================================
 # 📋 Variables for Documentation Queries (문서 쿼리용 변수)
 # ===================================================================
-{
-  "tableId": "6",           # Performance test table
-  "productTableId": "1",    # Products table
-  "category": "usage",
-  "searchQuery": "performance testing guide"
-}
+# {
+#   "tableId": "6",
+#   "productTableId": "1",
+#   "category": "usage",
+#   "searchQuery": "performance testing guide"
+# }
 
 # 2. 테이블별 문서 관리 - 카테고리별 문서 체계
 query TableDocumentationManagement($tableId: ID!) {
@@ -83,7 +83,7 @@ query TableDocumentationManagement($tableId: ID!) {
 # 3. 문서 카테고리별 분석 - 체계적인 문서 관리
 query DocumentationCategoryAnalysis {
   # Usage 문서들 - 사용법 가이드 (25개)
-  searchDocs(
+  guideDocs: searchDocs(
     filter: {
       category: usage
       isActive: true
@@ -101,7 +101,7 @@ query DocumentationCategoryAnalysis {
   }
 
   # Guide 문서들 - 상세 가이드 (3개)
-  searchDocs(
+  exampleDocs: searchDocs(
     filter: {
       category: guide
       isActive: true
@@ -118,7 +118,7 @@ query DocumentationCategoryAnalysis {
   }
 
   # Example 문서들 - 실제 예제 (2개)
-  searchDocs(
+  specDocs: searchDocs(
     filter: {
       category: example
       isActive: true

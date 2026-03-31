@@ -58,7 +58,7 @@ export class DocQueries extends BaseResolver {
 
   async getDoc(_: GraphQLParent, args: GetDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
       'getDoc',
     )
@@ -75,7 +75,7 @@ export class DocQueries extends BaseResolver {
 
   async getActiveDoc(_: GraphQLParent, args: GetActiveDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('tableId', 'Table ID'),
         BaseResolver.validationRules.required('category', 'Doc category'),
@@ -126,7 +126,7 @@ export class DocQueries extends BaseResolver {
 
   async getDocVersions(_: GraphQLParent, args: GetDocVersionsArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('tableId', 'Table ID'),
         BaseResolver.validationRules.required('category', 'Doc category'),
@@ -158,7 +158,7 @@ export class DocQueries extends BaseResolver {
 
   async searchDocs(_: GraphQLParent, args: SearchDocsArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('query', 'Search query'),
         BaseResolver.validationRules.nonEmpty('query', 'Search query'),

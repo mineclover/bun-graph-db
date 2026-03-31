@@ -12,9 +12,10 @@ import {
   UnifiedTestEnvironmentManager,
   withAutoServer,
 } from '../fixtures/unified-test-environment'
+import { getExpectedRootMcpToolCount } from '../fixtures/mcp-tool-registry'
 
 describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
-  let testEnvironment: UnifiedTestEnvironment
+  let testEnvironment: UnifiedTestEnvironment | undefined
   let mcpHelper: McpHelper
   let restHelper: RestApiHelper
 
@@ -34,11 +35,11 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
     console.log(`   - GraphQL: ${testEnvironment.server?.url}`)
     console.log(`   - REST API: ${baseUrl}/api`)
     console.log(`   - MCP: ${baseUrl}/mcp`)
-  }, 30000)
+  }, 120000)
 
   afterAll(async () => {
-    await testEnvironment.cleanup()
-  }, 10000)
+    await testEnvironment?.cleanup?.()
+  }, 120000)
 
   describe('MCP Protocol Compliance', () => {
     test('should handle MCP initialize method', async () => {
@@ -59,16 +60,16 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
       console.log('✅ MCP initialize method working')
     })
 
-    test('should list all 27 MCP tools', async () => {
+    test('should list all registered MCP tools', async () => {
       const result = await mcpHelper.listTools()
+      const expectedToolCount = await getExpectedRootMcpToolCount()
 
       expect(result).toBeDefined()
       expect(result.result).toBeDefined()
       expect(result.result.tools).toBeDefined()
       expect(Array.isArray(result.result.tools)).toBe(true)
 
-      // Should have exactly 27 tools
-      expect(result.result.tools.length).toBe(27)
+      expect(result.result.tools.length).toBe(expectedToolCount)
 
       // Verify tool structure
       result.result.tools.forEach((tool: any) => {
@@ -80,7 +81,7 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
         }
       })
 
-      console.log('✅ All 27 MCP tools listed correctly')
+      console.log(`✅ All ${expectedToolCount} MCP tools listed correctly`)
     })
 
     test('should handle basic MCP tool calls', async () => {
@@ -432,11 +433,19 @@ describe('Improved MCP-to-REST API Proxy Integration Tests', () => {
       const toolCategories = {
         'System Tools': ['healthCheck', 'systemStats'],
         'Table Management': ['createTable', 'getTables', 'searchTables'],
-        'Node Operations': ['createNode', 'searchNodes', 'getNodeAttributes'],
-        'Graph Operations': ['createRelation', 'getConnectedNodes', 'findShortestPath'],
-        'Template System': ['createTemplate', 'searchTemplates', 'executeTemplateWithGraphQL'],
-        'Attribute Management': ['createAttribute', 'setNodeAttribute'],
-        'Data Export': ['exportTableWithNodes', 'exportTemplate'],
+        'Node Operations': ['searchNodes', 'createAttribute'],
+        'Template System': ['searchTemplates', 'create-template', 'search-templates'],
+        'Template Import': ['bulk-import-templates', 'list-available-templates', 'get-import-status'],
+        'System Initialization': ['initialize-system', 'get-system-status', 'quick-reset', 'setup-demo'],
+        'Tabular Sync Management': [
+          'list-tabular-sync-configs',
+          'get-tabular-sync-config',
+          'save-tabular-sync-config',
+          'activate-tabular-sync-config',
+          'get-tabular-sync-status',
+          'resync-tabular-sync-table',
+        ],
+        'Backup and Export': ['export-table-nodes', 'backup-database', 'export-jsonl'],
       }
 
       const toolsResult = await mcpHelper.listTools()

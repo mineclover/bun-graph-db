@@ -19,6 +19,7 @@ interface BackupListFilterInput {
   createdBefore?: string
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: static GraphQL resolver namespace is intentional for schema wiring
 export class BackupQueries {
   /**
    * List all available backups

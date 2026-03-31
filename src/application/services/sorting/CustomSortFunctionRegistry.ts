@@ -25,7 +25,7 @@ export interface CustomSortParameter {
   type: 'string' | 'number' | 'boolean' | 'array' | 'object'
   required: boolean
   description: string
-  defaultValue?: any
+  defaultValue?: unknown
   validation?: CustomSortParameterValidation
 }
 
@@ -36,8 +36,8 @@ export interface CustomSortParameterValidation {
   min?: number
   max?: number
   pattern?: string
-  allowedValues?: any[]
-  customValidator?: (value: any) => boolean | string
+  allowedValues?: unknown[]
+  customValidator?: (value: unknown) => boolean | string
 }
 
 /**
@@ -47,7 +47,7 @@ export type CustomSortHandler = (
   field: string,
   direction: 'asc' | 'desc',
   context: SortContext,
-  parameters?: Record<string, any>,
+  parameters?: Record<string, unknown>,
 ) => SortResult
 
 /**
@@ -58,7 +58,7 @@ export interface CustomSortExample {
   description: string
   field: string
   direction: 'asc' | 'desc'
-  parameters?: Record<string, any>
+  parameters?: Record<string, unknown>
   expectedSql: string
 }
 
@@ -233,7 +233,7 @@ export class CustomSortFunctionRegistry {
     field: string,
     direction: 'asc' | 'desc',
     context: SortContext,
-    parameters?: Record<string, any>,
+    parameters?: Record<string, unknown>,
   ): SortResult {
     const func = this.functions.get(functionId)
     if (!func) {
@@ -343,7 +343,7 @@ export class CustomSortFunctionRegistry {
 
   private validateParameters(
     paramDefs: Record<string, CustomSortParameter>,
-    actualParams: Record<string, any>,
+    actualParams: Record<string, unknown>,
   ): { valid: boolean; errors: string[] } {
     const errors: string[] = []
 
@@ -376,7 +376,7 @@ export class CustomSortFunctionRegistry {
     return { valid: errors.length === 0, errors }
   }
 
-  private validateParameterType(value: any, expectedType: string): boolean {
+  private validateParameterType(value: unknown, expectedType: string): boolean {
     switch (expectedType) {
       case 'string':
         return typeof value === 'string'
@@ -393,12 +393,12 @@ export class CustomSortFunctionRegistry {
     }
   }
 
-  private validateParameterValue(value: any, validation: CustomSortParameterValidation): string | null {
-    if (validation.min !== undefined && value < validation.min) {
+  private validateParameterValue(value: unknown, validation: CustomSortParameterValidation): string | null {
+    if (validation.min !== undefined && typeof value === 'number' && value < validation.min) {
       return `must be at least ${validation.min}`
     }
 
-    if (validation.max !== undefined && value > validation.max) {
+    if (validation.max !== undefined && typeof value === 'number' && value > validation.max) {
       return `must be at most ${validation.max}`
     }
 

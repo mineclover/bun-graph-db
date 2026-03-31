@@ -17,6 +17,11 @@ interface TableValidationResult {
   error?: string
 }
 
+interface TableLookupCandidate {
+  id?: unknown
+  identifier?: unknown
+}
+
 /**
  * Singleton instance for global access
  */
@@ -61,9 +66,11 @@ export class TableMcpServerFactory {
 
       // Check if we already have a server for this table
       if (this.servers.has(tableId)) {
-        const existingServer = this.servers.get(tableId)!
-        this.logger?.debug(`Returning existing MCP server for table ${tableId}`)
-        return existingServer
+        const existingServer = this.servers.get(tableId)
+        if (existingServer) {
+          this.logger?.debug(`Returning existing MCP server for table ${tableId}`)
+          return existingServer
+        }
       }
 
       // Create new server for this table
@@ -107,22 +114,7 @@ export class TableMcpServerFactory {
         }
       }
 
-      // Query GraphQL to check if table exists
-      const _query = `
-        query ValidateTable($tableId: ID!) {
-          table(id: $tableId) {
-            id
-            identifier
-            description
-            nodeCount
-            attributeCount
-          }
-        }
-      `
-
-      // Note: We'll need to create a GraphQL executor for this
-      // For now, we'll use a simpler HTTP-based check
-      const response = await this.checkTableViaRestApi(sanitizedTableId)
+      const response = await this.checkTableViaGraphQL(sanitizedTableId)
 
       return response
     } catch (error) {
@@ -131,6 +123,65 @@ export class TableMcpServerFactory {
         exists: false,
         error: error instanceof Error ? error.message : 'Unknown validation error',
       }
+    }
+  }
+
+  /**
+   * Check table existence via GraphQL so validation is not affected by REST pagination limits.
+   */
+  private async checkTableViaGraphQL(tableId: string): Promise<TableValidationResult> {
+    try {
+      const response = await fetch(this.graphqlEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: `
+            query ValidateTable($tableId: ID!, $identifier: String!) {
+              byId: table(id: $tableId) {
+                id
+                identifier
+              }
+              byIdentifier: tableByIdentifier(identifier: $identifier) {
+                id
+                identifier
+              }
+            }
+          `,
+          variables: {
+            tableId,
+            identifier: tableId,
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        return this.checkTableViaRestApi(tableId)
+      }
+
+      const data = (await response.json()) as {
+        data?: {
+          byId?: TableLookupCandidate
+          byIdentifier?: TableLookupCandidate
+        }
+      }
+      const table = data?.data?.byId || data?.data?.byIdentifier
+
+      if (!table) {
+        return {
+          exists: false,
+          error: 'Table not found',
+        }
+      }
+
+      return {
+        exists: true,
+        id: this.toOptionalString(table.id),
+        identifier: this.toOptionalString(table.identifier),
+      }
+    } catch {
+      return this.checkTableViaRestApi(tableId)
     }
   }
 
@@ -153,26 +204,23 @@ export class TableMcpServerFactory {
         }
       }
 
-      const data = await response.json()
+      const data = (await response.json()) as {
+        data?: { tables?: TableLookupCandidate[] }
+        tables?: TableLookupCandidate[]
+      }
 
       // Look for the table in the response
       // Assuming the API returns { success: true, data: { tables: [...] } }
       const tables = data?.data?.tables || data?.tables || []
 
       if (Array.isArray(tables)) {
-        const table = tables.find(
-          (t: any) =>
-            t.id === tableId ||
-            t.identifier === tableId ||
-            String(t.id) === tableId ||
-            String(t.identifier) === tableId,
-        )
+        const table = tables.find((candidate) => this.matchesTableLookupCandidate(candidate, tableId))
 
         if (table) {
           return {
             exists: true,
-            id: table.id,
-            identifier: table.identifier,
+            id: this.toOptionalString(table.id),
+            identifier: this.toOptionalString(table.identifier),
           }
         }
       }
@@ -214,6 +262,23 @@ export class TableMcpServerFactory {
     }
 
     return sanitized
+  }
+
+  private matchesTableLookupCandidate(candidate: TableLookupCandidate, tableId: string): boolean {
+    return (
+      candidate.id === tableId ||
+      candidate.identifier === tableId ||
+      String(candidate.id) === tableId ||
+      String(candidate.identifier) === tableId
+    )
+  }
+
+  private toOptionalString(value: unknown): string | undefined {
+    if (value === null || value === undefined) {
+      return undefined
+    }
+
+    return typeof value === 'string' ? value : String(value)
   }
 
   /**

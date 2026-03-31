@@ -82,17 +82,17 @@ query RelationSystemOverview {
 # ===================================================================
 # 📋 Variables for Advanced Relation Queries (고급 관계 쿼리용 변수)
 # ===================================================================
-{
-  "sourceNodeId": "5",     # Performance Node 0
-  "targetNodeId": "15",    # Performance Node 10
-  "nodeId": "6",           # Performance Node 1 (most connected)
-  "strengthFilter": {
-    "tableIds": ["6"],
-    "relationTypes": ["relatedTo"],
-    "strengthRange": { "min": 2, "max": 4 },
-    "confidenceRange": { "min": 3, "max": 4 }
-  }
-}
+# {
+#   "sourceNodeId": "5",
+#   "targetNodeId": "15",
+#   "nodeId": "6",
+#   "strengthFilter": {
+#     "tableIds": ["6"],
+#     "relationTypes": ["relatedTo"],
+#     "strengthRange": { "min": 2, "max": 4 },
+#     "confidenceRange": { "min": 3, "max": 4 }
+#   }
+# }
 
 # 2. 최적 경로 찾기 - strength와 confidence를 활용한 pathfinding
 query OptimalPathFinding($sourceNodeId: ID!, $targetNodeId: ID!) {

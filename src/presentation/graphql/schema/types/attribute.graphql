@@ -18,6 +18,9 @@ type Attribute implements Node {
   identifier: String!
   name: String!
   description: String
+  tableId: ID!
+  required: Boolean!
+  searchable: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
 

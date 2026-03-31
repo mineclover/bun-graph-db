@@ -4,35 +4,39 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
-import { createTestAttributeType } from './test-helpers.js'
+import {
+  createMockLogger,
+  createPaginatedResult,
+  createTestAttributeType,
+  type MockedMethods,
+} from './test-helpers.js'
+
+type AttributeTypeRepositoryMock = MockedMethods<IAttributeTypeRepository>
+type LoggerMock = MockedMethods<ILogger>
 
 describe('CreateAttributeTypeUseCase', () => {
   let useCase: CreateAttributeTypeUseCase
-  let mockAttributeTypeRepository: IAttributeTypeRepository
-  let mockLogger: ILogger
+  let mockAttributeTypeRepository: AttributeTypeRepositoryMock
+  let mockLogger: LoggerMock
 
   beforeEach(() => {
-    // Mock logger
-    mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
-    }
+    mockLogger = createMockLogger()
 
-    // Mock repository
     mockAttributeTypeRepository = {
-      save: mock(async (attributeType) => attributeType),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      delete: mock(async () => {}),
-      exists: mock(async () => false),
+      save: mock(async (_attributeType) => {}),
+      findById: mock(async (_id: string) => null),
+      findByIdentifier: mock(async (_identifier: string) => null),
+      findAll: mock(async (_options) => createPaginatedResult<ReturnType<typeof createTestAttributeType>>()),
+      findByJsonType: mock(async (_jsonType: string, _options) =>
+        createPaginatedResult<ReturnType<typeof createTestAttributeType>>(),
+      ),
+      delete: mock(async (_id: string) => {}),
+      exists: mock(async (_identifier: string) => false),
       count: mock(async () => 0),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      deleteMany: mock(async () => {}),
-    } as any
+      saveMany: mock(async (_attributeTypes) => {}),
+      findByIds: mock(async (_ids: string[]) => []),
+      update: mock(async (_id: string, _updates) => createTestAttributeType()),
+    } satisfies AttributeTypeRepositoryMock
 
     useCase = new CreateAttributeTypeUseCase(mockAttributeTypeRepository, mockLogger)
   })

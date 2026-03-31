@@ -468,11 +468,16 @@ export class JsonlBackupService {
       version: '1.0',
       createdAt: new Date().toISOString(),
       source: 'bun-graph-db',
-      tables: tableFiles.map((f) => ({
-        identifier: f.tableIdentifier!,
-        nodeCount: f.lineCount,
-        file: `tables/${f.tableIdentifier}.jsonl`,
-      })),
+      tables: tableFiles.flatMap((f) => {
+        if (!f.tableIdentifier) {
+          return []
+        }
+        return [{
+          identifier: f.tableIdentifier,
+          nodeCount: f.lineCount,
+          file: `tables/${f.tableIdentifier}.jsonl`,
+        }]
+      }),
       hasRelations: files.some((f) => f.type === 'relations'),
       hasSchema: files.some((f) => f.type === 'schema'),
     }

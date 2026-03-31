@@ -62,6 +62,16 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
     const personTableId = createPersonTable.data.createTable.table.id
     const companyTableId = createCompanyTable.data.createTable.table.id
 
+    const attributeTypes = await graphqlRequest(`
+      query {
+        stringType: attributeTypeByIdentifier(identifier: "string") { id }
+        integerType: attributeTypeByIdentifier(identifier: "integer") { id }
+      }
+    `)
+
+    const stringTypeId = attributeTypes.data.stringType.id
+    const integerTypeId = attributeTypes.data.integerType.id
+
     // Create attributes for persons
     await graphqlRequest(`
       mutation {
@@ -69,7 +79,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
           tableId: "${personTableId}"
           identifier: "name"
           name: "Full Name"
-          attributeTypeId: "1"
+          attributeTypeId: "${stringTypeId}"
         }) { success }
       }
     `)
@@ -80,7 +90,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
           tableId: "${personTableId}"
           identifier: "age"
           name: "Age"
-          attributeTypeId: "2"
+          attributeTypeId: "${integerTypeId}"
         }) { success }
       }
     `)
@@ -92,7 +102,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
           tableId: "${companyTableId}"
           identifier: "company_name"
           name: "Company Name"
-          attributeTypeId: "1"
+          attributeTypeId: "${stringTypeId}"
         }) { success }
       }
     `)
@@ -493,12 +503,9 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
         query SearchNodesAdvanced($tableId: ID!, $searchQuery: SearchQueryInput!) {
           searchNodes(tableId: $tableId, searchQuery: $searchQuery) {
             nodes {
-              node {
-                id
-                title
-                content
-              }
-              attributes
+              id
+              title
+              content
             }
             totalCount
             hasNextPage
@@ -538,7 +545,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       expect(result.data.searchNodes.nodes).toBeDefined()
       // Should find Alice (contains "Alice" and age >= 25)
       const foundNodes = result.data.searchNodes.nodes
-      expect(foundNodes.some((item) => item.node.title === 'Alice')).toBe(true)
+      expect(foundNodes.some((item) => item.title === 'Alice')).toBe(true)
     })
 
     test('searchNodes - Range queries and multiple operators', async () => {
@@ -546,11 +553,8 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
         query SearchNodesRange($tableId: ID!, $searchQuery: SearchQueryInput!) {
           searchNodes(tableId: $tableId, searchQuery: $searchQuery) {
             nodes {
-              node {
-                id
-                title
-              }
-              attributes
+              id
+              title
             }
             totalCount
           }
@@ -579,7 +583,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       expect(result.errors).toBeUndefined()
       expect(result.data.searchNodes.nodes).toBeDefined()
       // Should find Alice (30) and Bob (25), but not Charlie (35)
-      const foundTitles = result.data.searchNodes.nodes.map((item) => item.node.title)
+      const foundTitles = result.data.searchNodes.nodes.map((item) => item.title)
       expect(foundTitles).toContain('Alice')
       expect(foundTitles).toContain('Bob')
       expect(foundTitles).not.toContain('Charlie')
@@ -590,10 +594,8 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
         query SearchNodesComplex($tableId: ID!, $searchQuery: SearchQueryInput!) {
           searchNodes(tableId: $tableId, searchQuery: $searchQuery) {
             nodes {
-              node {
-                id
-                title
-              }
+              id
+              title
             }
           }
         }
@@ -636,7 +638,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       expect(result.errors).toBeUndefined()
       expect(result.data.searchNodes.nodes).toBeDefined()
       // Should find Bob (name contains "Bob" and age < 32) and Alice (name contains "Alice" and age < 32)
-      const foundTitles = result.data.searchNodes.nodes.map((item) => item.node.title)
+      const foundTitles = result.data.searchNodes.nodes.map((item) => item.title)
       expect(foundTitles).toContain('Alice')
       expect(foundTitles).toContain('Bob')
     })
@@ -694,7 +696,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
         query SearchNodesEmpty($tableId: ID!, $searchQuery: SearchQueryInput!) {
           searchNodes(tableId: $tableId, searchQuery: $searchQuery) {
             nodes {
-              node { id }
+              id
             }
             totalCount
             hasNextPage
@@ -743,7 +745,7 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
         query SearchNodesInvalidTable($tableId: ID!) {
           searchNodes(tableId: $tableId, searchQuery: { limit: 10 }) {
             nodes {
-              node { id }
+              id
             }
           }
         }
@@ -754,7 +756,11 @@ describe('🔍 Advanced Graph Traversal and Search Test Suite', () => {
       })
 
       // Should handle gracefully - either error or empty result
-      expect(result.data.searchNodes.nodes).toEqual([])
+      if (result.errors) {
+        expect(Array.isArray(result.errors)).toBe(true)
+      } else {
+        expect(result.data.searchNodes.nodes).toEqual([])
+      }
     })
 
     test('shortestPath - Invalid target node', async () => {

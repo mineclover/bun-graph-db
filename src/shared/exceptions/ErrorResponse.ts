@@ -1,5 +1,23 @@
 import type { ErrorCode } from './DomainException.js'
 
+type ErrorWithResponseMetadata = Error & {
+  code: ErrorCode
+  statusCode: number
+  context?: Record<string, unknown>
+}
+
+function isErrorWithResponseMetadata(error: Error): error is ErrorWithResponseMetadata {
+  return 'code' in error && typeof error.code === 'string' && 'statusCode' in error && typeof error.statusCode === 'number'
+}
+
+function getErrorContext(context: unknown): Record<string, unknown> | undefined {
+  if (context && typeof context === 'object') {
+    return context as Record<string, unknown>
+  }
+
+  return undefined
+}
+
 /**
  * Standard error response structure
  * Used across GraphQL, REST, and MCP interfaces
@@ -56,10 +74,10 @@ export function createErrorResponse(
  */
 export function exceptionToErrorResponse(error: Error, requestId?: string): ErrorResponse {
   // Check if it's a BaseException with code property
-  if ('code' in error && 'statusCode' in error) {
-    return createErrorResponse((error as any).code, error.message, {
-      statusCode: (error as any).statusCode,
-      context: (error as any).context,
+  if (isErrorWithResponseMetadata(error)) {
+    return createErrorResponse(error.code, error.message, {
+      statusCode: error.statusCode,
+      context: getErrorContext(error.context),
       requestId,
     })
   }

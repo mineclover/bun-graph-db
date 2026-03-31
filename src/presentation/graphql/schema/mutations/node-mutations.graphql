@@ -4,9 +4,9 @@ extend type Mutation {
   # Node management
   createNode(input: CreateNodeInput!): CreateNodePayload!
 
-  updateNode(id: ID!, input: UpdateNodeInput!): UpdateNodePayload!
+  updateNode(id: ID, input: UpdateNodeInput!): UpdateNodePayload!
 
-  deleteNode(id: ID!): DeleteNodePayload!
+  deleteNode(id: ID, nodeId: ID): DeleteNodePayload!
 
   # Universal node creation with automatic attribute mapping
   createNodeWithAttributes(input: CreateNodeWithAttributesInput!): CreateNodeWithAttributesPayload!

@@ -3,6 +3,9 @@
 extend type Mutation {
   # System initialization
   initializeSystem(input: SystemInitializationInput!): SystemInitializationPayload!
+  saveTabularSyncConfig(input: SaveTabularSyncConfigInput!): SaveTabularSyncConfigPayload!
+  activateTabularSyncConfig(configKey: String!): ActivateTabularSyncConfigPayload!
+  resyncTabularSyncTable(tableIdentifier: String!): ResyncTabularSyncTablePayload!
 }
 
 # Input types for system initialization
@@ -91,4 +94,29 @@ type SystemSummary {
 
   "Number of attributes in the system"
   attributesCount: Int!
+}
+
+input SaveTabularSyncConfigInput {
+  configKey: String!
+  config: JSON!
+  active: Boolean = true
+}
+
+type SaveTabularSyncConfigPayload implements OperationResult {
+  success: Boolean!
+  config: TabularSyncConfigRecord
+  errors: [Error!]!
+}
+
+type ActivateTabularSyncConfigPayload implements OperationResult {
+  success: Boolean!
+  config: TabularSyncConfigRecord
+  errors: [Error!]!
+}
+
+type ResyncTabularSyncTablePayload implements OperationResult {
+  success: Boolean!
+  tableIdentifier: String
+  status: TabularSyncStatus
+  errors: [Error!]!
 }

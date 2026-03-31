@@ -36,17 +36,27 @@ const strategies: SortStrategy[] = [
 
 const customSortStrategy = new CustomSortStrategy()
 
+function getTextSortStrategy(): SortStrategy {
+  const strategy = strategies.find((s) => s instanceof TextSortStrategy)
+  return strategy ?? new TextSortStrategy()
+}
+
+function getDateTimeSortStrategy(): SortStrategy {
+  const strategy = strategies.find((s) => s instanceof DateTimeSortStrategy)
+  return strategy ?? new DateTimeSortStrategy()
+}
+
 /**
  * Get the appropriate sort strategy for a field based on its data type
  */
 export function getStrategy(field: string, availableAttributes: AttributeTypeInfo[]): SortStrategy {
   // Handle system fields
   if (['created_at', 'updated_at'].includes(field)) {
-    return strategies.find((s) => s instanceof DateTimeSortStrategy)!
+    return getDateTimeSortStrategy()
   }
 
   if (['title', 'content'].includes(field)) {
-    return strategies.find((s) => s instanceof TextSortStrategy)!
+    return getTextSortStrategy()
   }
 
   // Find attribute info
@@ -58,7 +68,7 @@ export function getStrategy(field: string, availableAttributes: AttributeTypeInf
 
   if (applicableStrategies.length === 0) {
     // Fallback to TextSortStrategy
-    return strategies.find((s) => s instanceof TextSortStrategy)!
+    return getTextSortStrategy()
   }
 
   // Return the strategy with highest priority
@@ -78,7 +88,7 @@ export function buildMultiCriteriaSort(sortOptions: SortOption[], context: SortC
   }
 
   const sortClauses: string[] = []
-  const parameters: any[] = []
+  const parameters: unknown[] = []
   const sortFields: string[] = []
 
   for (const sortOption of sortOptions) {
@@ -212,7 +222,7 @@ export function buildEnhancedMultiCriteriaSort(
   }
 
   const sortClauses: string[] = []
-  const parameters: any[] = []
+  const parameters: unknown[] = []
   const sortFields: string[] = []
 
   for (const sortOption of sortOptions) {
@@ -258,7 +268,7 @@ function getStrategyByDataType(
 
   if (applicableStrategies.length === 0) {
     // Fallback to TextSortStrategy
-    return strategies.find((s) => s instanceof TextSortStrategy)!
+    return getTextSortStrategy()
   }
 
   // Return the strategy with highest priority
@@ -504,34 +514,26 @@ export function getCustomSortRegistryInfo() {
  * Register a new custom sort function
  */
 export function registerCustomSortFunction(sortFunction: CustomSortFunction) {
-  // Access the registry through the custom sort strategy
-  const registry = (customSortStrategy as any).registry
-  return registry.register(sortFunction)
+  return customSortStrategy.getRegistry().register(sortFunction)
 }
 
 /**
  * Unregister a custom sort function
  */
 export function unregisterCustomSortFunction(functionId: string): boolean {
-  // Access the registry through the custom sort strategy
-  const registry = (customSortStrategy as any).registry
-  return registry.unregister(functionId)
+  return customSortStrategy.getRegistry().unregister(functionId)
 }
 
 /**
  * Export all custom sort functions to JSON
  */
 export function exportCustomSortFunctions(): string {
-  // Access the registry through the custom sort strategy
-  const registry = (customSortStrategy as any).registry
-  return registry.exportToJSON()
+  return customSortStrategy.getRegistry().exportToJSON()
 }
 
 /**
  * Clear all custom sort function usage statistics
  */
 export function clearCustomSortFunctionStats(): void {
-  // Access the registry through the custom sort strategy
-  const registry = (customSortStrategy as any).registry
-  registry.clearStats()
+  customSortStrategy.getRegistry().clearStats()
 }

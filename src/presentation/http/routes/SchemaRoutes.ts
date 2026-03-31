@@ -4,7 +4,7 @@
  * Provides REST endpoints to serve GraphQL schema files for external consumption
  */
 
-import { getIntrospectionQuery, introspectionFromSchema, printSchema } from 'graphql'
+import { getIntrospectionQuery, introspectionFromSchema, printSchema, type IntrospectionQuery } from 'graphql'
 import type { ILogger } from '../../../application/ports/ILogger.js'
 import type { DIContainer } from '../../../infrastructure/container/DIContainer.js'
 import { CommonTokens } from '../../../infrastructure/container/tokens/CommonTokens.js'
@@ -280,8 +280,8 @@ export class SchemaRoutes {
   /**
    * Basic TypeScript definitions generator (simplified)
    */
-  private generateTypeScriptDefinitions(introspection: any): string {
-    const types = introspection.types || []
+  private generateTypeScriptDefinitions(introspection: IntrospectionQuery): string {
+    const types = introspection.__schema.types || []
 
     let typescript = `// Generated GraphQL TypeScript Definitions\n`
     typescript += `// Generated at: ${new Date().toISOString()}\n`
@@ -295,15 +295,15 @@ export class SchemaRoutes {
     typescript += `  Int: { input: number; output: number };\n`
     typescript += `  Float: { input: number; output: number };\n`
     typescript += `  DateTime: { input: string; output: string };\n`
-    typescript += `  JSON: { input: any; output: any };\n`
+    typescript += `  JSON: { input: unknown; output: unknown };\n`
     typescript += `};\n\n`
 
     // Add enum types
-    const enums = types.filter((type: any) => type.kind === 'ENUM')
-    enums.forEach((enumType: any) => {
+    const enums = types.filter((type) => type.kind === 'ENUM')
+    enums.forEach((enumType) => {
       typescript += `export type ${enumType.name} =\n`
       const values = enumType.enumValues || []
-      values.forEach((value: any, index: number) => {
+      values.forEach((value, index: number) => {
         typescript += `  | '${value.name}'`
         if (index < values.length - 1) typescript += '\n'
       })

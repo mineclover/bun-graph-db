@@ -1,6 +1,7 @@
 import type { BaseEntityDto, WithDescription, WithIdentifier } from '@/core/types/UseCaseTypes.js'
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { RelationType } from '@/domain/entities/RelationType.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 // Data Transfer Object for NodeRelation entity
 export interface NodeRelationDto extends BaseEntityDto {
@@ -10,9 +11,13 @@ export interface NodeRelationDto extends BaseEntityDto {
   targetNodeId: string | null
   targetExternalId: string
   relationTypeId: string
-  properties: Record<string, any> | null
+  properties: Record<string, SafeJsonValue> | null
   strength: number
   confidence: number
+}
+
+interface NodeRelationWithConfidence extends NodeRelation {
+  getConfidence?: () => number
 }
 
 export function nodeRelationFromEntity(nodeRelation: NodeRelation): NodeRelationDto {
@@ -24,9 +29,9 @@ export function nodeRelationFromEntity(nodeRelation: NodeRelation): NodeRelation
     targetNodeId: nodeRelation.getTargetNodeId(),
     targetExternalId: nodeRelation.getTargetExternalId(),
     relationTypeId: nodeRelation.getRelationTypeId(),
-    properties: nodeRelation.getProperties(),
+    properties: nodeRelation.getProperties() as Record<string, SafeJsonValue> | null,
     strength: nodeRelation.getStrength(),
-    confidence: (nodeRelation as any).getConfidence ? (nodeRelation as any).getConfidence() : 1,
+    confidence: (nodeRelation as NodeRelationWithConfidence).getConfidence?.() ?? 1,
     createdAt: nodeRelation.getCreatedAt().toISOString(),
     updatedAt: nodeRelation.getUpdatedAt().toISOString(),
   }
@@ -64,7 +69,7 @@ export interface CreateRelationInput {
   targetNodeId?: string | null
   targetExternalId?: string
   relationTypeId: string
-  properties?: Record<string, any> | null
+  properties?: Record<string, SafeJsonValue> | null
   strength?: number
   confidence?: number
 }

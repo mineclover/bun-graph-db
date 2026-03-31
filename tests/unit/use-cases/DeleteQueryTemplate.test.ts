@@ -54,20 +54,25 @@ describe('DeleteQueryTemplate', () => {
     }
 
     // Mock repository
-    mockQueryTemplateRepository = {
+    const repositoryMock = {
       create: mock(async (template) => template),
       findById: mock(async () => null),
       findByIdentifier: mock(async () => null),
-      findAll: mock(async () => []),
+      findAll: mock(async () => ({ data: [], total: 0, hasMore: false })),
       update: mock(async () => createTestTemplate()),
       deleteById: mock(async () => true),
-      search: mock(async () => ({ templates: [], total: 0 })),
-      activate: mock(async () => {}),
-      deactivate: mock(async () => {}),
-      incrementUsageCount: mock(async () => {}),
+      search: mock(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
+      searchByQueryName: mock(async () => []),
+      searchByOperationType: mock(async () => []),
+      findByApplicableTable: mock(async () => []),
+      findTemplatesWithTableDependencies: mock(async () => []),
+      incrementUsage: mock(async () => {}),
       updateExecutionStats: mock(async () => {}),
       updateStatus: mock(async () => {}),
-    } as any
+      findPopular: mock(async () => []),
+    } satisfies IQueryTemplateRepository
+
+    mockQueryTemplateRepository = repositoryMock
 
     useCase = new DeleteQueryTemplate(mockQueryTemplateRepository, mockLogger)
   })

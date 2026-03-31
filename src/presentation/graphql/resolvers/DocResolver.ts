@@ -27,7 +27,7 @@ export class DocResolver extends BaseResolver {
     this.logger = logger
   }
 
-  private mapGraphQLCategoryToDomain(category: any): DocCategory {
+  private mapGraphQLCategoryToDomain(category: unknown): DocCategory {
     const categoryMapping: Record<string, DocCategory> = {
       USAGE: DocCategory.USAGE,
       GUIDE: DocCategory.GUIDE,
@@ -35,7 +35,12 @@ export class DocResolver extends BaseResolver {
       SPEC: DocCategory.SPEC,
       GENERAL: DocCategory.GENERAL,
     }
-    return categoryMapping[category] || category
+
+    if (typeof category === 'string') {
+      return categoryMapping[category] || (category as DocCategory)
+    }
+
+    return DocCategory.GENERAL
   }
 
   // Query resolvers

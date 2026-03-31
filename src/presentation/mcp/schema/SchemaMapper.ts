@@ -1531,7 +1531,11 @@ export const SchemaUtils = {
 
     schemas.forEach((schema) => {
       if (schema.type === 'object' && schema.properties) {
-        Object.assign(merged.properties!, schema.properties)
+        const mergedProperties = merged.properties ?? {}
+        if (!merged.properties) {
+          merged.properties = mergedProperties
+        }
+        Object.assign(mergedProperties, schema.properties)
 
         if (schema.required) {
           merged.required = [...(merged.required || []), ...schema.required]

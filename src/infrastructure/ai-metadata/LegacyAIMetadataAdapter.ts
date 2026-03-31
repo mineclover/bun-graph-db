@@ -3,6 +3,69 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { EnhancedAIMetadataGenerator } from './EnhancedAIMetadataGenerator.js'
 import { GraphQLSchemaIntrospector } from './GraphQLSchemaIntrospector.js'
 
+interface LegacyTableLike {
+  id: string
+}
+
+interface LegacyAttributeLike {
+  identifier: string
+  required?: boolean
+  isRequired?: boolean
+  searchable?: boolean
+  metadata?: {
+    searchable?: boolean
+  } | null
+  attributeType?: {
+    dataType?: string
+  }
+  attributeTypeId?: string
+}
+
+interface LegacyTemplateLike {
+  identifier: string
+  name?: string
+  description?: string | null
+}
+
+interface LegacyQueryLike {
+  name?: string
+  pattern?: string
+  description?: string
+  example?: string
+  query?: string
+}
+
+interface LegacySampleData {
+  entries: Array<{ nodeId: string; title: string; content: string; attributes: Record<string, unknown> }>
+  totalCount: number
+  hasMore: boolean
+  nodes: Array<{ id: string; content: string; attributes: Record<string, unknown> }>
+  relationships: Array<{ from: string; to: string; type: string }>
+}
+
+interface LegacyAiMetadata {
+  schemaInfo: {
+    dataTypes: Record<string, string>
+    requiredFields: string[]
+    searchableFields: string[]
+    relationshipCapabilities: string[]
+  }
+  usagePatterns: {
+    commonQueries: Array<{ pattern: string; description: string; example: string }>
+    templateRecommendations: Array<{ templateId: string; useCase: string }>
+    queryComplexity: 'simple' | 'moderate' | 'complex'
+    validExamples?: unknown[]
+    schemaCompliantExamples?: Record<string, string>
+    schemaVersion?: string
+  }
+  sampleData: LegacySampleData
+  validationInfo?: {
+    lastSchemaSync: string
+    schemaVersion: string
+    compatibilityScore: number
+  }
+}
+
 /**
  * Legacy AI Metadata Adapter
  * Bridges between existing GetTableDocsUseCase and enhanced AI metadata system
@@ -61,11 +124,12 @@ export class LegacyAIMetadataAdapter {
    * Generate AI metadata with enhanced system if available, fallback to legacy format
    */
   async generateAiMetadata(
-    table: any,
-    attributes: any[],
-    relatedTemplates: any[] = [],
+    table: LegacyTableLike,
+    attributes: LegacyAttributeLike[],
+    relatedTemplates: LegacyTemplateLike[] = [],
+    sampleData?: LegacySampleData,
     sampleLimit: number = 5,
-  ): Promise<any> {
+  ): Promise<LegacyAiMetadata> {
     // Try enhanced system first
     if (this.metadataGenerator && this.schemaIntrospector) {
       try {
@@ -79,23 +143,21 @@ export class LegacyAIMetadataAdapter {
             dataTypes: this.extractDataTypes(attributes),
             requiredFields: this.extractRequiredFields(attributes),
             searchableFields: this.extractSearchableFields(attributes),
-            relationshipCapabilities: [],
+            relationshipCapabilities: this.defaultRelationshipCapabilities(),
           },
           usagePatterns: {
             commonQueries: this.convertToLegacyQueries(enhancedMetadata.usagePatterns.commonQueries),
-            templateRecommendations: enhancedMetadata.usagePatterns.templateRecommendations.map((rec) => ({
-              templateId: rec.name,
-              useCase: rec.description,
+            // Keep legacy semantics stable: this field reflects related persisted templates only.
+            templateRecommendations: relatedTemplates.map((template) => ({
+              templateId: template.identifier,
+              useCase: template.name || template.description || 'Template usage',
             })),
-            queryComplexity: 'moderate',
+            queryComplexity: this.estimateQueryComplexity(attributes, relatedTemplates),
             // Add enhanced schema information
             validExamples: enhancedMetadata.usagePatterns.validExamples || [],
             schemaCompliantExamples: enhancedMetadata.schemaInfo?.schemaCompliantExamples || [],
           },
-          sampleData: {
-            nodes: [],
-            relationships: [],
-          },
+          sampleData: this.buildSampleData(sampleData, sampleLimit),
           // Enhanced validation info
           validationInfo: enhancedMetadata.validationInfo || {
             lastSchemaSync: new Date().toISOString(),
@@ -112,22 +174,23 @@ export class LegacyAIMetadataAdapter {
 
     // Fallback to legacy generation with corrected schema
     this.logger.info('📋 Using legacy AI metadata generation with schema corrections')
-    return this.generateLegacyAiMetadataWithCorrections(attributes, relatedTemplates, sampleLimit)
+    return this.generateLegacyAiMetadataWithCorrections(attributes, relatedTemplates, sampleData, sampleLimit)
   }
 
   /**
    * Legacy generation with schema corrections
    */
   private generateLegacyAiMetadataWithCorrections(
-    attributes: any[],
-    relatedTemplates: any[] = [],
+    attributes: LegacyAttributeLike[],
+    relatedTemplates: LegacyTemplateLike[] = [],
+    sampleData?: LegacySampleData,
     _sampleLimit: number = 5,
-  ): any {
+  ): LegacyAiMetadata {
     const schemaInfo = {
       dataTypes: this.extractDataTypes(attributes),
       requiredFields: this.extractRequiredFields(attributes),
       searchableFields: this.extractSearchableFields(attributes),
-      relationshipCapabilities: [],
+      relationshipCapabilities: this.defaultRelationshipCapabilities(),
     }
 
     // Generate corrected usage patterns
@@ -155,9 +218,17 @@ export class LegacyAIMetadataAdapter {
       })
     }
 
-    const templateRecommendations = relatedTemplates.slice(0, 5).map((template) => ({
+    for (const attr of attributes.slice(0, 5)) {
+      commonQueries.push({
+        pattern: `Search by ${attr.identifier}`,
+        description: `Find records using the ${attr.identifier} field`,
+        example: `searchNodes(filter: { tableId: $tableId, attributeFilters: [{ identifier: "${attr.identifier}", value: "example" }] })`,
+      })
+    }
+
+    const templateRecommendations = relatedTemplates.map((template) => ({
       templateId: template.identifier,
-      useCase: template.name || 'Template usage',
+      useCase: template.description || template.name || 'Template usage',
     }))
 
     return {
@@ -165,26 +236,25 @@ export class LegacyAIMetadataAdapter {
       usagePatterns: {
         commonQueries,
         templateRecommendations,
-        queryComplexity: attributes.length > 5 ? 'complex' : 'moderate',
+        queryComplexity: this.estimateQueryComplexity(attributes, relatedTemplates),
         // Add validation info
         validExamples: commonQueries,
         schemaVersion: 'corrected-v1.0.0',
       },
-      sampleData: {
-        nodes: [],
-        relationships: [],
-      },
+      sampleData: this.buildSampleData(sampleData, _sampleLimit),
     }
   }
 
   /**
    * Convert enhanced metadata queries to legacy format
    */
-  private convertToLegacyQueries(commonQueries: any[]): any[] {
+  private convertToLegacyQueries(
+    commonQueries: LegacyQueryLike[],
+  ): Array<{ pattern: string; description: string; example: string }> {
     return commonQueries.map((query) => ({
-      pattern: query.name || query.pattern,
-      description: query.description,
-      example: this.correctQuerySyntax(query.example || query.query),
+      pattern: query.name || query.pattern || 'Unknown query',
+      description: query.description || '',
+      example: this.correctQuerySyntax(query.example || query.query || ''),
     }))
   }
 
@@ -202,12 +272,10 @@ export class LegacyAIMetadataAdapter {
   /**
    * Extract data types from attributes
    */
-  private extractDataTypes(attributes: any[]): { [key: string]: string } {
+  private extractDataTypes(attributes: LegacyAttributeLike[]): { [key: string]: string } {
     const dataTypes: { [key: string]: string } = {}
     for (const attr of attributes) {
-      if (attr.attributeType) {
-        dataTypes[attr.identifier] = attr.attributeType.dataType || 'string'
-      }
+      dataTypes[attr.identifier] = attr.attributeType?.dataType || attr.attributeTypeId || 'string'
     }
     return dataTypes
   }
@@ -215,19 +283,65 @@ export class LegacyAIMetadataAdapter {
   /**
    * Extract required fields from attributes
    */
-  private extractRequiredFields(attributes: any[]): string[] {
+  private extractRequiredFields(attributes: LegacyAttributeLike[]): string[] {
     return attributes
-      .filter((attr) => attr.identifier === 'title' || attr.identifier === 'name' || attr.required)
+      .filter((attr) => attr.identifier === 'title' || attr.identifier === 'name' || attr.required || attr.isRequired)
       .map((attr) => attr.identifier)
   }
 
   /**
    * Extract searchable fields from attributes
    */
-  private extractSearchableFields(attributes: any[]): string[] {
+  private extractSearchableFields(attributes: LegacyAttributeLike[]): string[] {
     return attributes
-      .filter((attr) => ['string', 'text'].includes(attr.attributeType?.dataType))
+      .filter(
+        (attr) => {
+          const explicitSearchable = attr.searchable ?? attr.metadata?.searchable
+          if (explicitSearchable !== undefined) {
+            return explicitSearchable === true
+          }
+
+          return ['string', 'text', 'email', 'url'].includes(attr.attributeType?.dataType || attr.attributeTypeId || 'string')
+        },
+      )
       .map((attr) => attr.identifier)
+  }
+
+  private buildSampleData(
+    sampleData: LegacySampleData | undefined,
+    sampleLimit: number,
+  ) {
+    const entries = (sampleData?.entries || []).slice(0, sampleLimit)
+    return {
+      entries,
+      totalCount: sampleData?.totalCount || entries.length,
+      hasMore: sampleData?.hasMore || false,
+      nodes:
+        sampleData?.nodes ||
+        entries.map((entry) => ({
+          id: entry.nodeId,
+          content: entry.content,
+          attributes: entry.attributes,
+        })),
+      relationships: sampleData?.relationships || [],
+    }
+  }
+
+  private estimateQueryComplexity(
+    attributes: LegacyAttributeLike[],
+    relatedTemplates: LegacyTemplateLike[],
+  ): 'simple' | 'moderate' | 'complex' {
+    if (relatedTemplates.length >= 10 || attributes.length >= 10) {
+      return 'complex'
+    }
+    if (relatedTemplates.length >= 3 || attributes.length >= 5) {
+      return 'moderate'
+    }
+    return 'simple'
+  }
+
+  private defaultRelationshipCapabilities(): string[] {
+    return ['one-to-many', 'many-to-one', 'many-to-many', 'self-referential']
   }
 
   /**

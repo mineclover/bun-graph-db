@@ -2,10 +2,41 @@
  * Schema Discovery Service
  * Helps users discover available GraphQL operations and their variants
  */
-export class SchemaDiscoveryService {
-  private schema: any
+interface DiscoveryTypeRef {
+  kind?: string
+  name?: string | null
+  ofType?: DiscoveryTypeRef | null
+}
 
-  constructor(schema: any) {
+interface DiscoveryArgument {
+  name: string
+  type: DiscoveryTypeRef
+  description?: string | null
+  defaultValue?: unknown
+}
+
+interface DiscoveryField {
+  name: string
+  description?: string | null
+  type: DiscoveryTypeRef
+  args?: readonly DiscoveryArgument[]
+}
+
+interface DiscoveryType {
+  name: string
+  kind: string
+  fields?: readonly DiscoveryField[]
+  inputFields?: readonly DiscoveryArgument[]
+}
+
+interface DiscoverySchema {
+  types: readonly DiscoveryType[]
+}
+
+export class SchemaDiscoveryService {
+  private schema: DiscoverySchema
+
+  constructor(schema: DiscoverySchema) {
     // schema is now the introspection result, not a GraphQL schema object
     this.schema = schema
   }
@@ -17,18 +48,18 @@ export class SchemaDiscoveryService {
     console.log(`🔍 Discovering variations of ${baseOperation}`)
 
     // The schema is now the introspection result directly
-    if (!this.schema || !this.schema.types) {
+    if (!this.schema?.types) {
       throw new Error('Invalid schema: types not found in introspection result')
     }
 
     console.log(`📊 Schema contains ${this.schema.types.length} types`)
 
-    const queryType = this.schema.types.find((type: any) => type && type.name === 'Query')
+    const queryType = this.schema.types.find((type) => type && type.name === 'Query')
 
     if (!queryType) {
       console.log(
         '❌ Query type not found in schema types:',
-        this.schema.types.map((t: any) => t?.name).filter(Boolean),
+        this.schema.types.map((t) => t?.name).filter(Boolean),
       )
       throw new Error('Query type not found in schema')
     }
@@ -47,13 +78,13 @@ export class SchemaDiscoveryService {
 
     // Find all search-related operations with null safety
     const searchOperations = queryType.fields.filter(
-      (field: any) =>
+      (field) =>
         field?.name && (field.name.toLowerCase().includes('search') || field.name.toLowerCase().includes('node')),
     )
 
     console.log(
       `🔍 Found ${searchOperations.length} search-related operations:`,
-      searchOperations.map((op: any) => op.name),
+      searchOperations.map((op) => op.name),
     )
 
     const operations: SearchOperation[] = []
@@ -87,11 +118,11 @@ export class SchemaDiscoveryService {
     console.log(`🔍 Discovering SearchNodesFilter options`)
 
     // The schema is now the introspection result directly
-    if (!this.schema || !this.schema.types) {
+    if (!this.schema?.types) {
       throw new Error('Invalid schema: types not found in introspection result')
     }
 
-    const filterType = this.schema.types.find((type: any) => type.name === 'SearchNodesFilter')
+    const filterType = this.schema.types.find((type) => type.name === 'SearchNodesFilter')
 
     if (!filterType || filterType.kind !== 'INPUT_OBJECT' || !filterType.inputFields) {
       throw new Error('SearchNodesFilter type not found in schema')
@@ -235,14 +266,14 @@ export class SchemaDiscoveryService {
   }
 
   // Helper methods
-  private extractParameters(operation: any): OperationParameter[] {
-    if (!operation || !operation.args || !Array.isArray(operation.args)) {
+  private extractParameters(operation: DiscoveryField): OperationParameter[] {
+    if (!operation.args || !Array.isArray(operation.args)) {
       return []
     }
 
     return operation.args
-      .filter((arg: any) => arg?.name && arg.type) // Filter out null/invalid args
-      .map((arg: any) => ({
+      .filter((arg) => arg?.name && arg.type) // Filter out null/invalid args
+      .map((arg) => ({
         name: arg.name,
         type: this.getTypeName(arg.type),
         required: this.isRequired(arg.type),
@@ -272,7 +303,7 @@ export class SchemaDiscoveryService {
     return examples[operationName] || ['Basic usage example']
   }
 
-  private assessComplexity(operation: any): 'simple' | 'medium' | 'complex' {
+  private assessComplexity(operation: DiscoveryField): 'simple' | 'medium' | 'complex' {
     const paramCount = operation.args?.length || 0
     const hasAdvancedSorting = operation.name.includes('Advanced') || operation.name.includes('Sorting')
     const hasCustom = operation.name.includes('Custom')
@@ -296,7 +327,7 @@ export class SchemaDiscoveryService {
     return useCases[name] || ['General purpose operations']
   }
 
-  private getTypeName(type: any): string {
+  private getTypeName(type: DiscoveryTypeRef | null | undefined): string {
     // Add null safety for type object
     if (!type) {
       return 'Unknown'
@@ -311,11 +342,11 @@ export class SchemaDiscoveryService {
     return type.name || 'Unknown'
   }
 
-  private isRequired(type: any): boolean {
-    return type && type.kind === 'NON_NULL'
+  private isRequired(type: DiscoveryTypeRef | null | undefined): boolean {
+    return !!(type && type.kind === 'NON_NULL')
   }
 
-  private generateFilterExamples(fieldName: string, _type: any): string[] {
+  private generateFilterExamples(fieldName: string, _type: DiscoveryTypeRef | null | undefined): string[] {
     const examples: { [key: string]: string[] } = {
       search: ['"engineer"', '"senior developer"', '"project manager"'],
       content: ['"React component"', '"API documentation"', '"user guide"'],
@@ -418,14 +449,14 @@ export interface FilterOption {
 export interface FilterCombinationExample {
   name: string
   description: string
-  example: any
+  example: Record<string, unknown>
 }
 
 export interface SearchExample {
   name: string
   description: string
   query: string
-  variables: any
+  variables: Record<string, unknown>
   explanation: string
 }
 

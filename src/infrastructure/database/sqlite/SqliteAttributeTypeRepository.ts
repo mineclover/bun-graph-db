@@ -32,7 +32,7 @@ export class SqliteAttributeTypeRepository
   async save(attributeType: AttributeType): Promise<void> {
     const attributeTypeData = attributeType.toDatabase()
 
-    if (attributeTypeData.id === null || attributeTypeData.id === 'null') {
+    if (!attributeTypeData.id || attributeTypeData.id === 'null') {
       const query = `
         INSERT INTO attribute_types (identifier, json_type, format, description, validation_schema, reference_config, default_value, examples, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -182,7 +182,7 @@ export class SqliteAttributeTypeRepository
       updates.description ?? existing.getDescription(),
       updates.validationSchema ? JSON.stringify(updates.validationSchema) : existing.getValidationSchema(),
       existing.getReferenceConfig(), // No update available for this
-      updates.defaultValue ?? existing.getDefaultValue(),
+      updates.defaultValue !== undefined ? JSON.stringify(updates.defaultValue) : existing.getDefaultValue(),
       existing.getExamples(), // No update available for this
       existing.getCreatedAt(),
       existing.getUpdatedAt(),

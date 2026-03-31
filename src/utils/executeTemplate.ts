@@ -7,7 +7,30 @@
  * 모든 스크립트에서 재사용할 수 있습니다.
  */
 
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
+
 const GRAPHQL_ENDPOINT = 'http://localhost:4000/graphql'
+
+type TemplateVariableValue =
+  | SafeJsonValue
+  | undefined
+  | TemplateVariableValue[]
+  | { [key: string]: TemplateVariableValue }
+
+type TemplateVariables = Record<string, TemplateVariableValue>
+
+interface ExecuteTemplatePayload {
+  success?: boolean
+  data?: SafeJsonValue
+  errors?: Array<{ message: string; code?: string }>
+}
+
+interface ExecuteTemplateGraphQLResponse {
+  data?: {
+    executeTemplate?: ExecuteTemplatePayload
+  }
+  errors?: Array<{ message: string; code?: string }>
+}
 
 export interface ExecuteTemplateOptions {
   endpoint?: string
@@ -17,7 +40,7 @@ export interface ExecuteTemplateOptions {
 
 export interface ExecuteTemplateResult {
   success: boolean
-  data?: any
+  data?: SafeJsonValue
   errors?: Array<{ message: string; code?: string }>
   metadata?: {
     templateIdentifier: string
@@ -36,7 +59,7 @@ export interface ExecuteTemplateResult {
  */
 export async function executeTemplate(
   templateIdentifier: string,
-  variables: any = {},
+  variables: TemplateVariables = {},
   options: ExecuteTemplateOptions = {},
 ): Promise<ExecuteTemplateResult> {
   const startTime = Date.now()
@@ -87,17 +110,18 @@ export async function executeTemplate(
       throw new Error(`HTTP error! status: ${response.status}`)
     }
 
-    const result = await response.json()
+    const result: ExecuteTemplateGraphQLResponse = await response.json()
     const executionTime = Date.now() - startTime
+    const payload = result.data?.executeTemplate
 
     const executeResult: ExecuteTemplateResult = {
-      success: result.data?.executeTemplate?.success || false,
-      data: result.data?.executeTemplate?.data,
-      errors: result.data?.executeTemplate?.errors || result.errors,
+      success: payload?.success || false,
+      data: payload?.data,
+      errors: payload?.errors || result.errors,
       metadata: {
         templateIdentifier,
         executionTime,
-        hasData: !!result.data?.executeTemplate?.data,
+        hasData: payload?.data !== undefined,
       },
     }
 
@@ -142,7 +166,7 @@ export async function executeTemplate(
  * 여러 템플릿을 순차적으로 실행합니다
  */
 export async function executeTemplates(
-  templates: Array<{ identifier: string; variables?: any }>,
+  templates: Array<{ identifier: string; variables?: TemplateVariables }>,
   options: ExecuteTemplateOptions = {},
 ): Promise<ExecuteTemplateResult[]> {
   const results: ExecuteTemplateResult[] = []
@@ -193,7 +217,12 @@ export const TemplateHelpers = {
   },
 
   // 노드 생성
-  async createNode(content: string, tableId: string, attributes: any[] = [], options?: ExecuteTemplateOptions) {
+  async createNode(
+    content: string,
+    tableId: string,
+    attributes: SafeJsonValue[] = [],
+    options?: ExecuteTemplateOptions,
+  ) {
     return executeTemplate(
       'create-node-simple',
       {

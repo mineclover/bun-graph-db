@@ -19,6 +19,18 @@ type TableNode implements Node {
   "Optional description providing additional context about the node"
   description: String
 
+  "Arbitrary JSON metadata attached to the node"
+  metadata: JSON
+
+  "Compatibility score field for search-oriented clients"
+  relevanceScore: Float!
+
+  "Traversal helper field used by legacy connected-node queries"
+  distance: Int!
+
+  "Parent table identifier for compatibility with older queries"
+  tableId: ID!
+
   "Timestamp when the node was created"
   createdAt: DateTime!
 
@@ -38,6 +50,9 @@ type TableNode implements Node {
   "All relationships where this node is the target (incoming edges)"
   incomingRelations: [NodeRelation!]!
 
+  "Compatibility alias returning both incoming and outgoing relationships"
+  relations: [NodeRelation!]!
+
   # Computed fields
   "Total number of attributes attached to this node"
   attributeCount: Int!
@@ -55,7 +70,7 @@ type TableNode implements Node {
     "Maximum traversal depth (default: 1, max recommended: 10)"
     depth: Int = 1
     "Direction of relationships to follow (INCOMING, OUTGOING, or BOTH)"
-    direction: RelationDirection = BOTH
+    direction: String = "BOTH"
     "Filter by specific relationship types (optional)"
     relationTypes: [String!]
   ): [TableNode!]!
@@ -78,14 +93,15 @@ type TableNode implements Node {
   """
   neighborsByRelationType(
     "Relationship types to filter by"
-    relationTypes: [String!]!
+    relationTypes: [String!]
     "Direction of relationships to follow"
-    direction: RelationDirection = BOTH
+    direction: String = "BOTH"
   ): [TableNode!]!
 }
 
 type NodeAttribute {
   id: ID!
+  attributeId: ID!
   value: String!
   formattedValue: String!
   attribute: Attribute!
@@ -96,7 +112,9 @@ type NodeAttribute {
 # Input types for node operations
 input CreateNodeInput {
   content: String!
-  tableId: ID!
+  tableId: ID
+  title: String
+  description: String
   attributes: [NodeAttributeInput!]
   metadata: JSON
 }
@@ -122,7 +140,11 @@ input CreatePersonNodeInput {
 }
 
 input UpdateNodeInput {
+  nodeId: ID
   content: String
+  title: String
+  description: String
+  metadata: JSON
 }
 
 input NodeAttributeInput {
@@ -188,6 +210,38 @@ input SearchNodesFilter {
 
   "Filter by relationship patterns and connected nodes"
   relationFilters: [RelationFilter!]
+}
+
+input SearchNodesLegacyInput {
+  tableId: ID!
+  search: String
+  searchTerm: String
+  limit: Int
+  offset: Int
+}
+
+input SearchQueryInput {
+  textSearch: String
+  conditions: [SearchConditionGroupInput!]
+  sortBy: [SearchSortInput!]
+  limit: Int
+  offset: Int
+}
+
+input SearchConditionGroupInput {
+  logicalOperator: String = "AND"
+  filters: [SearchFilterConditionInput!]!
+}
+
+input SearchFilterConditionInput {
+  field: String!
+  operator: String!
+  value: JSON
+}
+
+input SearchSortInput {
+  field: String!
+  direction: String = "DESC"
 }
 
 """
@@ -296,6 +350,26 @@ input NodesPagination {
 
 # Connection types for nodes
 type NodesConnection implements Connection {
+  nodes: [TableNode!]!
+  totalCount: Int!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  queryTime: Float
+}
+
+type SearchNodeResult {
+  node: TableNode!
+  id: ID!
+  content: String!
+  title: String
+  description: String
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  table: Table!
+  attributes: JSON
+}
+
+type SearchNodesConnection implements Connection {
   nodes: [TableNode!]!
   totalCount: Int!
   hasNextPage: Boolean!
@@ -450,8 +524,13 @@ type DeleteNodePayload implements OperationResult {
 
 type SetNodeAttributePayload implements OperationResult {
   success: Boolean!
+  attribute: NodeAttribute
   nodeAttribute: NodeAttribute
   errors: [Error!]!
+}
+
+type GetNodeAttributesPayload {
+  attributes: [NodeAttribute!]!
 }
 
 type SetNodeAttributesPayload implements OperationResult {

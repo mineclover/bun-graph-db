@@ -73,11 +73,11 @@
   "usageExamples": {
     "byTableId": {
       "mutation": "executeTemplateWithGraphQL",
-      "variables": { "tableId": \"1\" }
+      "variables": { "tableId": "1" }
     },
     "byIdentifier": {
       "mutation": "executeTemplateWithGraphQL",
-      "variables": { "identifier": \"test-table\" }
+      "variables": { "identifier": "test-table" }
     }
   }
 }

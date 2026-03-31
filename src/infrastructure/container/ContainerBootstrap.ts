@@ -1,3 +1,4 @@
+import { getDatabasePath } from '@/config/database.js'
 import { DIContainer } from './DIContainer.js'
 import {
   registerCoreModule,
@@ -15,13 +16,20 @@ import {
  * Actual instances are only created when resolve() is called.
  */
 let containerInstance: DIContainer | undefined
+let containerDatabasePath: string | undefined
 
 /**
  * Create and configure the main application container
  */
 export async function createContainer(): Promise<DIContainer> {
-  if (containerInstance) {
+  const databasePath = getDatabasePath()
+
+  if (containerInstance && containerDatabasePath === databasePath) {
     return containerInstance
+  }
+
+  if (containerInstance && containerDatabasePath !== databasePath) {
+    containerInstance.clear()
   }
 
   const container = new DIContainer()
@@ -36,6 +44,7 @@ export async function createContainer(): Promise<DIContainer> {
   registerGraphQLModule(container)
 
   containerInstance = container
+  containerDatabasePath = databasePath
   return container
 }
 
@@ -53,7 +62,9 @@ export function getContainer(): DIContainer {
  * Reset the container (for testing)
  */
 export function resetContainer(): void {
+  containerInstance?.clear()
   containerInstance = undefined
+  containerDatabasePath = undefined
 }
 
 /**

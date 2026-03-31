@@ -1,5 +1,6 @@
 import type { NodeId, PaginatedResult, PaginationOptions, TableId } from '@/core/types/CommonTypes.js'
 import type { Node } from '@/domain/entities/Node.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export interface INodeRepository {
   save(node: Node): Promise<void>
@@ -15,6 +16,9 @@ export interface INodeRepository {
   saveMany(nodes: Node[]): Promise<void>
   findByIds(ids: NodeId[]): Promise<Node[]>
   searchByContent(tableId: TableId, searchTerm: string, options?: PaginationOptions): Promise<PaginatedResult<Node>>
-  executeRawQuery(query: string, params?: any[]): Promise<any[]>
-  update(id: NodeId, updates: { content?: string; title?: string | null; description?: string | null }): Promise<Node>
+  executeRawQuery(query: string, params?: unknown[]): Promise<unknown[]>
+  update(
+    id: NodeId,
+    updates: { content?: string; title?: string | null; description?: string | null; metadata?: SafeJsonValue },
+  ): Promise<Node>
 }

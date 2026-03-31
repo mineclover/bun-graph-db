@@ -8,12 +8,13 @@ import type {
 import type { IFullRepository, ITableScopedRepository } from '@/core/types/RepositoryTypes.js'
 import type { Attribute } from '@/domain/entities/Attribute.js'
 import type { AttributeType } from '@/domain/entities/AttributeType.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export interface AttributeUpdateData {
   identifier?: string
   description?: string | null
   isRequired?: boolean
-  defaultValue?: any
+  defaultValue?: SafeJsonValue
 }
 
 // Extends IFullRepository (provides: save, findById, findByIdentifier, findAll, delete,

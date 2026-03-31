@@ -1,9 +1,13 @@
 import type { Database } from 'bun:sqlite'
 import type { IGraphRepository } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
+import { Node } from '@/domain/entities/Node.js'
 import type { GraphQuery } from '@/domain/value-objects/RelationQuery.js'
 import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
+
+type SqliteParams = Array<string | number | boolean | null>
 
 interface RelatedNodeRow {
   node_id: string
@@ -35,43 +39,57 @@ interface DependencyResult {
   relationPath: string[]
 }
 
+interface RelatedNodeSearchResult {
+  node: Node
+  attributes: Record<string, unknown>
+  sourceNodeId?: string
+  targetNodeId?: string
+  relationTypeId?: string
+  properties?: Record<string, SafeJsonValue>
+  strength?: number
+}
+
 export class SqliteGraphRepository implements IGraphRepository {
   constructor(private readonly db: Database) {}
 
-  async searchRelatedNodes(tableId: TableId, graphQuery: GraphQuery): Promise<PaginatedResult<any>> {
+  async searchRelatedNodes(tableId: TableId, graphQuery: GraphQuery): Promise<PaginatedResult<RelatedNodeSearchResult>> {
     try {
       const { query, params } = this.buildRelatedNodesQuery(tableId, graphQuery, false)
       const { query: countQuery, params: countParams } = this.buildRelatedNodesQuery(tableId, graphQuery, true)
 
       // Get total count
-      const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...countParams)
+      const countResult = this.db.query<{ count: number }, SqliteParams>(countQuery).get(...countParams)
       const total = countResult?.count || 0
 
       // Get data
-      const rows = this.db.query<RelatedNodeRow, any[]>(query).all(...params)
+      const rows = this.db.query<RelatedNodeRow, SqliteParams>(query).all(...params)
 
       // Process results
-      const nodeMap = new Map<string, any>()
+      const nodeMap = new Map<string, RelatedNodeSearchResult>()
       const relations = new Set<string>()
 
       for (const row of rows) {
         // Add node if not already present
         if (!nodeMap.has(row.node_id)) {
           nodeMap.set(row.node_id, {
-            node: {
-              id: row.node_id,
-              tableId: row.node_table_id,
-              content: row.node_content,
-              title: row.node_title,
-              description: row.node_description,
-              createdAt: new Date(row.node_created_at),
-              updatedAt: new Date(row.node_updated_at),
-            },
+            node: Node.fromDatabase(
+              row.node_id,
+              row.node_table_id,
+              row.node_content,
+              row.node_title,
+              row.node_description,
+              null,
+              new Date(row.node_created_at),
+              new Date(row.node_updated_at),
+            ),
             attributes: {},
           })
         }
 
-        const nodeData = nodeMap.get(row.node_id)!
+        const nodeData = nodeMap.get(row.node_id)
+        if (!nodeData) {
+          continue
+        }
 
         // Add attribute if present
         if (row.attribute_identifier && row.attribute_value !== null) {
@@ -87,16 +105,20 @@ export class SqliteGraphRepository implements IGraphRepository {
         }
       }
 
-      const data = Array.from(nodeMap.values()).map((item) => ({
-        ...item,
-        sourceNodeId: rows.find((r) => r.node_id === item.node.id)?.source_node_id,
-        targetNodeId: rows.find((r) => r.node_id === item.node.id)?.target_node_id,
-        relationTypeId: rows.find((r) => r.node_id === item.node.id)?.relation_type_id,
-        properties: rows.find((r) => r.node_id === item.node.id)?.relation_properties
-          ? JSON.parse(rows.find((r) => r.node_id === item.node.id)?.relation_properties!)
-          : null,
-        strength: rows.find((r) => r.node_id === item.node.id)?.relation_strength,
-      }))
+      const data = Array.from(nodeMap.values()).map((item) => {
+        const relationRow = rows.find((r) => r.node_id === item.node.getId())
+
+        return {
+          ...item,
+          sourceNodeId: relationRow?.source_node_id ?? undefined,
+          targetNodeId: relationRow?.target_node_id ?? undefined,
+          relationTypeId: relationRow?.relation_type_id ?? undefined,
+          properties: relationRow?.relation_properties
+            ? (JSON.parse(relationRow.relation_properties) as Record<string, SafeJsonValue>)
+            : undefined,
+          strength: relationRow?.relation_strength ?? undefined,
+        }
+      })
 
       const limit = graphQuery.limit || 10
       const offset = graphQuery.offset || 0
@@ -181,7 +203,7 @@ export class SqliteGraphRepository implements IGraphRepository {
             path_json: string
             length: number
           },
-          any[]
+          SqliteParams
         >(query)
         .all(...params)
 
@@ -273,7 +295,7 @@ export class SqliteGraphRepository implements IGraphRepository {
             level: number
             relation_path_json: string
           },
-          any[]
+          SqliteParams
         >(query)
         .all(...params)
 
@@ -291,8 +313,8 @@ export class SqliteGraphRepository implements IGraphRepository {
     tableId: TableId,
     graphQuery: GraphQuery,
     isCountQuery: boolean,
-  ): { query: string; params: any[] } {
-    const params: any[] = [tableId]
+  ): { query: string; params: SqliteParams } {
+    const params: SqliteParams = [tableId]
 
     // Base query structure
     let query = isCountQuery
@@ -321,7 +343,7 @@ export class SqliteGraphRepository implements IGraphRepository {
           JOIN attributes a2 ON nav2.attribute_id = a2.id
           WHERE nav2.node_id = n.id AND a2.identifier = ? AND nav2.value = ?
         )`
-        params.push(field, value)
+        params.push(field, typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? value : JSON.stringify(value))
       }
     }
 
@@ -362,7 +384,7 @@ export class SqliteGraphRepository implements IGraphRepository {
     return { query, params }
   }
 
-  private parseAttributeValue(value: string): any {
+  private parseAttributeValue(value: string): unknown {
     try {
       return JSON.parse(value)
     } catch {

@@ -4,6 +4,8 @@ import type { ITableRepository } from '@/domain/repositories/ITableRepository.js
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
+type SqliteParams = Array<string | number | boolean | null>
+
 interface TableRow {
   id: number
   identifier: string
@@ -20,7 +22,7 @@ export class SqliteTableRepository extends BaseSqliteRepository<Table, TableId> 
   async save(table: Table): Promise<Table> {
     const tableData = table.toDatabase()
 
-    if (tableData.id === null || tableData.id === 'null') {
+    if (!tableData.id || tableData.id === 'null') {
       // Insert new table (let SQLite auto-generate ID)
       const query = `
         INSERT INTO tables (identifier, description, created_at, updated_at)
@@ -125,8 +127,8 @@ export class SqliteTableRepository extends BaseSqliteRepository<Table, TableId> 
       // Add limit and offset to query parameters
       const dataParams = [...queryParams, limit, offset]
 
-      const rows = this.db.query<TableRow, any[]>(dataQuery).all(...dataParams)
-      const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...queryParams)
+      const rows = this.db.query<TableRow, SqliteParams>(dataQuery).all(...dataParams)
+      const countResult = this.db.query<{ count: number }, SqliteParams>(countQuery).get(...queryParams)
       const total = countResult?.count || 0
 
       const tables = rows.map((row) => this.mapRowToEntity(row))

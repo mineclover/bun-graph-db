@@ -117,7 +117,8 @@ export class McpHelper {
 
     // Extract actual response from MCP wrapper
     if (result.result?.content?.[0]?.text) {
-      return JSON.parse(result.result.content[0].text)
+      const parsed = JSON.parse(result.result.content[0].text)
+      return this.normalizeToolResult(toolName, parsed)
     }
 
     return result
@@ -155,6 +156,72 @@ export class McpHelper {
     })
 
     return await response.json()
+  }
+
+  private normalizeToolResult(toolName: string, parsed: any): any {
+    const data = parsed?.data || {}
+
+    const mutationNames: Record<string, string> = {
+      createTable: 'createTable',
+      createAttribute: 'createAttribute',
+      createNode: 'createNode',
+      createRelation: 'createRelation',
+      createTemplate: 'createTemplate',
+      executeTemplateWithGraphQL: 'executeTemplateWithGraphQL',
+    }
+
+    if (toolName === 'healthCheck' && data.healthCheck) {
+      return {
+        success: true,
+        data: data.healthCheck,
+        errors: parsed.errors || [],
+      }
+    }
+
+    if (toolName === 'systemStats' && data.systemStats) {
+      return {
+        success: true,
+        data: data.systemStats,
+        errors: parsed.errors || [],
+      }
+    }
+
+    if (toolName === 'searchNodes' && data.searchNodes) {
+      return {
+        success: true,
+        data: data.searchNodes,
+        errors: parsed.errors || [],
+      }
+    }
+
+    if (toolName === 'searchTemplates' && data.searchTemplates) {
+      return {
+        success: true,
+        data: data.searchTemplates,
+        errors: parsed.errors || [],
+      }
+    }
+
+    const mutationName = mutationNames[toolName]
+    if (mutationName && data[mutationName]) {
+      const payload = data[mutationName]
+      const entity =
+        payload.table ||
+        payload.attribute ||
+        payload.node ||
+        payload.relation ||
+        payload.template ||
+        payload.executionResult ||
+        payload
+
+      return {
+        success: payload.success ?? true,
+        data: entity,
+        errors: payload.errors || parsed.errors || [],
+      }
+    }
+
+    return parsed
   }
 }
 
@@ -323,13 +390,31 @@ export class UnifiedTestEnvironmentManager {
         (102, 'e2e-projects', 'E2E Projects Table', datetime('now'), datetime('now'))
       `)
 
+      db.exec(`
+        INSERT OR IGNORE INTO attribute_types (id, identifier, json_type, created_at, updated_at)
+        VALUES
+        (1, 'text', 'string', datetime('now'), datetime('now'))
+      `)
+
+      db.exec(`
+        INSERT OR IGNORE INTO attributes (id, table_id, identifier, name, attribute_type_id, is_required, metadata, created_at, updated_at)
+        VALUES
+        (300, 100, 'test-attribute', 'Test Attribute', 1, 0, '{"searchable":true}', datetime('now'), datetime('now'))
+      `)
+
+      db.exec(`
+        INSERT OR IGNORE INTO relation_types (id, identifier, description, category, created_at, updated_at)
+        VALUES
+        (400, 'CONNECTED', 'Connected relation for E2E tests', 'semantic', datetime('now'), datetime('now'))
+      `)
+
       // 테스트 노드 생성
       db.exec(`
-        INSERT OR IGNORE INTO table_nodes (id, table_id, content, created_at, updated_at)
+        INSERT OR IGNORE INTO nodes (id, table_id, title, content, created_at, updated_at)
         VALUES
-        (200, 100, 'E2E Test Node 1', datetime('now'), datetime('now')),
-        (201, 100, 'E2E Test Node 2', datetime('now'), datetime('now')),
-        (202, 101, 'E2E User Node', datetime('now'), datetime('now'))
+        (200, 100, 'E2E Test Node 1', 'E2E Test Node 1', datetime('now'), datetime('now')),
+        (201, 100, 'E2E Test Node 2', 'E2E Test Node 2', datetime('now'), datetime('now')),
+        (202, 101, 'E2E User Node', 'E2E User Node', datetime('now'), datetime('now'))
       `)
 
       // 테스트 템플릿 생성

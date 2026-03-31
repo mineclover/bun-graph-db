@@ -43,7 +43,7 @@ export class CustomSortStrategy extends SortStrategy {
 
     // If customComparator is provided, it should contain the custom function identifier and parameters
     let functionId: string
-    let parameters: Record<string, any> = {}
+    let parameters: Record<string, unknown> = {}
 
     if (customComparator) {
       try {
@@ -89,7 +89,7 @@ export class CustomSortStrategy extends SortStrategy {
   private findBestCustomFunction(
     field: string,
     context: SortContext,
-    _parameters: Record<string, any>,
+    _parameters: Record<string, unknown>,
   ): CustomSortFunction | null {
     // First, try to find by exact field name match in function tags
     let candidates = this.registry.search(field)
@@ -171,6 +171,10 @@ export class CustomSortStrategy extends SortStrategy {
    */
   getRegistryInfo() {
     return this.registry.getInfo()
+  }
+
+  getRegistry(): CustomSortFunctionRegistry {
+    return this.registry
   }
 }
 
@@ -288,8 +292,8 @@ export function registerAllBuiltInCustomSortFunctions(
       },
     },
     handler: (field, direction, context, parameters = {}) => {
-      const searchTerms = parameters.search_terms || []
-      const boostExact = parameters.boost_exact || 2.0
+      const searchTerms = Array.isArray(parameters.search_terms) ? parameters.search_terms : []
+      const boostExact = typeof parameters.boost_exact === 'number' ? parameters.boost_exact : 2.0
 
       if (searchTerms.length === 0) {
         throw new Error('search_terms parameter is required for relevance scoring')

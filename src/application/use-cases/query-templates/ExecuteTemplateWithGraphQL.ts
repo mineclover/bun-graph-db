@@ -1,4 +1,4 @@
-import type { ExecutionResult, GraphQLSchema } from 'graphql'
+import type { DocumentNode, ExecutionResult, GraphQLSchema } from 'graphql'
 import { execute, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { ExecuteQueryTemplateUseCase } from './ExecuteQueryTemplate.js'
@@ -7,17 +7,17 @@ export interface ExecuteTemplateWithGraphQLInput {
   templateIdentifier: string
   variables?: Record<string, unknown>
   trackUsage?: boolean
-  context?: any
+  context?: Record<string, unknown>
 }
 
 export interface ExecuteTemplateWithGraphQLOutput {
   success: boolean
-  data?: any
+  data?: ExecutionResult['data']
   errors?: Array<{
     message: string
     locations?: Array<{ line: number; column: number }>
     path?: Array<string | number>
-    extensions?: any
+    extensions?: Record<string, unknown>
   }>
   metadata: {
     templateId: string
@@ -53,7 +53,7 @@ export class ExecuteTemplateWithGraphQLUseCase {
       })
 
       // 2. GraphQL 쿼리 파싱
-      let document: any
+      let document: DocumentNode
       try {
         document = parse(templateResult.queryText)
       } catch (parseError) {

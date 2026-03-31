@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
-import type { ILogger } from '@/application/ports/ILogger.js'
 import { ActivateDocUseCase } from '@/application/use-cases/docs/ActivateDoc.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import { createMockLogger, createPaginatedResult, type MockedMethods } from './test-helpers.js'
 
 // Helper function to create test Doc
 function createTestDoc(
@@ -19,45 +19,47 @@ function createTestDoc(
 
 describe('ActivateDocUseCase', () => {
   let useCase: ActivateDocUseCase
-  let mockDocRepository: IDocRepository
-  let mockLogger: ILogger
+  let mockDocRepository: MockedMethods<IDocRepository>
+  let mockLogger: ReturnType<typeof createMockLogger>
+
+  function createDocRepositoryMock(): MockedMethods<IDocRepository> {
+    return {
+      save: mock(async (_doc: Doc) => {}),
+      findById: mock(async (_id: string) => null),
+      findAll: mock(async (_options) => createPaginatedResult<Doc>()),
+      delete: mock(async (_id: string) => {}),
+      findByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => []),
+      findActiveByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => null),
+      findVersionsByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => []),
+      searchDocs: mock(async (_options) => createPaginatedResult<Doc>()),
+      getLatestVersion: mock(async (_tableId: string, _category: DocCategory) => 1),
+      deactivateOthersInCategory: mock(async (_tableId: string, _category: DocCategory, _exceptId?: string) => {}),
+      exists: mock(async (_tableId: string, _category: DocCategory, _version: number) => false),
+      count: mock(async (_tableId?: string) => 0),
+      countByCategory: mock(async (_category: DocCategory) => 0),
+      searchByContent: mock(async (_options, _pagination) => createPaginatedResult<Doc>()),
+      saveMany: mock(async (_docs: Doc[]) => {}),
+      findByIds: mock(async (_ids: string[]) => []),
+      findByTableIds: mock(async (_tableIds: string[]) => []),
+    } satisfies MockedMethods<IDocRepository>
+  }
 
   beforeEach(() => {
-    // Mock logger
-    mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
-    }
-
-    // Mock repository
-    mockDocRepository = {
-      save: mock(async (doc) => doc),
-      findById: mock(async () => null),
-      findByTableId: mock(async () => []),
-      findByTableAndCategory: mock(async () => []),
-      exists: mock(async () => false),
-      delete: mock(async () => {}),
-      activate: mock(async () => {}),
-      deactivate: mock(async () => {}),
-      deactivateOthersInCategory: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      count: mock(async () => 0),
-    } as any
+    mockLogger = createMockLogger()
+    mockDocRepository = createDocRepositoryMock()
 
     useCase = new ActivateDocUseCase(mockDocRepository, mockLogger)
   })
 
   describe('Input Validation', () => {
     it('should throw ValidationException when doc ID is empty', async () => {
-      await expect(useCase.execute('' as any)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute('' as any)).rejects.toThrow('Doc ID is required')
+      await expect(useCase.execute('')).rejects.toThrow(ValidationException)
+      await expect(useCase.execute('')).rejects.toThrow('Doc ID is required')
     })
 
     it('should throw ValidationException when doc ID is whitespace', async () => {
-      await expect(useCase.execute('   ' as any)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute('   ' as any)).rejects.toThrow('Doc ID is required')
+      await expect(useCase.execute('   ')).rejects.toThrow(ValidationException)
+      await expect(useCase.execute('   ')).rejects.toThrow('Doc ID is required')
     })
   })
 
@@ -65,8 +67,8 @@ describe('ActivateDocUseCase', () => {
     it('should throw NotFoundException when doc does not exist', async () => {
       mockDocRepository.findById = mock(async () => null)
 
-      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow("Doc with id 'nonexistent-doc' not found")
+      await expect(useCase.execute('nonexistent-doc')).rejects.toThrow(NotFoundException)
+      await expect(useCase.execute('nonexistent-doc')).rejects.toThrow("Doc with id 'nonexistent-doc' not found")
     })
   })
 
@@ -76,7 +78,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => inactiveDoc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.isActive).toBe(true)
@@ -89,7 +91,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => activeDoc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.isActive).toBe(true)
@@ -102,7 +104,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      await useCase.execute('doc-1' as any)
+      await useCase.execute('doc-1')
 
       expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.GUIDE, 'doc-1')
       expect(mockDocRepository.save).toHaveBeenCalled()
@@ -115,7 +117,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('usage')
@@ -128,7 +130,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-2' as any)
+      const result = await useCase.execute('doc-2')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('guide')
@@ -141,7 +143,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-3' as any)
+      const result = await useCase.execute('doc-3')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('example')
@@ -154,7 +156,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-4' as any)
+      const result = await useCase.execute('doc-4')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('spec')
@@ -167,7 +169,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-5' as any)
+      const result = await useCase.execute('doc-5')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.category).toBe('general')
@@ -182,7 +184,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.version).toBe(1)
@@ -194,7 +196,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-2' as any)
+      const result = await useCase.execute('doc-2')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.version).toBe(2)
@@ -206,7 +208,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-3' as any)
+      const result = await useCase.execute('doc-3')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.version).toBe(5)
@@ -226,7 +228,7 @@ describe('ActivateDocUseCase', () => {
         throw saveError
       })
 
-      await expect(useCase.execute('doc-1' as any)).rejects.toThrow('Database connection failed')
+      await expect(useCase.execute('doc-1')).rejects.toThrow('Database connection failed')
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to activate doc', expect.any(Object))
     })
 
@@ -241,7 +243,7 @@ describe('ActivateDocUseCase', () => {
         throw deactivationError
       })
 
-      await expect(useCase.execute('doc-1' as any)).rejects.toThrow('Deactivation failed')
+      await expect(useCase.execute('doc-1')).rejects.toThrow('Deactivation failed')
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to activate doc', expect.any(Object))
     })
   })
@@ -252,7 +254,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      await useCase.execute('doc-123' as any)
+      await useCase.execute('doc-123')
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Activating doc',
@@ -283,7 +285,7 @@ describe('ActivateDocUseCase', () => {
       })
 
       try {
-        await useCase.execute('doc-1' as any)
+        await useCase.execute('doc-1')
       } catch (_e) {
         // Expected error
       }
@@ -305,17 +307,17 @@ describe('ActivateDocUseCase', () => {
 
       // First activation
       mockDocRepository.findById = mock(async () => doc1)
-      const result1 = await useCase.execute('doc-1' as any)
+      const result1 = await useCase.execute('doc-1')
       expect(result1.doc.isActive).toBe(true)
 
       // Second activation (should deactivate doc-1)
       mockDocRepository.findById = mock(async () => doc2)
-      const result2 = await useCase.execute('doc-2' as any)
+      const result2 = await useCase.execute('doc-2')
       expect(result2.doc.isActive).toBe(true)
 
       // Third activation (should deactivate doc-2)
       mockDocRepository.findById = mock(async () => doc3)
-      const result3 = await useCase.execute('doc-3' as any)
+      const result3 = await useCase.execute('doc-3')
       expect(result3.doc.isActive).toBe(true)
 
       expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledTimes(3)
@@ -328,12 +330,12 @@ describe('ActivateDocUseCase', () => {
 
       // Activate doc in table-1
       mockDocRepository.findById = mock(async () => doc1)
-      await useCase.execute('doc-1' as any)
+      await useCase.execute('doc-1')
       expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-1', DocCategory.USAGE, 'doc-1')
 
       // Activate doc in table-2 (should not affect table-1)
       mockDocRepository.findById = mock(async () => doc2)
-      await useCase.execute('doc-2' as any)
+      await useCase.execute('doc-2')
       expect(mockDocRepository.deactivateOthersInCategory).toHaveBeenCalledWith('table-2', DocCategory.USAGE, 'doc-2')
     })
 
@@ -343,7 +345,7 @@ describe('ActivateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => doc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.doc).toBeDefined()
       expect(result.doc.isActive).toBe(true)

@@ -5,33 +5,24 @@
  * Based On: data-model.md GraphQLOperation specification
  */
 
+import type { GraphQLExecutionResult, GraphQLVariables } from '@/core/types/GraphQLTypes.js'
 import { type OperationDefinitionNode, parse } from 'graphql'
 
 export type GraphQLOperationType = 'query' | 'mutation' | 'custom'
+export type { GraphQLExecutionResult, GraphQLVariables } from '@/core/types/GraphQLTypes.js'
 
 export interface GraphQLOperation {
   operationName: string
   query: string
-  variables: Record<string, any>
+  variables: GraphQLVariables
   operationType: GraphQLOperationType
 }
 
 export interface GraphQLExecutionContext {
   operation: GraphQLOperation
-  variables: Record<string, any>
+  variables: GraphQLVariables
   timestamp: Date
   requestId?: string
-}
-
-export interface GraphQLExecutionResult {
-  data?: any
-  errors?: Array<{
-    message: string
-    locations?: Array<{ line: number; column: number }>
-    path?: Array<string | number>
-    extensions?: Record<string, any>
-  }>
-  extensions?: Record<string, any>
 }
 
 export class GraphQLOperationBuilder {
@@ -53,7 +44,7 @@ export class GraphQLOperationBuilder {
     return this
   }
 
-  withVariables(variables: Record<string, any>): GraphQLOperationBuilder {
+  withVariables(variables: GraphQLVariables): GraphQLOperationBuilder {
     this.operation.variables = variables || {}
     return this
   }
@@ -143,7 +134,7 @@ export function validateGraphQLOperation(operation: GraphQLOperation): {
 
 export function validateGraphQLOperationVariables(
   operation: GraphQLOperation,
-  providedVariables: Record<string, any>,
+  providedVariables: GraphQLVariables,
 ): { valid: boolean; errors: string[] } {
   const errors: string[] = []
 
@@ -190,7 +181,7 @@ export class GraphQLOperationExecutor {
     this.graphqlEndpoint = endpoint
   }
 
-  async execute(operation: GraphQLOperation, variables?: Record<string, any>): Promise<GraphQLExecutionResult> {
+  async execute(operation: GraphQLOperation, variables?: GraphQLVariables): Promise<GraphQLExecutionResult> {
     const validation = validateGraphQLOperation(operation)
     if (!validation.valid) {
       return {
@@ -231,7 +222,7 @@ export class GraphQLOperationExecutor {
         }
       }
 
-      const result = await response.json()
+      const result = (await response.json()) as GraphQLExecutionResult
       return result
     } catch (error) {
       return {
@@ -252,7 +243,7 @@ export class GraphQLOperationExecutor {
 export function createGraphQLQuery(
   operationName: string,
   query: string,
-  variables?: Record<string, any>,
+  variables?: GraphQLVariables,
 ): GraphQLOperation {
   return new GraphQLOperationBuilder()
     .withOperationName(operationName)
@@ -265,7 +256,7 @@ export function createGraphQLQuery(
 export function createGraphQLMutation(
   operationName: string,
   mutation: string,
-  variables?: Record<string, any>,
+  variables?: GraphQLVariables,
 ): GraphQLOperation {
   return new GraphQLOperationBuilder()
     .withOperationName(operationName)
@@ -292,7 +283,7 @@ export function extractGraphQLVariables(query: string): string[] {
 
 export function createGraphQLExecutionContext(
   operation: GraphQLOperation,
-  variables?: Record<string, any>,
+  variables?: GraphQLVariables,
   requestId?: string,
 ): GraphQLExecutionContext {
   return {

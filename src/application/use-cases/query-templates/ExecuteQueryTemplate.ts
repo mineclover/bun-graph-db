@@ -51,9 +51,14 @@ export class ExecuteQueryTemplateUseCase {
     }
 
     // 5. 사용 통계 업데이트 (선택적)
+    const templateId = template.getId()
+    if (!templateId) {
+      throw new ValidationException(`Query template is missing an ID: ${input.templateIdentifier}`)
+    }
+
     if (input.trackUsage !== false) {
       try {
-        await this.queryTemplateRepository.incrementUsage(template.getId()!)
+        await this.queryTemplateRepository.incrementUsage(templateId)
       } catch (error) {
         // 통계 업데이트 실패는 쿼리 실행을 막지 않음
         this.logger.warn('Failed to update template usage statistics', { error })
@@ -65,7 +70,7 @@ export class ExecuteQueryTemplateUseCase {
       queryText: template.getQueryText(),
       processedVariables: variables,
       metadata: {
-        templateId: template.getId()!,
+        templateId,
         templateName: template.getName(),
         complexityScore: template.getComplexityScore(),
         estimatedTokens: Math.ceil(template.getQueryText().length / 4), // 대략적인 토큰 추정

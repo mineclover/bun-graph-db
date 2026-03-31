@@ -35,7 +35,7 @@ describe('DeleteTableUseCase', () => {
       exists: mock(async () => false),
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
-    } as any
+    } as unknown as ITableRepository
 
     mockNodeRepository = {
       save: mock(async (node) => node),
@@ -47,7 +47,7 @@ describe('DeleteTableUseCase', () => {
       findAll: mock(async () => ({ data: [], metadata: {} })),
       countByTableId: mock(async () => 0),
       deleteByTableId: mock(async () => {}),
-    } as any
+    } as unknown as INodeRepository
 
     mockAttributeRepository = {
       save: mock(async () => {}),
@@ -60,7 +60,7 @@ describe('DeleteTableUseCase', () => {
       exists: mock(async () => false),
       countByTableId: mock(async () => 0),
       deleteByTableId: mock(async () => {}),
-    } as any
+    } as unknown as IAttributeRepository
 
     mockRelationRepository = {
       save: mock(async (rel) => rel),
@@ -74,7 +74,7 @@ describe('DeleteTableUseCase', () => {
       findAll: mock(async () => ({ data: [], metadata: {} })),
       count: mock(async () => 0),
       deleteByTableId: mock(async () => {}),
-    } as any
+    } as unknown as INodeRelationRepository
 
     useCase = new DeleteTableUseCase(
       mockTableRepository,
@@ -88,7 +88,7 @@ describe('DeleteTableUseCase', () => {
   describe('Table Existence Validation', () => {
     it('should throw error when table does not exist', async () => {
       const input: DeleteTableInput = {
-        id: 'non-existent-table' as any,
+        id: 'non-existent-table',
       }
 
       mockTableRepository.findById = mock(async () => null)
@@ -99,7 +99,7 @@ describe('DeleteTableUseCase', () => {
 
   describe('Dependency Checking', () => {
     it('should check table dependencies correctly', async () => {
-      const tableId = 'table-1' as any
+      const tableId = 'table-1'
 
       mockNodeRepository.countByTableId = mock(async () => 5)
       mockAttributeRepository.countByTableId = mock(async () => 3)
@@ -115,7 +115,7 @@ describe('DeleteTableUseCase', () => {
     })
 
     it('should report no data when all counts are zero', async () => {
-      const tableId = 'table-1' as any
+      const tableId = 'table-1'
 
       mockNodeRepository.countByTableId = mock(async () => 0)
       mockAttributeRepository.countByTableId = mock(async () => 0)
@@ -133,13 +133,13 @@ describe('DeleteTableUseCase', () => {
   describe('Deletion Protection', () => {
     it('should block deletion when table has data and force is false', async () => {
       const input: DeleteTableInput = {
-        id: 'table-1' as any,
+        id: 'table-1',
         force: false,
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockNodeRepository.countByTableId = mock(async () => 5)
       mockAttributeRepository.countByTableId = mock(async () => 3)
       mockRelationRepository.count = mock(async () => 2)
@@ -151,12 +151,12 @@ describe('DeleteTableUseCase', () => {
 
     it('should allow deletion when table has no data', async () => {
       const input: DeleteTableInput = {
-        id: 'table-1' as any,
+        id: 'table-1',
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockNodeRepository.countByTableId = mock(async () => 0)
       mockAttributeRepository.countByTableId = mock(async () => 0)
       mockRelationRepository.count = mock(async () => 0)
@@ -178,13 +178,13 @@ describe('DeleteTableUseCase', () => {
   describe('Force Deletion', () => {
     it('should delete table with data when force is true', async () => {
       const input: DeleteTableInput = {
-        id: 'table-1' as any,
+        id: 'table-1',
         force: true,
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockNodeRepository.countByTableId = mock(async () => 5)
       mockAttributeRepository.countByTableId = mock(async () => 3)
       mockRelationRepository.count = mock(async () => 2)
@@ -200,13 +200,13 @@ describe('DeleteTableUseCase', () => {
   describe('Cascade Deletion', () => {
     it('should perform cascade deletion when cascadeDelete is true', async () => {
       const input: DeleteTableInput = {
-        id: 'table-1' as any,
+        id: 'table-1',
         cascadeDelete: true,
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockNodeRepository.countByTableId = mock(async () => 5)
       mockAttributeRepository.countByTableId = mock(async () => 3)
       mockRelationRepository.count = mock(async () => 2)
@@ -223,13 +223,13 @@ describe('DeleteTableUseCase', () => {
 
     it('should skip cascade steps when no data exists', async () => {
       const input: DeleteTableInput = {
-        id: 'table-1' as any,
+        id: 'table-1',
         cascadeDelete: true,
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockNodeRepository.countByTableId = mock(async () => 0)
       mockAttributeRepository.countByTableId = mock(async () => 0)
       mockRelationRepository.count = mock(async () => 0)
@@ -245,13 +245,13 @@ describe('DeleteTableUseCase', () => {
 
     it('should delete only nodes when only nodes exist', async () => {
       const input: DeleteTableInput = {
-        id: 'table-1' as any,
+        id: 'table-1',
         cascadeDelete: true,
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockNodeRepository.countByTableId = mock(async () => 5)
       mockAttributeRepository.countByTableId = mock(async () => 0)
       mockRelationRepository.count = mock(async () => 0)
@@ -267,12 +267,12 @@ describe('DeleteTableUseCase', () => {
   describe('Logging', () => {
     it('should log deletion process steps', async () => {
       const input: DeleteTableInput = {
-        id: 'table-1' as any,
+        id: 'table-1',
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockNodeRepository.countByTableId = mock(async () => 0)
       mockAttributeRepository.countByTableId = mock(async () => 0)
       mockRelationRepository.count = mock(async () => 0)
@@ -292,12 +292,12 @@ describe('DeleteTableUseCase', () => {
 
     it('should log warning when deletion is blocked', async () => {
       const input: DeleteTableInput = {
-        id: 'table-1' as any,
+        id: 'table-1',
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockNodeRepository.countByTableId = mock(async () => 5)
       mockAttributeRepository.countByTableId = mock(async () => 0)
       mockRelationRepository.count = mock(async () => 0)

@@ -9,7 +9,9 @@
 
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { Database } from 'bun:sqlite'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { getDatabasePath } from '@/config/database.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import type { JsonlBackupService } from './JsonlBackupService.js'
 
@@ -60,6 +62,11 @@ export class AutoPersistenceService {
     }
 
     try {
+      if (this.hasExistingDatabaseContent()) {
+        this.logger.info('[AutoPersistence] Existing database content detected, skipping startup restore')
+        return { restored: false }
+      }
+
       const latestBackup = this.findLatestBackup()
       if (!latestBackup) {
         this.logger.info('[AutoPersistence] No previous backup found, starting fresh')
@@ -256,6 +263,36 @@ export class AutoPersistenceService {
       return directories[0] || null
     } catch {
       return null
+    }
+  }
+
+  private hasExistingDatabaseContent(): boolean {
+    const dbPath = getDatabasePath()
+    if (!existsSync(dbPath)) {
+      return false
+    }
+
+    let db: Database | null = null
+
+    try {
+      db = new Database(dbPath)
+      const tablesTable = db
+        .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type='table' AND name='tables'")
+        .get()
+
+      if (!tablesTable) {
+        return false
+      }
+
+      const tableCount = db.query<{ count: number }, []>('SELECT COUNT(*) as count FROM tables').get()?.count ?? 0
+      const nodeCount = db.query<{ count: number }, []>('SELECT COUNT(*) as count FROM nodes').get()?.count ?? 0
+
+      return tableCount > 0 || nodeCount > 0
+    } catch (error) {
+      this.logger.debug('[AutoPersistence] Existing database content check failed; restore will continue', toErrorMeta(error))
+      return false
+    } finally {
+      db?.close()
     }
   }
 }

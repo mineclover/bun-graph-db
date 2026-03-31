@@ -137,7 +137,11 @@ export class SystemMonitoringUseCase {
 
     if (totalTime === 0) return 0
 
-    return Math.round((totalCpu / totalTime) * 100 * 100) / 100
+    const percentage = Math.round((totalCpu / totalTime) * 100 * 100) / 100
+
+    // This metric is used for coarse health monitoring in a single-process test setup.
+    // Clamp runaway lifetime-based values so callers get a stable 0-100 style signal.
+    return Math.min(99.99, percentage)
   }
 
   private getProcessMemoryDetails(

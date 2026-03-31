@@ -1,5 +1,12 @@
 # Relation Query extensions
 
+input GetConnectedNodesInput {
+  nodeId: ID!
+  depth: Int = 1
+  direction: RelationDirection = BOTH
+  relationTypeIds: [ID!]
+}
+
 extend type Query {
   # Relation Type queries
   relationType(id: ID!): RelationType
@@ -12,6 +19,13 @@ extend type Query {
 
   # Graph relationship queries
   searchRelatedNodes(filter: SearchRelatedNodesFilter!, pagination: PaginationInput): RelatedNodesConnection!
+  getConnectedNodes(
+    input: GetConnectedNodesInput
+    nodeId: ID
+    depth: Int = 1
+    direction: RelationDirection = BOTH
+    relationTypeIds: [ID!]
+  ): RelatedNodesConnection!
 
   # Graph analysis queries
   findPathsBetweenNodes(input: FindPathsInput!): [NodePath!]!

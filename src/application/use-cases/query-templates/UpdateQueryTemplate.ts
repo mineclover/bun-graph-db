@@ -4,6 +4,7 @@ import type {
   IQueryTemplateRepository,
   QueryTemplateUpdateData,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { QueryVariablesSchema } from '@/domain/entities/QueryTemplate.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface UpdateQueryTemplateRequest {
@@ -11,7 +12,7 @@ export interface UpdateQueryTemplateRequest {
   name?: string
   description?: string
   queryText?: string
-  inputSchema?: any
+  inputSchema?: QueryVariablesSchema
   defaultVariables?: Record<string, unknown>
   applicableTables?: string[]
   templateType?: 'query' | 'mutation' | 'subscription'

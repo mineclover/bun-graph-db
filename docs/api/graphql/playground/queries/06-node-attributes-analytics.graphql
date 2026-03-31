@@ -38,20 +38,20 @@ query ComprehensiveAttributeAnalytics {
 # ===================================================================
 # 📋 Variables for Advanced Queries (고급 쿼리용 변수)
 # ===================================================================
-{
-  "performanceTableId": "6",
-  "attributeId": "15",  # performance cpu_usage attribute
-  "searchFilter": {
-    "attributeFilters": [
-      {
-        "attributeIdentifier": "cpu_usage",
-        "operator": "GREATER_THAN",
-        "value": "30"
-      }
-    ],
-    "logicalOperator": "AND"
-  }
-}
+# {
+#   "performanceTableId": "6",
+#   "attributeId": "15",
+#   "searchFilter": {
+#     "attributeFilters": [
+#       {
+#         "attributeIdentifier": "cpu_usage",
+#         "operator": "GREATER_THAN",
+#         "value": "30"
+#       }
+#     ],
+#     "logicalOperator": "AND"
+#   }
+# }
 
 # 2. 특정 테이블의 속성 완성도 분석 - is_required 필드 활용
 query AttributeCompleteness($performanceTableId: ID!) {

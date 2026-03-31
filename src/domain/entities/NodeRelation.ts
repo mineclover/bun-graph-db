@@ -1,5 +1,6 @@
 import type { NodeId, NodeRelationId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export class NodeRelation {
   constructor(
@@ -10,7 +11,7 @@ export class NodeRelation {
     private readonly targetNodeId: NodeId | null,
     private readonly targetExternalId: string,
     private readonly relationTypeId: RelationTypeId,
-    private readonly properties: Record<string, any> | null,
+    private readonly properties: Record<string, SafeJsonValue> | null,
     private readonly strength: number,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
@@ -26,11 +27,11 @@ export class NodeRelation {
     targetNodeId: NodeId | null,
     targetExternalId: string,
     relationTypeId: RelationTypeId,
-    properties?: Record<string, any> | null,
+    properties?: Record<string, SafeJsonValue> | null,
     strength?: number,
   ): NodeRelation {
     return new NodeRelation(
-      null as any as NodeRelationId,
+      '' as NodeRelationId,
       tableId,
       sourceNodeId,
       sourceExternalId,
@@ -57,7 +58,7 @@ export class NodeRelation {
     createdAt: Date,
     updatedAt: Date,
   ): NodeRelation {
-    let parsedProperties: Record<string, any> | null = null
+    let parsedProperties: Record<string, SafeJsonValue> | null = null
     if (properties) {
       try {
         parsedProperties = JSON.parse(properties)
@@ -109,7 +110,7 @@ export class NodeRelation {
   }
 
   // Update methods
-  updateProperties(properties: Record<string, any> | null): NodeRelation {
+  updateProperties(properties: Record<string, SafeJsonValue> | null): NodeRelation {
     return new NodeRelation(
       this.id,
       this.tableId,
@@ -187,7 +188,7 @@ export class NodeRelation {
     return this.relationTypeId
   }
 
-  getProperties(): Record<string, any> | null {
+  getProperties(): Record<string, SafeJsonValue> | null {
     return this.properties
   }
 

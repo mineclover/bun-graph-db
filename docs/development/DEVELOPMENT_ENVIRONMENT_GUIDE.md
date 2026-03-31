@@ -63,6 +63,9 @@ curl -X POST http://localhost:4141/graphql \
 # Run all tests
 bun test
 
+# Run Bun's raw test runner directly
+bun run test:direct
+
 # Run specific test suites
 bun test tests/unit/
 bun test tests/integration/
@@ -76,9 +79,11 @@ bun test tests/unit/use-cases/CreateTable.test.ts
 ```
 
 **Current Test Status**:
-- ✅ Use Case Tests: 310/310 passing
-- ✅ Core Functionality: 100% operational
 - ✅ TypeScript: 0 type errors
+- ✅ Lint: passes with `bun run lint --max-diagnostics=20`
+- ✅ Build: `bun run build` passes
+- ✅ Full lane run: `bun run test` passes
+- 📄 Details: [SYSTEM_EVALUATION_2026-03-30.md](./SYSTEM_EVALUATION_2026-03-30.md)
 
 ### Code Quality
 
@@ -308,12 +313,15 @@ git push -u origin feature/my-feature
 As of last verification:
 - ✅ Dependencies: 623 packages installed
 - ✅ TypeScript: 0 type errors
-- ✅ Tests: 310/310 use case tests passing
+- ✅ Lint: passes
+- ✅ Build: passes
 - ✅ Server: Running normally on port 4141
-- ✅ GraphQL API: Fully operational
+- ✅ GraphQL API: core CRUD and search paths verified
+- ✅ MCP API: initialize + table-scoped route verified
 - ✅ Database: SQLite working correctly
+- ✅ `bun run test`: passing
 
 ---
 
-**Last Updated**: 2025-11-25
-**Verified By**: Claude AI Assistant
+**Last Updated**: 2026-03-30
+**Verified By**: Codex AI Assistant

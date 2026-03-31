@@ -17,4 +17,7 @@ export const CommonTokens = {
   JSONL_BACKUP_SERVICE: Symbol.for('JsonlBackupService'),
   SQLITE_BACKUP_SERVICE: Symbol.for('SQLiteBackupService'),
   AUTO_PERSISTENCE_SERVICE: Symbol.for('AutoPersistenceService'),
+  TABULAR_SYNC_HOOK: Symbol.for('TabularSyncHook'),
+  TABULAR_SYNC_CONFIG_STORE: Symbol.for('TabularSyncConfigStore'),
+  TABULAR_SYNC_EVENT_STORE: Symbol.for('TabularSyncEventStore'),
 } as const

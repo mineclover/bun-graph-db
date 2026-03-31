@@ -49,7 +49,7 @@ export class SqliteAttributeRepository
   async save(attribute: Attribute): Promise<Attribute | undefined> {
     const attributeData = attribute.toDatabase()
 
-    if (attributeData.id === null || attributeData.id === 'null') {
+    if (!attributeData.id || attributeData.id === 'null') {
       const query = `
         INSERT INTO attributes (table_id, identifier, name, attribute_type_id, description, is_required, metadata, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)

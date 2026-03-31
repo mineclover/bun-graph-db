@@ -6,6 +6,9 @@ import type { TableNodesExportUseCase } from '@/application/use-cases/export/Tab
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
+type AttributeFormatOption = NonNullable<TableNodesExportInput['attributeFormat']>
+type DateFormatOption = NonNullable<TableNodesExportInput['dateFormat']>
+
 export class ExportMutations extends BaseResolver {
   protected logger: ILogger
 
@@ -36,8 +39,8 @@ export class ExportMutations extends BaseResolver {
         format: input.format,
         includeAttributes: input.includeAttributes ?? true,
         includeMetadata: input.includeMetadata ?? true,
-        attributeFormat: input.attributeFormat as any,
-        dateFormat: input.dateFormat as any,
+        attributeFormat: (input.attributeFormat ?? 'nested') as AttributeFormatOption,
+        dateFormat: (input.dateFormat ?? 'iso') as DateFormatOption,
         limit: input.limit,
         offset: input.offset,
         compression: input.compression ?? false,
@@ -117,8 +120,8 @@ export class ExportMutations extends BaseResolver {
         format: args.format.toLowerCase() as 'json' | 'csv' | 'excel' | 'xml' | 'yaml',
         includeAttributes: args.options?.includeAttributes ?? true,
         includeMetadata: args.options?.includeMetadata ?? true,
-        attributeFormat: (args.options?.attributeFormat?.toLowerCase() || 'nested') as any,
-        dateFormat: (args.options?.dateFormat?.toLowerCase() || 'iso') as any,
+        attributeFormat: (args.options?.attributeFormat?.toLowerCase() || 'nested') as AttributeFormatOption,
+        dateFormat: (args.options?.dateFormat?.toLowerCase() || 'iso') as DateFormatOption,
         limit: args.options?.limit,
         offset: args.options?.offset,
         compression: args.options?.compression ?? false,

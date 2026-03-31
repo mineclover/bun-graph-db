@@ -19,6 +19,7 @@ Welcome to the Bun Graph DB documentation! This directory contains all project d
 ### 🛠️ [Development](./development/)
 - [Testing Guide](./development/TESTING.md) - Testing strategies and setup
 - [Development Environment](./development/DEVELOPMENT_ENVIRONMENT_GUIDE.md) - Local setup guide
+- [System Evaluation Snapshot](./development/SYSTEM_EVALUATION_2026-03-30.md) - Latest verified runtime and test status
 - [Dependency Injection](./development/DEPENDENCY_INJECTION_SPEC.md) - DI specifications
 - [Folder Structure](./development/FOLDER_STRUCTURE.md) - Project organization
 - [Bug Reports](./development/graphql-api-bug-report-20250109.md) - Known issues
@@ -55,6 +56,7 @@ Welcome to the Bun Graph DB documentation! This directory contains all project d
 - **Architecture**: [Architecture Overview](./architecture/ARCHITECTURE_OVERVIEW.md)
 - **Templates**: [Template System Guide](./templates/template-system-guide.md)
 - **Development**: [Development Environment](./development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)
+- **Latest Verification**: [System Evaluation Snapshot](./development/SYSTEM_EVALUATION_2026-03-30.md)
 
 ## 🤝 Contributing
 
@@ -66,4 +68,4 @@ When adding new documentation:
 
 ---
 
-*Last updated: 2025-01-19*
+*Last updated: 2026-03-30*

@@ -6,22 +6,22 @@ export interface IQueryExecutor {
   /**
    * Execute a prepared statement with type safety
    */
-  executePrepared<T = any>(queryName: string, params: Record<string, any>): Promise<T[]>
+  executePrepared<T = unknown>(queryName: string, params: Record<string, unknown>): Promise<T[]>
 
   /**
    * Execute a single query with parameters
    */
-  executeQuery<T = any>(sql: string, params?: any[], options?: QueryOptions): Promise<QueryResult<T>>
+  executeQuery<T = unknown>(sql: string, params?: unknown[], options?: QueryOptions): Promise<QueryResult<T>>
 
   /**
    * Execute batch operations efficiently
    */
-  executeBatch<T = any>(operations: BatchOperation[]): Promise<BatchResult<T>>
+  executeBatch<T = unknown>(operations: BatchOperation[]): Promise<BatchResult<T>>
 
   /**
    * Execute with performance monitoring
    */
-  executeWithMetrics<T = any>(sql: string, params?: any[]): Promise<QueryResultWithMetrics<T>>
+  executeWithMetrics<T = unknown>(sql: string, params?: unknown[]): Promise<QueryResultWithMetrics<T>>
 }
 
 export interface QueryOptions {
@@ -50,7 +50,7 @@ export interface QueryResultWithMetrics<T> extends QueryResult<T> {
 
 export interface BatchOperation {
   sql: string
-  params?: any[]
+  params?: unknown[]
   expectsResult?: boolean
 }
 

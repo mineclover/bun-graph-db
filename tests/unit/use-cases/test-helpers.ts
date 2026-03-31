@@ -2,13 +2,40 @@
  * Test helpers for creating properly structured domain entities
  */
 
+import { mock, type Mock } from 'bun:test'
+import type { ILogger } from '@/application/ports/ILogger.js'
 import type { AttributeId, AttributeTypeId, NodeId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
+import type { PaginatedResult } from '@/core/types/CommonTypes.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
 import { Node } from '@/domain/entities/Node.js'
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
 import { Table } from '@/domain/entities/Table.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
+
+export type MockedMethods<T extends object> = {
+  [K in keyof T]: T[K] extends (...args: infer Args) => infer Return ? Mock<(...args: Args) => Return> : T[K]
+}
+
+export function createMockLogger(): MockedMethods<ILogger> {
+  return {
+    info: mock(() => {}),
+    warn: mock(() => {}),
+    error: mock(() => {}),
+    debug: mock(() => {}),
+  } satisfies MockedMethods<ILogger>
+}
+
+export function createPaginatedResult<T>(items: T[] = []): PaginatedResult<T> {
+  return {
+    nodes: items,
+    totalCount: items.length,
+    hasNextPage: false,
+    hasPreviousPage: false,
+    data: items,
+  }
+}
 
 export function createTestTable(
   id: string = 'table-1',
@@ -64,7 +91,7 @@ export function createTestAttribute(
     tableId as TableId,
     identifier,
     name,
-    attributeTypeId as any,
+    attributeTypeId as unknown as AttributeTypeId,
     null, // description
     false, // isRequired
     null, // metadata
@@ -102,7 +129,7 @@ export function createTestNodeRelation(
   targetNodeId: string | null = 'node-2',
   targetExternalId: string = 'internal',
   relationTypeId: string = 'rel-type-1',
-  properties: Record<string, any> | null = null,
+  properties: Record<string, SafeJsonValue> | null = null,
   strength: number = 50,
 ): NodeRelation {
   return NodeRelation.fromDatabase(

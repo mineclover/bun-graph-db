@@ -1,6 +1,7 @@
 import type { GraphQLSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
+import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { McpDataValidator, McpSchemaValidator } from '@/presentation/mcp/schema/SchemaMapper.js'
@@ -11,7 +12,7 @@ export class TemplateQueries extends BaseResolver {
   constructor(
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     logger: ILogger,
-    readonly _schema?: GraphQLSchema,
+    private schema?: GraphQLSchema,
   ) {
     super()
     this.logger = logger
@@ -172,7 +173,7 @@ export class TemplateQueries extends BaseResolver {
         const templates = await this.queryTemplateRepository.findTemplatesWithTableDependencies()
 
         // 테이블별로 그룹화
-        const groupedByTable = new Map<string, any[]>()
+        const groupedByTable = new Map<string, QueryTemplate[]>()
 
         templates.forEach((template) => {
           const applicableTables = template.getApplicableTables() || []
@@ -197,13 +198,13 @@ export class TemplateQueries extends BaseResolver {
   }
 
   setSchema(schema: GraphQLSchema) {
-    ;(this as any).schema = schema
+    this.schema = schema
   }
 
   /**
    * Validate JSON Schema for MCP inputSchema compatibility
    */
-  async validateInputSchema(_: GraphQLParent, args: { input: { schema: any } }, _context?: GraphQLContext) {
+  async validateInputSchema(_: GraphQLParent, args: { input: { schema: unknown } }, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         const { schema } = args.input
@@ -237,7 +238,11 @@ export class TemplateQueries extends BaseResolver {
   /**
    * Validate runtime data against a JSON Schema
    */
-  async validateData(_: GraphQLParent, args: { input: { data: any; schema: any } }, _context?: GraphQLContext) {
+  async validateData(
+    _: GraphQLParent,
+    args: { input: { data: unknown; schema: unknown } },
+    _context?: GraphQLContext,
+  ) {
     return this.handleQuery(
       async () => {
         const { data, schema } = args.input

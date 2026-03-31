@@ -29,7 +29,7 @@ export interface ExportedNodeData {
   title?: string
   content: string
   description?: string
-  attributes: Record<string, any>
+  attributes: Record<string, unknown>
   metadata?: {
     createdAt: string
     updatedAt: string
@@ -256,13 +256,13 @@ export class TableNodesExportUseCase {
     }
   }
 
-  private async getNodeAttributes(nodeId: string): Promise<Record<string, any>> {
+  private async getNodeAttributes(nodeId: string): Promise<Record<string, unknown>> {
     try {
       const nodeAttributesResult = await this.nodeAttributeRepository.findByNodeId(nodeId)
       // The result IS the array, not wrapped in a data property
       const nodeAttributes = Array.isArray(nodeAttributesResult) ? nodeAttributesResult : []
 
-      const attributeMap: Record<string, any> = {}
+      const attributeMap: Record<string, unknown> = {}
 
       for (const nodeAttr of nodeAttributes) {
         // Get the attribute ID and look up the attribute to get the identifier
@@ -348,7 +348,7 @@ export class TableNodesExportUseCase {
       if (options.includeAttributes) {
         if (options.attributeFormat === 'columns') {
           for (const key of attributeKeyArray) {
-            row.push(this.escapeCsvValue(node.attributes[key] || ''))
+            row.push(this.escapeCsvValue(String(node.attributes[key] ?? '')))
           }
         } else {
           row.push(this.escapeCsvValue(JSON.stringify(node.attributes)))

@@ -1,0 +1,27 @@
+{
+  "defaultTargetId": "google-sheets-primary",
+  "targets": [
+    {
+      "id": "google-sheets-primary",
+      "kind": "google-sheets",
+      "displayName": "Primary Google Sheet",
+      "transport": "pipe-builder-table-adapter",
+      "authMode": "oauth",
+      "spreadsheetId": "REPLACE_ME",
+      "oauthTokenFile": "/Users/junwoobang/workflow/bun-graph-db/google-oauth-token.json",
+      "pipeBuilderWorkspacePath": "/Users/junwoobang/workflow/pipe-builder"
+    }
+  ],
+  "routes": [
+    {
+      "tableIdentifier": "users",
+      "targetId": "google-sheets-primary",
+      "sheetName": "users",
+      "diffMode": "summary"
+    }
+  ],
+  "metadataSheetName": "_tables",
+  "schemaSheetName": "_schema",
+  "syncDebounceMs": 250,
+  "rewriteMode": "table-sheet-rewrite"
+}

@@ -30,11 +30,13 @@ export async function createGraphQLYoga(container: DIContainer) {
   return yoga
 }
 
+type TestYoga = Awaited<ReturnType<typeof createGraphQLYoga>>
+
 /**
  * Create GraphQL executor function with proper URL handling
  */
-export function createGraphQLExecutor(yoga: any) {
-  return async (query: string, variables?: any) => {
+export function createGraphQLExecutor(yoga: TestYoga) {
+  return async (query: string, variables?: Record<string, unknown>) => {
     const response = await yoga.fetch('http://localhost:4000/graphql', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

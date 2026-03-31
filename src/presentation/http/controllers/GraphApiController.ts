@@ -3,22 +3,33 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
-import type { NodeId, TableId } from '@/core/types/CommonTypes.js'
+import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { ResponseHelper } from '../utils/responseHelpers.js'
 
-interface GraphQLResponse<T = any> {
+interface GraphQLResponse<T = unknown> {
   data?: T
   errors?: Array<{ message: string }>
+}
+
+interface RelationSearchResult {
+  data: NodeRelation[]
+  total: number
+  hasMore: boolean
+}
+
+interface ExportTableResponse {
+  metadata?: unknown
+  statistics?: unknown
 }
 
 class GraphQLClient {
   constructor(private endpoint: string) {}
 
-  async query<T = any>(query: string, variables?: any): Promise<GraphQLResponse<T>> {
+  async query<T = unknown>(query: string, variables?: Record<string, unknown>): Promise<GraphQLResponse<T>> {
     try {
       const response = await fetch(this.endpoint, {
         method: 'POST',
@@ -194,7 +205,7 @@ export class GraphApiController {
         }
       `
 
-      const graphqlResult = await this.graphqlClient.query(query, { tableId })
+      const graphqlResult = await this.graphqlClient.query<{ exportTable?: ExportTableResponse }>(query, { tableId })
 
       if (graphqlResult.errors) {
         this.logger.error('GraphQL export error:', { errors: graphqlResult.errors })
@@ -263,7 +274,7 @@ export class GraphApiController {
         offset: 0,
       }
 
-      let relationsResult: any
+      let relationsResult: RelationSearchResult
 
       if (sourceNodeId && targetNodeId) {
         // Search for specific relation between two nodes
@@ -279,24 +290,24 @@ export class GraphApiController {
         }
       } else if (sourceNodeId) {
         // Search relations by source node
-        relationsResult = await this.nodeRelationRepository.findBySourceExternalId(
-          sourceNodeId as string,
-          tableId as TableId,
-          searchOptions,
+        relationsResult = this.toRelationSearchResult(
+          await this.nodeRelationRepository.findBySourceExternalId(sourceNodeId as string, tableId as TableId, searchOptions),
         )
       } else if (targetNodeId) {
         // Search relations by target node
-        relationsResult = await this.nodeRelationRepository.findByTargetExternalId(
-          targetNodeId as string,
-          tableId as TableId,
-          searchOptions,
+        relationsResult = this.toRelationSearchResult(
+          await this.nodeRelationRepository.findByTargetExternalId(targetNodeId as string, tableId as TableId, searchOptions),
         )
       } else if (relationTypeId) {
         // Search relations by type
-        relationsResult = await this.nodeRelationRepository.findByRelationType(relationTypeId as string, searchOptions)
+        relationsResult = this.toRelationSearchResult(
+          await this.nodeRelationRepository.findByRelationType(relationTypeId as string, searchOptions),
+        )
       } else {
         // Search all relations for the table
-        relationsResult = await this.nodeRelationRepository.findByTableId(tableId as TableId, searchOptions)
+        relationsResult = this.toRelationSearchResult(
+          await this.nodeRelationRepository.findByTableId(tableId as TableId, searchOptions),
+        )
       }
 
       const result = {
@@ -383,6 +394,14 @@ export class GraphApiController {
     }
   }
 
+  private toRelationSearchResult(result: PaginatedResult<NodeRelation>): RelationSearchResult {
+    return {
+      data: result.data ?? [],
+      total: result.total ?? 0,
+      hasMore: result.hasMore ?? false,
+    }
+  }
+
   async findShortestPath(req: Request, res: Response): Promise<void> {
     try {
       const { fromNodeId, toNodeId, maxDepth = 6, tableId } = req.body
@@ -462,7 +481,7 @@ export class GraphApiController {
       }
 
       // Filter by direction
-      const result: any = {
+      const result: Record<string, unknown> = {
         nodeId,
         direction,
         relationTypes: relationTypesArray,

@@ -20,6 +20,65 @@ export interface IsolatedTestContext {
   cleanup: () => Promise<void>
 }
 
+function tryExec(db: any, sql: string): void {
+  try {
+    db.exec(sql)
+  } catch {
+    // Compatibility helpers are best-effort for isolated test DBs.
+  }
+}
+
+export function enableLegacyAiMetadataCompatibility(db: any): void {
+  tryExec(db, `ALTER TABLE tables ADD COLUMN name TEXT`)
+  tryExec(db, `ALTER TABLE attributes ADD COLUMN required BOOLEAN`)
+  tryExec(db, `ALTER TABLE attributes ADD COLUMN searchable BOOLEAN`)
+  tryExec(db, `ALTER TABLE templates ADD COLUMN query TEXT`)
+  tryExec(db, `ALTER TABLE templates ADD COLUMN table_id TEXT`)
+
+  tryExec(
+    db,
+    `
+    CREATE TRIGGER IF NOT EXISTS legacy_attributes_after_insert
+    AFTER INSERT ON attributes
+    FOR EACH ROW
+    BEGIN
+      UPDATE attributes
+      SET
+        is_required = COALESCE(NEW.required, NEW.is_required, is_required),
+        metadata = CASE
+          WHEN NEW.metadata IS NOT NULL THEN NEW.metadata
+          WHEN NEW.searchable IS NOT NULL THEN CASE
+            WHEN NEW.searchable = 1 THEN '{"searchable":true}'
+            ELSE '{"searchable":false}'
+          END
+          ELSE metadata
+        END
+      WHERE id = NEW.id;
+    END;
+    `,
+  )
+
+  tryExec(
+    db,
+    `
+    CREATE TRIGGER IF NOT EXISTS legacy_templates_after_insert
+    AFTER INSERT ON templates
+    FOR EACH ROW
+    BEGIN
+      UPDATE templates
+      SET
+        query_text = COALESCE(NEW.query_text, NEW.query, query_text),
+        applicable_tables = COALESCE(
+          NEW.applicable_tables,
+          CASE WHEN NEW.table_id IS NOT NULL THEN json_array(NEW.table_id) ELSE applicable_tables END,
+          applicable_tables
+        )
+      WHERE id = NEW.id;
+    END;
+    `,
+  )
+}
+
 // Module-level state for test isolation contexts
 const isolationContexts: Map<string, IsolatedTestContext> = new Map()
 

@@ -2,6 +2,36 @@ import type { Database } from 'bun:sqlite'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 
+interface DatabaseLike {
+  prepare: (query: string) => {
+    all: () => unknown[]
+    get: () => unknown
+  }
+  filename?: string
+}
+
+interface MemoryUsageSnapshot {
+  heapUsed: number
+  heapTotal: number
+  rss: number
+  external: number
+}
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (typeof error === 'object' && error !== null) {
+    const message = Reflect.get(error, 'message')
+    if (typeof message === 'string') {
+      return message
+    }
+  }
+
+  return String(error)
+}
+
 export interface Logger {
   log: (message: string) => void
   error: (message: string) => void
@@ -74,11 +104,11 @@ export interface HealthCheckResult {
 }
 
 export class SystemQueries {
-  private db: Database | any
+  private db: Database | DatabaseLike | null
   private logger: Logger | null = null
   private startTime = process.hrtime()
 
-  constructor(db: Database | any) {
+  constructor(db: Database | DatabaseLike | null) {
     this.db = db
   }
 
@@ -127,20 +157,20 @@ export class SystemQueries {
         uptime: process.uptime(),
         platform: process.platform,
       }
-    } catch (error: any) {
-      this.safeLog(`System stats error: ${error.message}`, true)
-      return this.getDefaultSystemStats(error.message)
+    } catch (error: unknown) {
+      const message = getErrorMessage(error)
+      this.safeLog(`System stats error: ${message}`, true)
+      return this.getDefaultSystemStats(message)
     }
   }
 
-  async memoryStats(_options?: any): Promise<MemoryStats> {
+  async memoryStats(_options?: unknown): Promise<MemoryStats> {
     try {
       const memUsage = this.getMemoryUsage()
       const totalMem = this.getTotalMemory()
       const freeMem = this.getFreeMemory()
 
       const heapUsagePercent = memUsage.heapTotal > 0 ? (memUsage.heapUsed / memUsage.heapTotal) * 100 : 0
-
       const memoryUsagePercent = totalMem > 0 ? (memUsage.rss / totalMem) * 100 : 0
 
       return {
@@ -148,18 +178,19 @@ export class SystemQueries {
         heapTotal: memUsage.heapTotal,
         rss: memUsage.rss,
         external: memUsage.external,
-        heapUsagePercent,
-        memoryUsagePercent: Math.min(memoryUsagePercent, 200), // Cap at 200% for swap
+        heapUsagePercent: Math.max(0, Math.min(heapUsagePercent, 100)),
+        memoryUsagePercent: Math.max(0, Math.min(memoryUsagePercent, 200)), // Cap at 200% for swap
         totalMemory: totalMem,
         freeMemory: freeMem,
       }
-    } catch (error: any) {
-      this.safeLog(`Memory stats error: ${error.message}`, true)
-      return this.getDefaultMemoryStats(error.message)
+    } catch (error: unknown) {
+      const message = getErrorMessage(error)
+      this.safeLog(`Memory stats error: ${message}`, true)
+      return this.getDefaultMemoryStats(message)
     }
   }
 
-  async getDatabaseStats(_options?: any): Promise<DatabaseStats> {
+  async getDatabaseStats(_options?: unknown): Promise<DatabaseStats> {
     try {
       if (!this.db) {
         throw new Error('Database connection closed')
@@ -181,13 +212,14 @@ export class SystemQueries {
         indices,
         fileExists: true,
       }
-    } catch (error: any) {
-      this.safeLog(`Database stats error: ${error.message}`, true)
-      return this.getDefaultDatabaseStats(error.message)
+    } catch (error: unknown) {
+      const message = getErrorMessage(error)
+      this.safeLog(`Database stats error: ${message}`, true)
+      return this.getDefaultDatabaseStats(message)
     }
   }
 
-  async healthCheck(_options?: any): Promise<HealthCheckResult> {
+  async healthCheck(_options?: unknown): Promise<HealthCheckResult> {
     try {
       const memStats = await this.memoryStats()
       const sysStats = await this.systemStats()
@@ -216,8 +248,8 @@ export class SystemQueries {
         },
         timestamp: new Date(),
       }
-    } catch (error: any) {
-      return this.getDefaultHealthCheck(error.message)
+    } catch (error: unknown) {
+      return this.getDefaultHealthCheck(getErrorMessage(error))
     }
   }
 
@@ -235,7 +267,7 @@ export class SystemQueries {
     }
   }
 
-  private getMemoryUsage(): any {
+  private getMemoryUsage(): MemoryUsageSnapshot {
     try {
       const usage = process.memoryUsage()
       return {
@@ -283,6 +315,9 @@ export class SystemQueries {
   }
 
   private getDatabaseTables(): string[] {
+    if (!this.db) {
+      return []
+    }
     try {
       const result = this.db
         .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
@@ -294,6 +329,9 @@ export class SystemQueries {
   }
 
   private getDatabaseIndices(): string[] {
+    if (!this.db) {
+      return []
+    }
     try {
       const result = this.db
         .prepare("SELECT name FROM sqlite_master WHERE type='index' AND sql IS NOT NULL")
@@ -305,10 +343,13 @@ export class SystemQueries {
   }
 
   private getTotalRowCount(tables: string[]): number {
+    if (!this.db) {
+      return 0
+    }
     let total = 0
     for (const table of tables) {
       try {
-        const result = this.db.prepare(`SELECT COUNT(*) as count FROM "${table}"`).get() as any
+        const result = this.db.prepare(`SELECT COUNT(*) as count FROM "${table}"`).get() as { count?: number }
         total += result?.count || 0
       } catch {
         // Skip tables that can't be counted
@@ -318,6 +359,9 @@ export class SystemQueries {
   }
 
   private getDatabaseSize(): number {
+    if (!this.db) {
+      return 0
+    }
     try {
       // Try to get database path from connection
       const dbPath = this.db.filename || './data/bun-graph-db.sqlite'
@@ -506,8 +550,8 @@ export class SystemQueries {
     return this.safeDivide(output, Math.max(input, 1))
   }
 
-  categorizeError(error: Error | any): string {
-    const message = error.message || error.toString()
+  categorizeError(error: Error | unknown): string {
+    const message = getErrorMessage(error)
     if (message.includes('EACCES')) return 'permission'
     if (message.includes('ENOENT')) return 'not_found'
     if (message.includes('ENOMEM')) return 'resource'

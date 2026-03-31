@@ -32,11 +32,11 @@ query GetAllTables {
 # 📋 Variables for Table Queries (테이블 쿼리용 변수)
 # ===================================================================
 # Playground 하단 Variables 섹션에 붙여넣으세요:
-{
-  "tableId": "table_123",
-  "page": 0,
-  "limit": 10
-}
+# {
+#   "tableId": "table_123",
+#   "page": 0,
+#   "limit": 10
+# }
 
 # 2. 페이지네이션이 적용된 테이블 조회
 query GetTablesPaginated($page: Int!, $limit: Int!) {

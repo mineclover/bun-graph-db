@@ -323,8 +323,8 @@ export type DriftCallback = (result: DriftDetectionResult) => Promise<void> | vo
 /**
  * Helper factory for creating pre-configured drift monitors
  */
-export class SchemaDriftMonitorFactory {
-  static createDefaultMonitor(
+export const SchemaDriftMonitorFactory = {
+  createDefaultMonitor(
     schema: GraphQLSchema,
     syncPipeline: SchemaSyncPipeline,
     options?: {
@@ -359,12 +359,12 @@ export class SchemaDriftMonitorFactory {
     }
 
     return monitor
-  }
+  },
 
-  static createProductionMonitor(
+  createProductionMonitor(
     schema: GraphQLSchema,
     syncPipeline: SchemaSyncPipeline,
-    logger: (message: string, data?: any) => void,
+    logger: (message: string, data?: unknown) => void,
   ): SchemaDriftMonitor {
     const monitor = new SchemaDriftMonitor(schema, syncPipeline, 60 * 1000) // 1 minute
 
@@ -379,5 +379,5 @@ export class SchemaDriftMonitorFactory {
     })
 
     return monitor
-  }
+  },
 }

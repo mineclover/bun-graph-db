@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { type IsolatedTestContext, setupE2ETest } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'doc-system-e2e'
-let testContext: IsolatedTestContext
+let testContext: IsolatedTestContext | undefined
 
 // Test data scenarios
 const TEST_SCENARIOS = {
@@ -38,13 +38,13 @@ describe('Doc System - End-to-End Tests', () => {
     console.log('✅ E2E test environment ready')
     console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
     console.log(`💾 Database: ${testContext.database?.databasePath}`)
-  }, 45000) // Longer timeout for E2E setup
+  }, 120000) // Longer timeout for long serial lanes
 
   afterAll(async () => {
     console.log('🧹 Cleaning up E2E test environment...')
-    await testContext.cleanup()
+    await testContext?.cleanup?.()
     console.log('✅ E2E cleanup completed')
-  }, 15000)
+  }, 120000)
 
   describe('Complete Documentation Workflow', () => {
     test('should support full CRUD workflow for documentation', async () => {

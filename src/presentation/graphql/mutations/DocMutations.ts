@@ -55,9 +55,17 @@ export class DocMutations extends BaseResolver {
     this.logger = logger
   }
 
+  private getErrorCode(error: unknown, fallback: string): string {
+    if (typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string') {
+      return error.code
+    }
+
+    return fallback
+  }
+
   async createDoc(_: GraphQLParent, args: CreateDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('input', 'Create doc input'),
         BaseResolver.validationRules.required('input.tableId', 'Table ID'),
@@ -90,7 +98,7 @@ export class DocMutations extends BaseResolver {
     } catch (error) {
       this.logger.error('Mutation failed: createDoc', { input: args.input, ...toErrorMeta(error) })
 
-      const errorCode = (error as any).code || 'CREATE_DOC_ERROR'
+      const errorCode = this.getErrorCode(error, 'CREATE_DOC_ERROR')
       const errorMessage = (error as Error).message || 'Unknown error occurred'
 
       return {
@@ -103,7 +111,7 @@ export class DocMutations extends BaseResolver {
 
   async updateDoc(_: GraphQLParent, args: UpdateDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('id', 'Doc ID'),
         BaseResolver.validationRules.required('input', 'Update doc input'),
@@ -135,7 +143,7 @@ export class DocMutations extends BaseResolver {
         ...toErrorMeta(error),
       })
 
-      const errorCode = (error as any).code || 'UPDATE_DOC_ERROR'
+      const errorCode = this.getErrorCode(error, 'UPDATE_DOC_ERROR')
       const errorMessage = (error as Error).message || 'Unknown error occurred'
 
       return {
@@ -148,7 +156,7 @@ export class DocMutations extends BaseResolver {
 
   async deleteDoc(_: GraphQLParent, args: DeleteDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
       'deleteDoc',
     )
@@ -167,7 +175,7 @@ export class DocMutations extends BaseResolver {
     } catch (error) {
       this.logger.error('Mutation failed: deleteDoc', { id: args.id, ...toErrorMeta(error) })
 
-      const errorCode = (error as any).code || 'DELETE_DOC_ERROR'
+      const errorCode = this.getErrorCode(error, 'DELETE_DOC_ERROR')
       const errorMessage = (error as Error).message || 'Unknown error occurred'
 
       return {
@@ -179,7 +187,7 @@ export class DocMutations extends BaseResolver {
 
   async activateDoc(_: GraphQLParent, args: ActivateDocArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [BaseResolver.validationRules.required('id', 'Doc ID'), BaseResolver.validationRules.nonEmpty('id', 'Doc ID')],
       'activateDoc',
     )
@@ -199,7 +207,7 @@ export class DocMutations extends BaseResolver {
     } catch (error) {
       this.logger.error('Mutation failed: activateDoc', { id: args.id, ...toErrorMeta(error) })
 
-      const errorCode = (error as any).code || 'ACTIVATE_DOC_ERROR'
+      const errorCode = this.getErrorCode(error, 'ACTIVATE_DOC_ERROR')
       const errorMessage = (error as Error).message || 'Unknown error occurred'
 
       return {
@@ -212,7 +220,7 @@ export class DocMutations extends BaseResolver {
 
   async createDocVersion(_: GraphQLParent, args: CreateDocVersionArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('input', 'Create doc version input'),
         BaseResolver.validationRules.required('input.tableId', 'Table ID'),
@@ -247,7 +255,7 @@ export class DocMutations extends BaseResolver {
         ...toErrorMeta(error),
       })
 
-      const errorCode = (error as any).code || 'CREATE_DOC_VERSION_ERROR'
+      const errorCode = this.getErrorCode(error, 'CREATE_DOC_VERSION_ERROR')
       const errorMessage = (error as Error).message || 'Unknown error occurred'
 
       return {

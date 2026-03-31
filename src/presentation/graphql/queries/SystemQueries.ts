@@ -1,5 +1,10 @@
 import type { ILogger } from '../../../application/ports/ILogger.js'
+import type {
+  BestEffortTabularSyncHook,
+  TabularSyncStatusSnapshot,
+} from '@/application/services/BestEffortTabularSyncHook.js'
 import type { SystemMonitoringUseCase } from '../../../application/use-cases/monitoring/SystemMonitoringUseCase.js'
+import type { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
 import { toErrorMeta } from '../../http/utils/errorHelpers.js'
 
 interface HealthStatus {
@@ -20,12 +25,27 @@ export class SystemQueries {
   constructor(
     private systemMonitoringUseCase: SystemMonitoringUseCase,
     private logger: ILogger,
+    private readonly tabularSyncConfigStore?: TabularSyncConfigStore,
+    private readonly tabularSyncHook?: BestEffortTabularSyncHook,
   ) {}
 
   async systemStats() {
     try {
       this.logger.info('Fetching system statistics')
       const stats = await this.systemMonitoringUseCase.getSystemStats()
+      const normalizedStats = {
+        ...stats,
+        process: {
+          ...stats.process,
+          uptime: stats.uptime,
+        },
+        database: {
+          ...stats.database,
+          connections: stats.database.connectionCount,
+          queries: stats.database.queryCount,
+          size: 0,
+        },
+      }
 
       this.logger.debug('System stats retrieved', {
         memoryUsage: stats.memory.percentage,
@@ -33,7 +53,7 @@ export class SystemQueries {
         queryCount: stats.database.queryCount,
       })
 
-      return stats
+      return normalizedStats
     } catch (error) {
       this.logger.error('Error fetching system statistics', toErrorMeta(error))
       throw error
@@ -118,5 +138,71 @@ export class SystemQueries {
         message: 'Memory usage is critically high, immediate attention required',
       }
     }
+  }
+
+  tabularSyncConfigs() {
+    return this.tabularSyncConfigStore?.listConfigs() || []
+  }
+
+  tabularSyncConfig(args?: { configKey?: string | null }) {
+    if (!this.tabularSyncConfigStore) {
+      return null
+    }
+
+    if (args?.configKey) {
+      return this.tabularSyncConfigStore.getConfigRecordByKey(args.configKey)
+    }
+
+    return this.tabularSyncConfigStore.getActiveConfigRecord()
+  }
+
+  tabularSyncStatus(args?: {
+    limit?: number | null
+    tableIdentifier?: string | null
+    status?: string | null
+    mode?: string | null
+    windowPreset?: string | null
+    createdAfter?: string | null
+    createdBefore?: string | null
+  }): TabularSyncStatusSnapshot {
+    return (
+      this.tabularSyncHook?.getStatus({
+        limit: args?.limit ?? undefined,
+        tableIdentifier: args?.tableIdentifier ?? undefined,
+        status: args?.status ?? undefined,
+        mode: args?.mode ?? undefined,
+        windowPreset: args?.windowPreset ?? undefined,
+        createdAfter: args?.createdAfter ?? undefined,
+        createdBefore: args?.createdBefore ?? undefined,
+      }) || {
+        enabled: false,
+        configSource: 'none',
+        syncDebounceMs: 0,
+        pendingCount: 0,
+        pendingTables: [],
+        totalNotifications: 0,
+        totalExecutions: 0,
+        totalSucceeded: 0,
+        totalFailed: 0,
+        lastSuccessAt: null,
+        lastFailureAt: null,
+        recentFailures: [],
+        tables: [],
+        persistedEvents: [],
+        persistedSummary: [],
+      }
+    )
+  }
+
+  tabularSyncSummary(args?: {
+    limit?: number | null
+    tableIdentifier?: string | null
+    status?: string | null
+    mode?: string | null
+    windowPreset?: string | null
+    createdAfter?: string | null
+    createdBefore?: string | null
+  }) {
+    return this.tabularSyncStatus(args).persistedSummary
   }
 }

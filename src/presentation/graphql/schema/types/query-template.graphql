@@ -149,6 +149,7 @@ type TemplateExecutionResult {
   success: Boolean!
   data: JSON
   errors: [TemplateExecutionError!]
+  executionTime: Int!
   metadata: TemplateExecutionMetadata!
 }
 

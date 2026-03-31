@@ -6,6 +6,7 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export interface CreateRelationInput {
   tableId: string
@@ -14,7 +15,7 @@ export interface CreateRelationInput {
   targetNodeId?: string | null
   targetExternalId?: string
   relationTypeId: string
-  properties?: Record<string, any> | null
+  properties?: Record<string, SafeJsonValue> | null
   strength?: number
   confidence?: number
 }
@@ -28,7 +29,7 @@ export interface CreateRelationOutput {
     targetNodeId: string | null
     targetExternalId: string
     relationTypeId: string
-    properties: Record<string, any> | null
+    properties: Record<string, SafeJsonValue> | null
     strength: number
     confidence?: number
     createdAt: string
@@ -147,7 +148,7 @@ export class CreateRelationUseCase {
           targetNodeId: savedRelation.getTargetNodeId(),
           targetExternalId: savedRelation.getTargetExternalId(),
           relationTypeId: savedRelation.getRelationTypeId(),
-          properties: savedRelation.getProperties(),
+          properties: savedRelation.getProperties() as Record<string, SafeJsonValue> | null,
           strength: savedRelation.getStrength(),
           createdAt: savedRelation.getCreatedAt().toISOString(),
           updatedAt: savedRelation.getUpdatedAt().toISOString(),

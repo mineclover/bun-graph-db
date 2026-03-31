@@ -2,10 +2,16 @@ import { join } from 'node:path'
 import { loadFilesSync } from '@graphql-tools/load-files'
 import { mergeTypeDefs } from '@graphql-tools/merge'
 import { makeExecutableSchema } from '@graphql-tools/schema'
-import type { GraphQLSchema } from 'graphql'
+import type { GraphQLResolveInfo, GraphQLSchema } from 'graphql'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
-import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
+import type { ILogger } from '@/application/ports/ILogger.js'
+import type { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
+import type { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
+import type { GraphQLContext, GraphQLParent, NodeParent } from '@/core/types/GraphQLTypes.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import type { JsonExportService } from '@/domain/services/JsonExportService.js'
+import type { SQLiteBackupService } from '@/domain/services/SQLiteBackupService.js'
 import type { DIContainer } from '../../infrastructure/container/DIContainer.js'
 import { GraphQLTokens, RepositoryTokens, UseCaseTokens } from '../../infrastructure/container/tokens/index.js'
 import type {
@@ -25,6 +31,7 @@ import type {
   TableMutations,
   TemplateMutations,
 } from './mutations/index.js'
+import type { BackupMutations } from './mutations/BackupMutations.js'
 // Import resolver classes
 import type {
   AttributeQueries,
@@ -36,9 +43,48 @@ import type {
   TableQueries,
   TemplateQueries,
 } from './queries/index.js'
+import type { BackupQueries } from './queries/BackupQueries.js'
+import type { JsonlBackupQueries } from './queries/JsonlBackupQueries.js'
 import { createSchemaResolvers } from './resolvers/schema.js'
 import type { TablePackageResolver } from './resolvers/TablePackageResolver.js'
 import { templateSubscriptionResolvers } from './resolvers/TemplateSubscriptionResolver.js'
+
+type JsonExportQueriesBundle = {
+  JsonExportQueries: typeof JsonExportQueries
+  jsonExportService: JsonExportService
+  logger: ILogger
+}
+
+type BackupQueriesBundle = {
+  BackupQueries: typeof BackupQueries
+  backupService: SQLiteBackupService
+  logger: ILogger
+}
+
+type BackupMutationsBundle = {
+  BackupMutations: typeof BackupMutations
+  backupService: SQLiteBackupService
+  logger: ILogger
+}
+
+type GraphQLResolverObject = Record<string, (...args: unknown[]) => unknown>
+type DynamicResolverMap = Partial<Record<string, (...args: unknown[]) => unknown>>
+
+type ExportResolversBundle = {
+  Query: {
+    getSupportedExportFormats: (...args: unknown[]) => unknown
+    validateExportOptions: (...args: unknown[]) => unknown
+    getExportHistory: (...args: unknown[]) => unknown
+  }
+  Mutation: {
+    exportTableNodes: (...args: unknown[]) => unknown
+    exportMultipleTables: (...args: unknown[]) => unknown
+  }
+  Table: {
+    exportNodes: (...args: unknown[]) => unknown
+    exportPreview: (...args: unknown[]) => unknown
+  }
+}
 
 export interface GraphQLDependencies {
   // Query resolvers
@@ -49,13 +95,9 @@ export interface GraphQLDependencies {
   templateQueries: TemplateQueries
   docQueries: DocQueries
   systemQueries?: SystemQueries
-  jsonExportQueries?: {
-    JsonExportQueries: typeof JsonExportQueries
-    jsonExportService: any
-    logger: any
-  }
-  jsonlBackupQueries?: any
-  backupQueries?: any
+  jsonExportQueries?: JsonExportQueriesBundle | null
+  jsonlBackupQueries?: JsonlBackupQueries | null
+  backupQueries?: BackupQueriesBundle | null
   // enhancedAttributeQueries?: any
 
   // Mutation resolvers
@@ -65,18 +107,18 @@ export interface GraphQLDependencies {
   relationMutations: RelationMutations
   templateMutations: TemplateMutations
   docMutations: DocMutations
-  exportMutations: any
-  backupMutations?: any
+  exportMutations: ExportResolversBundle
+  backupMutations?: BackupMutationsBundle | null
   tablePackageResolver: TablePackageResolver
-  systemResolver?: any
+  systemResolver?: GraphQLResolverObject
 
   // Unified resolvers (Task 2.2 - Feature Flag Pattern)
-  nodeResolver?: any // Optional unified NodeResolver for progressive migration
-  tableResolver?: any // Optional unified TableResolver for progressive migration
-  docResolver?: any // Optional unified DocResolver for progressive migration
-  attributeResolver?: any // Optional unified AttributeResolver for progressive migration
-  relationResolver?: any // Optional unified RelationResolver for progressive migration
-  queryTemplateResolver?: any // Optional unified QueryTemplateResolver for progressive migration
+  nodeResolver?: DynamicResolverMap
+  tableResolver?: DynamicResolverMap
+  docResolver?: DynamicResolverMap
+  attributeResolver?: DynamicResolverMap
+  relationResolver?: DynamicResolverMap
+  queryTemplateResolver?: DynamicResolverMap
 
   // Field resolvers
   tableFieldResolvers: TableFieldResolvers
@@ -116,13 +158,17 @@ export class GraphQLSchemaBuilder {
 
     const systemQueries = (await this.container.resolve(GraphQLTokens.SYSTEM_QUERIES)) as SystemQueries | undefined
 
-    const jsonExportQueries = (await this.container.resolve(GraphQLTokens.JSON_EXPORT_QUERIES).catch(() => null)) as any
+    const jsonExportQueries = (await this.container.resolve(GraphQLTokens.JSON_EXPORT_QUERIES).catch(() => null)) as
+      | JsonExportQueriesBundle
+      | null
 
     const jsonlBackupQueries = (await this.container
       .resolve(GraphQLTokens.JSONL_BACKUP_QUERIES)
-      .catch(() => null)) as any
+      .catch(() => null)) as JsonlBackupQueries | null
 
-    const backupQueries = (await this.container.resolve(GraphQLTokens.BACKUP_QUERIES).catch(() => null)) as any
+    const backupQueries = (await this.container.resolve(GraphQLTokens.BACKUP_QUERIES).catch(() => null)) as
+      | BackupQueriesBundle
+      | null
 
     // Mutation resolvers
     const tableMutations = (await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS)) as TableMutations
@@ -137,16 +183,18 @@ export class GraphQLSchemaBuilder {
 
     const docMutations = (await this.container.resolve(GraphQLTokens.DOC_MUTATIONS)) as DocMutations
 
-    const exportMutations = (await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS)) as any
+    const exportMutations = (await this.container.resolve(GraphQLTokens.EXPORT_MUTATIONS)) as ExportResolversBundle
 
-    const backupMutations = (await this.container.resolve(GraphQLTokens.BACKUP_MUTATIONS).catch(() => null)) as any
+    const backupMutations = (await this.container.resolve(GraphQLTokens.BACKUP_MUTATIONS).catch(() => null)) as
+      | BackupMutationsBundle
+      | null
 
     const tablePackageResolver = (await this.container.resolve(
       GraphQLTokens.TABLE_PACKAGE_RESOLVER,
     )) as TablePackageResolver
 
     // System resolver
-    const systemResolver = (await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER)) as any
+    const systemResolver = (await this.container.resolve(GraphQLTokens.SYSTEM_RESOLVER)) as GraphQLResolverObject
 
     return {
       tableQueries,
@@ -172,12 +220,12 @@ export class GraphQLSchemaBuilder {
 
       // Unified resolvers (Task 2.2 - Feature Flag Pattern)
       // TEMP DISABLE ALL: Debugging server hang issue
-      nodeResolver: null, // await this.container.resolve(GraphQLTokens.NODE_RESOLVER).catch(() => null),
-      tableResolver: null, // await this.container.resolve(GraphQLTokens.TABLE_RESOLVER).catch(() => null),
-      docResolver: null, // await this.container.resolve(GraphQLTokens.DOC_RESOLVER).catch(() => null),
-      attributeResolver: null, // await this.container.resolve(GraphQLTokens.ATTRIBUTE_RESOLVER).catch(() => null),
-      relationResolver: null, // await this.container.resolve(GraphQLTokens.RELATION_RESOLVER).catch(() => null),
-      queryTemplateResolver: null, // await this.container.resolve(GraphQLTokens.QUERY_TEMPLATE_RESOLVER).catch(() => null),
+      nodeResolver: undefined, // await this.container.resolve(GraphQLTokens.NODE_RESOLVER).catch(() => null),
+      tableResolver: undefined, // await this.container.resolve(GraphQLTokens.TABLE_RESOLVER).catch(() => null),
+      docResolver: undefined, // await this.container.resolve(GraphQLTokens.DOC_RESOLVER).catch(() => null),
+      attributeResolver: undefined, // await this.container.resolve(GraphQLTokens.ATTRIBUTE_RESOLVER).catch(() => null),
+      relationResolver: undefined, // await this.container.resolve(GraphQLTokens.RELATION_RESOLVER).catch(() => null),
+      queryTemplateResolver: undefined, // await this.container.resolve(GraphQLTokens.QUERY_TEMPLATE_RESOLVER).catch(() => null),
 
       // Field resolvers
       tableFieldResolvers: await this.container.resolve(GraphQLTokens.TABLE_FIELD_RESOLVERS),
@@ -193,12 +241,12 @@ export class GraphQLSchemaBuilder {
     }
   }
 
-  private async resolveSchemaResolvers(): Promise<any> {
-    const tableRepository = (await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY)) as any
+  private async resolveSchemaResolvers(): Promise<ReturnType<typeof createSchemaResolvers>> {
+    const tableRepository = (await this.container.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
 
-    const schemaExportUseCase = (await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE)) as any
+    const schemaExportUseCase = (await this.container.resolve(UseCaseTokens.SCHEMA_EXPORT_USE_CASE)) as SchemaExportUseCase
 
-    const schemaImportUseCase = (await this.container.resolve(UseCaseTokens.SCHEMA_IMPORT_USE_CASE)) as any
+    const schemaImportUseCase = (await this.container.resolve(UseCaseTokens.SCHEMA_IMPORT_USE_CASE)) as SchemaImportUseCase
 
     const schemaResolvers = createSchemaResolvers({
       tableRepository,
@@ -223,6 +271,120 @@ export class GraphQLSchemaBuilder {
 
     const typeDefs = mergeTypeDefs(typesArray)
 
+    type RootResolverArgs = Record<string, unknown>
+    type RootArgsMapper<TArgs> = (args: TArgs) => TArgs
+
+    const callResolver = <T>(resolver: unknown, method: string, ...args: unknown[]): T | undefined => {
+      if (!resolver || (typeof resolver !== 'object' && typeof resolver !== 'function')) {
+        return undefined
+      }
+
+      const candidate = (resolver as Record<string, unknown>)[method]
+      if (typeof candidate !== 'function') {
+        return undefined
+      }
+
+      return Reflect.apply(candidate, resolver, args) as T
+    }
+
+    const castArgs = <T>(value: RootResolverArgs): T => value as unknown as T
+    const castParent = <T>(value: GraphQLParent): T => value as T
+    const getInput = (value: RootResolverArgs) => (value as { input?: RootResolverArgs }).input
+    const normalizeRootArgs = <TArgs>(
+      args: RootResolverArgs,
+      mapArgs?: RootArgsMapper<TArgs>,
+    ): TArgs => {
+      const typedArgs = castArgs<TArgs>(args)
+      return mapArgs ? mapArgs(typedArgs) : typedArgs
+    }
+    const callRootResolver = <TArgs = RootResolverArgs, TResult = unknown, TContext = GraphQLContext>(
+      resolver: unknown,
+      method: string,
+      parent: GraphQLParent,
+      args: RootResolverArgs,
+      context?: TContext,
+      info?: GraphQLResolveInfo,
+      mapArgs?: RootArgsMapper<TArgs>,
+    ): TResult | undefined => {
+      const typedArgs = normalizeRootArgs(args, mapArgs)
+      return callResolver<TResult>(resolver, method, parent, typedArgs, context, info)
+    }
+    const callRootResolverWithFallback = <
+      TArgs = RootResolverArgs,
+      TResult = unknown,
+      TContext = GraphQLContext,
+    >(
+      primaryResolver: unknown,
+      primaryMethod: string,
+      fallbackResolver: unknown,
+      fallbackMethod: string,
+      parent: GraphQLParent,
+      args: RootResolverArgs,
+      context?: TContext,
+      info?: GraphQLResolveInfo,
+      mapArgs?: RootArgsMapper<TArgs>,
+    ): TResult | undefined =>
+      callRootResolver<TArgs, TResult, TContext>(primaryResolver, primaryMethod, parent, args, context, info, mapArgs) ??
+      callRootResolver<TArgs, TResult, TContext>(fallbackResolver, fallbackMethod, parent, args, context, info, mapArgs)
+    const withPaginationInput = <
+      TArgs extends { input?: RootResolverArgs; pagination?: RootResolverArgs },
+    >(
+      args: TArgs,
+    ): TArgs => ({
+      ...args,
+      pagination: args.pagination ?? getInput(args),
+    })
+    const callFieldResolver = <TParent, TResult = unknown, TArgs extends unknown[] = []>(
+      resolver: unknown,
+      method: string,
+      parent: GraphQLParent,
+      ...args: TArgs
+    ): TResult | undefined => callResolver<TResult>(resolver, method, castParent<TParent>(parent), ...args)
+    const callFieldResolverWithFallback = <TParent, TResult = unknown, TArgs extends unknown[] = []>(
+      primaryResolver: unknown,
+      primaryMethod: string,
+      fallbackResolver: unknown,
+      fallbackMethod: string,
+      parent: GraphQLParent,
+      ...args: TArgs
+    ): TResult | undefined =>
+      callFieldResolver<TParent, TResult, TArgs>(primaryResolver, primaryMethod, parent, ...args) ??
+      callFieldResolver<TParent, TResult, TArgs>(fallbackResolver, fallbackMethod, parent, ...args)
+    const getRecordValue = (value: unknown): Record<string, unknown> | null =>
+      typeof value === 'object' && value !== null && !Array.isArray(value)
+        ? castParent<Record<string, unknown>>(value)
+        : null
+    const getStringValue = (value: unknown, key: string): string | undefined => {
+      const candidate = getRecordValue(value)?.[key]
+      return typeof candidate === 'string' ? candidate : undefined
+    }
+    const getNumberValue = (value: unknown, key: string): number | undefined => {
+      const candidate = getRecordValue(value)?.[key]
+      return typeof candidate === 'number' ? candidate : undefined
+    }
+    const getArrayValue = (value: unknown, key: string): unknown[] | undefined => {
+      const candidate = getRecordValue(value)?.[key]
+      return Array.isArray(candidate) ? candidate : undefined
+    }
+    const getNestedRecordValue = (value: unknown, key: string): Record<string, unknown> | null => {
+      const candidate = getRecordValue(value)?.[key]
+      return getRecordValue(candidate)
+    }
+    const callStringMethod = (value: unknown, key: string): string | null | undefined => {
+      const record = getRecordValue(value)
+      if (!record) {
+        return undefined
+      }
+
+      const candidate = record[key]
+      if (typeof candidate !== 'function') {
+        return undefined
+      }
+
+      const result = Reflect.apply(candidate, record, [])
+      return typeof result === 'string' || result === null ? result : undefined
+    }
+
     const resolvers = {
       // Custom scalars
       DateTime: DateTimeResolver,
@@ -233,60 +395,137 @@ export class GraphQLSchemaBuilder {
         _schema: () => null, // Required placeholder
         // Table queries
         table: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tableResolver?.table(_, args as any) || deps.tableQueries.table(_, args as any),
+          callResolver(deps.tableResolver, 'table', _, args) ?? callResolver(deps.tableQueries, 'table', _, args),
         tableByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tableResolver?.tableByIdentifier(_, args as any) || deps.tableQueries.tableByIdentifier(_, args as any),
+          callResolver(deps.tableResolver, 'tableByIdentifier', _, args) ??
+          callResolver(deps.tableQueries, 'tableByIdentifier', _, args),
         tables: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tableResolver?.tables(_, args as any) || deps.tableQueries.tables(_, args as any),
+          callResolver(deps.tableResolver, 'tables', _, args) ?? callResolver(deps.tableQueries, 'tables', _, args),
+        getTables: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callResolver(deps.tableResolver, 'tables', _, {
+            pagination: (args as { input?: Record<string, unknown> }).input,
+          }) ??
+          callResolver(deps.tableQueries, 'tables', _, {
+            pagination: (args as { input?: Record<string, unknown> }).input,
+          }),
         searchTables: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tableResolver?.searchTables(_, args as any) || deps.tableQueries.searchTables(_, args as any),
+          callResolver(deps.tableResolver, 'searchTables', _, args) ??
+          callResolver(deps.tableQueries, 'searchTables', _, args),
         tableDocumentation: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tableResolver?.tableDocumentation(_, args as any) ||
-          deps.tableQueries.tableDocumentation(_, args as any),
+          callResolver(deps.tableResolver, 'tableDocumentation', _, args) ??
+          callResolver(deps.tableQueries, 'tableDocumentation', _, args),
 
         // Attribute type queries
         attributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.attributeType(_, args as any) || deps.attributeQueries.attributeType(_, args as any),
+          callResolver(deps.attributeResolver, 'attributeType', _, args) ??
+          callResolver(deps.attributeQueries, 'attributeType', _, args),
         attributeTypeByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.attributeTypeByIdentifier(_, args as any) ||
-          deps.attributeQueries.attributeTypeByIdentifier(_, args as any),
+          callResolver(deps.attributeResolver, 'attributeTypeByIdentifier', _, args) ??
+          callResolver(deps.attributeQueries, 'attributeTypeByIdentifier', _, args),
         attributeTypes: (_: GraphQLParent) =>
-          deps.attributeResolver?.attributeTypes(_) || deps.attributeQueries.attributeTypes(_),
+          callResolver(deps.attributeResolver, 'attributeTypes', _) ??
+          callResolver(deps.attributeQueries, 'attributeTypes', _),
 
         // Attribute queries
         attribute: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.attribute(_, args as any) || deps.attributeQueries.attribute(_, args as any),
+          callResolver(deps.attributeResolver, 'attribute', _, args) ??
+          callResolver(deps.attributeQueries, 'attribute', _, args),
         attributeByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.attributeByIdentifier(_, args as any) ||
-          deps.attributeQueries.attributeByIdentifier(_, args as any),
+          callResolver(deps.attributeResolver, 'attributeByIdentifier', _, args) ??
+          callResolver(deps.attributeQueries, 'attributeByIdentifier', _, args),
         attributes: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.attributes(_, args as any) || deps.attributeQueries.attributes(_, args as any),
+          callResolver(deps.attributeResolver, 'attributes', _, args) ??
+          callResolver(deps.attributeQueries, 'attributes', _, args),
 
         // Node queries
         node: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.node(_, args as any) || deps.nodeQueries.node(_, args as any),
+          callResolver(deps.nodeResolver, 'node', _, castArgs<{ id: string }>(args)) ??
+          deps.nodeQueries.node(_, castArgs<{ id: string }>(args)),
         nodeByContent: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.nodeByContent(_, args as any) || deps.nodeQueries.nodeByContent(_, args as any),
+          callResolver(deps.nodeResolver, 'nodeByContent', _, castArgs<{ tableId: string; content: string }>(args)) ??
+          deps.nodeQueries.nodeByContent(_, castArgs<{ tableId: string; content: string }>(args)),
+        getNodeAttributes: async (_: GraphQLParent, args: Record<string, unknown>) => ({
+          attributes:
+            (await (callResolver(
+              deps.nodeResolver,
+              'attributes_field',
+              castParent<NodeParent>({
+                id: String(args.nodeId || ''),
+                tableId: '',
+                content: '',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                version: 0,
+              }),
+            ) ||
+              deps.nodeFieldResolvers.attributes(
+                castParent<NodeParent>({
+                  id: String(args.nodeId || ''),
+                  tableId: '',
+                  content: '',
+                  createdAt: new Date(),
+                  updatedAt: new Date(),
+                  version: 0,
+                }),
+              ))) || [],
+        }),
         nodes: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.nodes(_, args as any) || deps.nodeQueries.nodes(_, args as any),
+          callResolver(deps.nodeResolver, 'nodes', _, castArgs<Record<string, unknown>>(args)) ??
+          deps.nodeQueries.nodes(_, castArgs<Record<string, unknown>>(args)),
         searchNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.searchNodes(_, args as any) || deps.nodeQueries.searchNodes(_, args as any),
+          callResolver(deps.nodeResolver, 'searchNodes', _, castArgs<Record<string, unknown>>(args)) ??
+          deps.nodeQueries.searchNodes(_, castArgs<Record<string, unknown>>(args)),
+        searchNodesByAttribute: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
+          deps.nodeQueries.searchNodesByAttribute(_, castArgs<Record<string, unknown>>(args), context),
 
         // Relation queries
         relationType: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.relationType(_, args as any) || deps.relationQueries.relationType(_, args as any),
+          callResolver(deps.relationResolver, 'relationType', _, castArgs<{ id: string }>(args)) ??
+          deps.relationQueries.relationType(_, castArgs<{ id: string }>(args)),
         relationTypes: (_: GraphQLParent) =>
-          deps.relationResolver?.relationTypes(_) || deps.relationQueries.relationTypes(_),
+          callResolver(deps.relationResolver, 'relationTypes', _) ?? deps.relationQueries.relationTypes(_),
         nodeRelation: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.nodeRelation(_, args as any) || deps.relationQueries.nodeRelation(_, args as any),
+          callResolver(deps.relationResolver, 'nodeRelation', _, castArgs<{ id: string }>(args)) ??
+          deps.relationQueries.nodeRelation(_, castArgs<{ id: string }>(args)),
         nodeRelations: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.nodeRelations(_, args as any) || deps.relationQueries.nodeRelations(_, args as any),
+          callResolver(deps.relationResolver, 'nodeRelations', _, castArgs<Record<string, unknown>>(args)) ??
+          deps.relationQueries.nodeRelations(_, castArgs<Record<string, unknown>>(args)),
         searchRelatedNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.searchRelatedNodes(_, args as any) ||
-          deps.relationQueries.searchRelatedNodes(_, args as any),
+          callResolver(deps.relationResolver, 'searchRelatedNodes', _, castArgs<Record<string, unknown>>(args)) ??
+          deps.relationQueries.searchRelatedNodes(_, castArgs<Record<string, unknown>>(args)),
+        getConnectedNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationQueries.getConnectedNodes(
+            _,
+            castArgs<{
+              input?: { nodeId: string; depth?: number; direction?: string; relationTypeIds?: string[] }
+              nodeId?: string
+              depth?: number
+              direction?: string
+              relationTypeIds?: string[]
+            }>(args),
+          ),
+        findPathsBetweenNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.relationQueries.findPathsBetweenNodes(
+            _,
+            castArgs<{
+              input: { sourceNodeId: string; targetNodeId: string; maxDepth?: number; relationTypeIds?: string[] }
+            }>(args),
+          ),
         getDependencyChain: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.getDependencyChain(_, args as any) ||
-          deps.relationQueries.getDependencyChain(_, args as any),
+          callResolver(
+            deps.relationResolver,
+            'getDependencyChain',
+            _,
+            castArgs<{ input: { nodeId: string; direction?: string; maxDepth?: number; relationTypeIds?: string[] } }>(
+              args,
+            ),
+          ) ??
+          deps.relationQueries.getDependencyChain(
+            _,
+            castArgs<{ input: { nodeId: string; direction?: string; maxDepth?: number; relationTypeIds?: string[] } }>(
+              args,
+            ),
+          ),
 
         // Enhanced relation analytics (stub implementation)
         relationAnalytics: (_: GraphQLParent, _args: Record<string, unknown>) => ({
@@ -320,99 +559,273 @@ export class GraphQLSchemaBuilder {
 
         // Template queries
         getTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.getTemplate(_, args as any) || deps.templateQueries.getTemplate(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateQueries['getTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'getTemplate',
+            deps.templateQueries,
+            'getTemplate',
+            _,
+            args,
+          ),
         getTemplateByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.getTemplateByIdentifier(_, args as any) ||
-          deps.templateQueries.getTemplateByIdentifier(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateQueries['getTemplateByIdentifier']>[1]>(
+            deps.queryTemplateResolver,
+            'getTemplateByIdentifier',
+            deps.templateQueries,
+            'getTemplateByIdentifier',
+            _,
+            args,
+          ),
         searchTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.searchTemplates(_, args as any) ||
-          deps.templateQueries.searchTemplates(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateQueries['searchTemplates']>[1]>(
+            deps.queryTemplateResolver,
+            'searchTemplates',
+            deps.templateQueries,
+            'searchTemplates',
+            _,
+            args,
+            undefined,
+            undefined,
+            withPaginationInput,
+          ),
         getPopularTemplates: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.getPopularTemplates(_, args as any) ||
-          deps.templateQueries.getPopularTemplates(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateQueries['getPopularTemplates']>[1]>(
+            deps.queryTemplateResolver,
+            'getPopularTemplates',
+            deps.templateQueries,
+            'getPopularTemplates',
+            _,
+            args,
+          ),
 
         // Table dependency queries
         templatesByTable: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.templatesByTable(_, args as any) ||
-          deps.templateQueries.templatesByTable(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateQueries['templatesByTable']>[1]>(
+            deps.queryTemplateResolver,
+            'templatesByTable',
+            deps.templateQueries,
+            'templatesByTable',
+            _,
+            args,
+          ),
         // Template execution (delegated to mutations)
         executeTemplate: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.queryTemplateResolver?.executeTemplate(_, args as any, context) ||
-          deps.templateMutations.executeTemplate(_, args as any, context),
+          callRootResolverWithFallback<Parameters<TemplateMutations['executeTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'executeTemplate',
+            deps.templateMutations,
+            'executeTemplate',
+            _,
+            args,
+            context,
+          ),
 
         // InputSchema validation
         validateInputSchema: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.templateQueries.validateInputSchema(_, args as any),
+          callRootResolver<Parameters<TemplateQueries['validateInputSchema']>[1]>(
+            deps.templateQueries,
+            'validateInputSchema',
+            _,
+            args,
+          ),
 
         // Runtime data validation
         validateData: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.templateQueries.validateData(_, args as any),
+          callRootResolver<Parameters<TemplateQueries['validateData']>[1]>(deps.templateQueries, 'validateData', _, args),
 
         // Doc queries
         getDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.getDoc(_, args as any) || deps.docQueries.getDoc(_, args as any),
+          callRootResolverWithFallback<Parameters<DocQueries['getDoc']>[1]>(
+            deps.docResolver,
+            'getDoc',
+            deps.docQueries,
+            'getDoc',
+            _,
+            args,
+          ),
         getActiveDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.getActiveDoc(_, args as any) || deps.docQueries.getActiveDoc(_, args as any),
+          callRootResolverWithFallback<Parameters<DocQueries['getActiveDoc']>[1]>(
+            deps.docResolver,
+            'getActiveDoc',
+            deps.docQueries,
+            'getActiveDoc',
+            _,
+            args,
+          ),
         getDocs: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.getDocs(_, args as any) || deps.docQueries.getDocs(_, args as any),
+          callRootResolverWithFallback<Parameters<DocQueries['getDocs']>[1]>(
+            deps.docResolver,
+            'getDocs',
+            deps.docQueries,
+            'getDocs',
+            _,
+            args,
+          ),
         getDocVersions: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.getDocVersions(_, args as any) || deps.docQueries.getDocVersions(_, args as any),
+          callRootResolverWithFallback<Parameters<DocQueries['getDocVersions']>[1]>(
+            deps.docResolver,
+            'getDocVersions',
+            deps.docQueries,
+            'getDocVersions',
+            _,
+            args,
+          ),
         searchDocs: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.searchDocs(_, args as any) || deps.docQueries.searchDocs(_, args as any),
+          callRootResolverWithFallback<Parameters<DocQueries['searchDocs']>[1]>(
+            deps.docResolver,
+            'searchDocs',
+            deps.docQueries,
+            'searchDocs',
+            _,
+            args,
+          ),
 
         // Essential system queries only
         healthCheck: (_: GraphQLParent, _args: Record<string, unknown>) => deps.systemQueries?.healthCheck() || null,
-        systemStatus: (_: GraphQLParent, _args: Record<string, unknown>) => deps.systemResolver?.systemStatus() || null,
+        systemStats: (_: GraphQLParent, _args: Record<string, unknown>) => deps.systemQueries?.systemStats() || null,
+        systemStatus: (_: GraphQLParent, _args: Record<string, unknown>) => deps.systemResolver?.systemStatus?.() || null,
+        tabularSyncConfigs: (_: GraphQLParent, _args: Record<string, unknown>) =>
+          deps.systemQueries?.tabularSyncConfigs?.() || [],
+        tabularSyncConfig: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.systemQueries?.tabularSyncConfig?.(castArgs<{ configKey?: string | null }>(args)) || null,
+        tabularSyncStatus: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.systemQueries?.tabularSyncStatus?.(
+            castArgs<{
+              limit?: number | null
+              tableIdentifier?: string | null
+              status?: string | null
+              mode?: string | null
+              windowPreset?: string | null
+              createdAfter?: string | null
+              createdBefore?: string | null
+            }>(args),
+          ) || null,
+        tabularSyncSummary: (_: GraphQLParent, args: Record<string, unknown>) =>
+          deps.systemQueries?.tabularSyncSummary?.(
+            castArgs<{
+              limit?: number | null
+              tableIdentifier?: string | null
+              status?: string | null
+              mode?: string | null
+              windowPreset?: string | null
+              createdAfter?: string | null
+              createdBefore?: string | null
+            }>(args),
+          ) || [],
 
         // Schema export queries
         exportTable: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.schemaResolvers.Query.exportTable(_, args as any),
+          callRootResolver<Parameters<typeof deps.schemaResolvers.Query.exportTable>[1]>(
+            deps.schemaResolvers.Query,
+            'exportTable',
+            _,
+            args,
+          ),
         exportAllTables: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.schemaResolvers.Query.exportAllTables(_, args as any),
+          callRootResolver<Parameters<typeof deps.schemaResolvers.Query.exportAllTables>[1]>(
+            deps.schemaResolvers.Query,
+            'exportAllTables',
+            _,
+            args,
+          ),
 
         // Table Package queries
         validateTablePackage: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tablePackageResolver.validateTablePackage(_, args as any),
+          callRootResolver<Parameters<TablePackageResolver['validateTablePackage']>[1]>(
+            deps.tablePackageResolver,
+            'validateTablePackage',
+            _,
+            args,
+          ),
         analyzeTableDependencies: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tablePackageResolver.analyzeTableDependencies(_, args as any),
+          callRootResolver<Parameters<TablePackageResolver['analyzeTableDependencies']>[1]>(
+            deps.tablePackageResolver,
+            'analyzeTableDependencies',
+            _,
+            args,
+          ),
         getImportSession: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tablePackageResolver.getImportSession(_, args as any),
+          callRootResolver<Parameters<TablePackageResolver['getImportSession']>[1]>(
+            deps.tablePackageResolver,
+            'getImportSession',
+            _,
+            args,
+          ),
 
         // Export queries
         getSupportedExportFormats: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.exportMutations.Query.getSupportedExportFormats(_, args as any),
+          callRootResolver<Parameters<typeof deps.exportMutations.Query.getSupportedExportFormats>[1]>(
+            deps.exportMutations.Query,
+            'getSupportedExportFormats',
+            _,
+            args,
+          ),
         validateExportOptions: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.exportMutations.Query.validateExportOptions(_, args as any, context),
+          callRootResolver<Parameters<typeof deps.exportMutations.Query.validateExportOptions>[1]>(
+            deps.exportMutations.Query,
+            'validateExportOptions',
+            _,
+            args,
+            context,
+          ),
         getExportHistory: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.exportMutations.Query.getExportHistory(_, args as any, context),
+          callRootResolver<Parameters<typeof deps.exportMutations.Query.getExportHistory>[1]>(
+            deps.exportMutations.Query,
+            'getExportHistory',
+            _,
+            args,
+            context,
+          ),
 
         // JSON Export queries
-        exportTableJson: (_: GraphQLParent, args: Record<string, unknown>, _context: GraphQLContext, info: any) => {
+        exportTableJson: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: GraphQLResolveInfo,
+        ) => {
           if (!deps.jsonExportQueries) {
             throw new Error('JsonExportQueries not available')
           }
           const { JsonExportQueries, jsonExportService, logger } = deps.jsonExportQueries
-          return JsonExportQueries.exportTableJson(_, args as any, { jsonExportService, logger }, info)
+          return callRootResolver<
+            { tableId: string; options?: Record<string, unknown> },
+            unknown,
+            { jsonExportService: JsonExportService; logger: ILogger }
+          >(JsonExportQueries, 'exportTableJson', _, args, { jsonExportService, logger }, info)
         },
 
         // JSONL Backup queries
         inspectJsonlBackup: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.jsonlBackupQueries?.inspectJsonlBackup(_, args) || null,
+          deps.jsonlBackupQueries?.inspectJsonlBackup(_, args as { inputDir: string }) || null,
 
         // SQLite Backup queries
-        listBackups: (_: GraphQLParent, args: Record<string, unknown>, _context: GraphQLContext, info: any) => {
+        listBackups: (_: GraphQLParent, args: Record<string, unknown>, _context: GraphQLContext, info: GraphQLResolveInfo) => {
           if (!deps.backupQueries) {
             throw new Error('BackupQueries not available')
           }
           const { BackupQueries, backupService, logger } = deps.backupQueries
-          return BackupQueries.listBackups(_, args, { backupService, logger }, info)
+          return callRootResolver<
+            { filter?: { type?: 'FILE' | 'TABLE' | 'ALL'; createdAfter?: string; createdBefore?: string } },
+            unknown,
+            { backupService: SQLiteBackupService; logger: ILogger }
+          >(BackupQueries, 'listBackups', _, args, { backupService, logger }, info)
         },
-        backupMetrics: (_: GraphQLParent, args: Record<string, unknown>, _context: GraphQLContext, info: any) => {
+        backupMetrics: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: GraphQLResolveInfo,
+        ) => {
           if (!deps.backupQueries) {
             throw new Error('BackupQueries not available')
           }
           const { BackupQueries, backupService, logger } = deps.backupQueries
-          return BackupQueries.backupMetrics(_, args, { backupService, logger }, info)
+          return callRootResolver<
+            RootResolverArgs,
+            unknown,
+            { backupService: SQLiteBackupService; logger: ILogger }
+          >(BackupQueries, 'backupMetrics', _, args, { backupService, logger }, info)
         },
       },
 
@@ -421,145 +834,506 @@ export class GraphQLSchemaBuilder {
 
         // Table mutations
         createTable: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tableResolver?.createTable(_, args as any) || deps.tableMutations.createTable(_, args as any),
+          callRootResolverWithFallback<Parameters<TableMutations['createTable']>[1]>(
+            deps.tableResolver,
+            'createTable',
+            deps.tableMutations,
+            'createTable',
+            _,
+            args,
+          ),
+        batchCreateTables: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<TableMutations['batchCreateTables']>[1]>(
+            deps.tableMutations,
+            'batchCreateTables',
+            _,
+            args,
+          ),
         updateTable: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tableResolver?.updateTable(_, args as any) || deps.tableMutations.updateTable(_, args as any),
+          callRootResolverWithFallback<Parameters<TableMutations['updateTable']>[1]>(
+            deps.tableResolver,
+            'updateTable',
+            deps.tableMutations,
+            'updateTable',
+            _,
+            args,
+          ),
+        batchDeleteTables: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<TableMutations['batchDeleteTables']>[1]>(
+            deps.tableMutations,
+            'batchDeleteTables',
+            _,
+            args,
+          ),
         deleteTable: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tableResolver?.deleteTable(_, args as any) || deps.tableMutations.deleteTable(_, args as any),
+          callRootResolverWithFallback<Parameters<TableMutations['deleteTable']>[1]>(
+            deps.tableResolver,
+            'deleteTable',
+            deps.tableMutations,
+            'deleteTable',
+            _,
+            args,
+          ),
 
         // Attribute type mutations
         createAttributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.createAttributeType(_, args as any) ||
-          deps.attributeMutations.createAttributeType(_, args as any),
+          callRootResolverWithFallback<Parameters<AttributeMutations['createAttributeType']>[1]>(
+            deps.attributeResolver,
+            'createAttributeType',
+            deps.attributeMutations,
+            'createAttributeType',
+            _,
+            args,
+          ),
         updateAttributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.updateAttributeType(_, args as any) ||
-          deps.attributeMutations.updateAttributeType(_, args as any),
+          callRootResolverWithFallback<Parameters<AttributeMutations['updateAttributeType']>[1]>(
+            deps.attributeResolver,
+            'updateAttributeType',
+            deps.attributeMutations,
+            'updateAttributeType',
+            _,
+            args,
+          ),
         deleteAttributeType: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.deleteAttributeType(_, args as any) ||
-          deps.attributeMutations.deleteAttributeType(_, args as any),
+          callRootResolverWithFallback<Parameters<AttributeMutations['deleteAttributeType']>[1]>(
+            deps.attributeResolver,
+            'deleteAttributeType',
+            deps.attributeMutations,
+            'deleteAttributeType',
+            _,
+            args,
+          ),
 
         // Attribute mutations
         createAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.createAttribute(_, args as any) ||
-          deps.attributeMutations.createAttribute(_, args as any),
+          callRootResolverWithFallback<Parameters<AttributeMutations['createAttribute']>[1]>(
+            deps.attributeResolver,
+            'createAttribute',
+            deps.attributeMutations,
+            'createAttribute',
+            _,
+            args,
+          ),
+        batchCreateAttributes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<AttributeMutations['batchCreateAttributes']>[1]>(
+            deps.attributeMutations,
+            'batchCreateAttributes',
+            _,
+            args,
+          ),
         updateAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.updateAttribute(_, args as any) ||
-          deps.attributeMutations.updateAttribute(_, args as any),
+          callRootResolverWithFallback<Parameters<AttributeMutations['updateAttribute']>[1]>(
+            deps.attributeResolver,
+            'updateAttribute',
+            deps.attributeMutations,
+            'updateAttribute',
+            _,
+            args,
+          ),
         deleteAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.attributeResolver?.deleteAttribute(_, args as any) ||
-          deps.attributeMutations.deleteAttribute(_, args as any),
+          callRootResolverWithFallback<Parameters<AttributeMutations['deleteAttribute']>[1]>(
+            deps.attributeResolver,
+            'deleteAttribute',
+            deps.attributeMutations,
+            'deleteAttribute',
+            _,
+            args,
+          ),
 
         // Node mutations
         createNode: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.createNode(_, args as any) || deps.nodeMutations.createNode(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['createNode']>[1]>(
+            deps.nodeResolver,
+            'createNode',
+            deps.nodeMutations,
+            'createNode',
+            _,
+            args,
+          ),
+        batchCreateNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<NodeMutations['batchCreateNodes']>[1]>(deps.nodeMutations, 'batchCreateNodes', _, args),
+        batchCreateNodesTransactional: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<NodeMutations['batchCreateNodesTransactional']>[1]>(
+            deps.nodeMutations,
+            'batchCreateNodesTransactional',
+            _,
+            args,
+          ),
+        batchCreateNodesWithProgress: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<NodeMutations['batchCreateNodesWithProgress']>[1]>(
+            deps.nodeMutations,
+            'batchCreateNodesWithProgress',
+            _,
+            args,
+          ),
+        batchUpdateNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<NodeMutations['batchUpdateNodes']>[1]>(deps.nodeMutations, 'batchUpdateNodes', _, args),
         updateNode: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.updateNode(_, args as any) || deps.nodeMutations.updateNode(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['updateNode']>[1]>(
+            deps.nodeResolver,
+            'updateNode',
+            deps.nodeMutations,
+            'updateNode',
+            _,
+            args,
+          ),
         deleteNode: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.deleteNode(_, args as any) || deps.nodeMutations.deleteNode(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['deleteNode']>[1]>(
+            deps.nodeResolver,
+            'deleteNode',
+            deps.nodeMutations,
+            'deleteNode',
+            _,
+            args,
+          ),
         setNodeAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.setNodeAttribute(_, args as any) || deps.nodeMutations.setNodeAttribute(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['setNodeAttribute']>[1]>(
+            deps.nodeResolver,
+            'setNodeAttribute',
+            deps.nodeMutations,
+            'setNodeAttribute',
+            _,
+            args,
+          ),
         removeNodeAttribute: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.removeNodeAttribute(_, args as any) ||
-          deps.nodeMutations.removeNodeAttribute(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['removeNodeAttribute']>[1]>(
+            deps.nodeResolver,
+            'removeNodeAttribute',
+            deps.nodeMutations,
+            'removeNodeAttribute',
+            _,
+            args,
+          ),
         updateNodeAttributeValue: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.updateNodeAttributeValue(_, args as any) ||
-          deps.nodeMutations.updateNodeAttributeValue(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['updateNodeAttributeValue']>[1]>(
+            deps.nodeResolver,
+            'updateNodeAttributeValue',
+            deps.nodeMutations,
+            'updateNodeAttributeValue',
+            _,
+            args,
+          ),
         createNodeWithAttributes: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.createNodeWithAttributes(_, args as any) ||
-          deps.nodeMutations.createNodeWithAttributes(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['createNodeWithAttributes']>[1]>(
+            deps.nodeResolver,
+            'createNodeWithAttributes',
+            deps.nodeMutations,
+            'createNodeWithAttributes',
+            _,
+            args,
+          ),
         createPersonNode: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.createPersonNode(_, args as any) || deps.nodeMutations.createPersonNode(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['createPersonNode']>[1]>(
+            deps.nodeResolver,
+            'createPersonNode',
+            deps.nodeMutations,
+            'createPersonNode',
+            _,
+            args,
+          ),
         setNodeAttributes: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.setNodeAttributes(_, args as any) || deps.nodeMutations.setNodeAttributes(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['setNodeAttributes']>[1]>(
+            deps.nodeResolver,
+            'setNodeAttributes',
+            deps.nodeMutations,
+            'setNodeAttributes',
+            _,
+            args,
+          ),
         setNodeAttributesByIdentifier: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.nodeResolver?.setNodeAttributesByIdentifier(_, args as any) ||
-          deps.nodeMutations.setNodeAttributesByIdentifier(_, args as any),
+          callRootResolverWithFallback<Parameters<NodeMutations['setNodeAttributesByIdentifier']>[1]>(
+            deps.nodeResolver,
+            'setNodeAttributesByIdentifier',
+            deps.nodeMutations,
+            'setNodeAttributesByIdentifier',
+            _,
+            args,
+          ),
+        batchSetNodeAttributes: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<NodeMutations['batchSetNodeAttributes']>[1]>(
+            deps.nodeMutations,
+            'batchSetNodeAttributes',
+            _,
+            args,
+          ),
+        batchOperationWithRollback: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<NodeMutations['batchOperationWithRollback']>[1]>(
+            deps.nodeMutations,
+            'batchOperationWithRollback',
+            _,
+            args,
+          ),
 
         // Relation mutations
         createRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.createRelationType(_, args as any) ||
-          deps.relationMutations.createRelationType(_, args as any),
+          callRootResolverWithFallback<Parameters<RelationMutations['createRelationType']>[1]>(
+            deps.relationResolver,
+            'createRelationType',
+            deps.relationMutations,
+            'createRelationType',
+            _,
+            args,
+          ),
         updateRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.updateRelationType(_, args as any) ||
-          deps.relationMutations.updateRelationType(_, args as any),
+          callRootResolverWithFallback<Parameters<RelationMutations['updateRelationType']>[1]>(
+            deps.relationResolver,
+            'updateRelationType',
+            deps.relationMutations,
+            'updateRelationType',
+            _,
+            args,
+          ),
         deleteRelationType: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.deleteRelationType(_, args as any) ||
-          deps.relationMutations.deleteRelationType(_, args as any),
+          callRootResolverWithFallback<Parameters<RelationMutations['deleteRelationType']>[1]>(
+            deps.relationResolver,
+            'deleteRelationType',
+            deps.relationMutations,
+            'deleteRelationType',
+            _,
+            args,
+          ),
         createRelation: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.createRelation(_, args as any) ||
-          deps.relationMutations.createRelation(_, args as any),
+          callRootResolverWithFallback<Parameters<RelationMutations['createRelation']>[1]>(
+            deps.relationResolver,
+            'createRelation',
+            deps.relationMutations,
+            'createRelation',
+            _,
+            args,
+          ),
+        batchCreateRelations: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<Parameters<RelationMutations['batchCreateRelations']>[1]>(
+            deps.relationMutations,
+            'batchCreateRelations',
+            _,
+            args,
+          ),
         deleteRelation: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.relationResolver?.deleteRelation(_, args as any) ||
-          deps.relationMutations.deleteRelation(_, args as any),
+          callRootResolverWithFallback<Parameters<RelationMutations['deleteRelation']>[1]>(
+            deps.relationResolver,
+            'deleteRelation',
+            deps.relationMutations,
+            'deleteRelation',
+            _,
+            args,
+          ),
 
         // Template mutations
         createTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.createTemplate(_, args as any) ||
-          deps.templateMutations.createTemplate(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateMutations['createTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'createTemplate',
+            deps.templateMutations,
+            'createTemplate',
+            _,
+            args,
+          ),
         updateTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.updateTemplate(_, args as any) ||
-          deps.templateMutations.updateTemplate(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateMutations['updateTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'updateTemplate',
+            deps.templateMutations,
+            'updateTemplate',
+            _,
+            args,
+          ),
         updateTemplateQuery: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.updateTemplateQuery(_, args as any) ||
-          deps.templateMutations.updateTemplateQuery(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateMutations['updateTemplateQuery']>[1]>(
+            deps.queryTemplateResolver,
+            'updateTemplateQuery',
+            deps.templateMutations,
+            'updateTemplateQuery',
+            _,
+            args,
+          ),
         deleteTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.deleteTemplate(_, args as any) ||
-          deps.templateMutations.deleteTemplate(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateMutations['deleteTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'deleteTemplate',
+            deps.templateMutations,
+            'deleteTemplate',
+            _,
+            args,
+          ),
         activateTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.activateTemplate(_, args as any) ||
-          deps.templateMutations.activateTemplate(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateMutations['activateTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'activateTemplate',
+            deps.templateMutations,
+            'activateTemplate',
+            _,
+            args,
+          ),
         deactivateTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.deactivateTemplate(_, args as any) ||
-          deps.templateMutations.deactivateTemplate(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateMutations['deactivateTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'deactivateTemplate',
+            deps.templateMutations,
+            'deactivateTemplate',
+            _,
+            args,
+          ),
         executeTemplate: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.queryTemplateResolver?.executeTemplate(_, args as any) ||
-          deps.templateMutations.executeTemplate(_, args as any),
+          callRootResolverWithFallback<Parameters<TemplateMutations['executeTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'executeTemplate',
+            deps.templateMutations,
+            'executeTemplate',
+            _,
+            args,
+          ),
         executeTemplateWithGraphQL: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.queryTemplateResolver?.executeTemplateWithGraphQL(_, args as any, context) ||
-          deps.templateMutations.executeTemplateWithGraphQL(_, args as any, context),
+          callRootResolverWithFallback<Parameters<TemplateMutations['executeTemplateWithGraphQL']>[1]>(
+            deps.queryTemplateResolver,
+            'executeTemplateWithGraphQL',
+            deps.templateMutations,
+            'executeTemplateWithGraphQL',
+            _,
+            args,
+            context,
+          ),
         exportTemplate: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.queryTemplateResolver?.exportTemplate(_, args, context) ||
-          deps.templateMutations.exportTemplate(_, args, context),
+          callRootResolverWithFallback<Parameters<TemplateMutations['exportTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'exportTemplate',
+            deps.templateMutations,
+            'exportTemplate',
+            _,
+            args,
+            context,
+          ),
         exportTemplates: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.queryTemplateResolver?.exportTemplates(_, args, context) ||
-          deps.templateMutations.exportTemplates(_, args, context),
+          callRootResolverWithFallback<Parameters<TemplateMutations['exportTemplates']>[1]>(
+            deps.queryTemplateResolver,
+            'exportTemplates',
+            deps.templateMutations,
+            'exportTemplates',
+            _,
+            args,
+            context,
+          ),
         importTemplate: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.queryTemplateResolver?.importTemplate(_, args, context) ||
-          deps.templateMutations.importTemplate(_, args, context),
+          callRootResolverWithFallback<Parameters<TemplateMutations['importTemplate']>[1]>(
+            deps.queryTemplateResolver,
+            'importTemplate',
+            deps.templateMutations,
+            'importTemplate',
+            _,
+            args,
+            context,
+          ),
 
         // Doc mutations
         createDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.createDoc(_, args as any) || deps.docMutations.createDoc(_, args as any),
+          callRootResolverWithFallback<Parameters<DocMutations['createDoc']>[1]>(
+            deps.docResolver,
+            'createDoc',
+            deps.docMutations,
+            'createDoc',
+            _,
+            args,
+          ),
         updateDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.updateDoc(_, args as any) || deps.docMutations.updateDoc(_, args as any),
+          callRootResolverWithFallback<Parameters<DocMutations['updateDoc']>[1]>(
+            deps.docResolver,
+            'updateDoc',
+            deps.docMutations,
+            'updateDoc',
+            _,
+            args,
+          ),
         deleteDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.deleteDoc(_, args as any) || deps.docMutations.deleteDoc(_, args as any),
+          callRootResolverWithFallback<Parameters<DocMutations['deleteDoc']>[1]>(
+            deps.docResolver,
+            'deleteDoc',
+            deps.docMutations,
+            'deleteDoc',
+            _,
+            args,
+          ),
         activateDoc: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.activateDoc(_, args as any) || deps.docMutations.activateDoc(_, args as any),
+          callRootResolverWithFallback<Parameters<DocMutations['activateDoc']>[1]>(
+            deps.docResolver,
+            'activateDoc',
+            deps.docMutations,
+            'activateDoc',
+            _,
+            args,
+          ),
         createDocVersion: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.docResolver?.createDocVersion(_, args as any) || deps.docMutations.createDocVersion(_, args as any),
+          callRootResolverWithFallback<Parameters<DocMutations['createDocVersion']>[1]>(
+            deps.docResolver,
+            'createDocVersion',
+            deps.docMutations,
+            'createDocVersion',
+            _,
+            args,
+          ),
 
         // System initialization mutations
         initializeSystem: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.systemResolver?.initializeSystem(_, args as any) || null,
+          callRootResolver<{ input: RootResolverArgs }>(deps.systemResolver, 'initializeSystem', _, args) || null,
+        saveTabularSyncConfig: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<{ input: { configKey: string; config: Record<string, unknown>; active?: boolean } }>(
+            deps.systemResolver,
+            'saveTabularSyncConfig',
+            _,
+            args,
+          ) || null,
+        activateTabularSyncConfig: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<{ configKey: string }>(deps.systemResolver, 'activateTabularSyncConfig', _, args) || null,
+        resyncTabularSyncTable: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callRootResolver<{ tableIdentifier: string }>(deps.systemResolver, 'resyncTabularSyncTable', _, args) || null,
 
         // Schema import mutations
         importSchema: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.schemaResolvers.Mutation.importSchema(_, args as any),
+          callRootResolver<Parameters<typeof deps.schemaResolvers.Mutation.importSchema>[1]>(
+            deps.schemaResolvers.Mutation,
+            'importSchema',
+            _,
+            args,
+          ),
 
         // Table Package mutations
         exportTablePackage: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tablePackageResolver.exportTablePackage(_, args as any),
+          callRootResolver<Parameters<TablePackageResolver['exportTablePackage']>[1]>(
+            deps.tablePackageResolver,
+            'exportTablePackage',
+            _,
+            args,
+          ),
         importTablePackage: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tablePackageResolver.importTablePackage(_, args as any),
+          callRootResolver<Parameters<TablePackageResolver['importTablePackage']>[1]>(
+            deps.tablePackageResolver,
+            'importTablePackage',
+            _,
+            args,
+          ),
         batchImportTablePackages: (_: GraphQLParent, args: Record<string, unknown>) =>
-          deps.tablePackageResolver.batchImportTablePackages(_, args as any),
+          callRootResolver<Parameters<TablePackageResolver['batchImportTablePackages']>[1]>(
+            deps.tablePackageResolver,
+            'batchImportTablePackages',
+            _,
+            args,
+          ),
 
         // Export mutations
         exportTableNodes: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.exportMutations.Mutation.exportTableNodes(_, args as any, context),
+          callRootResolver<Parameters<typeof deps.exportMutations.Mutation.exportTableNodes>[1]>(
+            deps.exportMutations.Mutation,
+            'exportTableNodes',
+            _,
+            args,
+            context,
+          ),
         exportMultipleTables: (_: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.exportMutations.Mutation.exportMultipleTables(_, args as any, context),
+          callRootResolver<Parameters<typeof deps.exportMutations.Mutation.exportMultipleTables>[1]>(
+            deps.exportMutations.Mutation,
+            'exportMultipleTables',
+            _,
+            args,
+            context,
+          ),
 
         // JSONL Backup mutations
         exportJsonl: async (_: GraphQLParent, args: Record<string, unknown>) => {
@@ -572,35 +1346,65 @@ export class GraphQLSchemaBuilder {
           if (!deps.jsonlBackupQueries) {
             throw new Error('JSONL backup service not available')
           }
-          return deps.jsonlBackupQueries.importJsonl(_, args)
+          return deps.jsonlBackupQueries.importJsonl(_, args as {
+            input: {
+              inputDir: string
+              tableIdentifiers?: string[]
+              conflictResolution: 'SKIP' | 'OVERWRITE' | 'MERGE'
+              validateSchema?: boolean
+              dryRun?: boolean
+            }
+          })
         },
 
         // SQLite Backup mutations
-        backupDatabase: (_: GraphQLParent, args: Record<string, unknown>, _context: GraphQLContext, info: any) => {
-          if (!deps.backupMutations) {
-            throw new Error('BackupMutations not available')
-          }
-          const { BackupMutations, backupService, logger } = deps.backupMutations
-          return BackupMutations.backupDatabase(_, args, { backupService, logger }, info)
-        },
-        restoreDatabase: (_: GraphQLParent, args: Record<string, unknown>, _context: GraphQLContext, info: any) => {
-          if (!deps.backupMutations) {
-            throw new Error('BackupMutations not available')
-          }
-          const { BackupMutations, backupService, logger } = deps.backupMutations
-          return BackupMutations.restoreDatabase(_, args, { backupService, logger }, info)
-        },
-        applyRetentionPolicy: (
+        backupDatabase: (
           _: GraphQLParent,
           args: Record<string, unknown>,
           _context: GraphQLContext,
-          info: any,
+          info: GraphQLResolveInfo,
         ) => {
           if (!deps.backupMutations) {
             throw new Error('BackupMutations not available')
           }
           const { BackupMutations, backupService, logger } = deps.backupMutations
-          return BackupMutations.applyRetentionPolicy(_, args, { backupService, logger }, info)
+          return callRootResolver<
+            { input?: Record<string, unknown> },
+            unknown,
+            { backupService: SQLiteBackupService; logger: ILogger }
+          >(BackupMutations, 'backupDatabase', _, args, { backupService, logger }, info)
+        },
+        restoreDatabase: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: GraphQLResolveInfo,
+        ) => {
+          if (!deps.backupMutations) {
+            throw new Error('BackupMutations not available')
+          }
+          const { BackupMutations, backupService, logger } = deps.backupMutations
+          return callRootResolver<
+            { input: import('@/core/types/DatabaseBackup.js').SQLiteRestoreOptions },
+            unknown,
+            { backupService: SQLiteBackupService; logger: ILogger }
+          >(BackupMutations, 'restoreDatabase', _, args, { backupService, logger }, info)
+        },
+        applyRetentionPolicy: (
+          _: GraphQLParent,
+          args: Record<string, unknown>,
+          _context: GraphQLContext,
+          info: GraphQLResolveInfo,
+        ) => {
+          if (!deps.backupMutations) {
+            throw new Error('BackupMutations not available')
+          }
+          const { BackupMutations, backupService, logger } = deps.backupMutations
+          return callRootResolver<
+            { policy: import('@/core/types/DatabaseBackup.js').BackupRetentionPolicy },
+            unknown,
+            { backupService: SQLiteBackupService; logger: ILogger }
+          >(BackupMutations, 'applyRetentionPolicy', _, args, { backupService, logger }, info)
         },
       },
 
@@ -609,158 +1413,597 @@ export class GraphQLSchemaBuilder {
       },
 
       // Field resolvers
+      TablesConnection: {
+        tables: (parent: GraphQLParent) => getArrayValue(parent, 'tables') ?? getArrayValue(parent, 'nodes') ?? [],
+      },
+
+      RelatedNodesConnection: {
+        totalConnections: (parent: GraphQLParent) =>
+          getNumberValue(parent, 'totalConnections') ?? getNumberValue(parent, 'totalCount') ?? getArrayValue(parent, 'nodes')?.length ?? 0,
+      },
+
       Table: {
+        name: (parent: GraphQLParent) => getStringValue(parent, 'name') ?? getStringValue(parent, 'identifier'),
         attributes: (parent: GraphQLParent) =>
-          deps.tableResolver?.attributes_field(parent as any) || deps.tableFieldResolvers.attributes(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.tableFieldResolvers.attributes>[0],
+            ReturnType<typeof deps.tableFieldResolvers.attributes>
+          >(
+            deps.tableResolver,
+            'attributes_field',
+            deps.tableFieldResolvers,
+            'attributes',
+            parent,
+          ),
         attributeTypes: (parent: GraphQLParent) =>
-          deps.tableResolver?.attributeTypes_field(parent as any) ||
-          deps.tableFieldResolvers.attributeTypes(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.tableFieldResolvers.attributeTypes>[0],
+            ReturnType<typeof deps.tableFieldResolvers.attributeTypes>
+          >(
+            deps.tableResolver,
+            'attributeTypes_field',
+            deps.tableFieldResolvers,
+            'attributeTypes',
+            parent,
+          ),
+        nodes: (parent: GraphQLParent) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.tableFieldResolvers.tableNodes>[0],
+            ReturnType<typeof deps.tableFieldResolvers.tableNodes>
+          >(
+            deps.tableResolver,
+            'tableNodes_field',
+            deps.tableFieldResolvers,
+            'tableNodes',
+            parent,
+          ),
         tableNodes: (parent: GraphQLParent) =>
-          deps.tableResolver?.tableNodes_field(parent as any) || deps.tableFieldResolvers.tableNodes(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.tableFieldResolvers.tableNodes>[0],
+            ReturnType<typeof deps.tableFieldResolvers.tableNodes>
+          >(
+            deps.tableResolver,
+            'tableNodes_field',
+            deps.tableFieldResolvers,
+            'tableNodes',
+            parent,
+          ),
         tableNodeCount: (parent: GraphQLParent) =>
-          deps.tableResolver?.tableNodeCount_field(parent as any) ||
-          deps.tableFieldResolvers.tableNodeCount(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.tableFieldResolvers.tableNodeCount>[0],
+            ReturnType<typeof deps.tableFieldResolvers.tableNodeCount>
+          >(
+            deps.tableResolver,
+            'tableNodeCount_field',
+            deps.tableFieldResolvers,
+            'tableNodeCount',
+            parent,
+          ),
+        nodeCount: (parent: GraphQLParent) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.tableFieldResolvers.tableNodeCount>[0],
+            ReturnType<typeof deps.tableFieldResolvers.tableNodeCount>
+          >(
+            deps.tableResolver,
+            'tableNodeCount_field',
+            deps.tableFieldResolvers,
+            'tableNodeCount',
+            parent,
+          ),
         attributeCount: (parent: GraphQLParent) =>
-          deps.tableResolver?.attributeCount_field(parent as any) ||
-          deps.tableFieldResolvers.attributeCount(parent as any),
-        aiMetadata: (parent: GraphQLParent) =>
-          deps.tableResolver?.aiMetadata_field(parent as any) || deps.tableFieldResolvers.aiMetadata(parent as any),
-        mcpCommand: (parent: GraphQLParent) => deps.tableFieldResolvers.mcpCommand(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.tableFieldResolvers.attributeCount>[0],
+            ReturnType<typeof deps.tableFieldResolvers.attributeCount>
+          >(
+            deps.tableResolver,
+            'attributeCount_field',
+            deps.tableFieldResolvers,
+            'attributeCount',
+            parent,
+          ),
+        aiMetadata: (parent: GraphQLParent, args: Record<string, unknown>) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.tableFieldResolvers.aiMetadata>[0],
+            ReturnType<typeof deps.tableFieldResolvers.aiMetadata>,
+            [Parameters<typeof deps.tableFieldResolvers.aiMetadata>[1]]
+          >(
+            deps.tableResolver,
+            'aiMetadata_field',
+            deps.tableFieldResolvers,
+            'aiMetadata',
+            parent,
+            castArgs<Parameters<typeof deps.tableFieldResolvers.aiMetadata>[1]>(args),
+          ),
+        mcpCommand: (parent: GraphQLParent) =>
+          callFieldResolver<
+            Parameters<typeof deps.tableFieldResolvers.mcpCommand>[0],
+            ReturnType<typeof deps.tableFieldResolvers.mcpCommand>
+          >(deps.tableFieldResolvers, 'mcpCommand', parent),
         // Export field resolvers
         exportNodes: (parent: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.exportMutations.Table.exportNodes(parent as any, args as any, context),
+          callFieldResolver<{ id: string }, ReturnType<typeof deps.exportMutations.Table.exportNodes>, [Record<string, unknown>, GraphQLContext]>(
+            deps.exportMutations.Table,
+            'exportNodes',
+            parent,
+            args,
+            context,
+          ) ?? deps.exportMutations.Table.exportNodes(castParent<{ id: string }>(parent), args, context),
         exportPreview: (parent: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
-          deps.exportMutations.Table.exportPreview(parent as any, args as any, context),
+          callFieldResolver<{ id: string }, ReturnType<typeof deps.exportMutations.Table.exportPreview>, [Record<string, unknown>, GraphQLContext]>(
+            deps.exportMutations.Table,
+            'exportPreview',
+            parent,
+            args,
+            context,
+          ) ?? deps.exportMutations.Table.exportPreview(castParent<{ id: string }>(parent), args, context),
       },
 
       Attribute: {
+        tableId: (parent: GraphQLParent) => getStringValue(parent, 'tableId'),
+        required: (parent: GraphQLParent) =>
+          callFieldResolver<
+            Parameters<typeof deps.attributeFieldResolvers.required>[0],
+            ReturnType<typeof deps.attributeFieldResolvers.required>
+          >(deps.attributeFieldResolvers, 'required', parent),
+        searchable: (parent: GraphQLParent) =>
+          callFieldResolver<
+            Parameters<typeof deps.attributeFieldResolvers.searchable>[0],
+            ReturnType<typeof deps.attributeFieldResolvers.searchable>
+          >(deps.attributeFieldResolvers, 'searchable', parent),
         attributeType: (parent: GraphQLParent) =>
-          deps.attributeResolver?.attributeType_field(parent as any) ||
-          deps.attributeFieldResolvers.attributeType(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.attributeFieldResolvers.attributeType>[0],
+            ReturnType<typeof deps.attributeFieldResolvers.attributeType>
+          >(
+            deps.attributeResolver,
+            'attributeType_field',
+            deps.attributeFieldResolvers,
+            'attributeType',
+            parent,
+          ),
         table: (parent: GraphQLParent) =>
-          deps.attributeResolver?.table_field(parent as any) || deps.attributeFieldResolvers.table(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.attributeFieldResolvers.table>[0],
+            ReturnType<typeof deps.attributeFieldResolvers.table>
+          >(deps.attributeResolver, 'table_field', deps.attributeFieldResolvers, 'table', parent),
       },
 
       TableNode: {
+        relevanceScore: (parent: GraphQLParent) => getNumberValue(parent, 'relevanceScore') ?? 1,
+        distance: (parent: GraphQLParent) => getNumberValue(parent, 'distance') ?? 0,
+        tableId: (parent: GraphQLParent) => getStringValue(parent, 'tableId') ?? callStringMethod(parent, 'getTableId') ?? null,
         table: (parent: GraphQLParent) =>
-          deps.nodeResolver?.table_field(parent as any) || deps.nodeFieldResolvers.table(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.table>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.table>
+          >(deps.nodeResolver, 'table_field', deps.nodeFieldResolvers, 'table', parent),
         attributes: (parent: GraphQLParent) =>
-          deps.nodeResolver?.attributes_field(parent as any) || deps.nodeFieldResolvers.attributes(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.attributes>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.attributes>
+          >(
+            deps.nodeResolver,
+            'attributes_field',
+            deps.nodeFieldResolvers,
+            'attributes',
+            parent,
+          ),
         attributeCount: (parent: GraphQLParent) =>
-          deps.nodeResolver?.attributeCount_field(parent as any) ||
-          deps.nodeFieldResolvers.attributeCount(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.attributeCount>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.attributeCount>
+          >(
+            deps.nodeResolver,
+            'attributeCount_field',
+            deps.nodeFieldResolvers,
+            'attributeCount',
+            parent,
+          ),
         outgoingRelations: (parent: GraphQLParent) =>
-          deps.nodeResolver?.outgoingRelations_field(parent as any) ||
-          deps.nodeFieldResolvers.outgoingRelations(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.outgoingRelations>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.outgoingRelations>
+          >(
+            deps.nodeResolver,
+            'outgoingRelations_field',
+            deps.nodeFieldResolvers,
+            'outgoingRelations',
+            parent,
+          ),
         incomingRelations: (parent: GraphQLParent) =>
-          deps.nodeResolver?.incomingRelations_field(parent as any) ||
-          deps.nodeFieldResolvers.incomingRelations(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.incomingRelations>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.incomingRelations>
+          >(
+            deps.nodeResolver,
+            'incomingRelations_field',
+            deps.nodeFieldResolvers,
+            'incomingRelations',
+            parent,
+          ),
+        relations: async (parent: GraphQLParent) => {
+          const outgoing =
+            (await (callFieldResolverWithFallback<
+              Parameters<typeof deps.nodeFieldResolvers.outgoingRelations>[0],
+              ReturnType<typeof deps.nodeFieldResolvers.outgoingRelations>
+            >(
+              deps.nodeResolver,
+              'outgoingRelations_field',
+              deps.nodeFieldResolvers,
+              'outgoingRelations',
+              parent,
+            ))) || []
+          const incoming =
+            (await (callFieldResolverWithFallback<
+              Parameters<typeof deps.nodeFieldResolvers.incomingRelations>[0],
+              ReturnType<typeof deps.nodeFieldResolvers.incomingRelations>
+            >(
+              deps.nodeResolver,
+              'incomingRelations_field',
+              deps.nodeFieldResolvers,
+              'incomingRelations',
+              parent,
+            ))) || []
+          return [...outgoing, ...incoming]
+        },
         relationCount: (parent: GraphQLParent) =>
-          deps.nodeResolver?.relationCount_field(parent as any) || deps.nodeFieldResolvers.relationCount(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.relationCount>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.relationCount>
+          >(
+            deps.nodeResolver,
+            'relationCount_field',
+            deps.nodeFieldResolvers,
+            'relationCount',
+            parent,
+          ),
         // Graph traversal field resolvers
-        connectedNodes: (parent: GraphQLParent, args: any) =>
-          deps.nodeResolver?.connectedNodes_field(parent as any, args) ||
-          deps.nodeFieldResolvers.connectedNodes(parent as any, args),
-        shortestPath: (parent: GraphQLParent, args: any) =>
-          deps.nodeResolver?.shortestPath_field(parent as any, args) ||
-          deps.nodeFieldResolvers.shortestPath(parent as any, args),
-        neighborsByRelationType: (parent: GraphQLParent, args: any) =>
-          deps.nodeResolver?.neighborsByRelationType_field(parent as any, args) ||
-          deps.nodeFieldResolvers.neighborsByRelationType(parent as any, args),
+        connectedNodes: (parent: GraphQLParent, args: Record<string, unknown>) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.connectedNodes>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.connectedNodes>,
+            [Parameters<typeof deps.nodeFieldResolvers.connectedNodes>[1]]
+          >(
+            deps.nodeResolver,
+            'connectedNodes_field',
+            deps.nodeFieldResolvers,
+            'connectedNodes',
+            parent,
+            castArgs<Parameters<typeof deps.nodeFieldResolvers.connectedNodes>[1]>(args),
+          ),
+        shortestPath: (parent: GraphQLParent, args: Record<string, unknown>) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.shortestPath>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.shortestPath>,
+            [Parameters<typeof deps.nodeFieldResolvers.shortestPath>[1]]
+          >(
+            deps.nodeResolver,
+            'shortestPath_field',
+            deps.nodeFieldResolvers,
+            'shortestPath',
+            parent,
+            castArgs<Parameters<typeof deps.nodeFieldResolvers.shortestPath>[1]>(args),
+          ),
+        neighborsByRelationType: (parent: GraphQLParent, args: Record<string, unknown>) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.neighborsByRelationType>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.neighborsByRelationType>,
+            [Parameters<typeof deps.nodeFieldResolvers.neighborsByRelationType>[1]]
+          >(
+            deps.nodeResolver,
+            'neighborsByRelationType_field',
+            deps.nodeFieldResolvers,
+            'neighborsByRelationType',
+            parent,
+            castArgs<Parameters<typeof deps.nodeFieldResolvers.neighborsByRelationType>[1]>(args),
+          ),
+      },
+
+      SearchNodeResult: {
+        node: (parent: GraphQLParent) => getRecordValue(parent)?.node ?? parent,
+        table: (parent: GraphQLParent) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.nodeFieldResolvers.table>[0],
+            ReturnType<typeof deps.nodeFieldResolvers.table>
+          >(deps.nodeResolver, 'table_field', deps.nodeFieldResolvers, 'table', getRecordValue(parent)?.node ?? parent),
       },
 
       NodeAttribute: {
+        attributeId: (parent: GraphQLParent) => getStringValue(parent, 'attributeId') ?? callStringMethod(parent, 'getAttributeId') ?? null,
         attribute: (parent: GraphQLParent) =>
-          deps.attributeResolver?.nodeAttribute_attribute_field(parent as any) ||
-          deps.attributeFieldResolvers.nodeAttribute_attribute_field(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.attributeFieldResolvers.nodeAttribute_attribute_field>[0],
+            ReturnType<typeof deps.attributeFieldResolvers.nodeAttribute_attribute_field>
+          >(
+            deps.attributeResolver,
+            'nodeAttribute_attribute_field',
+            deps.attributeFieldResolvers,
+            'nodeAttribute_attribute_field',
+            parent,
+          ),
         formattedValue: (parent: GraphQLParent) =>
-          deps.attributeResolver?.nodeAttribute_formattedValue_field(parent as any) ||
-          deps.attributeFieldResolvers.nodeAttribute_formattedValue_field(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.attributeFieldResolvers.nodeAttribute_formattedValue_field>[0],
+            ReturnType<typeof deps.attributeFieldResolvers.nodeAttribute_formattedValue_field>
+          >(
+            deps.attributeResolver,
+            'nodeAttribute_formattedValue_field',
+            deps.attributeFieldResolvers,
+            'nodeAttribute_formattedValue_field',
+            parent,
+          ),
       },
 
       NodeRelation: {
+        fromNodeId: (parent: GraphQLParent) =>
+          getStringValue(parent, 'fromNodeId') ?? getStringValue(parent, 'sourceNodeId') ?? callStringMethod(parent, 'getSourceNodeId') ?? null,
+        toNodeId: (parent: GraphQLParent) =>
+          getStringValue(parent, 'toNodeId') ?? getStringValue(parent, 'targetNodeId') ?? callStringMethod(parent, 'getTargetNodeId') ?? null,
+        relationshipType: async (parent: GraphQLParent) => {
+          const relationType =
+            (await (callFieldResolverWithFallback<
+              Parameters<typeof deps.relationFieldResolvers.relationType>[0],
+              ReturnType<typeof deps.relationFieldResolvers.relationType>
+            >(
+              deps.relationResolver,
+              'relationType_field',
+              deps.relationFieldResolvers,
+              'relationType',
+              parent,
+            ))) || null
+          return getStringValue(relationType, 'identifier') ?? getStringValue(relationType, 'name') ?? ''
+        },
         table: (parent: GraphQLParent) =>
-          deps.relationResolver?.table_field(parent as any) || deps.relationFieldResolvers.table(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.relationFieldResolvers.table>[0],
+            ReturnType<typeof deps.relationFieldResolvers.table>
+          >(deps.relationResolver, 'table_field', deps.relationFieldResolvers, 'table', parent),
+        fromNode: (parent: GraphQLParent) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.relationFieldResolvers.sourceNode>[0],
+            ReturnType<typeof deps.relationFieldResolvers.sourceNode>
+          >(
+            deps.relationResolver,
+            'sourceNode_field',
+            deps.relationFieldResolvers,
+            'sourceNode',
+            parent,
+          ),
+        toNode: (parent: GraphQLParent) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.relationFieldResolvers.targetNode>[0],
+            ReturnType<typeof deps.relationFieldResolvers.targetNode>
+          >(
+            deps.relationResolver,
+            'targetNode_field',
+            deps.relationFieldResolvers,
+            'targetNode',
+            parent,
+          ),
         sourceNode: (parent: GraphQLParent) =>
-          deps.relationResolver?.sourceNode_field(parent as any) ||
-          deps.relationFieldResolvers.sourceNode(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.relationFieldResolvers.sourceNode>[0],
+            ReturnType<typeof deps.relationFieldResolvers.sourceNode>
+          >(
+            deps.relationResolver,
+            'sourceNode_field',
+            deps.relationFieldResolvers,
+            'sourceNode',
+            parent,
+          ),
         targetNode: (parent: GraphQLParent) =>
-          deps.relationResolver?.targetNode_field(parent as any) ||
-          deps.relationFieldResolvers.targetNode(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.relationFieldResolvers.targetNode>[0],
+            ReturnType<typeof deps.relationFieldResolvers.targetNode>
+          >(
+            deps.relationResolver,
+            'targetNode_field',
+            deps.relationFieldResolvers,
+            'targetNode',
+            parent,
+          ),
         relationType: (parent: GraphQLParent) =>
-          deps.relationResolver?.relationType_field(parent as any) ||
-          deps.relationFieldResolvers.relationType(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.relationFieldResolvers.relationType>[0],
+            ReturnType<typeof deps.relationFieldResolvers.relationType>
+          >(
+            deps.relationResolver,
+            'relationType_field',
+            deps.relationFieldResolvers,
+            'relationType',
+            parent,
+          ),
       },
 
       RelationType: {
         name: (parent: GraphQLParent) =>
-          deps.relationResolver?.name_field(parent as any) || deps.relationTypeFieldResolvers.name(parent as any),
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.relationTypeFieldResolvers.name>[0],
+            ReturnType<typeof deps.relationTypeFieldResolvers.name>
+          >(
+            deps.relationResolver,
+            'name_field',
+            deps.relationTypeFieldResolvers,
+            'name',
+            parent,
+          ),
+      },
+
+      SystemDatabaseStats: {
+        connections: (parent: GraphQLParent) => getNumberValue(parent, 'connections') ?? getNumberValue(parent, 'connectionCount') ?? 0,
+        queries: (parent: GraphQLParent) => getNumberValue(parent, 'queries') ?? getNumberValue(parent, 'queryCount') ?? 0,
+      },
+
+      SystemMemoryStats: {
+        heapUsed: (parent: GraphQLParent) => getNumberValue(parent, 'heapUsed') ?? getNumberValue(getNestedRecordValue(parent, 'heap'), 'used') ?? 0,
+      },
+
+      TemplateExecutionResult: {
+        executionTime: (parent: GraphQLParent) =>
+          getNumberValue(parent, 'executionTime') ?? getNumberValue(getNestedRecordValue(parent, 'metadata'), 'executionTime') ?? 0,
       },
 
       QueryTemplate: {
         query: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.query_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.query>>(
+            deps.queryTemplateResolver,
+            'query_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.query(parent as QueryTemplate),
         queryName: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.queryName_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.queryName>>(
+            deps.queryTemplateResolver,
+            'queryName_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.queryName(parent as QueryTemplate),
         operationType: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.operationType_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.operationType>>(
+            deps.queryTemplateResolver,
+            'operationType_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.operationType(parent as QueryTemplate),
         variables: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.variables_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.variables>>(
+            deps.queryTemplateResolver,
+            'variables_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.variables(parent as QueryTemplate),
         inputSchema: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.inputSchema_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.inputSchema>>(
+            deps.queryTemplateResolver,
+            'inputSchema_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.inputSchema(parent as QueryTemplate),
         defaultVariables: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.defaultVariables_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.defaultVariables>>(
+            deps.queryTemplateResolver,
+            'defaultVariables_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.defaultVariables(parent as QueryTemplate),
         applicableTables: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.applicableTables_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.applicableTables>>(
+            deps.queryTemplateResolver,
+            'applicableTables_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.applicableTables(parent as QueryTemplate),
         complexityScore: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.complexityScore_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.complexityScore>>(
+            deps.queryTemplateResolver,
+            'complexityScore_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.complexityScore(parent as QueryTemplate),
         usageCount: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.usageCount_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.usageCount>>(
+            deps.queryTemplateResolver,
+            'usageCount_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.usageCount(parent as QueryTemplate),
         lastUsedAt: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.lastUsedAt_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.lastUsedAt>>(
+            deps.queryTemplateResolver,
+            'lastUsedAt_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.lastUsedAt(parent as QueryTemplate),
         avgExecutionTimeMs: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.avgExecutionTimeMs_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.avgExecutionTimeMs>>(
+            deps.queryTemplateResolver,
+            'avgExecutionTimeMs_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.avgExecutionTimeMs(parent as QueryTemplate),
         version: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.version_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.version>>(
+            deps.queryTemplateResolver,
+            'version_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.version(parent as QueryTemplate),
         isActive: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.isActive_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.isActive>>(
+            deps.queryTemplateResolver,
+            'isActive_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.isActive(parent as QueryTemplate),
         tags: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.tags_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.tags>>(
+            deps.queryTemplateResolver,
+            'tags_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.tags(parent as QueryTemplate),
         createdBy: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.createdBy_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.createdBy>>(
+            deps.queryTemplateResolver,
+            'createdBy_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.createdBy(parent as QueryTemplate),
         createdAt: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.createdAt_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.createdAt>>(
+            deps.queryTemplateResolver,
+            'createdAt_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.createdAt(parent as QueryTemplate),
         updatedAt: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.updatedAt_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.updatedAt>>(
+            deps.queryTemplateResolver,
+            'updatedAt_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.updatedAt(parent as QueryTemplate),
         isValid: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.isValid_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.isValid>>(
+            deps.queryTemplateResolver,
+            'isValid_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.isValid(parent as QueryTemplate),
         validationErrors: (parent: GraphQLParent) =>
-          deps.queryTemplateResolver?.validationErrors_field(parent as QueryTemplate) ||
+          callResolver<ReturnType<typeof deps.queryTemplateFieldResolvers.validationErrors>>(
+            deps.queryTemplateResolver,
+            'validationErrors_field',
+            parent as QueryTemplate,
+          ) ??
           deps.queryTemplateFieldResolvers.validationErrors(parent as QueryTemplate),
       },
 
       Doc: {
-        table: (parent: GraphQLParent, args: any, context: any, info: any) =>
-          deps.docResolver?.table_field(parent as any, args, context, info) ||
-          deps.docFieldResolvers.table(parent as any, args, context, info),
+        table: (
+          parent: GraphQLParent,
+          args: Record<string, unknown>,
+          context: GraphQLContext,
+          info: GraphQLResolveInfo,
+        ) =>
+          callFieldResolverWithFallback<
+            Parameters<typeof deps.docFieldResolvers.table>[0],
+            ReturnType<typeof deps.docFieldResolvers.table>,
+            [
+              Parameters<typeof deps.docFieldResolvers.table>[1],
+              GraphQLContext,
+              GraphQLResolveInfo,
+            ]
+          >(
+            deps.docResolver,
+            'table_field',
+            deps.docFieldResolvers,
+            'table',
+            parent,
+            castArgs<Parameters<typeof deps.docFieldResolvers.table>[1]>(args),
+            context,
+            info,
+          ),
       },
     }
 
@@ -781,7 +2024,7 @@ export class GraphQLSchemaBuilder {
 export function buildGraphQLSchema(deps: GraphQLDependencies): GraphQLSchema {
   const builder = new (class extends GraphQLSchemaBuilder {
     constructor() {
-      super(null as any) // This is for backward compatibility only
+      super(null as unknown as DIContainer) // This is for backward compatibility only
     }
 
     override buildSchema(dependencies: GraphQLDependencies): GraphQLSchema {

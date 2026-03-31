@@ -2,7 +2,11 @@ import type { IResolvers } from '@graphql-tools/utils'
 import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type { ExportMutations } from '@/presentation/graphql/mutations/ExportMutations.js'
 
-export function createExportResolvers(exportMutations: ExportMutations): IResolvers<any, GraphQLContext> {
+interface ExportTableParent {
+  id: string
+}
+
+export function createExportResolvers(exportMutations: ExportMutations): IResolvers<unknown, GraphQLContext> {
   return {
     Query: {
       getSupportedExportFormats: () => exportMutations.getSupportedExportFormats(),
@@ -20,7 +24,7 @@ export function createExportResolvers(exportMutations: ExportMutations): IResolv
         // Transform args to include tableId from parent
         const input = {
           ...args.input,
-          tableId: parent.id,
+          tableId: (parent as ExportTableParent).id,
         }
         return exportMutations.exportTableNodes(parent, { input }, context)
       },
@@ -28,7 +32,7 @@ export function createExportResolvers(exportMutations: ExportMutations): IResolv
       exportPreview: async (parent, args, context) => {
         // Create preview input with fixed options
         const input = {
-          tableId: parent.id,
+          tableId: (parent as ExportTableParent).id,
           format: args.format.toLowerCase(),
           includeAttributes: true,
           includeMetadata: true,

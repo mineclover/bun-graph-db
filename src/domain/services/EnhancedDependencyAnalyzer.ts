@@ -148,7 +148,10 @@ export class EnhancedDependencyAnalyzer {
     }
 
     while (queue.length > 0) {
-      const current = queue.shift()!
+      const current = queue.shift()
+      if (!current) {
+        continue
+      }
       result.push(current)
 
       // Update neighbors
@@ -188,8 +191,8 @@ export class EnhancedDependencyAnalyzer {
 
     try {
       // Get all attributes for this table
-      const attributesResult = await this.attributeRepository.findByTableId(tableId as any)
-      const attributes = attributesResult.items || []
+      const attributesResult = await this.attributeRepository.findByTableId(tableId)
+      const attributes = attributesResult.items || attributesResult.data || []
 
       // For each attribute, check if it references another table
       // This would need to be enhanced based on the actual attribute type system
@@ -231,8 +234,8 @@ export class EnhancedDependencyAnalyzer {
 
     try {
       // Get all nodes for this table
-      const nodesResult = await this.nodeRepository.findByTableId(tableId as any)
-      const nodes = nodesResult.items || []
+      const nodesResult = await this.nodeRepository.findByTableId(tableId)
+      const nodes = nodesResult.items || nodesResult.data || []
 
       // For each node, check its relations to nodes in other tables
       for (const node of nodes) {
@@ -241,7 +244,10 @@ export class EnhancedDependencyAnalyzer {
         for (const relation of outgoingRelations) {
           // Find the target node's table
           const targetNodeId = relation.getTargetNodeId()
-          const targetNode = await this.nodeRepository.findById(targetNodeId as any)
+          if (!targetNodeId) {
+            continue
+          }
+          const targetNode = await this.nodeRepository.findById(targetNodeId)
 
           if (targetNode) {
             const targetTableId = targetNode.getTableId()

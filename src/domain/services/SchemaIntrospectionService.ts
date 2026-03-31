@@ -17,6 +17,7 @@ import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
 // NOTE: GraphQLSchemaBuilder is imported dynamically in getCurrentSchema() to avoid circular dependency:
 // TablePackageModule → TablePackageService → SchemaIntrospectionService → GraphQLSchemaBuilder → resolvers → container
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import type { JsonValue } from '@/core/types/GraphQLTypes.js'
 
 export interface SchemaAnalysisResult {
   isValid: boolean
@@ -51,7 +52,7 @@ export interface SchemaArgumentInfo {
   name: string
   type: string
   description?: string
-  defaultValue?: any
+  defaultValue?: JsonValue
   isRequired: boolean
 }
 
@@ -88,10 +89,33 @@ export interface SchemaChange {
   type: 'ADD' | 'REMOVE' | 'MODIFY'
   category: 'TYPE' | 'FIELD' | 'ARGUMENT' | 'DIRECTIVE'
   path: string
-  oldValue?: any
-  newValue?: any
+  oldValue?: JsonValue
+  newValue?: JsonValue
   isBreaking: boolean
   description: string
+}
+
+interface IntrospectionArgLike {
+  name: string
+  type: unknown
+  description?: string | null
+  defaultValue?: JsonValue
+}
+
+interface IntrospectionFieldLike {
+  name: string
+  type: unknown
+  description?: string | null
+  args?: IntrospectionArgLike[]
+}
+
+interface IntrospectionTypeLike {
+  name: string
+  kind: string
+  description?: string | null
+  fields?: IntrospectionFieldLike[]
+  interfaces?: Array<{ name: string }>
+  possibleTypes?: Array<{ name: string }>
 }
 
 export class SchemaIntrospectionService {
@@ -178,7 +202,7 @@ export class SchemaIntrospectionService {
   /**
    * Validate template query against current schema
    */
-  async validateTemplateQuery(query: string, _variables?: Record<string, any>): Promise<TemplateValidationResult> {
+  async validateTemplateQuery(query: string, _variables?: Record<string, unknown>): Promise<TemplateValidationResult> {
     try {
       const schema = await this.getCurrentSchema()
 
@@ -330,27 +354,30 @@ export class SchemaIntrospectionService {
 
     return types
       .filter((type) => !type.name.startsWith('__')) // Exclude introspection types
-      .map((type) => ({
+      .map((type) => {
+        const typed = type as unknown as IntrospectionTypeLike
+
+        return {
         name: type.name,
         kind: type.kind,
         description: type.description || undefined,
-        fields: (type as any).fields?.map((field: any) => ({
+        fields: typed.fields?.map((field) => ({
           name: field.name,
           type: this.getTypeString(field.type),
           description: field.description || undefined,
-          isRequired: field.type.kind === 'NON_NULL',
+          isRequired: this.getTypeKind(field.type) === 'NON_NULL',
           isArray: this.isArrayType(field.type),
-          args: field.args?.map((arg: any) => ({
+          args: field.args?.map((arg) => ({
             name: arg.name,
             type: this.getTypeString(arg.type),
             description: arg.description || undefined,
             defaultValue: arg.defaultValue,
-            isRequired: arg.type.kind === 'NON_NULL',
+            isRequired: this.getTypeKind(arg.type) === 'NON_NULL',
           })),
         })),
-        interfaces: (type as any).interfaces?.map((iface: any) => iface.name),
-        possibleTypes: (type as any).possibleTypes?.map((pt: any) => pt.name),
-      }))
+        interfaces: typed.interfaces?.map((iface) => iface.name),
+        possibleTypes: typed.possibleTypes?.map((pt) => pt.name),
+      }})
   }
 
   private extractOperationInfo(introspection: IntrospectionQuery, operationType: string): SchemaOperationInfo[] {
@@ -363,20 +390,23 @@ export class SchemaIntrospectionService {
 
     if (!operationTypeObj) return []
 
-    const type = introspection.__schema.types.find((t) => t.name === operationTypeObj.name)
-    if (!type || !(type as any).fields) return []
+    const type = introspection.__schema.types.find((t) => t.name === operationTypeObj.name) as
+      | (typeof introspection.__schema.types)[number]
+      | undefined
+    const typed = type as unknown as IntrospectionTypeLike | undefined
+    if (!typed?.fields) return []
 
-    return (type as any).fields.map((field: any) => ({
+    return typed.fields.map((field) => ({
       name: field.name,
       type: this.getTypeString(field.type),
       description: field.description || undefined,
       args:
-        field.args?.map((arg: any) => ({
+        field.args?.map((arg) => ({
           name: arg.name,
           type: this.getTypeString(arg.type),
           description: arg.description || undefined,
           defaultValue: arg.defaultValue,
-          isRequired: arg.type.kind === 'NON_NULL',
+          isRequired: this.getTypeKind(arg.type) === 'NON_NULL',
         })) || [],
       returnType: this.getTypeString(field.type),
       isArray: this.isArrayType(field.type),
@@ -384,37 +414,45 @@ export class SchemaIntrospectionService {
     }))
   }
 
-  private getTypeString(type: any): string {
-    if (type.kind === 'NON_NULL') {
-      return `${this.getTypeString(type.ofType)}!`
-    }
-    if (type.kind === 'LIST') {
-      return `[${this.getTypeString(type.ofType)}]`
-    }
-    return type.name || 'Unknown'
+  private getTypeKind(type: unknown): string | undefined {
+    return typeof type === 'object' && type !== null && 'kind' in type
+      ? (type as { kind?: string }).kind
+      : undefined
   }
 
-  private isArrayType(type: any): boolean {
-    if (type.kind === 'NON_NULL') {
-      return this.isArrayType(type.ofType)
+  private getTypeString(type: unknown): string {
+    const typed = type as { kind?: string; ofType?: unknown; name?: string }
+    if (typed.kind === 'NON_NULL') {
+      return `${this.getTypeString(typed.ofType)}!`
     }
-    return type.kind === 'LIST'
+    if (typed.kind === 'LIST') {
+      return `[${this.getTypeString(typed.ofType)}]`
+    }
+    return typed.name || 'Unknown'
   }
 
-  private extractUsedFields(_document: any): string[] {
+  private isArrayType(type: unknown): boolean {
+    const typed = type as { kind?: string; ofType?: unknown }
+    if (typed.kind === 'NON_NULL') {
+      return this.isArrayType(typed.ofType)
+    }
+    return typed.kind === 'LIST'
+  }
+
+  private extractUsedFields(_document: unknown): string[] {
     const fields: string[] = []
     // This would recursively extract all field names from the document
     // Implementation would traverse the AST and collect field names
     return fields
   }
 
-  private calculateQueryComplexity(_document: any, _schema: GraphQLSchema): number {
+  private calculateQueryComplexity(_document: unknown, _schema: GraphQLSchema): number {
     // Simplified complexity calculation
     // In practice, this would use a proper complexity analysis algorithm
     return 1
   }
 
-  private generateQuerySuggestions(_document: any, _schema: GraphQLSchema, errors: GraphQLError[]): string[] {
+  private generateQuerySuggestions(_document: unknown, _schema: GraphQLSchema, errors: GraphQLError[]): string[] {
     const suggestions: string[] = []
 
     for (const error of errors) {
@@ -443,7 +481,7 @@ export class SchemaIntrospectionService {
           type: 'ADD',
           category: 'TYPE',
           path: `types.${name}`,
-          newValue: type,
+          newValue: JSON.stringify(type),
           isBreaking: false,
           description: `Added type: ${name}`,
         })
@@ -457,7 +495,7 @@ export class SchemaIntrospectionService {
           type: 'REMOVE',
           category: 'TYPE',
           path: `types.${name}`,
-          oldValue: type,
+          oldValue: JSON.stringify(type),
           isBreaking: true,
           description: `Removed type: ${name}`,
         })
@@ -484,7 +522,7 @@ export class SchemaIntrospectionService {
     return recommendations
   }
 
-  private estimateFieldComplexity(field: any): number {
+  private estimateFieldComplexity(field: { args?: unknown[]; type: unknown }): number {
     let complexity = 1
 
     // Increase complexity for fields with arguments

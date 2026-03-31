@@ -1,0 +1,91 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.9/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!dist",
+      "!generated",
+      "!scripts/archive",
+      "!samples",
+      "!vendor/google-tools"
+    ]
+  },
+  "overrides": [
+    {
+      "includes": [
+        "tests/comprehensive/**/*",
+        "tests/contract/**/*",
+        "tests/e2e/**/*",
+        "tests/fixtures/**/*",
+        "tests/graph-traversal-advanced.test.ts",
+        "tests/integration/**/*",
+        "tests/node-mutations-isolated.test.ts",
+        "tests/relation-mutations-isolated.test.ts",
+        "tests/system-queries/**/*",
+        "tests/unified-template-execution/**/*"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          },
+          "style": {
+            "noNonNullAssertion": "off"
+          },
+          "complexity": {
+            "noStaticOnlyClass": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "tests/unit/ai-metadata.test.ts",
+        "tests/unit/backup-service.test.ts",
+        "tests/unit/format-mapper.test.ts",
+        "tests/unit/json-export-service.test.ts",
+        "tests/unit/rest-api-controllers.test.ts",
+        "tests/unit/schema/**/*",
+        "tests/unit/sort-caching.test.ts",
+        "tests/unit/system-queries.test.ts",
+        "tests/unit/table-packages/**/*",
+        "tests/unit/template-creation-isolated.test.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "templates/scripts/**/*",
+        "src/presentation/mcp/factory/TableMcpServer.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/presentation/mcp/schema/SchemaMapper.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          },
+          "complexity": {
+            "noStaticOnlyClass": "off"
+          }
+        }
+      }
+    }
+  ]
+}

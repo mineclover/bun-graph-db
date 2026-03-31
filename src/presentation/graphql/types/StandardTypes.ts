@@ -41,19 +41,19 @@ export interface SearchResult<T> extends PaginatedResult<T> {
 }
 
 // Node-specific response types
-export interface NodeMutationResult<T = any> {
+export interface NodeMutationResult<T = unknown> {
   success: boolean
   data?: T | null
   errors: GraphQLError[]
 }
 
-export interface NodeQueryResult {
-  node?: any | null
+export interface NodeQueryResult<T = unknown> {
+  node?: T | null
   errors?: GraphQLError[]
 }
 
-export interface NodesQueryResult {
-  nodes: any[]
+export interface NodesQueryResult<T = unknown> {
+  nodes: T[]
   totalCount: number
   hasNextPage: boolean
   hasPreviousPage: boolean
@@ -66,13 +66,13 @@ export interface DeleteResult {
 }
 
 // Template-specific response types
-export interface TemplateResult<T = any> {
+export interface TemplateResult<T = unknown> {
   success: boolean
   template?: T | null
   errors: GraphQLError[]
 }
 
-export interface TemplatesSearchResult<T = any> {
+export interface TemplatesSearchResult<T = unknown> {
   nodes: T[]
   totalCount: number
   hasNextPage: boolean
@@ -83,7 +83,7 @@ export interface TemplatesSearchResult<T = any> {
 // Schema-specific response types
 export interface ExportResult {
   success: boolean
-  exportData?: any
+  exportData?: unknown
   metadata?: {
     exportedAt: string
     version: string
@@ -112,27 +112,27 @@ export type RequiredKeys<T, K extends keyof T> = T & Required<Pick<T, K>>
 export type OptionalKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 
 // Field resolver wrapper type
-export type FieldResolver<TSource, TResult, TContext = any, TArgs = Record<string, unknown>> = (
+export type FieldResolver<TSource, TResult, TContext = unknown, TArgs = Record<string, unknown>> = (
   source: TSource,
   args: TArgs,
   context: TContext,
-  info?: any,
+  info?: unknown,
 ) => Promise<TResult> | TResult
 
 // Query resolver wrapper type
-export type QueryResolver<TResult, TContext = any, TArgs = Record<string, unknown>> = (
-  parent: any,
+export type QueryResolver<TResult, TContext = unknown, TArgs = Record<string, unknown>> = (
+  parent: unknown,
   args: TArgs,
   context: TContext,
-  info?: any,
+  info?: unknown,
 ) => Promise<TResult> | TResult
 
 // Mutation resolver wrapper type
-export type MutationResolver<TResult, TContext = any, TArgs = Record<string, unknown>> = (
-  parent: any,
+export type MutationResolver<TResult, TContext = unknown, TArgs = Record<string, unknown>> = (
+  parent: unknown,
   args: TArgs,
   context: TContext,
-  info?: any,
+  info?: unknown,
 ) => Promise<StandardMutationResult<TResult>> | StandardMutationResult<TResult>
 
 // Common validation result

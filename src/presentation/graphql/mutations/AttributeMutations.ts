@@ -1,4 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { AttributeDto } from '@/application/dtos/AttributeDto.js'
 import type { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import type {
@@ -13,6 +14,7 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
+import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class AttributeMutations extends BaseResolver {
@@ -24,6 +26,7 @@ export class AttributeMutations extends BaseResolver {
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly attributeRepository: IAttributeRepository,
     logger: ILogger,
+    private readonly tabularSyncHook?: BestEffortTabularSyncHook,
   ) {
     super()
     this.logger = logger
@@ -49,7 +52,10 @@ export class AttributeMutations extends BaseResolver {
           identifier: args.input.identifier,
           jsonType: args.input.dataType,
           description: args.input.description ?? undefined,
-          validationSchema: args.input.constraints,
+          validationSchema:
+            args.input.constraints && typeof args.input.constraints === 'object'
+              ? (args.input.constraints as Record<string, unknown>)
+              : undefined,
           defaultValue: args.input.defaultValue ?? undefined,
         })
 
@@ -96,7 +102,10 @@ export class AttributeMutations extends BaseResolver {
           description: args.input.description || undefined,
           jsonType: undefined, // Not available in input
           format: undefined, // Not available in input
-          validationSchema: args.input.constraints || undefined,
+          validationSchema:
+            args.input.constraints && typeof args.input.constraints === 'object'
+              ? (args.input.constraints as Record<string, unknown>)
+              : undefined,
           defaultValue: args.input.defaultValue || undefined,
         })
 
@@ -163,6 +172,8 @@ export class AttributeMutations extends BaseResolver {
           tableId: args.input.tableId,
         })
 
+        this.tabularSyncHook?.notifyByTableId(args.input.tableId)
+
         return result
       },
       'createAttribute',
@@ -199,6 +210,8 @@ export class AttributeMutations extends BaseResolver {
           defaultValue: undefined, // Not available in input
         })
 
+        this.tabularSyncHook?.notifyByTableId(existingAttribute.getTableId())
+
         return updatedAttribute
       },
       'updateAttribute',
@@ -228,6 +241,7 @@ export class AttributeMutations extends BaseResolver {
         }
 
         await this.attributeRepository.delete(args.id)
+        this.tabularSyncHook?.notifyByTableId(existingAttribute.getTableId())
         return null
       },
       'deleteAttribute',
@@ -236,5 +250,52 @@ export class AttributeMutations extends BaseResolver {
       success: mutationResult.success,
       errors: mutationResult.errors || [],
     }))
+  }
+
+  async batchCreateAttributes(
+    _: GraphQLParent,
+    args: {
+      attributes: Array<{
+        tableId: string
+        identifier: string
+        name?: string
+        attributeTypeId: string
+        description?: string
+      }>
+    },
+  ) {
+    const results: Array<{ attribute: AttributeDto | null; errors: string[] }> = []
+    let totalCreated = 0
+    let totalFailed = 0
+
+    for (const attributeInput of args.attributes || []) {
+      try {
+        const result = await this.createAttributeUseCase.execute({
+          tableId: attributeInput.tableId,
+          identifier: attributeInput.identifier,
+          name: attributeInput.name,
+          attributeTypeId: attributeInput.attributeTypeId,
+          description: attributeInput.description,
+        })
+        totalCreated++
+        results.push({
+          attribute: result.attribute,
+          errors: [],
+        })
+      } catch (error) {
+        totalFailed++
+        results.push({
+          attribute: null,
+          errors: [error instanceof Error ? error.message : 'Unknown error'],
+        })
+      }
+    }
+
+    return {
+      success: totalFailed === 0,
+      results,
+      totalCreated,
+      totalFailed,
+    }
   }
 }

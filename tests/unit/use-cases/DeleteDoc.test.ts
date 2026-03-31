@@ -33,31 +33,37 @@ describe('DeleteDocUseCase', () => {
 
     // Mock repository
     mockDocRepository = {
-      save: mock(async (doc) => doc),
+      save: mock(async () => {}),
       findById: mock(async () => null),
-      findByTableId: mock(async () => []),
       findByTableAndCategory: mock(async () => []),
+      findActiveByTableAndCategory: mock(async () => null),
+      findVersionsByTableAndCategory: mock(async () => []),
+      searchDocs: mock(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
+      getLatestVersion: mock(async () => 1),
       exists: mock(async () => false),
       delete: mock(async () => {}),
-      activate: mock(async () => {}),
-      deactivate: mock(async () => {}),
       deactivateOthersInCategory: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
+      findAll: mock(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
       count: mock(async () => 0),
-    } as any
+      countByCategory: mock(async () => 0),
+      searchByContent: mock(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
+      saveMany: mock(async () => {}),
+      findByIds: mock(async () => []),
+      findByTableIds: mock(async () => []),
+    }
 
     useCase = new DeleteDocUseCase(mockDocRepository, mockLogger)
   })
 
   describe('Input Validation', () => {
     it('should throw ValidationException when doc ID is empty', async () => {
-      await expect(useCase.execute('' as any)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute('' as any)).rejects.toThrow('Doc ID is required')
+      await expect(useCase.execute('')).rejects.toThrow(ValidationException)
+      await expect(useCase.execute('')).rejects.toThrow('Doc ID is required')
     })
 
     it('should throw ValidationException when doc ID is whitespace', async () => {
-      await expect(useCase.execute('   ' as any)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute('   ' as any)).rejects.toThrow('Doc ID is required')
+      await expect(useCase.execute('   ')).rejects.toThrow(ValidationException)
+      await expect(useCase.execute('   ')).rejects.toThrow('Doc ID is required')
     })
   })
 
@@ -65,8 +71,8 @@ describe('DeleteDocUseCase', () => {
     it('should throw NotFoundException when doc does not exist', async () => {
       mockDocRepository.findById = mock(async () => null)
 
-      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute('nonexistent-doc' as any)).rejects.toThrow("Doc with id 'nonexistent-doc' not found")
+      await expect(useCase.execute('nonexistent-doc')).rejects.toThrow(NotFoundException)
+      await expect(useCase.execute('nonexistent-doc')).rejects.toThrow("Doc with id 'nonexistent-doc' not found")
     })
   })
 
@@ -79,8 +85,8 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      await expect(useCase.execute('doc-1' as any)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute('doc-1' as any)).rejects.toThrow('Doc cannot be deleted')
+      await expect(useCase.execute('doc-1')).rejects.toThrow(ValidationException)
+      await expect(useCase.execute('doc-1')).rejects.toThrow('Doc cannot be deleted')
     })
 
     it('should allow deletion when doc can be deleted', async () => {
@@ -88,7 +94,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-1')
@@ -101,7 +107,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-1')
@@ -120,7 +126,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-2' as any)
+      const result = await useCase.execute('doc-2')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-2')
@@ -131,7 +137,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-3' as any)
+      const result = await useCase.execute('doc-3')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-3')
@@ -142,7 +148,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-4' as any)
+      const result = await useCase.execute('doc-4')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-4')
@@ -153,7 +159,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-5' as any)
+      const result = await useCase.execute('doc-5')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-5')
@@ -164,7 +170,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-6' as any)
+      const result = await useCase.execute('doc-6')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-6')
@@ -175,7 +181,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-7' as any)
+      const result = await useCase.execute('doc-7')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-7')
@@ -194,7 +200,7 @@ describe('DeleteDocUseCase', () => {
         throw deleteError
       })
 
-      await expect(useCase.execute('doc-1' as any)).rejects.toThrow('Database connection failed')
+      await expect(useCase.execute('doc-1')).rejects.toThrow('Database connection failed')
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to delete doc', expect.any(Object))
     })
 
@@ -209,7 +215,7 @@ describe('DeleteDocUseCase', () => {
         throw repositoryError
       })
 
-      await expect(useCase.execute('doc-1' as any)).rejects.toThrow('Repository operation failed')
+      await expect(useCase.execute('doc-1')).rejects.toThrow('Repository operation failed')
     })
   })
 
@@ -219,7 +225,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      await useCase.execute('doc-123' as any)
+      await useCase.execute('doc-123')
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Deleting doc',
@@ -249,7 +255,7 @@ describe('DeleteDocUseCase', () => {
       })
 
       try {
-        await useCase.execute('doc-1' as any)
+        await useCase.execute('doc-1')
       } catch (_e) {
         // Expected error
       }
@@ -270,7 +276,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-1')
@@ -282,7 +288,7 @@ describe('DeleteDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => existingDoc)
 
-      const result = await useCase.execute('doc-1' as any)
+      const result = await useCase.execute('doc-1')
 
       expect(result.success).toBe(true)
       expect(mockDocRepository.delete).toHaveBeenCalledWith('doc-1')
@@ -295,17 +301,17 @@ describe('DeleteDocUseCase', () => {
 
       // First deletion
       mockDocRepository.findById = mock(async () => doc1)
-      const result1 = await useCase.execute('doc-1' as any)
+      const result1 = await useCase.execute('doc-1')
       expect(result1.success).toBe(true)
 
       // Second deletion
       mockDocRepository.findById = mock(async () => doc2)
-      const result2 = await useCase.execute('doc-2' as any)
+      const result2 = await useCase.execute('doc-2')
       expect(result2.success).toBe(true)
 
       // Third deletion
       mockDocRepository.findById = mock(async () => doc3)
-      const result3 = await useCase.execute('doc-3' as any)
+      const result3 = await useCase.execute('doc-3')
       expect(result3.success).toBe(true)
 
       expect(mockDocRepository.delete).toHaveBeenCalledTimes(3)

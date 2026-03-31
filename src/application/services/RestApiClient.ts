@@ -1,6 +1,7 @@
 import { API_ENDPOINT_MAPPING } from '../../presentation/http/routes/ApiRoutes.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
-interface ApiResponse<T = any> {
+interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -13,10 +14,10 @@ export class RestApiClient {
     this.baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
   }
 
-  private async makeRequest<T = any>(
+  private async makeRequest<T = unknown>(
     method: string,
     endpoint: string,
-    data?: any,
+    data?: unknown,
     params?: Record<string, string>,
   ): Promise<ApiResponse<T>> {
     try {
@@ -62,7 +63,7 @@ export class RestApiClient {
   }
 
   // MCP Tool -> REST API 매핑
-  async callMcpTool(toolName: string, params: any = {}): Promise<ApiResponse> {
+  async callMcpTool(toolName: string, params: Record<string, unknown> = {}): Promise<ApiResponse> {
     const endpoint = this.getEndpointForTool(toolName)
 
     if (!endpoint) {
@@ -93,14 +94,15 @@ export class RestApiClient {
   private prepareRequest(
     _toolName: string,
     endpoint: string,
-    params: any,
+    params: Record<string, unknown>,
   ): {
     method: string
     path: string
     queryParams?: Record<string, string>
-    body?: any
+    body?: Record<string, unknown>
   } {
     const [method, pathTemplate] = endpoint.split(' ')
+    const resolvedMethod = method ?? 'GET'
 
     if (!pathTemplate) {
       throw new Error(`Invalid endpoint format: ${endpoint}. Expected format: "METHOD /path"`)
@@ -109,18 +111,18 @@ export class RestApiClient {
     // URL 파라미터 치환
     let path = pathTemplate.replace('/api', '')
     Object.keys(params).forEach((key) => {
-      path = path.replace(`:${key}`, params[key])
+      path = path.replace(`:${key}`, String(params[key]))
     })
 
     // GET 요청의 경우 쿼리 파라미터로 전환
-    if (method === 'GET') {
+    if (resolvedMethod === 'GET') {
       const queryParams: Record<string, string> = {}
       Object.keys(params).forEach((key) => {
         if (!pathTemplate.includes(`:${key}`)) {
           queryParams[key] = String(params[key])
         }
       })
-      return { method: method!, path, queryParams }
+      return { method: resolvedMethod, path, queryParams }
     }
 
     // POST/PUT 요청의 경우 body 데이터로 전환
@@ -131,7 +133,7 @@ export class RestApiClient {
       }
     })
 
-    return { method: method!, path, body }
+    return { method: resolvedMethod, path, body }
   }
 
   // 개별 API 메서드들
@@ -154,7 +156,7 @@ export class RestApiClient {
     })
   }
 
-  async createNode(params: { tableId: string; content: string; metadata?: any }): Promise<ApiResponse> {
+  async createNode(params: { tableId: string; content: string; metadata?: SafeJsonValue }): Promise<ApiResponse> {
     return this.makeRequest('POST', '/nodes', params)
   }
 
@@ -171,7 +173,7 @@ export class RestApiClient {
     toNodeId: string
     relationshipType: string
     tableId: string
-    properties?: any
+    properties?: Record<string, SafeJsonValue> | SafeJsonValue
   }): Promise<ApiResponse> {
     return this.makeRequest('POST', '/relations', params)
   }
@@ -185,7 +187,9 @@ export class RestApiClient {
     return this.makeRequest('POST', '/templates', params)
   }
 
-  async executeTemplateWithGraphQL(params: { templateIdentifier: string; variables?: any }): Promise<ApiResponse> {
+  async executeTemplateWithGraphQL(
+    params: { templateIdentifier: string; variables?: Record<string, unknown> },
+  ): Promise<ApiResponse> {
     return this.makeRequest('POST', '/templates/execute', params)
   }
 

@@ -4,9 +4,10 @@ import { buildMultiCriteriaSort, type SortOption } from '@/application/services/
 import type { INodeSearchRepository } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
-import type { SearchOperator, SearchQuery } from '@/domain/value-objects/SearchFilter.js'
+import type { RangeValue, SearchFilter, SearchOperator, SearchQuery } from '@/domain/value-objects/SearchFilter.js'
 import type { SortContext } from '@/domain/value-objects/SortStrategy.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { parseSafeJson, type SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 interface NodeWithAttributesRow {
   node_id: string
@@ -14,6 +15,7 @@ interface NodeWithAttributesRow {
   node_content: string
   node_title: string | null
   node_description: string | null
+  node_metadata: string | null
   node_created_at: string
   node_updated_at: string
   attribute_id: string | null
@@ -24,8 +26,11 @@ interface NodeWithAttributesRow {
 
 export interface NodeSearchResult {
   node: Node
-  attributes: Record<string, any>
+  attributes: Record<string, SafeJsonValue>
 }
+
+type SqliteParam = string | number | boolean | null
+type SqliteParams = SqliteParam[]
 
 export class SqliteNodeSearchRepository implements INodeSearchRepository {
   constructor(private readonly db: Database) {}
@@ -52,11 +57,11 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
       )
 
       // Execute count query
-      const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...countParams)
+      const countResult = this.db.query<{ count: number }, SqliteParams>(countQuery).get(...countParams)
       const total = countResult?.count || 0
 
       // Execute data query
-      const rows = this.db.query<NodeWithAttributesRow, any[]>(dataQuery).all(...dataParams)
+      const rows = this.db.query<NodeWithAttributesRow, SqliteParams>(dataQuery).all(...dataParams)
 
       // Group results by node
       const nodeMap = new Map<string, NodeSearchResult>()
@@ -70,6 +75,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
               row.node_content,
               row.node_title,
               row.node_description,
+              row.node_metadata ?? null,
               new Date(row.node_created_at),
               new Date(row.node_updated_at),
             ),
@@ -77,7 +83,10 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
           })
         }
 
-        const nodeResult = nodeMap.get(row.node_id)!
+        const nodeResult = nodeMap.get(row.node_id)
+        if (!nodeResult) {
+          continue
+        }
 
         // Add attribute value if present
         if (row.attribute_identifier && row.attribute_value !== null) {
@@ -111,14 +120,15 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     searchQuery: SearchQuery,
     availableAttributes: AttributeTypeInfo[],
     isCountQuery: boolean,
-  ): { query: string; params: any[] } {
-    const params: any[] = [tableId]
+  ): { query: string; params: SqliteParams } {
+    const params: SqliteParams = [tableId]
 
     // Base query structure
     let query = isCountQuery
       ? 'SELECT COUNT(DISTINCT n.id) as count'
       : `SELECT DISTINCT n.id as node_id, n.table_id as node_table_id, 
                 n.content as node_content, n.title as node_title, n.description as node_description,
+                n.metadata as node_metadata,
                 n.created_at as node_created_at, n.updated_at as node_updated_at,
                 a.id as attribute_id, a.identifier as attribute_identifier, 
                 nav.value as attribute_value, at.json_type as attribute_data_type`
@@ -168,7 +178,9 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
         if (multiSortResult.sqlClause) {
           query += ` ${multiSortResult.sqlClause}`
-          params.push(...multiSortResult.parameters)
+          for (const parameter of multiSortResult.parameters) {
+            params.push(this.toSqliteParam(parameter))
+          }
         } else {
           // Fallback to default sorting
           query += ' ORDER BY n.created_at DESC'
@@ -187,7 +199,11 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     return { query, params }
   }
 
-  private buildFilterClause(filter: any, availableAttributes: AttributeTypeInfo[], params: any[]): string {
+  private buildFilterClause(
+    filter: SearchFilter,
+    availableAttributes: AttributeTypeInfo[],
+    params: SqliteParams,
+  ): string {
     // Handle text search - search both content and attribute values
     if (filter.field === '_text_search') {
       params.push(`%${filter.value}%`, `%${filter.value}%`)
@@ -206,11 +222,11 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
     switch (filter.operator as SearchOperator) {
       case 'equals':
-        params.push(filter.value)
+        params.push(this.toSqliteParam(filter.value))
         return `${baseCondition}nav.value = ?)`
 
       case 'not_equals':
-        params.push(filter.value)
+        params.push(this.toSqliteParam(filter.value))
         return `${baseCondition}nav.value != ?)`
 
       case 'contains':
@@ -226,38 +242,46 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
         return `${baseCondition}nav.value LIKE ?)`
 
       case 'gt':
-        params.push(filter.value)
+        params.push(this.toSqliteParam(filter.value))
         return `${baseCondition + this.buildComparisonClause(attributeInfo.dataType, '>')})`
 
       case 'gte':
-        params.push(filter.value)
+        params.push(this.toSqliteParam(filter.value))
         return `${baseCondition + this.buildComparisonClause(attributeInfo.dataType, '>=')})`
 
       case 'lt':
-        params.push(filter.value)
+        params.push(this.toSqliteParam(filter.value))
         return `${baseCondition + this.buildComparisonClause(attributeInfo.dataType, '<')})`
 
       case 'lte':
-        params.push(filter.value)
+        params.push(this.toSqliteParam(filter.value))
         return `${baseCondition + this.buildComparisonClause(attributeInfo.dataType, '<=')})`
 
       case 'range': {
-        const range = filter.value as { min: any; max: any }
-        params.push(range.min, range.max)
+        if (!this.isRangeValue(filter.value)) {
+          throw new DatabaseException(`Invalid range filter for ${filter.field}`)
+        }
+
+        const range = filter.value as RangeValue
+        params.push(this.toSqliteParam(range.min), this.toSqliteParam(range.max))
         return `${baseCondition + this.buildRangeClause(attributeInfo.dataType)})`
       }
 
       case 'in': {
         const values = Array.isArray(filter.value) ? filter.value : [filter.value]
         const placeholders = values.map(() => '?').join(',')
-        params.push(...values)
+        for (const value of values) {
+          params.push(this.toSqliteParam(value))
+        }
         return `${baseCondition}nav.value IN (${placeholders}))`
       }
 
       case 'not_in': {
         const notValues = Array.isArray(filter.value) ? filter.value : [filter.value]
         const notPlaceholders = notValues.map(() => '?').join(',')
-        params.push(...notValues)
+        for (const value of notValues) {
+          params.push(this.toSqliteParam(value))
+        }
         return `${baseCondition}nav.value NOT IN (${notPlaceholders}))`
       }
 
@@ -296,7 +320,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     }
   }
 
-  private parseAttributeValue(value: string, dataType: string): any {
+  private parseAttributeValue(value: string, dataType: string): SafeJsonValue {
     switch (dataType) {
       case 'number': {
         const num = Number(value)
@@ -304,7 +328,13 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
       }
 
       case 'boolean':
-        return value === 'true' || value === '1'
+        if (value === 'true' || value === '1') {
+          return true
+        }
+        if (value === 'false' || value === '0') {
+          return false
+        }
+        return value
 
       case 'datetime':
         try {
@@ -315,7 +345,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
       case 'json':
         try {
-          return JSON.parse(value)
+          return parseSafeJson(value) ?? value
         } catch {
           return value
         }
@@ -323,5 +353,21 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
       default:
         return value
     }
+  }
+
+  private isRangeValue(value: unknown): value is RangeValue {
+    if (typeof value !== 'object' || value === null) {
+      return false
+    }
+
+    return 'min' in value && 'max' in value
+  }
+
+  private toSqliteParam(value: unknown): SqliteParam {
+    if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return value
+    }
+
+    return JSON.stringify(value)
   }
 }

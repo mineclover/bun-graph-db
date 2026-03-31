@@ -44,7 +44,7 @@ describe('SearchRelatedNodesUseCase', () => {
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
       update: mock(async () => createTestNode()),
-    } as any
+    } as unknown as INodeRepository
 
     mockRelationRepository = {
       save: mock(async (relation) => relation),
@@ -61,7 +61,7 @@ describe('SearchRelatedNodesUseCase', () => {
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
       deleteMany: mock(async () => {}),
-    } as any
+    } as unknown as INodeRelationRepository
 
     mockGraphRepository = {
       searchRelatedNodes: mock(async () => ({
@@ -86,7 +86,7 @@ describe('SearchRelatedNodesUseCase', () => {
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
       update: mock(async () => createTestTable()),
-    } as any
+    } as unknown as ITableRepository
 
     useCase = new SearchRelatedNodesUseCase(
       mockNodeRepository,

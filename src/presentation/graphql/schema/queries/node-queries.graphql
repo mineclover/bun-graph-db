@@ -4,12 +4,20 @@ extend type Query {
   # Get single node
   node(id: ID!): TableNode
   nodeByContent(content: String!, tableId: ID!): TableNode
+  getNodeAttributes(nodeId: ID!): GetNodeAttributesPayload!
 
   # Get multiple nodes with filtering and pagination
   nodes(filter: NodesFilter, pagination: NodesPagination, sort: [SortInput!]): NodesConnection!
 
   # Advanced node search
-  searchNodes(filter: SearchNodesFilter!, pagination: NodesPagination, sort: [SortInput!]): NodesConnection!
+  searchNodes(
+    filter: SearchNodesFilter
+    pagination: NodesPagination
+    sort: [SortInput!]
+    tableId: ID
+    searchQuery: SearchQueryInput
+    input: SearchNodesLegacyInput
+  ): SearchNodesConnection!
 
   # Basic advanced search is sufficient - removed redundant variants
 

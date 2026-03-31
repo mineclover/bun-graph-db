@@ -73,7 +73,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
           executionTime: 0,
         },
       })),
-    } as any
+    } as unknown as ExecuteQueryTemplateUseCase
 
     useCase = new ExecuteTemplateWithGraphQLUseCase(mockExecuteQueryTemplateUseCase, testSchema, mockLogger)
   })

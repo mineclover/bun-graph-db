@@ -7,11 +7,12 @@
  * Sequential: Integration testing after complete implementation
  */
 
-import { afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { startServerForSuite, stopServerForSuite } from '../fixtures/test-graphql-server'
 
-const TEST_PORT = 4141
-const BASE_URL = `http://localhost:${TEST_PORT}`
-const GRAPHQL_ENDPOINT = `${BASE_URL}/graphql`
+let BASE_URL = ''
+let GRAPHQL_ENDPOINT = ''
+const TEST_TIMEOUT = 60000
 
 // Test table data
 let testTableId: string
@@ -21,20 +22,20 @@ describe('MCP Table Integration Tests', () => {
   beforeAll(async () => {
     console.log('🧪 Starting MCP Table Integration Tests')
 
-    // Wait for server to be ready
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    const server = await startServerForSuite('mcp-table-integration')
+    BASE_URL = server.url.replace('/graphql', '')
+    GRAPHQL_ENDPOINT = server.url
 
-    // Verify server is running
-    try {
-      const response = await fetch(`${BASE_URL}/api/health`)
-      if (!response.ok) {
-        throw new Error(`Server not ready: ${response.status}`)
-      }
-      console.log('✅ Server is ready')
-    } catch (error) {
-      throw new Error(`Server not available: ${error}`)
+    const response = await fetch(`${BASE_URL}/api/health`)
+    if (!response.ok) {
+      throw new Error(`Server not ready: ${response.status}`)
     }
-  })
+    console.log(`✅ Server is ready at ${BASE_URL}`)
+  }, TEST_TIMEOUT)
+
+  afterAll(async () => {
+    await stopServerForSuite('mcp-table-integration')
+  }, TEST_TIMEOUT)
 
   beforeEach(async () => {
     // Create a test table for each test
@@ -108,7 +109,7 @@ describe('MCP Table Integration Tests', () => {
     }
 
     console.log(`📝 Created test template: ${testTemplateIdentifier}`)
-  })
+  }, TEST_TIMEOUT)
 
   afterEach(async () => {
     // Cleanup is handled by the database transaction rollback in most cases

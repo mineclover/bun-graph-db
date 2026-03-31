@@ -9,6 +9,8 @@ import type {
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
+type SqliteParams = Array<string | number | boolean | null>
+
 interface DocRow {
   id: number
   table_id: number
@@ -31,7 +33,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
   async save(doc: Doc): Promise<void> {
     const docData = doc.toDatabase()
 
-    if (docData.id === null || docData.id === 'null') {
+    if (!docData.id || docData.id === 'null') {
       // Insert new doc (let SQLite auto-generate ID)
       const query = `
         INSERT INTO docs (table_id, category, version, content, is_active, created_at, updated_at)
@@ -87,7 +89,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
     } = options
 
     const whereClauses: string[] = []
-    const params: any[] = []
+    const params: SqliteParams = []
 
     if (tableId) {
       whereClauses.push('table_id = ?')
@@ -124,7 +126,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
     try {
       // Get total count
       const countQuery = `SELECT COUNT(*) as count FROM docs ${whereClause}`
-      const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...params)
+      const countResult = this.db.query<{ count: number }, SqliteParams>(countQuery).get(...params)
       const totalCount = countResult?.count || 0
 
       // Get docs with pagination
@@ -136,7 +138,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
         LIMIT ? OFFSET ?
       `
 
-      const rows = this.db.query<DocRow, any[]>(dataQuery).all(...params, limit, offset)
+      const rows = this.db.query<DocRow, SqliteParams>(dataQuery).all(...params, limit, offset)
 
       return {
         nodes: rows.map((row) => this.mapRowToEntity(row)),
@@ -200,7 +202,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
     const { limit = 10, offset = 0 } = pagination || {}
 
     const whereClauses: string[] = ['content LIKE ?']
-    const params: any[] = [`%${query}%`]
+    const params: SqliteParams = [`%${query}%`]
 
     if (tableId) {
       whereClauses.push('table_id = ?')
@@ -222,7 +224,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
     try {
       // Get total count
       const countQuery = `SELECT COUNT(*) as count FROM docs ${whereClause}`
-      const countResult = this.db.query<{ count: number }, any[]>(countQuery).get(...params)
+      const countResult = this.db.query<{ count: number }, SqliteParams>(countQuery).get(...params)
       const totalCount = countResult?.count || 0
 
       // Get docs with pagination
@@ -234,7 +236,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
         LIMIT ? OFFSET ?
       `
 
-      const rows = this.db.query<DocRow, any[]>(dataQuery).all(...params, limit, offset)
+      const rows = this.db.query<DocRow, SqliteParams>(dataQuery).all(...params, limit, offset)
 
       return {
         nodes: rows.map((row) => this.mapRowToEntity(row)),
@@ -268,7 +270,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
       SET is_active = 0, updated_at = CURRENT_TIMESTAMP
       WHERE table_id = ? AND category = ?
     `
-    const params: any[] = [tableId, category]
+    const params: SqliteParams = [tableId, category]
 
     if (exceptId) {
       query += ' AND id != ?'
@@ -280,6 +282,16 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
     } catch (error) {
       throw new DatabaseException(`Failed to deactivate docs: ${error}`)
     }
+  }
+
+  override async exists(identifier: string): Promise<boolean>
+  override async exists(tableId: TableId, category: DocCategory, version: number): Promise<boolean>
+  override async exists(tableIdOrIdentifier: string, category?: DocCategory, version?: number): Promise<boolean> {
+    if (category !== undefined && version !== undefined) {
+      return await this.existsByTableIdCategoryVersion(tableIdOrIdentifier as TableId, category, version)
+    }
+
+    return await super.exists(tableIdOrIdentifier)
   }
 
   // Note: This exists method has a different signature than the base class
@@ -301,7 +313,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
 
   override async count(tableId?: TableId): Promise<number> {
     let query = 'SELECT COUNT(*) as count FROM docs'
-    const params: any[] = []
+    const params: SqliteParams = []
 
     if (tableId) {
       query += ' WHERE table_id = ?'
@@ -309,7 +321,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
     }
 
     try {
-      const result = this.db.query<{ count: number }, any[]>(query).get(...params)
+      const result = this.db.query<{ count: number }, SqliteParams>(query).get(...params)
       return result?.count || 0
     } catch (error) {
       throw new DatabaseException(`Failed to count docs: ${error}`)

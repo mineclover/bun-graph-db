@@ -1,4 +1,4 @@
-import type { Database } from 'bun:sqlite'
+import type { Database, SQLQueryBindings } from 'bun:sqlite'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type {
@@ -31,6 +31,8 @@ interface QueryTemplateRow {
   created_at: string
   updated_at: string
 }
+
+type SqliteParams = SQLQueryBindings[]
 
 export class SqliteQueryTemplateRepository
   extends BaseSqliteRepository<QueryTemplate, string>
@@ -69,7 +71,7 @@ export class SqliteQueryTemplateRepository
   }> {
     try {
       let query = `SELECT * FROM templates WHERE 1=1`
-      const params: any[] = []
+      const params: SqliteParams = []
 
       // Active filter
       if (criteria.isActive !== undefined) {
@@ -136,7 +138,7 @@ export class SqliteQueryTemplateRepository
 
       // Get total count
       const countQuery = query.replace('SELECT *', 'SELECT COUNT(*) as total')
-      const totalResult = this.db.query<{ total: number }, any[]>(countQuery).get(...params)
+      const totalResult = this.db.query<{ total: number }, SqliteParams>(countQuery).get(...params)
       const total = totalResult?.total || 0
 
       // Ordering
@@ -151,7 +153,7 @@ export class SqliteQueryTemplateRepository
       query += ` LIMIT ? OFFSET ?`
       params.push(limit, offset)
 
-      const rows = this.db.query<QueryTemplateRow, any[]>(query).all(...params)
+      const rows = this.db.query<QueryTemplateRow, SqliteParams>(query).all(...params)
 
       const items = rows.map((row) =>
         QueryTemplate.fromDatabase(
@@ -431,7 +433,7 @@ export class SqliteQueryTemplateRepository
 
   // Implement deleteById to match IQueryTemplateRepository signature (returns boolean instead of void)
   async deleteById(id: string): Promise<boolean> {
-    const query = `DELETE FROM query_templates WHERE id = ?`
+    const query = `DELETE FROM templates WHERE id = ?`
 
     try {
       const result = this.db.run(query, [id])
@@ -530,7 +532,7 @@ export class SqliteQueryTemplateRepository
       query += `) ORDER BY usage_count DESC, created_at DESC`
 
       const searchPattern = `%"${tableName}"%`
-      const rows = this.db.query<any, [string]>(query).all(searchPattern)
+      const rows = this.db.query<QueryTemplateRow, [string]>(query).all(searchPattern)
 
       return rows.map((row) =>
         QueryTemplate.fromDatabase(
@@ -557,7 +559,11 @@ export class SqliteQueryTemplateRepository
         ),
       )
     } catch (error) {
-      this.logger?.error('Error finding templates by applicable table:', error as any)
+      this.logger.error('Error finding templates by applicable table', {
+        tableName,
+        includeUniversal,
+        ...toErrorMeta(error),
+      })
       throw error
     }
   }
@@ -572,7 +578,7 @@ export class SqliteQueryTemplateRepository
         AND applicable_tables != '[]'
         ORDER BY created_at DESC
       `
-      const rows = this.db.query<any, any>(query).all()
+      const rows = this.db.query<QueryTemplateRow, []>(query).all()
 
       return rows.map((row) =>
         QueryTemplate.fromDatabase(
@@ -599,7 +605,7 @@ export class SqliteQueryTemplateRepository
         ),
       )
     } catch (error) {
-      this.logger?.error('Error finding templates with table dependencies:', error as any)
+      this.logger.error('Error finding templates with table dependencies', toErrorMeta(error))
       throw error
     }
   }
@@ -612,7 +618,7 @@ export class SqliteQueryTemplateRepository
         ORDER BY usage_count DESC
         LIMIT ?
       `
-      const rows = this.db.query<any, [number]>(query).all(limit)
+      const rows = this.db.query<QueryTemplateRow, [number]>(query).all(limit)
 
       return rows.map((row) =>
         QueryTemplate.fromDatabase(

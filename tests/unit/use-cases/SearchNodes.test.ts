@@ -37,7 +37,7 @@ describe('SearchNodesUseCase', () => {
       update: mock(async (node) => node),
       delete: mock(async () => {}),
       findAll: mock(async () => ({ data: [], metadata: {} })),
-    } as any
+    } as unknown as INodeRepository
 
     mockNodeSearchRepository = {
       searchNodes: mock(async () => ({
@@ -47,7 +47,7 @@ describe('SearchNodesUseCase', () => {
         hasNextPage: false,
         hasPreviousPage: false,
       })),
-    } as any
+    } as unknown as INodeSearchRepository
 
     mockAttributeRepository = {
       save: mock(async () => {}),
@@ -59,7 +59,7 @@ describe('SearchNodesUseCase', () => {
       findAll: mock(async () => ({ data: [], metadata: {} })),
       exists: mock(async () => false),
       getAttributeTypeForAttribute: mock(async () => null),
-    } as any
+    } as unknown as IAttributeRepository
 
     mockTableRepository = {
       save: mock(async (table) => table),
@@ -71,7 +71,7 @@ describe('SearchNodesUseCase', () => {
       exists: mock(async () => false),
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
-    } as any
+    } as unknown as ITableRepository
 
     useCase = new SearchNodesUseCase(
       mockNodeRepository,
@@ -146,7 +146,7 @@ describe('SearchNodesUseCase', () => {
       const node1 = createTestNode('node-1', 'table-1', 'Test Node 1')
       const node2 = createTestNode('node-2', 'table-1', 'Test Node 2')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
       mockNodeSearchRepository.searchNodes = mock(async () => ({
         data: [
@@ -180,7 +180,7 @@ describe('SearchNodesUseCase', () => {
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const node = createTestNode('node-1', 'table-1', 'Test Node')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
       mockNodeSearchRepository.searchNodes = mock(async () => ({
         data: [{ node, attributes: {} }],
@@ -208,12 +208,12 @@ describe('SearchNodesUseCase', () => {
       const attribute = createTestAttribute('attr-1', 'table-1', 'age', 'Age', 'attr-type-1')
       const attributeType = createTestAttributeType('attr-type-1', 'number', 'number')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockAttributeRepository.findByTableId = mock(async () => ({
         data: [attribute],
         metadata: {},
       }))
-      mockAttributeRepository.getAttributeTypeForAttribute = mock(async () => attributeType as any)
+      mockAttributeRepository.getAttributeTypeForAttribute = mock(async () => attributeType)
       mockNodeSearchRepository.searchNodes = mock(async () => ({
         data: [],
         total: 0,
@@ -239,7 +239,7 @@ describe('SearchNodesUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
       mockNodeSearchRepository.searchNodes = mock(async (_tableId, searchQuery) => {
         // Verify pagination parameters are passed correctly
@@ -273,7 +273,7 @@ describe('SearchNodesUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
       mockNodeSearchRepository.searchNodes = mock(async (_tableId, searchQuery) => {
         // Verify sort parameters are passed correctly
@@ -305,7 +305,7 @@ describe('SearchNodesUseCase', () => {
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const searchError = new Error('Database connection failed')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
       mockNodeSearchRepository.searchNodes = mock(async () => {
         throw searchError

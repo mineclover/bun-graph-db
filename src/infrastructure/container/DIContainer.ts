@@ -3,21 +3,21 @@
  * Type-safe container for managing application dependencies
  */
 
-export type ServiceToken<_T = any> = symbol | string
+export type ServiceToken<_T = unknown> = symbol | string
 
-export interface ServiceRegistration<T = any> {
+export interface ServiceRegistration<T = unknown> {
   token: ServiceToken<T>
   factory: ServiceFactory<T>
   singleton: boolean
   dependencies: ServiceToken[]
 }
 
-export type ServiceFactory<T = any> = (container: DIContainer) => T | Promise<T>
+export type ServiceFactory<T = unknown> = (container: DIContainer) => T | Promise<T>
 
 export class DIContainer {
   private registrations = new Map<ServiceToken, ServiceRegistration>()
-  private singletonInstances = new Map<ServiceToken, any>()
-  private resolutionStack = new Set<ServiceToken>()
+  private singletonInstances = new Map<ServiceToken, unknown>()
+  private pendingSingletons = new Map<ServiceToken, Promise<unknown>>()
 
   /**
    * Register a transient service (new instance each time)
@@ -60,16 +60,20 @@ export class DIContainer {
    * Resolve a service by token
    */
   async resolve<T>(token: ServiceToken<T>): Promise<T> {
+    return this.resolveWithChain(token, [])
+  }
+
+  private async resolveWithChain<T>(token: ServiceToken<T>, resolutionChain: ServiceToken[]): Promise<T> {
     // Check singleton cache first
     if (this.singletonInstances.has(token)) {
-      return this.singletonInstances.get(token)
+      return this.singletonInstances.get(token) as T
     }
 
     // Check for circular dependencies
-    if (this.resolutionStack.has(token)) {
-      const stackArray = Array.from(this.resolutionStack).map((t) => String(t))
+    if (resolutionChain.includes(token)) {
+      const stackArray = [...resolutionChain, token].map((t) => String(t))
       throw new Error(
-        `Circular dependency detected for token: ${String(token)}\nDependency chain: ${stackArray.join(' -> ')} -> ${String(token)}`,
+        `Circular dependency detected for token: ${String(token)}\nDependency chain: ${stackArray.join(' -> ')}`,
       )
     }
 
@@ -78,16 +82,21 @@ export class DIContainer {
       throw new Error(`Service not registered for token: ${String(token)}`)
     }
 
-    this.resolutionStack.add(token)
+    if (registration.singleton && this.pendingSingletons.has(token)) {
+      return this.pendingSingletons.get(token) as Promise<T>
+    }
 
-    try {
+    const nextChain = [...resolutionChain, token]
+    const resolutionContext = this.createResolutionContext(nextChain)
+
+    const instancePromise = (async () => {
       // Resolve dependencies first
       const _dependencyInstances = await Promise.all(
-        registration.dependencies.map((depToken) => this.resolve(depToken)),
+        registration.dependencies.map((depToken) => this.resolveWithChain(depToken, nextChain)),
       )
 
       // Create instance
-      const instance = await registration.factory(this)
+      const instance = await registration.factory(resolutionContext)
 
       // Cache singleton
       if (registration.singleton) {
@@ -95,9 +104,38 @@ export class DIContainer {
       }
 
       return instance
-    } finally {
-      this.resolutionStack.delete(token)
+    })()
+
+    if (registration.singleton) {
+      this.pendingSingletons.set(token, instancePromise)
     }
+
+    try {
+      return (await instancePromise) as T
+    } finally {
+      if (registration.singleton) {
+        this.pendingSingletons.delete(token)
+      }
+    }
+  }
+
+  private createResolutionContext(resolutionChain: ServiceToken[]): DIContainer {
+    const container = this
+
+    return {
+      resolve<T>(token: ServiceToken<T>) {
+        return container.resolveWithChain(token, resolutionChain)
+      },
+      isRegistered<T>(token: ServiceToken<T>) {
+        return container.isRegistered(token)
+      },
+      getRegisteredTokens() {
+        return container.getRegisteredTokens()
+      },
+      createChild() {
+        return container.createChild()
+      },
+    } as DIContainer
   }
 
   /**
@@ -120,7 +158,7 @@ export class DIContainer {
   clear(): void {
     this.registrations.clear()
     this.singletonInstances.clear()
-    this.resolutionStack.clear()
+    this.pendingSingletons.clear()
   }
 
   /**

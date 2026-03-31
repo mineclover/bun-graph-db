@@ -1,9 +1,9 @@
 import type { GraphQLSchema } from 'graphql'
 import type { EnhancedAIMetadata, TableAttributeProvider } from './EnhancedAIMetadataGenerator'
 import { EnhancedAIMetadataGenerator } from './EnhancedAIMetadataGenerator'
-import type { SchemaIntrospectionResult } from './GraphQLSchemaIntrospector'
+import type { QueryPattern, SchemaIntrospectionResult } from './GraphQLSchemaIntrospector'
 import { GraphQLSchemaIntrospector } from './GraphQLSchemaIntrospector'
-import type { TemplateDefinition, ValidationResult } from './TemplateValidator'
+import type { CorrectedTemplate, TemplateDefinition, ValidationResult } from './TemplateValidator'
 import { TemplateValidator } from './TemplateValidator'
 
 /**
@@ -112,7 +112,7 @@ export class SchemaSyncPipeline {
       return {
         originalTemplate: template,
         validation,
-        correctedTemplate: correctionResult,
+        correctedTemplate: correctionResult.correctedTemplate,
         correctedValidation,
         success: correctedValidation.isValid,
         recommendations: this.generateTemplateRecommendations(validation, correctionResult),
@@ -136,7 +136,7 @@ export class SchemaSyncPipeline {
     tableId: string
     operationType: string
     intent: string
-    variables?: Record<string, any>
+    variables?: Record<string, unknown>
   }): Promise<SchemaCompliantTemplateResult> {
     console.log(`🎯 Generating schema-compliant template for: ${aiRequest.intent}`)
 
@@ -173,7 +173,7 @@ export class SchemaSyncPipeline {
         template: validatedTemplate.template,
         validation: finalValidation,
         schemaPattern: matchingPattern,
-        enhancedMetadata: enhancedMetadata.schemaInfo,
+        enhancedMetadata,
         success: finalValidation.isValid,
         confidence: finalValidation.confidence,
         timestamp: new Date().toISOString(),
@@ -346,7 +346,10 @@ export class SchemaSyncPipeline {
     return recommendations
   }
 
-  private generateTemplateRecommendations(validation: ValidationResult, correctionResult?: any): string[] {
+  private generateTemplateRecommendations(
+    validation: ValidationResult,
+    correctionResult?: { confidence?: number },
+  ): string[] {
     const recommendations: string[] = []
 
     if (!validation.isValid) {
@@ -357,7 +360,7 @@ export class SchemaSyncPipeline {
       recommendations.push('Low confidence - validate with schema documentation')
     }
 
-    if (correctionResult && correctionResult.confidence < 0.9) {
+    if (correctionResult?.confidence !== undefined && correctionResult.confidence < 0.9) {
       recommendations.push('Auto-corrections applied - verify before production use')
     }
 
@@ -431,7 +434,7 @@ export interface ValidationReport {
 export interface AITemplateValidationResult {
   originalTemplate: TemplateDefinition
   validation: ValidationResult
-  correctedTemplate?: any
+  correctedTemplate?: CorrectedTemplate['correctedTemplate']
   correctedValidation?: ValidationResult
   success: boolean
   recommendations: string[]
@@ -441,8 +444,8 @@ export interface AITemplateValidationResult {
 export interface SchemaCompliantTemplateResult {
   template?: TemplateDefinition
   validation?: ValidationResult
-  schemaPattern?: any
-  enhancedMetadata?: any
+  schemaPattern?: QueryPattern
+  enhancedMetadata?: EnhancedAIMetadata
   success: boolean
   confidence?: number
   error?: string

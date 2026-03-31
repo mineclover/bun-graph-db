@@ -15,7 +15,7 @@ export class RelationType {
 
   static create(identifier: string, description?: string, category?: string): RelationType {
     return new RelationType(
-      null as any as RelationTypeId,
+      '' as RelationTypeId,
       identifier,
       description || null,
       category || null,

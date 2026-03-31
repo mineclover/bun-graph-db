@@ -1,6 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { type OperationType, QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { QueryVariablesSchema } from '@/domain/entities/QueryTemplate.js'
 
 export interface CreateQueryTemplateRequest {
   identifier: string
@@ -8,7 +9,7 @@ export interface CreateQueryTemplateRequest {
   queryText: string
   tags: string[]
   description?: string
-  inputSchema?: any
+  inputSchema?: QueryVariablesSchema
   defaultVariables?: Record<string, unknown>
   applicableTables?: string[]
   templateType?: OperationType

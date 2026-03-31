@@ -6,6 +6,7 @@ import {
 } from '@/application/use-cases/query-templates/UpdateQueryTemplate.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { QueryTemplateUpdateData } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 // Helper function to create test QueryTemplate
@@ -55,19 +56,25 @@ describe('UpdateQueryTemplate', () => {
     }
 
     // Mock repository
-    mockQueryTemplateRepository = {
+    const repositoryMock = {
       create: mock(async (template) => template),
       findById: mock(async () => null),
       findByIdentifier: mock(async () => null),
-      findAll: mock(async () => []),
+      findAll: mock(async () => ({ data: [], total: 0, hasMore: false })),
       update: mock(async () => createTestTemplate()),
-      delete: mock(async () => {}),
-      search: mock(async () => ({ templates: [], total: 0 })),
-      activate: mock(async () => {}),
-      deactivate: mock(async () => {}),
-      incrementUsageCount: mock(async () => {}),
+      deleteById: mock(async () => true),
+      search: mock(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
+      searchByQueryName: mock(async () => []),
+      searchByOperationType: mock(async () => []),
+      findByApplicableTable: mock(async () => []),
+      findTemplatesWithTableDependencies: mock(async () => []),
+      incrementUsage: mock(async () => {}),
       updateExecutionStats: mock(async () => {}),
-    } as any
+      findPopular: mock(async () => []),
+      updateStatus: mock(async () => createTestTemplate()),
+    } satisfies IQueryTemplateRepository
+
+    mockQueryTemplateRepository = repositoryMock
 
     useCase = new UpdateQueryTemplate(mockQueryTemplateRepository, mockLogger)
   })
@@ -116,7 +123,7 @@ describe('UpdateQueryTemplate', () => {
     it('should throw ValidationException when templateType is invalid', async () => {
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
-        templateType: 'invalid' as any,
+        templateType: 'invalid' as unknown as QueryTemplateUpdateData['templateType'],
       }
 
       await expect(useCase.execute(request)).rejects.toThrow(ValidationException)

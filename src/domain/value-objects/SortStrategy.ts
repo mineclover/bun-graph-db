@@ -1,8 +1,10 @@
 import type { AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
 
+export type SortParameterValue = unknown
+
 export interface SortResult {
   sqlClause: string
-  parameters: any[]
+  parameters: SortParameterValue[]
 }
 
 export interface SortContext {
@@ -96,11 +98,11 @@ export interface EnhancedSortOption extends SortOption {
   optimization?: SortOptimization
 
   // Extended null handling
-  nullValue?: any // Custom null replacement value
+  nullValue?: unknown // Custom null replacement value
 }
 
 export interface MultiCriteriaSortResult {
   sqlClause: string
-  parameters: any[]
+  parameters: SortParameterValue[]
   sortFields: string[]
 }

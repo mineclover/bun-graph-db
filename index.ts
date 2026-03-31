@@ -1,8 +1,25 @@
+import type { Request as ExpressRequest, Response as ExpressResponse } from 'express'
+import type { DefinitionNode, DocumentNode, ExecutionResult, OperationDefinitionNode } from 'graphql'
 import { createYoga } from 'graphql-yoga'
+import { randomUUID } from 'node:crypto'
 import type { ILogger } from './src/application/ports/ILogger'
+import type { CreateAttributeUseCase } from './src/application/use-cases/attributes/CreateAttribute'
+import type { CreateNodeUseCase } from './src/application/use-cases/nodes/CreateNode'
+import type { SearchNodesUseCase } from './src/application/use-cases/nodes/SearchNodes'
+import type { ExecuteTemplateWithGraphQLUseCase } from './src/application/use-cases/query-templates/ExecuteTemplateWithGraphQL'
+import type { CreateRelationUseCase } from './src/application/use-cases/relations/CreateRelation'
+import type { SearchRelatedNodesUseCase } from './src/application/use-cases/relations/SearchRelatedNodes'
+import type { CreateTableUseCase } from './src/application/use-cases/tables/CreateTable'
+import type { GetTableDocsUseCase } from './src/application/use-cases/tables/GetTableDocs'
 import { setDatabasePath } from './src/config/database'
 import { createGraphQLConfig } from './src/config/graphql'
 import type { AutoPersistenceService } from './src/domain/services/AutoPersistenceService'
+import type { IAttributeRepository } from './src/domain/repositories/IAttributeRepository'
+import type { INodeAttributeRepository } from './src/domain/repositories/INodeAttributeRepository'
+import type { INodeRelationRepository } from './src/domain/repositories/INodeRelationRepository'
+import type { IQueryTemplateRepository } from './src/domain/repositories/IQueryTemplateRepository'
+import type { IRelationTypeRepository } from './src/domain/repositories/IRelationTypeRepository'
+import type { ITableRepository } from './src/domain/repositories/ITableRepository'
 import { createContainer } from './src/infrastructure/container/ContainerBootstrap'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens'
 import { UseCaseTokens } from './src/infrastructure/container/tokens/UseCaseTokens'
@@ -74,6 +91,22 @@ const schema = await schemaBuilder.build()
 
 const logger = await container.resolve<ILogger>(CommonTokens.LOGGER)
 
+type MinimalControllerRequest = {
+  method: string
+  url: string
+  path: string
+  query: Record<string, string>
+  params: Record<string, string>
+  headers: Record<string, string>
+  body: unknown
+}
+
+type MinimalControllerResponse = {
+  status: (code: number) => MinimalControllerResponse
+  json: (data: unknown) => void
+  send: (data: unknown) => void
+}
+
 // Initialize AutoPersistenceService
 const autoPersistence = await container.resolve<AutoPersistenceService>(CommonTokens.AUTO_PERSISTENCE_SERVICE)
 const persistenceResult = await autoPersistence.initialize()
@@ -88,6 +121,11 @@ const graphqlConfig = createGraphQLConfig(finalOptions)
 
 const yoga = createYoga({
   schema,
+  context: async ({ request }) => ({
+    requestId: request.headers.get('x-request-id') || randomUUID(),
+    startTime: new Date(),
+    requestCache: new Map(),
+  }),
   logging: {
     debug: (...args) => logger.debug('GraphQL Debug', { args }),
     info: (...args) => logger.info('GraphQL Info', { args }),
@@ -99,11 +137,17 @@ const yoga = createYoga({
       // Auto-save hook: mark dirty after successful mutations
       onExecute() {
         return {
-          onExecuteDone({ result, args }: { result: any; args: any }) {
+          onExecuteDone({
+            result,
+            args,
+          }: {
+            result: ExecutionResult
+            args: { document: DocumentNode }
+          }) {
             // Check if this was a mutation and successful
             const operationType = args.document.definitions.find(
-              (def: any) => def.kind === 'OperationDefinition',
-            ) as any
+              (def: DefinitionNode): def is OperationDefinitionNode => def.kind === 'OperationDefinition',
+            )
             if (operationType?.operation === 'mutation') {
               // Skip backup-related mutations to avoid recursive saves
               const queryText = args.document.loc?.source?.body || ''
@@ -117,7 +161,7 @@ const yoga = createYoga({
               }
 
               // Check if result has no errors
-              const hasErrors = 'errors' in result && result.errors?.length > 0
+              const hasErrors = Array.isArray(result.errors) && result.errors.length > 0
               if (!hasErrors) {
                 autoPersistence.markDirty()
               }
@@ -135,11 +179,16 @@ const yoga = createYoga({
       # This API provides access to the SQLite-based graph database
       
       query HealthCheck {
-        health {
+        healthCheck {
           status
           timestamp
           database
           version
+          memory {
+            status
+            percentage
+            message
+          }
         }
       }
       
@@ -151,7 +200,7 @@ const yoga = createYoga({
             description
             createdAt
             updatedAt
-            nodeCount
+            tableNodeCount
             attributeCount
           }
           totalCount
@@ -172,13 +221,18 @@ import { GraphDbApiController } from './src/presentation/http/controllers/GraphD
 import { McpToolController } from './src/presentation/http/controllers/McpToolController'
 // Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes'
+import { createTabularSyncHandler } from './src/presentation/http/routes/TabularSyncRoutes'
 import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes'
 // Import table MCP routes
 import { createTableMcpMiddleware } from './src/presentation/mcp/routes/mcp-routes'
 
 // Resolve dependencies from container in parallel
 const [
+  createTableUseCase,
   createAttributeUseCase,
+  createNodeUseCase,
+  createRelationUseCase,
+  executeTemplateWithGraphQLUseCase,
   attributeRepository,
   nodeAttributeRepository,
   getTableDocsUseCase,
@@ -186,8 +240,14 @@ const [
   searchRelatedNodesUseCase,
   tableRepository,
   nodeRelationRepository,
+  relationTypeRepository,
+  queryTemplateRepository,
 ] = (await Promise.all([
+  container.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE),
   container.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE),
+  container.resolve(UseCaseTokens.CREATE_NODE_USE_CASE),
+  container.resolve(UseCaseTokens.CREATE_RELATION_USE_CASE),
+  container.resolve(UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE),
   container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY),
   container.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY),
   container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE),
@@ -195,31 +255,46 @@ const [
   container.resolve(UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE),
   container.resolve(RepositoryTokens.TABLE_REPOSITORY),
   container.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY),
-])) as any[]
+  container.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY),
+  container.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY),
+]))
 
 // Create controllers
-const graphDbController = new GraphDbApiController(logger)
+const graphDbController = new GraphDbApiController(
+  logger,
+  createTableUseCase as CreateTableUseCase | undefined,
+  createNodeUseCase as CreateNodeUseCase | undefined,
+  searchNodesUseCase as SearchNodesUseCase | undefined,
+  createRelationUseCase as CreateRelationUseCase | undefined,
+  tableRepository as ITableRepository | undefined,
+  relationTypeRepository as IRelationTypeRepository | undefined,
+  queryTemplateRepository as IQueryTemplateRepository | undefined,
+  executeTemplateWithGraphQLUseCase as ExecuteTemplateWithGraphQLUseCase | undefined,
+)
 const attributeController = new AttributeApiController(
-  createAttributeUseCase,
-  attributeRepository,
-  nodeAttributeRepository,
+  createAttributeUseCase as CreateAttributeUseCase,
+  attributeRepository as IAttributeRepository,
+  nodeAttributeRepository as INodeAttributeRepository,
   logger,
 )
 const graphController = new GraphApiController(
   logger,
-  getTableDocsUseCase,
-  searchNodesUseCase,
-  searchRelatedNodesUseCase,
-  tableRepository,
-  nodeRelationRepository,
+  getTableDocsUseCase as GetTableDocsUseCase,
+  searchNodesUseCase as SearchNodesUseCase,
+  searchRelatedNodesUseCase as SearchRelatedNodesUseCase,
+  tableRepository as ITableRepository,
+  nodeRelationRepository as INodeRelationRepository,
   graphqlConfig.port,
 )
 const _mcpToolController = new McpToolController(logger, graphqlConfig.port)
+const tabularSyncConfigStore = await container.resolve(CommonTokens.TABULAR_SYNC_CONFIG_STORE)
+const tabularSyncHook = await container.resolve(CommonTokens.TABULAR_SYNC_HOOK)
 
 // Create route handlers in parallel
-const [schemaHandler, templateFileHandler] = await Promise.all([
+const [schemaHandler, templateFileHandler, tabularSyncHandler] = await Promise.all([
   createSchemaHandler(container),
   createTemplateFileHandler(container),
+  Promise.resolve(createTabularSyncHandler(tabularSyncConfigStore as never, logger, tabularSyncHook as never)),
 ])
 
 // Create MCP HTTP server with REST API base URL
@@ -244,7 +319,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
 
   try {
     // Parse request body for POST/PUT requests
-    let body: any = {}
+    let body: unknown = {}
     if (method === 'POST' || method === 'PUT') {
       try {
         body = await request.json()
@@ -254,7 +329,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
     }
 
     // Create request and response objects compatible with controllers
-    const req: any = {
+    const req: MinimalControllerRequest = {
       method,
       url: pathname + url.search,
       path: pathname,
@@ -264,21 +339,24 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       body,
     }
 
-    let responseData: any
+    let responseData: unknown
     let statusCode = 200
 
-    const res: any = {
+    const res: MinimalControllerResponse = {
       status: (code: number) => {
         statusCode = code
         return res
       },
-      json: (data: any) => {
+      json: (data: unknown) => {
         responseData = data
       },
-      send: (data: any) => {
+      send: (data: unknown) => {
         responseData = data
       },
     }
+
+    const expressReq = req as unknown as ExpressRequest
+    const expressRes = res as unknown as ExpressResponse
 
     // Route matching and execution
     if (method === 'GET' && pathname === '/api/health') {
@@ -294,75 +372,75 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
         },
       }
     } else if (method === 'GET' && pathname === '/api/stats') {
-      await graphDbController.systemStats(req, res)
+      await graphDbController.systemStats(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/tables') {
-      await graphDbController.createTable(req, res)
+      await graphDbController.createTable(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/tables/search') {
-      await graphDbController.searchTables(req, res)
+      await graphDbController.searchTables(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/tables') {
-      await graphController.getTables(req, res)
+      await graphController.getTables(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/tables/docs') {
-      await graphController.getTableDocs(req, res)
+      await graphController.getTableDocs(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/nodes') {
-      await graphDbController.createNode(req, res)
+      await graphDbController.createNode(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/nodes/search') {
-      await graphDbController.searchNodes(req, res)
+      await graphDbController.searchNodes(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/relations') {
-      await graphDbController.createRelation(req, res)
+      await graphDbController.createRelation(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/templates') {
-      await graphDbController.createTemplate(req, res)
+      await graphDbController.createTemplate(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/templates/search') {
-      await graphDbController.searchTemplates(req, res)
+      await graphDbController.searchTemplates(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/templates/execute') {
-      await graphDbController.executeTemplateWithGraphQL(req, res)
+      await graphDbController.executeTemplateWithGraphQL(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/attributes') {
-      await attributeController.createAttribute(req, res)
+      await attributeController.createAttribute(expressReq, expressRes)
     } else if (method === 'GET' && pathname.startsWith('/api/nodes/') && pathname.endsWith('/attributes')) {
       // Extract nodeId from path like /api/nodes/123/attributes
-      const nodeId = pathname.split('/')[3]
+      const nodeId = pathname.split('/')[3] || ''
       req.params.nodeId = nodeId
-      await attributeController.getNodeAttributes(req, res)
+      await attributeController.getNodeAttributes(expressReq, expressRes)
     } else if (method === 'POST' && pathname.startsWith('/api/tables/') && pathname.endsWith('/export')) {
       // Extract tableId from path like /api/tables/123/export
-      const tableId = pathname.split('/')[3]
+      const tableId = pathname.split('/')[3] || ''
       req.params.tableId = tableId
-      await graphController.exportTableWithNodes(req, res)
+      await graphController.exportTableWithNodes(expressReq, expressRes)
 
       // MCP Tool Operations (Bridge between GraphQL and local services)
     } else if (method === 'GET' && pathname === '/api/mcp-tools') {
-      await _mcpToolController.listMcpTools(req, res)
+      await _mcpToolController.listMcpTools(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/mcp-tools/call') {
-      await _mcpToolController.callMcpTool(req, res)
+      await _mcpToolController.callMcpTool(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/mcp-tools/bulk-import-templates') {
-      await _mcpToolController.bulkImportTemplates(req, res)
+      await _mcpToolController.bulkImportTemplates(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/mcp-tools/list-available-templates') {
-      await _mcpToolController.listAvailableTemplates(req, res)
+      await _mcpToolController.listAvailableTemplates(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/mcp-tools/import-status') {
-      await _mcpToolController.getImportStatus(req, res)
+      await _mcpToolController.getImportStatus(expressReq, expressRes)
 
       // New template management tools
     } else if (method === 'POST' && pathname === '/api/mcp-tools/create-template') {
-      await _mcpToolController.createTemplate(req, res)
+      await _mcpToolController.createTemplate(expressReq, expressRes)
     } else if (method === 'PUT' && pathname === '/api/mcp-tools/update-template') {
-      await _mcpToolController.updateTemplate(req, res)
+      await _mcpToolController.updateTemplate(expressReq, expressRes)
     } else if (method === 'DELETE' && pathname === '/api/mcp-tools/delete-template') {
-      await _mcpToolController.deleteTemplate(req, res)
+      await _mcpToolController.deleteTemplate(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/mcp-tools/validate-template') {
-      await _mcpToolController.validateTemplate(req, res)
+      await _mcpToolController.validateTemplate(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/mcp-tools/search-templates') {
-      await _mcpToolController.searchTemplates(req, res)
+      await _mcpToolController.searchTemplates(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/mcp-tools/get-template-metadata') {
-      await _mcpToolController.getTemplateMetadata(req, res)
+      await _mcpToolController.getTemplateMetadata(expressReq, expressRes)
 
       // System initialization tools
     } else if (method === 'POST' && pathname === '/api/mcp-tools/initialize-system') {
-      await _mcpToolController.initializeSystem(req, res)
+      await _mcpToolController.initializeSystem(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/mcp-tools/get-system-status') {
-      await _mcpToolController.getSystemStatus(req, res)
+      await _mcpToolController.getSystemStatus(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/mcp-tools/quick-reset') {
-      await _mcpToolController.quickReset(req, res)
+      await _mcpToolController.quickReset(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/mcp-tools/setup-demo') {
-      await _mcpToolController.setupDemo(req, res)
+      await _mcpToolController.setupDemo(expressReq, expressRes)
     } else {
       return new Response('Not Found', { status: 404 })
     }
@@ -406,6 +484,12 @@ const requestHandler = async (request: Request): Promise<Response> => {
   const templateFileResponse = await templateFileHandler(request)
   if (templateFileResponse) {
     return templateFileResponse
+  }
+
+  // Handle tabular sync management routes
+  const tabularSyncResponse = await tabularSyncHandler(request)
+  if (tabularSyncResponse) {
+    return tabularSyncResponse
   }
 
   // Handle schema routes second

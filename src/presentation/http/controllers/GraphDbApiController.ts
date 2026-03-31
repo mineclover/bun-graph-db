@@ -1,10 +1,29 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
+import type { ExecuteTemplateWithGraphQLUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithGraphQL.js'
+import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
+import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
+import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
+import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
+import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { ExportTemplateData, HealthCheckData, ImportTemplateData } from '../types/ApiResponseTypes.js'
 import { sendHandleError, sendSuccess, sendValidationError } from '../utils/responseHelpers.js'
 
 export class GraphDbApiController {
-  constructor(private readonly logger: ILogger) {}
+  constructor(
+    protected readonly logger: ILogger,
+    private readonly createTableUseCase?: CreateTableUseCase,
+    private readonly createNodeUseCase?: CreateNodeUseCase,
+    private readonly searchNodesUseCase?: SearchNodesUseCase,
+    private readonly createRelationUseCase?: CreateRelationUseCase,
+    private readonly tableRepository?: ITableRepository,
+    private readonly relationTypeRepository?: IRelationTypeRepository,
+    private readonly queryTemplateRepository?: IQueryTemplateRepository,
+    private readonly executeTemplateWithGraphQLUseCase?: ExecuteTemplateWithGraphQLUseCase,
+  ) {}
 
   // System Operations
   async healthCheck(_req: Request, res: Response): Promise<void> {
@@ -44,23 +63,29 @@ export class GraphDbApiController {
   // Table Operations
   async createTable(req: Request, res: Response): Promise<void> {
     try {
-      const { identifier, name, description } = req.body
+      const { identifier, description } = req.body
 
       if (!identifier) {
         sendValidationError(res, 'identifier is required')
         return
       }
 
-      const result = {
-        id: `table_${Date.now()}`,
-        identifier,
-        name: name || identifier,
-        description: description || '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+      if (!this.createTableUseCase) {
+        sendSuccess(res, {
+          id: `table-${Date.now()}`,
+          identifier,
+          name: req.body.name || identifier,
+          description: description || null,
+        })
+        return
       }
 
-      sendSuccess(res, result)
+      const result = await this.createTableUseCase.execute({
+        identifier,
+        description,
+      })
+
+      sendSuccess(res, result.table)
     } catch (error) {
       sendHandleError(res, this.logger, error, 'Create table')
     }
@@ -70,12 +95,39 @@ export class GraphDbApiController {
     try {
       const searchTerm = (req.query.searchTerm as string) || ''
       const limit = parseInt(req.query.limit as string, 10) || 10
+      const offset = parseInt(req.query.offset as string, 10) || 0
+      if (!this.tableRepository) {
+        sendSuccess(res, {
+          tables: [],
+          total: 0,
+          searchTerm,
+          limit,
+          offset,
+          hasMore: false,
+        })
+        return
+      }
+      const tablesResult = await this.tableRepository.findAll({
+        search: searchTerm,
+        limit,
+        offset,
+        sortBy: 'createdAt',
+        sortDirection: 'DESC',
+      })
 
       const result = {
-        tables: [],
-        total: 0,
+        tables: (tablesResult.data || []).map((table) => ({
+          id: table.id,
+          identifier: table.identifier,
+          description: table.description,
+          createdAt: table.createdAt.toISOString(),
+          updatedAt: table.updatedAt.toISOString(),
+        })),
+        total: tablesResult.total,
         searchTerm,
         limit,
+        offset,
+        hasMore: tablesResult.hasMore,
       }
 
       sendSuccess(res, result)
@@ -87,22 +139,34 @@ export class GraphDbApiController {
   // Node Operations
   async createNode(req: Request, res: Response): Promise<void> {
     try {
-      const { tableId, content, metadata } = req.body
+      const { tableId, content, title, description, attributes } = req.body
 
       if (!tableId || !content) {
         sendValidationError(res, 'tableId and content are required')
         return
       }
 
-      const result = {
-        id: `node_${Date.now()}`,
-        tableId,
-        content,
-        metadata: metadata || {},
-        createdAt: new Date().toISOString(),
+      if (!this.createNodeUseCase) {
+        sendSuccess(res, {
+          id: `node-${Date.now()}`,
+          tableId,
+          content,
+          title: title || null,
+          description: description || null,
+          metadata: req.body.metadata || null,
+        })
+        return
       }
 
-      sendSuccess(res, result)
+      const result = await this.createNodeUseCase.execute({
+        tableId,
+        content,
+        title,
+        description,
+        attributes: this.normalizeAttributes(attributes),
+      })
+
+      sendSuccess(res, result.node)
     } catch (error) {
       sendHandleError(res, this.logger, error, 'Create node')
     }
@@ -113,19 +177,32 @@ export class GraphDbApiController {
       const tableId = req.query.tableId as string
       const search = (req.query.search as string) || ''
       const limit = parseInt(req.query.limit as string, 10) || 10
+      const offset = parseInt(req.query.offset as string, 10) || 0
 
       if (!tableId) {
         sendValidationError(res, 'tableId is required')
         return
       }
 
-      const result = {
-        nodes: [],
-        total: 0,
-        tableId,
-        search,
-        limit,
+      if (!this.searchNodesUseCase) {
+        sendSuccess(res, {
+          nodes: [],
+          total: 0,
+          hasMore: false,
+          tableId,
+          query: search,
+          limit,
+          offset,
+        })
+        return
       }
+
+      const result = await this.searchNodesUseCase.execute({
+        tableId,
+        query: search,
+        limit,
+        offset,
+      })
 
       sendSuccess(res, result)
     } catch (error) {
@@ -136,24 +213,61 @@ export class GraphDbApiController {
   // Relation Operations
   async createRelation(req: Request, res: Response): Promise<void> {
     try {
-      const { fromNodeId, toNodeId, relationshipType, tableId, properties } = req.body
+      const { fromNodeId, toNodeId, relationshipType, relationTypeId, tableId, properties, strength } = req.body
 
-      if (!fromNodeId || !toNodeId || !relationshipType || !tableId) {
-        sendValidationError(res, 'fromNodeId, toNodeId, relationshipType, and tableId are required')
+      if (!fromNodeId || !toNodeId || !tableId || (!relationshipType && !relationTypeId)) {
+        sendValidationError(res, 'fromNodeId, toNodeId, tableId, and relationshipType or relationTypeId are required')
         return
       }
 
-      const result = {
-        id: `relation_${Date.now()}`,
-        fromNodeId,
-        toNodeId,
-        relationshipType,
-        tableId,
-        properties: properties || {},
-        createdAt: new Date().toISOString(),
+      const resolvedRelationType =
+        relationTypeId ||
+        (relationshipType && this.relationTypeRepository
+          ? (await this.relationTypeRepository.findByIdentifier(relationshipType))?.getId()
+          : undefined)
+
+      if (!resolvedRelationType) {
+        sendValidationError(res, 'A valid relationshipType or relationTypeId is required')
+        return
       }
 
-      sendSuccess(res, result)
+      if (!this.createRelationUseCase) {
+        sendSuccess(res, {
+          id: `relation-${Date.now()}`,
+          fromNodeId,
+          toNodeId,
+          tableId,
+          relationTypeId: resolvedRelationType,
+          relationshipType: relationshipType || relationTypeId,
+          properties: properties || null,
+          strength: strength || null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        return
+      }
+
+      const result = await this.createRelationUseCase.execute({
+        tableId,
+        sourceNodeId: fromNodeId,
+        targetNodeId: toNodeId,
+        relationTypeId: resolvedRelationType,
+        properties: properties || null,
+        strength,
+      })
+
+      sendSuccess(res, {
+        id: result.relation.id,
+        fromNodeId: result.relation.sourceNodeId,
+        toNodeId: result.relation.targetNodeId,
+        tableId: result.relation.tableId,
+        relationTypeId: result.relation.relationTypeId,
+        relationshipType: relationshipType || relationTypeId,
+        properties: result.relation.properties,
+        strength: result.relation.strength,
+        createdAt: result.relation.createdAt,
+        updatedAt: result.relation.updatedAt,
+      })
     } catch (error) {
       sendHandleError(res, this.logger, error, 'Create relation')
     }
@@ -162,23 +276,42 @@ export class GraphDbApiController {
   // Template Operations
   async createTemplate(req: Request, res: Response): Promise<void> {
     try {
-      const { identifier, name, query, tags } = req.body
+      const { identifier, name, query, description, tags } = req.body
 
       if (!identifier || !name || !query) {
         sendValidationError(res, 'identifier, name, and query are required')
         return
       }
 
-      const result = {
-        id: `template_${Date.now()}`,
-        identifier,
-        name,
-        query,
-        tags: tags || [],
-        createdAt: new Date().toISOString(),
+      if (!this.queryTemplateRepository) {
+        sendSuccess(res, {
+          id: `template-${Date.now()}`,
+          identifier,
+          name,
+          description: description || null,
+          query,
+          tags: tags || ['general'],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+        return
       }
 
-      sendSuccess(res, result)
+      const template = QueryTemplate.create(identifier, name, query, tags || ['general'], {
+        description,
+      })
+      const result = await this.queryTemplateRepository.create(template)
+
+      sendSuccess(res, {
+        id: result.getId(),
+        identifier: result.getIdentifier(),
+        name: result.getName(),
+        description: result.getDescription(),
+        query: result.getQueryText(),
+        tags: result.getTags(),
+        createdAt: result.getCreatedAt().toISOString(),
+        updatedAt: result.getUpdatedAt().toISOString(),
+      })
     } catch (error) {
       sendHandleError(res, this.logger, error, 'Create template')
     }
@@ -187,11 +320,46 @@ export class GraphDbApiController {
   async searchTemplates(req: Request, res: Response): Promise<void> {
     try {
       const searchTerm = (req.query.searchTerm as string) || ''
-      const tags = (req.query.tags as string[]) || []
+      const tags = this.extractTags(req)
+      const limit = parseInt(req.query.limit as string, 10) || 20
+      const offset = parseInt(req.query.offset as string, 10) || 0
+      if (!this.queryTemplateRepository) {
+        sendSuccess(res, {
+          templates: [],
+          total: 0,
+          searchTerm,
+          tags,
+        })
+        return
+      }
+      const searchResult = await this.queryTemplateRepository.search({
+        tags: tags.length > 0 ? tags : undefined,
+        limit,
+        offset,
+      })
+      const normalizedSearch = searchTerm.trim().toLowerCase()
+      const filteredTemplates =
+        normalizedSearch.length === 0
+          ? searchResult.items
+          : searchResult.items.filter((template) =>
+              [template.getIdentifier(), template.getName(), template.getDescription() || '']
+                .join(' ')
+                .toLowerCase()
+                .includes(normalizedSearch),
+            )
 
       const result = {
-        templates: [],
-        total: 0,
+        templates: filteredTemplates.map((template) => ({
+          id: template.getId(),
+          identifier: template.getIdentifier(),
+          name: template.getName(),
+          description: template.getDescription(),
+          query: template.getQueryText(),
+          tags: template.getTags(),
+          createdAt: template.getCreatedAt().toISOString(),
+          updatedAt: template.getUpdatedAt().toISOString(),
+        })),
+        total: filteredTemplates.length,
         searchTerm,
         tags,
       }
@@ -211,18 +379,30 @@ export class GraphDbApiController {
         return
       }
 
-      const result = {
-        templateIdentifier,
-        variables: variables || {},
-        executionResult: {
-          success: true,
-          data: {},
-          errors: [],
-        },
-        executedAt: new Date().toISOString(),
+      if (!this.executeTemplateWithGraphQLUseCase) {
+        sendSuccess(res, {
+          templateIdentifier,
+          variables: variables || {},
+          executionResult: {
+            success: true,
+            data: {},
+            errors: [],
+          },
+        })
+        return
       }
 
-      sendSuccess(res, result)
+      const result = await this.executeTemplateWithGraphQLUseCase.execute({
+        templateIdentifier,
+        variables: variables || {},
+      })
+
+      sendSuccess(res, {
+        templateIdentifier,
+        variables: variables || {},
+        executionResult: result,
+        executedAt: new Date().toISOString(),
+      })
     } catch (error) {
       sendHandleError(res, this.logger, error, 'Execute template')
     }
@@ -284,5 +464,51 @@ export class GraphDbApiController {
     } catch (error) {
       sendHandleError(res, this.logger, error, 'Import template')
     }
+  }
+
+  private normalizeAttributes(attributes: unknown): Record<string, unknown> | undefined {
+    if (!attributes) {
+      return undefined
+    }
+
+    if (Array.isArray(attributes)) {
+      return Object.fromEntries(
+        attributes
+          .filter(
+            (attribute): attribute is { attributeId?: string; identifier?: string; value: unknown } =>
+              typeof attribute === 'object' && attribute !== null && 'value' in attribute,
+          )
+          .map((attribute) => [attribute.identifier || attribute.attributeId, attribute.value])
+          .filter(([key]) => typeof key === 'string' && key.length > 0),
+      )
+    }
+
+    if (typeof attributes === 'object') {
+      return attributes as Record<string, unknown>
+    }
+
+    return undefined
+  }
+
+  private extractTags(req: Request): string[] {
+    const explicitTags = req.query.tags
+
+    if (Array.isArray(explicitTags)) {
+      return explicitTags.map(String)
+    }
+
+    const queryEntries = Object.entries(req.query)
+      .filter(([key]) => key.startsWith('tags['))
+      .map(([, value]) => String(value))
+
+    if (queryEntries.length > 0) {
+      return queryEntries
+    }
+
+    if (typeof explicitTags === 'string' && explicitTags.trim().length > 0) {
+      return explicitTags.split(',').map((tag) => tag.trim()).filter(Boolean)
+    }
+
+    return []
   }
 }

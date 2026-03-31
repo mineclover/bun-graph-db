@@ -6,17 +6,17 @@ export interface IDatabaseConnection {
   /**
    * Execute a query and return results
    */
-  query<T = any>(sql: string, params?: any[]): Promise<T[]>
+  query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>
 
   /**
    * Execute a query and return first result
    */
-  queryFirst<T = any>(sql: string, params?: any[]): Promise<T | null>
+  queryFirst<T = unknown>(sql: string, params?: unknown[]): Promise<T | null>
 
   /**
    * Execute a query without returning results (INSERT, UPDATE, DELETE)
    */
-  execute(sql: string, params?: any[]): Promise<{ changes: number; lastInsertRowid?: number }>
+  execute(sql: string, params?: unknown[]): Promise<{ changes: number; lastInsertRowid?: number }>
 
   /**
    * Execute multiple statements in a transaction
@@ -44,7 +44,7 @@ export interface IDatabaseConnection {
 }
 
 export interface ITransactionManager {
-  query<T = any>(sql: string, params?: any[]): Promise<T[]>
-  queryFirst<T = any>(sql: string, params?: any[]): Promise<T | null>
-  execute(sql: string, params?: any[]): Promise<{ changes: number; lastInsertRowid?: number }>
+  query<T = unknown>(sql: string, params?: unknown[]): Promise<T[]>
+  queryFirst<T = unknown>(sql: string, params?: unknown[]): Promise<T | null>
+  execute(sql: string, params?: unknown[]): Promise<{ changes: number; lastInsertRowid?: number }>
 }

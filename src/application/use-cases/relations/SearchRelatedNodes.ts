@@ -7,13 +7,24 @@ import type { ITableRepository } from '@/domain/repositories/ITableRepository.js
 import type { GraphQuery, PathQuery, RelationFilter } from '@/domain/value-objects/RelationQuery.js'
 import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
+
+interface GraphSearchResultItem {
+  node: import('@/domain/entities/Node.js').Node
+  attributes?: Record<string, unknown>
+  sourceNodeId?: string
+  targetNodeId?: string
+  relationTypeId?: string
+  properties?: Record<string, SafeJsonValue>
+  strength?: number
+}
 
 export interface SearchRelatedNodesInput {
   tableId: string
   sourceNodeIds?: string[]
   relationFilters?: RelationFilter[]
   pathQueries?: PathQuery[]
-  nodeFilters?: Record<string, any>
+  nodeFilters?: Record<string, unknown>
   limit?: number
   offset?: number
 }
@@ -24,7 +35,7 @@ export interface SearchRelatedNodesOutput {
     sourceNodeId: string
     targetNodeId: string
     relationTypeId: string
-    properties?: Record<string, any>
+    properties?: Record<string, SafeJsonValue>
     strength?: number
   }>
   paths?: Array<{
@@ -41,7 +52,7 @@ export interface SearchRelatedNodesOutput {
 }
 
 export interface IGraphRepository {
-  searchRelatedNodes(tableId: TableId, graphQuery: GraphQuery): Promise<PaginatedResult<any>>
+  searchRelatedNodes(tableId: TableId, graphQuery: GraphQuery): Promise<PaginatedResult<GraphSearchResultItem>>
 
   findPathsBetweenNodes(
     tableId: TableId,
@@ -134,7 +145,7 @@ export class SearchRelatedNodesUseCase {
       }
 
       // Convert to DTOs
-      const nodeDtos = (result.data || []).map((item: any) => nodeFromEntity(item.node, item.attributes || {}))
+      const nodeDtos = (result.data || []).map((item) => nodeFromEntity(item.node, item.attributes || {}))
 
       this.logger.info('Related nodes search completed', {
         tableId: input.tableId,
@@ -145,13 +156,21 @@ export class SearchRelatedNodesUseCase {
 
       return {
         nodes: nodeDtos,
-        relations: (result.data || []).map((item: any) => ({
-          sourceNodeId: item.sourceNodeId,
-          targetNodeId: item.targetNodeId,
-          relationTypeId: item.relationTypeId,
-          properties: item.properties,
-          strength: item.strength,
-        })),
+        relations: (result.data || [])
+          .filter(
+            (item): item is typeof item & {
+              sourceNodeId: string
+              targetNodeId: string
+              relationTypeId: string
+            } => Boolean(item.sourceNodeId && item.targetNodeId && item.relationTypeId),
+          )
+          .map((item) => ({
+            sourceNodeId: item.sourceNodeId,
+            targetNodeId: item.targetNodeId,
+            relationTypeId: item.relationTypeId,
+            properties: item.properties,
+            strength: item.strength,
+          })),
         paths,
         total: result.total || 0,
         hasMore: result.hasMore || false,

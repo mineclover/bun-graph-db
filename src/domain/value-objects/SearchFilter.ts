@@ -25,7 +25,7 @@ export enum LogicalOperator {
 export interface SearchFilter {
   field: string
   operator: SearchOperator
-  value: any
+  value: unknown
   valueType: 'string' | 'number' | 'datetime' | 'json' | 'boolean'
 }
 
@@ -57,8 +57,13 @@ export class SearchQueryBuilder {
   private limit?: number
   private offset?: number
 
-  addFilter(field: string, operator: SearchOperator, value: any, valueType: string = 'string'): this {
-    const filter: SearchFilter = { field, operator, value, valueType: valueType as any }
+  addFilter(
+    field: string,
+    operator: SearchOperator,
+    value: unknown,
+    valueType: SearchFilter['valueType'] = 'string',
+  ): this {
+    const filter: SearchFilter = { field, operator, value, valueType }
 
     if (this.conditions.length === 0) {
       this.conditions.push({

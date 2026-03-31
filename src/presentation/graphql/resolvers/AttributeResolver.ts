@@ -213,7 +213,10 @@ export class AttributeResolver extends BaseResolver {
         description: args.input.description,
         jsonType: args.input.jsonType,
         format: args.input.format,
-        validationSchema: args.input.validationSchema ? args.input.validationSchema : null,
+        validationSchema:
+          args.input.validationSchema && typeof args.input.validationSchema === 'object'
+            ? (args.input.validationSchema as Record<string, unknown>)
+            : null,
         defaultValue: args.input.defaultValue !== undefined ? args.input.defaultValue : null,
       }
 

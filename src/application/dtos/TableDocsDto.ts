@@ -41,10 +41,18 @@ export interface TableDocsDto {
       queryComplexity: 'simple' | 'moderate' | 'complex'
     }
     sampleData?: {
+      entries: Array<{
+        nodeId: string
+        title: string
+        content: string
+        attributes: { [key: string]: unknown }
+      }>
+      totalCount: number
+      hasMore: boolean
       nodes: Array<{
         id: string
         content: string
-        attributes: { [key: string]: any }
+        attributes: { [key: string]: unknown }
       }>
       relationships: Array<{
         from: string

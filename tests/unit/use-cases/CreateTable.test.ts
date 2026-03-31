@@ -2,11 +2,23 @@ import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { CreateTableInput } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
+import type { Attribute } from '@/domain/entities/Attribute.js'
+import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import { Table } from '@/domain/entities/Table.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
+
+function emptyPage<T>() {
+  return {
+    data: [] as T[],
+    nodes: [] as T[],
+    totalCount: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  }
+}
 
 describe('CreateTableUseCase', () => {
   let useCase: CreateTableUseCase
@@ -28,19 +40,19 @@ describe('CreateTableUseCase', () => {
     mockTableRepository = {
       save: mock(async (table: Table) => {
         // Return a properly constructed table using fromDatabase
-        return Table.fromDatabase('table-1', table.identifier, table.description || null, new Date(), new Date()) as any
+        return Table.fromDatabase('table-1', table.identifier, table.description || null, new Date(), new Date())
       }),
       findById: mock(async () => null),
       findByIdentifier: mock(async () => null),
       update: mock(async (table: Table) => table),
       delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
+      findAll: mock(async () => emptyPage<Table>()),
       count: mock(async () => 0),
       exists: mock(async () => false),
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
       deleteMany: mock(async () => {}),
-    } as any
+    }
 
     mockQueryTemplateRepository = {
       findById: mock(async () => null),
@@ -55,42 +67,48 @@ describe('CreateTableUseCase', () => {
       searchByOperationType: mock(async () => []),
       findByApplicableTable: mock(async () => []),
       findTemplatesWithTableDependencies: mock(async () => []),
-      create: mock(async (template: any) => template),
-      update: mock(async (_id: string, _updates: any) => ({}) as any),
+      create: mock(async (template: QueryTemplate) => template),
+      update: mock(async () => {
+        throw new Error('Not implemented in test')
+      }),
       deleteById: mock(async () => true),
       incrementUsage: mock(async () => {}),
       updateExecutionStats: mock(async () => {}),
       findPopular: mock(async () => []),
-      updateStatus: mock(async () => ({}) as any),
-    } as any
+      updateStatus: mock(async () => {
+        throw new Error('Not implemented in test')
+      }),
+    }
 
     mockAttributeRepository = {
       // IFullRepository methods
-      save: mock(async (attr: any) => attr),
+      save: mock(async (attr: Attribute) => attr),
       findById: mock(async () => null),
       findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
+      findAll: mock(async () => emptyPage<Attribute>()),
       delete: mock(async () => {}),
       count: mock(async () => 0),
       exists: mock(async () => false),
       saveMany: mock(async () => {}),
       findByIds: mock(async () => []),
-      update: mock(async (attr: any) => attr),
+      update: mock(async () => {
+        throw new Error('Not implemented in test')
+      }),
       deleteMany: mock(async () => {}),
       // ITableScopedRepository methods
-      findByParentId: mock(async () => ({ data: [], metadata: {} })),
+      findByParentId: mock(async () => emptyPage<Attribute>()),
       countByParentId: mock(async () => 0),
       deleteByParentId: mock(async () => {}),
       // Attribute-specific methods
-      findByTableId: mock(async () => ({ data: [], metadata: {} })),
+      findByTableId: mock(async () => emptyPage<Attribute>()),
       countByTableId: mock(async () => 0),
       deleteByTableId: mock(async () => {}),
       findByTableIdAndIdentifier: mock(async () => null),
-      findByAttributeTypeId: mock(async () => ({ data: [], metadata: {} })),
+      findByAttributeTypeId: mock(async () => emptyPage<Attribute>()),
       findRequiredByTableId: mock(async () => []),
       getAttributeTypeForAttribute: mock(async () => null),
       existsByTableIdAndIdentifier: mock(async () => false),
-    } as any
+    }
 
     useCase = new CreateTableUseCase(
       mockTableRepository,
@@ -123,9 +141,9 @@ describe('CreateTableUseCase', () => {
 
     it('should throw ValidationException when identifier is null', async () => {
       const input: CreateTableInput = {
-        identifier: null as any,
+        identifier: null,
         description: 'Test Description',
-      }
+      } as unknown as CreateTableInput
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
       await expect(useCase.execute(input)).rejects.toThrow('Table identifier is required')
@@ -133,9 +151,9 @@ describe('CreateTableUseCase', () => {
 
     it('should throw ValidationException when identifier is undefined', async () => {
       const input: CreateTableInput = {
-        identifier: undefined as any,
+        identifier: undefined,
         description: 'Test Description',
-      }
+      } as unknown as CreateTableInput
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
       await expect(useCase.execute(input)).rejects.toThrow('Table identifier is required')
@@ -151,7 +169,7 @@ describe('CreateTableUseCase', () => {
 
       const existingTable = Table.fromDatabase('table-1', 'existing-table', 'Existing Table', new Date(), new Date())
 
-      mockTableRepository.findByIdentifier = mock(async () => existingTable as any)
+      mockTableRepository.findByIdentifier = mock(async () => existingTable)
 
       await expect(useCase.execute(input)).rejects.toThrow(ConflictException)
       await expect(useCase.execute(input)).rejects.toThrow("Table with identifier 'existing-table' already exists")

@@ -20,9 +20,9 @@ interface FullTemplate {
   query: string
   queryName: string[]
   operationType: string
-  variables: any
-  inputSchema: any
-  defaultVariables: any
+  variables: Record<string, unknown> | null
+  inputSchema: Record<string, unknown> | null
+  defaultVariables: Record<string, unknown> | null
   applicableTables: string[]
   complexityScore: number
   version: string
@@ -305,12 +305,15 @@ async function generateIndexFile(results: ExportResult[]) {
 | 파일명 | 템플릿명 | 설명 | 사용횟수 | 카테고리 | 운영타입 |
 |--------|----------|------|----------|----------|----------|
 ${successful
-  .map((result) => {
-    const template = result.template!
+  .flatMap((result) => {
+    const template = result.template
+    if (!template) {
+      return []
+    }
     const category = getCategory(template)
     const description = template.description || '설명 없음'
     const truncatedDesc = description.length > 50 ? `${description.substring(0, 50)}...` : description
-    return `| \`${result.filename}\` | ${template.name} | ${truncatedDesc} | ${template.usageCount}회 | ${category} | ${template.operationType} |`
+    return [`| \`${result.filename}\` | ${template.name} | ${truncatedDesc} | ${template.usageCount}회 | ${category} | ${template.operationType} |`]
   })
   .join('\n')}
 
@@ -319,7 +322,10 @@ ${successful
 ${(() => {
   const categories = successful.reduce(
     (acc, result) => {
-      const category = getCategory(result.template!)
+      if (!result.template) {
+        return acc
+      }
+      const category = getCategory(result.template)
       acc[category] = (acc[category] || 0) + 1
       return acc
     },

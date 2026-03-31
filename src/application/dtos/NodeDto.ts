@@ -1,22 +1,25 @@
 import type { BaseEntityDto, DeleteOutput, GetManyInput, WithDescription } from '@/core/types/UseCaseTypes.js'
 import type { Node } from '@/domain/entities/Node.js'
 import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 // Data Transfer Object for Node entity
 export interface NodeDto extends BaseEntityDto, WithDescription {
   tableId: string
   content: string
   title: string | null
-  attributes?: Record<string, any> // Will be populated with node attribute values
+  metadata?: SafeJsonValue | null
+  attributes?: Record<string, unknown> // Will be populated with node attribute values
 }
 
-export function fromEntity(node: Node, attributes?: Record<string, any>): NodeDto {
+export function fromEntity(node: Node, attributes?: Record<string, unknown>): NodeDto {
   return {
-    id: node.getId(),
-    tableId: node.getTableId(),
+    id: String(node.getId()),
+    tableId: String(node.getTableId()),
     content: node.getContent(),
     title: node.getTitle(),
     description: node.getDescription(),
+    metadata: node.getParsedMetadata(),
     createdAt: node.getCreatedAt().toISOString(),
     updatedAt: node.getUpdatedAt().toISOString(),
     attributes,
@@ -33,14 +36,16 @@ export interface CreateNodeInput {
   content: string
   title?: string
   description?: string
-  attributes?: Record<string, any>
+  metadata?: SafeJsonValue
+  attributes?: Record<string, unknown>
 }
 
 export interface UpdateNodeInput {
   title?: string | null
   content?: string
   description?: string | null
-  attributes?: Record<string, any>
+  metadata?: SafeJsonValue
+  attributes?: Record<string, unknown>
 }
 
 // Use generic GetManyInput with node-specific filters
@@ -76,14 +81,14 @@ export type DeleteNodeOutput = DeleteOutput
 export interface NodeAttributeDto extends BaseEntityDto {
   nodeId: string
   attributeId: string
-  value: any
+  value: SafeJsonValue | null
 }
 
 export function nodeAttributeFromEntity(nodeAttribute: NodeAttribute): NodeAttributeDto {
   return {
-    id: nodeAttribute.getId() || '',
-    nodeId: nodeAttribute.getNodeId(),
-    attributeId: nodeAttribute.getAttributeId(),
+    id: nodeAttribute.getId() ? String(nodeAttribute.getId()) : '',
+    nodeId: String(nodeAttribute.getNodeId()),
+    attributeId: String(nodeAttribute.getAttributeId()),
     value: nodeAttribute.getParsedValue(),
     createdAt: nodeAttribute.getCreatedAt().toISOString(),
     updatedAt: nodeAttribute.getUpdatedAt().toISOString(),

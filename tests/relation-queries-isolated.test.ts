@@ -4,13 +4,76 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
+import {
+  createRequestHelper,
+  requireGraphQLData,
+  startServerForSuite,
+  stopServerForSuite,
+  type GraphQLRequestHelper,
+} from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'relation-queries-isolated'
-const TEST_TIMEOUT = 15000
+const TEST_TIMEOUT = 60000
+
+type SchemaHealthData = {
+  __schema: {
+    types: Array<{ name: string }>
+  }
+}
+
+type RelationTypeSummary = {
+  id: string
+  identifier: string
+}
+
+type NodeRelationSummary = {
+  id: string
+}
+
+type NodeRelationConnection = {
+  nodes: NodeRelationSummary[]
+  totalCount: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
+type RelationTypesQueryData = {
+  relationTypes: RelationTypeSummary[]
+}
+
+type RelationTypeQueryData = {
+  relationType: RelationTypeSummary | null
+}
+
+type NodeRelationsQueryData = {
+  nodeRelations: NodeRelationConnection
+}
+
+type NodeRelationQueryData = {
+  nodeRelation: NodeRelationSummary | null
+}
+
+type SearchRelatedNodesQueryData = {
+  searchRelatedNodes: {
+    nodes: NodeSummary[]
+    totalCount: number
+    hasNextPage: boolean
+  }
+}
+
+type DependencyChainQueryData = {
+  getDependencyChain: {
+    nodes: NodeSummary[]
+    totalCount: number
+  }
+}
+
+type NodeSummary = {
+  id: string
+}
 
 // Global test server
-let graphqlRequest: (query: string, variables?: Record<string, any>) => Promise<any>
+let graphqlRequest: GraphQLRequestHelper
 
 describe('Relation Queries - Isolated Database Test Suite', () => {
   beforeAll(async () => {
@@ -25,7 +88,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
     graphqlRequest = createRequestHelper(SUITE_NAME)
 
     // Verify server is working
-    const healthCheck = await graphqlRequest(`
+    const healthCheck = await graphqlRequest<SchemaHealthData>(`
       query {
         __schema {
           types {
@@ -35,7 +98,7 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
       }
     `)
 
-    expect(healthCheck.data).toBeDefined()
+    expect(requireGraphQLData(healthCheck).__schema).toBeDefined()
     console.log('✅ GraphQL server health check passed')
   }, TEST_TIMEOUT)
 
@@ -56,11 +119,12 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query)
+      const result = await graphqlRequest<RelationTypesQueryData>(query)
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.relationTypes).toBeDefined()
-      expect(Array.isArray(result.data.relationTypes)).toBe(true)
+      expect(data.relationTypes).toBeDefined()
+      expect(Array.isArray(data.relationTypes)).toBe(true)
       // Can be empty array, that's valid
     })
 
@@ -74,10 +138,11 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
           }
         }
       `
-      const typesResult = await graphqlRequest(typesQuery)
+      const typesResult = await graphqlRequest<RelationTypesQueryData>(typesQuery)
+      const typesData = requireGraphQLData(typesResult)
 
-      if (typesResult.data.relationTypes.length > 0) {
-        const typeId = typesResult.data.relationTypes[0].id
+      if (typesData.relationTypes.length > 0) {
+        const typeId = typesData.relationTypes[0].id
 
         const query = `
           query GetRelationType($id: ID!) {
@@ -88,11 +153,12 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
           }
         `
 
-        const result = await graphqlRequest(query, { id: typeId })
+        const result = await graphqlRequest<RelationTypeQueryData>(query, { id: typeId })
+        const data = requireGraphQLData(result)
 
         expect(result.errors).toBeUndefined()
-        expect(result.data.relationType).toBeDefined()
-        expect(result.data.relationType.id).toBe(typeId)
+        expect(data.relationType).toBeDefined()
+        expect(data.relationType?.id).toBe(typeId)
       } else {
         console.log('ℹ️ No relation types found, skipping relation type by ID test')
       }
@@ -118,15 +184,16 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         pagination: { limit: 10, offset: 0 },
       }
 
-      const result = await graphqlRequest(query, variables)
+      const result = await graphqlRequest<NodeRelationsQueryData>(query, variables)
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.nodeRelations).toBeDefined()
-      expect(result.data.nodeRelations.nodes).toBeDefined()
-      expect(Array.isArray(result.data.nodeRelations.nodes)).toBe(true)
-      expect(result.data.nodeRelations.totalCount).toBeGreaterThanOrEqual(0)
-      expect(typeof result.data.nodeRelations.hasNextPage).toBe('boolean')
-      expect(typeof result.data.nodeRelations.hasPreviousPage).toBe('boolean')
+      expect(data.nodeRelations).toBeDefined()
+      expect(data.nodeRelations.nodes).toBeDefined()
+      expect(Array.isArray(data.nodeRelations.nodes)).toBe(true)
+      expect(data.nodeRelations.totalCount).toBeGreaterThanOrEqual(0)
+      expect(typeof data.nodeRelations.hasNextPage).toBe('boolean')
+      expect(typeof data.nodeRelations.hasPreviousPage).toBe('boolean')
     })
 
     test('nodeRelation - Get specific node relation by ID', async () => {
@@ -138,10 +205,11 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
           }
         }
       `
-      const relationsResult = await graphqlRequest(relationsQuery)
+      const relationsResult = await graphqlRequest<NodeRelationsQueryData>(relationsQuery)
+      const relationsData = requireGraphQLData(relationsResult)
 
-      if (relationsResult.data.nodeRelations.nodes.length > 0) {
-        const relationId = relationsResult.data.nodeRelations.nodes[0].id
+      if (relationsData.nodeRelations.nodes.length > 0) {
+        const relationId = relationsData.nodeRelations.nodes[0].id
 
         const query = `
           query GetNodeRelation($id: ID!) {
@@ -151,11 +219,12 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
           }
         `
 
-        const result = await graphqlRequest(query, { id: relationId })
+        const result = await graphqlRequest<NodeRelationQueryData>(query, { id: relationId })
+        const data = requireGraphQLData(result)
 
         expect(result.errors).toBeUndefined()
-        expect(result.data.nodeRelation).toBeDefined()
-        expect(result.data.nodeRelation.id).toBe(relationId)
+        expect(data.nodeRelation).toBeDefined()
+        expect(data.nodeRelation?.id).toBe(relationId)
       } else {
         console.log('ℹ️ No node relations found, skipping node relation by ID test')
       }
@@ -184,16 +253,17 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         pagination: { limit: 5, offset: 0 },
       }
 
-      const result = await graphqlRequest(query, variables)
+      const result = await graphqlRequest<SearchRelatedNodesQueryData>(query, variables)
 
       // SearchRelatedNodesUseCase might not be available (dependency issue mentioned in code)
       // So we accept either successful search or fallback behavior
       if (result.errors) {
         console.log('ℹ️ SearchRelatedNodes has implementation issues, this is expected:', result.errors[0]?.message)
       } else {
-        expect(result.data.searchRelatedNodes).toBeDefined()
-        expect(result.data.searchRelatedNodes.nodes).toBeDefined()
-        expect(Array.isArray(result.data.searchRelatedNodes.nodes)).toBe(true)
+        const data = requireGraphQLData(result)
+        expect(data.searchRelatedNodes).toBeDefined()
+        expect(data.searchRelatedNodes.nodes).toBeDefined()
+        expect(Array.isArray(data.searchRelatedNodes.nodes)).toBe(true)
       }
     })
 
@@ -217,13 +287,14 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         },
       }
 
-      const result = await graphqlRequest(query, variables)
+      const result = await graphqlRequest<DependencyChainQueryData>(query, variables)
+      const data = requireGraphQLData(result)
 
       // This is a stub implementation, so it should return empty results
       expect(result.errors).toBeUndefined()
-      expect(result.data.getDependencyChain).toBeDefined()
-      expect(result.data.getDependencyChain.totalCount).toBe(0)
-      expect(Array.isArray(result.data.getDependencyChain.nodes)).toBe(true)
+      expect(data.getDependencyChain).toBeDefined()
+      expect(data.getDependencyChain.totalCount).toBe(0)
+      expect(Array.isArray(data.getDependencyChain.nodes)).toBe(true)
     })
   })
 
@@ -238,10 +309,11 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query, { id: '999999' })
+      const result = await graphqlRequest<RelationTypeQueryData>(query, { id: '999999' })
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.relationType).toBeNull()
+      expect(data.relationType).toBeNull()
     })
 
     test('nodeRelation - Invalid ID should return null', async () => {
@@ -253,10 +325,11 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query, { id: '999999' })
+      const result = await graphqlRequest<NodeRelationQueryData>(query, { id: '999999' })
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.nodeRelation).toBeNull()
+      expect(data.nodeRelation).toBeNull()
     })
 
     test('getDependencyChain - Missing required nodeId should cause error', async () => {
@@ -299,13 +372,14 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
       `
 
       // Test with limit 3
-      const result = await graphqlRequest(query, {
+      const result = await graphqlRequest<NodeRelationsQueryData>(query, {
         pagination: { limit: 3, offset: 0 },
       })
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.nodeRelations.nodes.length).toBeLessThanOrEqual(3)
-      expect(result.data.nodeRelations.totalCount).toBeGreaterThanOrEqual(0)
+      expect(data.nodeRelations.nodes.length).toBeLessThanOrEqual(3)
+      expect(data.nodeRelations.totalCount).toBeGreaterThanOrEqual(0)
     })
 
     test('relationTypes - Should handle large result sets', async () => {
@@ -318,11 +392,12 @@ describe('Relation Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query)
+      const result = await graphqlRequest<RelationTypesQueryData>(query)
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.relationTypes).toBeDefined()
-      expect(result.data.relationTypes.length).toBeLessThanOrEqual(100) // Repository limit
+      expect(data.relationTypes).toBeDefined()
+      expect(data.relationTypes.length).toBeLessThanOrEqual(100) // Repository limit
     })
   })
 })

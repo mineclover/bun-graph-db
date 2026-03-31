@@ -160,9 +160,46 @@ export abstract class BaseResolver {
       return {
         requestId: this.generateRequestId(),
         startTime: new Date(),
+        requestCache: new Map(),
       }
     }
+
+    if (!context.requestCache) {
+      context.requestCache = new Map()
+    }
+
     return context
+  }
+
+  /**
+   * Cache repeated entity lookups for the lifetime of a single GraphQL request.
+   * This trims a large amount of duplicate repository work from nested field resolution.
+   */
+  protected withRequestCache<T>(
+    context: GraphQLContext | undefined,
+    namespace: string,
+    key: string | null | undefined,
+    loader: () => Promise<T>,
+  ): Promise<T> {
+    if (!key) {
+      return loader()
+    }
+
+    const resolvedContext = this.extractContext(context)
+    const cacheKey = `${namespace}:${key}`
+    const cached = resolvedContext.requestCache?.get(cacheKey) as Promise<T> | undefined
+
+    if (cached) {
+      return cached
+    }
+
+    const promise = loader().catch((error) => {
+      resolvedContext.requestCache?.delete(cacheKey)
+      throw error
+    })
+
+    resolvedContext.requestCache?.set(cacheKey, promise as Promise<unknown>)
+    return promise
   }
 
   /**
@@ -286,7 +323,13 @@ export abstract class BaseResolver {
    * Helper method to get nested object values
    */
   private static getNestedValue(obj: Record<string, unknown>, path: string): unknown {
-    return path.split('.').reduce((current: any, key) => current?.[key], obj)
+    return path.split('.').reduce<unknown>((current, key) => {
+      if (typeof current !== 'object' || current === null) {
+        return undefined
+      }
+
+      return (current as Record<string, unknown>)[key]
+    }, obj)
   }
 
   /**

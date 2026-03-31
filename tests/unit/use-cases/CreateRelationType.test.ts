@@ -4,9 +4,20 @@ import {
   type CreateRelationTypeInput,
   CreateRelationTypeUseCase,
 } from '@/application/use-cases/relations/CreateRelationType.js'
+import type { RelationType } from '@/domain/entities/RelationType.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { ConflictException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { createTestRelationType } from './test-helpers.js'
+
+function emptyPage<T>() {
+  return {
+    data: [] as T[],
+    nodes: [] as T[],
+    totalCount: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  }
+}
 
 describe('CreateRelationTypeUseCase', () => {
   let useCase: CreateRelationTypeUseCase
@@ -24,13 +35,18 @@ describe('CreateRelationTypeUseCase', () => {
 
     // Mock repository
     mockRelationTypeRepository = {
-      save: mock(async (relationType) => relationType),
+      save: mock(async (relationType: RelationType) => relationType),
       findById: mock(async () => null),
       findByIdentifier: mock(async () => null),
-      update: mock(async (relationType) => relationType),
+      update: mock(async () => {}),
       delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-    } as any
+      findAll: mock(async () => emptyPage<RelationType>()),
+      count: mock(async () => 0),
+      exists: mock(async () => false),
+      saveMany: mock(async () => {}),
+      findByIds: mock(async () => []),
+      deleteMany: mock(async () => {}),
+    } as unknown as IRelationTypeRepository
 
     useCase = new CreateRelationTypeUseCase(mockRelationTypeRepository, mockLogger)
   })

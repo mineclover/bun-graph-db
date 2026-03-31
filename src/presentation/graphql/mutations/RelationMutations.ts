@@ -12,10 +12,12 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import { sanitizeJsonValue, type SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export class RelationMutations extends BaseResolver {
   protected logger: ILogger
@@ -24,6 +26,7 @@ export class RelationMutations extends BaseResolver {
     private readonly createRelationUseCase: CreateRelationUseCase,
     private readonly createRelationTypeUseCase: CreateRelationTypeUseCase,
     private readonly nodeRelationRepository: INodeRelationRepository,
+    private readonly nodeRepository: INodeRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
     logger: ILogger,
   ) {
@@ -34,13 +37,11 @@ export class RelationMutations extends BaseResolver {
   async createRelationType(_: GraphQLParent, args: CreateRelationTypeArgs, _context?: GraphQLContext) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('input', 'Create relation type input'),
           BaseResolver.validationRules.required('input.identifier', 'Relation type identifier'),
-          BaseResolver.validationRules.required('input.name', 'Relation type name'),
           BaseResolver.validationRules.nonEmpty('input.identifier', 'Relation type identifier'),
-          BaseResolver.validationRules.nonEmpty('input.name', 'Relation type name'),
         ],
         'createRelationType',
       )
@@ -50,14 +51,14 @@ export class RelationMutations extends BaseResolver {
       const result = await this.createRelationTypeUseCase.execute({
         identifier: args.input.identifier,
         description: args.input.description,
-        category: args.input.name, // Map name to category for now
+        category: args.input.name || args.input.identifier, // Map name to category for now
       })
 
       return {
         success: true,
         relationType: {
           ...result.relationType,
-          name: args.input.name, // Add the name field from input
+          name: args.input.name || args.input.identifier, // Add the name field from input
         },
         errors: [],
       }
@@ -82,8 +83,40 @@ export class RelationMutations extends BaseResolver {
 
   async createRelation(_: GraphQLParent, args: CreateRelationArgs, _context?: GraphQLContext) {
     try {
+      const sourceNodeId = args.input.sourceNodeId || args.input.fromNodeId
+      const targetNodeId = args.input.targetNodeId || args.input.toNodeId
+      let resolvedRelationTypeId =
+        args.input.relationTypeId ||
+        (args.input.relationshipType
+          ? (await this.relationTypeRepository.findByIdentifier(args.input.relationshipType))?.getId() || undefined
+          : undefined)
+
+      if (!resolvedRelationTypeId && args.input.relationshipType) {
+        try {
+          const createdRelationType = await this.createRelationTypeUseCase.execute({
+            identifier: args.input.relationshipType,
+            category: args.input.relationshipType,
+          })
+          resolvedRelationTypeId = createdRelationType.relationType.id
+        } catch {
+          resolvedRelationTypeId =
+            (await this.relationTypeRepository.findByIdentifier(args.input.relationshipType))?.getId() || undefined
+        }
+      }
+      const resolvedTableId =
+        args.input.tableId || (sourceNodeId ? (await this.nodeRepository.findById(sourceNodeId))?.getTableId() : undefined)
+
       this.validateArgs(
-        args as any,
+        {
+          ...args,
+          input: {
+            ...args.input,
+            tableId: resolvedTableId,
+            sourceNodeId,
+            targetNodeId,
+            relationTypeId: resolvedRelationTypeId,
+          },
+        } as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('input', 'Create relation input'),
           BaseResolver.validationRules.required('input.sourceNodeId', 'Source node ID'),
@@ -96,18 +129,31 @@ export class RelationMutations extends BaseResolver {
         'createRelation',
       )
 
+      if (!resolvedTableId || !resolvedRelationTypeId) {
+        throw new ValidationException('Table ID and relation type ID are required')
+      }
+
       this.logger.info('Executing mutation: createRelation', { input: args.input })
 
       const result = await this.createRelationUseCase.execute({
-        tableId: args.input.tableId,
-        sourceNodeId: args.input.sourceNodeId,
-        targetNodeId: args.input.targetNodeId,
-        relationTypeId: args.input.relationTypeId,
+        tableId: resolvedTableId,
+        sourceNodeId,
+        targetNodeId,
+        relationTypeId: resolvedRelationTypeId,
+        properties: args.input.properties
+          ? (sanitizeJsonValue(args.input.properties) as Record<string, SafeJsonValue>)
+          : undefined,
+        strength: args.input.strength,
       })
 
       return {
         success: true,
-        relation: result.relation,
+        relation: {
+          ...result.relation,
+          fromNodeId: sourceNodeId,
+          toNodeId: targetNodeId,
+          relationshipType: args.input.relationshipType || resolvedRelationTypeId,
+        },
         errors: [],
       }
     } catch (error) {
@@ -172,7 +218,7 @@ export class RelationMutations extends BaseResolver {
   async updateRelationType(_: GraphQLParent, args: MutationUpdateRelationTypeArgs, _context?: GraphQLContext) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('id', 'Relation type ID'),
           BaseResolver.validationRules.required('input', 'Update relation type input'),
@@ -188,9 +234,14 @@ export class RelationMutations extends BaseResolver {
         throw new NotFoundException('Relation type not found')
       }
 
+      const existingRelationTypeId = existingRelationType.getId()
+      if (!existingRelationTypeId) {
+        throw new ValidationException('Relation type ID is required')
+      }
+
       // Create updated RelationType entity
       const updatedRelationType = RelationType.fromDatabase(
-        existingRelationType.getId()!,
+        existingRelationTypeId,
         existingRelationType.getIdentifier(),
         args.input.description !== undefined ? args.input.description : existingRelationType.getDescription(),
         args.input.name || existingRelationType.getCategory(),
@@ -259,10 +310,88 @@ export class RelationMutations extends BaseResolver {
     }
   }
 
+  async batchCreateRelations(
+    _: GraphQLParent,
+    args: {
+      relations: Array<
+        CreateRelationArgs['input'] & {
+          fromNodeId?: string
+          toNodeId?: string
+          relationshipType?: string
+        }
+      >
+    },
+  ) {
+    const results: Array<{ relation: Record<string, unknown> | null; errors: string[] }> = []
+    let totalCreated = 0
+    let totalFailed = 0
+
+    for (const relationInput of args.relations || []) {
+      try {
+        if (relationInput.relationshipType && !relationInput.relationTypeId) {
+          let relationType = await this.relationTypeRepository.findByIdentifier(relationInput.relationshipType)
+          if (!relationType) {
+            try {
+              const createdRelationType = await this.createRelationTypeUseCase.execute({
+                identifier: relationInput.relationshipType,
+                description: `${relationInput.relationshipType} relation`,
+                category: relationInput.relationshipType,
+              })
+              relationType = await this.relationTypeRepository.findById(createdRelationType.relationType.id)
+            } catch {
+              relationType = await this.relationTypeRepository.findByIdentifier(relationInput.relationshipType)
+            }
+          }
+
+          relationInput.relationTypeId = relationType?.getId()
+        }
+
+        const result = await this.createRelation(_, { input: relationInput })
+        if (result.success && result.relation) {
+          totalCreated++
+          let relationshipType = relationInput.relationshipType || relationInput.relationTypeId
+          if (result.relation.relationTypeId && !relationInput.relationshipType) {
+            const relationType = await this.relationTypeRepository.findById(result.relation.relationTypeId)
+            relationshipType = relationType?.getIdentifier() || result.relation.relationTypeId
+          }
+          results.push({
+            relation: {
+              id: result.relation.id,
+              fromNodeId: relationInput.fromNodeId || relationInput.sourceNodeId || result.relation.sourceNodeId,
+              toNodeId: relationInput.toNodeId || relationInput.targetNodeId || result.relation.targetNodeId,
+              relationshipType,
+              tableId: relationInput.tableId || result.relation.tableId,
+            },
+            errors: [],
+          })
+        } else {
+          totalFailed++
+          results.push({
+            relation: null,
+            errors: (result.errors || []).map((error) => error.message),
+          })
+        }
+      } catch (error) {
+        totalFailed++
+        results.push({
+          relation: null,
+          errors: [error instanceof Error ? error.message : 'Unknown error'],
+        })
+      }
+    }
+
+    return {
+      success: totalFailed === 0,
+      results,
+      totalCreated,
+      totalFailed,
+    }
+  }
+
   async deleteRelationType(_: GraphQLParent, args: MutationDeleteRelationTypeArgs, _context?: GraphQLContext) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('id', 'Relation type ID'),
           BaseResolver.validationRules.nonEmpty('id', 'Relation type ID'),
@@ -315,7 +444,7 @@ export class RelationMutations extends BaseResolver {
 
   async deleteRelation(_: GraphQLParent, args: DeleteRelationArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('id', 'Relation ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Relation ID'),

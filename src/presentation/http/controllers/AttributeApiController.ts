@@ -4,8 +4,58 @@ import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 import type { AttributeData, NodeAttributeData, TableAttributesData } from '../types/ApiResponseTypes.js'
 import { ResponseHelper } from '../utils/responseHelpers.js'
+
+type AttributeBodyRequest<TBody> = Request<Record<string, string>, unknown, TBody>
+type AttributeRequest<TParams extends object, TBody = unknown> = Request<TParams, unknown, TBody>
+
+interface SetNodeAttributeBody {
+  input?: {
+    nodeId?: string
+    attributeId?: string
+    value?: SafeJsonValue
+  }
+}
+
+interface CreateAttributeBody {
+  tableId?: string
+  identifier?: string
+  attributeTypeId?: string
+  description?: string
+  isRequired?: boolean
+  metadata?: object | null
+}
+
+interface UpdateAttributeParams {
+  attributeId?: string
+}
+
+interface UpdateAttributeBody {
+  description?: string | null
+  isRequired?: boolean
+  metadata?: object | null
+}
+
+interface TableParams {
+  tableId?: string
+}
+
+interface NodeParams {
+  nodeId?: string
+}
+
+interface RemoveNodeAttributeBody {
+  nodeId?: string
+  attributeId?: string
+}
+
+interface UpdateNodeAttributeValueBody {
+  nodeId?: string
+  attributeId?: string
+  value?: string
+}
 
 export class AttributeApiController {
   private responseHelper: ResponseHelper
@@ -19,11 +69,11 @@ export class AttributeApiController {
     this.responseHelper = new ResponseHelper(logger)
   }
 
-  async setNodeAttribute(req: Request, res: Response): Promise<void> {
+  async setNodeAttribute(req: AttributeBodyRequest<SetNodeAttributeBody>, res: Response): Promise<void> {
     try {
       const { input } = req.body
 
-      if (!input || !input.nodeId || !input.attributeId || input.value === undefined) {
+      if (!input?.nodeId || !input.attributeId || input.value === undefined) {
         this.responseHelper.validationError(res, 'input with nodeId, attributeId, and value is required')
         return
       }
@@ -50,9 +100,9 @@ export class AttributeApiController {
     }
   }
 
-  async createAttribute(req: Request, res: Response): Promise<void> {
+  async createAttribute(req: AttributeBodyRequest<CreateAttributeBody>, res: Response): Promise<void> {
     try {
-      const { tableId, identifier, attributeTypeId = '1' } = req.body
+      const { tableId, identifier, attributeTypeId = '1', description, isRequired = false, metadata } = req.body
 
       if (!tableId || !identifier) {
         this.responseHelper.validationError(res, 'tableId and identifier are required')
@@ -64,9 +114,9 @@ export class AttributeApiController {
         tableId: tableId as TableId,
         identifier,
         attributeTypeId: attributeTypeId as AttributeId,
-        description: req.body.description,
-        isRequired: req.body.isRequired || false,
-        metadata: req.body.metadata,
+        description,
+        isRequired,
+        metadata: metadata ?? undefined,
       })
 
       const result: AttributeData = {
@@ -83,7 +133,10 @@ export class AttributeApiController {
     }
   }
 
-  async updateAttribute(req: Request, res: Response): Promise<void> {
+  async updateAttribute(
+    req: AttributeRequest<UpdateAttributeParams, UpdateAttributeBody>,
+    res: Response,
+  ): Promise<void> {
     try {
       const { attributeId } = req.params
       const { description, isRequired, metadata } = req.body
@@ -133,7 +186,7 @@ export class AttributeApiController {
     }
   }
 
-  async deleteAttribute(req: Request, res: Response): Promise<void> {
+  async deleteAttribute(req: AttributeRequest<UpdateAttributeParams>, res: Response): Promise<void> {
     try {
       const { attributeId } = req.params
 
@@ -162,7 +215,7 @@ export class AttributeApiController {
     }
   }
 
-  async getTableAttributes(req: Request, res: Response): Promise<void> {
+  async getTableAttributes(req: AttributeRequest<TableParams>, res: Response): Promise<void> {
     try {
       const { tableId } = req.params
 
@@ -192,7 +245,7 @@ export class AttributeApiController {
     }
   }
 
-  async removeNodeAttribute(req: Request, res: Response): Promise<void> {
+  async removeNodeAttribute(req: AttributeBodyRequest<RemoveNodeAttributeBody>, res: Response): Promise<void> {
     try {
       const { nodeId, attributeId } = req.body
 
@@ -231,7 +284,10 @@ export class AttributeApiController {
     }
   }
 
-  async updateNodeAttributeValue(req: Request, res: Response): Promise<void> {
+  async updateNodeAttributeValue(
+    req: AttributeBodyRequest<UpdateNodeAttributeValueBody>,
+    res: Response,
+  ): Promise<void> {
     try {
       const { nodeId, attributeId, value } = req.body
 
@@ -267,7 +323,7 @@ export class AttributeApiController {
     }
   }
 
-  async getNodeAttributes(req: Request, res: Response): Promise<void> {
+  async getNodeAttributes(req: AttributeRequest<NodeParams>, res: Response): Promise<void> {
     try {
       const { nodeId } = req.params
 

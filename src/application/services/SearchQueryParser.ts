@@ -9,8 +9,23 @@ export interface AttributeTypeInfo {
   dataType: string
 }
 
+type SearchValueType = SearchFilter['valueType']
+
 export class SearchQueryParser {
   constructor(private readonly availableAttributes: AttributeTypeInfo[]) {}
+
+  private normalizeValueType(dataType: string): SearchValueType {
+    switch (dataType) {
+      case 'number':
+      case 'datetime':
+      case 'json':
+      case 'boolean':
+      case 'string':
+        return dataType
+      default:
+        return 'string'
+    }
+  }
 
   parse(queryString: string): SearchQuery {
     if (!queryString || queryString.trim().length === 0) {
@@ -107,10 +122,10 @@ export class SearchQueryParser {
     }
 
     // Parse value and operator based on attribute type
-    return this.parseValueAndOperator(field, valueString, attributeInfo.dataType)
+    return this.parseValueAndOperator(field, valueString, this.normalizeValueType(attributeInfo.dataType))
   }
 
-  private parseValueAndOperator(field: string, valueString: string, dataType: string): SearchFilter {
+  private parseValueAndOperator(field: string, valueString: string, dataType: SearchValueType): SearchFilter {
     // Handle comparison operators for numbers and dates
     if (dataType === 'number' || dataType === 'datetime') {
       if (valueString.startsWith('>=')) {
@@ -118,28 +133,28 @@ export class SearchQueryParser {
           field,
           operator: SearchOperator.GREATER_THAN_OR_EQUAL,
           value: this.parseValue(valueString.substring(2).trim(), dataType),
-          valueType: dataType as any,
+          valueType: dataType,
         }
       } else if (valueString.startsWith('<=')) {
         return {
           field,
           operator: SearchOperator.LESS_THAN_OR_EQUAL,
           value: this.parseValue(valueString.substring(2).trim(), dataType),
-          valueType: dataType as any,
+          valueType: dataType,
         }
       } else if (valueString.startsWith('>')) {
         return {
           field,
           operator: SearchOperator.GREATER_THAN,
           value: this.parseValue(valueString.substring(1).trim(), dataType),
-          valueType: dataType as any,
+          valueType: dataType,
         }
       } else if (valueString.startsWith('<')) {
         return {
           field,
           operator: SearchOperator.LESS_THAN,
           value: this.parseValue(valueString.substring(1).trim(), dataType),
-          valueType: dataType as any,
+          valueType: dataType,
         }
       } else if (valueString.includes('..')) {
         // Range: 80..95
@@ -148,7 +163,7 @@ export class SearchQueryParser {
           field,
           operator: SearchOperator.RANGE,
           value: { min, max } as RangeValue,
-          valueType: dataType as any,
+          valueType: dataType,
         }
       }
     }
@@ -185,7 +200,7 @@ export class SearchQueryParser {
         field,
         operator: SearchOperator.EQUALS,
         value: valueString.slice(1, -1),
-        valueType: dataType as any,
+        valueType: dataType,
       }
     }
 
@@ -194,11 +209,11 @@ export class SearchQueryParser {
       field,
       operator: SearchOperator.EQUALS,
       value: this.parseValue(valueString, dataType),
-      valueType: dataType as any,
+      valueType: dataType,
     }
   }
 
-  private parseValue(value: string, dataType: string): any {
+  private parseValue(value: string, dataType: SearchValueType): unknown {
     switch (dataType) {
       case 'number': {
         const num = Number(value)

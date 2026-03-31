@@ -9,7 +9,18 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
+import {
+  enableLegacyAiMetadataCompatibility,
+  type IsolatedTestContext,
+  setupIntegrationTest,
+} from '../fixtures/test-isolation-helpers'
+import {
+  insertAttribute,
+  insertNode,
+  insertNodeAttributes,
+  insertTable,
+  insertTemplate,
+} from '../fixtures/ai-metadata-fixtures'
 
 const SUITE_NAME = 'ai-metadata-integration'
 let testContext: IsolatedTestContext
@@ -18,6 +29,7 @@ describe('AIMetadata Integration Tests', () => {
   beforeAll(async () => {
     console.log('🚀 Setting up AIMetadata integration test environment...')
     testContext = await setupIntegrationTest(SUITE_NAME)
+    enableLegacyAiMetadataCompatibility(testContext.database?.database.getConnection())
     console.log('✅ AIMetadata integration test environment ready')
     console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
     console.log(`💾 Database: ${testContext.database?.databasePath}`)
@@ -126,36 +138,74 @@ describe('AIMetadata Integration Tests', () => {
       const db = testContext.database?.database.getConnection()
 
       // Create test table
-      const tableId = `test-table-${Date.now()}`
-      db.exec(`
-        INSERT INTO tables (id, identifier, name, description, created_at, updated_at)
-        VALUES ('${tableId}', 'test-users', 'Test Users', 'Test user table for AIMetadata', datetime('now'), datetime('now'))
-      `)
+      const table = insertTable(db as any, {
+        identifier: 'test-users',
+        description: 'Test user table for AIMetadata',
+      })
+      const tableId = table.id
 
-      // Create test attributes
-      db.exec(`
-        INSERT INTO attributes (id, table_id, identifier, name, attribute_type_id, required, searchable, created_at)
-        VALUES
-        ('attr-1-${tableId}', '${tableId}', 'name', 'Full Name', 'text', 1, 1, datetime('now')),
-        ('attr-2-${tableId}', '${tableId}', 'email', 'Email Address', 'email', 1, 1, datetime('now')),
-        ('attr-3-${tableId}', '${tableId}', 'age', 'Age', 'number', 0, 0, datetime('now'))
-      `)
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'name',
+        name: 'Full Name',
+        attributeTypeIdentifier: 'text',
+        required: true,
+        searchable: true,
+      })
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'email',
+        name: 'Email Address',
+        attributeTypeIdentifier: 'email',
+        required: true,
+        searchable: true,
+      })
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'age',
+        name: 'Age',
+        attributeTypeIdentifier: 'number',
+        required: false,
+        searchable: false,
+      })
 
-      // Create test templates
-      db.exec(`
-        INSERT INTO templates (id, identifier, name, description, query, table_id, created_at)
-        VALUES
-        ('template-1-${tableId}', 'create-test-user', 'Create Test User', 'Creates a test user', 'INSERT INTO...', '${tableId}', datetime('now')),
-        ('template-2-${tableId}', 'update-test-user', 'Update Test User', 'Updates a test user', 'UPDATE...', '${tableId}', datetime('now'))
-      `)
+      insertTemplate(db as any, {
+        identifier: 'create-test-user',
+        name: 'Create Test User',
+        description: 'Creates a test user',
+        query: 'query CreateTestUser { healthCheck { status } }',
+        tableId,
+        tableIdentifier: table.identifier,
+      })
+      insertTemplate(db as any, {
+        identifier: 'update-test-user',
+        name: 'Update Test User',
+        description: 'Updates a test user',
+        query: 'query UpdateTestUser { healthCheck { status } }',
+        tableId,
+        tableIdentifier: table.identifier,
+      })
 
-      // Create sample nodes
-      db.exec(`
-        INSERT INTO nodes (id, table_id, title, content, created_at)
-        VALUES
-        ('node-1-${tableId}', '${tableId}', 'John Doe', 'Software Engineer', datetime('now')),
-        ('node-2-${tableId}', '${tableId}', 'Jane Smith', 'Product Manager', datetime('now'))
-      `)
+      const john = insertNode(db as any, { tableId, title: 'John Doe', content: 'Software Engineer' })
+      const jane = insertNode(db as any, { tableId, title: 'Jane Smith', content: 'Product Manager' })
+      insertNodeAttributes(db as any, {
+        nodeId: john.id,
+        tableId,
+        values: {
+          name: 'John Doe',
+          email: 'john.doe@company.com',
+          age: '30',
+        },
+      })
+      insertNodeAttributes(db as any, {
+        nodeId: jane.id,
+        tableId,
+        values: {
+          name: 'Jane Smith',
+          email: 'jane.smith@company.com',
+          age: '28',
+        },
+      })
 
       // Query AIMetadata through GraphQL
       const query = `
@@ -257,18 +307,19 @@ describe('AIMetadata Integration Tests', () => {
       const db = testContext.database?.database.getConnection()
 
       // Create table with multiple nodes
-      const tableId = `sample-test-${Date.now()}`
-      db.exec(`
-        INSERT INTO tables (id, identifier, name, created_at, updated_at)
-        VALUES ('${tableId}', 'sample-test', 'Sample Test Table', datetime('now'), datetime('now'))
-      `)
+      const table = insertTable(db as any, {
+        identifier: 'sample-test',
+        description: 'Sample Test Table',
+      })
+      const tableId = table.id
 
       // Create multiple sample nodes
       for (let i = 1; i <= 10; i++) {
-        db.exec(`
-          INSERT INTO nodes (id, table_id, title, content, created_at)
-          VALUES ('node-${i}-${tableId}', '${tableId}', 'Sample ${i}', 'Content ${i}', datetime('now'))
-        `)
+        insertNode(db as any, {
+          tableId,
+          title: `Sample ${i}`,
+          content: `Content ${i}`,
+        })
       }
 
       // Query with specific sample limit
@@ -302,21 +353,22 @@ describe('AIMetadata Integration Tests', () => {
   describe('Performance and Scalability', () => {
     test('should handle large tables efficiently', async () => {
       const db = testContext.database?.database.getConnection()
-      const tableId = `large-table-${Date.now()}`
-
-      // Create table with many attributes
-      db.exec(`
-        INSERT INTO tables (id, identifier, name, created_at, updated_at)
-        VALUES ('${tableId}', 'large-table', 'Large Table Test', datetime('now'), datetime('now'))
-      `)
+      const table = insertTable(db as any, {
+        identifier: 'large-table',
+        description: 'Large Table Test',
+      })
+      const tableId = table.id
 
       // Create many attributes
       for (let i = 1; i <= 50; i++) {
-        db.exec(`
-          INSERT INTO attributes (id, table_id, identifier, name, attribute_type_id, required, searchable, created_at)
-          VALUES
-          ('attr-${i}-${tableId}', '${tableId}', 'field_${i}', 'Field ${i}', 'text', ${i <= 10 ? 1 : 0}, ${i % 2}, datetime('now'))
-        `)
+        insertAttribute(db as any, {
+          tableId,
+          identifier: `field_${i}`,
+          name: `Field ${i}`,
+          attributeTypeIdentifier: 'text',
+          required: i <= 10,
+          searchable: i % 2 === 1,
+        })
       }
 
       const startTime = performance.now()
@@ -356,18 +408,20 @@ describe('AIMetadata Integration Tests', () => {
 
       // Create multiple test tables
       for (let i = 1; i <= 5; i++) {
-        const tableId = `concurrent-table-${i}-${Date.now()}`
-        tableIds.push(tableId)
+        const table = insertTable(db as any, {
+          identifier: `concurrent-${i}`,
+          description: `Concurrent Test ${i}`,
+        })
+        tableIds.push(table.id)
 
-        db.exec(`
-          INSERT INTO tables (id, identifier, name, created_at, updated_at)
-          VALUES ('${tableId}', 'concurrent-${i}', 'Concurrent Test ${i}', datetime('now'), datetime('now'))
-        `)
-
-        db.exec(`
-          INSERT INTO attributes (id, table_id, identifier, name, attribute_type_id, required, searchable, created_at)
-          VALUES ('attr-${tableId}', '${tableId}', 'name', 'Name', 'text', 1, 1, datetime('now'))
-        `)
+        insertAttribute(db as any, {
+          tableId: table.id,
+          identifier: 'name',
+          name: 'Name',
+          attributeTypeIdentifier: 'text',
+          required: true,
+          searchable: true,
+        })
       }
 
       const query = `
@@ -405,12 +459,11 @@ describe('AIMetadata Integration Tests', () => {
 
     test('should cache AIMetadata appropriately', async () => {
       const db = testContext.database?.database.getConnection()
-      const tableId = `cache-test-${Date.now()}`
-
-      db.exec(`
-        INSERT INTO tables (id, identifier, name, created_at, updated_at)
-        VALUES ('${tableId}', 'cache-test', 'Cache Test Table', datetime('now'), datetime('now'))
-      `)
+      const table = insertTable(db as any, {
+        identifier: 'cache-test',
+        description: 'Cache Test Table',
+      })
+      const tableId = table.id
 
       const query = `
         query GetTableAIMetadata($tableId: ID!) {
@@ -447,22 +500,45 @@ describe('AIMetadata Integration Tests', () => {
   describe('Data Quality and Validation', () => {
     test('should provide accurate schema information', async () => {
       const db = testContext.database?.database.getConnection()
-      const tableId = `accuracy-test-${Date.now()}`
-
-      db.exec(`
-        INSERT INTO tables (id, identifier, name, created_at, updated_at)
-        VALUES ('${tableId}', 'accuracy-test', 'Accuracy Test', datetime('now'), datetime('now'))
-      `)
+      const table = insertTable(db as any, {
+        identifier: 'accuracy-test',
+        description: 'Accuracy Test',
+      })
+      const tableId = table.id
 
       // Create attributes with specific characteristics
-      db.exec(`
-        INSERT INTO attributes (id, table_id, identifier, name, attribute_type_id, required, searchable, created_at)
-        VALUES
-        ('req-field-${tableId}', '${tableId}', 'required_field', 'Required Field', 'text', 1, 0, datetime('now')),
-        ('search-field-${tableId}', '${tableId}', 'searchable_field', 'Searchable Field', 'text', 0, 1, datetime('now')),
-        ('both-field-${tableId}', '${tableId}', 'both_field', 'Required and Searchable', 'text', 1, 1, datetime('now')),
-        ('neither-field-${tableId}', '${tableId}', 'neither_field', 'Neither Required nor Searchable', 'text', 0, 0, datetime('now'))
-      `)
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'required_field',
+        name: 'Required Field',
+        attributeTypeIdentifier: 'text',
+        required: true,
+        searchable: false,
+      })
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'searchable_field',
+        name: 'Searchable Field',
+        attributeTypeIdentifier: 'text',
+        required: false,
+        searchable: true,
+      })
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'both_field',
+        name: 'Required and Searchable',
+        attributeTypeIdentifier: 'text',
+        required: true,
+        searchable: true,
+      })
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'neither_field',
+        name: 'Neither Required nor Searchable',
+        attributeTypeIdentifier: 'text',
+        required: false,
+        searchable: false,
+      })
 
       const query = `
         query GetAccuracyTest($tableId: ID!) {
@@ -504,22 +580,45 @@ describe('AIMetadata Integration Tests', () => {
 
     test('should handle various attribute types correctly', async () => {
       const db = testContext.database?.database.getConnection()
-      const tableId = `types-test-${Date.now()}`
-
-      db.exec(`
-        INSERT INTO tables (id, identifier, name, created_at, updated_at)
-        VALUES ('${tableId}', 'types-test', 'Types Test', datetime('now'), datetime('now'))
-      `)
+      const table = insertTable(db as any, {
+        identifier: 'types-test',
+        description: 'Types Test',
+      })
+      const tableId = table.id
 
       // Create attributes with different types
-      db.exec(`
-        INSERT INTO attributes (id, table_id, identifier, name, attribute_type_id, required, searchable, created_at)
-        VALUES
-        ('text-${tableId}', '${tableId}', 'text_field', 'Text Field', 'text', 1, 1, datetime('now')),
-        ('number-${tableId}', '${tableId}', 'number_field', 'Number Field', 'number', 1, 0, datetime('now')),
-        ('email-${tableId}', '${tableId}', 'email_field', 'Email Field', 'email', 1, 1, datetime('now')),
-        ('date-${tableId}', '${tableId}', 'date_field', 'Date Field', 'date', 0, 0, datetime('now'))
-      `)
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'text_field',
+        name: 'Text Field',
+        attributeTypeIdentifier: 'text',
+        required: true,
+        searchable: true,
+      })
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'number_field',
+        name: 'Number Field',
+        attributeTypeIdentifier: 'number',
+        required: true,
+        searchable: false,
+      })
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'email_field',
+        name: 'Email Field',
+        attributeTypeIdentifier: 'email',
+        required: true,
+        searchable: true,
+      })
+      insertAttribute(db as any, {
+        tableId,
+        identifier: 'date_field',
+        name: 'Date Field',
+        attributeTypeIdentifier: 'date',
+        required: false,
+        searchable: false,
+      })
 
       const query = `
         query GetTypesTest($tableId: ID!) {
@@ -549,12 +648,11 @@ describe('AIMetadata Integration Tests', () => {
   describe('Error Handling and Edge Cases', () => {
     test('should handle tables with no attributes', async () => {
       const db = testContext.database?.database.getConnection()
-      const tableId = `empty-attrs-${Date.now()}`
-
-      db.exec(`
-        INSERT INTO tables (id, identifier, name, created_at, updated_at)
-        VALUES ('${tableId}', 'empty-attrs', 'Empty Attributes', datetime('now'), datetime('now'))
-      `)
+      const table = insertTable(db as any, {
+        identifier: 'empty-attrs',
+        description: 'Empty Attributes',
+      })
+      const tableId = table.id
 
       const query = `
         query GetEmptyAttrsTable($tableId: ID!) {
@@ -583,12 +681,11 @@ describe('AIMetadata Integration Tests', () => {
 
     test('should handle tables with no templates', async () => {
       const db = testContext.database?.database.getConnection()
-      const tableId = `no-templates-${Date.now()}`
-
-      db.exec(`
-        INSERT INTO tables (id, identifier, name, created_at, updated_at)
-        VALUES ('${tableId}', 'no-templates', 'No Templates', datetime('now'), datetime('now'))
-      `)
+      const table = insertTable(db as any, {
+        identifier: 'no-templates',
+        description: 'No Templates',
+      })
+      const tableId = table.id
 
       const query = `
         query GetNoTemplatesTable($tableId: ID!) {
@@ -596,7 +693,10 @@ describe('AIMetadata Integration Tests', () => {
             id
             aiMetadata {
               usagePatterns {
-                templateRecommendations
+                templateRecommendations {
+                  templateId
+                  useCase
+                }
                 queryComplexity
               }
             }

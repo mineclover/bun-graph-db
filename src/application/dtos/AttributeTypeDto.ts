@@ -1,4 +1,5 @@
 import type { AttributeType } from '@/domain/entities/AttributeType.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 // Data Transfer Object for AttributeType entity
 export interface AttributeTypeDto {
@@ -9,8 +10,8 @@ export interface AttributeTypeDto {
   description: string | null
   validationSchema: object | null
   referenceConfig: object | null
-  defaultValue: any
-  examples: any[] | null
+  defaultValue: SafeJsonValue | null
+  examples: SafeJsonValue[] | null
   createdAt: string
   updatedAt: string
 }
@@ -43,8 +44,8 @@ export interface CreateAttributeTypeInput {
   description?: string
   validationSchema?: object
   referenceConfig?: object
-  defaultValue?: any
-  examples?: any[]
+  defaultValue?: unknown
+  examples?: unknown[]
 }
 
 export interface UpdateAttributeTypeInput {
@@ -54,8 +55,8 @@ export interface UpdateAttributeTypeInput {
   description?: string | null
   validationSchema?: object | null
   referenceConfig?: object | null
-  defaultValue?: any | null
-  examples?: any[] | null
+  defaultValue?: unknown | null
+  examples?: unknown[] | null
 }
 
 export interface GetAttributeTypesInput {

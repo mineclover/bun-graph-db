@@ -1,5 +1,50 @@
 import { type GraphQLSchema, introspectionFromSchema } from 'graphql'
 
+interface IntrospectionTypeRefLike {
+  kind: string
+  name?: string | null
+  ofType?: IntrospectionTypeRefLike | null
+}
+
+interface IntrospectionArgumentLike {
+  name: string
+  description?: string | null
+  defaultValue?: unknown
+  type: IntrospectionTypeRefLike
+}
+
+interface IntrospectionFieldLike {
+  name: string
+  description?: string | null
+  type: IntrospectionTypeRefLike
+  args: readonly IntrospectionArgumentLike[]
+  isDeprecated?: boolean
+  deprecationReason?: string | null
+}
+
+interface IntrospectionEnumValueLike {
+  name: string
+  description?: string | null
+  isDeprecated: boolean
+}
+
+interface IntrospectionTypeLike {
+  name: string
+  kind: string
+  description?: string | null
+  fields?: readonly IntrospectionFieldLike[]
+  inputFields?: readonly IntrospectionArgumentLike[]
+  enumValues?: readonly IntrospectionEnumValueLike[]
+}
+
+interface IntrospectionSchemaLike {
+  __schema: {
+    queryType?: { name: string } | null
+    mutationType?: { name: string } | null
+    types: readonly IntrospectionTypeLike[]
+  }
+}
+
 /**
  * GraphQL Schema Introspection Service
  * Extracts real-time schema information for AI metadata enhancement
@@ -7,7 +52,7 @@ import { type GraphQLSchema, introspectionFromSchema } from 'graphql'
 export class GraphQLSchemaIntrospector {
   private schema: GraphQLSchema
   private lastIntrospection: Date | null = null
-  private cachedIntrospection: any = null
+  private cachedIntrospection: SchemaIntrospectionResult | null = null
   private readonly CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
   constructor(schema: GraphQLSchema) {
@@ -18,11 +63,11 @@ export class GraphQLSchemaIntrospector {
    * Get complete schema introspection data
    */
   async getSchemaIntrospection(): Promise<SchemaIntrospectionResult> {
-    if (this.isCacheValid()) {
+    if (this.isCacheValid() && this.cachedIntrospection) {
       return this.cachedIntrospection
     }
 
-    const introspection = introspectionFromSchema(this.schema)
+    const introspection = introspectionFromSchema(this.schema) as unknown as IntrospectionSchemaLike
     const result: SchemaIntrospectionResult = {
       schema: introspection,
       queries: this.extractQueries(introspection),
@@ -41,8 +86,8 @@ export class GraphQLSchemaIntrospector {
   /**
    * Extract query field definitions
    */
-  private extractQueries(introspection: any): QueryFieldDefinition[] {
-    const queryType = introspection.data.__schema.queryType
+  private extractQueries(introspection: IntrospectionSchemaLike): QueryFieldDefinition[] {
+    const queryType = introspection.__schema.queryType
     if (!queryType) return []
 
     return this.extractFieldsFromType(introspection, queryType.name, 'query')
@@ -51,8 +96,8 @@ export class GraphQLSchemaIntrospector {
   /**
    * Extract mutation field definitions
    */
-  private extractMutations(introspection: any): MutationFieldDefinition[] {
-    const mutationType = introspection.data.__schema.mutationType
+  private extractMutations(introspection: IntrospectionSchemaLike): MutationFieldDefinition[] {
+    const mutationType = introspection.__schema.mutationType
     if (!mutationType) return []
 
     return this.extractFieldsFromType(introspection, mutationType.name, 'mutation')
@@ -61,32 +106,45 @@ export class GraphQLSchemaIntrospector {
   /**
    * Extract field definitions from a specific type
    */
-  private extractFieldsFromType(introspection: any, typeName: string, operationType: 'query' | 'mutation'): any[] {
-    const types = introspection.data.__schema.types
-    const targetType = types.find((type: any) => type.name === typeName)
+  private extractFieldsFromType(
+    introspection: IntrospectionSchemaLike,
+    typeName: string,
+    operationType: 'query' | 'mutation',
+  ): QueryFieldDefinition[] {
+    const types = introspection.__schema.types
+    const targetType = types.find((type) => type.name === typeName)
 
-    if (!targetType || !targetType.fields) return []
+    if (!targetType?.fields) return []
 
-    return targetType.fields.map((field: any) => ({
+    return targetType.fields.map((field) => ({
       name: field.name,
-      description: field.description,
+      description: field.description || undefined,
       operationType,
-      args: field.args.map((arg: any) => ({
+      args: field.args.map((arg) => ({
         name: arg.name,
         type: this.extractTypeInfo(arg.type),
-        description: arg.description,
+        description: arg.description || undefined,
         defaultValue: arg.defaultValue,
       })),
       returnType: this.extractTypeInfo(field.type),
-      isDeprecated: field.isDeprecated,
-      deprecationReason: field.deprecationReason,
+      isDeprecated: field.isDeprecated ?? false,
+      deprecationReason: field.deprecationReason || undefined,
     }))
   }
 
   /**
    * Extract type information recursively
    */
-  private extractTypeInfo(type: any): TypeInfo {
+  private extractTypeInfo(type: IntrospectionTypeRefLike | null | undefined): TypeInfo {
+    if (!type) {
+      return {
+        kind: 'UNKNOWN',
+        name: null,
+        isRequired: false,
+        ofType: null,
+      }
+    }
+
     if (type.kind === 'NON_NULL') {
       return {
         kind: 'NON_NULL',
@@ -107,7 +165,7 @@ export class GraphQLSchemaIntrospector {
 
     return {
       kind: type.kind,
-      name: type.name,
+      name: type.name ?? null,
       isRequired: false,
       ofType: null,
     }
@@ -116,32 +174,32 @@ export class GraphQLSchemaIntrospector {
   /**
    * Extract all custom types from schema
    */
-  private extractTypes(introspection: any): TypeDefinition[] {
-    return introspection.data.__schema.types
-      .filter((type: any) => !type.name.startsWith('__') && type.kind !== 'SCALAR')
-      .map((type: any) => ({
+  private extractTypes(introspection: IntrospectionSchemaLike): TypeDefinition[] {
+    return introspection.__schema.types
+      .filter((type) => !type.name.startsWith('__') && type.kind !== 'SCALAR')
+      .map((type) => ({
         name: type.name,
         kind: type.kind,
-        description: type.description,
+        description: type.description || undefined,
         fields: type.fields
-          ? type.fields.map((field: any) => ({
+          ? type.fields.map((field) => ({
               name: field.name,
               type: this.extractTypeInfo(field.type),
-              description: field.description,
+              description: field.description || undefined,
             }))
           : [],
         inputFields: type.inputFields
-          ? type.inputFields.map((field: any) => ({
+          ? type.inputFields.map((field) => ({
               name: field.name,
               type: this.extractTypeInfo(field.type),
-              description: field.description,
+              description: field.description || undefined,
               defaultValue: field.defaultValue,
             }))
           : [],
         enumValues: type.enumValues
-          ? type.enumValues.map((value: any) => ({
+          ? type.enumValues.map((value) => ({
               name: value.name,
-              description: value.description,
+              description: value.description || undefined,
               isDeprecated: value.isDeprecated,
             }))
           : [],
@@ -151,7 +209,7 @@ export class GraphQLSchemaIntrospector {
   /**
    * Generate schema version hash for change detection
    */
-  private generateSchemaVersion(introspection: any): string {
+  private generateSchemaVersion(introspection: IntrospectionSchemaLike): string {
     const schemaString = JSON.stringify(introspection, null, 0)
     // Simple hash function for version generation
     let hash = 0
@@ -212,7 +270,7 @@ export class GraphQLSchemaIntrospector {
   /**
    * Generate working searchNodes example based on actual schema
    */
-  private generateSearchNodesExample(_searchNodesQuery: any): string {
+  private generateSearchNodesExample(_searchNodesQuery: QueryFieldDefinition): string {
     return `query SearchNodes($filter: SearchNodesFilter!, $pagination: NodesPagination, $sort: [NodeSortInput!]) {
   searchNodes(filter: $filter, pagination: $pagination, sort: $sort) {
     id
@@ -228,7 +286,7 @@ export class GraphQLSchemaIntrospector {
   /**
    * Generate working createNode example based on actual schema
    */
-  private generateCreateNodeExample(_createNodeMutation: any): string {
+  private generateCreateNodeExample(_createNodeMutation: MutationFieldDefinition): string {
     return `mutation CreateNode($input: CreateNodeInput!) {
   createNode(input: $input) {
     success
@@ -248,7 +306,7 @@ export class GraphQLSchemaIntrospector {
 
 // Type definitions for schema introspection
 export interface SchemaIntrospectionResult {
-  schema: any
+  schema: IntrospectionSchemaLike
   queries: QueryFieldDefinition[]
   mutations: MutationFieldDefinition[]
   types: TypeDefinition[]
@@ -272,7 +330,7 @@ export interface ArgumentDefinition {
   name: string
   type: TypeInfo
   description?: string
-  defaultValue?: any
+  defaultValue?: unknown
 }
 
 export interface TypeInfo {
@@ -298,7 +356,7 @@ export interface FieldDefinition {
 }
 
 export interface InputFieldDefinition extends FieldDefinition {
-  defaultValue?: any
+  defaultValue?: unknown
 }
 
 export interface EnumValueDefinition {

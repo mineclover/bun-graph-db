@@ -164,10 +164,18 @@ export class BulkTemplateImportTool {
 
       // Read and parse the template file
       const fileContent = await readFile(filePath, 'utf-8')
-      let templateData: any
+      let templateData: {
+        template?: {
+          identifier?: string
+        }
+      }
 
       try {
-        templateData = JSON.parse(fileContent)
+        templateData = JSON.parse(fileContent) as {
+          template?: {
+            identifier?: string
+          }
+        }
       } catch (parseError) {
         return {
           identifier,

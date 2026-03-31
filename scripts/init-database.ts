@@ -6,7 +6,8 @@
  */
 
 import { Database } from 'bun:sqlite'
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
+import { dirname } from 'node:path'
 
 const DB_PATH = './data/bun-graph-db.sqlite'
 const SCHEMA_PATH = './scripts/database/schema.sql'
@@ -20,6 +21,9 @@ async function initializeDatabase() {
     // Read schema SQL
     const schemaSql = readFileSync(SCHEMA_PATH, 'utf-8')
     console.log(`📖 Schema file loaded (${schemaSql.length} bytes)`)
+
+    // Ensure the parent directory exists before opening SQLite
+    mkdirSync(dirname(DB_PATH), { recursive: true })
 
     // Open database connection
     const db = new Database(DB_PATH, { create: true })
@@ -38,9 +42,11 @@ async function initializeDatabase() {
     }
 
     // Verify tables were created
-    const tables = db.query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all()
+    const tables = db.query("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all() as Array<{
+      name: string
+    }>
     console.log('\n📊 Created tables:')
-    tables.forEach((table: any) => {
+    tables.forEach((table) => {
       console.log(`  - ${table.name}`)
     })
 

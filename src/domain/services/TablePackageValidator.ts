@@ -549,7 +549,7 @@ export class TablePackageValidator {
 
   private async validateSchemaUpgrade(
     _packageData: TablePackageFormat,
-    _existingTable: any,
+    _existingTable: Awaited<ReturnType<ITableRepository['findByIdentifier']>>,
   ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
@@ -559,7 +559,7 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateAttributeTypes(schema: any): Promise<TablePackageConflict[]> {
+  private async validateAttributeTypes(schema: TablePackageFormat['package']['schema']): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     for (const attrType of schema.attributeTypes || []) {
@@ -592,12 +592,14 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateAttributeConstraints(schema: any): Promise<TablePackageConflict[]> {
+  private async validateAttributeConstraints(
+    schema: TablePackageFormat['package']['schema'],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     for (const attr of schema.attributes || []) {
       // Check if required attribute type exists
-      const hasAttributeType = schema.attributeTypes?.some((at: any) => at.id === attr.attributeTypeId)
+      const hasAttributeType = schema.attributeTypes?.some((at) => at.id === attr.attributeTypeId)
       if (!hasAttributeType) {
         conflicts.push({
           type: 'attribute_type_mismatch',
@@ -611,7 +613,10 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateNodeData(dataset: any, _schema: any): Promise<TablePackageConflict[]> {
+  private async validateNodeData(
+    dataset: TablePackageFormat['package']['dataset'],
+    _schema: TablePackageFormat['package']['schema'],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     for (const node of dataset.nodes || []) {
@@ -639,11 +644,14 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateNodeAttributes(dataset: any, schema: any): Promise<TablePackageConflict[]> {
+  private async validateNodeAttributes(
+    dataset: TablePackageFormat['package']['dataset'],
+    schema: TablePackageFormat['package']['schema'],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
-    const nodeIds = new Set(dataset.nodes?.map((n: any) => n.externalId) || [])
-    const attributeIds = new Set(schema.attributes?.map((a: any) => a.identifier) || [])
+    const nodeIds = new Set(dataset.nodes?.map((n) => n.externalId) || [])
+    const attributeIds = new Set(schema.attributes?.map((a) => a.identifier) || [])
 
     for (const nodeAttr of dataset.nodeAttributes || []) {
       // Check if node exists
@@ -670,7 +678,10 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateDataTypes(_dataset: any, _schema: any): Promise<TablePackageConflict[]> {
+  private async validateDataTypes(
+    _dataset: TablePackageFormat['package']['dataset'],
+    _schema: TablePackageFormat['package']['schema'],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Implementation would validate data against attribute type constraints
@@ -680,7 +691,7 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateDuplicateData(dataset: any): Promise<TablePackageConflict[]> {
+  private async validateDuplicateData(dataset: TablePackageFormat['package']['dataset']): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     const externalIds = new Set()
@@ -699,10 +710,13 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateRelationshipReferences(relations: any, dataset: any): Promise<TablePackageConflict[]> {
+  private async validateRelationshipReferences(
+    relations: TablePackageFormat['package']['relations'],
+    dataset: TablePackageFormat['package']['dataset'],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
-    const nodeIds = new Set(dataset.nodes?.map((n: any) => n.externalId) || [])
+    const nodeIds = new Set(dataset.nodes?.map((n) => n.externalId) || [])
 
     for (const relation of relations.nodeRelations || []) {
       if (!nodeIds.has(relation.sourceExternalId)) {
@@ -727,10 +741,12 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateRelationshipTypes(relations: any): Promise<TablePackageConflict[]> {
+  private async validateRelationshipTypes(
+    relations: TablePackageFormat['package']['relations'],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
-    const relationTypeIds = new Set(relations.relationTypes?.map((rt: any) => rt.id) || [])
+    const relationTypeIds = new Set(relations.relationTypes?.map((rt) => rt.id) || [])
 
     for (const relation of relations.nodeRelations || []) {
       if (!relationTypeIds.has(relation.relationTypeId)) {
@@ -746,11 +762,14 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateOrphanedRelationships(relations: any, _dataset: any): Promise<TablePackageConflict[]> {
+  private async validateOrphanedRelationships(
+    relations: TablePackageFormat['package']['relations'],
+    _dataset: TablePackageFormat['package']['dataset'],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Check for relation types not used by any relations
-    const usedRelationTypes = new Set(relations.nodeRelations?.map((r: any) => r.relationTypeId) || [])
+    const usedRelationTypes = new Set(relations.nodeRelations?.map((r) => r.relationTypeId) || [])
 
     for (const relationType of relations.relationTypes || []) {
       if (!usedRelationTypes.has(relationType.id)) {
@@ -766,7 +785,9 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateTemplateVariables(template: any): Promise<TablePackageConflict[]> {
+  private async validateTemplateVariables(
+    template: TablePackageFormat['package']['templates']['templates'][number],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     // Parse template query to extract variable definitions
@@ -801,7 +822,9 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private async validateOperationType(template: any): Promise<TablePackageConflict[]> {
+  private async validateOperationType(
+    template: TablePackageFormat['package']['templates']['templates'][number],
+  ): Promise<TablePackageConflict[]> {
     const conflicts: TablePackageConflict[] = []
 
     const query = template.query.trim()
@@ -873,7 +896,7 @@ export class TablePackageValidator {
       /social[_-]?security/i,
     ]
 
-    const checkObject = (obj: any, path: string) => {
+    const checkObject = (obj: unknown, path: string) => {
       if (typeof obj === 'string') {
         for (const pattern of sensitivePatterns) {
           if (pattern.test(obj)) {
@@ -938,7 +961,7 @@ export class TablePackageValidator {
     // Check for SQL injection patterns in string data
     const sqlPatterns = [/;\s*(drop|delete|truncate|alter)\s+/i, /union\s+select/i, /'\s*or\s+'?\d*'?\s*=\s*'?\d*'?/i]
 
-    const checkForSqlInjection = (data: any, context: string) => {
+    const checkForSqlInjection = (data: unknown, context: string) => {
       if (typeof data === 'string') {
         for (const pattern of sqlPatterns) {
           if (pattern.test(data)) {
@@ -967,7 +990,7 @@ export class TablePackageValidator {
     return conflicts
   }
 
-  private traverseObject(obj: any, callback: (value: any, path: string) => void, path = ''): void {
+  private traverseObject(obj: unknown, callback: (value: unknown, path: string) => void, path = ''): void {
     if (typeof obj === 'object' && obj !== null) {
       for (const [key, value] of Object.entries(obj)) {
         const newPath = path ? `${path}.${key}` : key

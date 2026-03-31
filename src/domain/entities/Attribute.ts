@@ -28,7 +28,7 @@ export class Attribute {
     metadata?: string,
   ): Attribute {
     return new Attribute(
-      null as any as AttributeId,
+      '' as AttributeId,
       tableId,
       identifier,
       name || null,

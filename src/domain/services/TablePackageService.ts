@@ -1,4 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { AttributeTypeId, TableId } from '@/core/types/CommonTypes.js'
 import type {
   ImportSession,
   TableDataExport,
@@ -16,6 +17,7 @@ import type {
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 import { QueryTemplate } from '../entities/QueryTemplate.js'
 import type { IAttributeRepository } from '../repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '../repositories/IAttributeTypeRepository.js'
@@ -217,7 +219,7 @@ export class TablePackageService implements ITablePackageService {
 
       if (options.generateTemplates !== false) {
         const autoTemplates = await this.generateTableTemplates(resolvedIdentifier)
-        if (autoTemplates.success) {
+        if (autoTemplates.templates.length > 0) {
           generatedTemplates.push(
             ...autoTemplates.templates.map((t) => ({
               id: '', // Will be set after creation
@@ -456,12 +458,12 @@ export class TablePackageService implements ITablePackageService {
 
       // Delete created nodes (cascade will handle relations)
       for (const nodeId of session.rollbackInfo.nodesCreated) {
-        await this.nodeRepository.delete(nodeId as any)
+        await this.nodeRepository.delete(nodeId)
       }
 
       // Delete created tables (cascade will handle attributes)
       for (const tableId of session.rollbackInfo.tablesCreated) {
-        await this.tableRepository.delete(tableId as any)
+        await this.tableRepository.delete(tableId)
       }
 
       session.status = 'rolled_back'
@@ -704,18 +706,19 @@ export class TablePackageService implements ITablePackageService {
   // Private helper methods
 
   private async exportTableSchema(tableId: string): Promise<TableSchemaExport> {
-    const table = await this.tableRepository.findById(tableId as any)
+    const table = await this.tableRepository.findById(tableId)
     if (!table) {
       throw new DomainException(`Table with ID '${tableId}' not found`)
     }
 
     // Get all attributes for this table
-    const attributesPaginated = await this.attributeRepository.findByTableId(tableId as any)
+    const attributesPaginated = await this.attributeRepository.findByTableId(tableId)
     const attributes = attributesPaginated.nodes
 
     // Get all attribute types used by these attributes
     const attributeTypeIds = [...new Set(attributes.map((attr) => attr.getAttributeTypeId()))]
     const attributeTypes = await Promise.all(attributeTypeIds.map((id) => this.attributeTypeRepository.findById(id)))
+    const existingAttributeTypes = attributeTypes.filter((attrType): attrType is NonNullable<typeof attrType> => attrType !== null)
 
     return {
       table: {
@@ -733,22 +736,22 @@ export class TablePackageService implements ITablePackageService {
         createdAt: attr.getCreatedAt().toISOString(),
         updatedAt: attr.getUpdatedAt().toISOString(),
       })),
-      attributeTypes: attributeTypes.filter(Boolean).map((attrType) => ({
-        id: attrType?.getId() as string,
-        identifier: attrType?.getIdentifier(),
-        description: attrType?.getDescription(),
-        dataType: attrType?.getJsonType(),
-        validation: attrType?.getValidationSchema(),
+      attributeTypes: existingAttributeTypes.map((attrType) => ({
+        id: attrType.getId() as string,
+        identifier: attrType.getIdentifier(),
+        description: attrType.getDescription(),
+        dataType: attrType.getJsonType(),
+        validation: attrType.getValidationSchema(),
         metadata: null,
-        createdAt: attrType?.getCreatedAt().toISOString(),
-        updatedAt: attrType?.getUpdatedAt().toISOString(),
+        createdAt: attrType.getCreatedAt().toISOString(),
+        updatedAt: attrType.getUpdatedAt().toISOString(),
       })),
     }
   }
 
   private async exportTableData(tableId: string): Promise<TableDataExport> {
     // Get all nodes for this table
-    const nodesPaginated = await this.nodeRepository.findByTableId(tableId as any)
+    const nodesPaginated = await this.nodeRepository.findByTableId(tableId)
     const nodes = nodesPaginated.nodes
 
     // Get all node attributes for these nodes
@@ -760,27 +763,30 @@ export class TablePackageService implements ITablePackageService {
       nodes: nodes.map((node) => ({
         externalId: node.getId() as string, // Use node ID as external ID
         nodeType: 'node', // Default node type
-        content:
-          typeof node.getContent() === 'string'
-            ? JSON.parse(node.getContent() as string)
-            : (node.getContent() as unknown as Record<string, any> | null),
-        metadata: null, // No metadata available in current Node entity
+        content: node.getContent(),
+        metadata: node.getParsedMetadata() as Record<string, SafeJsonValue> | null,
         createdAt: node.getCreatedAt().toISOString(),
         updatedAt: node.getUpdatedAt().toISOString(),
       })),
-      nodeAttributes: flatNodeAttributes.map((nodeAttr) => ({
-        nodeExternalId: nodeAttr.getNodeId() as string, // Should be mapped to external ID
-        attributeIdentifier: nodeAttr.getAttributeId() as string, // Should be mapped to attribute identifier
-        value: nodeAttr.getValue(),
-        createdAt: nodeAttr.getCreatedAt().toISOString(),
-        updatedAt: nodeAttr.getUpdatedAt().toISOString(),
-      })),
+      nodeAttributes: await Promise.all(
+        flatNodeAttributes.map(async (nodeAttr) => {
+          const attribute = await this.attributeRepository.findById(nodeAttr.getAttributeId())
+
+          return {
+            nodeExternalId: nodeAttr.getNodeId() as string,
+            attributeIdentifier: attribute?.getIdentifier() || (nodeAttr.getAttributeId() as string),
+            value: nodeAttr.getValue(),
+            createdAt: nodeAttr.getCreatedAt().toISOString(),
+            updatedAt: nodeAttr.getUpdatedAt().toISOString(),
+          }
+        }),
+      ),
     }
   }
 
   private async exportTableRelations(tableId: string): Promise<TableRelationsExport> {
     // Get all nodes for this table to find their relations
-    const nodesPaginated = await this.nodeRepository.findByTableId(tableId as any)
+    const nodesPaginated = await this.nodeRepository.findByTableId(tableId)
     const nodes = nodesPaginated.nodes
     const nodeIds = nodes.map((node) => node.getId())
 
@@ -797,15 +803,16 @@ export class TablePackageService implements ITablePackageService {
     // Get unique relation types used
     const relationTypeIds = [...new Set(flatNodeRelations.map((rel) => rel.getRelationTypeId()))]
     const relationTypes = await Promise.all(relationTypeIds.map((id) => this.relationTypeRepository.findById(id)))
+    const existingRelationTypes = relationTypes.filter((relType): relType is NonNullable<typeof relType> => relType !== null)
 
     return {
-      relationTypes: relationTypes.filter(Boolean).map((relType) => ({
-        id: relType?.getId() as string,
-        identifier: relType?.getIdentifier(),
-        description: relType?.getDescription(),
+      relationTypes: existingRelationTypes.map((relType) => ({
+        id: relType.getId() as string,
+        identifier: relType.getIdentifier(),
+        description: relType.getDescription(),
         properties: {}, // No properties available in current RelationType entity
-        createdAt: relType?.getCreatedAt().toISOString(),
-        updatedAt: relType?.getUpdatedAt().toISOString(),
+        createdAt: relType.getCreatedAt().toISOString(),
+        updatedAt: relType.getUpdatedAt().toISOString(),
       })),
       nodeRelations: flatNodeRelations.map((nodeRel) => ({
         sourceExternalId: nodeRel.getSourceNodeId() as string,
@@ -940,9 +947,9 @@ export class TablePackageService implements ITablePackageService {
 
         const Attribute = (await import('../entities/Attribute.js')).Attribute
         const attribute = Attribute.create(
-          savedTable.id,
+          savedTable.id as TableId,
           attrData.identifier,
-          newAttributeTypeId as any,
+          newAttributeTypeId as AttributeTypeId,
           attrData.identifier, // name parameter
           attrData.description || undefined,
           attrData.isRequired,
@@ -972,15 +979,22 @@ export class TablePackageService implements ITablePackageService {
     for (const nodeData of dataset.nodes) {
       try {
         const Node = (await import('../entities/Node.js')).Node
+        const content =
+          typeof nodeData.content === 'string' ? nodeData.content : JSON.stringify(nodeData.content ?? {})
         const node = Node.create(
-          tableId as any,
-          JSON.stringify(nodeData.content),
+          tableId as TableId,
+          content,
           undefined, // title
           undefined, // description
+          nodeData.metadata || undefined,
         )
 
         await this.nodeRepository.save(node)
-        nodeIdMap.set(nodeData.externalId, node.getId() as string)
+        const savedNode = await this.nodeRepository.findByTableIdAndContent(tableId, content)
+        if (!savedNode?.getId()) {
+          throw new Error('Failed to load saved node after import')
+        }
+        nodeIdMap.set(nodeData.externalId, savedNode.getId() as string)
       } catch (error) {
         this.logger.warn('Failed to import node', {
           externalId: nodeData.externalId,
@@ -990,9 +1004,9 @@ export class TablePackageService implements ITablePackageService {
     }
 
     // Get attribute identifier to ID mapping for this table
-    const attributesResult = await this.attributeRepository.findByTableId(tableId as any)
+    const attributesResult = await this.attributeRepository.findByTableId(tableId)
     const attributeMap = new Map<string, string>()
-    for (const attr of attributesResult.items || []) {
+    for (const attr of attributesResult.items || attributesResult.nodes || attributesResult.data || []) {
       attributeMap.set(attr.getIdentifier(), attr.getId() as string)
     }
 
@@ -1011,7 +1025,9 @@ export class TablePackageService implements ITablePackageService {
         }
 
         const NodeAttribute = (await import('../entities/NodeAttribute.js')).NodeAttribute
-        const nodeAttribute = NodeAttribute.create(nodeId as any, attributeId as any, nodeAttrData.value)
+        const serializedValue =
+          typeof nodeAttrData.value === 'string' ? nodeAttrData.value : JSON.stringify(nodeAttrData.value)
+        const nodeAttribute = NodeAttribute.create(nodeId, attributeId, serializedValue)
 
         await this.nodeAttributeRepository.save(nodeAttribute)
       } catch (error) {
@@ -1060,9 +1076,9 @@ export class TablePackageService implements ITablePackageService {
     }
 
     // Get nodes from this table by external ID to map to internal IDs
-    const nodesResult = await this.nodeRepository.findByTableId(tableId as any)
+    const nodesResult = await this.nodeRepository.findByTableId(tableId)
     const nodeIdMap = new Map<string, string>()
-    for (const node of nodesResult.items || []) {
+    for (const node of nodesResult.items || nodesResult.nodes || nodesResult.data || []) {
       const externalId = node.getId() as string // Use node ID as external ID since Node doesn't have getExternalId
       nodeIdMap.set(externalId, node.getId() as string)
     }
@@ -1085,12 +1101,12 @@ export class TablePackageService implements ITablePackageService {
 
         const NodeRelation = (await import('../entities/NodeRelation.js')).NodeRelation
         const nodeRelation = NodeRelation.create(
-          tableId as any,
-          sourceNodeId as any,
+          tableId,
+          sourceNodeId || null,
           nodeRelData.sourceExternalId,
-          targetNodeId as any,
+          targetNodeId || null,
           nodeRelData.targetExternalId,
-          relationTypeId as any,
+          relationTypeId,
           nodeRelData.properties || undefined,
           nodeRelData.strength,
         )
@@ -1185,9 +1201,14 @@ export class TablePackageService implements ITablePackageService {
    * Generate schema-aware templates for a table using introspection
    */
   async generateSchemaAwareTemplates(tableIdentifier: string): Promise<{
-    templates: any[]
-    schemaAnalysis: any
-    validationResults: any[]
+    templates: Awaited<ReturnType<EnhancedTemplateGenerator['generateTableTemplates']>>['templates']
+    schemaAnalysis: Awaited<ReturnType<SchemaIntrospectionService['analyzeSchema']>>
+    validationResults: Array<{
+      template: string
+      validation:
+        | Awaited<ReturnType<SchemaIntrospectionService['validateTemplateQuery']>>
+        | { isValid: boolean; errors: string[] }
+    }>
   }> {
     try {
       this.logger.info('Generating schema-aware templates', { tableIdentifier })
@@ -1252,7 +1273,13 @@ export class TablePackageService implements ITablePackageService {
    */
   async validatePackageSchemaCompatibility(packageData: TablePackageFormat): Promise<{
     isCompatible: boolean
-    validationResults: any[]
+    validationResults: Array<{
+      templateId: string
+      templateName: string
+      validation:
+        | Awaited<ReturnType<SchemaIntrospectionService['validateTemplateQuery']>>
+        | { isValid: boolean; errors: Array<{ message: string }> }
+    }>
     recommendations: string[]
   }> {
     try {
@@ -1335,7 +1362,7 @@ export class TablePackageService implements ITablePackageService {
   /**
    * Get current GraphQL schema analysis
    */
-  async getSchemaAnalysis(): Promise<any> {
+  async getSchemaAnalysis(): Promise<Awaited<ReturnType<SchemaIntrospectionService['analyzeSchema']>>> {
     try {
       return await this.schemaIntrospectionService.analyzeSchema()
     } catch (error) {

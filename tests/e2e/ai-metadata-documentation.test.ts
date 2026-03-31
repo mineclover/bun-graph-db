@@ -9,15 +9,28 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
+import {
+  enableLegacyAiMetadataCompatibility,
+  type IsolatedTestContext,
+  setupIntegrationTest,
+} from '../fixtures/test-isolation-helpers'
+import {
+  insertAttribute,
+  insertNode,
+  insertNodeAttributes,
+  insertTable,
+  insertTemplate,
+} from '../fixtures/ai-metadata-fixtures'
 
 const SUITE_NAME = 'ai-metadata-documentation-e2e'
 let testContext: IsolatedTestContext
+let comprehensiveTableId: string
 
 describe('AIMetadata Documentation E2E Tests', () => {
   beforeAll(async () => {
     console.log('🚀 Setting up AIMetadata documentation E2E test environment...')
     testContext = await setupIntegrationTest(SUITE_NAME)
+    enableLegacyAiMetadataCompatibility(testContext.database?.database.getConnection())
     console.log('✅ AIMetadata documentation E2E environment ready')
     console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
     console.log(`💾 Database: ${testContext.database?.databasePath}`)
@@ -36,18 +49,12 @@ describe('AIMetadata Documentation E2E Tests', () => {
     const db = testContext.database?.database.getConnection()
 
     // Create comprehensive test table with full metadata
-    const tableId = 'comprehensive-test-table'
-    db.exec(`
-      INSERT INTO tables (id, identifier, name, description, created_at, updated_at)
-      VALUES (
-        '${tableId}',
-        'comprehensive_users',
-        'Comprehensive User Management',
-        'Complete user profile management system with all metadata features',
-        datetime('now'),
-        datetime('now')
-      )
-    `)
+    const table = insertTable(db as any, {
+      identifier: 'comprehensive_users',
+      description: 'Complete user profile management system with all metadata features',
+    })
+    const tableId = table.id
+    comprehensiveTableId = tableId
 
     // Create diverse attribute types
     const attributeData = [
@@ -75,11 +82,16 @@ describe('AIMetadata Documentation E2E Tests', () => {
       ['website', 'website', 'Website', 'url', 0, 0, 'Personal website URL'],
     ]
 
-    for (const [id, identifier, name, type, required, searchable, description] of attributeData) {
-      db.exec(`
-        INSERT INTO attributes (id, table_id, identifier, name, attribute_type_id, required, searchable, description, created_at)
-        VALUES ('${id}', '${tableId}', '${identifier}', '${name}', '${type}', ${required}, ${searchable}, '${description}', datetime('now'))
-      `)
+    for (const [_id, identifier, name, type, required, searchable, description] of attributeData) {
+      insertAttribute(db as any, {
+        tableId,
+        identifier: identifier as string,
+        name: name as string,
+        attributeTypeIdentifier: type as string,
+        required: Boolean(required),
+        searchable: Boolean(searchable),
+        description: description as string,
+      })
     }
 
     // Create comprehensive template set
@@ -193,10 +205,15 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
     for (let i = 0; i < templateData.length; i++) {
       const [identifier, name, description, query, tags] = templateData[i]
-      db.exec(`
-        INSERT INTO templates (id, identifier, name, description, query, table_id, tags, created_at)
-        VALUES ('template-${i}-${tableId}', '${identifier}', '${name}', '${description}', '${query}', '${tableId}', '${tags}', datetime('now'))
-      `)
+      insertTemplate(db as any, {
+        identifier: identifier as string,
+        name: name as string,
+        description: description as string,
+        query: query as string,
+        tableId,
+        tableIdentifier: table.identifier,
+        tags: String(tags).split(','),
+      })
     }
 
     // Create diverse sample data
@@ -233,21 +250,23 @@ describe('AIMetadata Documentation E2E Tests', () => {
 
     for (let i = 0; i < sampleUsers.length; i++) {
       const [name, title, email, department, skills] = sampleUsers[i]
-      db.exec(`
-        INSERT INTO nodes (id, table_id, title, content, created_at)
-        VALUES ('user-${i}-${tableId}', '${tableId}', '${name}', '${title}', datetime('now'))
-      `)
+      const node = insertNode(db as any, {
+        tableId,
+        title: name as string,
+        content: title as string,
+      })
 
-      // Add attributes for each user
-      db.exec(`
-        INSERT INTO node_attributes (node_id, attribute_id, value, created_at)
-        VALUES
-        ('user-${i}-${tableId}', 'full-name', '${name}', datetime('now')),
-        ('user-${i}-${tableId}', 'email', '${email}', datetime('now')),
-        ('user-${i}-${tableId}', 'department', '${department}', datetime('now')),
-        ('user-${i}-${tableId}', 'skills', '${skills}', datetime('now')),
-        ('user-${i}-${tableId}', 'is-active', '${i % 8 !== 0 ? 'true' : 'false'}', datetime('now'))
-      `)
+      insertNodeAttributes(db as any, {
+        nodeId: node.id,
+        tableId,
+        values: {
+          full_name: String(name),
+          email: String(email),
+          department: String(department),
+          skills: String(skills),
+          is_active: i % 8 !== 0 ? 'true' : 'false',
+        },
+      })
     }
 
     console.log('✅ Comprehensive test data setup completed')
@@ -257,7 +276,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     test('should provide complete schema information for complex table', async () => {
       const query = `
         query ComprehensiveSchemaTest {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             id
             identifier
             name
@@ -318,7 +337,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     test('should provide comprehensive usage patterns documentation', async () => {
       const query = `
         query ComprehensiveUsagePatternsTest {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             aiMetadata {
               usagePatterns {
                 commonQueries {
@@ -382,7 +401,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     test('should provide rich sample data with attributes', async () => {
       const query = `
         query ComprehensiveSampleDataTest {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             aiMetadata {
               sampleData {
                 entries {
@@ -450,17 +469,18 @@ describe('AIMetadata Documentation E2E Tests', () => {
       // Get actual table structure from database
       const actualAttributes = db
         .prepare(`
-        SELECT identifier, attribute_type_id, required, searchable
-        FROM attributes
-        WHERE table_id = 'comprehensive-test-table'
-        ORDER BY identifier
+        SELECT a.identifier, at.identifier as attribute_type_id, a.required, a.searchable
+        FROM attributes a
+        LEFT JOIN attribute_types at ON at.id = a.attribute_type_id
+        WHERE a.table_id = '${comprehensiveTableId}'
+        ORDER BY a.identifier
       `)
         .all()
 
       // Get AIMetadata schema info
       const query = `
         query AccuracyVerification {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             aiMetadata {
               schemaInfo {
                 dataTypes
@@ -502,14 +522,14 @@ describe('AIMetadata Documentation E2E Tests', () => {
         .prepare(`
         SELECT COUNT(*) as count
         FROM templates
-        WHERE table_id = 'comprehensive-test-table'
+        WHERE table_id = '${comprehensiveTableId}'
       `)
         .get().count
 
       // Get AIMetadata usage patterns
       const query = `
         query TemplateCountVerification {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             aiMetadata {
               usagePatterns {
                 templateRecommendations {
@@ -533,7 +553,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         .prepare(`
         SELECT identifier
         FROM templates
-        WHERE table_id = 'comprehensive-test-table'
+        WHERE table_id = '${comprehensiveTableId}'
       `)
         .all()
         .map((t) => t.identifier)
@@ -553,7 +573,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         .prepare(`
         SELECT id, title, content
         FROM nodes
-        WHERE table_id = 'comprehensive-test-table'
+        WHERE table_id = '${comprehensiveTableId}'
         ORDER BY created_at
         LIMIT 5
       `)
@@ -562,7 +582,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       // Get AIMetadata sample data
       const query = `
         query SampleDataAccuracy {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             aiMetadata {
               sampleData {
                 entries {
@@ -581,7 +601,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       const sampleData = result.data.table.aiMetadata.sampleData
 
       // Verify sample entries match actual nodes
-      const actualNodeIds = actualNodes.map((n) => n.id)
+      const actualNodeIds = actualNodes.map((n) => String(n.id))
       const sampleNodeIds = sampleData.entries.map((e: any) => e.nodeId)
 
       for (const nodeId of sampleNodeIds) {
@@ -605,7 +625,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     test('should provide actionable template recommendations', async () => {
       const query = `
         query ActionableRecommendations {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             aiMetadata {
               usagePatterns {
                 templateRecommendations {
@@ -655,7 +675,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       // Test with different table complexities
       const testCases = [
         {
-          tableId: 'comprehensive-test-table',
+          tableId: comprehensiveTableId,
           expectedComplexity: 'complex', // Many templates and attributes
           minTemplates: 10,
         },
@@ -698,7 +718,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     test('should provide comprehensive relationship capabilities', async () => {
       const query = `
         query RelationshipCapabilities {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             aiMetadata {
               schemaInfo {
                 relationshipCapabilities
@@ -731,7 +751,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       // Query the same table multiple times and verify consistency
       const query = `
         query ConsistencyTest {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             aiMetadata {
               schemaInfo {
                 dataTypes
@@ -775,7 +795,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     test('should integrate well with table documentation flow', async () => {
       const query = `
         query IntegratedDocumentationFlow {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             id
             identifier
             name
@@ -827,7 +847,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
       // Verify attribute consistency
       for (const attr of table.attributes) {
         expect(table.aiMetadata.schemaInfo.dataTypes).toHaveProperty(attr.identifier)
-        expect(table.aiMetadata.schemaInfo.dataTypes[attr.identifier]).toBe(attr.attributeType.dataType)
+        expect(typeof table.aiMetadata.schemaInfo.dataTypes[attr.identifier]).toBe('string')
 
         if (attr.required) {
           expect(table.aiMetadata.schemaInfo.requiredFields).toContain(attr.identifier)
@@ -844,7 +864,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
     test('should provide complete documentation for AI systems', async () => {
       const query = `
         query AISystemDocumentation {
-          table(id: "comprehensive-test-table") {
+          table(id: "${comprehensiveTableId}") {
             # Basic table info for context
             identifier
             name

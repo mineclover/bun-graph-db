@@ -14,6 +14,7 @@ export interface BackupMutationsContext {
   logger: ILogger
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: static GraphQL resolver namespace is intentional for schema wiring
 export class BackupMutations {
   /**
    * Create a full database backup

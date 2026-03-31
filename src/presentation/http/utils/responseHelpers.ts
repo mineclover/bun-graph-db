@@ -1,8 +1,9 @@
 import type { Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { BaseException } from '@/shared/exceptions/DomainException.js'
 import { toErrorMeta } from './errorHelpers.js'
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string
@@ -40,10 +41,13 @@ export function sendHandleError(res: Response, logger: ILogger, error: unknown, 
   logger.error(`${operation} error:`, toErrorMeta(error))
 
   const message = error instanceof Error ? error.message : `${operation} failed`
+  const statusCode = error instanceof BaseException ? error.statusCode : 500
+  const code = error instanceof BaseException ? error.code : undefined
 
-  res.status(500).json({
+  res.status(statusCode).json({
     success: false,
     error: message,
+    errors: code ? [{ message, code }] : undefined,
   } satisfies ApiResponse)
 }
 

@@ -6,10 +6,11 @@
 
 **📚 용어가 궁금하신가요?** [**GLOSSARY.md**](GLOSSARY.md) - 모든 용어 설명
 
-[![System Health](https://img.shields.io/badge/System%20Health-✅%20Verified-brightgreen)](./CLAUDE.md)
-[![Test Coverage](https://img.shields.io/badge/Tests-310/310%20Passing-brightgreen)](#testing)
+[![System Health](https://img.shields.io/badge/System%20Health-Core%20flows%20verified-brightgreen)](./docs/development/SYSTEM_EVALUATION_2026-03-30.md)
+[![Quality Gates](https://img.shields.io/badge/Build%20%2B%20Typecheck%20%2B%20Lint-Passing-brightgreen)](./docs/development/SYSTEM_EVALUATION_2026-03-30.md)
+[![Test Status](https://img.shields.io/badge/bun%20run%20test-Passing-brightgreen)](./docs/development/SYSTEM_EVALUATION_2026-03-30.md)
 [![Documentation](https://img.shields.io/badge/Docs-Complete-blue)](./docs/README.md)
-[![Last Updated](https://img.shields.io/badge/Updated-2025--12--08-blue)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-2026--03--30-blue)](#)
 
 ## ⚡ 빠른 시작
 
@@ -30,6 +31,24 @@ curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
 - 메인 인터페이스: `http://localhost:4141/graphql`
 - AI 전역 도구: `http://localhost:4141/mcp`
 - 테이블별 도구: `http://localhost:4141/sub/:tableId/mcp`
+
+## 📌 검증 스냅샷
+
+2026-03-30 기준으로 다음이 실제로 다시 검증되었습니다.
+
+- `bun run typecheck` 통과
+- `bun run lint --max-diagnostics=20` 통과
+- `bun run build` 통과
+- 라이브 스모크
+  - `GET /api/health`
+  - GraphQL `healthCheck`
+  - MCP `initialize`
+  - `createTable`
+  - `tableByIdentifier`
+  - `createNode`
+  - `searchNodes` with `nodes { tableId }`
+
+현재 `bun run test`까지 포함한 기본 품질 게이트가 통과합니다. 자세한 검증 내역은 [최신 시스템 평가 문서](docs/development/SYSTEM_EVALUATION_2026-03-30.md)를 참고하세요.
 
 ---
 
@@ -82,7 +101,7 @@ Claude 같은 AI 어시스턴트가 데이터 기능을 발견하고 사용할 �
 ### 명령어
 ```bash
 bun run dev              # 개발 서버 시작
-bun test                 # 모든 테스트 실행 (310/310 통과)
+bun test                 # lane-based 전체 테스트 실행 (통과)
 bun run typecheck        # 타입 검증
 bun run check            # 포맷 + 린트 + 수정
 ```
@@ -96,7 +115,7 @@ src/
 └── presentation/      # 인터페이스 계층
 
 tests/
-├── unit/              # 310개 유스케이스 테스트
+├── unit/              # 도메인/유스케이스 단위 테스트
 └── integration/       # 인터페이스 엔드포인트 테스트
 ```
 
@@ -114,6 +133,7 @@ tests/
 ### 개발자용
 - **[아키텍처 개요](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 시스템 설계
 - **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)** - 기여 & 설정
+- **[최신 시스템 평가](docs/development/SYSTEM_EVALUATION_2026-03-30.md)** - 실제 검증 결과와 known issues
 - **[테스팅 전략](docs/development/TESTING.md)** - 품질 보증
 - **[리포지토리 패턴](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 데이터 접근
 
@@ -166,17 +186,17 @@ claude mcp add --transport http my-table http://localhost:4141/sub/my-table-id/m
 
 ### 현재 지표
 ```
-✅ 핵심 기능: 완전 작동
-├── 쿼리 인터페이스: 모든 엔드포인트 작동
-├── 템플릿 시스템: 생성 & 실행 검증됨
-├── 일괄 작업: 대량 처리 기능
-├── 그래프 탐색: 모든 알고리즘 작동
-├── AI 통합: 프로토콜 준수
-└── 타입 안전성: 0개 오류
+✅ Build / Typecheck / Lint: 통과
+✅ 핵심 서버 경로: 검증됨
+├── REST health: 검증됨
+├── GraphQL healthCheck: 검증됨
+├── MCP initialize: 검증됨
+├── createTable → tableByIdentifier: 검증됨
+├── createNode → searchNodes: 검증됨
+└── table-scoped MCP route: 검증됨
 
-✅ 테스트 커버리지: 310/310 통과 (100%)
-✅ 저장소 스키마: 11개 테이블 작동
-✅ 서버 응답: <1ms 헬스 체크
+✅ 전체 `bun run test`: 통과
+✅ 기본 품질 게이트: build + typecheck + lint + lane tests 통과
 ```
 
 ### 알려진 제한사항

@@ -1,6 +1,6 @@
 import { execute, type GraphQLSchema, parse } from 'graphql'
 import type { GraphQLSchemaIntrospector, QueryPattern } from './GraphQLSchemaIntrospector'
-import type { TemplateDefinition, TemplateValidator } from './TemplateValidator'
+import type { TemplateDefinition, TemplateValidator, ValidationResult } from './TemplateValidator'
 
 /**
  * Working Example Generation Service
@@ -29,9 +29,10 @@ export class WorkingExampleGenerator {
     console.log(`🎯 Generating working examples for table ${tableId}`)
 
     const cacheKey = `table-${tableId}`
-    if (this.exampleCache.has(cacheKey)) {
+    const cachedExamples = this.exampleCache.get(cacheKey)
+    if (cachedExamples) {
       console.log('📋 Returning cached examples')
-      return this.exampleCache.get(cacheKey)!
+      return cachedExamples
     }
 
     const examples: WorkingExample[] = []
@@ -75,7 +76,7 @@ export class WorkingExampleGenerator {
     const workingExamples = await this.generateWorkingExamples(tableId)
 
     const templates: TemplateDefinition[] = []
-    const validationResults: { [templateId: string]: any } = {}
+    const validationResults: Record<string, ValidationResult> = {}
 
     for (const example of workingExamples) {
       const template: TemplateDefinition = {
@@ -345,8 +346,8 @@ export class WorkingExampleGenerator {
     return patternExample.replace(/tableId:\s*"[^"]*"/, `tableId: "${tableId}"`)
   }
 
-  private generateSampleVariables(pattern: QueryPattern, tableId: string): Record<string, any> {
-    const variables: Record<string, any> = { tableId }
+  private generateSampleVariables(pattern: QueryPattern, tableId: string): Record<string, unknown> {
+    const variables: Record<string, unknown> = { tableId }
 
     pattern.parameters.forEach((param) => {
       switch (param.name) {
@@ -377,7 +378,7 @@ export class WorkingExampleGenerator {
     return variables
   }
 
-  private generateDefaultValue(type: any): any {
+  private generateDefaultValue(type: { ofType?: unknown; name?: string | null; kind?: string } | unknown): unknown {
     const baseType = this.getBaseType(type)
 
     switch (baseType) {
@@ -396,11 +397,15 @@ export class WorkingExampleGenerator {
     }
   }
 
-  private getBaseType(type: any): string {
-    if (type.ofType) {
+  private getBaseType(type: { ofType?: unknown; name?: string | null; kind?: string } | unknown): string {
+    if (typeof type === 'object' && type !== null && 'ofType' in type && type.ofType) {
       return this.getBaseType(type.ofType)
     }
-    return type.name || type.kind
+    if (typeof type === 'object' && type !== null) {
+      const typed = type as { name?: string | null; kind?: string }
+      return typed.name || typed.kind || 'Unknown'
+    }
+    return 'Unknown'
   }
 
   private categorizePattern(pattern: QueryPattern): string {
@@ -509,7 +514,7 @@ export interface WorkingExample {
   description: string
   category: string
   query: string
-  variables: Record<string, any>
+  variables: Record<string, unknown>
   expectedResult: string
   verified: boolean
   lastTested: string
@@ -520,7 +525,7 @@ export interface TemplateCollection {
   tableId: string
   timestamp: string
   templates: TemplateDefinition[]
-  validationResults: { [templateId: string]: any }
+  validationResults: Record<string, ValidationResult>
   totalTemplates: number
   validTemplates: number
 }
@@ -528,7 +533,7 @@ export interface TemplateCollection {
 export interface ExecutionTestResult {
   exampleName: string
   success: boolean
-  result?: any
+  result?: unknown
   errors: string[]
   executionTime?: number
   timestamp: string

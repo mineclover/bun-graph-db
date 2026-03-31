@@ -38,7 +38,7 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
    * Map database row to domain entity
    * Must be implemented by subclasses
    */
-  protected abstract mapRowToEntity(row: any): TEntity
+  protected abstract mapRowToEntity(row: unknown): TEntity
 
   /**
    * Find entity by ID
@@ -48,7 +48,7 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
     const query = `SELECT * FROM ${this.tableName} WHERE ${this.idField} = ?`
 
     try {
-      const row = this.db.query<any, [string]>(query).get(id)
+      const row = this.db.query<unknown, [string]>(query).get(id)
       return row ? this.mapRowToEntity(row) : null
     } catch (error) {
       throw new DatabaseException(`Failed to find ${this.tableName} by id: ${error}`)
@@ -71,7 +71,7 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
     const countQuery = `SELECT COUNT(*) as count FROM ${this.tableName}`
 
     try {
-      const rows = this.db.query<any, [number, number]>(dataQuery).all(limit, offset)
+      const rows = this.db.query<unknown, [number, number]>(dataQuery).all(limit, offset)
       const countResult = this.db.query<{ count: number }, []>(countQuery).get()
       const total = countResult?.count || 0
 
@@ -132,7 +132,7 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
     const query = `SELECT * FROM ${this.tableName} WHERE ${this.identifierField} = ?`
 
     try {
-      const row = this.db.query<any, [string]>(query).get(identifier)
+      const row = this.db.query<unknown, [string]>(query).get(identifier)
       return row ? this.mapRowToEntity(row) : null
     } catch (error) {
       throw new DatabaseException(`Failed to find ${this.tableName} by ${this.identifierField}: ${error}`)
@@ -165,7 +165,7 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
     const query = `SELECT * FROM ${this.tableName} WHERE ${this.idField} IN (${placeholders})`
 
     try {
-      const rows = this.db.query<any, string[]>(query).all(...ids)
+      const rows = this.db.query<unknown, string[]>(query).all(...ids)
       return rows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
       throw new DatabaseException(`Failed to find ${this.tableName} by ids: ${error}`)

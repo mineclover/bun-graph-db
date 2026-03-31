@@ -105,7 +105,15 @@ export class TemplateImportExportService {
         }
       }
 
-      return this.exportTemplate(template.getId()!, options)
+      const templateId = template.getId()
+      if (!templateId) {
+        return {
+          success: false,
+          errors: [`Template with identifier '${identifier}' is missing an ID`],
+        }
+      }
+
+      return this.exportTemplate(templateId, options)
     } catch (error) {
       return {
         success: false,
@@ -182,17 +190,34 @@ export class TemplateImportExportService {
 
       if (existingTemplate && options.overwriteExisting) {
         // 업데이트 로직 (현재는 삭제 후 재생성)
-        await this.templateRepository.deleteById(existingTemplate.getId()!)
+        const existingTemplateId = existingTemplate.getId()
+        if (!existingTemplateId) {
+          return {
+            success: false,
+            errors: ['Existing template is missing an ID'],
+            warnings,
+          }
+        }
+        await this.templateRepository.deleteById(existingTemplateId)
         createdTemplate = await this.templateRepository.create(finalTemplate)
       } else {
         createdTemplate = await this.templateRepository.create(finalTemplate)
       }
 
+      const createdTemplateId = createdTemplate.getId()
+      if (!createdTemplateId) {
+        return {
+          success: false,
+          errors: ['Created template is missing an ID'],
+          warnings,
+        }
+      }
+
       return {
         success: true,
-        templateId: createdTemplate.getId()!,
+        templateId: createdTemplateId,
         template: {
-          id: createdTemplate.getId()!,
+          id: createdTemplateId,
           identifier: createdTemplate.getIdentifier(),
           name: createdTemplate.getName(),
         },

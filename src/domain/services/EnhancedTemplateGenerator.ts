@@ -16,7 +16,24 @@ import type { ITableRepository } from '../repositories/ITableRepository.js'
  * - Relationship queries with nested selections
  * - Advanced validation and type safety
  */
+interface GeneratedTableSchemaAttribute {
+  identifier: string
+  type: string
+  description: string | null
+  required: boolean
+}
+
+interface GeneratedTableSchema {
+  attributes: GeneratedTableSchemaAttribute[]
+  types: Map<string, string>
+}
+
 export class EnhancedTemplateGenerator {
+  private readonly emptyTableSchema: GeneratedTableSchema = {
+    attributes: [],
+    types: new Map(),
+  }
+
   constructor(
     private readonly tableRepository: ITableRepository,
     private readonly attributeRepository: IAttributeRepository,
@@ -48,7 +65,7 @@ export class EnhancedTemplateGenerator {
       name: string
       operationType: string
       query: string
-      variables?: Record<string, any>
+      variables?: Record<string, unknown>
       description?: string
     }>
     errors: string[]
@@ -226,7 +243,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
     includeValidation: boolean,
   ) {
     const _inputFields = this.generateInputFields(tableSchema, 'create')
@@ -279,7 +296,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
   ) {
     const outputFields = this.generateOutputFields(tableSchema)
 
@@ -359,7 +376,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
   ) {
     const outputFields = this.generateOutputFields(tableSchema, true) // Simplified for list view
 
@@ -467,7 +484,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     _tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
   ) {
     return {
       identifier: `search-${tableIdentifier}-enhanced`,
@@ -557,7 +574,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
   ) {
     return {
       identifier: `batch-create-${tableIdentifier}-enhanced`,
@@ -653,7 +670,7 @@ export class EnhancedTemplateGenerator {
     }
 
     after {
-      ${this.generateOutputFields({}, true)}
+      ${this.generateOutputFields(this.emptyTableSchema, true)}
     }
 
     changes {
@@ -692,20 +709,12 @@ export class EnhancedTemplateGenerator {
 
   // Helper methods
 
-  private async getTableSchema(tableId: string): Promise<any> {
+  private async getTableSchema(tableId: string): Promise<GeneratedTableSchema> {
     try {
-      const attributesResult = await this.attributeRepository.findByTableId(tableId as any)
-      const attributes = attributesResult.items || []
+      const attributesResult = await this.attributeRepository.findByTableId(tableId)
+      const attributes = attributesResult.items || attributesResult.data || []
 
-      const schema: {
-        attributes: Array<{
-          identifier: string
-          type: string
-          description: string | null
-          required: boolean
-        }>
-        types: Map<string, any>
-      } = {
+      const schema: GeneratedTableSchema = {
         attributes: [],
         types: new Map(),
       }
@@ -717,11 +726,6 @@ export class EnhancedTemplateGenerator {
           type: attrType?.getJsonType() || 'string',
           description: attr.getDescription(),
           required: attr.getIsRequired(),
-        } as {
-          identifier: string
-          type: string
-          description: string | null
-          required: boolean
         })
       }
 
@@ -732,18 +736,18 @@ export class EnhancedTemplateGenerator {
     }
   }
 
-  private generateInputFields(tableSchema: any, operation: 'create' | 'update'): string {
+  private generateInputFields(tableSchema: GeneratedTableSchema, operation: 'create' | 'update'): string {
     if (!tableSchema.attributes) return 'content\n  metadata'
 
     return (
       tableSchema.attributes
-        .filter((attr: any) => operation === 'update' || attr.required)
-        .map((attr: any) => `${this.sanitizeFieldName(attr.identifier)}`)
+        .filter((attr) => operation === 'update' || attr.required)
+        .map((attr) => `${this.sanitizeFieldName(attr.identifier)}`)
         .join('\n  ') || 'content\n  metadata'
     )
   }
 
-  private generateOutputFields(tableSchema: any, simplified = false): string {
+  private generateOutputFields(tableSchema: GeneratedTableSchema, simplified = false): string {
     const baseFields = `
       id
       externalId
@@ -757,7 +761,7 @@ export class EnhancedTemplateGenerator {
     const attributeFields =
       tableSchema.attributes?.length > 0
         ? `\n      attributes {\n        ${tableSchema.attributes
-            .map((attr: any) => this.sanitizeFieldName(attr.identifier))
+            .map((attr) => this.sanitizeFieldName(attr.identifier))
             .join('\n        ')}\n      }`
         : ''
 
@@ -782,8 +786,11 @@ export class EnhancedTemplateGenerator {
       suggestions`
   }
 
-  private generateVariableProperties(tableSchema: any, _operation: 'create' | 'update'): Record<string, any> {
-    const properties: Record<string, any> = {}
+  private generateVariableProperties(
+    tableSchema: GeneratedTableSchema,
+    _operation: 'create' | 'update',
+  ): Record<string, unknown> {
+    const properties: Record<string, unknown> = {}
 
     if (tableSchema.attributes) {
       for (const attr of tableSchema.attributes) {
@@ -798,8 +805,8 @@ export class EnhancedTemplateGenerator {
     return properties
   }
 
-  private generateFilterProperties(tableSchema: any): Record<string, any> {
-    const properties: Record<string, any> = {
+  private generateFilterProperties(tableSchema: GeneratedTableSchema): Record<string, unknown> {
+    const properties: Record<string, unknown> = {
       ids: { type: 'array', items: { type: 'string' } },
       createdAfter: { type: 'string', format: 'date-time' },
       createdBefore: { type: 'string', format: 'date-time' },
@@ -820,7 +827,7 @@ export class EnhancedTemplateGenerator {
     return properties
   }
 
-  private generateSearchFilterProperties(tableSchema: any): Record<string, any> {
+  private generateSearchFilterProperties(tableSchema: GeneratedTableSchema): Record<string, unknown> {
     return {
       ...this.generateFilterProperties(tableSchema),
       tags: { type: 'array', items: { type: 'string' } },
@@ -829,19 +836,19 @@ export class EnhancedTemplateGenerator {
     }
   }
 
-  private getRequiredFields(tableSchema: any, operation: 'create' | 'update'): string[] {
+  private getRequiredFields(tableSchema: GeneratedTableSchema, operation: 'create' | 'update'): string[] {
     if (!tableSchema.attributes) return []
 
     return tableSchema.attributes
-      .filter((attr: any) => operation === 'create' && attr.required)
-      .map((attr: any) => this.sanitizeFieldName(attr.identifier))
+      .filter((attr) => operation === 'create' && attr.required)
+      .map((attr) => this.sanitizeFieldName(attr.identifier))
   }
 
-  private getFieldNames(tableSchema: any): string[] {
+  private getFieldNames(tableSchema: GeneratedTableSchema): string[] {
     const baseFields = ['id', 'createdAt', 'updatedAt']
 
     if (tableSchema.attributes) {
-      return [...baseFields, ...tableSchema.attributes.map((attr: any) => this.sanitizeFieldName(attr.identifier))]
+      return [...baseFields, ...tableSchema.attributes.map((attr) => this.sanitizeFieldName(attr.identifier))]
     }
 
     return baseFields
@@ -908,7 +915,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
     _includeValidation: boolean,
   ) {
     return {
@@ -1057,7 +1064,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
   ) {
     return {
       identifier: `filter-${tableIdentifier}-enhanced`,
@@ -1129,7 +1136,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     _tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
   ) {
     return {
       identifier: `batch-update-${tableIdentifier}-enhanced`,
@@ -1336,7 +1343,7 @@ export class EnhancedTemplateGenerator {
     tableIdentifier: string,
     tableNameCamel: string,
     tableNamePascal: string,
-    tableSchema: any,
+    tableSchema: GeneratedTableSchema,
   ) {
     return {
       identifier: `${tableIdentifier}-nested-query-enhanced`,
@@ -1452,7 +1459,7 @@ export class EnhancedTemplateGenerator {
       id
       changeType
       data {
-        ${this.generateOutputFields({}, true)}
+        ${this.generateOutputFields(this.emptyTableSchema, true)}
       }
       metadata {
         version
@@ -1492,8 +1499,8 @@ export class EnhancedTemplateGenerator {
     }
   }
 
-  private generateWhereProperties(tableSchema: any): Record<string, any> {
-    const properties: Record<string, any> = {
+  private generateWhereProperties(tableSchema: GeneratedTableSchema): Record<string, unknown> {
+    const properties: Record<string, unknown> = {
       AND: { type: 'array', items: { $ref: '#' } },
       OR: { type: 'array', items: { $ref: '#' } },
       NOT: { $ref: '#' },
@@ -1517,7 +1524,7 @@ export class EnhancedTemplateGenerator {
     return properties
   }
 
-  private generateFieldWhereClause(type: string): any {
+  private generateFieldWhereClause(type: string): Record<string, unknown> {
     const baseClause = {
       equals: { type: this.mapTypeToJsonSchema(type) },
       not: { type: this.mapTypeToJsonSchema(type) },

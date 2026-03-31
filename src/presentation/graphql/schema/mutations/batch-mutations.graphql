@@ -1,0 +1,191 @@
+extend type Mutation {
+  batchCreateTables(tables: [CreateTableInput!]!): BatchCreateTablesPayload!
+  batchDeleteTables(tableIds: [ID!]!): BatchDeleteTablesPayload!
+
+  batchCreateNodes(nodes: [CreateNodeInput!], input: BatchCreateNodesInput): BatchCreateNodesPayload!
+  batchCreateNodesTransactional(nodes: [CreateNodeInput!]!): BatchCreateNodesTransactionalPayload!
+  batchCreateNodesWithProgress(nodes: [CreateNodeInput!]!, progressCallback: String): BatchCreateNodesWithProgressPayload!
+  batchUpdateNodes(updates: [UpdateNodeInput!]!): BatchUpdateNodesPayload!
+
+  batchCreateAttributes(attributes: [CreateAttributeInput!]!): BatchCreateAttributesPayload!
+  batchSetNodeAttributes(attributeUpdates: [NodeAttributeUpdateInput!]!): BatchSetNodeAttributesPayload!
+
+  batchCreateRelations(relations: [CreateRelationInput!]!): BatchCreateRelationsPayload!
+
+  batchOperationWithRollback(operations: [BatchOperationInput!]!): BatchOperationWithRollbackPayload!
+}
+
+input BatchCreateNodesInput {
+  tableId: ID!
+  nodes: [BatchCreateNodeItemInput!]!
+  options: BatchCreateNodesOptionsInput
+}
+
+input BatchCreateNodeItemInput {
+  content: String!
+  title: String
+  description: String
+  metadata: JSON
+}
+
+input BatchCreateNodesOptionsInput {
+  continueOnError: Boolean
+  validateBeforeInsert: Boolean
+}
+
+input NodeAttributeUpdateInput {
+  nodeId: ID!
+  attributeId: ID!
+  value: String!
+}
+
+input BatchOperationInput {
+  type: String!
+  data: JSON!
+}
+
+type BatchOperationError {
+  index: Int
+  code: String!
+  message: String!
+  field: String
+  details: JSON
+}
+
+type BatchCreateTableResult {
+  table: Table
+  errors: [String!]!
+}
+
+type BatchCreateTablesPayload {
+  success: Boolean!
+  results: [BatchCreateTableResult!]!
+  totalCreated: Int!
+  totalFailed: Int!
+}
+
+type BatchDeleteTablesPayload {
+  success: Boolean!
+  deletedCount: Int!
+  failedCount: Int!
+  errors: [String!]!
+}
+
+type BatchCreateNodeResult {
+  node: TableNode
+  errors: [BatchOperationError!]!
+}
+
+type BatchCreateNodesStatistics {
+  totalRequested: Int!
+  successfullyCreated: Int!
+  failed: Int!
+  executionTime: Float!
+}
+
+type BatchErrorSummary {
+  validationErrors: Int!
+  databaseErrors: Int!
+  systemErrors: Int!
+}
+
+type BatchProgressUpdate {
+  completed: Int!
+  total: Int!
+  percentage: Float!
+  estimatedTimeRemainingMs: Float!
+}
+
+type BatchCreateNodesPayload {
+  success: Boolean!
+  nodes: [TableNode!]!
+  results: [BatchCreateNodeResult!]!
+  errors: [BatchOperationError!]!
+  totalCreated: Int!
+  totalFailed: Int!
+  processingTimeMs: Float!
+  averageTimePerNodeMs: Float!
+  memoryUsageMB: Float!
+  statistics: BatchCreateNodesStatistics!
+  errorSummary: BatchErrorSummary!
+}
+
+type BatchCreateNodesTransactionalPayload {
+  success: Boolean!
+  totalCreated: Int!
+  totalFailed: Int!
+  rollbackOccurred: Boolean!
+}
+
+type BatchCreateNodesWithProgressPayload {
+  success: Boolean!
+  totalCreated: Int!
+  totalFailed: Int!
+  progressUpdates: [BatchProgressUpdate!]!
+}
+
+type BatchUpdateNodeResult {
+  node: TableNode
+  errors: [BatchOperationError!]!
+}
+
+type BatchUpdateNodesPayload {
+  success: Boolean!
+  results: [BatchUpdateNodeResult!]!
+  totalUpdated: Int!
+  totalFailed: Int!
+}
+
+type BatchCreateAttributeResult {
+  attribute: Attribute
+  errors: [String!]!
+}
+
+type BatchCreateAttributesPayload {
+  success: Boolean!
+  results: [BatchCreateAttributeResult!]!
+  totalCreated: Int!
+  totalFailed: Int!
+}
+
+type BatchSetNodeAttributeResult {
+  nodeId: ID!
+  attributeId: ID!
+  value: String
+  errors: [BatchOperationError!]!
+}
+
+type BatchSetNodeAttributesPayload {
+  success: Boolean!
+  results: [BatchSetNodeAttributeResult!]!
+  totalSet: Int!
+  totalFailed: Int!
+}
+
+type BatchRelationSummary {
+  id: ID!
+  fromNodeId: ID
+  toNodeId: ID
+  relationshipType: String
+  tableId: ID!
+}
+
+type BatchCreateRelationResult {
+  relation: BatchRelationSummary
+  errors: [String!]!
+}
+
+type BatchCreateRelationsPayload {
+  success: Boolean!
+  results: [BatchCreateRelationResult!]!
+  totalCreated: Int!
+  totalFailed: Int!
+}
+
+type BatchOperationWithRollbackPayload {
+  success: Boolean!
+  rollbackOccurred: Boolean!
+  successfulOperations: Int!
+  failedOperations: Int!
+  errors: [String!]!
+}

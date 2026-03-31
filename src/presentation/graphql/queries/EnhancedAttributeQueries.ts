@@ -14,7 +14,7 @@ export class EnhancedAttributeQueries extends BaseResolver {
     this.logger = logger
   }
 
-  async enhancedAttributeTypes(_: GraphQLParent, args: any, _context?: GraphQLContext) {
+  async enhancedAttributeTypes(_: GraphQLParent, args: Record<string, unknown>, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         // Basic implementation that returns empty result
@@ -31,7 +31,7 @@ export class EnhancedAttributeQueries extends BaseResolver {
     )
   }
 
-  async enhancedAttributeType(_: GraphQLParent, args: any, _context?: GraphQLContext) {
+  async enhancedAttributeType(_: GraphQLParent, args: Record<string, unknown>, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
         // Basic implementation that returns null

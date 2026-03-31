@@ -4,6 +4,8 @@
 
 > 💡 **용어가 궁금하신가요?** [용어집(GLOSSARY.md)](GLOSSARY.md)에서 모든 용어를 자세히 설명합니다.
 
+> ✅ **2026-03-30 검증 스냅샷**: 서버 기동, 헬스체크, `createTable`, `createNode`, `searchNodes`, MCP `initialize`, 그리고 `bun run test`까지 다시 검증되었습니다. 자세한 내용은 [docs/development/SYSTEM_EVALUATION_2026-03-30.md](docs/development/SYSTEM_EVALUATION_2026-03-30.md)를 참고하세요.
+
 ---
 
 ## 📚 핵심 개념 (3가지만 알면 됩니다)

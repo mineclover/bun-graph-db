@@ -400,8 +400,83 @@ describe('Table Package System Integration', () => {
             success
             package {
               version
+              exportedAt
               sourceTable {
                 identifier
+                description
+              }
+              dependencies
+              package {
+                schema {
+                  table {
+                    identifier
+                    description
+                    createdAt
+                    updatedAt
+                  }
+                  attributes {
+                    identifier
+                    name
+                    description
+                    attributeType
+                    isRequired
+                    defaultValue
+                  }
+                  attributeTypes {
+                    identifier
+                    name
+                    description
+                    dataType
+                    validationRules
+                  }
+                }
+                dataset {
+                  nodes {
+                    id
+                    content
+                    contentHash
+                    metadata
+                    createdAt
+                    updatedAt
+                  }
+                  nodeAttributes {
+                    nodeId
+                    attributeIdentifier
+                    value
+                    metadata
+                  }
+                }
+                relations {
+                  relationTypes {
+                    identifier
+                    name
+                    description
+                    isDirectional
+                    metadata
+                  }
+                  nodeRelations {
+                    fromNodeId
+                    toNodeId
+                    relationTypeIdentifier
+                    strength
+                    confidence
+                    metadata
+                    createdAt
+                  }
+                }
+                templates {
+                  templates {
+                    identifier
+                    name
+                    description
+                    query
+                    variables
+                    operationType
+                    tags
+                    complexityScore
+                    metadata
+                  }
+                }
               }
             }
           }

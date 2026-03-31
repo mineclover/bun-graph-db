@@ -5,6 +5,8 @@
  * Based On: data-model.md McpSession specification
  */
 
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
+
 export interface ClientInfo {
   name: string
   version: string
@@ -27,7 +29,7 @@ export interface McpSession {
   lastActivity: Date
   state: SessionState
   protocolVersion?: string
-  metadata?: Record<string, any>
+  metadata?: Record<string, SafeJsonValue>
 }
 
 export interface SessionStateTransition {
@@ -84,7 +86,7 @@ export class McpSessionBuilder {
     return this
   }
 
-  withMetadata(metadata: Record<string, any>): McpSessionBuilder {
+  withMetadata(metadata: Record<string, SafeJsonValue>): McpSessionBuilder {
     this.session.metadata = metadata || {}
     return this
   }
@@ -290,7 +292,7 @@ export function createMcpSession(
   clientInfo: ClientInfo,
   capabilities: ClientCapabilities,
   protocolVersion?: string,
-  metadata?: Record<string, any>,
+  metadata?: Record<string, SafeJsonValue>,
 ): McpSession {
   return new McpSessionBuilder()
     .withSessionId(generateMcpSessionId())
@@ -301,8 +303,8 @@ export function createMcpSession(
     .build()
 }
 
-export function validateMcpClientInfo(clientInfo: any): ClientInfo {
-  if (!clientInfo || typeof clientInfo !== 'object') {
+export function validateMcpClientInfo(clientInfo: unknown): ClientInfo {
+  if (!isRecord(clientInfo)) {
     throw new Error('Client info must be an object')
   }
 
@@ -320,8 +322,8 @@ export function validateMcpClientInfo(clientInfo: any): ClientInfo {
   }
 }
 
-export function validateMcpClientCapabilities(capabilities: any): ClientCapabilities {
-  if (!capabilities || typeof capabilities !== 'object') {
+export function validateMcpClientCapabilities(capabilities: unknown): ClientCapabilities {
+  if (!isRecord(capabilities)) {
     return {}
   }
 
@@ -351,4 +353,8 @@ export function isMcpSessionExpired(session: McpSession, timeoutMs: number): boo
 
 export function formatMcpSessionInfo(session: McpSession): string {
   return `Session ${session.sessionId} (${session.clientInfo.name} v${session.clientInfo.version}) - ${session.state}`
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
 }

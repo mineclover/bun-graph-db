@@ -79,7 +79,7 @@ export class SortResultCache {
   generateCacheKey(
     sortOptions: EnhancedSortOption[],
     context: SortContext,
-    additionalParams: Record<string, any> = {},
+    additionalParams: Record<string, unknown> = {},
   ): string {
     // Create normalized sort key components
     const sortKey = this.normalizeSortOptions(sortOptions)
@@ -309,7 +309,7 @@ export class SortResultCache {
     return JSON.stringify(normalized)
   }
 
-  private normalizeParams(params: Record<string, any>): string {
+  private normalizeParams(params: Record<string, unknown>): string {
     // Sort object keys for consistent serialization
     const sortedParams = Object.keys(params)
       .sort()
@@ -318,7 +318,7 @@ export class SortResultCache {
           obj[key] = params[key]
           return obj
         },
-        {} as Record<string, any>,
+        {} as Record<string, unknown>,
       )
 
     return JSON.stringify(sortedParams)

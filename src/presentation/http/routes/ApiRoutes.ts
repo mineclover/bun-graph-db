@@ -77,6 +77,15 @@ export function createApiRoutes(
     router.get('/mcp-tools/get-system-status', (req, res) => mcpToolController.getSystemStatus(req, res))
     router.post('/mcp-tools/quick-reset', (req, res) => mcpToolController.quickReset(req, res))
     router.post('/mcp-tools/setup-demo', (req, res) => mcpToolController.setupDemo(req, res))
+
+    // Tabular sync config tools
+    router.get('/mcp-tools/list-tabular-sync-configs', (req, res) => mcpToolController.callMcpTool(req, res))
+    router.get('/mcp-tools/get-tabular-sync-config', (req, res) => mcpToolController.callMcpTool(req, res))
+    router.post('/mcp-tools/save-tabular-sync-config', (req, res) => mcpToolController.callMcpTool(req, res))
+    router.post('/mcp-tools/activate-tabular-sync-config', (req, res) => mcpToolController.callMcpTool(req, res))
+    router.get('/mcp-tools/get-tabular-sync-status', (req, res) => mcpToolController.callMcpTool(req, res))
+    router.get('/mcp-tools/get-tabular-sync-summary', (req, res) => mcpToolController.callMcpTool(req, res))
+    router.post('/mcp-tools/resync-tabular-sync-table', (req, res) => mcpToolController.callMcpTool(req, res))
   }
 
   return router
@@ -132,4 +141,11 @@ export const API_ENDPOINT_MAPPING = {
   'get-system-status': 'GET /api/mcp-tools/get-system-status',
   'quick-reset': 'POST /api/mcp-tools/quick-reset',
   'setup-demo': 'POST /api/mcp-tools/setup-demo',
+  'list-tabular-sync-configs': 'GET /api/mcp-tools/call',
+  'get-tabular-sync-config': 'GET /api/mcp-tools/call',
+  'save-tabular-sync-config': 'POST /api/mcp-tools/call',
+  'activate-tabular-sync-config': 'POST /api/mcp-tools/call',
+  'get-tabular-sync-status': 'GET /api/mcp-tools/call',
+  'get-tabular-sync-summary': 'GET /api/mcp-tools/call',
+  'resync-tabular-sync-table': 'POST /api/mcp-tools/call',
 }

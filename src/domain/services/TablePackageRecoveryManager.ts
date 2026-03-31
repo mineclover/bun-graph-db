@@ -18,7 +18,7 @@ import type { ITableRepository } from '../repositories/ITableRepository.js'
  * - Error classification and automated resolution
  */
 export class TablePackageRecoveryManager {
-  private readonly backupStorage = new Map<string, any>()
+  private readonly backupStorage = new Map<string, SystemBackup>()
   private readonly recoverySessions = new Map<string, RecoverySession>()
 
   constructor(
@@ -155,7 +155,7 @@ export class TablePackageRecoveryManager {
       const recoveryInfo = this.generateRecoveryInfo(recoverySession)
 
       // Handle final result
-      if (!result || !result.success) {
+      if (!result?.success) {
         if (defaults.enableBackup && backupId) {
           this.logger.info('Import failed, backup available for restoration', {
             sessionId: recoverySession.sessionId,
@@ -239,7 +239,7 @@ export class TablePackageRecoveryManager {
       for (const nodeId of session.rollbackInfo.nodesCreated) {
         operations.push(async () => {
           try {
-            await this.nodeRepository.delete(nodeId as any)
+            await this.nodeRepository.delete(nodeId)
             rollbackResult.rollbackSummary.nodes++
             this.logger.debug('Rolled back node', { nodeId })
           } catch (error) {
@@ -254,7 +254,7 @@ export class TablePackageRecoveryManager {
       for (const tableId of session.rollbackInfo.tablesCreated) {
         operations.push(async () => {
           try {
-            await this.tableRepository.delete(tableId as any)
+            await this.tableRepository.delete(tableId)
             rollbackResult.rollbackSummary.tables++
             this.logger.debug('Rolled back table', { tableId })
           } catch (error) {
@@ -476,7 +476,7 @@ export class TablePackageRecoveryManager {
 
   // Private helper methods
 
-  private createRecoverySession(packageData: TablePackageFormat, options: any): RecoverySession {
+  private createRecoverySession(packageData: TablePackageFormat, options: RecoveryOptions): RecoverySession {
     const sessionId = `recovery_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
     const session: RecoverySession = {
@@ -658,7 +658,7 @@ export class TablePackageRecoveryManager {
         return check
       }
 
-      const table = await this.tableRepository.findById(importResult.importedTable.id as any)
+      const table = await this.tableRepository.findById(importResult.importedTable.id)
       if (!table) {
         check.status = 'failed'
         check.details = 'Imported table not found in database'
@@ -696,7 +696,7 @@ export class TablePackageRecoveryManager {
         return check
       }
 
-      const nodesResult = await this.nodeRepository.findByTableId(importResult.importedTable.id as any)
+      const nodesResult = await this.nodeRepository.findByTableId(importResult.importedTable.id)
       const actualNodeCount = nodesResult.items?.length || 0
 
       if (actualNodeCount === expectedNodeCount) {
@@ -789,7 +789,7 @@ interface RecoverySession {
   status: 'running' | 'completed' | 'partial' | 'failed' | 'rolled_back'
   startTime: Date
   endTime?: Date
-  options: any
+  options: RecoveryOptions
   attempts: ImportAttempt[]
   rollbackInfo: {
     tablesCreated: string[]
@@ -807,6 +807,14 @@ interface ImportAttempt {
   status: 'running' | 'success' | 'partial' | 'failed'
   result?: TablePackageImportResult
   error?: string
+}
+
+interface RecoveryOptions {
+  enableBackup?: boolean
+  autoRetry?: boolean
+  maxRetries?: number
+  partialSuccessHandling?: 'rollback' | 'continue' | 'prompt'
+  recoveryStrategy?: 'aggressive' | 'conservative' | 'custom'
 }
 
 interface RecoveryAction {
@@ -857,7 +865,7 @@ interface RollbackResult {
 
 interface RestoreResult {
   success: boolean
-  restoredTable: any
+  restoredTable: SystemBackup['existingTableData'] | null
   errors: string[]
 }
 

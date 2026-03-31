@@ -6,6 +6,8 @@ import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeT
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
+type EmptyResolverArgs = Record<string, never>
+
 export class TableFieldResolvers extends BaseResolver {
   protected logger: ILogger
 
@@ -20,23 +22,31 @@ export class TableFieldResolvers extends BaseResolver {
     this.logger = logger
   }
 
-  async attributes(parent: TableParent, _args?: any, _context?: GraphQLContext) {
+  async attributes(parent: TableParent, _args?: EmptyResolverArgs, context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
-        const result = await this.attributeRepository.findByTableId(parent.id)
+        const result = await this.attributeRepository.findByTableId(parent.id, { limit: 1000, offset: 0 })
         const attributes = result.data || result.nodes || result.items || []
 
         // Map entities to GraphQL format with proper name resolution
         const mappedAttributes = await Promise.all(
           attributes.map(async (attribute) => {
             // Get the associated AttributeType to resolve the name
-            const attributeType = await this.attributeTypeRepository.findById(attribute.getAttributeTypeId())
+            const attributeType = await this.withRequestCache(
+              context,
+              'attributeTypeById',
+              attribute.getAttributeTypeId(),
+              () => this.attributeTypeRepository.findById(attribute.getAttributeTypeId()),
+            )
 
             return {
               id: attribute.getId(),
               identifier: attribute.getIdentifier(),
               name: attributeType?.getIdentifier() || attribute.getIdentifier(), // Use AttributeType name or fallback to identifier
               description: attribute.getDescription(),
+              required: attribute.getIsRequired(),
+              isRequired: attribute.getIsRequired(),
+              metadata: attribute.getParsedMetadata(),
               attributeTypeId: attribute.getAttributeTypeId(), // Include attributeTypeId for Attribute.attributeType field resolver
               createdAt: attribute.getCreatedAt(),
               updatedAt: attribute.getUpdatedAt(),
@@ -52,11 +62,11 @@ export class TableFieldResolvers extends BaseResolver {
     )
   }
 
-  async attributeTypes(parent: TableParent, _args?: any, _context?: GraphQLContext) {
+  async attributeTypes(parent: TableParent, _args?: EmptyResolverArgs, context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         // Get all attributes for this table
-        const attributesResult = await this.attributeRepository.findByTableId(parent.id)
+        const attributesResult = await this.attributeRepository.findByTableId(parent.id, { limit: 1000, offset: 0 })
         const attributes = attributesResult.data || attributesResult.nodes || attributesResult.items || []
 
         // Get unique attribute type IDs
@@ -64,7 +74,9 @@ export class TableFieldResolvers extends BaseResolver {
 
         // Fetch all attribute types for these IDs
         const attributeTypes = await Promise.all(
-          attributeTypeIds.map((id) => this.attributeTypeRepository.findById(id)),
+          attributeTypeIds.map((id) =>
+            this.withRequestCache(context, 'attributeTypeById', id, () => this.attributeTypeRepository.findById(id)),
+          ),
         )
 
         // Map to GraphQL format
@@ -89,7 +101,7 @@ export class TableFieldResolvers extends BaseResolver {
     )
   }
 
-  async tableNodes(parent: TableParent, _args?: any, _context?: GraphQLContext) {
+  async tableNodes(parent: TableParent, _args?: EmptyResolverArgs, _context?: GraphQLContext) {
     try {
       this.logger.debug(`Resolving field: Table.tableNodes`, {
         tableId: parent.id,
@@ -97,7 +109,7 @@ export class TableFieldResolvers extends BaseResolver {
 
       const result = await this.nodeRepository.findByTableId(parent.id)
 
-      if (!result || !result.nodes || result.nodes.length === 0) {
+      if (!result?.nodes || result.nodes.length === 0) {
         this.logger.warn('No nodes found for Table', {
           tableId: parent.id,
         })
@@ -130,7 +142,7 @@ export class TableFieldResolvers extends BaseResolver {
     }
   }
 
-  async tableNodeCount(parent: TableParent, _args?: any, _context?: GraphQLContext) {
+  async tableNodeCount(parent: TableParent, _args?: EmptyResolverArgs, _context?: GraphQLContext) {
     try {
       return await this.nodeRepository.countByTableId(parent.id)
     } catch (error) {
@@ -139,7 +151,7 @@ export class TableFieldResolvers extends BaseResolver {
     }
   }
 
-  async attributeCount(parent: TableParent, _args?: any, _context?: GraphQLContext) {
+  async attributeCount(parent: TableParent, _args?: EmptyResolverArgs, _context?: GraphQLContext) {
     try {
       return await this.attributeRepository.countByTableId(parent.id)
     } catch (error) {
@@ -148,7 +160,7 @@ export class TableFieldResolvers extends BaseResolver {
     }
   }
 
-  async aiMetadata(parent: TableParent, _args?: any, _context?: GraphQLContext) {
+  async aiMetadata(parent: TableParent, args?: { sampleLimit?: number }, _context?: GraphQLContext) {
     return this.handleFieldResolution(
       async () => {
         try {
@@ -156,7 +168,9 @@ export class TableFieldResolvers extends BaseResolver {
             tableId: parent.id,
             includeAiMetadata: true,
             includeDocs: false,
-            includeRelatedTemplates: false,
+            includeRelatedTemplates: true,
+            includeSampleNodes: true,
+            sampleLimit: args?.sampleLimit,
           })
 
           return result.tableDocs?.aiMetadata || null
@@ -170,11 +184,11 @@ export class TableFieldResolvers extends BaseResolver {
       },
       'aiMetadata',
       'Table',
-      { tableId: parent.id },
+      { tableId: parent.id, sampleLimit: args?.sampleLimit },
     )
   }
 
-  async mcpCommand(parent: TableParent, _args?: any, _context?: GraphQLContext): Promise<string> {
+  async mcpCommand(parent: TableParent, _args?: EmptyResolverArgs, _context?: GraphQLContext): Promise<string> {
     // Generate Claude Code MCP add command for this table
     const identifier = parent.identifier
     // Convert identifier to kebab-case for the MCP server name

@@ -1,8 +1,8 @@
 # Getting Started with Bun Graph Database
 
 **Version**: 1.0.0
-**Last Updated**: 2025-11-23
-**Test Coverage**: 100% (60/60 features working)
+**Last Updated**: 2026-03-30
+**Verification Snapshot**: build/typecheck/lint passing, core runtime flows verified
 
 ---
 
@@ -76,8 +76,8 @@ ls -la node_modules
 ### 3. Database Initialization
 
 ```bash
-# Data directory is created automatically
-# Database is initialized on first server startup
+# Initialize the schema explicitly
+bun run scripts/init-database.ts
 ```
 
 **Database Location**: `./data/bun-graph-db.sqlite`
@@ -119,9 +119,16 @@ curl -X POST http://localhost:4141/graphql \
   -H "Content-Type: application/json" \
   -d '{"query": "query { healthCheck { status database version } }"}'
 
+# MCP initialize
+curl -X POST http://localhost:4141/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"clientInfo":{"name":"smoke","version":"1.0.0"},"capabilities":{}}}'
+
 # Expected output:
-# {"data":{"healthCheck":{"status":"healthy","database":"connected","version":"1.0.0"}}}
+# {"data":{"healthCheck":{"status":"OK","database":true,"version":"1.0.0"}}}
 ```
+
+> Note: the latest lane-based full-suite status is tracked in [../development/SYSTEM_EVALUATION_2026-03-30.md](../development/SYSTEM_EVALUATION_2026-03-30.md). Core server flows are verified and `bun run test` is currently passing.
 
 ### Stopping the Server
 

@@ -94,7 +94,11 @@ export class ExportTablePackageUseCase {
     }
   }
 
-  private async writePackageToFile(packageData: any, outputPath: string, prettyPrint?: boolean): Promise<string> {
+  private async writePackageToFile(
+    packageData: NonNullable<TablePackageExportResult['tablePackage']>,
+    outputPath: string,
+    prettyPrint?: boolean,
+  ): Promise<string> {
     const fs = await import('node:fs/promises')
     const path = await import('node:path')
 

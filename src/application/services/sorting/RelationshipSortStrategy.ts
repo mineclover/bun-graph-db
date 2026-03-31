@@ -83,7 +83,7 @@ export class RelationshipSortStrategy extends SortStrategy {
     _context: SortContext,
     params?: RelationshipParameters,
   ): SortResult {
-    const parameters: any[] = []
+    const parameters: unknown[] = []
     let relationTypeFilter = ''
 
     // Add relationship type filtering if specified
@@ -128,7 +128,7 @@ export class RelationshipSortStrategy extends SortStrategy {
     _context: SortContext,
     params: RelationshipParameters,
   ): SortResult {
-    const parameters: any[] = []
+    const parameters: unknown[] = []
     let relationTypeFilter = ''
 
     if (params.relationshipTypes && params.relationshipTypes.length > 0) {

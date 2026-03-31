@@ -3,6 +3,11 @@ import { getDatabasePath } from '@/config/database.js'
 import type { DIContainer } from '../DIContainer.js'
 import { DatabaseTokens } from '../tokens/index.js'
 
+interface DatabaseConfigShape {
+  url: string
+  type: 'sqlite'
+}
+
 /**
  * Database module - registers database connections and adapters
  */
@@ -17,7 +22,7 @@ export function registerDatabaseModule(container: DIContainer): void {
   container.registerSingleton(
     DatabaseTokens.DATABASE_CONNECTION,
     async (c) => {
-      const config = (await c.resolve(DatabaseTokens.DATABASE_CONFIG)) as any
+      const config = (await c.resolve(DatabaseTokens.DATABASE_CONFIG)) as DatabaseConfigShape
 
       // Create SQLite database connection using the configured path
       const db = new Database(config.url)
@@ -43,6 +48,33 @@ export function registerDatabaseModule(container: DIContainer): void {
           })()
           console.log('Database schema initialized successfully')
         }
+
+        const nodeColumns = db.query<{ name: string }, []>('PRAGMA table_info(nodes)').all()
+        if (!nodeColumns.some((column) => column.name === 'metadata')) {
+          db.exec('ALTER TABLE nodes ADD COLUMN metadata TEXT')
+        }
+
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS tabular_sync_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            config_key TEXT NOT NULL UNIQUE,
+            config_json TEXT NOT NULL,
+            is_active BOOLEAN NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          )
+        `)
+
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS tabular_sync_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            table_identifier TEXT NOT NULL,
+            mode TEXT NOT NULL,
+            status TEXT NOT NULL,
+            error_message TEXT,
+            created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+          )
+        `)
       } catch (error) {
         console.error('Failed to initialize database schema:', error)
       }

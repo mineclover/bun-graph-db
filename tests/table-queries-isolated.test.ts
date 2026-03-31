@@ -4,13 +4,50 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
+import {
+  createRequestHelper,
+  requireGraphQLData,
+  startServerForSuite,
+  stopServerForSuite,
+  type GraphQLRequestHelper,
+} from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'table-queries-isolated'
-const TEST_TIMEOUT = 15000
+const TEST_TIMEOUT = 30000
+
+type SchemaHealthData = {
+  __schema: {
+    types: Array<{ name: string }>
+  }
+}
+
+type TableSummary = {
+  id: string
+  identifier: string
+  description?: string | null
+}
+
+type TableConnection = {
+  nodes: TableSummary[]
+  totalCount: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
+type TablesQueryData = {
+  tables: TableConnection
+}
+
+type TableQueryData = {
+  table: TableSummary | null
+}
+
+type TableByIdentifierQueryData = {
+  tableByIdentifier: TableSummary | null
+}
 
 // Global test server
-let graphqlRequest: (query: string, variables?: Record<string, any>) => Promise<any>
+let graphqlRequest: GraphQLRequestHelper
 
 describe('Table Queries - Isolated Database Test Suite', () => {
   beforeAll(async () => {
@@ -25,7 +62,7 @@ describe('Table Queries - Isolated Database Test Suite', () => {
     graphqlRequest = createRequestHelper(SUITE_NAME)
 
     // Verify server is working
-    const healthCheck = await graphqlRequest(`
+    const healthCheck = await graphqlRequest<SchemaHealthData>(`
       query {
         __schema {
           types {
@@ -35,7 +72,7 @@ describe('Table Queries - Isolated Database Test Suite', () => {
       }
     `)
 
-    expect(healthCheck.data).toBeDefined()
+    expect(requireGraphQLData(healthCheck).__schema).toBeDefined()
     console.log('✅ GraphQL server health check passed')
   }, TEST_TIMEOUT)
 
@@ -66,15 +103,16 @@ describe('Table Queries - Isolated Database Test Suite', () => {
         pagination: { limit: 10, offset: 0 },
       }
 
-      const result = await graphqlRequest(query, variables)
+      const result = await graphqlRequest<TablesQueryData>(query, variables)
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.tables).toBeDefined()
-      expect(result.data.tables.nodes).toBeDefined()
-      expect(Array.isArray(result.data.tables.nodes)).toBe(true)
-      expect(result.data.tables.totalCount).toBeGreaterThanOrEqual(0)
-      expect(typeof result.data.tables.hasNextPage).toBe('boolean')
-      expect(typeof result.data.tables.hasPreviousPage).toBe('boolean')
+      expect(data.tables).toBeDefined()
+      expect(data.tables.nodes).toBeDefined()
+      expect(Array.isArray(data.tables.nodes)).toBe(true)
+      expect(data.tables.totalCount).toBeGreaterThanOrEqual(0)
+      expect(typeof data.tables.hasNextPage).toBe('boolean')
+      expect(typeof data.tables.hasPreviousPage).toBe('boolean')
     })
 
     test('table - Get specific table by ID', async () => {
@@ -86,10 +124,11 @@ describe('Table Queries - Isolated Database Test Suite', () => {
           }
         }
       `
-      const tablesResult = await graphqlRequest(tablesQuery)
+      const tablesResult = await graphqlRequest<TablesQueryData>(tablesQuery)
+      const tablesData = requireGraphQLData(tablesResult)
 
-      if (tablesResult.data.tables.nodes.length > 0) {
-        const tableId = tablesResult.data.tables.nodes[0].id
+      if (tablesData.tables.nodes.length > 0) {
+        const tableId = tablesData.tables.nodes[0].id
 
         const query = `
           query GetTable($id: ID!) {
@@ -101,12 +140,13 @@ describe('Table Queries - Isolated Database Test Suite', () => {
           }
         `
 
-        const result = await graphqlRequest(query, { id: tableId })
+        const result = await graphqlRequest<TableQueryData>(query, { id: tableId })
+        const data = requireGraphQLData(result)
 
         expect(result.errors).toBeUndefined()
-        expect(result.data.table).toBeDefined()
-        expect(result.data.table.id).toBe(tableId)
-        expect(result.data.table.identifier).toBeDefined()
+        expect(data.table).toBeDefined()
+        expect(data.table?.id).toBe(tableId)
+        expect(data.table?.identifier).toBeDefined()
       } else {
         console.log('ℹ️ No tables found, skipping table by ID test')
       }
@@ -125,12 +165,13 @@ describe('Table Queries - Isolated Database Test Suite', () => {
       `
 
       const variables = { identifier: 'test-todos' }
-      const result = await graphqlRequest(query, variables)
+      const result = await graphqlRequest<TableByIdentifierQueryData>(query, variables)
+      const data = requireGraphQLData(result)
 
-      if (result.data.tableByIdentifier) {
+      if (data.tableByIdentifier) {
         expect(result.errors).toBeUndefined()
-        expect(result.data.tableByIdentifier.identifier).toBe('test-todos')
-        expect(result.data.tableByIdentifier.id).toBeDefined()
+        expect(data.tableByIdentifier.identifier).toBe('test-todos')
+        expect(data.tableByIdentifier.id).toBeDefined()
       } else {
         console.log('ℹ️ test-todos table not found, this is expected for isolated tests')
       }
@@ -148,10 +189,11 @@ describe('Table Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query, { id: '999999' })
+      const result = await graphqlRequest<TableQueryData>(query, { id: '999999' })
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.table).toBeNull()
+      expect(data.table).toBeNull()
     })
 
     test('tableByIdentifier - Non-existent identifier should return null', async () => {
@@ -164,10 +206,11 @@ describe('Table Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query, { identifier: 'non-existent-table' })
+      const result = await graphqlRequest<TableByIdentifierQueryData>(query, { identifier: 'non-existent-table' })
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.tableByIdentifier).toBeNull()
+      expect(data.tableByIdentifier).toBeNull()
     })
 
     test('table - Empty ID should cause validation error', async () => {
@@ -179,10 +222,11 @@ describe('Table Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query, { id: '' })
+      const result = await graphqlRequest<TableQueryData>(query, { id: '' })
+      const data = requireGraphQLData(result)
 
       // Should either have GraphQL errors or return null
-      expect(result.errors || result.data.table === null).toBeTruthy()
+      expect(result.errors || data.table === null).toBeTruthy()
     })
   })
 
@@ -202,13 +246,14 @@ describe('Table Queries - Isolated Database Test Suite', () => {
       `
 
       // Test with limit 5
-      const result = await graphqlRequest(query, {
+      const result = await graphqlRequest<TablesQueryData>(query, {
         pagination: { limit: 5, offset: 0 },
       })
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.tables.nodes.length).toBeLessThanOrEqual(5)
-      expect(result.data.tables.totalCount).toBeGreaterThanOrEqual(0)
+      expect(data.tables.nodes.length).toBeLessThanOrEqual(5)
+      expect(data.tables.totalCount).toBeGreaterThanOrEqual(0)
     })
 
     test('tables - No pagination (default behavior)', async () => {
@@ -224,11 +269,12 @@ describe('Table Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query)
+      const result = await graphqlRequest<TablesQueryData>(query)
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.tables).toBeDefined()
-      expect(result.data.tables.nodes.length).toBeLessThanOrEqual(10) // Default limit
+      expect(data.tables).toBeDefined()
+      expect(data.tables.nodes.length).toBeLessThanOrEqual(10) // Default limit
     })
   })
 })

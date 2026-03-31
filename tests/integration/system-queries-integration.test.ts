@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'system-queries-integration'
-let testContext: IsolatedTestContext
+let testContext: IsolatedTestContext | undefined
 
 describe('System Queries - Integration Tests with Server Isolation', () => {
   beforeAll(async () => {
@@ -16,13 +16,13 @@ describe('System Queries - Integration Tests with Server Isolation', () => {
     console.log('✅ Integration test environment ready')
     console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
     console.log(`💾 Database: ${testContext.database?.databasePath}`)
-  }, 30000)
+  }, 60000)
 
   afterAll(async () => {
     console.log('🧹 Cleaning up integration test environment...')
-    await testContext.cleanup()
+    await testContext?.cleanup?.()
     console.log('✅ Cleanup completed')
-  }, 10000)
+  }, 60000)
 
   describe('GraphQL Schema Introspection', () => {
     test('should have system query types in schema', async () => {

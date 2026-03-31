@@ -31,14 +31,14 @@ subscription BasicTemplateStreaming {
 # 📋 Variables for Template Streaming (템플릿 스트리밍용 변수)
 # ===================================================================
 # Playground 하단 Variables 섹션에 붙여넣으세요:
-{
-  "templateIdentifier": "user-analytics-live",
-  "variables": {
-    "tableId": "users_table",
-    "timeWindow": "1h",
-    "limit": 100
-  }
-}
+# {
+#   "templateIdentifier": "user-analytics-live",
+#   "variables": {
+#     "tableId": "users_table",
+#     "timeWindow": "1h",
+#     "limit": 100
+#   }
+# }
 
 # 2. 변수가 있는 고급 템플릿 스트리밍
 subscription AdvancedTemplateStreaming($templateId: String!, $variables: JSON) {

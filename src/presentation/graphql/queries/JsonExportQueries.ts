@@ -59,6 +59,7 @@ function toGraphQLFormat(format: JsonExportFormat): GraphQLExportFormat {
   return format.toUpperCase() as GraphQLExportFormat
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: static GraphQL resolver namespace is intentional for schema wiring
 export class JsonExportQueries {
   /**
    * Export table data to JSON format

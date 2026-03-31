@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
-import type { ILogger } from '@/application/ports/ILogger.js'
 import { type CreateDocInput, CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
-import { createTestTable } from './test-helpers.js'
+import { createMockLogger, createPaginatedResult, createTestTable, type MockedMethods } from './test-helpers.js'
 
 // Helper function to create test Doc
 function createTestDoc(
@@ -19,48 +18,59 @@ function createTestDoc(
   return Doc.fromDatabase(id, tableId, category as string, version, content, isActive, new Date(), new Date())
 }
 
+type DocRepositoryMock = MockedMethods<IDocRepository>
+type TableRepositoryMock = MockedMethods<ITableRepository>
+
+function createDocRepositoryMock(): DocRepositoryMock {
+  return {
+    save: mock(async (_doc: Doc) => {}),
+    findById: mock(async (_id: string) => null),
+    findAll: mock(async (_options: unknown) => createPaginatedResult<Doc>()),
+    delete: mock(async (_id: string) => {}),
+    findByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => []),
+    findActiveByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => null),
+    findVersionsByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => []),
+    searchDocs: mock(async (_options: unknown) => createPaginatedResult<Doc>()),
+    getLatestVersion: mock(async (_tableId: string, _category: DocCategory) => 1),
+    deactivateOthersInCategory: mock(async (_tableId: string, _category: DocCategory, _exceptId?: string) => {}),
+    exists: mock(async (_tableId: string, _category: DocCategory, _version: number) => false),
+    count: mock(async (_tableId?: string) => 0),
+    countByCategory: mock(async (_category: DocCategory) => 0),
+    searchByContent: mock(
+      async (_options: unknown, _pagination?: { limit?: number; offset?: number }) => createPaginatedResult<Doc>(),
+    ),
+    saveMany: mock(async (_docs: Doc[]) => {}),
+    findByIds: mock(async (_ids: string[]) => []),
+    findByTableIds: mock(async (_tableIds: string[]) => []),
+  } satisfies DocRepositoryMock
+}
+
+function createTableRepositoryMock(): TableRepositoryMock {
+  return {
+    save: mock(async (table: ReturnType<typeof createTestTable>) => table),
+    findById: mock(async (_id: string) => createTestTable('table-1', 'test-table')),
+    findByIdentifier: mock(async (_identifier: string) => null),
+    findAll: mock(async (_options: unknown) => createPaginatedResult<ReturnType<typeof createTestTable>>()),
+    delete: mock(async (_id: string) => {}),
+    count: mock(async () => 0),
+    exists: mock(async (_identifier: string) => false),
+    saveMany: mock(async (_tables: ReturnType<typeof createTestTable>[]) => {}),
+    findByIds: mock(async (_ids: string[]) => []),
+    deleteMany: mock(async (_ids: string[]) => {}),
+    update: mock(async (table: ReturnType<typeof createTestTable>) => table),
+  } satisfies TableRepositoryMock
+}
+
 describe('CreateDocUseCase', () => {
   let useCase: CreateDocUseCase
-  let mockDocRepository: IDocRepository
-  let mockTableRepository: ITableRepository
-  let mockLogger: ILogger
+  let mockDocRepository: DocRepositoryMock
+  let mockTableRepository: TableRepositoryMock
+  let mockLogger: ReturnType<typeof createMockLogger>
 
   beforeEach(() => {
-    // Mock logger
-    mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
-    }
-
-    // Mock repositories
-    mockDocRepository = {
-      save: mock(async (doc) => doc),
-      findById: mock(async () => null),
-      findByTableId: mock(async () => []),
-      findByTableAndCategory: mock(async () => []),
-      exists: mock(async () => false),
-      delete: mock(async () => {}),
-      activate: mock(async () => {}),
-      deactivate: mock(async () => {}),
-      deactivateOthersInCategory: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      count: mock(async () => 0),
-    } as any
-
-    mockTableRepository = {
-      save: mock(async (table) => table),
-      findById: mock(async () => createTestTable('table-1', 'test-table')),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      delete: mock(async () => {}),
-      exists: mock(async () => false),
-      count: mock(async () => 0),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      update: mock(async () => createTestTable()),
-    } as any
+    mockLogger = createMockLogger()
+    mockDocRepository = createDocRepositoryMock()
+    mockTableRepository = createTableRepositoryMock()
 
     useCase = new CreateDocUseCase(mockDocRepository, mockTableRepository, mockLogger)
   })
@@ -68,7 +78,7 @@ describe('CreateDocUseCase', () => {
   describe('Input Validation', () => {
     it('should throw ValidationException when tableId is empty', async () => {
       const input: CreateDocInput = {
-        tableId: '' as any,
+        tableId: '',
         category: DocCategory.USAGE,
         content: 'Test content',
       }
@@ -79,8 +89,8 @@ describe('CreateDocUseCase', () => {
 
     it('should throw ValidationException when category is missing', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
-        category: undefined as any,
+        tableId: 'table-1',
+        category: undefined as unknown as DocCategory,
         content: 'Test content',
       }
 
@@ -90,7 +100,7 @@ describe('CreateDocUseCase', () => {
 
     it('should throw ValidationException when content is empty', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.USAGE,
         content: '',
       }
@@ -101,7 +111,7 @@ describe('CreateDocUseCase', () => {
 
     it('should throw ValidationException when content is whitespace', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.USAGE,
         content: '   ',
       }
@@ -114,7 +124,7 @@ describe('CreateDocUseCase', () => {
   describe('Resource Validation', () => {
     it('should throw NotFoundException when table does not exist', async () => {
       const input: CreateDocInput = {
-        tableId: 'nonexistent-table' as any,
+        tableId: 'nonexistent-table',
         category: DocCategory.USAGE,
         content: 'Test content',
       }
@@ -129,7 +139,7 @@ describe('CreateDocUseCase', () => {
   describe('Version Management', () => {
     it('should create doc with default version 1', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.USAGE,
         content: 'Usage documentation',
       }
@@ -147,7 +157,7 @@ describe('CreateDocUseCase', () => {
 
     it('should create doc with custom version', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.GUIDE,
         content: 'Guide documentation',
         version: 2,
@@ -166,7 +176,7 @@ describe('CreateDocUseCase', () => {
 
     it('should throw ConflictException when doc with same version already exists', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.EXAMPLE,
         content: 'Example documentation',
         version: 1,
@@ -185,7 +195,7 @@ describe('CreateDocUseCase', () => {
   describe('Deactivation Logic', () => {
     it('should deactivate other docs in same category when creating new doc', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.SPEC,
         content: 'Specification documentation',
       }
@@ -204,7 +214,7 @@ describe('CreateDocUseCase', () => {
   describe('Successful Doc Creation', () => {
     it('should create doc with USAGE category', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.USAGE,
         content: 'How to use this table',
       }
@@ -223,7 +233,7 @@ describe('CreateDocUseCase', () => {
 
     it('should create doc with GUIDE category', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.GUIDE,
         content: 'Step-by-step guide',
       }
@@ -240,7 +250,7 @@ describe('CreateDocUseCase', () => {
 
     it('should create doc with EXAMPLE category', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.EXAMPLE,
         content: 'Code examples',
       }
@@ -257,7 +267,7 @@ describe('CreateDocUseCase', () => {
 
     it('should create doc with SPEC category', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.SPEC,
         content: 'Technical specification',
       }
@@ -274,7 +284,7 @@ describe('CreateDocUseCase', () => {
 
     it('should create doc with GENERAL category', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.GENERAL,
         content: 'General information',
       }
@@ -291,8 +301,8 @@ describe('CreateDocUseCase', () => {
 
     it('should handle category mapping from GraphQL enum values', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
-        category: 'USAGE' as any, // GraphQL enum value (uppercase)
+        tableId: 'table-1',
+        category: 'USAGE' as unknown as DocCategory, // GraphQL enum value (uppercase)
         content: 'Mapped category content',
       }
 
@@ -310,7 +320,7 @@ describe('CreateDocUseCase', () => {
   describe('Error Handling', () => {
     it('should log errors and rethrow when save fails', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.USAGE,
         content: 'Test content',
       }
@@ -327,7 +337,7 @@ describe('CreateDocUseCase', () => {
 
     it('should throw error when saved doc cannot be retrieved', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.USAGE,
         content: 'Test content',
       }
@@ -342,7 +352,7 @@ describe('CreateDocUseCase', () => {
   describe('Logging', () => {
     it('should log doc creation start and success', async () => {
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.USAGE,
         content: 'Logged content',
       }
@@ -376,7 +386,7 @@ describe('CreateDocUseCase', () => {
     it('should handle very long content', async () => {
       const longContent = 'A'.repeat(10000)
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.GUIDE,
         content: longContent,
       }
@@ -394,7 +404,7 @@ describe('CreateDocUseCase', () => {
     it('should handle special characters in content', async () => {
       const specialContent = 'Content with special chars: <>&"\'`\n\t'
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.EXAMPLE,
         content: specialContent,
       }
@@ -412,7 +422,7 @@ describe('CreateDocUseCase', () => {
     it('should handle markdown content', async () => {
       const markdownContent = `# Title\n\n## Subtitle\n\n- Item 1\n- Item 2\n\n\`\`\`javascript\nconst x = 1;\n\`\`\``
       const input: CreateDocInput = {
-        tableId: 'table-1' as any,
+        tableId: 'table-1',
         category: DocCategory.GUIDE,
         content: markdownContent,
       }

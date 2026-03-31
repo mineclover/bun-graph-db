@@ -6,15 +6,25 @@
  * Based On: data-model.md McpToolDefinition specification
  */
 
-import type { JSONSchema7 } from 'json-schema'
+import type { JSONSchema7, JSONSchema7Definition } from 'json-schema'
 
 export type OperationType = 'query' | 'mutation' | 'custom'
 
 export interface GraphQLOperation {
   operationName: string
   query: string
-  variables: Record<string, any>
+  variables: Record<string, unknown>
   operationType: OperationType
+}
+
+interface ContractToolDefinitionLike {
+  name: string
+  description: string
+  inputSchema: JSONSchema7
+  graphqlOperation: {
+    type: string
+    query?: string
+  }
 }
 
 export interface McpToolDefinition {
@@ -66,7 +76,11 @@ export class McpToolDefinitionBuilder {
     // For anyOf/oneOf/allOf schemas, validate that each alternative has proper additionalProperties
     if (hasComposition) {
       const alternatives = schema.anyOf || schema.oneOf || schema.allOf || []
-      alternatives.forEach((alt: any, _index: number) => {
+      alternatives.forEach((alt: JSONSchema7Definition, _index: number) => {
+        if (!isJsonSchemaObject(alt)) {
+          return
+        }
+
         if (alt.type === 'object' && alt.additionalProperties === undefined) {
           alt.additionalProperties = false
         }
@@ -157,7 +171,12 @@ export function validateMcpToolDefinition(tool: McpToolDefinition): {
       // For complex schemas with anyOf/oneOf/allOf, validate each sub-schema
       const subSchemas = tool.inputSchema.anyOf || tool.inputSchema.oneOf || tool.inputSchema.allOf
       if (subSchemas && Array.isArray(subSchemas)) {
-        subSchemas.forEach((subSchema: any, index: number) => {
+        subSchemas.forEach((subSchema: JSONSchema7Definition, index: number) => {
+          if (!isJsonSchemaObject(subSchema)) {
+            errors.push(`Sub-schema ${index} must be a JSON schema object`)
+            return
+          }
+
           if (subSchema.type !== 'object') {
             errors.push(`Sub-schema ${index} must be of type "object"`)
           }
@@ -293,7 +312,11 @@ export function createMcpMutationTool(
     .build()
 }
 
-export function createMcpToolFromContract(contractTool: any): McpToolDefinition {
+export function createMcpToolFromContract(contractTool: unknown): McpToolDefinition {
+  if (!isContractToolDefinition(contractTool)) {
+    throw new Error('Invalid contract tool: missing required fields')
+  }
+
   if (!contractTool.name || !contractTool.description || !contractTool.inputSchema || !contractTool.graphqlOperation) {
     throw new Error('Invalid contract tool: missing required fields')
   }
@@ -317,6 +340,10 @@ export function createMcpToolFromContract(contractTool: any): McpToolDefinition 
       operationType: operationType,
     })
   } else {
+    if (typeof contractTool.graphqlOperation.query !== 'string' || contractTool.graphqlOperation.query.length === 0) {
+      throw new Error('Invalid contract tool: missing GraphQL query')
+    }
+
     builder.withGraphQLOperation({
       operationName: contractTool.name,
       query: contractTool.graphqlOperation.query,
@@ -326,4 +353,27 @@ export function createMcpToolFromContract(contractTool: any): McpToolDefinition 
   }
 
   return builder.build()
+}
+
+function isJsonSchemaObject(schema: JSONSchema7Definition): schema is JSONSchema7 {
+  return typeof schema === 'object' && schema !== null
+}
+
+function isContractToolDefinition(value: unknown): value is ContractToolDefinitionLike {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  const record = value as Record<string, unknown>
+  const graphqlOperation = record.graphqlOperation
+
+  return (
+    typeof record.name === 'string' &&
+    typeof record.description === 'string' &&
+    typeof record.inputSchema === 'object' &&
+    record.inputSchema !== null &&
+    typeof graphqlOperation === 'object' &&
+    graphqlOperation !== null &&
+    typeof (graphqlOperation as Record<string, unknown>).type === 'string'
+  )
 }

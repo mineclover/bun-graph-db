@@ -1115,7 +1115,7 @@ export class TableMcpServer {
    * Override tools/call to handle table-specific tool execution
    */
   async handleToolsCall(id: string | number | undefined, params: any): Promise<McpResponse> {
-    if (!params || !params.name) {
+    if (!params?.name) {
       return this.createErrorResponse(id, -32602, 'Invalid params', 'Tool name required')
     }
 

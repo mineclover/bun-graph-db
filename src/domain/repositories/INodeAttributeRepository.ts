@@ -1,5 +1,6 @@
 import type { AttributeId, NodeId, PaginatedResult, PaginationOptions } from '@/core/types/CommonTypes.js'
 import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export interface INodeAttributeRepository {
   save(nodeAttribute: NodeAttribute): Promise<void>
@@ -15,5 +16,5 @@ export interface INodeAttributeRepository {
   countByNodeId(nodeId: NodeId): Promise<number>
   saveMany(nodeAttributes: NodeAttribute[]): Promise<void>
   updateMany(nodeAttributes: NodeAttribute[]): Promise<void>
-  setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: any): Promise<NodeAttribute>
+  setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: SafeJsonValue): Promise<NodeAttribute>
 }

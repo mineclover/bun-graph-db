@@ -7,7 +7,6 @@ import { type NodeDto, fromEntities as nodeFromEntities } from '@/application/dt
 import { type TableDto, fromEntity as tableFromEntity } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
-import type { TableId } from '@/core/types/CommonTypes.js'
 import type {
   CreateTableInput,
   GraphQLContext,
@@ -51,7 +50,7 @@ export class TableResolver extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        const table = await this.tableRepository.findById(args.id as TableId)
+        const table = await this.tableRepository.findById(args.id)
         return table ? tableFromEntity(table) : null
       },
       'findTableById',
@@ -100,7 +99,7 @@ export class TableResolver extends BaseResolver {
         createdAfter: filter?.createdAfter || undefined,
         createdBefore: filter?.createdBefore || undefined,
         sortBy: sort?.[0]?.field || 'createdAt',
-        sortDirection: (sort?.[0]?.direction || 'DESC') as 'ASC' | 'DESC',
+        sortDirection: sort?.[0]?.direction ?? 'DESC',
       }
 
       const result = await this.tableRepository.findAll(searchOptions)
@@ -139,7 +138,7 @@ export class TableResolver extends BaseResolver {
     includeSampleNodes?: boolean
     includeUsageStats?: boolean
     sampleLimit?: number
-  }): Promise<any> {
+  }): Promise<Record<string, unknown>> {
     // Validate that either tableId or identifier is provided
     if (!args.tableId && !args.identifier) {
       throw new ValidationException('Either tableId or identifier must be provided')
@@ -148,9 +147,9 @@ export class TableResolver extends BaseResolver {
     return this.handleQuery(
       async () => {
         // Find the table first
-        let table: any
+        let table: Awaited<ReturnType<ITableRepository['findById']>> | Awaited<ReturnType<ITableRepository['findByIdentifier']>> = null
         if (args.tableId) {
-          table = await this.tableRepository.findById(args.tableId as TableId)
+          table = await this.tableRepository.findById(args.tableId)
         } else if (args.identifier) {
           table = await this.tableRepository.findByIdentifier(args.identifier)
         }
@@ -251,7 +250,7 @@ export class TableResolver extends BaseResolver {
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
     try {
-      const table = await this.tableRepository.findById(args.id as TableId)
+      const table = await this.tableRepository.findById(args.id)
       if (!table) {
         throw new NotFoundException(`Table with id ${args.id} not found`)
       }
@@ -308,7 +307,7 @@ export class TableResolver extends BaseResolver {
     errors: Array<{ message: string; code: string }>
   }> {
     try {
-      const table = await this.tableRepository.findById(args.id as TableId)
+      const table = await this.tableRepository.findById(args.id)
       if (!table) {
         throw new NotFoundException(`Table with id ${args.id} not found`)
       }
@@ -318,7 +317,7 @@ export class TableResolver extends BaseResolver {
         throw new ValidationException('Cannot delete table with existing nodes')
       }
 
-      await this.tableRepository.delete(args.id as TableId)
+      await this.tableRepository.delete(args.id)
 
       return {
         success: true,

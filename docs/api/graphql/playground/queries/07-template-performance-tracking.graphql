@@ -82,20 +82,20 @@ query TemplatePerformanceOverview {
 # ===================================================================
 # 📋 Variables for Performance Queries (성능 쿼리용 변수)
 # ===================================================================
-{
-  "performanceFilter": {
-    "operationTypes": ["query", "mutation"],
-    "performanceCategories": ["fast", "medium"],
-    "usageRange": { "min": 100, "max": 2000 },
-    "onlyActive": true
-  },
-  "timeRange": {
-    "start": "2025-09-17T00:00:00Z",
-    "end": "2025-09-18T23:59:59Z"
-  },
-  "templateId": "1",
-  "threshold": 200
-}
+# {
+#   "performanceFilter": {
+#     "operationTypes": ["query", "mutation"],
+#     "performanceCategories": ["fast", "medium"],
+#     "usageRange": { "min": 100, "max": 2000 },
+#     "onlyActive": true
+#   },
+#   "timeRange": {
+#     "start": "2025-09-17T00:00:00Z",
+#     "end": "2025-09-18T23:59:59Z"
+#   },
+#   "templateId": "1",
+#   "threshold": 200
+# }
 
 # 2. 핫 쿼리 분석 - 고성능, 고사용량 템플릿
 query HotQueriesAnalysis {

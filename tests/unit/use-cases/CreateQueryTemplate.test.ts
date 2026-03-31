@@ -1,40 +1,56 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
-import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   CreateQueryTemplate,
   type CreateQueryTemplateRequest,
 } from '@/application/use-cases/query-templates/CreateQueryTemplate.js'
+import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
+import { createMockLogger, type MockedMethods } from './test-helpers.js'
+
+type QueryTemplateRepositoryMock = MockedMethods<IQueryTemplateRepository>
+type QueryTemplateSearchResult = Awaited<ReturnType<IQueryTemplateRepository['search']>>
+
+function createQueryTemplateSearchResult(): QueryTemplateSearchResult {
+  return {
+    items: [],
+    total: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  }
+}
+
+function createQueryTemplateRepositoryMock(): QueryTemplateRepositoryMock {
+  return {
+    findById: mock(async (_id: string) => null),
+    findByIdentifier: mock(async (_identifier: string) => null),
+    search: mock(async (_criteria: unknown) => createQueryTemplateSearchResult()),
+    searchByQueryName: mock(async (_queryName: string) => []),
+    searchByOperationType: mock(async (_operationType: string) => []),
+    findByApplicableTable: mock(async (_tableName: string, _includeUniversal?: boolean) => []),
+    findTemplatesWithTableDependencies: mock(async () => []),
+    create: mock(async (template: QueryTemplate) => template),
+    update: mock(async (_id: string, _updates: unknown) => {
+      throw new Error('update should not be called in this test suite')
+    }),
+    deleteById: mock(async (_id: string) => false),
+    incrementUsage: mock(async (_id: string) => {}),
+    updateExecutionStats: mock(async (_id: string, _executionTimeMs: number) => {}),
+    findPopular: mock(async (_limit?: number) => []),
+    updateStatus: mock(async (_id: string, _isActive: boolean) => {
+      throw new Error('updateStatus should not be called in this test suite')
+    }),
+  } satisfies QueryTemplateRepositoryMock
+}
 
 describe('CreateQueryTemplate', () => {
   let useCase: CreateQueryTemplate
-  let mockQueryTemplateRepository: IQueryTemplateRepository
-  let mockLogger: ILogger
+  let mockQueryTemplateRepository: QueryTemplateRepositoryMock
+  let mockLogger: ReturnType<typeof createMockLogger>
 
   beforeEach(() => {
-    // Mock logger
-    mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
-    }
-
-    // Mock repository
-    mockQueryTemplateRepository = {
-      create: mock(async (template) => template),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => []),
-      update: mock(async () => {}),
-      delete: mock(async () => {}),
-      search: mock(async () => ({ templates: [], total: 0 })),
-      activate: mock(async () => {}),
-      deactivate: mock(async () => {}),
-      incrementUsageCount: mock(async () => {}),
-      updateExecutionStats: mock(async () => {}),
-    } as any
+    mockLogger = createMockLogger()
+    mockQueryTemplateRepository = createQueryTemplateRepositoryMock()
 
     useCase = new CreateQueryTemplate(mockQueryTemplateRepository, mockLogger)
   })

@@ -3,6 +3,7 @@
 type Table implements Node {
   id: ID!
   identifier: String!
+  name: String!
   description: String
   createdAt: DateTime!
   updatedAt: DateTime!
@@ -10,14 +11,16 @@ type Table implements Node {
   # Relationships
   attributes: [Attribute!]!
   attributeTypes: [AttributeType!]!
+  nodes: [TableNode!]!
   tableNodes: [TableNode!]!
 
   # Computed fields
+  nodeCount: Int!
   tableNodeCount: Int!
   attributeCount: Int!
 
   # AI-friendly metadata
-  aiMetadata: AIMetadata
+  aiMetadata(sampleLimit: Int): AIMetadata
 
   # MCP setup command for Claude Code integration
   mcpCommand: String!
@@ -26,6 +29,7 @@ type Table implements Node {
 # Input types for table operations
 input CreateTableInput {
   identifier: String!
+  name: String
   description: String
 }
 
@@ -53,6 +57,7 @@ input TablesPagination {
 # Connection types for tables
 type TablesConnection implements Connection {
   nodes: [Table!]!
+  tables: [Table!]!
   totalCount: Int!
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -211,8 +216,18 @@ type AITemplateRecommendation {
 }
 
 type AISampleData {
+  entries: [AISampleEntry!]!
+  totalCount: Int!
+  hasMore: Boolean!
   nodes: [AISampleNode!]!
   relationships: [AISampleRelationship!]!
+}
+
+type AISampleEntry {
+  nodeId: String!
+  title: String!
+  content: String!
+  attributes: JSON!
 }
 
 type AISampleNode {

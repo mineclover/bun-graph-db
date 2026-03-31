@@ -9,6 +9,7 @@ import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttrib
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import { sanitizeTextContent } from '@/shared/utils/sanitizeText.js'
 
 export class CreateNodeUseCase {
   constructor(
@@ -20,9 +21,13 @@ export class CreateNodeUseCase {
   ) {}
 
   async execute(input: CreateNodeInput): Promise<CreateNodeOutput> {
+    const sanitizedContent = sanitizeTextContent(input.content) ?? undefined
+    const sanitizedTitle = sanitizeTextContent(input.title) ?? undefined
+    const sanitizedDescription = sanitizeTextContent(input.description) ?? undefined
+
     this.logger.info('Creating new node', {
       tableId: input.tableId,
-      content: input.content,
+      content: sanitizedContent,
     })
 
     // Validate input
@@ -30,7 +35,7 @@ export class CreateNodeUseCase {
       throw new ValidationException('Table ID is required')
     }
 
-    if (!input.content?.trim()) {
+    if (!sanitizedContent?.trim()) {
       throw new ValidationException('Node content is required')
     }
 
@@ -41,26 +46,32 @@ export class CreateNodeUseCase {
     }
 
     // Check if node with same content already exists in this table
-    const existingNode = await this.nodeRepository.findByTableIdAndContent(input.tableId as TableId, input.content)
+    const existingNode = await this.nodeRepository.findByTableIdAndContent(input.tableId as TableId, sanitizedContent)
     if (existingNode) {
-      throw new ConflictException(`Node with content '${input.content}' already exists in table '${table.identifier}'`)
+      throw new ConflictException(`Node with content '${sanitizedContent}' already exists in table '${table.identifier}'`)
     }
 
     try {
       // Create domain entity
-      const node = Node.create(input.tableId as TableId, input.content, input.title, input.description)
+      const node = Node.create(
+        input.tableId as TableId,
+        sanitizedContent,
+        sanitizedTitle,
+        sanitizedDescription,
+        input.metadata,
+      )
 
       // Save node to repository
       await this.nodeRepository.save(node)
 
       // Retrieve the saved node with the generated ID
-      const savedNode = await this.nodeRepository.findByTableIdAndContent(input.tableId as TableId, input.content)
+      const savedNode = await this.nodeRepository.findByTableIdAndContent(input.tableId as TableId, sanitizedContent)
       if (!savedNode) {
         throw new Error('Failed to retrieve saved node')
       }
 
       // Process attributes if provided
-      const attributeValues: Record<string, any> = {}
+      const attributeValues: Record<string, unknown> = {}
 
       if (input.attributes) {
         for (const [attributeIdentifier, value] of Object.entries(input.attributes)) {
@@ -101,6 +112,7 @@ export class CreateNodeUseCase {
     } catch (error) {
       this.logger.error('Failed to create node', {
         content: input.content,
+        sanitizedContent,
         tableId: input.tableId,
         error: error instanceof Error ? error.message : String(error),
       })

@@ -321,8 +321,7 @@ describe('AIMetadata Unit Tests', () => {
       expect(result.tableDocs.aiMetadata.schemaInfo).toBeDefined()
       expect(result.tableDocs.aiMetadata.usagePatterns).toBeDefined()
       expect(result.tableDocs.aiMetadata.sampleData).toBeDefined()
-      // LegacyAIMetadataAdapter always returns empty arrays for sampleData.nodes
-      expect(result.tableDocs.aiMetadata.sampleData.nodes.length).toBe(0)
+      expect(result.tableDocs.aiMetadata.sampleData.nodes.length).toBe(2)
     })
 
     it('should generate schema information correctly', async () => {
@@ -474,8 +473,7 @@ describe('AIMetadata Unit Tests', () => {
 
       const sampleData = result.tableDocs.aiMetadata.sampleData
 
-      // Test sample data structure - LegacyAIMetadataAdapter returns empty arrays
-      // as it doesn't actually fetch sample nodes
+      // Test sample data structure
       expect(sampleData).toBeDefined()
       expect(Array.isArray(sampleData.nodes)).toBe(true)
       expect(Array.isArray(sampleData.relationships)).toBe(true)
@@ -532,10 +530,9 @@ describe('AIMetadata Unit Tests', () => {
       expect(aiMetadata.schemaInfo.requiredFields).toEqual([])
       expect(aiMetadata.schemaInfo.searchableFields).toEqual([])
       expect(aiMetadata.usagePatterns.templateRecommendations).toEqual([])
-      // LegacyAIMetadataAdapter always returns empty arrays for sampleData
       expect(aiMetadata.sampleData).toBeDefined()
       expect(aiMetadata.sampleData.nodes).toEqual([])
-      expect(aiMetadata.usagePatterns.queryComplexity).toBe('moderate')
+      expect(aiMetadata.usagePatterns.queryComplexity).toBe('simple')
     })
   })
 
@@ -569,8 +566,7 @@ describe('AIMetadata Unit Tests', () => {
         sampleLimit: 3,
       })
 
-      // LegacyAIMetadataAdapter always returns empty arrays - sampleLimit parameter is not used
-      expect(result.tableDocs.aiMetadata.sampleData.nodes.length).toBe(0)
+      expect(result.tableDocs.aiMetadata.sampleData.nodes.length).toBe(3)
     })
 
     it('should allow disabling AI metadata', async () => {
@@ -765,8 +761,7 @@ describe('AIMetadata Unit Tests', () => {
         sampleLimit: 5,
       })
 
-      // LegacyAIMetadataAdapter always returns empty arrays regardless of input
-      expect(result.tableDocs.aiMetadata.sampleData.nodes.length).toBe(0)
+      expect(result.tableDocs.aiMetadata.sampleData.nodes.length).toBe(5)
     })
   })
 })

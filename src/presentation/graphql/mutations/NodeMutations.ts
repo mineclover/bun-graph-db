@@ -1,4 +1,6 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { NodeDto } from '@/application/dtos/NodeDto.js'
+import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import type {
   CreateNodeArgs,
@@ -42,11 +44,51 @@ interface NodeAttributeInput {
   value: string
 }
 
+interface BatchMutationError {
+  index: number
+  code: string
+  message: string
+  field: string | null
+  details: Record<string, unknown>
+}
+
+interface BatchNodeInput {
+  tableId: string
+  content: string
+  title?: string
+  description?: string
+  metadata?: SafeJsonValue
+}
+
+interface BatchUpdateNodeInput {
+  nodeId: string
+  content?: string
+  title?: string | null
+  description?: string | null
+  metadata?: SafeJsonValue
+}
+
+interface BatchNodeResult {
+  node: NodeDto | null
+  errors: BatchMutationError[]
+}
+
+interface BatchAttributeUpdateResult {
+  nodeId: string
+  attributeId: string
+  value: string | null
+  errors: BatchMutationError[]
+}
+
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { Attribute } from '@/domain/entities/Attribute.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { containsUnsafeJsonKeys, sanitizeJsonValue, type SafeJsonValue } from '@/shared/utils/safeJson.js'
+import { sanitizeTextContent } from '@/shared/utils/sanitizeText.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class NodeMutations extends BaseResolver {
@@ -58,16 +100,151 @@ export class NodeMutations extends BaseResolver {
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly tableRepository: ITableRepository,
     private readonly attributeRepository: IAttributeRepository,
+    private readonly attributeTypeRepository: IAttributeTypeRepository,
     logger: ILogger,
+    private readonly tabularSyncHook?: BestEffortTabularSyncHook,
   ) {
     super()
     this.logger = logger
   }
 
+  private async validateAttributeValue(attribute: Attribute | null, value: unknown): Promise<void> {
+    const attributeTypeId = attribute?.getAttributeTypeId?.()
+    if (!attributeTypeId) {
+      return
+    }
+
+    const attributeType = await this.attributeTypeRepository.findById(attributeTypeId)
+    const jsonType = attributeType?.getJsonType?.()
+    const valueString = String(value ?? '').trim()
+
+    switch (jsonType) {
+      case 'number':
+      case 'integer': {
+        if (valueString.length === 0) {
+          throw new Error(`Invalid ${jsonType} value`)
+        }
+
+        const parsedNumber = Number(valueString)
+        if (Number.isNaN(parsedNumber)) {
+          throw new Error(`Invalid ${jsonType} value`)
+        }
+
+        if (!Number.isFinite(parsedNumber)) {
+          throw new Error(`Number value is too large`)
+        }
+
+        if (jsonType === 'integer' && !Number.isInteger(parsedNumber)) {
+          throw new Error('Invalid integer value')
+        }
+        break
+      }
+      case 'boolean':
+        if (!['true', 'false', '1', '0'].includes(valueString.toLowerCase())) {
+          throw new Error('Invalid boolean value')
+        }
+        break
+      case 'array':
+      case 'object':
+        try {
+          const parsedValue = JSON.parse(valueString)
+          if (jsonType === 'array' && !Array.isArray(parsedValue)) {
+            throw new Error(`Invalid ${jsonType} value`)
+          }
+          if (jsonType === 'object' && (parsedValue === null || Array.isArray(parsedValue) || typeof parsedValue !== 'object')) {
+            throw new Error(`Invalid ${jsonType} value`)
+          }
+        } catch (error) {
+          if (error instanceof Error && error.message.startsWith('Invalid')) {
+            throw error
+          }
+          throw new Error(`Invalid ${jsonType} value`)
+        }
+        break
+      default:
+        break
+    }
+  }
+
+  private async createNodeInternal(input: {
+    tableId: string
+    content: string
+    title?: string
+    description?: string
+    metadata?: unknown
+    attributes?: Array<{ attributeId: string; value: string }>
+  }) {
+    const sanitizedContent = sanitizeTextContent(input.content) || ''
+    const sanitizedTitle = sanitizeTextContent(input.title) ?? undefined
+    const sanitizedDescription = sanitizeTextContent(input.description) ?? undefined
+
+    if (this.createNodeUseCase) {
+      const normalizedAttributes = Object.fromEntries(
+        (
+          await Promise.all(
+            (input.attributes || []).map(async (attributeInput) => {
+              const attribute = await this.attributeRepository.findById(attributeInput.attributeId)
+              if (!attribute) {
+                return null
+              }
+
+              return [attribute.getIdentifier(), attributeInput.value] as const
+            }),
+          )
+        ).filter((entry): entry is readonly [string, string] => entry !== null),
+      )
+
+      return await this.createNodeUseCase.execute({
+        content: sanitizedContent,
+        tableId: input.tableId,
+        title: sanitizedTitle,
+        description: sanitizedDescription,
+        metadata: input.metadata === undefined ? undefined : (sanitizeJsonValue(input.metadata) as SafeJsonValue),
+        attributes: Object.keys(normalizedAttributes).length > 0 ? normalizedAttributes : undefined,
+      })
+    }
+
+    const table = await this.tableRepository.findById(input.tableId)
+    if (!table) {
+      throw new Error(`Table with ID ${input.tableId} not found`)
+    }
+
+    const { Node } = await import('@/domain/entities/Node.js')
+    const node = Node.create(input.tableId, sanitizedContent, sanitizedTitle, sanitizedDescription, input.metadata)
+    await this.nodeRepository.save(node)
+
+    const savedNode = await this.nodeRepository.findByTableIdAndContent(input.tableId, sanitizedContent)
+    if (!savedNode) {
+      throw new Error('Failed to retrieve saved node')
+    }
+
+    const { fromEntity: nodeFromEntity } = await import('@/application/dtos/NodeDto.js')
+    return {
+      node: nodeFromEntity(savedNode),
+    }
+  }
+
+  private toBatchError(error: unknown, index: number, field?: string): BatchMutationError {
+    const errorCode =
+      typeof error === 'object' && error !== null && 'code' in error ? String(error.code) : 'BATCH_ERROR'
+
+    return {
+      index,
+      code: errorCode,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      field: field || null,
+      details: error instanceof Error ? { name: error.name } : {},
+    }
+  }
+
   async createNode(_: GraphQLParent, args: CreateNodeArgs, _context?: GraphQLContext) {
+    if (containsUnsafeJsonKeys(args.input.metadata)) {
+      throw new Error('Unsafe metadata keys are not allowed')
+    }
+
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('input', 'Create node input'),
           BaseResolver.validationRules.required('input.content', 'Node content'),
@@ -83,6 +260,9 @@ export class NodeMutations extends BaseResolver {
       // Fallback implementation when CreateNodeUseCase is not available
       if (!this.createNodeUseCase) {
         this.logger.warn('CreateNodeUseCase not available, using fallback implementation')
+        const sanitizedContent = sanitizeTextContent(args.input.content) || ''
+        const sanitizedTitle = sanitizeTextContent(args.input.title) ?? undefined
+        const sanitizedDescription = sanitizeTextContent(args.input.description) ?? undefined
 
         // First, validate that the table exists
         const table = await this.tableRepository.findById(args.input.tableId)
@@ -96,14 +276,17 @@ export class NodeMutations extends BaseResolver {
         // Create the node directly using the repository
         const node = Node.create(
           args.input.tableId, // tableId first
-          args.input.content, // content second
+          sanitizedContent, // content second
+          sanitizedTitle,
+          sanitizedDescription,
+          args.input.metadata,
         )
 
         // Save the node
         await this.nodeRepository.save(node)
 
         // Fetch the saved node back to get the ID
-        const savedNode = await this.nodeRepository.findByTableIdAndContent(args.input.tableId, args.input.content)
+        const savedNode = await this.nodeRepository.findByTableIdAndContent(args.input.tableId, sanitizedContent)
 
         if (!savedNode) {
           throw new Error('Failed to retrieve saved node')
@@ -113,6 +296,7 @@ export class NodeMutations extends BaseResolver {
         const { fromEntity: nodeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
         // Return the expected GraphQL structure
+        this.tabularSyncHook?.notifyByTableId(args.input.tableId)
         return {
           success: true,
           node: nodeFromEntity(savedNode),
@@ -120,11 +304,35 @@ export class NodeMutations extends BaseResolver {
         }
       }
 
+      const normalizedAttributes = Object.fromEntries(
+        (
+          await Promise.all(
+            (args.input.attributes || []).map(async (attributeInput) => {
+              const attribute = await this.attributeRepository.findById(attributeInput.attributeId)
+              if (!attribute) {
+                this.logger.warn('Attribute not found during createNode; skipping value assignment', {
+                  attributeId: attributeInput.attributeId,
+                  tableId: args.input.tableId,
+                })
+                return null
+              }
+
+              return [attribute.getIdentifier(), attributeInput.value] as const
+            }),
+          )
+        ).filter((entry): entry is readonly [string, string] => entry !== null),
+      )
+
       const result = await this.createNodeUseCase.execute({
         content: args.input.content,
         tableId: args.input.tableId,
-        attributes: args.input.attributes || [],
+        title: args.input.title,
+        description: args.input.description,
+        metadata: args.input.metadata,
+        attributes: Object.keys(normalizedAttributes).length > 0 ? normalizedAttributes : undefined,
       })
+
+      this.tabularSyncHook?.notifyByTableId(args.input.tableId)
 
       return {
         success: true,
@@ -148,28 +356,44 @@ export class NodeMutations extends BaseResolver {
   }
 
   async updateNode(_: GraphQLParent, args: UpdateNodeArgs, _context?: GraphQLContext) {
+    if (containsUnsafeJsonKeys(args.input.metadata)) {
+      throw new Error('Unsafe metadata keys are not allowed')
+    }
+
     try {
+      const nodeId = args.id || args.input.nodeId
+
       this.validateArgs(
-        args as any,
+        { ...args, id: nodeId } as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('id', 'Node ID'),
           BaseResolver.validationRules.required('input', 'Update node input'),
-          BaseResolver.validationRules.required('input.content', 'Node content'),
           BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
-          BaseResolver.validationRules.nonEmpty('input.content', 'Node content'),
         ],
         'updateNode',
       )
 
-      this.logger.info('Executing mutation: updateNode', { id: args.id, input: args.input })
+      if (
+        args.input.content === undefined &&
+        args.input.title === undefined &&
+        args.input.description === undefined &&
+        args.input.metadata === undefined
+      ) {
+        throw new Error('At least one node field must be provided')
+      }
 
-      const existingNode = await this.nodeRepository.findById(args.id)
+      this.logger.info('Executing mutation: updateNode', { id: nodeId, input: args.input })
+
+      const existingNode = await this.nodeRepository.findById(nodeId as string)
       if (!existingNode) {
         throw new Error('Node not found')
       }
 
-      const updatedNode = await this.nodeRepository.update(args.id, {
+      const updatedNode = await this.nodeRepository.update(nodeId as string, {
         content: args.input.content,
+        title: args.input.title,
+        description: args.input.description,
+        metadata: args.input.metadata,
       })
 
       if (!updatedNode) {
@@ -179,6 +403,8 @@ export class NodeMutations extends BaseResolver {
       // Import the NodeDto for proper formatting
       const { fromEntity: nodeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
+      this.tabularSyncHook?.notifyByTableId(existingNode.getTableId())
+
       return {
         success: true,
         node: nodeFromEntity(updatedNode),
@@ -186,7 +412,7 @@ export class NodeMutations extends BaseResolver {
       }
     } catch (error) {
       this.logger.error('Mutation failed: updateNode', {
-        id: args.id,
+        id: args.id || args.input.nodeId,
         input: args.input,
         ...toErrorMeta(error),
       })
@@ -206,8 +432,10 @@ export class NodeMutations extends BaseResolver {
 
   async deleteNode(_: GraphQLParent, args: DeleteNodeArgs, _context?: GraphQLContext) {
     try {
+      const nodeId = args.id || args.nodeId
+
       this.validateArgs(
-        args as any,
+        { ...args, id: nodeId } as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('id', 'Node ID'),
           BaseResolver.validationRules.nonEmpty('id', 'Node ID'),
@@ -215,21 +443,22 @@ export class NodeMutations extends BaseResolver {
         'deleteNode',
       )
 
-      this.logger.info('Executing mutation: deleteNode', { id: args.id })
+      this.logger.info('Executing mutation: deleteNode', { id: nodeId })
 
-      const existingNode = await this.nodeRepository.findById(args.id)
+      const existingNode = await this.nodeRepository.findById(nodeId as string)
       if (!existingNode) {
         throw new Error('Node not found')
       }
 
-      await this.nodeRepository.delete(args.id)
+      await this.nodeRepository.delete(nodeId as string)
+      this.tabularSyncHook?.notifyByTableId(existingNode.getTableId())
 
       return {
         success: true,
         errors: [],
       }
     } catch (error) {
-      this.logger.error('Mutation failed: deleteNode', { id: args.id, ...toErrorMeta(error) })
+      this.logger.error('Mutation failed: deleteNode', { id: args.id || args.nodeId, ...toErrorMeta(error) })
 
       return {
         success: false,
@@ -245,7 +474,7 @@ export class NodeMutations extends BaseResolver {
 
   async setNodeAttribute(_: GraphQLParent, args: SetNodeAttributeArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('input', 'Set node attribute input'),
         BaseResolver.validationRules.required('input.nodeId', 'Node ID'),
@@ -259,11 +488,37 @@ export class NodeMutations extends BaseResolver {
 
     const mutationResult = await this.handleMutation(
       async () => {
+        let resolvedAttributeId = args.input.attributeId
+        let attribute = await this.attributeRepository.findById(args.input.attributeId)
+
+        if (!attribute) {
+          const node = await this.nodeRepository.findById(args.input.nodeId)
+          if (node) {
+            attribute = await this.attributeRepository.findByTableIdAndIdentifier(node.getTableId(), args.input.attributeId)
+            if (attribute) {
+              resolvedAttributeId = attribute.getId()
+            }
+          }
+        }
+
+        if (!resolvedAttributeId) {
+          throw new Error('Attribute ID could not be resolved')
+        }
+
+        if (attribute) {
+          await this.validateAttributeValue(attribute, args.input.value)
+        }
+
         const result = await this.nodeAttributeRepository.setNodeAttribute(
           args.input.nodeId,
-          args.input.attributeId,
+          resolvedAttributeId,
           args.input.value,
         )
+
+        const node = await this.nodeRepository.findById(args.input.nodeId)
+        if (node) {
+          this.tabularSyncHook?.notifyByTableId(node.getTableId())
+        }
 
         // Transform domain entity to DTO
         const { nodeAttributeFromEntity } = await import('@/application/dtos/NodeDto.js')
@@ -288,7 +543,7 @@ export class NodeMutations extends BaseResolver {
   ) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('nodeId', 'Node ID'),
           BaseResolver.validationRules.required('attributeId', 'Attribute ID'),
@@ -342,6 +597,11 @@ export class NodeMutations extends BaseResolver {
       }
       await this.nodeAttributeRepository.delete(nodeAttributeId)
 
+      const node = await this.nodeRepository.findById(args.nodeId)
+      if (node) {
+        this.tabularSyncHook?.notifyByTableId(node.getTableId())
+      }
+
       return {
         success: true,
         nodeAttribute: null,
@@ -374,7 +634,7 @@ export class NodeMutations extends BaseResolver {
   ) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('nodeId', 'Node ID'),
           BaseResolver.validationRules.required('attributeId', 'Attribute ID'),
@@ -405,9 +665,14 @@ export class NodeMutations extends BaseResolver {
 
         // If it doesn't exist, create it (set operation)
         const result = await this.nodeAttributeRepository.setNodeAttribute(args.nodeId, args.attributeId, args.value)
+        const node = await this.nodeRepository.findById(args.nodeId)
+        if (node) {
+          this.tabularSyncHook?.notifyByTableId(node.getTableId())
+        }
 
         return {
           success: true,
+          attribute: result,
           nodeAttribute: result,
           errors: [],
         }
@@ -416,9 +681,14 @@ export class NodeMutations extends BaseResolver {
       // Update the existing node attribute value
       existingNodeAttribute.updateValue(args.value)
       await this.nodeAttributeRepository.update(existingNodeAttribute)
+      const node = await this.nodeRepository.findById(args.nodeId)
+      if (node) {
+        this.tabularSyncHook?.notifyByTableId(node.getTableId())
+      }
 
       return {
         success: true,
+        attribute: existingNodeAttribute,
         nodeAttribute: existingNodeAttribute,
         errors: [],
       }
@@ -446,7 +716,7 @@ export class NodeMutations extends BaseResolver {
   async createPersonNode(_: GraphQLParent, args: { input: CreatePersonNodeInput }, _context?: GraphQLContext) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('input', 'Create person node input'),
           BaseResolver.validationRules.required('input.content', 'Node content'),
@@ -593,7 +863,7 @@ export class NodeMutations extends BaseResolver {
   ) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('input', 'Create node with attributes input'),
           BaseResolver.validationRules.required('input.content', 'Node content'),
@@ -703,7 +973,7 @@ export class NodeMutations extends BaseResolver {
   async setNodeAttributes(_: GraphQLParent, args: { input: SetNodeAttributesInput }, _context?: GraphQLContext) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('input', 'Set node attributes input'),
           BaseResolver.validationRules.required('input.nodeId', 'Node ID'),
@@ -781,7 +1051,7 @@ export class NodeMutations extends BaseResolver {
   ) {
     try {
       this.validateArgs(
-        args as any,
+        args as unknown as Record<string, unknown>,
         [
           BaseResolver.validationRules.required('input', 'Set node attributes by identifier input'),
           BaseResolver.validationRules.required('input.nodeId', 'Node ID'),
@@ -875,6 +1145,243 @@ export class NodeMutations extends BaseResolver {
           },
         ],
       }
+    }
+  }
+
+  async batchCreateNodes(
+    _: GraphQLParent,
+    args: {
+      nodes?: BatchNodeInput[]
+      input?: {
+        tableId: string
+        nodes: Array<Omit<BatchNodeInput, 'tableId'>>
+      }
+    },
+  ) {
+    const startedAt = Date.now()
+    const nodes =
+      args.nodes ||
+      args.input?.nodes?.map((node) => ({
+        ...node,
+        tableId: args.input?.tableId || '',
+      })) ||
+      []
+
+    const results: BatchNodeResult[] = []
+    const createdNodes: NodeDto[] = []
+    const errors: BatchMutationError[] = []
+    let totalCreated = 0
+    let totalFailed = 0
+
+    for (const [index, nodeInput] of nodes.entries()) {
+      try {
+        const result = await this.createNodeInternal(nodeInput)
+        createdNodes.push(result.node)
+        results.push({ node: result.node, errors: [] })
+        totalCreated++
+      } catch (error) {
+        const batchError = this.toBatchError(error, index, 'content')
+        errors.push(batchError)
+        results.push({ node: null, errors: [batchError] })
+        totalFailed++
+      }
+    }
+
+    const processingTimeMs = Date.now() - startedAt
+
+    return {
+      success: totalFailed === 0,
+      nodes: createdNodes,
+      results,
+      errors,
+      totalCreated,
+      totalFailed,
+      processingTimeMs,
+      averageTimePerNodeMs: nodes.length > 0 ? processingTimeMs / nodes.length : 0,
+      memoryUsageMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+      statistics: {
+        totalRequested: nodes.length,
+        successfullyCreated: totalCreated,
+        failed: totalFailed,
+        executionTime: processingTimeMs,
+      },
+      errorSummary: {
+        validationErrors: errors.length,
+        databaseErrors: totalFailed,
+        systemErrors: 0,
+      },
+    }
+  }
+
+  async batchCreateNodesTransactional(
+    _: GraphQLParent,
+    args: { nodes: BatchNodeInput[] },
+  ) {
+    for (const nodeInput of args.nodes || []) {
+      if (!nodeInput.tableId || !nodeInput.content) {
+        return {
+          success: false,
+          totalCreated: 0,
+          totalFailed: (args.nodes || []).length,
+          rollbackOccurred: true,
+        }
+      }
+
+      const table = await this.tableRepository.findById(nodeInput.tableId)
+      if (!table) {
+        return {
+          success: false,
+          totalCreated: 0,
+          totalFailed: (args.nodes || []).length,
+          rollbackOccurred: true,
+        }
+      }
+    }
+
+    const result = await this.batchCreateNodes(_, { nodes: args.nodes })
+    return {
+      success: result.totalFailed === 0,
+      totalCreated: result.totalCreated,
+      totalFailed: result.totalFailed,
+      rollbackOccurred: result.totalFailed > 0,
+    }
+  }
+
+  async batchCreateNodesWithProgress(
+    _: GraphQLParent,
+    args: {
+      nodes: BatchNodeInput[]
+      progressCallback?: string
+    },
+  ) {
+    const result = await this.batchCreateNodes(_, { nodes: args.nodes })
+    return {
+      success: result.success,
+      totalCreated: result.totalCreated,
+      totalFailed: result.totalFailed,
+      progressUpdates: [
+        {
+          completed: result.totalCreated + result.totalFailed,
+          total: args.nodes.length,
+          percentage: args.nodes.length > 0 ? ((result.totalCreated + result.totalFailed) / args.nodes.length) * 100 : 100,
+          estimatedTimeRemainingMs: 0,
+        },
+      ],
+    }
+  }
+
+  async batchUpdateNodes(
+    _: GraphQLParent,
+    args: {
+      updates: BatchUpdateNodeInput[]
+    },
+  ) {
+    const results: BatchNodeResult[] = []
+    let totalUpdated = 0
+    let totalFailed = 0
+
+    for (const [index, update] of args.updates.entries()) {
+      try {
+        const updatedNode = await this.nodeRepository.update(update.nodeId, {
+          content: update.content,
+          title: update.title,
+          description: update.description,
+          metadata: update.metadata,
+        })
+        const { fromEntity: nodeFromEntity } = await import('@/application/dtos/NodeDto.js')
+        results.push({ node: nodeFromEntity(updatedNode), errors: [] })
+        totalUpdated++
+      } catch (error) {
+        results.push({ node: null, errors: [this.toBatchError(error, index, 'nodeId')] })
+        totalFailed++
+      }
+    }
+
+    return {
+      success: totalFailed === 0,
+      results,
+      totalUpdated,
+      totalFailed,
+    }
+  }
+
+  async batchSetNodeAttributes(
+    _: GraphQLParent,
+    args: { attributeUpdates: Array<{ nodeId: string; attributeId: string; value: string }> },
+  ) {
+    const results: BatchAttributeUpdateResult[] = []
+    let totalSet = 0
+    let totalFailed = 0
+
+    for (const [index, update] of (args.attributeUpdates || []).entries()) {
+      try {
+        let resolvedAttributeId = update.attributeId
+        let attribute = await this.attributeRepository.findById(update.attributeId)
+        if (!attribute) {
+          const node = await this.nodeRepository.findById(update.nodeId)
+          if (node) {
+            attribute = await this.attributeRepository.findByTableIdAndIdentifier(node.getTableId(), update.attributeId)
+            if (attribute) {
+              resolvedAttributeId = attribute.getId()
+            }
+          }
+        }
+
+        if (!resolvedAttributeId) {
+          throw new Error('Attribute ID could not be resolved')
+        }
+
+        await this.nodeAttributeRepository.setNodeAttribute(update.nodeId, resolvedAttributeId, update.value)
+        results.push({
+          nodeId: update.nodeId,
+          attributeId: resolvedAttributeId,
+          value: update.value,
+          errors: [],
+        })
+        totalSet++
+      } catch (error) {
+        results.push({
+          nodeId: update.nodeId,
+          attributeId: update.attributeId,
+          value: null,
+          errors: [this.toBatchError(error, index, 'attributeId')],
+        })
+        totalFailed++
+      }
+    }
+
+    return {
+      success: totalFailed === 0,
+      results,
+      totalSet,
+      totalFailed,
+    }
+  }
+
+  async batchOperationWithRollback(
+    _: GraphQLParent,
+    args: { operations: Array<{ type: string; data: { tableId: string; content: string; title?: string; description?: string } }> },
+  ) {
+    const unsupportedOperations = (args.operations || []).filter((operation) => operation.type !== 'CREATE_NODE')
+    if (unsupportedOperations.length > 0) {
+      return {
+        success: false,
+        rollbackOccurred: true,
+        successfulOperations: 0,
+        failedOperations: (args.operations || []).length,
+        errors: ['Only CREATE_NODE batch operations are currently supported'],
+      }
+    }
+
+    const nodes = (args.operations || []).map((operation) => operation.data)
+    const transactionalResult = await this.batchCreateNodesTransactional(_, { nodes })
+
+    return {
+      success: transactionalResult.success,
+      rollbackOccurred: transactionalResult.rollbackOccurred,
+      successfulOperations: transactionalResult.success ? transactionalResult.totalCreated : 0,
+      failedOperations: transactionalResult.success ? 0 : nodes.length,
+      errors: transactionalResult.success ? [] : ['Batch rolled back due to invalid operation'],
     }
   }
 }

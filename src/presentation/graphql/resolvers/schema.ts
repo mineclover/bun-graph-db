@@ -9,6 +9,7 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import type { SchemaExportResult } from '@/application/use-cases/export/SchemaExportUseCase.js'
 
 interface SchemaResolverDependencies {
   tableRepository: ITableRepository
@@ -72,7 +73,7 @@ export function createSchemaResolvers(dependencies: SchemaResolverDependencies) 
               ? (options.conflictResolution as 'skip' | 'overwrite' | 'merge' | 'fail')
               : undefined,
           }
-          return await schemaImportUseCase.importSchema(exportData as any, importOptions)
+          return await schemaImportUseCase.importSchema(exportData as unknown as SchemaExportResult, importOptions)
         } catch (error) {
           logger.error('Failed to import schema', toErrorMeta(error))
           throw error

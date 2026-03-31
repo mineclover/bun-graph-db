@@ -11,7 +11,9 @@ import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNod
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type { GraphQLContext } from '@/core/types/GraphQLTypes.js'
 import type { Attribute } from '@/domain/entities/Attribute.js'
+import type { Node as DomainNode } from '@/domain/entities/Node.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
+import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
@@ -237,7 +239,7 @@ export class NodeResolver extends BaseResolver {
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
     this.validateArgs(
-      args.input as any,
+      args.input as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('tableId', 'Table ID'),
         BaseResolver.validationRules.required('content', 'Content'),
@@ -291,7 +293,7 @@ export class NodeResolver extends BaseResolver {
     errors: Array<{ message: string; code: string; field?: string }>
   }> {
     this.validateArgs(
-      args.input as any,
+      args.input as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('content', 'Content'),
         BaseResolver.validationRules.required('name', 'Name'),
@@ -583,7 +585,7 @@ export class NodeResolver extends BaseResolver {
   }
 
   // Relation field resolvers
-  async outgoingRelations_field(node: NodeDto, _context?: GraphQLContext): Promise<any[]> {
+  async outgoingRelations_field(node: NodeDto, _context?: GraphQLContext): Promise<NodeRelation[]> {
     const result = await this.handleFieldResolution(
       async () => {
         return await this.nodeRelationRepository.findBySourceNodeId(node.id as NodeId)
@@ -595,7 +597,7 @@ export class NodeResolver extends BaseResolver {
     return result ?? []
   }
 
-  async incomingRelations_field(node: NodeDto, _context?: GraphQLContext): Promise<any[]> {
+  async incomingRelations_field(node: NodeDto, _context?: GraphQLContext): Promise<NodeRelation[]> {
     const result = await this.handleFieldResolution(
       async () => {
         return await this.nodeRelationRepository.findByTargetNodeId(node.id as NodeId)
@@ -630,7 +632,7 @@ export class NodeResolver extends BaseResolver {
       relationTypes?: string[]
     },
     _context?: GraphQLContext,
-  ): Promise<any[]> {
+  ): Promise<DomainNode[]> {
     this.logger.info('connectedNodes field resolver called', {
       parentId: node.id,
       args,
@@ -642,7 +644,7 @@ export class NodeResolver extends BaseResolver {
       const relationTypes = args?.relationTypes
 
       const visited = new Set<string>()
-      const result: any[] = []
+      const result: Array<{ node: DomainNode; depth: number; path: string[] }> = []
 
       await this._traverseGraph(node.id as NodeId, depth, direction, relationTypes, visited, result, 0)
 
@@ -676,7 +678,7 @@ export class NodeResolver extends BaseResolver {
     node: NodeDto,
     args: { targetNodeId: string; maxDepth?: number },
     _context?: GraphQLContext,
-  ): Promise<any[]> {
+  ): Promise<DomainNode[]> {
     this.validateArgs(
       args,
       [
@@ -708,7 +710,7 @@ export class NodeResolver extends BaseResolver {
     direction: 'OUTGOING' | 'INCOMING' | 'BOTH',
     relationTypes: string[] | undefined,
     visited: Set<string>,
-    result: any[],
+    result: Array<{ node: DomainNode; depth: number; path: string[] }>,
     currentDepth: number,
   ): Promise<void> {
     if (remainingDepth <= 0 || visited.has(nodeId)) return
@@ -724,7 +726,7 @@ export class NodeResolver extends BaseResolver {
     })
 
     // Get related relations
-    const relations: any[] = []
+    const relations: NodeRelation[] = []
 
     if (direction === 'OUTGOING' || direction === 'BOTH') {
       const outgoing = await this.nodeRelationRepository.findBySourceNodeId(nodeId)
@@ -763,14 +765,17 @@ export class NodeResolver extends BaseResolver {
     sourceId: NodeId,
     targetId: NodeId,
     maxDepth: number,
-  ): Promise<{ nodes: any[]; relations: any[]; distance: number } | null> {
-    const queue: Array<{ nodeId: NodeId; path: NodeId[]; relations: any[]; depth: number }> = [
+  ): Promise<{ nodes: DomainNode[]; relations: NodeRelation[]; distance: number } | null> {
+    const queue: Array<{ nodeId: NodeId; path: NodeId[]; relations: NodeRelation[]; depth: number }> = [
       { nodeId: sourceId, path: [sourceId], relations: [], depth: 0 },
     ]
     const visited = new Set<string>()
 
     while (queue.length > 0) {
-      const current = queue.shift()!
+      const current = queue.shift()
+      if (!current) {
+        continue
+      }
 
       if (current.nodeId === targetId) {
         // Path found

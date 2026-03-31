@@ -37,7 +37,7 @@ export interface INodeSearchRepository {
     tableId: TableId,
     searchQuery: SearchQuery,
     availableAttributes: AttributeTypeInfo[],
-  ): Promise<PaginatedResult<any>>
+  ): Promise<PaginatedResult<{ node: import('@/domain/entities/Node.js').Node; attributes?: Record<string, unknown> }>>
 }
 
 export class SearchNodesUseCase {
@@ -70,7 +70,7 @@ export class SearchNodesUseCase {
       // Get available attributes for this table
       const attributes = await this.attributeRepository.findByTableId(input.tableId as TableId)
       const attributeInfo: AttributeTypeInfo[] = await Promise.all(
-        (attributes.data || []).map(async (attr: any) => ({
+        (attributes.data || []).map(async (attr) => ({
           identifier: attr.getIdentifier(),
           dataType:
             (await this.attributeRepository.getAttributeTypeForAttribute(attr.getId()))?.getIdentifier() || 'string',

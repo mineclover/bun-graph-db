@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS nodes (
   content TEXT NOT NULL,
   title TEXT,
   description TEXT,
+  metadata TEXT,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE,
@@ -471,4 +472,3 @@ CREATE INDEX IF NOT EXISTS idx_template_executions_executed_at ON template_execu
 CREATE INDEX IF NOT EXISTS idx_template_executions_success ON template_executions(success);
 CREATE INDEX IF NOT EXISTS idx_template_executions_execution_time ON template_executions(execution_time_ms);
 CREATE INDEX IF NOT EXISTS idx_template_executions_composite ON template_executions(template_id, executed_at, success);
-

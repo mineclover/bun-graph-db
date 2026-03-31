@@ -1,5 +1,6 @@
 import type { AttributeTypeId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export class AttributeType {
   constructor(
@@ -32,7 +33,7 @@ export class AttributeType {
     examples?: string,
   ): AttributeType {
     return new AttributeType(
-      null as any as AttributeTypeId,
+      '' as AttributeTypeId,
       identifier,
       jsonType,
       format || null,
@@ -196,7 +197,7 @@ export class AttributeType {
     }
   }
 
-  getParsedDefaultValue(): any {
+  getParsedDefaultValue(): SafeJsonValue | string | null {
     if (!this.defaultValue) return null
     try {
       return JSON.parse(this.defaultValue)
@@ -205,7 +206,7 @@ export class AttributeType {
     }
   }
 
-  getParsedExamples(): any[] | null {
+  getParsedExamples(): SafeJsonValue[] | null {
     if (!this.examples) return null
     try {
       const parsed = JSON.parse(this.examples)

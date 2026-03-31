@@ -1,7 +1,9 @@
+import type { SQLQueryBindings } from 'bun:sqlite'
 import type { NodeId, PaginatedResult, PaginationOptions, TableId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { stringifySafeJson, type SafeJsonValue } from '@/shared/utils/safeJson.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface NodeRow {
@@ -10,9 +12,13 @@ interface NodeRow {
   content: string
   title: string | null
   description: string | null
+  metadata: string | null
   created_at: string
   updated_at: string
 }
+
+type SqliteQueryRow = Record<string, unknown>
+type SqliteRawQueryParams = SQLQueryBindings[]
 
 export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> implements INodeRepository {
   protected get tableName(): string {
@@ -25,10 +31,10 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
   async save(node: Node): Promise<void> {
     const nodeData = node.toDatabase()
 
-    if (nodeData.id === null || nodeData.id === 'null') {
+    if (!nodeData.id || nodeData.id === 'null') {
       const query = `
-        INSERT INTO nodes (table_id, content, title, description, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO nodes (table_id, content, title, description, metadata, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `
 
       try {
@@ -37,6 +43,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
           nodeData.content,
           nodeData.title,
           nodeData.description,
+          nodeData.metadata,
           nodeData.created_at,
           nodeData.updated_at,
         ])
@@ -49,7 +56,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
     } else {
       const query = `
         UPDATE nodes 
-        SET table_id = ?, content = ?, title = ?, description = ?, updated_at = ?
+        SET table_id = ?, content = ?, title = ?, description = ?, metadata = ?, updated_at = ?
         WHERE id = ?
       `
 
@@ -59,6 +66,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
           nodeData.content,
           nodeData.title,
           nodeData.description,
+          nodeData.metadata,
           nodeData.updated_at,
           nodeData.id,
         ])
@@ -72,7 +80,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
 
   async findByTableIdAndContent(tableId: TableId, content: string): Promise<Node | null> {
     const query = `
-      SELECT id, table_id, content, title, description, created_at, updated_at
+      SELECT id, table_id, content, title, description, metadata, created_at, updated_at
       FROM nodes
       WHERE table_id = ? AND content = ?
     `
@@ -89,7 +97,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, content, title, description, created_at, updated_at
+      SELECT id, table_id, content, title, description, metadata, created_at, updated_at
       FROM nodes
       WHERE table_id = ?
       ORDER BY created_at DESC
@@ -123,7 +131,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, content, title, description, created_at, updated_at
+      SELECT id, table_id, content, title, description, metadata, created_at, updated_at
       FROM nodes
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
@@ -193,8 +201,8 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
     if (nodes.length === 0) return
 
     const query = `
-      INSERT OR REPLACE INTO nodes (id, table_id, content, title, description, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO nodes (id, table_id, content, title, description, metadata, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `
 
     try {
@@ -209,6 +217,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
             nodeData.content,
             nodeData.title,
             nodeData.description,
+            nodeData.metadata,
             nodeData.created_at,
             nodeData.updated_at,
           )
@@ -229,7 +238,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, content, title, description, created_at, updated_at
+      SELECT id, table_id, content, title, description, metadata, created_at, updated_at
       FROM nodes
       WHERE table_id = ? AND (content LIKE ? OR title LIKE ? OR description LIKE ?)
       ORDER BY created_at DESC
@@ -268,9 +277,9 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
     }
   }
 
-  async executeRawQuery(query: string, params: any[] = []): Promise<any[]> {
+  async executeRawQuery(query: string, params: SqliteRawQueryParams = []): Promise<SqliteQueryRow[]> {
     try {
-      const rows = this.db.query<any, any[]>(query).all(...params)
+      const rows = this.db.query<SqliteQueryRow, SqliteRawQueryParams>(query).all(...params)
       return rows
     } catch (error) {
       throw new DatabaseException(`Failed to execute raw query: ${error}`)
@@ -279,7 +288,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
 
   async update(
     id: NodeId,
-    updates: { content?: string; title?: string | null; description?: string | null },
+    updates: { content?: string; title?: string | null; description?: string | null; metadata?: SafeJsonValue },
   ): Promise<Node> {
     try {
       const existingNode = await this.findById(id)
@@ -301,6 +310,10 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
       if (updates.description !== undefined) {
         updateFields.push('description = ?')
         updateValues.push(updates.description)
+      }
+      if (updates.metadata !== undefined) {
+        updateFields.push('metadata = ?')
+        updateValues.push(stringifySafeJson(updates.metadata))
       }
 
       if (updateFields.length === 0) {
@@ -337,6 +350,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
       row.content,
       row.title,
       row.description,
+      row.metadata ?? null,
       new Date(row.created_at),
       new Date(row.updated_at),
     )

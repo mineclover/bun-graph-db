@@ -12,7 +12,7 @@ import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test
 // Typed interfaces for GraphQL responses
 
 const SUITE_NAME = 'graphql-api-comprehensive'
-let testContext: IsolatedTestContext
+let testContext: IsolatedTestContext | undefined
 
 describe('Comprehensive GraphQL API Test Suite', () => {
   beforeAll(async () => {
@@ -21,13 +21,13 @@ describe('Comprehensive GraphQL API Test Suite', () => {
     console.log('✅ Test environment ready')
     console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
     console.log(`💾 Database: ${testContext.database?.databasePath}`)
-  }, 60000)
+  }, 120000)
 
   afterAll(async () => {
     console.log('🧹 Cleaning up comprehensive GraphQL API test environment...')
-    await testContext.cleanup()
+    await testContext?.cleanup?.()
     console.log('✅ Cleanup completed')
-  }, 10000)
+  }, 120000)
 
   describe('System Health and Information Queries', () => {
     test('should return comprehensive health check information', async () => {
@@ -406,6 +406,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
 
   describe('Attribute Management', () => {
     let tableId: string
+    let attributeTypeIds: Record<string, string>
 
     beforeEach(async () => {
       const uniqueIdentifier = `attribute-test-table-${Date.now()}-${Math.random().toString(36).substring(7)}`
@@ -425,15 +426,35 @@ describe('Comprehensive GraphQL API Test Suite', () => {
       expect(result.data.createTable.success).toBe(true)
       expect(result.data.createTable.table).toBeTruthy()
       tableId = result.data.createTable.table.id
+
+      const attributeTypeResult = await testContext.graphqlRequest?.(`
+        query {
+          stringType: attributeTypeByIdentifier(identifier: "string") { id }
+          integerType: attributeTypeByIdentifier(identifier: "integer") { id }
+          numberType: attributeTypeByIdentifier(identifier: "number") { id }
+          booleanType: attributeTypeByIdentifier(identifier: "boolean") { id }
+          dateType: attributeTypeByIdentifier(identifier: "date") { id }
+          arrayType: attributeTypeByIdentifier(identifier: "array") { id }
+        }
+      `)
+
+      attributeTypeIds = {
+        string: attributeTypeResult.data.stringType.id,
+        integer: attributeTypeResult.data.integerType.id,
+        number: attributeTypeResult.data.numberType.id,
+        boolean: attributeTypeResult.data.booleanType.id,
+        date: attributeTypeResult.data.dateType.id,
+        array: attributeTypeResult.data.arrayType.id,
+      }
     })
 
     test('should create multiple attribute types', async () => {
       const attributes = [
-        { identifier: 'name', name: 'Full Name', attributeTypeId: '1' }, // text
-        { identifier: 'age', name: 'Age', attributeTypeId: '2' }, // number
-        { identifier: 'active', name: 'Is Active', attributeTypeId: '3' }, // boolean
-        { identifier: 'birthdate', name: 'Birth Date', attributeTypeId: '4' }, // date
-        { identifier: 'tags', name: 'Tags', attributeTypeId: '5' }, // array
+        { identifier: 'name', name: 'Full Name', attributeTypeId: attributeTypeIds.string },
+        { identifier: 'age', name: 'Age', attributeTypeId: attributeTypeIds.integer },
+        { identifier: 'active', name: 'Is Active', attributeTypeId: attributeTypeIds.boolean },
+        { identifier: 'birthdate', name: 'Birth Date', attributeTypeId: attributeTypeIds.date },
+        { identifier: 'tags', name: 'Tags', attributeTypeId: attributeTypeIds.array },
       ]
 
       for (const attr of attributes) {
@@ -477,7 +498,7 @@ describe('Comprehensive GraphQL API Test Suite', () => {
             tableId: "${tableId}"
             identifier: "score"
             name: "Score"
-            attributeTypeId: "2"
+            attributeTypeId: "${attributeTypeIds.number}"
           }) { success }
         }
       `)

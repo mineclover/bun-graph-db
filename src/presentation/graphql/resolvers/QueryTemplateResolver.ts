@@ -18,6 +18,16 @@ import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { sanitizeJsonValue } from '@/shared/utils/safeJson.js'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function readRequiredFields(schema: Record<string, unknown>): string[] {
+  const { required } = schema
+  return Array.isArray(required) && required.every((field) => typeof field === 'string') ? required : []
+}
 
 export class QueryTemplateResolver extends BaseResolver {
   protected logger: ILogger
@@ -50,7 +60,7 @@ export class QueryTemplateResolver extends BaseResolver {
     }
 
     // 2. 활성화 상태 확인
-    if (!template.isActive) {
+    if (!template.getIsActive()) {
       throw new GraphQLError('Template is inactive', {
         extensions: { code: 'TEMPLATE_INACTIVE' },
       })
@@ -58,22 +68,23 @@ export class QueryTemplateResolver extends BaseResolver {
 
     // 3. 변수 처리 및 검증
     const processedVariables = this.processVariables(
-      template.defaultVariables,
-      (input.variables as any) || null,
-      template.inputSchema,
+      template.getDefaultVariables(),
+      input.variables || null,
+      template.getInputSchema(),
       input.validateVariables !== false,
     )
 
     // 4. 사용 통계 업데이트 (비동기, 실패 무시)
-    if (input.trackUsage !== false) {
-      this.trackUsage(template.id).catch((error) => {
+    const templateId = template.getId()
+    if (input.trackUsage !== false && templateId) {
+      this.trackUsage(templateId).catch((error) => {
         this.logger.warn('Failed to track template usage', { error })
       })
     }
 
     // 5. GraphQL 쿼리 실행
     try {
-      const document = parse(template.queryText)
+      const document = parse(template.getQueryText())
 
       const result = await execute({
         schema: this.schema,
@@ -85,7 +96,7 @@ export class QueryTemplateResolver extends BaseResolver {
       // 6. 실행 결과 반환
       if (result.errors && result.errors.length > 0) {
         this.logger.error('Template execution errors', {
-          templateId: template.id,
+          templateId,
           errors: result.errors,
         })
         throw new GraphQLError('Template execution failed', {
@@ -96,10 +107,10 @@ export class QueryTemplateResolver extends BaseResolver {
         })
       }
 
-      return result.data as JsonValue
+      return this.toJsonValue(result.data ?? null)
     } catch (error) {
       this.logger.error('Failed to execute template', {
-        templateId: template.id,
+        templateId,
         error,
       })
 
@@ -188,7 +199,7 @@ export class QueryTemplateResolver extends BaseResolver {
 
   // Private helper methods
 
-  private async loadTemplate(id?: string, identifier?: string): Promise<any> {
+  private async loadTemplate(id?: string, identifier?: string): Promise<QueryTemplate | null> {
     if (id) {
       return await this.queryTemplateRepository.findById(id)
     }
@@ -199,20 +210,20 @@ export class QueryTemplateResolver extends BaseResolver {
   }
 
   private processVariables(
-    defaultVariables: JsonValue,
-    userVariables: JsonValue,
-    schema: JsonValue,
+    defaultVariables: unknown,
+    userVariables: unknown,
+    schema: unknown,
     validate: boolean,
-  ): Record<string, any> {
+  ): Record<string, unknown> {
     // 기본값과 사용자 입력 병합
     const merged = {
-      ...(typeof defaultVariables === 'object' && defaultVariables !== null ? defaultVariables : {}),
-      ...(typeof userVariables === 'object' && userVariables !== null ? userVariables : {}),
+      ...(isRecord(defaultVariables) ? defaultVariables : {}),
+      ...(isRecord(userVariables) ? userVariables : {}),
     }
 
     // 검증이 필요한 경우
-    if (validate && schema && typeof schema === 'object' && schema !== null) {
-      this.validateVariables(merged, schema as Record<string, unknown>)
+    if (validate && isRecord(schema)) {
+      this.validateVariables(merged, schema)
     }
 
     return merged
@@ -221,9 +232,7 @@ export class QueryTemplateResolver extends BaseResolver {
   private validateVariables(variables: Record<string, unknown>, schema: Record<string, unknown>): void {
     // JSON Schema 검증 로직
     // 실제 구현에서는 ajv 같은 JSON Schema validator 사용
-    if (!schema) return
-
-    const required = (Array.isArray(schema.required) ? schema.required : []) as string[]
+    const required = readRequiredFields(schema)
     for (const field of required) {
       if (!(field in variables)) {
         throw new GraphQLError(`Missing required variable: ${field}`, {
@@ -242,6 +251,10 @@ export class QueryTemplateResolver extends BaseResolver {
       // 실패 무시
       this.logger.warn('Failed to track usage', { templateId, error })
     }
+  }
+
+  private toJsonValue(value: unknown): JsonValue {
+    return sanitizeJsonValue(value)
   }
 
   /**
@@ -309,7 +322,7 @@ export class QueryTemplateResolver extends BaseResolver {
    * 특정 테이블과 연관된 템플릿 검색
    */
   async findTemplatesByTable(input: FindTemplatesByTableInput): Promise<QueryTemplateDto[]> {
-    this.logger.info('Finding templates by table', input as any)
+    this.logger.info('Finding templates by table', { ...input })
 
     try {
       const templates = await this.queryTemplateRepository.findByApplicableTable(
@@ -422,7 +435,7 @@ export class QueryTemplateResolver extends BaseResolver {
       }
 
       if (args.updateVariables) {
-        updateData.inputSchema = args.updateVariables as any
+        updateData.defaultVariables = args.updateVariables
       }
 
       const templateId = template.getId()

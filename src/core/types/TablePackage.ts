@@ -1,3 +1,5 @@
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
+
 /**
  * Table Package Export/Import Types
  *
@@ -52,15 +54,15 @@ export interface TableDataExport {
   nodes: Array<{
     externalId: string
     nodeType: string
-    content: Record<string, any> | null
-    metadata: Record<string, any> | null
+    content: string | Record<string, SafeJsonValue> | null
+    metadata: Record<string, SafeJsonValue> | null
     createdAt: string
     updatedAt: string
   }>
   nodeAttributes: Array<{
     nodeExternalId: string
     attributeIdentifier: string
-    value: any
+    value: SafeJsonValue
     createdAt: string
     updatedAt: string
   }>
@@ -71,7 +73,7 @@ export interface TableRelationsExport {
     id: string
     identifier: string
     description: string | null
-    properties: Record<string, any> | null
+    properties: Record<string, SafeJsonValue> | null
     createdAt: string
     updatedAt: string
   }>
@@ -79,7 +81,7 @@ export interface TableRelationsExport {
     sourceExternalId: string
     targetExternalId: string
     relationTypeId: string
-    properties: Record<string, any> | null
+    properties: Record<string, SafeJsonValue> | null
     strength: number
     createdAt: string
     updatedAt: string

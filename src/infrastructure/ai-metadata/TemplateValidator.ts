@@ -1,6 +1,10 @@
 import type { DocumentNode } from 'graphql'
 import { type GraphQLError, type GraphQLSchema, parse, validate } from 'graphql'
-import type { GraphQLSchemaIntrospector, QueryPattern } from './GraphQLSchemaIntrospector'
+import type {
+  GraphQLSchemaIntrospector,
+  QueryFieldDefinition,
+  QueryPattern,
+} from './GraphQLSchemaIntrospector'
 
 /**
  * Template Validation Engine
@@ -25,17 +29,17 @@ export class TemplateValidator {
     try {
       // 1. Parse GraphQL query
       const document = this.parseQuery(template.query)
-      if (!document.success) {
+      if (!document.success || !document.document) {
         return {
           isValid: false,
-          errors: [{ type: 'SYNTAX_ERROR', message: document.error!, field: 'query' }],
+          errors: [{ type: 'SYNTAX_ERROR', message: document.error || 'Unknown parse error', field: 'query' }],
           corrections: [],
           confidence: 0,
         }
       }
 
       // 2. Validate against schema
-      const graphqlErrors = validate(this.schema, document.document!)
+      const graphqlErrors = validate(this.schema, document.document)
       if (graphqlErrors.length > 0) {
         validationErrors.push(...this.convertGraphQLErrors(graphqlErrors))
       }
@@ -85,30 +89,42 @@ export class TemplateValidator {
     for (const correction of corrections) {
       switch (correction.type) {
         case 'PARAMETER_RENAME':
-          correctedQuery = this.renameParameter(correctedQuery, correction.from!, correction.to!)
-          if (correctedVariables[correction.from!]) {
-            correctedVariables[correction.to!] = correctedVariables[correction.from!]
-            delete correctedVariables[correction.from!]
+          if (!correction.from || !correction.to) {
+            break
+          }
+          correctedQuery = this.renameParameter(correctedQuery, correction.from, correction.to)
+          if (correctedVariables[correction.from]) {
+            correctedVariables[correction.to] = correctedVariables[correction.from]
+            delete correctedVariables[correction.from]
           }
           appliedCorrections.push(`Renamed parameter: ${correction.from} → ${correction.to}`)
           break
 
         case 'PARAMETER_STRUCTURE':
+          if (!correction.oldStructure || !correction.newStructure) {
+            break
+          }
           correctedQuery = this.restructureParameters(
             correctedQuery,
-            correction.oldStructure!,
-            correction.newStructure!,
+            correction.oldStructure,
+            correction.newStructure,
           )
           appliedCorrections.push(`Restructured parameters: ${correction.description}`)
           break
 
         case 'OPERATION_TYPE_FIX':
-          correctedQuery = this.fixOperationType(correctedQuery, correction.correctType!)
+          if (!correction.correctType) {
+            break
+          }
+          correctedQuery = this.fixOperationType(correctedQuery, correction.correctType)
           appliedCorrections.push(`Fixed operation type: ${correction.description}`)
           break
 
         case 'FIELD_REPLACEMENT':
-          correctedQuery = this.replaceField(correctedQuery, correction.from!, correction.to!)
+          if (!correction.from || !correction.to) {
+            break
+          }
+          correctedQuery = this.replaceField(correctedQuery, correction.from, correction.to)
           appliedCorrections.push(`Replaced field: ${correction.from} → ${correction.to}`)
           break
       }
@@ -193,7 +209,7 @@ export class TemplateValidator {
    */
   private async validateParameters(
     template: TemplateDefinition,
-    schemaIntrospection: any,
+    schemaIntrospection: { queries: QueryFieldDefinition[]; mutations: QueryFieldDefinition[] },
   ): Promise<{ errors: ValidationError[]; corrections: Correction[] }> {
     const errors: ValidationError[] = []
     const corrections: Correction[] = []
@@ -224,7 +240,7 @@ export class TemplateValidator {
     }
 
     const operationName = queryMatch[1]
-    const schemaOperation = operations.find((op: any) => op.name === operationName)
+    const schemaOperation = operations.find((op) => op.name === operationName)
 
     if (!schemaOperation) {
       errors.push({
@@ -260,7 +276,7 @@ export class TemplateValidator {
 
     // Check for unknown parameters
     for (const templateParam of templateParams) {
-      if (!schemaParams.find((p: any) => p.name === templateParam)) {
+      if (!schemaParams.find((p) => p.name === templateParam)) {
         errors.push({
           type: 'UNKNOWN_PARAMETER',
           message: `Unknown parameter: ${templateParam}`,
@@ -306,12 +322,12 @@ export class TemplateValidator {
             offset: 'pagination.offset',
           }
 
-          if (parameterMappings[error.field!]) {
+          if (error.field && parameterMappings[error.field]) {
             corrections.push({
               type: 'PARAMETER_RENAME',
               description: `Map AI parameter to schema parameter`,
-              from: error.field!,
-              to: parameterMappings[error.field!],
+              from: error.field,
+              to: parameterMappings[error.field],
             })
           }
           break
@@ -375,8 +391,8 @@ export class TemplateValidator {
   private generateSchemaCompliantVariables(
     pattern: QueryPattern,
     aiSuggestion: AITemplateRequest,
-  ): Record<string, any> {
-    const variables: Record<string, any> = {}
+  ): Record<string, unknown> {
+    const variables: Record<string, unknown> = {}
 
     pattern.parameters.forEach((param) => {
       if (aiSuggestion.variables?.[param.name]) {
@@ -399,9 +415,12 @@ export class TemplateValidator {
     return error.path?.[0]?.toString() || 'unknown'
   }
 
-  private findSimilarParameter(param: string, schemaParams: any[]): any | null {
+  private findSimilarParameter(
+    param: string,
+    schemaParams: Array<{ name: string }>,
+  ): { name: string } | null {
     const threshold = 0.6
-    let bestMatch: any = null
+    let bestMatch: { name: string } | null = null
     let bestScore = 0
 
     for (const schemaParam of schemaParams) {
@@ -427,30 +446,52 @@ export class TemplateValidator {
       .fill(null)
       .map(() => Array(a.length + 1).fill(0))
 
-    for (let i = 0; i <= a.length; i++) matrix[0]![i] = i
-    for (let j = 0; j <= b.length; j++) matrix[j]![0] = j
-
-    for (let j = 1; j <= b.length; j++) {
-      for (let i = 1; i <= a.length; i++) {
-        const indicator = a[i - 1] === b[j - 1] ? 0 : 1
-        matrix[j]![i] = Math.min(matrix[j]?.[i - 1]! + 1, matrix[j - 1]?.[i]! + 1, matrix[j - 1]?.[i - 1]! + indicator)
+    const firstRow = matrix[0]
+    if (firstRow) {
+      for (let i = 0; i <= a.length; i++) firstRow[i] = i
+    }
+    for (let j = 0; j <= b.length; j++) {
+      const row = matrix[j]
+      if (row) {
+        row[0] = j
       }
     }
 
-    return matrix[b.length]?.[a.length]!
+    for (let j = 1; j <= b.length; j++) {
+      const currentRow = matrix[j]
+      const previousRow = matrix[j - 1]
+      if (!currentRow || !previousRow) {
+        continue
+      }
+      for (let i = 1; i <= a.length; i++) {
+        const indicator = a[i - 1] === b[j - 1] ? 0 : 1
+        const left = currentRow[i - 1] ?? Number.POSITIVE_INFINITY
+        const up = previousRow[i] ?? Number.POSITIVE_INFINITY
+        const diagonal = previousRow[i - 1] ?? Number.POSITIVE_INFINITY
+        currentRow[i] = Math.min(left + 1, up + 1, diagonal + indicator)
+      }
+    }
+
+    return matrix[b.length]?.[a.length] ?? 0
   }
 
-  private formatTypeInfo(typeInfo: any): string {
-    if (typeInfo.kind === 'NON_NULL' && typeInfo.ofType) {
-      return `${this.formatTypeInfo(typeInfo.ofType)}!`
+  private formatTypeInfo(typeInfo: { kind?: string; ofType?: unknown; name?: string } | unknown): string {
+    if (typeof typeInfo !== 'object' || typeInfo === null) {
+      return 'Unknown'
     }
-    if (typeInfo.kind === 'LIST' && typeInfo.ofType) {
-      return `[${this.formatTypeInfo(typeInfo.ofType)}]`
+
+    const typed = typeInfo as { kind?: string; ofType?: unknown; name?: string }
+
+    if (typed.kind === 'NON_NULL' && typed.ofType) {
+      return `${this.formatTypeInfo(typed.ofType)}!`
     }
-    return typeInfo.name || typeInfo.kind
+    if (typed.kind === 'LIST' && typed.ofType) {
+      return `[${this.formatTypeInfo(typed.ofType)}]`
+    }
+    return typed.name || typed.kind || 'Unknown'
   }
 
-  private generateDefaultValue(typeInfo: any): any {
+  private generateDefaultValue(typeInfo: { ofType?: unknown; name?: string; kind?: string } | unknown): unknown {
     const baseType = this.getBaseType(typeInfo)
 
     switch (baseType) {
@@ -469,11 +510,15 @@ export class TemplateValidator {
     }
   }
 
-  private getBaseType(typeInfo: any): string {
-    if (typeInfo.ofType) {
+  private getBaseType(typeInfo: { ofType?: unknown; name?: string; kind?: string } | unknown): string {
+    if (typeof typeInfo === 'object' && typeInfo !== null && 'ofType' in typeInfo && typeInfo.ofType) {
       return this.getBaseType(typeInfo.ofType)
     }
-    return typeInfo.name || typeInfo.kind
+    if (typeof typeInfo === 'object' && typeInfo !== null) {
+      const typed = typeInfo as { name?: string; kind?: string }
+      return typed.name || typed.kind || 'Unknown'
+    }
+    return 'Unknown'
   }
 
   private calculateConfidence(errors: ValidationError[], corrections: Correction[]): number {
@@ -504,7 +549,7 @@ export interface TemplateDefinition {
   identifier: string
   name: string
   query: string
-  variables?: Record<string, any>
+  variables?: Record<string, unknown>
   tags?: string[]
 }
 
@@ -554,7 +599,7 @@ export interface AITemplateRequest {
   name: string
   operationType: string
   intent: string
-  variables?: Record<string, any>
+  variables?: Record<string, unknown>
   tags?: string[]
 }
 

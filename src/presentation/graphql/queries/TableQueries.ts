@@ -1,4 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import type {
   GraphQLContext,
   GraphQLParent,
@@ -25,7 +26,7 @@ export class TableQueries extends BaseResolver {
 
   async table(_: GraphQLParent, args: TableArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('id', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('id', 'Table ID'),
@@ -44,7 +45,7 @@ export class TableQueries extends BaseResolver {
 
   async tableByIdentifier(_: GraphQLParent, args: TableByIdentifierArgs, _context?: GraphQLContext) {
     this.validateArgs(
-      args as any,
+      args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('identifier', 'Table identifier'),
         BaseResolver.validationRules.nonEmpty('identifier', 'Table identifier'),
@@ -78,7 +79,7 @@ export class TableQueries extends BaseResolver {
     )
   }
 
-  async searchTables(_: GraphQLParent, args: { filter?: any }, _context?: GraphQLContext) {
+  async searchTables(_: GraphQLParent, args: { filter?: TablesArgs['filter'] }, _context?: GraphQLContext) {
     // searchTables is a simplified interface for MCP compatibility
     // It delegates to the tables method with default pagination
     return this.tables(
@@ -113,7 +114,7 @@ export class TableQueries extends BaseResolver {
     return this.handleQuery(
       async () => {
         // Resolve the use case from container to avoid circular dependency
-        const getTableDocsUseCase = (await this.container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE)) as any
+        const getTableDocsUseCase = (await this.container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE)) as GetTableDocsUseCase
 
         const result = await getTableDocsUseCase.execute({
           tableId: args.tableId,

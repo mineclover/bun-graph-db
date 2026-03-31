@@ -1,13 +1,12 @@
 import type { AttributeTypeId, PaginatedResult, PaginationOptions } from '@/core/types/CommonTypes.js'
 import type { AttributeType } from '@/domain/entities/AttributeType.js'
-
 export interface AttributeTypeUpdateData {
   identifier?: string
   description?: string | null
   jsonType?: string
   format?: string | null
-  validationSchema?: Record<string, any> | null
-  defaultValue?: any
+  validationSchema?: Record<string, unknown> | null
+  defaultValue?: unknown
 }
 
 export interface IAttributeTypeRepository {

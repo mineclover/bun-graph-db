@@ -225,7 +225,7 @@ describe('Batch Operations Comprehensive Tests', () => {
                 content
                 tableId
               }
-              errors
+              errors { message }
             }
             totalCreated
             totalFailed
@@ -265,7 +265,7 @@ describe('Batch Operations Comprehensive Tests', () => {
                 id
                 content
               }
-              errors
+              errors { message }
             }
             totalCreated
             totalFailed
@@ -322,7 +322,7 @@ describe('Batch Operations Comprehensive Tests', () => {
                 id
                 content
               }
-              errors
+              errors { message }
             }
             totalUpdated
             totalFailed
@@ -453,7 +453,7 @@ describe('Batch Operations Comprehensive Tests', () => {
               nodeId
               attributeId
               value
-              errors
+              errors { message }
             }
             totalSet
             totalFailed
@@ -852,7 +852,7 @@ describe('Batch Operations Comprehensive Tests', () => {
             totalCreated
             totalFailed
             memoryUsageMB
-            errors
+            errors { message }
           }
         }
       `

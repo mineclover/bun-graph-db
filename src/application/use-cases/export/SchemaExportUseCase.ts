@@ -7,6 +7,7 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.ts'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export interface SchemaExportOptions {
   includeData?: boolean
@@ -19,7 +20,7 @@ export interface ExportedTable {
   id: string
   identifier: string
   description?: string
-  metadata?: any
+  metadata?: SafeJsonValue
   createdAt: string
   updatedAt: string
   attributes: ExportedAttribute[]
@@ -43,10 +44,10 @@ export interface ExportedAttribute {
     name: string
     dataType: string
     allowedValues?: string[]
-    constraints?: any
+    constraints?: SafeJsonValue
   }
   isRequired: boolean
-  defaultValue?: any
+  defaultValue?: SafeJsonValue
   createdAt: string
   updatedAt: string
 }
@@ -56,7 +57,7 @@ export interface ExportedNode {
   content: string
   title?: string
   description?: string
-  attributes?: Record<string, any>
+  attributes?: Record<string, unknown>
   createdAt: string
   updatedAt: string
 }
@@ -71,7 +72,7 @@ export interface ExportedRelation {
     name: string
     description?: string
   }
-  properties?: any
+  properties?: SafeJsonValue
   strength?: number
   createdAt: string
   updatedAt: string
@@ -91,7 +92,7 @@ export interface SchemaExportResult {
     identifier: string
     name: string
     description?: string
-    metadata?: any
+    metadata?: SafeJsonValue
     createdAt: string
     updatedAt: string
   }>
@@ -102,7 +103,7 @@ export interface SchemaExportResult {
     description?: string
     dataType: string
     allowedValues?: string[]
-    constraints?: any
+    constraints?: SafeJsonValue
     createdAt: string
     updatedAt: string
   }>
@@ -349,7 +350,7 @@ export class SchemaExportUseCase {
     }
   }
 
-  private async exportGlobalRelationTypes(): Promise<any[]> {
+  private async exportGlobalRelationTypes(): Promise<SchemaExportResult['globalRelationTypes']> {
     const relationTypesResult = await this.relationTypeRepository.findAll({
       limit: 1000,
       offset: 0,
@@ -368,7 +369,7 @@ export class SchemaExportUseCase {
     )
   }
 
-  private async exportGlobalAttributeTypes(): Promise<any[]> {
+  private async exportGlobalAttributeTypes(): Promise<SchemaExportResult['globalAttributeTypes']> {
     const attributeTypesResult = await this.attributeTypeRepository.findAll({
       limit: 1000,
       offset: 0,

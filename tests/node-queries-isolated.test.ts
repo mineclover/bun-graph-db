@@ -4,13 +4,57 @@
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
-import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
+import {
+  createRequestHelper,
+  requireGraphQLData,
+  startServerForSuite,
+  stopServerForSuite,
+  type GraphQLRequestHelper,
+} from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'node-queries-isolated'
-const TEST_TIMEOUT = 15000
+const TEST_TIMEOUT = 30000
+
+type SchemaHealthData = {
+  __schema: {
+    types: Array<{ name: string }>
+  }
+}
+
+type NodeSummary = {
+  id: string
+  content: string
+}
+
+type NodeConnection = {
+  nodes: NodeSummary[]
+  totalCount: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
+type NodesQueryData = {
+  nodes: NodeConnection
+}
+
+type NodeQueryData = {
+  node: NodeSummary | null
+}
+
+type NodeByContentQueryData = {
+  nodeByContent: NodeSummary | null
+}
+
+type SearchNodesQueryData = {
+  searchNodes: {
+    nodes: NodeSummary[]
+    totalCount: number
+    hasNextPage: boolean
+  }
+}
 
 // Global test server
-let graphqlRequest: (query: string, variables?: Record<string, any>) => Promise<any>
+let graphqlRequest: GraphQLRequestHelper
 
 describe('Node Queries - Isolated Database Test Suite', () => {
   beforeAll(async () => {
@@ -25,7 +69,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
     graphqlRequest = createRequestHelper(SUITE_NAME)
 
     // Verify server is working
-    const healthCheck = await graphqlRequest(`
+    const healthCheck = await graphqlRequest<SchemaHealthData>(`
       query {
         __schema {
           types {
@@ -35,7 +79,7 @@ describe('Node Queries - Isolated Database Test Suite', () => {
       }
     `)
 
-    expect(healthCheck.data).toBeDefined()
+    expect(requireGraphQLData(healthCheck).__schema).toBeDefined()
     console.log('✅ GraphQL server health check passed')
   }, TEST_TIMEOUT)
 
@@ -65,15 +109,16 @@ describe('Node Queries - Isolated Database Test Suite', () => {
         pagination: { limit: 10, offset: 0 },
       }
 
-      const result = await graphqlRequest(query, variables)
+      const result = await graphqlRequest<NodesQueryData>(query, variables)
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.nodes).toBeDefined()
-      expect(result.data.nodes.nodes).toBeDefined()
-      expect(Array.isArray(result.data.nodes.nodes)).toBe(true)
-      expect(result.data.nodes.totalCount).toBeGreaterThanOrEqual(0)
-      expect(typeof result.data.nodes.hasNextPage).toBe('boolean')
-      expect(typeof result.data.nodes.hasPreviousPage).toBe('boolean')
+      expect(data.nodes).toBeDefined()
+      expect(data.nodes.nodes).toBeDefined()
+      expect(Array.isArray(data.nodes.nodes)).toBe(true)
+      expect(data.nodes.totalCount).toBeGreaterThanOrEqual(0)
+      expect(typeof data.nodes.hasNextPage).toBe('boolean')
+      expect(typeof data.nodes.hasPreviousPage).toBe('boolean')
     })
 
     test('node - Get specific node by ID', async () => {
@@ -85,10 +130,11 @@ describe('Node Queries - Isolated Database Test Suite', () => {
           }
         }
       `
-      const nodesResult = await graphqlRequest(nodesQuery)
+      const nodesResult = await graphqlRequest<NodesQueryData>(nodesQuery)
+      const nodesData = requireGraphQLData(nodesResult)
 
-      if (nodesResult.data.nodes.nodes.length > 0) {
-        const nodeId = nodesResult.data.nodes.nodes[0].id
+      if (nodesData.nodes.nodes.length > 0) {
+        const nodeId = nodesData.nodes.nodes[0].id
 
         const query = `
           query GetNode($id: ID!) {
@@ -99,12 +145,13 @@ describe('Node Queries - Isolated Database Test Suite', () => {
           }
         `
 
-        const result = await graphqlRequest(query, { id: nodeId })
+        const result = await graphqlRequest<NodeQueryData>(query, { id: nodeId })
+        const data = requireGraphQLData(result)
 
         expect(result.errors).toBeUndefined()
-        expect(result.data.node).toBeDefined()
-        expect(result.data.node.id).toBe(nodeId)
-        expect(result.data.node.content).toBeDefined()
+        expect(data.node).toBeDefined()
+        expect(data.node?.id).toBe(nodeId)
+        expect(data.node?.content).toBeDefined()
       } else {
         console.log('ℹ️ No nodes found, skipping node by ID test')
       }
@@ -126,12 +173,13 @@ describe('Node Queries - Isolated Database Test Suite', () => {
         tableId: '58', // Using test table ID
       }
 
-      const result = await graphqlRequest(query, variables)
+      const result = await graphqlRequest<NodeByContentQueryData>(query, variables)
+      const data = requireGraphQLData(result)
 
       // This might return null if no node exists, which is expected
       expect(result.errors).toBeUndefined()
       // Either returns a node or null, both are valid
-      expect(result.data.nodeByContent === null || typeof result.data.nodeByContent === 'object').toBe(true)
+      expect(data.nodeByContent === null || typeof data.nodeByContent === 'object').toBe(true)
     })
 
     test('searchNodes - Search nodes with filters', async () => {
@@ -156,15 +204,16 @@ describe('Node Queries - Isolated Database Test Suite', () => {
         pagination: { limit: 5, offset: 0 },
       }
 
-      const result = await graphqlRequest(query, variables)
+      const result = await graphqlRequest<SearchNodesQueryData>(query, variables)
 
       // SearchNodesUseCase might not be available (dependency issue mentioned in code)
       // So we accept either successful search or fallback behavior
       if (result.errors) {
         console.log('ℹ️ SearchNodes not fully implemented, this is expected:', result.errors[0]?.message)
       } else {
-        expect(result.data.searchNodes).toBeDefined()
-        expect(Array.isArray(result.data.searchNodes.nodes)).toBe(true)
+        const data = requireGraphQLData(result)
+        expect(data.searchNodes).toBeDefined()
+        expect(Array.isArray(data.searchNodes.nodes)).toBe(true)
       }
     })
   })
@@ -180,10 +229,11 @@ describe('Node Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query, { id: '999999' })
+      const result = await graphqlRequest<NodeQueryData>(query, { id: '999999' })
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.node).toBeNull()
+      expect(data.node).toBeNull()
     })
 
     test('nodeByContent - Missing required fields should cause error', async () => {
@@ -195,10 +245,11 @@ describe('Node Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query, { content: '', tableId: '58' })
+      const result = await graphqlRequest<NodeByContentQueryData>(query, { content: '', tableId: '58' })
+      const data = requireGraphQLData(result)
 
       // Should either have GraphQL errors or handle empty content gracefully
-      expect(result.errors || result.data.nodeByContent === null).toBeTruthy()
+      expect(result.errors || data.nodeByContent === null).toBeTruthy()
     })
 
     test('searchNodes - Missing required tableId should cause error', async () => {
@@ -242,13 +293,14 @@ describe('Node Queries - Isolated Database Test Suite', () => {
       `
 
       // Test with limit 3
-      const result = await graphqlRequest(query, {
+      const result = await graphqlRequest<NodesQueryData>(query, {
         pagination: { limit: 3, offset: 0 },
       })
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.nodes.nodes.length).toBeLessThanOrEqual(3)
-      expect(result.data.nodes.totalCount).toBeGreaterThanOrEqual(0)
+      expect(data.nodes.nodes.length).toBeLessThanOrEqual(3)
+      expect(data.nodes.totalCount).toBeGreaterThanOrEqual(0)
     })
 
     test('nodes - No pagination (default behavior)', async () => {
@@ -264,11 +316,12 @@ describe('Node Queries - Isolated Database Test Suite', () => {
         }
       `
 
-      const result = await graphqlRequest(query)
+      const result = await graphqlRequest<NodesQueryData>(query)
+      const data = requireGraphQLData(result)
 
       expect(result.errors).toBeUndefined()
-      expect(result.data.nodes).toBeDefined()
-      expect(result.data.nodes.nodes.length).toBeLessThanOrEqual(10) // Default limit
+      expect(data.nodes).toBeDefined()
+      expect(data.nodes.nodes.length).toBeLessThanOrEqual(10) // Default limit
     })
   })
 })

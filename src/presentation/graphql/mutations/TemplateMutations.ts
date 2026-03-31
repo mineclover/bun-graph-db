@@ -1,4 +1,4 @@
-import type { ExecutionResult, GraphQLSchema } from 'graphql'
+import type { DocumentNode, ExecutionResult, GraphQLSchema } from 'graphql'
 import { execute, parse } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
@@ -6,11 +6,53 @@ import { ExportTemplatesUseCase } from '@/application/use-cases/templates/Export
 import { ExportTemplateUseCase } from '@/application/use-cases/templates/ExportTemplateUseCase.js'
 import { ImportTemplateUseCase } from '@/application/use-cases/templates/ImportTemplateUseCase.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
-import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
-import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
+import { QueryTemplate, type QueryVariablesSchema } from '@/domain/entities/QueryTemplate.js'
+import type { IQueryTemplateRepository, QueryTemplateUpdateData } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { refreshMcpCacheForTemplate } from '@/presentation/mcp/factory/TableMcpServerFactory.js'
+
+interface TemplateMutationInput {
+  identifier: string
+  name: string
+  query: string
+  description?: string
+  tags?: string[]
+  inputSchema?: QueryVariablesSchema
+  defaultVariables?: Record<string, unknown>
+  applicableTables?: string[]
+  templateType?: 'query' | 'mutation' | 'subscription'
+  complexityScore?: number
+  version?: string
+  variables?: Record<string, unknown>
+}
+
+interface ExportTemplateArgs {
+  templateId?: string
+  templateIdentifier?: string
+  includeStatistics?: boolean
+}
+
+interface ExportTemplatesArgs {
+  filter?: Record<string, unknown>
+  includeStatistics?: boolean
+  outputDirectory?: string
+}
+
+interface ImportTemplateArgs {
+  jsonData?: string
+  overwriteExisting?: boolean
+  generateNewIdentifier?: boolean
+  newIdentifierPrefix?: string
+}
+
+interface TemplateExecutionPayload {
+  metadata?: {
+    templateId?: string
+    executionTime?: number
+  }
+  data?: unknown
+}
 
 export class TemplateMutations extends BaseResolver {
   protected logger: ILogger
@@ -22,7 +64,7 @@ export class TemplateMutations extends BaseResolver {
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     private readonly executeQueryTemplateUseCase: ExecuteQueryTemplateUseCase,
     logger: ILogger,
-    private readonly schema?: GraphQLSchema,
+    private schema?: GraphQLSchema,
   ) {
     super()
     this.logger = logger
@@ -31,7 +73,7 @@ export class TemplateMutations extends BaseResolver {
     this.importTemplateUseCase = new ImportTemplateUseCase(queryTemplateRepository, logger)
   }
 
-  async createTemplate(_: GraphQLParent, args: { input: any }, _context?: GraphQLContext) {
+  async createTemplate(_: GraphQLParent, args: { input: TemplateMutationInput }, _context?: GraphQLContext) {
     this.validateArgs(
       args,
       [
@@ -100,7 +142,11 @@ export class TemplateMutations extends BaseResolver {
     }
   }
 
-  async updateTemplate(_: GraphQLParent, args: { id: string; input: any }, _context?: GraphQLContext) {
+  async updateTemplate(
+    _: GraphQLParent,
+    args: { id: string; input: Partial<TemplateMutationInput> },
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args,
       [
@@ -330,14 +376,15 @@ export class TemplateMutations extends BaseResolver {
       // Create execution object from metadata if available
       let execution = null
       if (result.success && result.data && typeof result.data === 'object' && 'metadata' in result.data) {
-        const metadata = (result.data as any).metadata
+        const executionPayload = result.data as TemplateExecutionPayload
+        const metadata = executionPayload.metadata
         execution = {
           id: `exec_${Date.now()}`,
-          templateId: metadata.templateId,
+          templateId: metadata?.templateId,
           executedAt: new Date().toISOString(),
-          duration: metadata.executionTime,
-          resultCount: Array.isArray((result.data as any).data)
-            ? (result.data as any).data.length
+          duration: metadata?.executionTime,
+          resultCount: Array.isArray(executionPayload.data)
+            ? executionPayload.data.length
             : result.data
               ? 1
               : 0,
@@ -424,7 +471,7 @@ export class TemplateMutations extends BaseResolver {
         }
 
         // 3. GraphQL 쿼리 파싱
-        let document: any
+        let document: DocumentNode
         try {
           document = parse(templateResult.queryText)
         } catch (parseError) {
@@ -513,7 +560,7 @@ export class TemplateMutations extends BaseResolver {
     )
   }
 
-  async exportTemplate(_: GraphQLParent, args: any, _context?: GraphQLContext) {
+  async exportTemplate(_: GraphQLParent, args: ExportTemplateArgs, _context?: GraphQLContext) {
     this.logger.info('Executing mutation: exportTemplate', {
       templateId: args.templateId,
       templateIdentifier: args.templateIdentifier,
@@ -584,7 +631,7 @@ export class TemplateMutations extends BaseResolver {
     }
   }
 
-  async exportTemplates(_: GraphQLParent, args: any, _context?: GraphQLContext) {
+  async exportTemplates(_: GraphQLParent, args: ExportTemplatesArgs, _context?: GraphQLContext) {
     this.logger.info('Executing mutation: exportTemplates', {
       filter: args.filter,
       includeStatistics: args.includeStatistics,
@@ -640,7 +687,7 @@ export class TemplateMutations extends BaseResolver {
     }
   }
 
-  async importTemplate(_: GraphQLParent, args: any, _context?: GraphQLContext) {
+  async importTemplate(_: GraphQLParent, args: ImportTemplateArgs, _context?: GraphQLContext) {
     this.logger.info('Executing mutation: importTemplate', { hasJsonData: !!args.jsonData })
 
     try {
@@ -690,7 +737,7 @@ export class TemplateMutations extends BaseResolver {
   }
 
   async updateTemplateQuery(
-    _: any,
+    _: GraphQLParent,
     args: {
       templateId?: string
       templateIdentifier?: string
@@ -699,7 +746,7 @@ export class TemplateMutations extends BaseResolver {
     },
   ): Promise<{
     success: boolean
-    template?: any
+    template?: QueryTemplate
     errors: Array<{ message: string }>
     previousQuery?: string
   }> {
@@ -729,7 +776,7 @@ export class TemplateMutations extends BaseResolver {
       const previousQuery = template.getQueryText()
 
       // Update the query
-      const updateData: any = {
+      const updateData: QueryTemplateUpdateData = {
         queryText: args.newQuery,
       }
 
@@ -774,6 +821,6 @@ export class TemplateMutations extends BaseResolver {
   }
 
   setSchema(schema: GraphQLSchema) {
-    ;(this as any).schema = schema
+    this.schema = schema
   }
 }

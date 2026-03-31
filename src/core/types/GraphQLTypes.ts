@@ -16,14 +16,14 @@ export interface CreateDocInput {
 export interface CreateNodeInput {
   tableId: string
   content: string
-  metadata?: Record<string, any>
+  metadata?: PropertyRecord
 }
 
 export interface CreateRelationInput {
   fromNodeId: string
   toNodeId: string
   relationshipType: string
-  properties?: Record<string, any>
+  properties?: PropertyRecord
 }
 
 export interface CreateTableInput {
@@ -41,7 +41,7 @@ export interface UpdateDocInput {
 
 export interface UpdateNodeInput {
   content?: string
-  metadata?: Record<string, any>
+  metadata?: PropertyRecord
 }
 
 export interface UpdateQueryTemplateInput {
@@ -129,7 +129,7 @@ export interface MutationCreateAttributeTypeArgs {
     name: string
     dataType: string
     description?: string
-    constraints?: any
+    constraints?: JsonValue
     defaultValue?: string
   }
   [key: string]: unknown
@@ -159,7 +159,7 @@ export interface MutationUpdateAttributeTypeArgs {
   input: {
     name?: string
     description?: string
-    constraints?: any
+    constraints?: JsonValue
     defaultValue?: string
   }
   [key: string]: unknown
@@ -168,11 +168,36 @@ export interface MutationUpdateAttributeTypeArgs {
 export interface GraphQLContext {
   requestId: string
   startTime: Date
+  requestCache?: Map<string, Promise<unknown>>
   user?: {
     id: string
     permissions: string[]
   }
   // Add database connection, services, etc.
+}
+
+export type GraphQLVariables = Record<string, unknown>
+
+export interface GraphQLExecutionLocation {
+  line: number
+  column: number
+}
+
+export type GraphQLErrorPath = Array<string | number>
+
+export type GraphQLErrorExtensions = Record<string, unknown>
+
+export interface GraphQLExecutionError<TExtensions extends GraphQLErrorExtensions = GraphQLErrorExtensions> {
+  message: string
+  locations?: GraphQLExecutionLocation[]
+  path?: GraphQLErrorPath
+  extensions?: TExtensions
+}
+
+export interface GraphQLExecutionResult<TData = unknown, TExtensions extends GraphQLErrorExtensions = GraphQLErrorExtensions> {
+  data?: TData
+  errors?: GraphQLExecutionError<TExtensions>[]
+  extensions?: TExtensions
 }
 
 // JSON Value Types
@@ -263,6 +288,31 @@ export interface SearchNodesArgs {
     query?: string // New advanced query field
     attributeFilters?: AttributeFilterInput[] // Attribute-based filtering
   }
+  tableId?: string
+  input?: {
+    tableId: string
+    search?: string
+    searchTerm?: string
+    limit?: number
+    offset?: number
+  }
+  searchQuery?: {
+    textSearch?: string
+    conditions?: Array<{
+      logicalOperator?: string
+      filters: Array<{
+        field: string
+        operator: string
+        value: unknown
+      }>
+    }>
+    sortBy?: Array<{
+      field: string
+      direction: string
+    }>
+    limit?: number
+    offset?: number
+  }
   pagination?: {
     limit?: number
     offset?: number
@@ -273,10 +323,36 @@ export interface SearchNodesArgs {
   }
 }
 
+export interface SearchNodesByAttributeArgs {
+  filter?: {
+    tableIds?: string[]
+    attributeFilters?: AttributeFilterInput[]
+    logicalOperator?: string
+  }
+  input?: {
+    tableId: string
+    attributeId?: string
+    attributeIdentifier?: string
+    value: string
+    operator?: string
+  }
+  pagination?: {
+    limit?: number
+    offset?: number
+  }
+  sort?: Array<{
+    field: string
+    direction: 'ASC' | 'DESC'
+  }>
+}
+
 export interface CreateNodeArgs {
   input: {
     content: string
     tableId: string
+    title?: string
+    description?: string
+    metadata?: PropertyRecord
     attributes?: Array<{
       attributeId: string
       value: string
@@ -285,14 +361,19 @@ export interface CreateNodeArgs {
 }
 
 export interface UpdateNodeArgs {
-  id: string
+  id?: string
   input: {
-    content: string
+    nodeId?: string
+    content?: string
+    title?: string | null
+    description?: string | null
+    metadata?: PropertyRecord
   }
 }
 
 export interface DeleteNodeArgs {
-  id: string
+  id?: string
+  nodeId?: string
 }
 
 export interface SetNodeAttributeArgs {
@@ -372,17 +453,22 @@ export interface GetDependencyChainArgs {
 export interface CreateRelationTypeArgs {
   input: {
     identifier: string
-    name: string
+    name?: string
     description?: string
   }
 }
 
 export interface CreateRelationArgs {
   input: {
-    tableId: string
-    sourceNodeId: string
-    targetNodeId: string
-    relationTypeId: string
+    tableId?: string
+    sourceNodeId?: string
+    fromNodeId?: string
+    targetNodeId?: string
+    toNodeId?: string
+    relationTypeId?: string
+    relationshipType?: string
+    properties?: Record<string, unknown>
+    strength?: number
   }
 }
 

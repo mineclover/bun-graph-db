@@ -1,4 +1,11 @@
-import { buildSchema, getIntrospectionQuery, graphqlSync, type OperationDefinitionNode, parse } from 'graphql'
+import {
+  buildSchema,
+  getIntrospectionQuery,
+  graphqlSync,
+  type OperationDefinitionNode,
+  type SelectionNode,
+  parse,
+} from 'graphql'
 
 export interface GraphQLOperationInfo {
   queryName: string | null
@@ -57,7 +64,7 @@ export function extractVariableDefinitions(queryText: string): string[] {
       | OperationDefinitionNode
       | undefined
 
-    if (!operationDefinition || !operationDefinition.variableDefinitions) {
+    if (!operationDefinition?.variableDefinitions) {
       return []
     }
 
@@ -117,7 +124,7 @@ export function calculateComplexityScore(queryText: string): number {
     let nestedLevels = 0
 
     // Simple complexity calculation based on query structure
-    const countComplexity = (selections: any, depth = 0): void => {
+    const countComplexity = (selections: readonly SelectionNode[] | undefined, depth = 0): void => {
       if (!selections) return
 
       nestedLevels = Math.max(nestedLevels, depth)
@@ -126,13 +133,13 @@ export function calculateComplexityScore(queryText: string): number {
         fieldCount++
 
         // Add complexity for nested fields
-        if (selection.selectionSet) {
+        if ('selectionSet' in selection && selection.selectionSet) {
           complexity += depth * 0.5
           countComplexity(selection.selectionSet.selections, depth + 1)
         }
 
         // Add complexity for arguments
-        if (selection.arguments && selection.arguments.length > 0) {
+        if ('arguments' in selection && selection.arguments && selection.arguments.length > 0) {
           complexity += selection.arguments.length * 0.2
         }
       }
@@ -164,15 +171,15 @@ export function extractFieldNames(queryText: string): string[] {
     const document = parse(queryText.trim())
     const fieldNames: string[] = []
 
-    const extractFields = (selections: any): void => {
+    const extractFields = (selections: readonly SelectionNode[] | undefined): void => {
       if (!selections) return
 
       for (const selection of selections) {
-        if (selection.name?.value) {
+        if ('name' in selection && selection.name?.value) {
           fieldNames.push(selection.name.value)
         }
 
-        if (selection.selectionSet) {
+        if ('selectionSet' in selection && selection.selectionSet) {
           extractFields(selection.selectionSet.selections)
         }
       }

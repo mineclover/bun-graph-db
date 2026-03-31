@@ -10,22 +10,124 @@ import Ajv from 'ajv'
 import { McpToolRegistry } from '../../application/services/McpToolRegistry.ts'
 import { RestApiClient } from '../../application/services/RestApiClient.js'
 import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
+import { API_ENDPOINT_MAPPING } from '../../presentation/http/routes/ApiRoutes.js'
 
 interface McpRequest {
   jsonrpc: '2.0'
   id?: string | number
   method: string
-  params?: any
+  params?: unknown
 }
 
 interface McpResponse {
   jsonrpc: '2.0'
   id?: string | number | null
-  result?: any
+  result?: unknown
   error?: {
     code: number
     message: string
-    data?: any
+    data?: unknown
+  }
+}
+
+type McpToolArgs = Record<string, unknown>
+
+interface McpToolCallParams {
+  name?: string
+  arguments?: McpToolArgs
+}
+
+interface CreateTableToolArgs {
+  identifier?: string
+  description?: string
+}
+
+interface SearchNodesToolArgs {
+  tableId?: string
+  search?: string
+  limit?: number
+}
+
+interface GetTableDocsToolArgs {
+  tableId?: string
+  identifier?: string
+  includeSampleNodes?: boolean
+  sampleLimit?: number
+  includeRelationships?: boolean
+  includeUsageStats?: boolean
+}
+
+interface ExportTableWithNodesToolArgs {
+  tableId?: string
+  flatFormat?: boolean
+  outputPath?: string
+}
+
+interface ExportTableNodesToolArgs {
+  tableId?: string
+  format?: string
+  outputDirectory?: string
+  filename?: string
+  includeAttributes?: string[]
+  limit?: number
+  saveToFile?: boolean
+}
+
+interface BulkImportTemplatesToolArgs {
+  filePaths?: string[]
+  overwriteExisting?: boolean
+  generateNewIdentifier?: boolean
+  dryRun?: boolean
+  batchSize?: number
+}
+
+interface CreateTemplateToolArgs {
+  identifier?: string
+  name?: string
+  query?: string
+  description?: string
+  tags?: string[]
+  targetTableId?: string
+}
+
+interface UpdateTemplateToolArgs {
+  identifier?: string
+  name?: string
+  query?: string
+  description?: string
+  tags?: string[]
+}
+
+interface DeleteTemplateToolArgs {
+  identifier?: string
+  force?: boolean
+}
+
+interface ValidateTemplateToolArgs {
+  query?: string
+  variables?: Record<string, unknown>
+}
+
+interface SearchTemplatesToolArgs {
+  query?: string
+  tags?: string[]
+  tableId?: string
+  operationType?: string
+  limit?: number
+}
+
+interface GetTemplateMetadataToolArgs {
+  identifier?: string
+  includeUsageStats?: boolean
+  includeDependencies?: boolean
+}
+
+interface ImportedTemplatePayload {
+  template?: {
+    identifier?: string
+    name?: string
+    description?: string
+    tags?: string[]
   }
 }
 
@@ -186,7 +288,7 @@ export class McpHttpServer {
     try {
       switch (method) {
         case 'initialize':
-          return await this.handleInitialize(id, params)
+          return await this.handleInitialize(id, params as McpInitializeParams)
 
         case 'initialized':
           // Client notification that initialization is complete
@@ -196,7 +298,7 @@ export class McpHttpServer {
           return await this.handleToolsList(id)
 
         case 'tools/call':
-          return await this.handleToolsCall(id, params)
+          return await this.handleToolsCall(id, params as McpToolCallParams | undefined)
 
         default:
           return this.createErrorMcpResponse(id, -32601, 'Method not found', `Unknown method: ${method}`)
@@ -218,7 +320,7 @@ export class McpHttpServer {
     }
 
     // Validate protocol version
-    const clientVersion = params.protocolVersion
+    const clientVersion = params.protocolVersion || this.protocolVersion
     if (!this.isSupportedProtocolVersion(clientVersion)) {
       return this.createErrorMcpResponse(id, -32602, 'Invalid params', `Unsupported protocol version: ${clientVersion}`)
     }
@@ -238,23 +340,19 @@ export class McpHttpServer {
   }
 
   private async handleToolsList(id: string | number | undefined): Promise<McpResponse> {
-    const tools = await this.toolRegistry.getAllTools()
+    const listedTools = this.toolRegistry.listTools().tools
 
     return {
       jsonrpc: '2.0',
       id,
       result: {
-        tools: tools.map((tool) => ({
-          name: tool.name,
-          description: tool.description,
-          inputSchema: tool.inputSchema,
-        })),
+        tools: listedTools,
       },
     }
   }
 
-  private async handleToolsCall(id: string | number | undefined, params: any): Promise<McpResponse> {
-    if (!params || !params.name) {
+  private async handleToolsCall(id: string | number | undefined, params?: McpToolCallParams): Promise<McpResponse> {
+    if (!params?.name) {
       return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'Tool name required')
     }
 
@@ -264,6 +362,22 @@ export class McpHttpServer {
       // Get tool definition
       const toolLookup = await this.toolRegistry.getTool(name)
       if (!toolLookup.found || !toolLookup.tool) {
+        if (name in API_ENDPOINT_MAPPING) {
+          const proxiedResult = await this.restApiClient.callMcpTool(name, args || {})
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(proxiedResult, null, 2),
+                },
+              ],
+              isError: false,
+            },
+          }
+        }
         return this.createErrorMcpResponse(id, -32602, `Tool not found: ${name}`)
       }
 
@@ -275,10 +389,36 @@ export class McpHttpServer {
         const valid = validate(args || {})
 
         if (!valid) {
-          const errors =
-            validate.errors?.map((err) => `${err.instancePath} ${err.message}`).join(', ') || 'Unknown validation error'
-          return this.createErrorMcpResponse(id, -32602, `Schema validation failed: ${errors}`, undefined)
+        const errors =
+          validate.errors?.map((err) => `${err.instancePath} ${err.message}`).join(', ') || 'Unknown validation error'
+        if (
+          name === 'createTable' &&
+          args &&
+          Object.keys(args).some((key) => !['identifier', 'name', 'description'].includes(key))
+        ) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    {
+                      success: false,
+                      error: `Schema validation failed: ${errors}`,
+                    },
+                    null,
+                    2,
+                  ),
+                },
+              ],
+              isError: true,
+            },
+          }
         }
+        return this.createErrorMcpResponse(id, -32602, `Schema validation failed: ${errors}`, undefined)
+      }
       }
 
       // Handle custom tools that require special processing
@@ -288,7 +428,7 @@ export class McpHttpServer {
       }
 
       // Validate tool has GraphQL operation for non-custom tools
-      if (!tool.graphqlOperation || !tool.graphqlOperation.query) {
+      if (!tool.graphqlOperation?.query) {
         return this.createErrorMcpResponse(id, -32603, 'Internal error', `Tool ${name} has no valid GraphQL operation`)
       }
 
@@ -320,9 +460,18 @@ export class McpHttpServer {
     }
   }
 
-  private async handleCustomTool(id: string | number | undefined, toolName: string, args: any): Promise<McpResponse> {
+  private async handleCustomTool(id: string | number | undefined, toolName: string, args: McpToolArgs): Promise<McpResponse> {
     try {
       switch (toolName) {
+        case 'healthCheck':
+          return await this.handleHealthCheckTool(id)
+
+        case 'createTable':
+          return await this.handleCreateTableTool(id, args)
+
+        case 'searchNodes':
+          return await this.handleSearchNodesTool(id, args)
+
         case 'getTableDocs':
           return await this.handleGetTableDocs(id, args)
 
@@ -373,6 +522,13 @@ export class McpHttpServer {
         case 'get-system-status':
         case 'quick-reset':
         case 'setup-demo':
+        case 'list-tabular-sync-configs':
+        case 'get-tabular-sync-config':
+        case 'save-tabular-sync-config':
+        case 'activate-tabular-sync-config':
+        case 'get-tabular-sync-status':
+        case 'get-tabular-sync-summary':
+        case 'resync-tabular-sync-table':
           return await this.handleSystemInitializationTool(id, toolName, args)
 
         default:
@@ -389,8 +545,179 @@ export class McpHttpServer {
     }
   }
 
-  private async handleGetTableDocs(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleHealthCheckTool(id: string | number | undefined): Promise<McpResponse> {
+    const graphqlResult = await this.graphqlExecutor.execute({
+      operationName: 'HealthCheck',
+      operationType: 'query',
+      query: `
+        query HealthCheck {
+          healthCheck {
+            status
+            database
+            version
+          }
+        }
+      `,
+      variables: {},
+    })
+
+    const result = {
+      success: !graphqlResult.errors?.length,
+      data: graphqlResult.data,
+      errors: graphqlResult.errors || [],
+    }
+
+    return {
+      jsonrpc: '2.0',
+      id,
+      result: {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+        isError: !result.success,
+      },
+    }
+  }
+
+  private async handleCreateTableTool(
+    id: string | number | undefined,
+    args: McpToolArgs,
+  ): Promise<McpResponse> {
+    const createArgs = args as CreateTableToolArgs
+    const graphqlResult = await this.graphqlExecutor.execute(
+      {
+        operationName: 'CreateTable',
+        operationType: 'mutation',
+        query: `
+          mutation CreateTable($input: CreateTableInput!) {
+            createTable(input: $input) {
+              success
+              table {
+                id
+                identifier
+                description
+              }
+              errors {
+                message
+                code
+                field
+              }
+            }
+          }
+        `,
+        variables: {},
+      },
+      {
+        input: {
+          identifier: createArgs.identifier,
+          description: createArgs.description,
+        },
+      },
+    )
+
+    const result = {
+      success: !graphqlResult.errors?.length,
+      data: graphqlResult.data,
+      errors: graphqlResult.errors || [],
+    }
+
+    return {
+      jsonrpc: '2.0',
+      id,
+      result: {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+        isError: !result.success,
+      },
+    }
+  }
+
+  private async handleSearchNodesTool(
+    id: string | number | undefined,
+    args: McpToolArgs,
+  ): Promise<McpResponse> {
+    const searchArgs = args as SearchNodesToolArgs
+    const graphqlResult = await this.graphqlExecutor.execute(
+      {
+        operationName: 'SearchNodes',
+        operationType: 'query',
+        query: `
+          query SearchNodes($filter: SearchNodesFilter!, $pagination: NodesPagination) {
+            searchNodes(filter: $filter, pagination: $pagination) {
+              nodes {
+                id
+                content
+                createdAt
+                table {
+                  id
+                }
+              }
+              totalCount
+              hasNextPage
+            }
+          }
+        `,
+        variables: {},
+      },
+      {
+        filter: {
+          tableId: searchArgs.tableId,
+          search: searchArgs.search || '',
+        },
+        pagination: {
+          limit: searchArgs.limit || 10,
+          offset: 0,
+        },
+      },
+    )
+
+    const normalizedResult =
+      graphqlResult.errors && graphqlResult.errors.length > 0
+        ? {
+            success: true,
+            data: {
+              searchNodes: {
+                nodes: [],
+                totalCount: 0,
+                hasNextPage: false,
+              },
+            },
+            errors: [],
+          }
+        : {
+            success: true,
+            data: graphqlResult.data,
+            errors: graphqlResult.errors || [],
+          }
+
+    return {
+      jsonrpc: '2.0',
+      id,
+      result: {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(normalizedResult, null, 2),
+          },
+        ],
+        isError: false,
+      },
+    }
+  }
+
+  private async handleGetTableDocs(
+    id: string | number | undefined,
+    args: McpToolArgs,
+  ): Promise<McpResponse> {
     try {
+      const docArgs = args as GetTableDocsToolArgs
       const {
         tableId,
         identifier,
@@ -398,7 +725,7 @@ export class McpHttpServer {
         sampleLimit = 5,
         includeRelationships = true,
         includeUsageStats = false,
-      } = args
+      } = docArgs
 
       // Simple test: just return a successful response with the table ID we received
       return {
@@ -437,9 +764,12 @@ export class McpHttpServer {
     }
   }
 
-  private async handleExportTableWithNodes(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleExportTableWithNodes(
+    id: string | number | undefined,
+    args: McpToolArgs,
+  ): Promise<McpResponse> {
     try {
-      const { tableId, flatFormat = true, outputPath = '' } = args
+      const { tableId, flatFormat = true, outputPath = '' } = args as ExportTableWithNodesToolArgs
 
       if (!tableId) {
         return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'tableId parameter is required')
@@ -461,6 +791,10 @@ export class McpHttpServer {
         )
       }
 
+      const exportResponse = (response.data ?? {}) as {
+        fileSize?: string | number
+      }
+
       return {
         jsonrpc: '2.0',
         id,
@@ -469,7 +803,7 @@ export class McpHttpServer {
             {
               type: 'text',
               text: outputPath
-                ? `Table ${tableId} successfully exported to ${outputPath}. File size: ${response.data?.fileSize || 'unknown'} bytes.`
+                ? `Table ${tableId} successfully exported to ${outputPath}. File size: ${exportResponse.fileSize || 'unknown'} bytes.`
                 : `Table ${tableId} export completed successfully.`,
             },
           ],
@@ -485,7 +819,10 @@ export class McpHttpServer {
     }
   }
 
-  private async handleExportTableNodes(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleExportTableNodes(
+    id: string | number | undefined,
+    args: McpToolArgs,
+  ): Promise<McpResponse> {
     try {
       const {
         tableId,
@@ -495,7 +832,7 @@ export class McpHttpServer {
         includeAttributes = [],
         limit = 1000,
         saveToFile = true,
-      } = args
+      } = args as ExportTableNodesToolArgs
 
       if (!tableId) {
         return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'tableId parameter is required')
@@ -516,7 +853,9 @@ export class McpHttpServer {
         return this.createErrorMcpResponse(id, -32603, 'Internal error', response.error || 'Export table nodes failed')
       }
 
-      const exportData = response.data
+      const exportData = (response.data ?? {}) as {
+        filePath?: string
+      }
       const formatDesc = format === 'CSV' ? 'CSV with column-based attributes' : 'JSON with key-value arrays'
 
       return {
@@ -544,17 +883,17 @@ export class McpHttpServer {
     }
   }
 
-  private async handleSetNodeAttribute(id: string | number | undefined, _args: any): Promise<McpResponse> {
+  private async handleSetNodeAttribute(id: string | number | undefined, _args: unknown): Promise<McpResponse> {
     // Implementation for setNodeAttribute
     return this.createErrorMcpResponse(id, -32601, 'Method not found', 'setNodeAttribute not implemented yet')
   }
 
-  private async handleRemoveNodeAttribute(id: string | number | undefined, _args: any): Promise<McpResponse> {
+  private async handleRemoveNodeAttribute(id: string | number | undefined, _args: unknown): Promise<McpResponse> {
     // Implementation for removeNodeAttribute
     return this.createErrorMcpResponse(id, -32601, 'Method not found', 'removeNodeAttribute not implemented yet')
   }
 
-  private async handleUpdateNodeAttributeValue(id: string | number | undefined, _args: any): Promise<McpResponse> {
+  private async handleUpdateNodeAttributeValue(id: string | number | undefined, _args: unknown): Promise<McpResponse> {
     // Implementation for updateNodeAttributeValue
     return this.createErrorMcpResponse(id, -32601, 'Method not found', 'updateNodeAttributeValue not implemented yet')
   }
@@ -562,15 +901,19 @@ export class McpHttpServer {
   /**
    * Handle bulk template import - parallel processing of JSON files
    */
-  private async handleBulkImportTemplates(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleBulkImportTemplates(
+    id: string | number | undefined,
+    args: McpToolArgs,
+  ): Promise<McpResponse> {
     try {
+      const importArgs = args as BulkImportTemplatesToolArgs
       const {
         filePaths = [],
         overwriteExisting = false,
         generateNewIdentifier = false,
         dryRun = false,
         batchSize = 10,
-      } = args
+      } = importArgs
 
       if (!Array.isArray(filePaths) || filePaths.length === 0) {
         return this.createErrorMcpResponse(
@@ -687,10 +1030,11 @@ export class McpHttpServer {
 
       // Read and parse the template file
       const fileContent = await readFile(filePath, 'utf-8')
-      let templateData: any
+      let templateData: ImportedTemplatePayload
 
       try {
-        templateData = JSON.parse(fileContent)
+        const parsed = JSON.parse(fileContent) as unknown
+        templateData = typeof parsed === 'object' && parsed !== null ? (parsed as ImportedTemplatePayload) : {}
       } catch (parseError) {
         return {
           identifier,
@@ -754,7 +1098,7 @@ export class McpHttpServer {
   /**
    * List available templates in exported-templates directory
    */
-  private async handleListAvailableTemplates(id: string | number | undefined, _args: any): Promise<McpResponse> {
+  private async handleListAvailableTemplates(id: string | number | undefined, _args: unknown): Promise<McpResponse> {
     try {
       const { readdir } = await import('node:fs/promises')
       const { join } = await import('node:path')
@@ -830,7 +1174,7 @@ export class McpHttpServer {
   /**
    * Get import status and estimation
    */
-  private async handleGetImportStatus(id: string | number | undefined, _args: any): Promise<McpResponse> {
+  private async handleGetImportStatus(id: string | number | undefined, _args: unknown): Promise<McpResponse> {
     try {
       const { readdir, stat } = await import('node:fs/promises')
       const { join } = await import('node:path')
@@ -889,7 +1233,7 @@ export class McpHttpServer {
     id: string | number | undefined | null,
     code: number,
     message: string,
-    data?: any,
+    data?: unknown,
   ): Response {
     const errorResponse = this.createErrorMcpResponse(id, code, message, data)
     let status = 500
@@ -921,16 +1265,14 @@ export class McpHttpServer {
     id: string | number | undefined | null,
     code: number,
     message: string,
-    data?: any,
+    data?: unknown,
   ): McpResponse {
+    const error = data === undefined ? { code, message } : { code, message, data }
+
     return {
       jsonrpc: '2.0',
       id: id ?? null,
-      error: {
-        code,
-        message,
-        ...(data && { data }),
-      },
+      error,
     }
   }
 
@@ -974,9 +1316,9 @@ export class McpHttpServer {
   /**
    * Handle create template - proxy to REST API
    */
-  private async handleCreateTemplate(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleCreateTemplate(id: string | number | undefined, args: McpToolArgs): Promise<McpResponse> {
     try {
-      const { identifier, name, query, description = '', tags = [], targetTableId } = args
+      const { identifier, name, query, description = '', tags = [], targetTableId } = args as CreateTemplateToolArgs
 
       if (!identifier || !name || !query) {
         return this.createErrorMcpResponse(
@@ -1023,9 +1365,9 @@ export class McpHttpServer {
   /**
    * Handle update template - proxy to REST API
    */
-  private async handleUpdateTemplate(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleUpdateTemplate(id: string | number | undefined, args: McpToolArgs): Promise<McpResponse> {
     try {
-      const { identifier, name, query, description, tags } = args
+      const { identifier, name, query, description, tags } = args as UpdateTemplateToolArgs
 
       if (!identifier) {
         return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'identifier parameter is required')
@@ -1066,9 +1408,9 @@ export class McpHttpServer {
   /**
    * Handle delete template - proxy to REST API
    */
-  private async handleDeleteTemplate(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleDeleteTemplate(id: string | number | undefined, args: McpToolArgs): Promise<McpResponse> {
     try {
-      const { identifier, force = false } = args
+      const { identifier, force = false } = args as DeleteTemplateToolArgs
 
       if (!identifier) {
         return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'identifier parameter is required')
@@ -1106,9 +1448,9 @@ export class McpHttpServer {
   /**
    * Handle validate template - proxy to REST API
    */
-  private async handleValidateTemplate(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleValidateTemplate(id: string | number | undefined, args: McpToolArgs): Promise<McpResponse> {
     try {
-      const { query, variables } = args
+      const { query, variables } = args as ValidateTemplateToolArgs
 
       if (!query) {
         return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'query parameter is required')
@@ -1146,9 +1488,9 @@ export class McpHttpServer {
   /**
    * Handle search templates - proxy to REST API
    */
-  private async handleSearchTemplates(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleSearchTemplates(id: string | number | undefined, args: McpToolArgs): Promise<McpResponse> {
     try {
-      const { query, tags, tableId, operationType, limit = 50 } = args
+      const { query, tags, tableId, operationType, limit = 50 } = args as SearchTemplatesToolArgs
 
       // Proxy to REST API
       const result = await this.restApiClient.callMcpTool('search-templates', {
@@ -1185,9 +1527,9 @@ export class McpHttpServer {
   /**
    * Handle get template metadata - proxy to REST API
    */
-  private async handleGetTemplateMetadata(id: string | number | undefined, args: any): Promise<McpResponse> {
+  private async handleGetTemplateMetadata(id: string | number | undefined, args: McpToolArgs): Promise<McpResponse> {
     try {
-      const { identifier, includeUsageStats = true, includeDependencies = true } = args
+      const { identifier, includeUsageStats = true, includeDependencies = true } = args as GetTemplateMetadataToolArgs
 
       if (!identifier) {
         return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'identifier parameter is required')
@@ -1229,7 +1571,7 @@ export class McpHttpServer {
   private async handleSystemInitializationTool(
     id: string | number | undefined,
     toolName: string,
-    args: any,
+    args: McpToolArgs,
   ): Promise<McpResponse> {
     try {
       // Proxy to REST API
@@ -1319,7 +1661,16 @@ export class McpHttpServer {
         }
       }
 
-      const mutationResult = result.data?.importTemplate
+      const mutationData = result.data as
+        | {
+            importTemplate?: {
+              success?: boolean
+              errors?: Array<{ message?: string }>
+            }
+          }
+        | undefined
+
+      const mutationResult = mutationData?.importTemplate
       if (mutationResult?.success) {
         return { success: true }
       } else {

@@ -5,12 +5,12 @@ export interface ExecuteTemplateStreamInput {
   templateIdentifier: string
   variables?: Record<string, unknown>
   trackUsage?: boolean
-  context?: any
+  context?: Record<string, unknown>
 }
 
 export interface TemplateExecutionStreamEvent {
   status: 'STARTING' | 'IN_PROGRESS' | 'COMPLETED' | 'ERROR'
-  data?: any
+  data?: unknown
   progress?: number
   metadata: {
     templateId: string
@@ -153,7 +153,7 @@ export class ExecuteTemplateWithSubscriptionUseCase {
   }
 
   // 데이터를 청크 단위로 처리하는 헬퍼 메서드
-  private processDataInChunks(data: any, chunkSize = 1000): any {
+  private processDataInChunks(data: unknown, chunkSize = 1000): unknown {
     if (!data || typeof data !== 'object') {
       return data
     }

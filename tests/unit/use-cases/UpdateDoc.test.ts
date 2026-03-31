@@ -32,19 +32,27 @@ describe('UpdateDocUseCase', () => {
     }
 
     // Mock repository
-    mockDocRepository = {
-      save: mock(async (doc) => doc),
+    const repositoryMock = {
+      save: mock(async () => {}),
       findById: mock(async () => null),
-      findByTableId: mock(async () => []),
       findByTableAndCategory: mock(async () => []),
+      findActiveByTableAndCategory: mock(async () => null),
+      findVersionsByTableAndCategory: mock(async () => []),
+      searchDocs: mock(async () => ({ data: [], total: 0, hasMore: false })),
+      getLatestVersion: mock(async () => 1),
       exists: mock(async () => false),
       delete: mock(async () => {}),
-      activate: mock(async () => {}),
-      deactivate: mock(async () => {}),
       deactivateOthersInCategory: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
+      findAll: mock(async () => ({ data: [], total: 0, hasMore: false })),
       count: mock(async () => 0),
-    } as any
+      countByCategory: mock(async () => 0),
+      searchByContent: mock(async () => ({ data: [], total: 0, hasMore: false })),
+      saveMany: mock(async () => {}),
+      findByIds: mock(async () => []),
+      findByTableIds: mock(async () => []),
+    } satisfies IDocRepository
+
+    mockDocRepository = repositoryMock
 
     useCase = new UpdateDocUseCase(mockDocRepository, mockLogger)
   })
@@ -55,8 +63,8 @@ describe('UpdateDocUseCase', () => {
         content: 'Updated content',
       }
 
-      await expect(useCase.execute('' as any, input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute('' as any, input)).rejects.toThrow('Doc ID is required')
+      await expect(useCase.execute('', input)).rejects.toThrow(ValidationException)
+      await expect(useCase.execute('', input)).rejects.toThrow('Doc ID is required')
     })
 
     it('should throw ValidationException when doc ID is whitespace', async () => {
@@ -64,8 +72,8 @@ describe('UpdateDocUseCase', () => {
         content: 'Updated content',
       }
 
-      await expect(useCase.execute('   ' as any, input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute('   ' as any, input)).rejects.toThrow('Doc ID is required')
+      await expect(useCase.execute('   ', input)).rejects.toThrow(ValidationException)
+      await expect(useCase.execute('   ', input)).rejects.toThrow('Doc ID is required')
     })
   })
 
@@ -77,8 +85,8 @@ describe('UpdateDocUseCase', () => {
 
       mockDocRepository.findById = mock(async () => null)
 
-      await expect(useCase.execute('nonexistent-doc' as any, input)).rejects.toThrow(NotFoundException)
-      await expect(useCase.execute('nonexistent-doc' as any, input)).rejects.toThrow(
+      await expect(useCase.execute('nonexistent-doc', input)).rejects.toThrow(NotFoundException)
+      await expect(useCase.execute('nonexistent-doc', input)).rejects.toThrow(
         "Doc with id 'nonexistent-doc' not found",
       )
     })
@@ -94,7 +102,7 @@ describe('UpdateDocUseCase', () => {
         content: 'Updated content',
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.content).toBe('Updated content')
@@ -112,7 +120,7 @@ describe('UpdateDocUseCase', () => {
       }
 
       // Empty content should fail validation in Doc entity's updateContent method
-      await expect(useCase.execute('doc-1' as any, input)).rejects.toThrow()
+      await expect(useCase.execute('doc-1', input)).rejects.toThrow()
     })
 
     it('should handle whitespace-only content update', async () => {
@@ -125,7 +133,7 @@ describe('UpdateDocUseCase', () => {
       }
 
       // Whitespace-only content should fail validation in Doc entity
-      await expect(useCase.execute('doc-1' as any, input)).rejects.toThrow()
+      await expect(useCase.execute('doc-1', input)).rejects.toThrow()
     })
   })
 
@@ -139,7 +147,7 @@ describe('UpdateDocUseCase', () => {
         isActive: true,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.isActive).toBe(true)
@@ -156,7 +164,7 @@ describe('UpdateDocUseCase', () => {
         isActive: false,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.isActive).toBe(false)
@@ -173,7 +181,7 @@ describe('UpdateDocUseCase', () => {
         isActive: false,
       }
 
-      await useCase.execute('doc-1' as any, input)
+      await useCase.execute('doc-1', input)
 
       expect(mockDocRepository.deactivateOthersInCategory).not.toHaveBeenCalled()
     })
@@ -190,7 +198,7 @@ describe('UpdateDocUseCase', () => {
         isActive: true,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.content).toBe('New content')
@@ -209,7 +217,7 @@ describe('UpdateDocUseCase', () => {
         isActive: false,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.content).toBe('Updated content')
@@ -226,7 +234,7 @@ describe('UpdateDocUseCase', () => {
 
       const input: UpdateDocInput = {}
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(mockDocRepository.save).toHaveBeenCalled()
@@ -242,7 +250,7 @@ describe('UpdateDocUseCase', () => {
         isActive: true,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.content).toBe('Original content')
@@ -259,7 +267,7 @@ describe('UpdateDocUseCase', () => {
         isActive: undefined,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.content).toBe('New content')
@@ -284,7 +292,7 @@ describe('UpdateDocUseCase', () => {
         throw saveError
       })
 
-      await expect(useCase.execute('doc-1' as any, input)).rejects.toThrow('Database connection failed')
+      await expect(useCase.execute('doc-1', input)).rejects.toThrow('Database connection failed')
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to update doc', expect.any(Object))
     })
   })
@@ -299,7 +307,7 @@ describe('UpdateDocUseCase', () => {
         content: 'Updated content',
       }
 
-      await useCase.execute('doc-1' as any, input)
+      await useCase.execute('doc-1', input)
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Updating doc',
@@ -330,7 +338,7 @@ describe('UpdateDocUseCase', () => {
         content: longContent,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.content.length).toBe(10000)
@@ -346,7 +354,7 @@ describe('UpdateDocUseCase', () => {
         content: specialContent,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.content).toContain('<>&"\'`')
@@ -362,7 +370,7 @@ describe('UpdateDocUseCase', () => {
         content: markdownContent,
       }
 
-      const result = await useCase.execute('doc-1' as any, input)
+      const result = await useCase.execute('doc-1', input)
 
       expect(result.doc).toBeDefined()
       expect(result.doc.content).toContain('# Title')
@@ -387,7 +395,7 @@ describe('UpdateDocUseCase', () => {
           content: `Updated ${category} content`,
         }
 
-        const result = await useCase.execute(`doc-${category}` as any, input)
+        const result = await useCase.execute(`doc-${category}`, input)
 
         expect(result.doc).toBeDefined()
         expect(result.doc.content).toBe(`Updated ${category} content`)

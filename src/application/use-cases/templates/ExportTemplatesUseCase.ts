@@ -77,8 +77,22 @@ export class ExportTemplatesUseCase {
       const exportErrors: string[] = []
 
       for (const template of templates) {
+        const templateId = template.getId()
+        if (!templateId) {
+          exportedTemplates.push({
+            templateId: 'unknown',
+            templateIdentifier: template.getIdentifier(),
+            templateName: template.getName(),
+            filename: '',
+            exportSuccess: false,
+            exportError: 'Template is missing an ID',
+          })
+          exportErrors.push(`Failed to export template ${template.getIdentifier()}: Template is missing an ID`)
+          continue
+        }
+
         try {
-          const exportResult = await this.importExportService.exportTemplate(template.getId()!, {
+          const exportResult = await this.importExportService.exportTemplate(templateId, {
             includeStatistics: options.includeStatistics,
             includeMetadata: options.includeMetadata,
             prettyPrint: options.prettyPrint,
@@ -90,7 +104,7 @@ export class ExportTemplatesUseCase {
             writeFileSync(filePath, JSON.stringify(exportResult.exportData, null, 2), 'utf-8')
 
             exportedTemplates.push({
-              templateId: template.getId()!,
+              templateId,
               templateIdentifier: template.getIdentifier(),
               templateName: template.getName(),
               filename: exportResult.filename,
@@ -104,7 +118,7 @@ export class ExportTemplatesUseCase {
           } else {
             const errorMessage = exportResult.errors.join(', ')
             exportedTemplates.push({
-              templateId: template.getId()!,
+              templateId,
               templateIdentifier: template.getIdentifier(),
               templateName: template.getName(),
               filename: '',
@@ -117,7 +131,7 @@ export class ExportTemplatesUseCase {
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error'
           exportedTemplates.push({
-            templateId: template.getId()!,
+            templateId,
             templateIdentifier: template.getIdentifier(),
             templateName: template.getName(),
             filename: '',

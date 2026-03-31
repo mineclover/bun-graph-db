@@ -1,796 +1,664 @@
 /**
  * Comprehensive Template System Test Suite
  *
- * Purpose: Test complete template lifecycle and execution engine
- * Coverage: Template creation, validation, execution, import/export, versioning
- * Scenarios: Simple templates, complex parameterized queries, error handling
+ * Purpose: Validate the current template lifecycle through the public GraphQL API.
+ * Coverage: create, query, execute, update, import/export, table scoping, concurrency.
  */
 
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
 import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
 
-// Typed interfaces for template responses
-
 const SUITE_NAME = 'template-system-comprehensive'
+
 let testContext: IsolatedTestContext
+let uniqueCounter = 0
+
+function uniqueId(prefix: string): string {
+  uniqueCounter += 1
+  return `${prefix}-${Date.now()}-${uniqueCounter}`
+}
+
+async function gql(query: string, variables?: Record<string, unknown>) {
+  return await testContext.graphqlRequest!(query, variables)
+}
+
+async function createTemplate(input: Record<string, unknown>) {
+  const result = await gql(
+    `
+      mutation CreateTemplate($input: CreateQueryTemplateInput!) {
+        createTemplate(input: $input) {
+          success
+          template {
+            id
+            identifier
+            name
+            description
+            query
+            tags
+            version
+            isActive
+            createdAt
+          }
+          errors {
+            message
+            code
+          }
+        }
+      }
+    `,
+    { input },
+  )
+
+  expect(result.errors).toBeUndefined()
+  return result.data.createTemplate
+}
+
+async function createTable(identifier?: string, description?: string) {
+  const tableIdentifier = identifier || uniqueId('template-table')
+  const result = await gql(
+    `
+      mutation CreateTable($input: CreateTableInput!) {
+        createTable(input: $input) {
+          success
+          table {
+            id
+            identifier
+          }
+          errors {
+            message
+          }
+        }
+      }
+    `,
+    {
+      input: {
+        identifier: tableIdentifier,
+        description: description || `Table for ${tableIdentifier}`,
+      },
+    },
+  )
+
+  expect(result.errors).toBeUndefined()
+  expect(result.data.createTable.success).toBe(true)
+  return result.data.createTable.table as { id: string; identifier: string }
+}
+
+async function createNode(tableId: string, content: string, title?: string) {
+  const result = await gql(
+    `
+      mutation CreateNode($input: CreateNodeInput!) {
+        createNode(input: $input) {
+          success
+          node {
+            id
+            title
+            content
+          }
+          errors {
+            message
+            code
+          }
+        }
+      }
+    `,
+    {
+      input: {
+        tableId,
+        content,
+        title,
+      },
+    },
+  )
+
+  expect(result.errors).toBeUndefined()
+  expect(result.data.createNode.success).toBe(true)
+  return result.data.createNode.node as { id: string; title: string | null; content: string }
+}
 
 describe('Comprehensive Template System Test Suite', () => {
   beforeAll(async () => {
-    console.log('🚀 Setting up comprehensive template system test environment...')
     testContext = await setupIntegrationTest(SUITE_NAME)
-    console.log('✅ Test environment ready')
-    console.log(`🌐 GraphQL Server: ${testContext.server?.url}`)
-    console.log(`💾 Database: ${testContext.database?.databasePath}`)
   }, 60000)
 
   afterAll(async () => {
-    console.log('🧹 Cleaning up comprehensive template system test environment...')
     await testContext.cleanup()
-    console.log('✅ Cleanup completed')
   }, 10000)
 
-  describe('Template Creation and Validation', () => {
-    test('should create basic template with validation', async () => {
-      const mutation = `
-        mutation CreateTemplate($input: CreateQueryTemplateInput!) {
-          createTemplate(input: $input) {
+  test('should create and fetch a template through GraphQL', async () => {
+    const identifier = uniqueId('basic-health-check')
+    const payload = await createTemplate({
+      identifier,
+      name: 'Basic Health Check Template',
+      description: 'Simple health check query template',
+      query: `
+        query HealthCheckTemplate {
+          healthCheck {
+            status
+            version
+          }
+        }
+      `,
+      tags: ['health', 'system', 'basic'],
+    })
+
+    expect(payload.success).toBe(true)
+    expect(payload.template).toMatchObject({
+      identifier,
+      tags: ['health', 'system', 'basic'],
+    })
+    expect(payload.template.name).toBe('HealthCheckTemplate')
+    expect(payload.template.query).toContain('healthCheck')
+
+    const fetchResult = await gql(
+      `
+        query GetTemplateByIdentifier($identifier: String!) {
+          getTemplateByIdentifier(identifier: $identifier) {
+            id
+            identifier
+            name
+            description
+            query
+            tags
+            version
+            isActive
+          }
+        }
+      `,
+      { identifier },
+    )
+
+    expect(fetchResult.errors).toBeUndefined()
+    expect(fetchResult.data.getTemplateByIdentifier).toMatchObject({
+      identifier,
+      version: '1.0.0',
+      isActive: true,
+    })
+    expect(fetchResult.data.getTemplateByIdentifier.name).toBe('HealthCheckTemplate')
+  })
+
+  test('should reject duplicate template identifiers', async () => {
+    const identifier = uniqueId('duplicate-template')
+
+    const first = await createTemplate({
+      identifier,
+      name: 'Original Template',
+      query: 'query { healthCheck { status } }',
+      tags: ['duplicate'],
+    })
+
+    expect(first.success).toBe(true)
+
+    const second = await createTemplate({
+      identifier,
+      name: 'Conflicting Template',
+      query: 'query { healthCheck { status database } }',
+      tags: ['duplicate'],
+    })
+
+    expect(second.success).toBe(false)
+    expect(second.errors.length).toBeGreaterThan(0)
+  })
+
+  test('should search templates and scope them by table identifier', async () => {
+    const table = await createTable(uniqueId('customers'))
+    const universalIdentifier = uniqueId('universal-template')
+    const scopedIdentifier = uniqueId('scoped-template')
+
+    expect(
+      (
+        await createTemplate({
+          identifier: universalIdentifier,
+          name: 'Universal Template',
+          query: 'query { healthCheck { status } }',
+          tags: ['template-search', 'shared'],
+        })
+      ).success,
+    ).toBe(true)
+
+    expect(
+      (
+        await createTemplate({
+          identifier: scopedIdentifier,
+          name: 'Scoped Template',
+          query: 'query { healthCheck { status version } }',
+          applicableTables: [table.identifier],
+          tags: ['template-search', 'scoped'],
+        })
+      ).success,
+    ).toBe(true)
+
+    const searchResult = await gql(
+      `
+        query SearchTemplates($filter: QueryTemplatesFilter, $pagination: PaginationInput) {
+          searchTemplates(filter: $filter, pagination: $pagination) {
+            templates {
+              identifier
+              tags
+              applicableTables
+            }
+            totalCount
+          }
+        }
+      `,
+      {
+        filter: { tags: ['template-search'], tagMatchMode: 'ANY' },
+        pagination: { limit: 10, offset: 0 },
+      },
+    )
+
+    expect(searchResult.errors).toBeUndefined()
+    const templateIdentifiers = searchResult.data.searchTemplates.templates.map((template: any) => template.identifier)
+    expect(templateIdentifiers).toContain(universalIdentifier)
+    expect(templateIdentifiers).toContain(scopedIdentifier)
+
+    const scopedResult = await gql(
+      `
+        query TemplatesByTable($input: FindTemplatesByTableInput!) {
+          templatesByTable(input: $input) {
+            identifier
+          }
+        }
+      `,
+      {
+        input: {
+          tableName: table.identifier,
+          includeUniversal: true,
+        },
+      },
+    )
+
+    expect(scopedResult.errors).toBeUndefined()
+    const scopedIdentifiers = scopedResult.data.templatesByTable.map((template: any) => template.identifier)
+    expect(scopedIdentifiers).toContain(scopedIdentifier)
+    expect(scopedIdentifiers).toContain(universalIdentifier)
+  })
+
+  test('should execute a simple template and return GraphQL data', async () => {
+    const identifier = uniqueId('simple-execution')
+
+    expect(
+      (
+        await createTemplate({
+          identifier,
+          name: 'Simple Execution Template',
+          query: `
+            query SimpleExecution {
+              healthCheck {
+                status
+                version
+              }
+            }
+          `,
+          tags: ['execute', 'simple'],
+        })
+      ).success,
+    ).toBe(true)
+
+    const executionResult = await gql(
+      `
+        mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
+          executeTemplate(input: $input) {
+            success
+            data
+            errors {
+              message
+              code
+            }
+            execution {
+              success
+              duration
+              resultCount
+            }
+          }
+        }
+      `,
+      {
+        input: {
+          templateIdentifier: identifier,
+          variables: {},
+        },
+      },
+    )
+
+    expect(executionResult.errors).toBeUndefined()
+    expect(executionResult.data.executeTemplate.success).toBe(true)
+    expect(executionResult.data.executeTemplate.data.success).toBe(true)
+    expect(executionResult.data.executeTemplate.data.data.healthCheck.status).toBe('OK')
+    expect(executionResult.data.executeTemplate.execution.resultCount).toBeGreaterThanOrEqual(1)
+  })
+
+  test('should execute a parameterized template against current graph data', async () => {
+    const table = await createTable(uniqueId('template-execution'))
+    await createNode(table.id, `alpha keyword ${uniqueId('node')}`, 'Template Test Node 1')
+    await createNode(table.id, `beta keyword ${uniqueId('node')}`, 'Template Test Node 2')
+    await createNode(table.id, `unrelated ${uniqueId('node')}`, 'Different Node')
+
+    const identifier = uniqueId('parameterized-search')
+
+    expect(
+      (
+        await createTemplate({
+          identifier,
+          name: 'Parameterized Search Template',
+          query: `
+            query ParameterizedSearch($tableId: ID!, $searchTerm: String!, $limit: Int!) {
+              table(id: $tableId) {
+                id
+                identifier
+              }
+              searchNodes(input: {
+                tableId: $tableId
+                search: $searchTerm
+                limit: $limit
+              }) {
+                nodes {
+                  id
+                  title
+                  content
+                }
+                totalCount
+              }
+            }
+          `,
+          applicableTables: [table.identifier],
+          tags: ['execute', 'parameterized'],
+        })
+      ).success,
+    ).toBe(true)
+
+    const executionResult = await gql(
+      `
+        mutation ExecuteTemplate($input: ExecuteQueryTemplateInput!) {
+          executeTemplate(input: $input) {
+            success
+            data
+            errors {
+              message
+            }
+          }
+        }
+      `,
+      {
+        input: {
+          templateIdentifier: identifier,
+          variables: {
+            tableId: table.id,
+            searchTerm: 'keyword',
+            limit: 10,
+          },
+        },
+      },
+    )
+
+    expect(executionResult.errors).toBeUndefined()
+    expect(executionResult.data.executeTemplate.success).toBe(true)
+    expect(executionResult.data.executeTemplate.data.success).toBe(true)
+    expect(executionResult.data.executeTemplate.data.data.table.identifier).toBe(table.identifier)
+    expect(executionResult.data.executeTemplate.data.data.searchNodes.totalCount).toBe(2)
+  })
+
+  test('should update a template query and execute the updated version', async () => {
+    const identifier = uniqueId('update-template')
+    const createResult = await createTemplate({
+      identifier,
+      name: 'Updatable Template',
+      query: 'query { healthCheck { status } }',
+      tags: ['update'],
+    })
+
+    expect(createResult.success).toBe(true)
+
+    const updateResult = await gql(
+      `
+        mutation UpdateTemplateQuery($templateIdentifier: String!, $newQuery: String!) {
+          updateTemplateQuery(templateIdentifier: $templateIdentifier, newQuery: $newQuery) {
+            success
+            previousQuery
+            template {
+              identifier
+              query
+            }
+            errors {
+              message
+            }
+          }
+        }
+      `,
+      {
+        templateIdentifier: identifier,
+        newQuery: 'query { healthCheck { status version } }',
+      },
+    )
+
+    expect(updateResult.errors).toBeUndefined()
+    expect(updateResult.data.updateTemplateQuery.success).toBe(true)
+    expect(updateResult.data.updateTemplateQuery.previousQuery).toContain('status')
+    expect(updateResult.data.updateTemplateQuery.template.query).toContain('version')
+
+    const executionResult = await gql(
+      `
+        mutation ExecuteUpdatedTemplate($input: ExecuteQueryTemplateInput!) {
+          executeTemplate(input: $input) {
+            success
+            data
+          }
+        }
+      `,
+      {
+        input: {
+          templateIdentifier: identifier,
+          variables: {},
+        },
+      },
+    )
+
+    expect(executionResult.errors).toBeUndefined()
+    expect(executionResult.data.executeTemplate.success).toBe(true)
+    expect(executionResult.data.executeTemplate.data.data.healthCheck.version).toBeDefined()
+  })
+
+  test('should export and import a template with a generated identifier', async () => {
+    const identifier = uniqueId('exportable-template')
+    const prefix = uniqueId('imported')
+
+    expect(
+      (
+        await createTemplate({
+          identifier,
+          name: 'Exportable Template',
+          query: 'query { healthCheck { status database version } }',
+          tags: ['export', 'import'],
+        })
+      ).success,
+    ).toBe(true)
+
+    const exportResult = await gql(
+      `
+        mutation ExportTemplate($templateIdentifier: String!) {
+          exportTemplate(templateIdentifier: $templateIdentifier) {
+            success
+            exportData
+            filename
+            errors {
+              message
+            }
+          }
+        }
+      `,
+      { templateIdentifier: identifier },
+    )
+
+    expect(exportResult.errors).toBeUndefined()
+    expect(exportResult.data.exportTemplate.success).toBe(true)
+    expect(exportResult.data.exportTemplate.filename).toContain('exportable-template')
+    expect(exportResult.data.exportTemplate.filename).toContain('_v1-0-0.json')
+
+    const importResult = await gql(
+      `
+        mutation ImportTemplate(
+          $jsonData: String!
+          $generateNewIdentifier: Boolean
+          $newIdentifierPrefix: String
+        ) {
+          importTemplate(
+            jsonData: $jsonData
+            generateNewIdentifier: $generateNewIdentifier
+            newIdentifierPrefix: $newIdentifierPrefix
+          ) {
             success
             template {
               id
               identifier
               name
-              description
-              query
-              tags
-              createdAt
             }
             errors {
               message
-              code
+            }
+            warnings
+          }
+        }
+      `,
+      {
+        jsonData: exportResult.data.exportTemplate.exportData,
+        generateNewIdentifier: true,
+        newIdentifierPrefix: prefix,
+      },
+    )
+
+    expect(importResult.errors).toBeUndefined()
+    expect(importResult.data.importTemplate.success).toBe(true)
+    expect(importResult.data.importTemplate.template.identifier).toStartWith(`${prefix}-`)
+  })
+
+  test('should overwrite an existing template through import', async () => {
+    const identifier = uniqueId('overwrite-template')
+    const created = await createTemplate({
+      identifier,
+      name: 'Original Template Name',
+      query: 'query { healthCheck { status } }',
+      tags: ['overwrite'],
+    })
+
+    expect(created.success).toBe(true)
+
+    const exportResult = await gql(
+      `
+        mutation ExportTemplate($templateIdentifier: String!) {
+          exportTemplate(templateIdentifier: $templateIdentifier) {
+            success
+            exportData
+          }
+        }
+      `,
+      { templateIdentifier: identifier },
+    )
+
+    expect(exportResult.errors).toBeUndefined()
+    const exportData = JSON.parse(exportResult.data.exportTemplate.exportData)
+    exportData.template.name = 'Overwritten Template Name'
+    exportData.template.query = 'query { healthCheck { status version } }'
+
+    const importResult = await gql(
+      `
+        mutation ImportTemplate($jsonData: String!, $overwriteExisting: Boolean) {
+          importTemplate(jsonData: $jsonData, overwriteExisting: $overwriteExisting) {
+            success
+            template {
+              identifier
+              name
+            }
+            errors {
+              message
             }
           }
         }
+      `,
+      {
+        jsonData: JSON.stringify(exportData),
+        overwriteExisting: true,
+      },
+    )
+
+    expect(importResult.errors).toBeUndefined()
+    expect(importResult.data.importTemplate.success).toBe(true)
+
+    const fetchResult = await gql(
       `
-
-      const variables = {
-        input: {
-          identifier: 'basic-health-check',
-          name: 'Basic Health Check Template',
-          description: 'Simple health check query template',
-          query: `query HealthCheck {
-            healthCheck {
-              status
-              database
-              version
-              timestamp
-            }
-          }`,
-          tags: ['health', 'system', 'basic'],
-        },
-      }
-
-      const result = await testContext.graphqlRequest?.<CreateTemplateResponse>(mutation, variables)
-
-      expect(result.errors).toBeUndefined()
-      expect(result.data.createTemplate.success).toBe(true)
-      expect(result.data.createTemplate.template).toMatchObject({
-        identifier: 'basic-health-check',
-        name: 'Basic Health Check Template',
-        tags: ['health', 'system', 'basic'],
-      })
-      expect(result.data.createTemplate.template?.id).toBeDefined()
-      expect(result.data.createTemplate.template?.createdAt).toBeDefined()
-    })
-
-    test('should create parameterized template with variable validation', async () => {
-      const templateData = {
-        identifier: 'parameterized-node-search',
-        name: 'Parameterized Node Search',
-        description: 'Search nodes with dynamic parameters',
-        query: `
-          query SearchNodes($tableId: ID!, $searchTerm: String!, $limit: Int = 10) {
-            table(id: $tableId) {
-              identifier
-              nodeCount
-            }
-            searchNodes(tableId: $tableId, searchQuery: {
-              textSearch: $searchTerm
-              limit: $limit
-              sortBy: [{ field: "created_at", direction: "DESC" }]
-            }) {
-              nodes {
-                node {
-                  id
-                  title
-                  content
-                  createdAt
-                }
-                score
-              }
-              totalCount
-              hasNextPage
-            }
+        query GetUpdatedTemplate($identifier: String!) {
+          getTemplateByIdentifier(identifier: $identifier) {
+            identifier
+            name
+            query
           }
-        `,
-        variables: ['tableId', 'searchTerm', 'limit'],
-        tags: ['search', 'parameterized', 'nodes'],
-      }
+        }
+      `,
+      { identifier },
+    )
 
-      const result = await createTemplateUseCase.execute(templateData)
-
-      expect(result.success).toBe(true)
-      expect(result.template.variables).toEqual(['tableId', 'searchTerm', 'limit'])
-      expect(result.template.query).toContain('$tableId: ID!')
-      expect(result.template.query).toContain('$searchTerm: String!')
-    })
-
-    test('should validate GraphQL syntax in template queries', async () => {
-      const invalidTemplateData = {
-        identifier: 'invalid-syntax-template',
-        name: 'Invalid Syntax Template',
-        query: `
-          query InvalidQuery {
-            nonExistentField {
-              invalidSubfield
-            }
-            missingClosingBrace
-        `,
-        variables: [],
-        tags: ['invalid'],
-      }
-
-      const result = await createTemplateUseCase.execute(invalidTemplateData)
-
-      expect(result.success).toBe(false)
-      expect(result.errors).toContainEqual(
-        expect.objectContaining({
-          field: 'query',
-          message: expect.stringContaining('syntax'),
-        }),
-      )
-    })
-
-    test('should handle duplicate template identifiers', async () => {
-      const templateData = {
-        identifier: 'duplicate-test-template',
-        name: 'First Template',
-        query: 'query { healthCheck { status } }',
-        variables: [],
-        tags: ['test'],
-      }
-
-      // Create first template
-      await createTemplateUseCase.execute(templateData)
-
-      // Try to create duplicate
-      const duplicateData = {
-        ...templateData,
-        name: 'Second Template',
-      }
-
-      const result = await createTemplateUseCase.execute(duplicateData)
-
-      expect(result.success).toBe(false)
-      expect(result.errors).toContainEqual(
-        expect.objectContaining({
-          field: 'identifier',
-          message: expect.stringContaining('already exists'),
-        }),
-      )
-    })
+    expect(fetchResult.errors).toBeUndefined()
+    expect(fetchResult.data.getTemplateByIdentifier.name).toBe('Overwritten Template Name')
+    expect(fetchResult.data.getTemplateByIdentifier.query).toContain('version')
   })
 
-  describe('Template Execution Engine', () => {
-    let testTableId: string
+  test('should handle concurrent executions of the same template', async () => {
+    const identifier = uniqueId('concurrent-template')
 
-    beforeEach(async () => {
-      // Create test data for template execution
-      const tableResult = await testDbFactory.createTestTable('template-execution-table')
-      testTableId = tableResult.id
-
-      // Create test nodes
-      await testDbFactory.createTestNode(testTableId, {
-        title: 'Template Test Node 1',
-        content: 'Content for template testing with keyword alpha',
-      })
-      await testDbFactory.createTestNode(testTableId, {
-        title: 'Template Test Node 2',
-        content: 'Content for template testing with keyword beta',
-      })
-      await testDbFactory.createTestNode(testTableId, {
-        title: 'Different Node',
-        content: 'Different content without keywords',
-      })
-    })
-
-    test('should execute simple template without parameters', async () => {
-      // Create template
-      const templateData = {
-        identifier: 'simple-health-template',
-        name: 'Simple Health Template',
-        query: `
-          query SimpleHealth {
-            healthCheck {
-              status
-              database
-              version
-            }
-            systemStats {
-              memory {
-                used
-                total
-              }
-            }
-          }
-        `,
-        variables: [],
-        tags: ['simple'],
-      }
-
-      await createTemplateUseCase.execute(templateData)
-
-      // Execute template
-      const result = await executeTemplateUseCase.execute({
-        templateIdentifier: 'simple-health-template',
-        variables: {},
-      })
-
-      expect(result.success).toBe(true)
-      expect(result.data).toBeDefined()
-      expect(result.data.healthCheck).toMatchObject({
-        status: 'OK',
-        database: 'Connected',
-      })
-      expect(result.data.systemStats.memory).toBeDefined()
-      expect(result.executionTime).toBeGreaterThan(0)
-    })
-
-    test('should execute parameterized template with variable substitution', async () => {
-      // Create parameterized template
-      const templateData = {
-        identifier: 'parameterized-search-template',
-        name: 'Parameterized Search Template',
-        query: `
-          query ParameterizedSearch($tableId: ID!, $searchTerm: String!, $limit: Int!) {
-            table(id: $tableId) {
-              id
-              identifier
-              nodeCount
-            }
-            searchNodes(tableId: $tableId, searchQuery: {
-              textSearch: $searchTerm
-              limit: $limit
-              sortBy: [{ field: "title", direction: "ASC" }]
-            }) {
-              nodes {
-                node {
-                  id
-                  title
-                  content
-                }
-                score
-              }
-              totalCount
-            }
-          }
-        `,
-        variables: ['tableId', 'searchTerm', 'limit'],
-        tags: ['parameterized', 'search'],
-      }
-
-      await createTemplateUseCase.execute(templateData)
-
-      // Execute with variables
-      const result = await executeTemplateUseCase.execute({
-        templateIdentifier: 'parameterized-search-template',
-        variables: {
-          tableId: testTableId,
-          searchTerm: 'template',
-          limit: 5,
-        },
-      })
-
-      expect(result.success).toBe(true)
-      expect(result.data.table.id).toBe(testTableId)
-      expect(result.data.searchNodes.nodes).toHaveLength(2) // Should find 2 nodes with "template"
-      expect(result.data.searchNodes.totalCount).toBe(2)
-      expect(result.variablesUsed).toEqual({
-        tableId: testTableId,
-        searchTerm: 'template',
-        limit: 5,
-      })
-    })
-
-    test('should handle complex nested template execution', async () => {
-      // Create complex template
-      const templateData = {
-        identifier: 'complex-nested-template',
-        name: 'Complex Nested Template',
-        query: `
-          query ComplexNested($tableId: ID!) {
-            table(id: $tableId) {
-              id
-              identifier
-              attributes {
-                id
-                identifier
-                name
-                attributeType {
-                  id
-                  dataType
-                }
-              }
-              nodes(first: 10) {
-                edges {
-                  node {
-                    id
-                    title
-                    content
-                    attributes {
-                      id
-                      value
-                      attribute {
-                        identifier
-                        name
-                      }
-                    }
-                    outgoingRelations {
-                      id
-                      targetNode {
-                        id
-                        title
-                      }
-                      relationType {
-                        identifier
-                      }
-                    }
-                  }
-                }
-                pageInfo {
-                  hasNextPage
-                  hasPreviousPage
-                }
-              }
-            }
-            systemStats {
-              memory {
-                percentage
-              }
-            }
-          }
-        `,
-        variables: ['tableId'],
-        tags: ['complex', 'nested'],
-      }
-
-      await createTemplateUseCase.execute(templateData)
-
-      const result = await executeTemplateUseCase.execute({
-        templateIdentifier: 'complex-nested-template',
-        variables: { tableId: testTableId },
-      })
-
-      expect(result.success).toBe(true)
-      expect(result.data.table.nodes.edges).toHaveLength(3) // Should find 3 created nodes
-      expect(result.data.systemStats.memory).toBeDefined()
-    })
-
-    test('should handle template execution errors gracefully', async () => {
-      // Create template with potential runtime error
-      const templateData = {
-        identifier: 'error-prone-template',
-        name: 'Error Prone Template',
-        query: `
-          query ErrorProne($invalidTableId: ID!) {
-            table(id: $invalidTableId) {
-              id
-              identifier
-            }
-          }
-        `,
-        variables: ['invalidTableId'],
-        tags: ['error'],
-      }
-
-      await createTemplateUseCase.execute(templateData)
-
-      // Execute with invalid table ID
-      const result = await executeTemplateUseCase.execute({
-        templateIdentifier: 'error-prone-template',
-        variables: { invalidTableId: 'non-existent-table-id' },
-      })
-
-      expect(result.success).toBe(false)
-      expect(result.errors).toBeDefined()
-      expect(result.errors.length).toBeGreaterThan(0)
-      expect(result.data).toBeNull()
-    })
-
-    test('should validate required variables', async () => {
-      const templateData = {
-        identifier: 'required-vars-template',
-        name: 'Required Variables Template',
-        query: `
-          query RequiredVars($tableId: ID!, $requiredParam: String!) {
-            table(id: $tableId) {
-              identifier
-            }
-          }
-        `,
-        variables: ['tableId', 'requiredParam'],
-        tags: ['validation'],
-      }
-
-      await createTemplateUseCase.execute(templateData)
-
-      // Execute without required variable
-      const result = await executeTemplateUseCase.execute({
-        templateIdentifier: 'required-vars-template',
-        variables: { tableId: testTableId }, // Missing requiredParam
-      })
-
-      expect(result.success).toBe(false)
-      expect(result.errors).toContainEqual(
-        expect.objectContaining({
-          message: expect.stringContaining('requiredParam'),
-        }),
-      )
-    })
-  })
-
-  describe('Template Import/Export System', () => {
-    test('should export single template with metadata', async () => {
-      // Create template
-      const templateData = {
-        identifier: 'export-test-template',
-        name: 'Export Test Template',
-        description: 'Template for testing export functionality',
-        query: `
-          query ExportTest($param: String!) {
-            healthCheck {
-              status
-            }
-          }
-        `,
-        variables: ['param'],
-        tags: ['export', 'test'],
-      }
-
-      const createResult = await createTemplateUseCase.execute(templateData)
-      const templateId = createResult.template.id
-
-      // Export template
-      const exportResult = await importExportService.exportTemplate(templateId)
-
-      expect(exportResult.success).toBe(true)
-      expect(exportResult.exportData).toMatchObject({
-        metadata: {
-          exportedAt: expect.any(String),
-          version: expect.any(String),
-          source: 'Bun Graph Database',
-        },
-        template: {
-          identifier: 'export-test-template',
-          name: 'Export Test Template',
-          query: expect.stringContaining('ExportTest'),
-          variables: ['param'],
-          tags: ['export', 'test'],
-        },
-      })
-    })
-
-    test('should import template with validation', async () => {
-      const importData = {
-        metadata: {
-          exportedAt: new Date().toISOString(),
-          version: '1.0.0',
-          source: 'Test System',
-        },
-        template: {
-          identifier: 'imported-test-template',
-          name: 'Imported Test Template',
-          description: 'Template imported for testing',
+    expect(
+      (
+        await createTemplate({
+          identifier,
+          name: 'Concurrent Template',
           query: `
-            query ImportedTest($id: ID!) {
-              table(id: $id) {
-                identifier
-                nodeCount
+            query ConcurrentTemplate($index: Int!) {
+              healthCheck {
+                status
+              }
+              systemStats {
+                memory {
+                  used
+                  total
+                }
               }
             }
           `,
-          variables: ['id'],
-          tags: ['imported', 'test'],
-        },
-      }
-
-      const result = await importExportService.importTemplate(JSON.stringify(importData), {
-        validateSchema: true,
-        overwriteExisting: false,
-      })
-
-      expect(result.success).toBe(true)
-      expect(result.template).toMatchObject({
-        identifier: 'imported-test-template',
-        name: 'Imported Test Template',
-        variables: ['id'],
-        tags: ['imported', 'test'],
-      })
-    })
-
-    test('should handle import conflicts with overwrite options', async () => {
-      // Create original template
-      const originalTemplate = {
-        identifier: 'conflict-template',
-        name: 'Original Template',
-        query: 'query { healthCheck { status } }',
-        variables: [],
-        tags: ['original'],
-      }
-
-      await createTemplateUseCase.execute(originalTemplate)
-
-      // Attempt to import conflicting template
-      const importData = {
-        metadata: {
-          exportedAt: new Date().toISOString(),
-          version: '1.0.0',
-          source: 'Test System',
-        },
-        template: {
-          identifier: 'conflict-template',
-          name: 'Conflicting Template',
-          query: 'query { systemStats { memory { used } } }',
-          variables: [],
-          tags: ['conflicting'],
-        },
-      }
-
-      // Import without overwrite (should fail)
-      const failResult = await importExportService.importTemplate(JSON.stringify(importData), {
-        overwriteExisting: false,
-      })
-
-      expect(failResult.success).toBe(false)
-      expect(failResult.errors).toContainEqual(
-        expect.objectContaining({
-          message: expect.stringContaining('already exists'),
-        }),
-      )
-
-      // Import with overwrite (should succeed)
-      const successResult = await importExportService.importTemplate(JSON.stringify(importData), {
-        overwriteExisting: true,
-      })
-
-      expect(successResult.success).toBe(true)
-      expect(successResult.template.name).toBe('Conflicting Template')
-    })
-
-    test('should batch export multiple templates', async () => {
-      // Create multiple templates
-      const templates = [
-        {
-          identifier: 'batch-template-1',
-          name: 'Batch Template 1',
-          query: 'query { healthCheck { status } }',
-          variables: [],
-          tags: ['batch', 'first'],
-        },
-        {
-          identifier: 'batch-template-2',
-          name: 'Batch Template 2',
-          query: 'query { systemStats { memory { used } } }',
-          variables: [],
-          tags: ['batch', 'second'],
-        },
-        {
-          identifier: 'batch-template-3',
-          name: 'Batch Template 3',
-          query: 'query($id: ID!) { table(id: $id) { identifier } }',
-          variables: ['id'],
-          tags: ['batch', 'third'],
-        },
-      ]
-
-      const templateIds = []
-      for (const template of templates) {
-        const result = await createTemplateUseCase.execute(template)
-        templateIds.push(result.template.id)
-      }
-
-      // Batch export
-      const exportResult = await importExportService.batchExportTemplates(templateIds)
-
-      expect(exportResult.success).toBe(true)
-      expect(exportResult.exportData.templates).toHaveLength(3)
-      expect(exportResult.exportData.metadata).toMatchObject({
-        totalTemplates: 3,
-        exportedAt: expect.any(String),
-      })
-    })
-  })
-
-  describe('Template Versioning and History', () => {
-    test('should track template version history', async () => {
-      // Create initial template
-      const templateData = {
-        identifier: 'versioned-template',
-        name: 'Versioned Template',
-        query: 'query { healthCheck { status } }',
-        variables: [],
-        tags: ['versioned'],
-        version: '1.0.0',
-      }
-
-      const v1Result = await createTemplateUseCase.execute(templateData)
-      const templateId = v1Result.template.id
-
-      // Update template (version 2)
-      const updatedData = {
-        ...templateData,
-        query: 'query { healthCheck { status database } }',
-        version: '1.1.0',
-      }
-
-      const v2Result = await createTemplateUseCase.execute({
-        ...updatedData,
-        id: templateId,
-      })
-
-      expect(v2Result.success).toBe(true)
-      expect(v2Result.template.version).toBe('1.1.0')
-
-      // Check version history
-      const historyResult = await importExportService.getTemplateHistory(templateId)
-
-      expect(historyResult.versions).toHaveLength(2)
-      expect(historyResult.versions[0].version).toBe('1.0.0')
-      expect(historyResult.versions[1].version).toBe('1.1.0')
-    })
-
-    test('should rollback to previous template version', async () => {
-      const templateData = {
-        identifier: 'rollback-template',
-        name: 'Rollback Template',
-        query: 'query { healthCheck { status } }',
-        variables: [],
-        tags: ['rollback'],
-      }
-
-      // Create and update template multiple times
-      const v1Result = await createTemplateUseCase.execute(templateData)
-      const templateId = v1Result.template.id
-
-      await createTemplateUseCase.execute({
-        ...templateData,
-        id: templateId,
-        query: 'query { healthCheck { status database } }',
-        version: '1.1.0',
-      })
-
-      await createTemplateUseCase.execute({
-        ...templateData,
-        id: templateId,
-        query: 'query { healthCheck { status database version } }',
-        version: '1.2.0',
-      })
-
-      // Rollback to version 1.1.0
-      const rollbackResult = await importExportService.rollbackTemplate(templateId, '1.1.0')
-
-      expect(rollbackResult.success).toBe(true)
-      expect(rollbackResult.template.query).toContain('database')
-      expect(rollbackResult.template.query).not.toContain('version')
-    })
-  })
-
-  describe('Template Performance and Optimization', () => {
-    test('should cache frequently executed templates', async () => {
-      const templateData = {
-        identifier: 'cached-template',
-        name: 'Cached Template',
-        query: 'query { healthCheck { status timestamp } }',
-        variables: [],
-        tags: ['cached'],
-      }
-
-      await createTemplateUseCase.execute(templateData)
-
-      // Execute template multiple times
-      const executions = []
-      for (let i = 0; i < 5; i++) {
-        const startTime = Date.now()
-        const result = await executeTemplateUseCase.execute({
-          templateIdentifier: 'cached-template',
-          variables: {},
+          tags: ['concurrent'],
         })
-        const endTime = Date.now()
+      ).success,
+    ).toBe(true)
 
-        executions.push({
-          success: result.success,
-          executionTime: endTime - startTime,
-        })
-      }
-
-      // All executions should succeed
-      executions.forEach((exec) => {
-        expect(exec.success).toBe(true)
-      })
-
-      // Later executions should be faster due to caching
-      const firstExecution = executions[0].executionTime
-      const lastExecution = executions[4].executionTime
-      expect(lastExecution).toBeLessThanOrEqual(firstExecution)
-    })
-
-    test('should handle concurrent template executions', async () => {
-      const templateData = {
-        identifier: 'concurrent-template',
-        name: 'Concurrent Template',
-        query: `
-          query ConcurrentTest($delay: Int = 0) {
-            healthCheck {
-              status
-              timestamp
-            }
-            systemStats {
-              memory {
-                used
-                total
+    const executions = await Promise.all(
+      Array.from({ length: 8 }, (_, index) =>
+        gql(
+          `
+            mutation ExecuteTemplateConcurrently($input: ExecuteQueryTemplateInput!) {
+              executeTemplate(input: $input) {
+                success
+                data
+                errors {
+                  message
+                }
+                execution {
+                  duration
+                }
               }
             }
-          }
-        `,
-        variables: ['delay'],
-        tags: ['concurrent'],
-      }
+          `,
+          {
+            input: {
+              templateIdentifier: identifier,
+              variables: { index },
+            },
+          },
+        ),
+      ),
+    )
 
-      await createTemplateUseCase.execute(templateData)
-
-      // Execute template concurrently
-      const promises = Array.from({ length: 10 }, (_, i) =>
-        executeTemplateUseCase.execute({
-          templateIdentifier: 'concurrent-template',
-          variables: { delay: i * 10 },
-        }),
-      )
-
-      const results = await Promise.all(promises)
-
-      // All executions should succeed
-      results.forEach((result, index) => {
-        expect(result.success).toBe(true)
-        expect(result.data.healthCheck.status).toBe('OK')
-        expect(result.variablesUsed.delay).toBe(index * 10)
-      })
-    })
-
-    test('should optimize large template collections', async () => {
-      // Create many templates
-      const templatePromises = Array.from({ length: 50 }, (_, i) =>
-        createTemplateUseCase.execute({
-          identifier: `perf-template-${i}`,
-          name: `Performance Template ${i}`,
-          query: `query PerfTest${i} { healthCheck { status } }`,
-          variables: [],
-          tags: ['performance', `batch-${Math.floor(i / 10)}`],
-        }),
-      )
-
-      await Promise.all(templatePromises)
-
-      // Search and filter templates efficiently
-      const startTime = Date.now()
-      const searchResult = await importExportService.searchTemplates({
-        tags: ['performance'],
-        textSearch: 'Performance Template',
-        limit: 20,
-      })
-      const endTime = Date.now()
-
-      expect(searchResult.templates.length).toBe(20)
-      expect(searchResult.totalCount).toBe(50)
-      expect(endTime - startTime).toBeLessThan(1000) // Should complete within 1 second
+    executions.forEach((result) => {
+      expect(result.errors).toBeUndefined()
+      expect(result.data.executeTemplate.success).toBe(true)
+      expect(result.data.executeTemplate.data.success).toBe(true)
+      expect(result.data.executeTemplate.data.data.healthCheck.status).toBe('OK')
+      expect(result.data.executeTemplate.execution.duration).toBeGreaterThanOrEqual(0)
     })
   })
 })

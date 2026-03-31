@@ -21,6 +21,13 @@ export interface ForeignKeyInfo {
   to: string
 }
 
+interface SqliteIndexRow {
+  name: string
+  unique: number | boolean
+  sql?: string
+  partial?: number | boolean
+}
+
 export interface TableSchema {
   name: string
   columns: ColumnInfo[]
@@ -83,7 +90,7 @@ export class SchemaReflection {
 
     for (const table of tables) {
       const columns = this.db.query(`PRAGMA table_info(${table.name})`).all() as ColumnInfo[]
-      const foreignKeys = this.db.query(`PRAGMA foreign_key_list(${table.name})`).all() as any[]
+      const foreignKeys = this.db.query(`PRAGMA foreign_key_list(${table.name})`).all() as ForeignKeyInfo[]
       const indexes = this.extractIndexes(table.name)
 
       const primaryKeys = columns.filter((col) => col.pk).map((col) => col.name)
@@ -116,14 +123,14 @@ export class SchemaReflection {
       FROM sqlite_master 
       WHERE type='index' AND tbl_name=? AND name NOT LIKE 'sqlite_%'
     `)
-      .all(tableName) as any[]
+      .all(tableName) as SqliteIndexRow[]
 
     return indexes.map((idx) => {
-      const info = this.db.query(`PRAGMA index_info(${idx.name})`).all() as any[]
+      const info = this.db.query(`PRAGMA index_info(${idx.name})`).all() as Array<{ name?: string }>
       return {
         name: idx.name,
         unique: Boolean(idx.unique),
-        columns: info.map((i) => i.name).filter(Boolean),
+        columns: info.map((i) => i.name).filter((name): name is string => Boolean(name)),
         partial: Boolean(idx.partial),
         expression: idx.sql,
       }

@@ -44,7 +44,7 @@ export class Doc implements TimestampedEntity {
     }
 
     return new Doc(
-      null as any as DocId, // Will be set after database insertion
+      '' as DocId, // Will be set after database insertion
       tableId,
       category,
       version,

@@ -7,6 +7,7 @@ extend type Query {
 
   # Get multiple tables with filtering and pagination
   tables(filter: TablesFilter, pagination: TablesPagination, sort: [SortInput!]): TablesConnection!
+  getTables(input: PaginationInput): TablesConnection!
 
   # Search tables with simplified interface (for MCP compatibility)
   searchTables(filter: TablesFilter): TablesConnection!

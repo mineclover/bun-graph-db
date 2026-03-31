@@ -1,109 +1,132 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { CreateAttributeInput } from '@/application/dtos/AttributeDto.js'
-import type { ILogger } from '@/application/ports/ILogger.js'
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
-import { createTestAttribute, createTestAttributeType, createTestTable } from './test-helpers.js'
+import {
+  createMockLogger,
+  createPaginatedResult,
+  createTestAttribute,
+  createTestAttributeType,
+  createTestTable,
+  type MockedMethods,
+} from './test-helpers.js'
+
+type AttributeRepositoryMock = MockedMethods<IAttributeRepository>
+type AttributeTypeRepositoryMock = MockedMethods<IAttributeTypeRepository>
+type TableRepositoryMock = MockedMethods<ITableRepository>
+type QueryTemplateRepositoryMock = MockedMethods<IQueryTemplateRepository>
+
+function createQueryTemplateSearchResult(): Awaited<ReturnType<IQueryTemplateRepository['search']>> {
+  return {
+    items: [],
+    total: 0,
+    hasNextPage: false,
+    hasPreviousPage: false,
+  }
+}
+
+function createAttributeRepositoryMock(): AttributeRepositoryMock {
+  return {
+    save: mock(async (_attribute) => {}),
+    findById: mock(async (_id: string) => null),
+    findByIdentifier: mock(async (_identifier: string) => null),
+    findAll: mock(async (_options) => createPaginatedResult<ReturnType<typeof createTestAttribute>>()),
+    delete: mock(async (_id: string) => {}),
+    count: mock(async () => 0),
+    exists: mock(async (_identifier: string) => false),
+    saveMany: mock(async (_attributes) => {}),
+    findByIds: mock(async (_ids: string[]) => []),
+    update: mock(async (_id: string, _updates) => createTestAttribute()),
+    deleteMany: mock(async (_ids: string[]) => {}),
+    findByParentId: mock(async (_parentId: string, _options) => createPaginatedResult<ReturnType<typeof createTestAttribute>>()),
+    countByParentId: mock(async (_parentId: string) => 0),
+    deleteByParentId: mock(async (_parentId: string) => {}),
+    findByTableId: mock(async (_tableId: string, _options) => createPaginatedResult<ReturnType<typeof createTestAttribute>>()),
+    countByTableId: mock(async (_tableId: string) => 0),
+    deleteByTableId: mock(async (_tableId: string) => {}),
+    findByTableIdAndIdentifier: mock(async (_tableId: string, _identifier: string) => null),
+    findByAttributeTypeId: mock(async (_attributeTypeId: string, _options) =>
+      createPaginatedResult<ReturnType<typeof createTestAttribute>>(),
+    ),
+    findRequiredByTableId: mock(async (_tableId: string) => []),
+    getAttributeTypeForAttribute: mock(async (_attributeId: string) => null),
+    existsByTableIdAndIdentifier: mock(async (_tableId: string, _identifier: string) => false),
+  } satisfies AttributeRepositoryMock
+}
+
+function createAttributeTypeRepositoryMock(): AttributeTypeRepositoryMock {
+  return {
+    save: mock(async (_attributeType) => {}),
+    findById: mock(async (_id: string) => null),
+    findByIdentifier: mock(async (_identifier: string) => null),
+    findAll: mock(async (_options) => createPaginatedResult<ReturnType<typeof createTestAttributeType>>()),
+    findByJsonType: mock(async (_jsonType: string, _options) => createPaginatedResult<ReturnType<typeof createTestAttributeType>>()),
+    delete: mock(async (_id: string) => {}),
+    exists: mock(async (_identifier: string) => false),
+    count: mock(async () => 0),
+    saveMany: mock(async (_attributeTypes) => {}),
+    findByIds: mock(async (_ids: string[]) => []),
+    update: mock(async (_id: string, _updates) => createTestAttributeType()),
+  } satisfies AttributeTypeRepositoryMock
+}
+
+function createTableRepositoryMock(): TableRepositoryMock {
+  return {
+    save: mock(async (table) => table),
+    findById: mock(async (_id: string) => null),
+    findByIdentifier: mock(async (_identifier: string) => null),
+    update: mock(async (_id: string, _updates) => createTestTable()),
+    delete: mock(async (_id: string) => {}),
+    findAll: mock(async (_options) => createPaginatedResult<ReturnType<typeof createTestTable>>()),
+    count: mock(async () => 0),
+    exists: mock(async (_identifier: string) => false),
+    saveMany: mock(async (_tables) => {}),
+    findByIds: mock(async (_ids: string[]) => []),
+    deleteMany: mock(async (_ids: string[]) => {}),
+  } satisfies TableRepositoryMock
+}
+
+function createQueryTemplateRepositoryMock(): QueryTemplateRepositoryMock {
+  return {
+    findById: mock(async (_id: string) => null),
+    findByIdentifier: mock(async (_identifier: string) => null),
+    search: mock(async (_criteria) => createQueryTemplateSearchResult()),
+    searchByQueryName: mock(async (_queryName: string) => []),
+    searchByOperationType: mock(async (_operationType: string) => []),
+    findByApplicableTable: mock(async (_tableName: string, _includeUniversal?: boolean) => []),
+    findTemplatesWithTableDependencies: mock(async () => []),
+    create: mock(async (template) => template),
+    update: mock(async (_id: string, _updates) => {
+      throw new Error('update should not be called in this test suite')
+    }),
+    deleteById: mock(async (_id: string) => true),
+    incrementUsage: mock(async (_id: string) => {}),
+    updateExecutionStats: mock(async (_id: string, _executionTimeMs: number) => {}),
+    findPopular: mock(async (_limit?: number) => []),
+    updateStatus: mock(async (_id: string, _isActive: boolean) => {
+      throw new Error('updateStatus should not be called in this test suite')
+    }),
+  } satisfies QueryTemplateRepositoryMock
+}
 
 describe('CreateAttributeUseCase', () => {
   let useCase: CreateAttributeUseCase
-  let mockAttributeRepository: IAttributeRepository
-  let mockAttributeTypeRepository: IAttributeTypeRepository
-  let mockTableRepository: ITableRepository
-  let mockQueryTemplateRepository: IQueryTemplateRepository
-  let mockLogger: ILogger
+  let mockAttributeRepository: AttributeRepositoryMock
+  let mockAttributeTypeRepository: AttributeTypeRepositoryMock
+  let mockTableRepository: TableRepositoryMock
+  let mockQueryTemplateRepository: QueryTemplateRepositoryMock
+  let mockLogger: ReturnType<typeof createMockLogger>
 
   beforeEach(() => {
-    // Mock logger
-    mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
-    }
-
-    // Mock repositories
-    mockAttributeRepository = {
-      // IFullRepository methods
-      save: mock(async () => {}),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      delete: mock(async () => {}),
-      count: mock(async () => 0),
-      exists: mock(async () => false),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      update: mock(async (attr) => attr),
-      deleteMany: mock(async () => {}),
-      // ITableScopedRepository methods
-      findByParentId: mock(async () => ({ data: [], metadata: {} })),
-      countByParentId: mock(async () => 0),
-      deleteByParentId: mock(async () => {}),
-      // Attribute-specific methods
-      findByTableId: mock(async () => ({ data: [], metadata: {} })),
-      countByTableId: mock(async () => 0),
-      deleteByTableId: mock(async () => {}),
-      findByTableIdAndIdentifier: mock(async () => null),
-      findByAttributeTypeId: mock(async () => ({ data: [], metadata: {} })),
-      findRequiredByTableId: mock(async () => []),
-      getAttributeTypeForAttribute: mock(async () => null),
-      existsByTableIdAndIdentifier: mock(async () => false),
-    } as any
-
-    mockAttributeTypeRepository = {
-      save: mock(async (type) => type),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      findByJsonType: mock(async () => ({ data: [], metadata: {} })),
-      delete: mock(async () => {}),
-      exists: mock(async () => false),
-      count: mock(async () => 0),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      update: mock(async (_id, _updates) => ({}) as any),
-    } as any
-
-    mockTableRepository = {
-      save: mock(async (table) => table),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      update: mock(async (table) => table),
-      delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      count: mock(async () => 0),
-      exists: mock(async () => false),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      deleteMany: mock(async () => {}),
-    } as any
-
-    mockQueryTemplateRepository = {
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      search: mock(async () => ({
-        items: [],
-        total: 0,
-        hasNextPage: false,
-        hasPreviousPage: false,
-      })),
-      searchByQueryName: mock(async () => []),
-      searchByOperationType: mock(async () => []),
-      findByApplicableTable: mock(async () => []),
-      findTemplatesWithTableDependencies: mock(async () => []),
-      create: mock(async (template) => template),
-      update: mock(async (_id, _updates) => ({}) as any),
-      deleteById: mock(async () => true),
-      incrementUsage: mock(async () => {}),
-      updateExecutionStats: mock(async () => {}),
-      findPopular: mock(async () => []),
-      updateStatus: mock(async () => ({}) as any),
-    } as any
+    mockLogger = createMockLogger()
+    mockAttributeRepository = createAttributeRepositoryMock()
+    mockAttributeTypeRepository = createAttributeTypeRepositoryMock()
+    mockTableRepository = createTableRepositoryMock()
+    mockQueryTemplateRepository = createQueryTemplateRepositoryMock()
 
     useCase = new CreateAttributeUseCase(
       mockAttributeRepository,
@@ -172,7 +195,7 @@ describe('CreateAttributeUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table as any)
+      mockTableRepository.findById = mock(async () => table)
       mockAttributeTypeRepository.findById = mock(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
@@ -198,8 +221,8 @@ describe('CreateAttributeUseCase', () => {
         'attr-type-1',
       )
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockAttributeTypeRepository.findById = mock(async () => attributeType)
       mockAttributeRepository.findByTableIdAndIdentifier = mock().mockResolvedValueOnce(existingAttribute)
 
       const promise = useCase.execute(input)
@@ -224,8 +247,8 @@ describe('CreateAttributeUseCase', () => {
       const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
       const createdAttribute = createTestAttribute('attr-1', 'table-1', 'test_attr', 'Test Attribute', 'attr-type-1')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockAttributeTypeRepository.findById = mock(async () => attributeType)
       mockAttributeRepository.findByTableIdAndIdentifier = mock()
         .mockResolvedValueOnce(null) // First call for duplicate check
         .mockResolvedValueOnce(createdAttribute) // Second call after save
@@ -264,8 +287,8 @@ describe('CreateAttributeUseCase', () => {
         'attr-type-1',
       )
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockAttributeTypeRepository.findById = mock(async () => attributeType)
       mockAttributeRepository.findByTableIdAndIdentifier = mock()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttribute)
@@ -296,8 +319,8 @@ describe('CreateAttributeUseCase', () => {
         'attr-type-1',
       )
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockAttributeTypeRepository.findById = mock(async () => attributeType)
       mockAttributeRepository.findByTableIdAndIdentifier = mock()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttribute)
@@ -322,8 +345,8 @@ describe('CreateAttributeUseCase', () => {
       const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
       const saveError = new Error('Database connection failed')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockAttributeTypeRepository.findById = mock(async () => attributeType)
       mockAttributeRepository.findByTableIdAndIdentifier = mock(async () => null)
       mockAttributeRepository.save = mock(async () => {
         throw saveError
@@ -350,8 +373,8 @@ describe('CreateAttributeUseCase', () => {
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
 
-      mockTableRepository.findById = mock(async () => table as any)
-      mockAttributeTypeRepository.findById = mock(async () => attributeType as any)
+      mockTableRepository.findById = mock(async () => table)
+      mockAttributeTypeRepository.findById = mock(async () => attributeType)
       mockAttributeRepository.findByTableIdAndIdentifier = mock()
         .mockResolvedValueOnce(null) // First call for duplicate check
         .mockResolvedValueOnce(null) // Second call after save fails to retrieve

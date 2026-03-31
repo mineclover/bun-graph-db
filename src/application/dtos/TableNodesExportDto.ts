@@ -35,8 +35,13 @@ export interface TableNodesExportOutput {
 }
 
 export function createDefaultExportOptions(format: string): Partial<TableNodesExportInput> {
+  const normalizedFormat: TableNodesExportInput['format'] =
+    format === 'csv' || format === 'json' || format === 'excel' || format === 'xml' || format === 'yaml'
+      ? format
+      : 'json'
+
   return {
-    format: format as any,
+    format: normalizedFormat,
     includeAttributes: true,
     includeMetadata: true,
     attributeFormat: 'nested',

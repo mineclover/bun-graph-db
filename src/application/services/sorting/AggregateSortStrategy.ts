@@ -15,7 +15,7 @@ export interface AggregateParameters {
   filterConditions?: Array<{
     field: string
     operator: string
-    value: any
+    value: unknown
   }>
 }
 
@@ -106,7 +106,7 @@ export class AggregateSortStrategy extends SortStrategy {
     direction: 'asc' | 'desc',
     _context: SortContext,
   ): SortResult {
-    const parameters: any[] = []
+    const parameters: unknown[] = []
     let aggregateExpression = ''
     let fromClause = ''
     let whereClause = 'WHERE agg_nav.node_id = n.id'
@@ -212,7 +212,7 @@ export class AggregateSortStrategy extends SortStrategy {
     direction: 'asc' | 'desc',
     _context: SortContext,
   ): SortResult {
-    const parameters: any[] = []
+    const parameters: unknown[] = []
 
     // Add source field parameter
     if (params.sourceField !== '*') {
@@ -255,7 +255,7 @@ export class AggregateSortStrategy extends SortStrategy {
     direction: 'asc' | 'desc',
     _context: SortContext,
   ): SortResult {
-    const parameters: any[] = []
+    const parameters: unknown[] = []
     const timeWindow = params.timeWindow || 'day'
 
     let timeGrouping = ''
@@ -336,7 +336,7 @@ export class AggregateSortStrategy extends SortStrategy {
       return this.buildSimpleAggregate(params, direction, context)
     }
 
-    const parameters: any[] = []
+    const parameters: unknown[] = []
     const _aggregateExpression = this.getAggregateExpression(params.aggregateFunction)
 
     const sqlClause = `
@@ -384,7 +384,10 @@ export class AggregateSortStrategy extends SortStrategy {
     }
   }
 
-  private buildFilterCondition(filter: any, parameters: any[]): string {
+  private buildFilterCondition(
+    filter: { field: string; operator: string; value: unknown },
+    parameters: unknown[],
+  ): string {
     const { field, operator, value } = filter
 
     switch (operator) {

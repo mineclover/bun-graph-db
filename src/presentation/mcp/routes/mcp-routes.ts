@@ -8,12 +8,19 @@
  */
 
 import type { ILogger } from '../../../application/ports/ILogger'
+import type { TableMcpServer } from '../factory/TableMcpServer'
 import { TableMcpServerFactory } from '../factory/TableMcpServerFactory'
 
 interface McpRouteConfig {
   graphqlEndpoint: string
   restApiBaseUrl: string
   logger?: ILogger
+}
+
+interface JsonRpcRequest {
+  jsonrpc?: string
+  id?: string | number | null
+  method?: string
 }
 
 /**
@@ -90,7 +97,7 @@ export class McpRoutes {
   /**
    * Handle GET requests (server discovery)
    */
-  private handleGetRequest(mcpServer: any, tableId: string): Response {
+  private handleGetRequest(mcpServer: TableMcpServer, tableId: string): Response {
     const serverInfo = {
       name: `Bun Graph DB MCP Server - Table ${tableId}`,
       version: '1.0.0',
@@ -116,11 +123,11 @@ export class McpRoutes {
   /**
    * Handle POST requests (JSON-RPC)
    */
-  private async handlePostRequest(request: Request, mcpServer: any, tableId: string): Promise<Response> {
+  private async handlePostRequest(request: Request, mcpServer: TableMcpServer, tableId: string): Promise<Response> {
     try {
       // Validate Content-Type
       const contentType = request.headers.get('Content-Type')
-      if (!contentType || !contentType.includes('application/json')) {
+      if (!contentType?.includes('application/json')) {
         return this.createErrorResponse(null, 400, 'Invalid Content-Type', 'Content-Type must be application/json')
       }
 
@@ -130,9 +137,9 @@ export class McpRoutes {
         return this.createErrorResponse(null, 400, 'Empty request body', 'JSON-RPC request body is required')
       }
 
-      let jsonRpcRequest: any
+      let jsonRpcRequest: JsonRpcRequest
       try {
-        jsonRpcRequest = JSON.parse(body)
+        jsonRpcRequest = JSON.parse(body) as JsonRpcRequest
       } catch (_parseError) {
         return this.createErrorResponse(null, -32700, 'Parse error', 'Invalid JSON in request body')
       }
@@ -231,7 +238,7 @@ export class McpRoutes {
   /**
    * Create standardized error response
    */
-  private createErrorResponse(id: string | number | null, code: number, message: string, data?: any): Response {
+  private createErrorResponse(id: string | number | null, code: number, message: string, data?: unknown): Response {
     let status = 500
 
     // Map JSON-RPC error codes to HTTP status codes
@@ -261,7 +268,7 @@ export class McpRoutes {
         error: {
           code,
           message,
-          ...(data && { data }),
+          ...(data !== undefined ? { data } : {}),
         },
       }
 
@@ -274,7 +281,7 @@ export class McpRoutes {
     // Create standard HTTP error response for HTTP errors
     const errorResponse = {
       error: message,
-      ...(data && { details: data }),
+      ...(data !== undefined ? { details: data } : {}),
     }
 
     return new Response(JSON.stringify(errorResponse), {

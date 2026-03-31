@@ -12,7 +12,7 @@ import {
 } from '../fixtures/unified-test-environment'
 
 describe('서버 독립적 테스트 아키텍처 검증', () => {
-  let testEnvironment: UnifiedTestEnvironment
+  let testEnvironment: UnifiedTestEnvironment | undefined
 
   beforeAll(async () => {
     console.log('🚀 서버 독립적 환경 설정 시작...')
@@ -26,13 +26,13 @@ describe('서버 독립적 테스트 아키텍처 검증', () => {
     console.log(`   - 서버 포트: ${testEnvironment.server?.port}`)
     console.log(`   - GraphQL: ${testEnvironment.server?.url}`)
     console.log(`   - 데이터베이스: ${testEnvironment.database?.databasePath}`)
-  }, 30000)
+  }, 120000)
 
   afterAll(async () => {
     console.log('🧹 환경 정리 시작...')
-    await testEnvironment.cleanup()
+    await testEnvironment?.cleanup?.()
     console.log('✅ 환경 정리 완료')
-  })
+  }, 120000)
 
   test('자동 서버 시작 및 GraphQL 접근 가능 확인', async () => {
     // GraphQL 헬스체크
@@ -194,7 +194,7 @@ describe('withAutoServer 패턴 검증', () => {
     expect(environmentPort).toBeGreaterThanOrEqual(5500)
 
     console.log(`✅ 에러 상황에서도 환경 정리 보장됨 (포트: ${environmentPort})`)
-  })
+  }, 15000)
 })
 
 describe('성능 및 안정성 검증', () => {
@@ -207,10 +207,10 @@ describe('성능 및 안정성 검증', () => {
     })
 
     const duration = Date.now() - startTime
-    expect(duration).toBeLessThan(5000) // 5초 이내 완료
+    expect(duration).toBeLessThan(10000) // 장시간 serial lane에서도 현실적인 상한
 
     console.log(`✅ 환경 생성/해제 성능: ${duration}ms`)
-  })
+  }, 15000)
 
   test('연속적인 환경 생성 안정성', async () => {
     console.log('🔄 연속 환경 생성 테스트...')

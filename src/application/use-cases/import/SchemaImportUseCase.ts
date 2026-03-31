@@ -20,6 +20,8 @@ import type {
   SchemaExportResult,
 } from '../export/SchemaExportUseCase.js'
 
+type ImportDiagnosticItem = ExportedTable | ExportedNode | ExportedRelation | ExportedAttribute | unknown
+
 export interface SchemaImportOptions {
   overwriteExisting?: boolean
   skipDuplicates?: boolean
@@ -43,12 +45,12 @@ export interface ImportResult {
   errors: Array<{
     type: string
     message: string
-    item?: any
+    item?: ImportDiagnosticItem
   }>
   warnings: Array<{
     type: string
     message: string
-    item?: any
+    item?: ImportDiagnosticItem
   }>
   executionTime: number
   importedAt: string
@@ -140,7 +142,7 @@ export class SchemaImportUseCase {
 
   private async validateExportData(exportData: SchemaExportResult, result: ImportResult): Promise<void> {
     // Validate metadata
-    if (!exportData.metadata || !exportData.metadata.exportedAt) {
+    if (!exportData.metadata?.exportedAt) {
       result.warnings.push({
         type: 'VALIDATION_WARNING',
         message: 'Export metadata is missing or incomplete',
@@ -188,7 +190,7 @@ export class SchemaImportUseCase {
   }
 
   private async importAttributeTypes(
-    attributeTypes: any[],
+    attributeTypes: SchemaExportResult['globalAttributeTypes'],
     options: SchemaImportOptions,
     result: ImportResult,
   ): Promise<void> {
@@ -215,11 +217,10 @@ export class SchemaImportUseCase {
 
         const attributeType = AttributeType.create(
           atData.identifier,
-          atData.name,
           atData.dataType,
-          atData.description,
-          atData.allowedValues,
-          atData.constraints,
+          undefined,
+          atData.description || undefined,
+          atData.constraints ? JSON.stringify(atData.constraints) : undefined,
         )
 
         await this.attributeTypeRepository.save(attributeType)
@@ -238,7 +239,7 @@ export class SchemaImportUseCase {
   }
 
   private async importRelationTypes(
-    relationTypes: any[],
+    relationTypes: SchemaExportResult['globalRelationTypes'],
     options: SchemaImportOptions,
     result: ImportResult,
   ): Promise<void> {
@@ -489,7 +490,9 @@ export class SchemaImportUseCase {
           targetNodeId,
           'internal',
           relationType?.getId() || relationData.relationType.id,
-          relationData.properties,
+          relationData.properties && typeof relationData.properties === 'object' && !Array.isArray(relationData.properties)
+            ? relationData.properties
+            : undefined,
           relationData.strength || 50,
         )
 

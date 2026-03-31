@@ -1,7 +1,28 @@
 extend type Query {
   # Essential system queries only
   healthCheck: HealthStatus!
+  systemStats: SystemStats!
   systemStatus: SystemStatusResult!
+  tabularSyncConfigs: [TabularSyncConfigRecord!]!
+  tabularSyncConfig(configKey: String): TabularSyncConfigRecord
+  tabularSyncStatus(
+    limit: Int
+    tableIdentifier: String
+    status: String
+    mode: String
+    windowPreset: String
+    createdAfter: String
+    createdBefore: String
+  ): TabularSyncStatus!
+  tabularSyncSummary(
+    limit: Int
+    tableIdentifier: String
+    status: String
+    mode: String
+    windowPreset: String
+    createdAfter: String
+    createdBefore: String
+  ): [TabularSyncEventSummary!]!
 }
 
 # Removed detailed system stats types - keeping only essential ones
@@ -23,9 +44,120 @@ type MemoryHealthStatus {
   message: String
 }
 
+type SystemStats {
+  memory: SystemMemoryStats!
+  process: SystemProcessStats!
+  database: SystemDatabaseStats!
+  timestamp: DateTime!
+  uptime: Float!
+}
+
+type SystemMemoryStats {
+  used: Float!
+  heapUsed: Float!
+  free: Float!
+  total: Float!
+  percentage: Float!
+  heap: SystemHeapStats!
+}
+
+type SystemHeapStats {
+  used: Float!
+  total: Float!
+  external: Float!
+  arrayBuffers: Float!
+}
+
+type SystemProcessStats {
+  pid: Int!
+  cpu: Float!
+  uptime: Float!
+  version: String!
+  platform: String!
+  memoryDetails: JSON!
+}
+
+type SystemDatabaseStats {
+  connections: Int!
+  queries: Int!
+  size: Float!
+  connectionCount: Int!
+  queryCount: Int!
+  averageQueryTime: Float!
+}
+
 # System initialization status
 type SystemStatusResult {
   database: Boolean!
   summary: SystemSummary!
   lastInitialized: String
+}
+
+type TabularSyncConfigRecord {
+  configKey: String!
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+  config: JSON!
+}
+
+type TabularSyncStatus {
+  enabled: Boolean!
+  configSource: String!
+  syncDebounceMs: Int!
+  pendingCount: Int!
+  pendingTables: [String!]!
+  totalNotifications: Int!
+  totalExecutions: Int!
+  totalSucceeded: Int!
+  totalFailed: Int!
+  lastSuccessAt: String
+  lastFailureAt: String
+  recentFailures: [TabularSyncFailureMetric!]!
+  tables: [TabularSyncTableMetric!]!
+  persistedEvents: [TabularSyncEvent!]!
+  persistedSummary: [TabularSyncEventSummary!]!
+}
+
+type TabularSyncFailureMetric {
+  tableIdentifier: String!
+  mode: String!
+  error: String!
+  occurredAt: String!
+}
+
+type TabularSyncTableMetric {
+  tableIdentifier: String!
+  pending: Boolean!
+  notifications: Int!
+  executions: Int!
+  successes: Int!
+  failures: Int!
+  lastMode: String
+  lastScheduledAt: String
+  lastStartedAt: String
+  lastCompletedAt: String
+  lastSuccessAt: String
+  lastFailureAt: String
+  lastError: String
+}
+
+type TabularSyncEvent {
+  id: Int!
+  tableIdentifier: String!
+  mode: String!
+  status: String!
+  errorMessage: String
+  createdAt: String!
+}
+
+type TabularSyncEventSummary {
+  tableIdentifier: String!
+  mode: String!
+  eventCount: Int!
+  successCount: Int!
+  failureCount: Int!
+  successRate: Float!
+  lastCreatedAt: String!
+  latestErrorMessage: String
 }

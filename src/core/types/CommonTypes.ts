@@ -57,7 +57,7 @@ export interface ErrorInfo {
   field?: string
 }
 
-export interface OperationResult<T = any> {
+export interface OperationResult<T = unknown> {
   success: boolean
   data?: T
   errors: ErrorInfo[]
