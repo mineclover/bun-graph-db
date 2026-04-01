@@ -257,12 +257,32 @@ describe('Tabular Sync Config Management', () => {
         const adminHtml = await adminPage.text()
         expect(adminPage.status).toBe(200)
         expect(adminHtml).toContain('Tabular Sync Config Admin')
+        expect(adminHtml).toContain('Persisted Summary')
+        expect(adminHtml).toContain('Recent Events')
+        expect(adminHtml).toContain('auto refresh (5s)')
+        expect(adminHtml).toContain('Mapping Preview')
+        expect(adminHtml).toContain('Connection Test')
+        expect(adminHtml).toContain('Test Draft Config')
+        expect(adminHtml).toContain('Quick Setup')
+        expect(adminHtml).toContain('Build Google Draft')
+        expect(adminHtml).toContain('Build Excel Draft')
+        expect(adminHtml).toContain('Google Sheets Recommended')
+        expect(adminHtml).toContain('Excel Preview Only')
+        expect(adminHtml).toContain('resolved id:')
 
         const listResponse = await fetch(`${baseUrl}/api/tabular-sync-configs`)
         const listPayload = await listResponse.json()
         expect(listResponse.status).toBe(200)
         expect(Array.isArray(listPayload.configs)).toBe(true)
         expect(listPayload.configs[0]?.configKey).toBe('http-alpha')
+
+        const previewResponse = await fetch(`${baseUrl}/api/tabular-sync-preview`)
+        const previewPayload = await previewResponse.json()
+        expect(previewResponse.status).toBe(200)
+        expect(previewPayload.success).toBe(true)
+        expect(previewPayload.preview.length).toBe(1)
+        expect(previewPayload.preview[0]?.tableIdentifier).toBe('users')
+        expect(previewPayload.preview[0]?.sheetName).toBe('users')
 
         const activeResponse = await fetch(`${baseUrl}/api/tabular-sync-configs/active`)
         const activePayload = await activeResponse.json()
@@ -277,6 +297,35 @@ describe('Tabular Sync Config Management', () => {
         expect(activateResponse.status).toBe(200)
         expect(activatePayload.success).toBe(true)
         expect(activatePayload.config.configKey).toBe('http-alpha')
+
+        const testResponse = await fetch(`${baseUrl}/api/tabular-sync-test`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            config: {
+              defaultTargetId: 'local-excel',
+              targets: [
+                {
+                  id: 'local-excel',
+                  kind: 'excel-file',
+                  workbookPath: '/tmp/demo.xlsx',
+                },
+              ],
+              routes: [
+                {
+                  tableIdentifier: 'users',
+                  targetId: 'local-excel',
+                  sheetName: 'users',
+                },
+              ],
+            },
+          }),
+        })
+        const testPayload = await testResponse.json()
+        expect(testResponse.status).toBe(200)
+        expect(testPayload.success).toBe(true)
+        expect(testPayload.results.length).toBe(1)
+        expect(testPayload.results[0]?.tableIdentifier).toBe('users')
       },
     )
   })

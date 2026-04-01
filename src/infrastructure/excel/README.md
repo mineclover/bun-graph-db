@@ -216,9 +216,26 @@ HTTP admin endpoints:
 - `POST /api/tabular-sync-configs/:configKey/activate`
 - `GET /api/tabular-sync-status`
 - `GET /api/tabular-sync-summary`
+- `GET /api/tabular-sync-preview`
+- `POST /api/tabular-sync-test`
 - `POST /api/tabular-sync-status/resync`
 
 `/api/tabular-sync-status` and `/api/tabular-sync-summary` support `limit`, `tableIdentifier`, `status`, `mode`, `windowPreset`, `createdAfter`, and `createdBefore` query parameters for persisted event filtering. `windowPreset` supports `1h`, `24h`, and `7d`.
+
+The `/tabular-sync` admin page also includes:
+
+- `1h`, `24h`, `7d` preset buttons
+- manual refresh button
+- optional auto refresh every 5 seconds
+- KPI cards for active config, pending count, executions, failures, and success rate
+- active mapping preview
+- draft config connection test
+- quick setup builder for Google Sheets / Excel draft config generation
+
+The quick setup builder currently guides users toward:
+
+- `Google Sheets (Recommended)`
+- `Excel File (Preview Only)`
 
 MCP admin tools:
 
