@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { Database } from 'bun:sqlite'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
+import { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
 
 function createLogger() {
   return {
@@ -90,5 +92,87 @@ describe('BestEffortTabularSyncHook', () => {
     expect(status.tables[0]?.executions).toBe(1)
     expect(status.tables[0]?.failures).toBe(1)
     expect(status.tables[0]?.pending).toBe(false)
+  })
+
+  test('reloads active config from store without restart', async () => {
+    const db = new Database(':memory:')
+    db.exec(`
+      CREATE TABLE tabular_sync_configs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        config_key TEXT NOT NULL UNIQUE,
+        config_json TEXT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )
+    `)
+
+    const store = new TabularSyncConfigStore(db)
+    store.saveConfig(
+      'alpha',
+      {
+        defaultTargetId: 'google-main',
+        targets: [
+          {
+            id: 'google-main',
+            kind: 'google-sheets',
+            transport: 'google-tools-http',
+            spreadsheetId: 'sheet-1',
+            googleToolsBaseUrl: 'http://localhost:5678',
+          },
+        ],
+        routes: [
+          {
+            tableIdentifier: 'users',
+            targetId: 'google-main',
+          },
+        ],
+        syncDebounceMs: 50,
+      },
+      { active: true },
+    )
+
+    const hook = new BestEffortTabularSyncHook(
+      {
+        findById: mock(async () => null),
+      } as never,
+      {} as never,
+      {} as never,
+      {} as never,
+      createLogger() as never,
+      undefined,
+      store,
+    )
+
+    expect(hook.getStatus().syncDebounceMs).toBe(50)
+    expect(hook.getStatus().configSource).toBe('db')
+
+    store.saveConfig(
+      'alpha',
+      {
+        defaultTargetId: 'google-main',
+        targets: [
+          {
+            id: 'google-main',
+            kind: 'google-sheets',
+            transport: 'google-tools-http',
+            spreadsheetId: 'sheet-1',
+            googleToolsBaseUrl: 'http://localhost:5678',
+          },
+        ],
+        routes: [
+          {
+            tableIdentifier: 'users',
+            targetId: 'google-main',
+          },
+        ],
+        syncDebounceMs: 777,
+      },
+      { active: true },
+    )
+
+    expect(hook.getStatus().syncDebounceMs).toBe(777)
+
+    db.close()
   })
 })

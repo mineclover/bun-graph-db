@@ -39,6 +39,22 @@ export interface TabularSyncEventSummaryRecord {
   latestErrorMessage: string | null
 }
 
+interface TabularSyncAggregateRow {
+  total_events: number
+  total_success: number
+  total_failure: number
+  last_success_at: string | null
+  last_failure_at: string | null
+}
+
+export interface TabularSyncAggregateMetrics {
+  totalEvents: number
+  totalSuccess: number
+  totalFailure: number
+  lastSuccessAt: string | null
+  lastFailureAt: string | null
+}
+
 export class TabularSyncEventStore {
   constructor(private readonly db: Database) {}
 
@@ -197,5 +213,36 @@ export class TabularSyncEventStore {
       lastCreatedAt: row.last_created_at,
       latestErrorMessage: row.latest_error_message,
     }))
+  }
+
+  getAggregateMetrics(): TabularSyncAggregateMetrics {
+    const row =
+      this.db
+        .query<TabularSyncAggregateRow, []>(
+          `
+            SELECT
+              COUNT(*) AS total_events,
+              SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) AS total_success,
+              SUM(CASE WHEN status = 'failure' THEN 1 ELSE 0 END) AS total_failure,
+              MAX(CASE WHEN status = 'success' THEN created_at END) AS last_success_at,
+              MAX(CASE WHEN status = 'failure' THEN created_at END) AS last_failure_at
+            FROM tabular_sync_events
+          `,
+        )
+        .get() || {
+        total_events: 0,
+        total_success: 0,
+        total_failure: 0,
+        last_success_at: null,
+        last_failure_at: null,
+      }
+
+    return {
+      totalEvents: row.total_events || 0,
+      totalSuccess: row.total_success || 0,
+      totalFailure: row.total_failure || 0,
+      lastSuccessAt: row.last_success_at,
+      lastFailureAt: row.last_failure_at,
+    }
   }
 }

@@ -48,4 +48,66 @@ describe('TabularSyncConfigStore', () => {
 
     db.close()
   })
+
+  test('should reject activating preview-only Excel configs', () => {
+    const { db, store } = createStore()
+
+    store.saveConfig(
+      'excel-preview',
+      {
+        defaultTargetId: 'excel-preview',
+        targets: [
+          {
+            id: 'excel-preview',
+            kind: 'excel-file',
+            workbookPath: '/tmp/demo.xlsx',
+          },
+        ],
+        routes: [
+          {
+            tableIdentifier: 'users',
+            targetId: 'excel-preview',
+          },
+        ],
+      },
+      { active: false },
+    )
+
+    expect(() => store.activateConfig('excel-preview')).toThrow(
+      "Excel target 'excel-preview' is preview-only",
+    )
+
+    db.close()
+  })
+
+  test('should reject activating configs with unknown route targets', () => {
+    const { db, store } = createStore()
+
+    expect(() =>
+      store.saveConfig(
+        'broken',
+        {
+          defaultTargetId: 'google-main',
+          targets: [
+            {
+              id: 'google-main',
+              kind: 'google-sheets',
+              transport: 'google-tools-http',
+              spreadsheetId: 'sheet-1',
+              googleToolsBaseUrl: 'http://localhost:5678',
+            },
+          ],
+          routes: [
+            {
+              tableIdentifier: 'users',
+              targetId: 'missing-target',
+            },
+          ],
+        },
+        { active: true },
+      ),
+    ).toThrow("references unknown target 'missing-target'")
+
+    db.close()
+  })
 })

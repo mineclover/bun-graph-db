@@ -110,10 +110,11 @@ export interface TabularSyncStatusFilters {
 }
 
 export class BestEffortTabularSyncHook {
-  private readonly bridge: TabularTableSyncBridge | null
-  private readonly syncDebounceMs: number
+  private bridge: TabularTableSyncBridge | null = null
+  private syncDebounceMs = 0
   private readonly pendingSyncs = new Map<string, PendingSyncEntry>()
-  private readonly configSource: TabularSyncConfigSource
+  private configSource: TabularSyncConfigSource = 'none'
+  private currentConfigSignature = 'uninitialized'
   private readonly tableMetrics = new Map<string, TableSyncMetricState>()
   private readonly recentFailures: TabularSyncFailureMetric[] = []
   private totalNotifications = 0
@@ -125,65 +126,19 @@ export class BestEffortTabularSyncHook {
 
   constructor(
     private readonly tableRepository: ITableRepository,
-    attributeRepository: IAttributeRepository,
-    nodeRepository: INodeRepository,
-    nodeAttributeRepository: INodeAttributeRepository,
+    private readonly attributeRepository: IAttributeRepository,
+    private readonly nodeRepository: INodeRepository,
+    private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly logger: ILogger,
-    configPath: string | undefined = process.env.TABULAR_SYNC_CONFIG_FILE,
-    configStore?: TabularSyncConfigStore,
+    private readonly configPath: string | undefined = process.env.TABULAR_SYNC_CONFIG_FILE,
+    private readonly configStore?: TabularSyncConfigStore,
     private readonly eventStore?: TabularSyncEventStore,
   ) {
-    let config: TabularSyncConfig | null = null
-    let configSource: TabularSyncConfigSource = 'none'
-
-    if (configPath && existsSync(configPath)) {
-      config = JSON.parse(readFileSync(configPath, 'utf8')) as TabularSyncConfig
-      configSource = 'file'
-    } else if (configStore) {
-      config = configStore.getActiveConfig()
-      if (config) {
-        configSource = 'db'
-      }
-    }
-
-    if (!config) {
-      this.bridge = null
-      this.syncDebounceMs = 0
-      this.configSource = configSource
-      return
-    }
-
-    try {
-      const registry = new TabularSyncTargetRegistry(config)
-      const planner = new TabularSyncPlanner(registry, new ExcelSchemaProjector())
-      const syncService = new TabularSyncService(
-        registry,
-        planner,
-        createTabularDestinationGateways(),
-      )
-      this.syncDebounceMs = registry.getSyncDebounceMs()
-
-      this.bridge = new TabularTableSyncBridge(
-        this.tableRepository,
-        attributeRepository,
-        nodeRepository,
-        nodeAttributeRepository,
-        syncService,
-        logger,
-      )
-    } catch (error) {
-      this.syncDebounceMs = 0
-      this.logger.warn('Failed to initialize tabular sync hook; disabling sync', {
-        configPath,
-        error: error instanceof Error ? error.message : String(error),
-      })
-      this.bridge = null
-    }
-
-    this.configSource = this.bridge ? configSource : 'none'
+    this.refreshRuntime()
   }
 
   isEnabled(): boolean {
+    this.refreshRuntime()
     return this.bridge !== null
   }
 
@@ -193,6 +148,7 @@ export class BestEffortTabularSyncHook {
 
   notifyByTableId(tableId: string): void {
     void (async () => {
+      this.refreshRuntime()
       if (!this.bridge) {
         return
       }
@@ -218,6 +174,7 @@ export class BestEffortTabularSyncHook {
   }
 
   async syncByIdentifier(tableIdentifier: string): Promise<boolean> {
+    this.refreshRuntime()
     if (!this.bridge) {
       return false
     }
@@ -226,6 +183,7 @@ export class BestEffortTabularSyncHook {
   }
 
   async syncByTableId(tableId: string): Promise<boolean> {
+    this.refreshRuntime()
     if (!this.bridge) {
       return false
     }
@@ -247,6 +205,7 @@ export class BestEffortTabularSyncHook {
   }
 
   async clearByIdentifier(tableIdentifier: string): Promise<boolean> {
+    this.refreshRuntime()
     if (!this.bridge) {
       return false
     }
@@ -263,12 +222,14 @@ export class BestEffortTabularSyncHook {
   }
 
   getStatus(filters: TabularSyncStatusFilters = {}): TabularSyncStatusSnapshot {
+    this.refreshRuntime()
     const resolvedWindow = this.resolveWindowPreset(filters.windowPreset)
     const createdAfter = filters.createdAfter ?? resolvedWindow.createdAfter
     const createdBefore = filters.createdBefore ?? resolvedWindow.createdBefore
     const tables = Array.from(this.tableMetrics.values())
       .map<TabularSyncTableMetric>((metric) => ({ ...metric }))
       .sort((left, right) => left.tableIdentifier.localeCompare(right.tableIdentifier))
+    const aggregateMetrics = this.eventStore?.getAggregateMetrics()
 
     return {
       enabled: this.isEnabled(),
@@ -277,11 +238,11 @@ export class BestEffortTabularSyncHook {
       pendingCount: this.pendingSyncs.size,
       pendingTables: Array.from(this.pendingSyncs.keys()).sort(),
       totalNotifications: this.totalNotifications,
-      totalExecutions: this.totalExecutions,
-      totalSucceeded: this.totalSucceeded,
-      totalFailed: this.totalFailed,
-      lastSuccessAt: this.lastSuccessAt,
-      lastFailureAt: this.lastFailureAt,
+      totalExecutions: aggregateMetrics?.totalEvents ?? this.totalExecutions,
+      totalSucceeded: aggregateMetrics?.totalSuccess ?? this.totalSucceeded,
+      totalFailed: aggregateMetrics?.totalFailure ?? this.totalFailed,
+      lastSuccessAt: aggregateMetrics?.lastSuccessAt ?? this.lastSuccessAt,
+      lastFailureAt: aggregateMetrics?.lastFailureAt ?? this.lastFailureAt,
       recentFailures: [...this.recentFailures],
       tables,
       persistedEvents:
@@ -341,6 +302,7 @@ export class BestEffortTabularSyncHook {
     mode: PendingSyncMode,
     waitForCompletion: boolean,
   ): Promise<boolean> {
+    this.refreshRuntime()
     if (!this.bridge) {
       return false
     }
@@ -390,6 +352,7 @@ export class BestEffortTabularSyncHook {
     entry: PendingSyncEntry,
   ): ReturnType<typeof setTimeout> {
     return setTimeout(async () => {
+      this.refreshRuntime()
       const metric = this.getOrCreateMetric(tableIdentifier)
       const startedAt = new Date().toISOString()
       this.totalExecutions++
@@ -486,6 +449,79 @@ export class BestEffortTabularSyncHook {
     this.recentFailures.unshift(failure)
     if (this.recentFailures.length > 10) {
       this.recentFailures.length = 10
+    }
+  }
+
+  private loadRuntimeConfig(): {
+    config: TabularSyncConfig | null
+    source: TabularSyncConfigSource
+    signature: string
+  } {
+    if (this.configPath && existsSync(this.configPath)) {
+      const raw = readFileSync(this.configPath, 'utf8')
+      return {
+        config: JSON.parse(raw) as TabularSyncConfig,
+        source: 'file',
+        signature: `file:${raw}`,
+      }
+    }
+
+    const record = this.configStore?.getActiveConfigRecord()
+    if (record) {
+      const serialized = JSON.stringify(record.config)
+      return {
+        config: record.config,
+        source: 'db',
+        signature: `db:${record.configKey}:${record.updatedAt}:${serialized}`,
+      }
+    }
+
+    return {
+      config: null,
+      source: 'none',
+      signature: 'none',
+    }
+  }
+
+  private refreshRuntime(): void {
+    const { config, source, signature } = this.loadRuntimeConfig()
+
+    if (signature === this.currentConfigSignature) {
+      return
+    }
+
+    this.currentConfigSignature = signature
+
+    if (!config) {
+      this.bridge = null
+      this.syncDebounceMs = 0
+      this.configSource = source
+      return
+    }
+
+    try {
+      const registry = new TabularSyncTargetRegistry(config)
+      const planner = new TabularSyncPlanner(registry, new ExcelSchemaProjector())
+      const syncService = new TabularSyncService(registry, planner, createTabularDestinationGateways())
+
+      this.syncDebounceMs = registry.getSyncDebounceMs()
+      this.bridge = new TabularTableSyncBridge(
+        this.tableRepository,
+        this.attributeRepository,
+        this.nodeRepository,
+        this.nodeAttributeRepository,
+        syncService,
+        this.logger,
+      )
+      this.configSource = source
+    } catch (error) {
+      this.syncDebounceMs = 0
+      this.configSource = 'none'
+      this.bridge = null
+      this.logger.warn('Failed to initialize tabular sync hook; disabling sync', {
+        configPath: this.configPath,
+        error: error instanceof Error ? error.message : String(error),
+      })
     }
   }
 }

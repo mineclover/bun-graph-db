@@ -36,17 +36,17 @@ Current relevant references:
 
 The intended integration paths are:
 
-1. `pipe-builder-table-adapter` mode
-   - use `pipe-builder/packages/table-adapter-gsheets`
-   - load the built adapter directly
-   - pass that adapter into `GoogleSheetsGateway`
-
-2. HTTP mode
+1. HTTP mode
    - run `google-tools` as a separate server
    - use `GoogleToolsHttpSheetsAdapter`
    - pass that adapter into `GoogleSheetsGateway`
 
-3. submodule-client mode
+2. `pipe-builder-table-adapter` mode
+   - use `pipe-builder/packages/table-adapter-gsheets`
+   - load the built adapter directly
+   - pass that adapter into `GoogleSheetsGateway`
+
+3. submodule-client mode (legacy)
    - create or inject a `GoogleToolsClient`
    - wrap `client.sheets` with `GoogleToolsSheetsAdapter`
    - pass that adapter into `GoogleSheetsGateway`
@@ -65,9 +65,9 @@ Current assumptions for submodule mode:
 
 Recommended default:
 
-- use `pipe-builder-table-adapter` first when `~/workflow/pipe-builder` is available
-- use `google-tools` over HTTP as the next fallback
-- keep submodule-client mode as a low-priority compatibility path
+- use `google-tools-http` first
+- use `pipe-builder-table-adapter` as an advanced/explicit alternative
+- treat `google-tools-submodule` as a low-priority legacy compatibility path
 
 ## Factory entrypoints
 
@@ -78,8 +78,8 @@ Preferred creation path:
 
 These factories resolve Google Sheets adapters lazily per target:
 
-- `pipe-builder-table-adapter`
 - `google-tools-http`
+- `pipe-builder-table-adapter`
 - `google-tools-submodule`
 
 ## Sample config and smoke
@@ -115,7 +115,7 @@ Optional:
 - `TABULAR_TABLE_IDENTIFIER`
 - `PIPE_BUILDER_WORKSPACE_PATH`
 
-`TABULAR_TARGET_TRANSPORT` defaults to `pipe-builder-table-adapter`.
+`TABULAR_TARGET_TRANSPORT` defaults to `google-tools-http`.
 
 For direct consumption of an already-authenticated `google-tools` server:
 

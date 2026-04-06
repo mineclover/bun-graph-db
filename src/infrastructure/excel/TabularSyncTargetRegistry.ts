@@ -41,9 +41,7 @@ export class TabularSyncTargetRegistry {
       return null
     }
 
-    const target =
-      this.getTarget(route.targetId) ||
-      (this.config.defaultTargetId ? this.getTarget(this.config.defaultTargetId) : null)
+    const target = this.getTarget(route.targetId)
 
     if (!target || target.enabled !== true) {
       return null

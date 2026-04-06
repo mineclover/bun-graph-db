@@ -1,5 +1,6 @@
 import type { Database } from 'bun:sqlite'
 import type { TabularSyncConfig } from './TabularSyncConfig.js'
+import type { GoogleSheetsTargetConfig, TabularSyncTargetConfig } from './TabularSyncConfig.js'
 
 interface TabularSyncConfigRow {
   id: number
@@ -76,6 +77,10 @@ export class TabularSyncConfigStore {
   ): void {
     const isActive = options.active === true ? 1 : 0
 
+    if (isActive === 1) {
+      this.validateActivatableConfig(config)
+    }
+
     this.db.transaction(() => {
       if (isActive === 1) {
         this.db.run('UPDATE tabular_sync_configs SET is_active = 0 WHERE config_key != ?', [
@@ -100,9 +105,9 @@ export class TabularSyncConfigStore {
 
   activateConfig(configKey: string): void {
     const row = this.db
-      .query<Pick<TabularSyncConfigRow, 'config_key'>, [string]>(
+      .query<Pick<TabularSyncConfigRow, 'config_key' | 'config_json'>, [string]>(
         `
-          SELECT config_key
+          SELECT config_key, config_json
           FROM tabular_sync_configs
           WHERE config_key = ?
           LIMIT 1
@@ -113,6 +118,8 @@ export class TabularSyncConfigStore {
     if (!row) {
       throw new Error(`Tabular sync config '${configKey}' not found.`)
     }
+
+    this.validateActivatableConfig(JSON.parse(row.config_json) as TabularSyncConfig)
 
     this.db.transaction(() => {
       this.db.run('UPDATE tabular_sync_configs SET is_active = 0')
@@ -144,6 +151,46 @@ export class TabularSyncConfigStore {
       isActive: row.is_active === 1,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+    }
+  }
+
+  private validateActivatableConfig(config: TabularSyncConfig): void {
+    const targets = new Map(config.targets.map((target) => [target.id, target]))
+
+    for (const route of config.routes) {
+      if (route.enabled === false) {
+        continue
+      }
+
+      const target = targets.get(route.targetId)
+      if (!target) {
+        throw new Error(
+          `Route for table '${route.tableIdentifier}' references unknown target '${route.targetId}'.`,
+        )
+      }
+
+      if (target.enabled === false) {
+        throw new Error(
+          `Route for table '${route.tableIdentifier}' references disabled target '${route.targetId}'.`,
+        )
+      }
+
+      this.validateTargetForActivation(target)
+    }
+  }
+
+  private validateTargetForActivation(target: TabularSyncTargetConfig): void {
+    if (target.kind === 'excel-file') {
+      throw new Error(
+        `Excel target '${target.id}' is preview-only until Excel write support is implemented.`,
+      )
+    }
+
+    const googleTarget = target as GoogleSheetsTargetConfig
+    if (!googleTarget.spreadsheetId && !googleTarget.spreadsheetUrl) {
+      throw new Error(
+        `Google Sheets target '${target.id}' requires spreadsheetId or spreadsheetUrl before activation.`,
+      )
     }
   }
 }

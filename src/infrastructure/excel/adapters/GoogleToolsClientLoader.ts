@@ -35,10 +35,15 @@ function assertGoogleToolsReady(submodulePath: string): void {
 export async function createGoogleToolsSheetsAdapter(
   target: GoogleSheetsTargetConfig,
 ): Promise<GoogleToolsSheetsAdapter> {
-  const submodulePath = resolve(
-    process.cwd(),
-    target.googleToolsSubmodulePath || 'vendor/google-tools',
-  )
+  const configuredSubmodulePath =
+    target.googleToolsSubmodulePath || process.env.GOOGLE_TOOLS_SUBMODULE_PATH
+  if (!configuredSubmodulePath) {
+    throw new Error(
+      "googleToolsSubmodulePath is required for 'google-tools-submodule' transport.",
+    )
+  }
+
+  const submodulePath = resolve(process.cwd(), configuredSubmodulePath)
 
   assertGoogleToolsReady(submodulePath)
 

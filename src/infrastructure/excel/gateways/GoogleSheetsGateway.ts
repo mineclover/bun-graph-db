@@ -36,8 +36,16 @@ export class GoogleSheetsGateway implements TabularDestinationGateway {
         : undefined
 
     const adapter = await this.resolveAdapter(selection)
-    if (!adapter || !spreadsheetId) {
-      return []
+    if (!spreadsheetId) {
+      throw new Error(
+        `Google Sheets target '${selection.target.id}' is missing spreadsheetId.`,
+      )
+    }
+
+    if (!adapter) {
+      throw new Error(
+        `Google Sheets target '${selection.target.id}' could not resolve an adapter.`,
+      )
     }
 
     try {

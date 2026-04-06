@@ -101,10 +101,15 @@ async function resolvePipeBuilderAuth(
 export async function createPipeBuilderGoogleSheetsAdapter(
   target: GoogleSheetsTargetConfig,
 ): Promise<PipeBuilderGoogleSheetsAdapter> {
-  const workspacePath = resolve(
-    process.cwd(),
-    target.pipeBuilderWorkspacePath || '/Users/junwoobang/workflow/pipe-builder',
-  )
+  const configuredWorkspacePath =
+    target.pipeBuilderWorkspacePath || process.env.PIPE_BUILDER_WORKSPACE_PATH
+  if (!configuredWorkspacePath) {
+    throw new Error(
+      "pipeBuilderWorkspacePath is required for 'pipe-builder-table-adapter' transport.",
+    )
+  }
+
+  const workspacePath = resolve(process.cwd(), configuredWorkspacePath)
   const packagePath = resolve(
     workspacePath,
     target.tableAdapterPackagePath || 'packages/table-adapter-gsheets',

@@ -362,6 +362,6 @@ Google Sheets는 Excel과 같은 row/sheet abstraction으로 다루되, writer/g
 
 현재 우선순위:
 
-1. `pipe-builder-table-adapter`
-2. `google-tools-http`
-3. `google-tools-submodule`
+1. `google-tools-http`
+2. `pipe-builder-table-adapter`
+3. `google-tools-submodule` (legacy compatibility only)

@@ -80,18 +80,10 @@ export function createTabularSyncConfig(
         : {
           ...target,
           authMode: target.authMode || 'service-account',
-          accessMode: target.accessMode || 'google-workspace-cli',
-          transport: target.transport || 'pipe-builder-table-adapter',
+          accessMode: target.accessMode || 'google-drive-api',
+          transport: target.transport || 'google-tools-http',
           cliCommand: target.cliCommand || 'gwk',
-          adapterKind: target.adapterKind || 'google-tools-submodule',
-          googleToolsSubmodulePath:
-            target.googleToolsSubmodulePath || 'vendor/google-tools',
-          googleToolsBaseUrl:
-            target.googleToolsBaseUrl || 'http://localhost:5678',
-          pipeBuilderWorkspacePath:
-            target.pipeBuilderWorkspacePath || '/Users/junwoobang/workflow/pipe-builder',
-          tableAdapterPackagePath:
-            target.tableAdapterPackagePath || 'packages/table-adapter-gsheets',
+          googleToolsBaseUrl: target.googleToolsBaseUrl || 'http://localhost:5678',
         }),
   })) as Required<TabularSyncTargetConfig>[]
 
