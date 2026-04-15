@@ -3,10 +3,10 @@
   "sessionId": "fd10ed77-50db-49a2-9378-ae54015d31bb",
   "status": "running",
   "startedAt": "2026-04-15T18:27:52.039Z",
-  "updatedAt": "2026-04-15T19:04:32.871Z",
-  "currentIteration": 2,
+  "updatedAt": "2026-04-15T19:08:12.804Z",
+  "currentIteration": 3,
   "maxIterations": 0,
-  "tasksCompleted": 2,
+  "tasksCompleted": 3,
   "isPaused": false,
   "agentPlugin": "codex",
   "trackerState": {
@@ -34,6 +34,16 @@
       "durationMs": 657384,
       "startedAt": "2026-04-15T18:43:00.403Z",
       "endedAt": "2026-04-15T18:53:57.787Z"
+    },
+    {
+      "iteration": 3,
+      "status": "completed",
+      "taskId": "US-006",
+      "taskTitle": "Invalidate generated templates and table docs on schema changes",
+      "taskCompleted": true,
+      "durationMs": 633913,
+      "startedAt": "2026-04-15T18:53:58.957Z",
+      "endedAt": "2026-04-15T19:04:32.870Z"
     }
   ],
   "skippedTaskIds": [],

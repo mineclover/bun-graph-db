@@ -8,6 +8,7 @@ after each iteration and it's included in prompts for context.
 - Table-scoped MCP schema cache invalidation should refresh only already-cached matching table server keys, resolving table id/identifier aliases when possible; table deletion should remove cached table servers instead of recreating them.
 - Runtime updateNode validation should stay separate from createNode validation: transports normalize table context and identifier-keyed attributes, then `UpdateNodeUseCase` applies `validateProjectedNodeUpdateInput` so partial updates do not require all required create attributes.
 - Downstream table docs/AI metadata freshness should be represented with the table schema projection `versionHash`, while persisted generated templates can be invalidated independently by marking `auto-generated` + `table:<id>` templates with stale metadata.
+- Future shared schema extraction should keep pure projection/value-validation functions separate from repository/file/cache orchestration; generated transport shapes remain adapters over projections until both systems share the same value-level primitives.
 
 ---
 
@@ -57,4 +58,21 @@ after each iteration and it's included in prompts for context.
   - Patterns discovered: table docs and AI metadata are generated dynamically, so a deterministic projection hash is the safest backward-compatible freshness marker for downstream consumers.
   - Patterns discovered: generated template invalidation should use the persisted template repository and `auto-generated`/`table:<id>` tags, not table-scoped MCP server cache wiring.
   - Gotchas encountered: AttributeType update/delete only has the type id, so affected table ids must be resolved from attributes before the type changes or is removed.
+---
+
+## 2026-04-16 - US-007
+- Added `docs/development/SHARED_SCHEMA_ENGINE_BOUNDARY.md`, documenting a future shared `SchemaEngine` interface boundary between OA SDK and bun-graph-db.
+- Distinguished pure schema functions from repository-backed projection services, using `projectTableSchema()`, projected node validation, and `TableSchemaProjectionService.project()` as the current bun-graph-db split.
+- Explained why table-specific shapes remain generated projections over runtime metadata instead of static GraphQL/REST/MCP server contracts.
+- Mapped OA SDK concepts to bun-graph-db concepts for schema validation, `$ref` graphs, diagnostics, source coordinates, type generation, and incremental invalidation.
+- Listed what is explicitly not shared yet and defined criteria for when to extract a shared package or module.
+- Linked the new design note from `docs/README.md`.
+- `bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-schema-projection-service.test.ts tests/integration/mcp-table-projection-tools-list.test.ts`: pass.
+- `bun run typecheck`: pass.
+- `bun run lint --max-diagnostics=20`: pass with the same 2 pre-existing warnings in `src/core/schema/TableSchemaProjection.ts`.
+- Files changed: `docs/development/SHARED_SCHEMA_ENGINE_BOUNDARY.md`, `docs/README.md`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: the candidate shared boundary is the value-level schema graph contract, not either system's repository, file loader, cache, transport, or generated output layer.
+  - Patterns discovered: extraction should wait until both systems can consume the same projection/refs/diagnostics/sources/versionHash shape without mirror adapters.
+  - Gotchas encountered: documentation needs to name current downstream integrations, but those integrations should be evidence for the boundary rather than responsibilities moved into the shared engine.
 ---

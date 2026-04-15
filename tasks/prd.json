@@ -167,11 +167,12 @@
         "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
       ],
       "priority": 7,
-      "passes": false,
+      "passes": true,
       "notes": "This story should remain documentation/design only; do not extract a shared package here.",
       "dependsOn": [
         "US-006"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-008",
@@ -205,6 +206,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T19:04:32.871Z"
+    "updatedAt": "2026-04-15T19:08:12.804Z"
   }
 }
