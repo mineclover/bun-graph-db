@@ -46,7 +46,7 @@ export interface TableSchemaProjectionLike {
   tableId: string
   tableIdentifier: string
   versionHash: string
-  attributeValueSchemas: Record<string, JsonSchema>
+  attributeValueSchemas: Record<string, unknown>
   requiredAttributes: string[]
 }
 
@@ -402,13 +402,13 @@ export class SchemaMapper {
   }
 }
 
-function cloneSchemaMap(schemas: Record<string, JsonSchema>): Record<string, JsonSchema> {
+function cloneSchemaMap(schemas: Record<string, unknown>): Record<string, JsonSchema> {
   return Object.fromEntries(
     Object.entries(schemas).map(([name, schema]) => [name, cloneSchema(schema)]),
   )
 }
 
-function cloneSchema(schema: JsonSchema): JsonSchema {
+function cloneSchema(schema: unknown): JsonSchema {
   return JSON.parse(JSON.stringify(schema)) as JsonSchema
 }
 

@@ -8,6 +8,7 @@
  */
 
 import type { ILogger } from '../../../application/ports/ILogger'
+import type { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
 import { TableMcpServer } from './TableMcpServer'
 
 interface TableValidationResult {
@@ -35,11 +36,18 @@ export class TableMcpServerFactory {
   private graphqlEndpoint: string
   private restApiBaseUrl: string
   private logger?: ILogger
+  private projectionService?: Pick<TableSchemaProjectionService, 'project'>
 
-  constructor(graphqlEndpoint: string, restApiBaseUrl: string, logger?: ILogger) {
+  constructor(
+    graphqlEndpoint: string,
+    restApiBaseUrl: string,
+    logger?: ILogger,
+    projectionService?: Pick<TableSchemaProjectionService, 'project'>,
+  ) {
     this.graphqlEndpoint = graphqlEndpoint
     this.restApiBaseUrl = restApiBaseUrl
     this.logger = logger
+    this.projectionService = projectionService
 
     // Set as global instance
     globalFactoryInstance = this
@@ -75,7 +83,9 @@ export class TableMcpServerFactory {
 
       // Create new server for this table
       this.logger?.info(`Creating new MCP server for table ${tableId}`)
-      const server = new TableMcpServer(tableId, this.graphqlEndpoint, this.restApiBaseUrl)
+      const server = new TableMcpServer(tableId, this.graphqlEndpoint, this.restApiBaseUrl, {
+        projectionService: this.projectionService,
+      })
 
       // Initialize the server
       await server.initialize()

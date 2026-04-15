@@ -1,0 +1,158 @@
+# Iteration 1 Log
+
+## Metadata
+
+- **Task ID**: US-001
+- **Task Title**: Establish bun-graph-db baseline runtime health
+- **Description**: As a maintainer, I want a current baseline of install, focused tests, typecheck, lint, build, and smoke status so that projection integration failures can be separated from pre-existing runtime issues...
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-15T10:34:54.847Z
+- **Ended At**: 2026-04-15T10:40:03.697Z
+- **Duration**: 5m 8s
+- **Input Tokens**: 3695037
+- **Output Tokens**: 13084
+- **Total Tokens**: 3708121
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll start by reading the repo guidance and the ralph progress file, then I’ll run the requested baseline checks before making any harness-only edits.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' AGENTS.md"
+
+[91m[Error: sed: AGENTS.md: No such file or directory
+][0m
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc "pwd && rg --files -g 'AGENTS.md' -g '.ralph-tui/progress.md' -g 'package.json' -g 'bun...
+There isn’t an `AGENTS.md` at the repo root, so I’m checking the parent scopes next. The progress log is currently empty apart from its template, so the baseline story will need to add the first concrete entry.
+[94m[shell][0m $ done'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' package.json"
+[94m[shell][0m $ /bin/zsh -lc "find . -maxdepth 3 -type f | sort | sed -n '1,220p'"
+I’ve got no repo-level agent instructions to apply beyond the task text. Next I’m locating existing server/MCP smoke helpers so the baseline uses project-native paths instead of inventing a new runtime flow.
+[94m[shell][0m $ /bin/zsh -lc "rg --files tests src scripts | rg '(server|graphql|mcp|smoke|health|projection|test-ru...
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"smoke|health|GraphQL|graphql|createYoga|startServer|server helper|MCP|mcp|Mode...
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/fixtures/test-server-manager.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/fixtures/test-graphql-server.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' tests/integration/tools/health-check.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/integration/mcp-table-integration.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '260,560p' tests/integration/mcp-table-integration.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' tests/fixtures/graphql-yoga-helper.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '220,520p' tests/integration/tools/health-check.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/fixtures/mcp-tool-registry.ts"
+The worktree already contains projection-related untracked/modified files, so I’ll treat those as existing user/engine changes and only add the required progress documentation unless a harness fix is genuinely needed. I’m running the frozen Bun install now and will compare status before and after.
+[94m[shell][0m $ /bin/zsh -lc 'bun install --frozen-lockfile'
+Frozen install passed and Bun reported no dependency changes. I’m moving through the requested command baseline in order, starting with the two focused projection test files.
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-sch...
+Focused projection tests are green: 6 tests passed. Next is `bun run typecheck`; if it fails, I’ll separate known baseline errors from projection-related ones before deciding whether any harness-only fix is justified.
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+Typecheck passes. I’m running the capped Biome lint command now so any existing lint debt stays bounded in the baseline.
+[94m[shell][0m $ /bin/zsh -lc 'bun run lint --max-diagnostics=20'
+Lint exits 0, with two warnings in the current projection file rather than failures. I’m leaving them untouched because this story is baseline-only and the command passes; next is the build.
+[94m[shell][0m $ /bin/zsh -lc 'bun run build'
+Build passes. I’m using the existing isolated server helper for the GraphQL smoke so the server lifecycle is owned by the test fixture and cleaned up in `finally`.
+[94m[shell][0m $ }'"'"
+
+[91m[Error: ✅ Test database setup complete: /tmp/bun-graph-db-tests/server-us-001-graphql-smoke-1776249387251-4kwy0ptkb.sqlite
+185 |       nextPort = candidate + 1 > TEST_PORT_END ? TEST_PORT_START : candidate + 1
+186 |       return candidate
+187 |     }
+188 |   }
+189 | 
+190 |   throw new Error('Test server port range exhausted (5500-5999)')
+                  ^
+error: Test server port range exhausted (5500-5999)
+      at allocatePort (/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/tests/fixtures/][0m
+The in-process helper failed before the server started because its fixed test port range reported exhausted. I’m checking whether that is real port contention or a fixture allocation issue, then I’ll use a reliable smoke path that still stops cleanly.
+[94m[shell][0m $ /bin/zsh -lc 'ls -la /tmp/bun-graph-db-tests | tail -20'
+[94m[shell][0m $ }'"
+[94m[shell][0m $ /bin/zsh -lc 'lsof -nP -iTCP:5500-5999 -sTCP:LISTEN'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,160p' src/infrastructure/container/ContainerBootstrap.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/fixtures/test-database-factory.ts"
+[94m[shell][0m $ /bin/zsh -lc 'rg -n "process.env.DATABASE_PATH|DATABASE_PATH" src tests/fixtures | head -80'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' src/infrastructure/container/DIContainer.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"clear\\(|dispose|close\\(|Database|SqliteConnection\" src/infrastructure/conta...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,180p' src/infrastructure/database/sqlite/SqliteConnection.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,130p' src/infrastructure/container/modules/DatabaseModule.ts"
+The fixed-port helper is blocked in this sandbox with `EPERM` on localhost binds, not by a running test server. I’m switching to the existing in-process GraphQL Yoga helper, which exercises the GraphQL schema against an isolated SQLite test database without opening a socket.
+[94m[shell][0m $ }'"'"
+The GraphQL health smoke passes through Yoga with an isolated database and cleanup. I’m checking whether table-scoped MCP has an in-process callable route/helper; if it only exists behind the socket-bound full server, I’ll document that as the follow-up rather than adding new runtime behavior.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' src/presentation/mcp/factory/TableMcpServerFactory.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' src/presentation/mcp/routes/mcp-routes.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,340p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '320,420p' src/presentation/mcp/routes/mcp-routes.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"getTableTemplates|fetch\\(\" src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '940,1080p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/mcp/http-server/McpHttpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,180p' src/models/GraphQLOperation.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '180,280p' src/models/GraphQLOperation.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"handleRequest|tools/list|list|tableTools|case 'tools/list'\" src/presentation/...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1080,1165p' src/presentation/mcp/factory/TableMcpServer.ts && sed -n '1818,188...
+[94m[shell][0m $ }'"'"
+Table-scoped MCP smoke also passes without a socket by routing the MCP middleware to an in-process Yoga endpoint. I’m cleaning the temporary database files left by the earlier failed port-binding attempt, then I’ll record the baseline in `.ralph-tui/progress.md`.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'find dist -maxdepth 2 -type f -print 2>/dev/null | sort | head -20'
+The cleanup command was blocked by the execution policy, so I won’t keep poking at temp cleanup. The smoke paths that completed did run their fixture cleanup; I’m checking the workspace status and then appending the baseline entry.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short --untracked-files=all'
+[94m[shell][0m $ /bin/zsh -lc 'git rev-parse --show-toplevel && git status --porcelain=v1 --untracked-files=all'
+[94m[shell][0m $ /bin/zsh -lc 'git check-ignore -v .ralph-tui/progress.md dist/index.js .omx/logs/turns-2026-04-15.js...
+[94m[shell][0m $ /bin/zsh -lc 'git ls-files src/core/schema/TableSchemaProjection.ts src/application/services/TableSc...
+[94m[shell][0m $ /bin/zsh -lc 'git log --oneline -5 --decorate'
+[94m[shell][0m $ test -f .ralph-tui/progress.md && sed -n '1,80p' .ralph-tui/progress.md"
+
+[91m[Error: export type JsonSchema = {
+  $schema?: string
+  $id?: string
+  $ref?: string
+  $defs?: Record<string, JsonSchema>
+  type?: string | string[]
+  const?: unknown
+  enum?: unknown[]
+  format?: string
+  description?: string
+  default?: unknown
+  examples?: unknown[]
+  properties?: Record<string, JsonSchema>
+  required?: string[]
+  items?: JsonSchema
+  additionalProperties?: boolean | JsonSchema
+  minLength?: number
+  maxLength?: number
+  pattern?: string
+  minimum?: number
+][0m
+[94m[shell][0m $ /bin/zsh -lc 'ls -la .ralph-tui && find .ralph-tui -maxdepth 2 -type f -print | sort'
+
+[91m[Error: ls: .ralph-tui: No such file or directory
+][0m
+[94m[shell][0m $ /bin/zsh -lc 'git show --stat --oneline --name-status HEAD'
+[94m[shell][0m $ /bin/zsh -lc "git show --format='%H %an %ae %ad %s' --date=iso-strict --no-patch HEAD"
+An external commit landed while I was running the baseline, and the `.ralph-tui` directory disappeared from the workspace. Since the task explicitly requires a progress entry, I’m recreating the progress file with the original template shape plus the US-001 baseline notes.
+[94m[shell][0m $ /bin/zsh -lc 'mkdir -p .ralph-tui'
+I’m adding documentation only now: the command outcomes, smoke approach, and the port-binding gotcha that matters for later integration work.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- .ralph-tui/progress.md'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short --untracked-files=all'
+Baseline complete. I ran all requested checks and documented the results in [.ralph-tui/progress.md](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/.ralph-tui/progress.md).
+
+Results:
+- `bun install --frozen-lockfile`: pass, no dependency changes.
+- Focused projection tests: pass, 6 tests / 0 failures.
+- `bun run typecheck`: pass.
+- `bun run lint --max-diagnostics=20`: pass with 2 warnings, exit 0.
+- `bun run build`: pass.
+- GraphQL health smoke: pass via isolated in-process Yoga helper.
+- Table-scoped MCP smoke: pass via in-process `createTableMcpMiddleware`, 24 table tools returned.
+- Runtime behavior changes: none.
+- Files changed by me: [.ralph-tui/progress.md](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/.ralph-tui/progress.md) only.
+
+Note: a fixed-port server helper attempt failed due sandbox `EPERM` on localhost binds, so I used the existing in-process helpers instead. No background server was left running.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+2026-04-15T10:34:55.548420Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", resource_metadata=\"https://mcp.cloudflare.com/.well-known/oauth-protected-resource/mcp\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
+2026-04-15T10:34:55.728093Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_request\", error_description=\"No access token was provided in this request\", resource_metadata=\"https://mcp.supabase.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-04-15T10:34:55.813633Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=https://mcp.stripe.com/.well-known/oauth-protected-resource" })
+2026-04-15T10:38:40.592594Z ERROR codex_core::tools::router: error=exec_command failed for `/bin/zsh -lc 'rm -f /tmp/bun-graph-db-tests/server-us-001-graphql-smoke-1776249387251-4kwy0ptkb.sqlite /tmp/bun-graph-db-tests/server-us-001-graphql-smoke-1776249387251-4kwy0ptkb.sqlite-shm /tmp/bun-graph-db-tests/server-us-001-graphql-smoke-1776249387251-4kwy0ptkb.sqlite-wal'`: CreateProcess { message: "Rejected(\"`/bin/zsh -lc 'rm -f /tmp/bun-graph-db-tests/server-us-001-graphql-smoke-1776249387251-4kwy0ptkb.sqlite /tmp/bun-graph-db-tests/server-us-001-graphql-smoke-1776249387251-4kwy0ptkb.sqlite-shm /tmp/bun-graph-db-tests/server-us-001-graphql-smoke-1776249387251-4kwy0ptkb.sqlite-wal'` rejected: blocked by policy\")" }

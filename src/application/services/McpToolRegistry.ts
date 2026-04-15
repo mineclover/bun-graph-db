@@ -24,6 +24,8 @@ export interface McpToolDefinition {
   name: string
   description: string
   inputSchema: McpToolInputSchema
+  _meta?: Record<string, unknown>
+  annotations?: Record<string, unknown>
   operationType?: 'query' | 'mutation'
   graphqlOperation?: {
     operationType?: string
@@ -109,6 +111,8 @@ export class McpToolRegistry {
       name: tool.name,
       description: tool.description,
       inputSchema: tool.inputSchema,
+      ...(tool._meta ? { _meta: tool._meta } : {}),
+      ...(tool.annotations ? { annotations: tool.annotations } : {}),
     }))
 
     return { tools }

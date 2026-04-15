@@ -8,6 +8,8 @@
  */
 
 import type { McpToolDefinition } from '../../../application/services/McpToolRegistry'
+import type { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
+import type { ProjectionDiagnostic, TableSchemaProjection } from '../../../core/schema/TableSchemaProjection'
 import type { FormatMappingTemplate, SimpleMappingDefinition } from '../../../core/types/FormatMapping.js'
 import { PRESET_MAPPINGS } from '../../../core/types/FormatMapping.js'
 import type { FlatJsonExport } from '../../../core/types/JsonExport.js'
@@ -51,6 +53,12 @@ interface McpResponse {
   }
 }
 
+type TableSchemaProjectionProvider = Pick<TableSchemaProjectionService, 'project'>
+
+interface TableMcpServerOptions {
+  projectionService?: TableSchemaProjectionProvider
+}
+
 /**
  * Table-specific MCP Server that provides templates as discoverable tools
  */
@@ -61,11 +69,13 @@ export class TableMcpServer {
   private mcpServer: McpHttpServer
   private schemaDiscoveryService: SchemaDiscoveryService | null = null
   private formatMapperService: FormatMapperService
+  private projectionService?: TableSchemaProjectionProvider
 
-  constructor(tableId: string, graphqlEndpoint: string, restApiBaseUrl?: string) {
+  constructor(tableId: string, graphqlEndpoint: string, restApiBaseUrl?: string, options: TableMcpServerOptions = {}) {
     this.tableId = tableId
     this.mcpServer = new McpHttpServer(graphqlEndpoint, restApiBaseUrl)
     this.formatMapperService = new FormatMapperService()
+    this.projectionService = options.projectionService
   }
 
   /**
@@ -80,7 +90,7 @@ export class TableMcpServer {
     await this.mcpServer.initialize()
 
     // Add basic CRUD tools for table management
-    this.addTableCrudTools()
+    await this.addTableCrudTools()
 
     // Load table-specific templates and convert to tools
     await this.loadTableTemplates()
@@ -539,7 +549,9 @@ export class TableMcpServer {
   /**
    * Add table CRUD tools for this table
    */
-  private addTableCrudTools(): void {
+  private async addTableCrudTools(): Promise<void> {
+    const projectedNodeTools = await this.createProjectedNodeTools()
+
     // 1. Get table attributes
     const getAttributesTool: McpToolDefinition = {
       name: `get-table-${this.tableId}-attributes`,
@@ -972,6 +984,9 @@ export class TableMcpServer {
     }
 
     // Add all tools to the registry
+    for (const tool of projectedNodeTools) {
+      this.tableTools.set(tool.name, tool)
+    }
     this.tableTools.set(getAttributesTool.name, getAttributesTool)
     this.tableTools.set(createAttributeTool.name, createAttributeTool)
     this.tableTools.set(updateAttributeTool.name, updateAttributeTool)
@@ -981,6 +996,238 @@ export class TableMcpServer {
     this.tableTools.set(searchTableTemplatesTool.name, searchTableTemplatesTool)
     this.tableTools.set(executeTableTemplateTool.name, executeTableTemplateTool)
     this.tableTools.set(updateTemplateTool.name, updateTemplateTool)
+  }
+
+  private async createProjectedNodeTools(): Promise<McpToolDefinition[]> {
+    const { createInputSchema, updateInputSchema, metadata } = await this.getProjectedNodeToolSchemas()
+
+    const createNodeTool: McpToolDefinition = {
+      name: `create-table-${this.tableId}-node`,
+      description: `[노드 생성] Create a node in table ${this.tableId} with projection-derived attribute values.`,
+      inputSchema: createInputSchema,
+      _meta: metadata,
+      operationType: 'mutation',
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation CreateTableNodeWithAttributes($input: CreateNodeWithAttributesInput!) {
+            createNodeWithAttributes(input: $input) {
+              success
+              node {
+                id
+                tableId
+                content
+                title
+                description
+                createdAt
+                updatedAt
+              }
+              attributes {
+                id
+                attributeId
+                value
+                attribute {
+                  identifier
+                  name
+                }
+              }
+              errors {
+                message
+                code
+                field
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    const updateNodeTool: McpToolDefinition = {
+      name: `update-table-${this.tableId}-node`,
+      description: `[노드 속성 수정] Update projection-derived attribute values for a node in table ${this.tableId}.`,
+      inputSchema: updateInputSchema,
+      _meta: metadata,
+      operationType: 'mutation',
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation SetTableNodeAttributes($input: SetNodeAttributesByIdentifierInput!) {
+            setNodeAttributesByIdentifier(input: $input) {
+              success
+              nodeAttributes {
+                id
+                attributeId
+                value
+                attribute {
+                  identifier
+                  name
+                }
+              }
+              errors {
+                message
+                code
+                field
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    return [createNodeTool, updateNodeTool]
+  }
+
+  private async getProjectedNodeToolSchemas(): Promise<{
+    createInputSchema: ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema>
+    updateInputSchema: ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema>
+    metadata: Record<string, unknown>
+  }> {
+    if (!this.projectionService) {
+      const createInputSchema = this.createFallbackNodeInputSchema()
+      return {
+        createInputSchema,
+        updateInputSchema: this.createUpdateNodeInputSchemaFromCreateSchema(createInputSchema),
+        metadata: {
+          tableSchemaProjection: {
+            tableId: this.tableId,
+            available: false,
+            warnings: ['Table schema projection service is not configured for this table MCP server.'],
+          },
+        },
+      }
+    }
+
+    try {
+      const projection = await this.projectionService.project({ tableId: this.tableId })
+      const createInputSchema = SchemaMapper.mapTableProjectionToMcpInputSchema(projection)
+
+      if (!SchemaMapper.validateJsonSchema(createInputSchema)) {
+        return this.createProjectionFallbackSchemas('Projection-derived MCP input schema is invalid', projection)
+      }
+
+      return {
+        createInputSchema,
+        updateInputSchema: this.createUpdateNodeInputSchemaFromCreateSchema(createInputSchema),
+        metadata: this.createProjectionMetadata(projection),
+      }
+    } catch (error) {
+      console.warn(`Failed to project table schema for table ${this.tableId}:`, error)
+      const createInputSchema = this.createFallbackNodeInputSchema()
+      return {
+        createInputSchema,
+        updateInputSchema: this.createUpdateNodeInputSchemaFromCreateSchema(createInputSchema),
+        metadata: {
+          tableSchemaProjection: {
+            tableId: this.tableId,
+            available: false,
+            warnings: [error instanceof Error ? error.message : String(error)],
+          },
+        },
+      }
+    }
+  }
+
+  private createProjectionFallbackSchemas(
+    reason: string,
+    projection: TableSchemaProjection,
+  ): {
+    createInputSchema: ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema>
+    updateInputSchema: ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema>
+    metadata: Record<string, unknown>
+  } {
+    const createInputSchema = this.createFallbackNodeInputSchema()
+
+    return {
+      createInputSchema,
+      updateInputSchema: this.createUpdateNodeInputSchemaFromCreateSchema(createInputSchema),
+      metadata: {
+        tableSchemaProjection: {
+          ...this.createProjectionMetadata(projection).tableSchemaProjection,
+          usable: false,
+          warnings: [reason],
+        },
+      },
+    }
+  }
+
+  private createUpdateNodeInputSchemaFromCreateSchema(
+    createInputSchema: ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema>,
+  ): ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema> {
+    const attributesSchema = createInputSchema.properties.attributes ?? {
+      type: 'object',
+      description: `Attribute values for table ${this.tableId}`,
+      properties: {},
+      required: [],
+      additionalProperties: true,
+    }
+
+    return {
+      type: 'object',
+      properties: {
+        nodeId: {
+          type: 'string',
+          description: `Node ID in table ${this.tableId}`,
+        },
+        attributes: attributesSchema,
+      },
+      required: ['nodeId', 'attributes'],
+      additionalProperties: false,
+    }
+  }
+
+  private createFallbackNodeInputSchema(): ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema> {
+    return {
+      type: 'object',
+      properties: {
+        content: {
+          type: 'string',
+          description: `Node content for table ${this.tableId}`,
+        },
+        attributes: {
+          type: 'object',
+          description: `Attribute values for table ${this.tableId}`,
+          properties: {},
+          required: [],
+          additionalProperties: true,
+        },
+      },
+      required: ['content', 'attributes'],
+      additionalProperties: false,
+    }
+  }
+
+  private createProjectionMetadata(projection: TableSchemaProjection): { tableSchemaProjection: Record<string, unknown> } {
+    const diagnostics = projection.diagnostics.map((diagnostic) => this.serializeProjectionDiagnostic(diagnostic))
+
+    return {
+      tableSchemaProjection: {
+        available: true,
+        usable: true,
+        tableId: projection.tableId,
+        tableIdentifier: projection.tableIdentifier,
+        versionHash: projection.versionHash,
+        diagnostics,
+        warnings: diagnostics.filter((diagnostic) => diagnostic.severity === 'warning'),
+        errors: diagnostics.filter((diagnostic) => diagnostic.severity === 'error'),
+      },
+    }
+  }
+
+  private serializeProjectionDiagnostic(diagnostic: ProjectionDiagnostic): Record<string, unknown> {
+    return {
+      severity: diagnostic.severity,
+      code: diagnostic.code,
+      message: diagnostic.message,
+      ...(diagnostic.source
+        ? {
+            source: {
+              entity: diagnostic.source.entity,
+              id: diagnostic.source.id,
+              pointer: diagnostic.source.pointer,
+            },
+          }
+        : {}),
+    }
   }
 
   /**
@@ -1106,6 +1353,8 @@ export class TableMcpServer {
           name: tool.name,
           description: tool.description,
           inputSchema: tool.inputSchema,
+          ...(tool._meta ? { _meta: tool._meta } : {}),
+          ...(tool.annotations ? { annotations: tool.annotations } : {}),
         })),
       },
     }
@@ -1913,7 +2162,22 @@ export class TableMcpServer {
       let operationType = tool.graphqlOperation.operationType
 
       // Handle different tool types with proper variable preparation
-      if (tool.name.includes('get-table-') && tool.name.includes('-attributes')) {
+      if (tool.name === `create-table-${this.tableId}-node`) {
+        variables = {
+          input: {
+            tableId: this.tableId,
+            content: args.content,
+            attributesByIdentifier: this.toAttributesByIdentifier(args.attributes),
+          },
+        }
+      } else if (tool.name === `update-table-${this.tableId}-node`) {
+        variables = {
+          input: {
+            nodeId: args.nodeId,
+            attributesByIdentifier: this.toAttributesByIdentifier(args.attributes),
+          },
+        }
+      } else if (tool.name.includes('get-table-') && tool.name.includes('-attributes')) {
         // CRUD: Get table attributes - needs tableId
         variables = { tableId: this.tableId }
       } else if (tool.name.includes('create-table-') && tool.name.includes('-attribute')) {
@@ -2030,6 +2294,26 @@ export class TableMcpServer {
         data: null,
       }
     }
+  }
+
+  private toAttributesByIdentifier(attributes: unknown): Array<{ identifier: string; value: string }> {
+    if (!attributes || typeof attributes !== 'object' || Array.isArray(attributes)) {
+      return []
+    }
+
+    return Object.entries(attributes).map(([identifier, value]) => ({
+      identifier,
+      value: this.stringifyAttributeValue(value),
+    }))
+  }
+
+  private stringifyAttributeValue(value: unknown): string {
+    if (typeof value === 'string') {
+      return value
+    }
+
+    const serialized = JSON.stringify(value)
+    return serialized === undefined ? String(value) : serialized
   }
 
   /**

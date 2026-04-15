@@ -8,13 +8,15 @@
  */
 
 import type { ILogger } from '../../../application/ports/ILogger'
+import type { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
 import type { TableMcpServer } from '../factory/TableMcpServer'
 import { TableMcpServerFactory } from '../factory/TableMcpServerFactory'
 
-interface McpRouteConfig {
+export interface McpRouteConfig {
   graphqlEndpoint: string
   restApiBaseUrl: string
   logger?: ILogger
+  projectionService?: Pick<TableSchemaProjectionService, 'project'>
 }
 
 interface JsonRpcRequest {
@@ -31,7 +33,12 @@ export class McpRoutes {
   private logger?: ILogger
 
   constructor(config: McpRouteConfig) {
-    this.factory = new TableMcpServerFactory(config.graphqlEndpoint, config.restApiBaseUrl, config.logger)
+    this.factory = new TableMcpServerFactory(
+      config.graphqlEndpoint,
+      config.restApiBaseUrl,
+      config.logger,
+      config.projectionService,
+    )
     this.logger = config.logger
   }
 

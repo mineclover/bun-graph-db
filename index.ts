@@ -11,10 +11,12 @@ import type { CreateRelationUseCase } from './src/application/use-cases/relation
 import type { SearchRelatedNodesUseCase } from './src/application/use-cases/relations/SearchRelatedNodes'
 import type { CreateTableUseCase } from './src/application/use-cases/tables/CreateTable'
 import type { GetTableDocsUseCase } from './src/application/use-cases/tables/GetTableDocs'
+import { TableSchemaProjectionService } from './src/application/services/TableSchemaProjectionService'
 import { setDatabasePath } from './src/config/database'
 import { createGraphQLConfig } from './src/config/graphql'
 import type { AutoPersistenceService } from './src/domain/services/AutoPersistenceService'
 import type { IAttributeRepository } from './src/domain/repositories/IAttributeRepository'
+import type { IAttributeTypeRepository } from './src/domain/repositories/IAttributeTypeRepository'
 import type { INodeAttributeRepository } from './src/domain/repositories/INodeAttributeRepository'
 import type { INodeRelationRepository } from './src/domain/repositories/INodeRelationRepository'
 import type { IQueryTemplateRepository } from './src/domain/repositories/IQueryTemplateRepository'
@@ -234,6 +236,7 @@ const [
   createRelationUseCase,
   executeTemplateWithGraphQLUseCase,
   attributeRepository,
+  attributeTypeRepository,
   nodeAttributeRepository,
   getTableDocsUseCase,
   searchNodesUseCase,
@@ -249,6 +252,7 @@ const [
   container.resolve(UseCaseTokens.CREATE_RELATION_USE_CASE),
   container.resolve(UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE),
   container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY),
+  container.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY),
   container.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY),
   container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE),
   container.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE),
@@ -304,11 +308,19 @@ const mcpServer = new McpHttpServer(
 )
 await mcpServer.initialize()
 
+const tableSchemaProjectionService = new TableSchemaProjectionService(
+  tableRepository as ITableRepository,
+  attributeRepository as IAttributeRepository,
+  attributeTypeRepository as IAttributeTypeRepository,
+  logger,
+)
+
 // Create table MCP middleware
 const tableMcpMiddleware = createTableMcpMiddleware({
   graphqlEndpoint: `http://localhost:${graphqlConfig.port}/graphql`,
   restApiBaseUrl: `http://localhost:${graphqlConfig.port}/api`,
   logger,
+  projectionService: tableSchemaProjectionService,
 })
 
 // Direct API route handler without Express
