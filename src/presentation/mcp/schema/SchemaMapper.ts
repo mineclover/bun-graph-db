@@ -42,6 +42,14 @@ export interface McpInputSchema {
   additionalProperties?: boolean
 }
 
+export interface TableSchemaProjectionLike {
+  tableId: string
+  tableIdentifier: string
+  versionHash: string
+  attributeValueSchemas: Record<string, JsonSchema>
+  requiredAttributes: string[]
+}
+
 /**
  * Schema mapping utilities for converting SQLite types and template parameters
  * to MCP-compatible JSON Schema format
@@ -258,6 +266,34 @@ export class SchemaMapper {
   }
 
   /**
+   * Convert a table schema projection into an MCP-compatible input schema.
+   *
+   * The projection itself keeps `$defs` and `$ref` edges for research,
+   * invalidation, and diagnostics. The MCP schema is intentionally inlined
+   * because the current MCP validator expects concrete property schemas.
+   */
+  static mapTableProjectionToMcpInputSchema(projection: TableSchemaProjectionLike): McpInputSchema {
+    return {
+      type: 'object',
+      properties: {
+        content: {
+          type: 'string',
+          description: `Node content for table ${projection.tableIdentifier}`,
+        },
+        attributes: {
+          type: 'object',
+          description: `Attribute values for table ${projection.tableIdentifier} (schema ${projection.versionHash})`,
+          properties: cloneSchemaMap(projection.attributeValueSchemas),
+          required: [...projection.requiredAttributes],
+          additionalProperties: false,
+        },
+      },
+      required: ['content', 'attributes'],
+      additionalProperties: false,
+    }
+  }
+
+  /**
    * Validate JSON Schema structure
    */
   static validateJsonSchema(schema: any): boolean {
@@ -364,6 +400,16 @@ export class SchemaMapper {
       inputSchema: mcpInputSchema,
     }
   }
+}
+
+function cloneSchemaMap(schemas: Record<string, JsonSchema>): Record<string, JsonSchema> {
+  return Object.fromEntries(
+    Object.entries(schemas).map(([name, schema]) => [name, cloneSchema(schema)]),
+  )
+}
+
+function cloneSchema(schema: JsonSchema): JsonSchema {
+  return JSON.parse(JSON.stringify(schema)) as JsonSchema
 }
 
 /**

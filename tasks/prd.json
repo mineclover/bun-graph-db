@@ -1,0 +1,204 @@
+{
+  "name": "Dynamic Table Schema Projection Runtime Integration",
+  "description": "Connect bun-graph-db runtime table schema projections to table-scoped MCP input schemas, create/update node validation, schema-change invalidation, documentation, and final GraphQL/MCP smoke verification. This plan assumes the current projection core, repository service, and SchemaMapper adapter already exist and focuses on completing the path to runtime use.",
+  "branchName": "ralph/dynamic-table-schema-projection",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Establish bun-graph-db baseline runtime health",
+      "description": "As a maintainer, I want a current baseline of install, focused tests, typecheck, lint, build, and smoke status so that projection integration failures can be separated from pre-existing runtime issues.",
+      "acceptanceCriteria": [
+        "Run `bun install --frozen-lockfile` from `references/bun-graph-db` and document whether dependencies are already current or changed.",
+        "Run focused projection tests: `bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-schema-projection-service.test.ts`.",
+        "Run `bun run typecheck` and record pass/fail.",
+        "Run `bun run lint --max-diagnostics=20` and record pass/fail.",
+        "Run `bun run build` and record pass/fail.",
+        "Run a basic GraphQL health smoke using an isolated server helper or a background server that is stopped cleanly.",
+        "Run a table-scoped MCP smoke if a reliable helper already exists; otherwise document the missing helper as a follow-up for the final integration story.",
+        "Do not change runtime behavior in this story except for minimal test harness fixes required to establish baseline.",
+        "Focused projection tests pass.",
+        "bun run typecheck passes, or failures are documented as pre-existing and unrelated.",
+        "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "PRD review improvement: preflight must run first so ralph does not confuse existing bun-graph-db health issues with projection integration regressions.",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Wire projection service into table-scoped MCP tools/list",
+      "description": "As an MCP client, I want table-scoped tools/list to expose projection-derived input schemas so that the current dynamic table attributes are visible to AI tools.",
+      "acceptanceCriteria": [
+        "`TableMcpServer` can construct or receive `TableSchemaProjectionService` without creating hard coupling from core schema code to repositories.",
+        "Create/update node table-scoped tools use `SchemaMapper.mapTableProjectionToMcpInputSchema(projection)` for their input schemas where applicable.",
+        "Existing table-scoped tools remain listed.",
+        "`tools/list` for a table includes an `attributes` object with the current table attributes.",
+        "Required attributes appear in `attributes.required`.",
+        "Projection diagnostics are surfaced safely as metadata or warnings without crashing tools/list unless the table projection is unusable.",
+        "A focused test verifies tools/list output includes projection-derived attributes.",
+        "Focused projection tests pass.",
+        "bun run typecheck passes, or failures are documented as pre-existing and unrelated.",
+        "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "PRD review improvement: skip reimplementing core projection/service; consume the existing `TableSchemaProjectionService` and `SchemaMapper` adapter.",
+      "dependsOn": [
+        "US-001"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "Validate createNode attributes with table projection",
+      "description": "As a data user, I want createNode attribute payloads validated against the current table projection so that invalid dynamic table data is rejected consistently.",
+      "acceptanceCriteria": [
+        "Identify the createNode execution path used by GraphQL, REST, and table-scoped MCP flows.",
+        "CreateNode validation obtains the current projection by `tableId` before persisting attribute values.",
+        "Missing required attributes produce structured validation errors.",
+        "Unknown attributes produce structured validation errors.",
+        "Enum violations produce structured validation errors.",
+        "Numeric constraint violations produce structured validation errors.",
+        "Existing valid createNode flows still pass.",
+        "Focused tests cover valid create input, missing required attribute, unknown attribute, enum violation, and numeric constraint violation.",
+        "Focused projection tests pass.",
+        "bun run typecheck passes, or failures are documented as pre-existing and unrelated.",
+        "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "Keep validation logic projection-based; do not add a separate hand-written validator for createNode.",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "Validate updateNode attributes with partial projection rules",
+      "description": "As a data user, I want updateNode attribute payloads validated against the current table projection while allowing valid partial updates.",
+      "acceptanceCriteria": [
+        "Identify the updateNode execution path used by GraphQL, REST, and table-scoped MCP flows.",
+        "UpdateNode validation obtains the current projection from the existing node table or request table context.",
+        "Partial updates do not require all required attributes when only changing existing node fields.",
+        "Unknown updated attributes produce structured validation errors.",
+        "Enum violations produce structured validation errors.",
+        "Numeric constraint violations produce structured validation errors.",
+        "Table mismatch is rejected when update input includes a conflicting table context.",
+        "Existing valid update flows still pass.",
+        "Focused tests cover valid partial update, unknown attribute, enum violation, numeric constraint violation, and table mismatch where applicable.",
+        "Focused projection tests pass.",
+        "bun run typecheck passes, or failures are documented as pre-existing and unrelated.",
+        "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "This is separate from createNode because partial-update required-field semantics are different and should not be conflated.",
+      "dependsOn": [
+        "US-003"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "Invalidate table-scoped MCP schema cache on schema changes",
+      "description": "As an MCP user, I want table-scoped MCP tools to refresh after table schema changes so that stale input schemas do not remain cached.",
+      "acceptanceCriteria": [
+        "Attribute create flow triggers table schema invalidation.",
+        "Attribute update flow triggers table schema invalidation.",
+        "Attribute delete flow triggers table schema invalidation if such a flow exists; otherwise document the missing flow.",
+        "AttributeType update/delete triggers invalidation for affected tables.",
+        "Table delete removes or invalidates the table-scoped MCP server cache.",
+        "`TableMcpServerFactory.refreshServerForTable(tableId)` or an equivalent invalidation boundary is used instead of rebuilding all table servers.",
+        "Unchanged tables keep existing cache behavior.",
+        "Focused tests verify cached table MCP schema changes after an attribute schema change.",
+        "Focused projection tests pass.",
+        "bun run typecheck passes, or failures are documented as pre-existing and unrelated.",
+        "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": "PRD review improvement: invalidation should be table-scoped, not global, to preserve dynamic table performance.",
+      "dependsOn": [
+        "US-002"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "Invalidate generated templates and table docs on schema changes",
+      "description": "As a docs and template user, I want generated templates and table docs/AI metadata to reflect table schema changes so that generated guidance does not drift.",
+      "acceptanceCriteria": [
+        "Attribute create/update/delete marks generated templates for the table stale or refreshes them.",
+        "AttributeType update/delete marks affected table docs/AI metadata stale or refreshes them.",
+        "`GetTableDocsUseCase` includes projection version/hash or an equivalent freshness marker in schema/AI metadata output.",
+        "Existing docs generation behavior remains backward compatible.",
+        "`TableTemplateAutoGenerator` no longer relies on misleading `dataType: 'string'` fallback when attribute type data is available.",
+        "Tests verify table docs/schema metadata changes after attribute type changes.",
+        "Tests verify generated template metadata is refreshed or marked stale after table schema changes.",
+        "Focused projection tests pass.",
+        "bun run typecheck passes, or failures are documented as pre-existing and unrelated.",
+        "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": "PRD review improvement: template/docs invalidation is downstream from schema cache invalidation and should not be mixed into MCP tools/list wiring.",
+      "dependsOn": [
+        "US-005"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "Document future shared SchemaEngine boundary",
+      "description": "As an OA SDK and bun-graph-db maintainer, I want a clear shared schema engine boundary documented before extracting shared code so that the systems can converge without over-coupling.",
+      "acceptanceCriteria": [
+        "Add a design document describing a future `SchemaEngine` interface.",
+        "The document distinguishes pure schema functions from repository-backed projection services.",
+        "The document explains why table-specific shapes remain generated projections, not static server contracts.",
+        "The document maps OA SDK concepts to bun-graph-db concepts: schema validation, `$ref` graph, diagnostics, source coordinates, type generation, and incremental invalidation.",
+        "The document lists what is explicitly not shared yet.",
+        "The document defines criteria for when to extract a shared package or module.",
+        "The document references `SCHEMA_PROJECTION_EXPERIMENT.md` and the current projection service.",
+        "Focused projection tests pass.",
+        "bun run typecheck passes, or failures are documented as pre-existing and unrelated.",
+        "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": "This story should remain documentation/design only; do not extract a shared package here.",
+      "dependsOn": [
+        "US-006"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "Add projection-based GraphQL and MCP smoke test",
+      "description": "As a maintainer, I want an integration smoke test proving projection-driven schema changes are visible through GraphQL and table-scoped MCP behavior.",
+      "acceptanceCriteria": [
+        "Start an isolated GraphQL/MCP test server or equivalent helper.",
+        "Create a table.",
+        "Create at least two attribute types.",
+        "Create attributes for the table.",
+        "Fetch table-scoped MCP `tools/list`.",
+        "Verify the tool input schema includes the created attributes.",
+        "Modify an attribute or attribute type.",
+        "Verify the table-scoped tool schema refreshes.",
+        "Verify GraphQL health or table lookup still works.",
+        "Stop the server cleanly.",
+        "Run `bun run build` successfully.",
+        "Focused projection tests pass.",
+        "bun run typecheck passes, or failures are documented as pre-existing and unrelated.",
+        "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": "Final integration story. Includes smoke verification instead of browser/UI checks.",
+      "dependsOn": [
+        "US-003",
+        "US-004",
+        "US-006",
+        "US-007"
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-04-15T10:34:54.859Z"
+  }
+}
