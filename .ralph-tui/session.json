@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "sessionId": "024391db-16c8-4546-8ced-92494963825b",
+  "status": "running",
+  "startedAt": "2026-04-15T10:34:48.083Z",
+  "updatedAt": "2026-04-15T10:40:03.699Z",
+  "currentIteration": 0,
+  "maxIterations": 0,
+  "tasksCompleted": 0,
+  "isPaused": false,
+  "agentPlugin": "codex",
+  "trackerState": {
+    "plugin": "json",
+    "prdPath": "./tasks/prd.json",
+    "totalTasks": 8,
+    "tasks": [
+      {
+        "id": "US-001",
+        "title": "Establish bun-graph-db baseline runtime health",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-002",
+        "title": "Wire projection service into table-scoped MCP tools/list",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-003",
+        "title": "Validate createNode attributes with table projection",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-004",
+        "title": "Validate updateNode attributes with partial projection rules",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-005",
+        "title": "Invalidate table-scoped MCP schema cache on schema changes",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-006",
+        "title": "Invalidate generated templates and table docs on schema changes",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-007",
+        "title": "Document future shared SchemaEngine boundary",
+        "status": "open",
+        "completedInSession": false
+      },
+      {
+        "id": "US-008",
+        "title": "Add projection-based GraphQL and MCP smoke test",
+        "status": "open",
+        "completedInSession": false
+      }
+    ]
+  },
+  "iterations": [],
+  "skippedTaskIds": [],
+  "cwd": "/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db",
+  "activeTaskIds": [],
+  "subagentPanelVisible": false
+}
