@@ -23,6 +23,17 @@ interface TableLookupCandidate {
   identifier?: unknown
 }
 
+interface TableMcpCacheRefreshResult {
+  refreshed: string[]
+  skipped: string[]
+  failed: Array<{ tableId: string; error: string }>
+}
+
+interface TableMcpCacheRemovalResult {
+  removed: string[]
+  skipped: string[]
+}
+
 /**
  * Singleton instance for global access
  */
@@ -68,7 +79,9 @@ export class TableMcpServerFactory {
       // First validate that the table exists
       const validation = await this.validateTable(tableId)
       if (!validation.exists) {
-        this.logger?.warn(`Table ${tableId} does not exist: ${validation.error}`)
+        this.logger?.warn(
+          `Table ${tableId} does not exist: ${validation.error}`,
+        )
         return null
       }
 
@@ -76,16 +89,23 @@ export class TableMcpServerFactory {
       if (this.servers.has(tableId)) {
         const existingServer = this.servers.get(tableId)
         if (existingServer) {
-          this.logger?.debug(`Returning existing MCP server for table ${tableId}`)
+          this.logger?.debug(
+            `Returning existing MCP server for table ${tableId}`,
+          )
           return existingServer
         }
       }
 
       // Create new server for this table
       this.logger?.info(`Creating new MCP server for table ${tableId}`)
-      const server = new TableMcpServer(tableId, this.graphqlEndpoint, this.restApiBaseUrl, {
-        projectionService: this.projectionService,
-      })
+      const server = new TableMcpServer(
+        tableId,
+        this.graphqlEndpoint,
+        this.restApiBaseUrl,
+        {
+          projectionService: this.projectionService,
+        },
+      )
 
       // Initialize the server
       await server.initialize()
@@ -93,11 +113,15 @@ export class TableMcpServerFactory {
       // Cache the server
       this.servers.set(tableId, server)
 
-      this.logger?.info(`MCP server created for table ${tableId} with ${server.getTableToolsCount()} tools`)
+      this.logger?.info(
+        `MCP server created for table ${tableId} with ${server.getTableToolsCount()} tools`,
+      )
 
       return server
     } catch (error) {
-      this.logger?.error(`Failed to create MCP server for table ${tableId}:`, { error })
+      this.logger?.error(`Failed to create MCP server for table ${tableId}:`, {
+        error,
+      })
       return null
     }
   }
@@ -131,7 +155,8 @@ export class TableMcpServerFactory {
       this.logger?.error(`Table validation error for ${tableId}:`, { error })
       return {
         exists: false,
-        error: error instanceof Error ? error.message : 'Unknown validation error',
+        error:
+          error instanceof Error ? error.message : 'Unknown validation error',
       }
     }
   }
@@ -139,7 +164,9 @@ export class TableMcpServerFactory {
   /**
    * Check table existence via GraphQL so validation is not affected by REST pagination limits.
    */
-  private async checkTableViaGraphQL(tableId: string): Promise<TableValidationResult> {
+  private async checkTableViaGraphQL(
+    tableId: string,
+  ): Promise<TableValidationResult> {
     try {
       const response = await fetch(this.graphqlEndpoint, {
         method: 'POST',
@@ -198,7 +225,9 @@ export class TableMcpServerFactory {
   /**
    * Check table existence via REST API
    */
-  private async checkTableViaRestApi(tableId: string): Promise<TableValidationResult> {
+  private async checkTableViaRestApi(
+    tableId: string,
+  ): Promise<TableValidationResult> {
     try {
       const response = await fetch(`${this.restApiBaseUrl}/tables`, {
         method: 'GET',
@@ -224,7 +253,9 @@ export class TableMcpServerFactory {
       const tables = data?.data?.tables || data?.tables || []
 
       if (Array.isArray(tables)) {
-        const table = tables.find((candidate) => this.matchesTableLookupCandidate(candidate, tableId))
+        const table = tables.find((candidate) =>
+          this.matchesTableLookupCandidate(candidate, tableId),
+        )
 
         if (table) {
           return {
@@ -267,14 +298,21 @@ export class TableMcpServerFactory {
     }
 
     // Prevent path traversal patterns
-    if (sanitized.includes('..') || sanitized.includes('/') || sanitized.includes('\\')) {
+    if (
+      sanitized.includes('..') ||
+      sanitized.includes('/') ||
+      sanitized.includes('\\')
+    ) {
       return null
     }
 
     return sanitized
   }
 
-  private matchesTableLookupCandidate(candidate: TableLookupCandidate, tableId: string): boolean {
+  private matchesTableLookupCandidate(
+    candidate: TableLookupCandidate,
+    tableId: string,
+  ): boolean {
     return (
       candidate.id === tableId ||
       candidate.identifier === tableId ||
@@ -311,6 +349,119 @@ export class TableMcpServerFactory {
   }
 
   /**
+   * Refresh cached server instances for one table schema without creating caches
+   * for tables that have not already been requested.
+   */
+  async refreshServersForTableSchema(
+    tableReferences: string | string[],
+  ): Promise<TableMcpCacheRefreshResult> {
+    const refreshed: string[] = []
+    const skipped: string[] = []
+    const failed: Array<{ tableId: string; error: string }> = []
+    const references = this.normalizeTableReferences(tableReferences)
+
+    if (references.length === 0) {
+      return { refreshed, skipped, failed }
+    }
+
+    const cachedTableIds =
+      await this.findCachedServerKeysForTableReferences(references)
+    const cachedTableIdSet = new Set(cachedTableIds)
+
+    for (const reference of references) {
+      if (!cachedTableIdSet.has(reference) && !this.servers.has(reference)) {
+        skipped.push(reference)
+      }
+    }
+
+    for (const tableId of cachedTableIds) {
+      try {
+        const server = await this.refreshServerForTable(tableId)
+        if (server) {
+          refreshed.push(tableId)
+          this.logger?.info(
+            `Refreshed table-scoped MCP schema cache for table ${tableId}`,
+          )
+        } else {
+          failed.push({ tableId, error: 'Server refresh returned null' })
+        }
+      } catch (error) {
+        failed.push({
+          tableId,
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Unknown error during refresh',
+        })
+        this.logger?.error(
+          `Failed to refresh table-scoped MCP schema cache for table ${tableId}:`,
+          { error },
+        )
+      }
+    }
+
+    return { refreshed, skipped, failed }
+  }
+
+  /**
+   * Remove cached server instances for a table that is being deleted.
+   */
+  removeServersForTableSchema(
+    tableReferences: string | string[],
+  ): TableMcpCacheRemovalResult {
+    const removed: string[] = []
+    const skipped: string[] = []
+    const references = this.normalizeTableReferences(tableReferences)
+
+    for (const tableId of references) {
+      if (this.removeServerForTable(tableId)) {
+        removed.push(tableId)
+      } else {
+        skipped.push(tableId)
+      }
+    }
+
+    return { removed, skipped }
+  }
+
+  private normalizeTableReferences(
+    tableReferences: string | string[],
+  ): string[] {
+    const references = Array.isArray(tableReferences)
+      ? tableReferences
+      : [tableReferences]
+
+    return Array.from(
+      new Set(references.map((reference) => reference?.trim()).filter(Boolean)),
+    )
+  }
+
+  private async findCachedServerKeysForTableReferences(
+    tableReferences: string[],
+  ): Promise<string[]> {
+    const referenceSet = new Set(tableReferences)
+    const matchedTableIds = new Set<string>()
+
+    for (const tableId of this.servers.keys()) {
+      if (referenceSet.has(tableId)) {
+        matchedTableIds.add(tableId)
+        continue
+      }
+
+      const validation = await this.validateTable(tableId)
+      if (
+        validation.exists &&
+        ((validation.id && referenceSet.has(validation.id)) ||
+          (validation.identifier && referenceSet.has(validation.identifier)))
+      ) {
+        matchedTableIds.add(tableId)
+      }
+    }
+
+    return Array.from(matchedTableIds)
+  }
+
+  /**
    * Get all active servers
    */
   getActiveServers(): Map<string, TableMcpServer> {
@@ -328,11 +479,13 @@ export class TableMcpServerFactory {
       toolCount: number
     }>
   } {
-    const serverDetails = Array.from(this.servers.entries()).map(([tableId, server]) => ({
-      tableId,
-      initialized: server.isTableInitialized(),
-      toolCount: server.getTableToolsCount(),
-    }))
+    const serverDetails = Array.from(this.servers.entries()).map(
+      ([tableId, server]) => ({
+        tableId,
+        initialized: server.isTableInitialized(),
+        toolCount: server.getTableToolsCount(),
+      }),
+    )
 
     return {
       totalServers: this.servers.size,
@@ -395,7 +548,9 @@ export class TableMcpServerFactory {
       }
     }
 
-    this.logger?.info(`Preloading complete: ${successful.length} successful, ${failed.length} failed`)
+    this.logger?.info(
+      `Preloading complete: ${successful.length} successful, ${failed.length} failed`,
+    )
 
     return { successful, failed }
   }
@@ -449,11 +604,15 @@ export class TableMcpServerFactory {
       .filter((id) => id.length > 0)
 
     if (tableIds.length === 0) {
-      this.logger?.debug('No table tags found in template, skipping cache refresh')
+      this.logger?.debug(
+        'No table tags found in template, skipping cache refresh',
+      )
       return { refreshed, failed }
     }
 
-    this.logger?.info(`Refreshing MCP servers for ${tableIds.length} tables: ${tableIds.join(', ')}`)
+    this.logger?.info(
+      `Refreshing MCP servers for ${tableIds.length} tables: ${tableIds.join(', ')}`,
+    )
 
     for (const tableId of tableIds) {
       try {
@@ -462,7 +621,9 @@ export class TableMcpServerFactory {
           const server = await this.refreshServerForTable(tableId)
           if (server) {
             refreshed.push(tableId)
-            this.logger?.info(`Successfully refreshed MCP server cache for table ${tableId}`)
+            this.logger?.info(
+              `Successfully refreshed MCP server cache for table ${tableId}`,
+            )
           } else {
             failed.push({ tableId, error: 'Server refresh returned null' })
           }
@@ -472,9 +633,15 @@ export class TableMcpServerFactory {
       } catch (error) {
         failed.push({
           tableId,
-          error: error instanceof Error ? error.message : 'Unknown error during refresh',
+          error:
+            error instanceof Error
+              ? error.message
+              : 'Unknown error during refresh',
         })
-        this.logger?.error(`Failed to refresh MCP server for table ${tableId}:`, { error })
+        this.logger?.error(
+          `Failed to refresh MCP server for table ${tableId}:`,
+          { error },
+        )
       }
     }
 
@@ -492,8 +659,55 @@ export async function refreshMcpCacheForTemplate(tags: string[]): Promise<{
 }> {
   const factory = TableMcpServerFactory.getInstance()
   if (!factory) {
-    console.warn('[MCP Cache] No factory instance available, skipping cache refresh')
+    console.warn(
+      '[MCP Cache] No factory instance available, skipping cache refresh',
+    )
     return { refreshed: [], failed: [] }
   }
   return factory.refreshServersForTemplateTags(tags)
+}
+
+/**
+ * Utility function to refresh cached table-scoped MCP schemas after table schema changes.
+ */
+export async function refreshMcpCacheForTableSchema(
+  tableReferences: string | string[],
+): Promise<TableMcpCacheRefreshResult> {
+  const factory = TableMcpServerFactory.getInstance()
+  if (!factory) {
+    console.warn(
+      '[MCP Cache] No factory instance available, skipping table schema cache refresh',
+    )
+    return {
+      refreshed: [],
+      skipped: Array.isArray(tableReferences)
+        ? tableReferences
+        : [tableReferences],
+      failed: [],
+    }
+  }
+
+  return factory.refreshServersForTableSchema(tableReferences)
+}
+
+/**
+ * Utility function to remove cached table-scoped MCP schemas after table deletion.
+ */
+export function removeMcpCacheForTableSchema(
+  tableReferences: string | string[],
+): TableMcpCacheRemovalResult {
+  const factory = TableMcpServerFactory.getInstance()
+  if (!factory) {
+    console.warn(
+      '[MCP Cache] No factory instance available, skipping table schema cache removal',
+    )
+    return {
+      removed: [],
+      skipped: Array.isArray(tableReferences)
+        ? tableReferences
+        : [tableReferences],
+    }
+  }
+
+  return factory.removeServersForTableSchema(tableReferences)
 }

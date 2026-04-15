@@ -15,6 +15,7 @@ import type {
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
+import { refreshMcpCacheForTableSchema } from '@/presentation/mcp/factory/TableMcpServerFactory.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class AttributeMutations extends BaseResolver {
@@ -32,11 +33,64 @@ export class AttributeMutations extends BaseResolver {
     this.logger = logger
   }
 
-  async createAttributeType(_: GraphQLParent, args: MutationCreateAttributeTypeArgs, _context?: GraphQLContext) {
+  private async refreshTableSchemaCache(
+    tableReferences: string | string[],
+    operation: string,
+  ): Promise<void> {
+    const cacheResult = await refreshMcpCacheForTableSchema(tableReferences)
+    if (cacheResult.refreshed.length > 0) {
+      this.logger.info('MCP table schema cache refreshed', {
+        operation,
+        refreshed: cacheResult.refreshed,
+      })
+    }
+    if (cacheResult.failed.length > 0) {
+      this.logger.warn('MCP table schema cache refresh failed', {
+        operation,
+        failed: cacheResult.failed,
+      })
+    }
+  }
+
+  private async getTableIdsUsingAttributeType(
+    attributeTypeId: string,
+  ): Promise<string[]> {
+    const tableIds = new Set<string>()
+    const limit = 1000
+    let offset = 0
+
+    while (true) {
+      const attributesResult =
+        await this.attributeRepository.findByAttributeTypeId(attributeTypeId, {
+          limit,
+          offset,
+        })
+      const attributes = attributesResult.data ?? attributesResult.nodes ?? []
+      for (const attribute of attributes) {
+        tableIds.add(attribute.getTableId())
+      }
+
+      if (!attributesResult.hasMore && !attributesResult.hasNextPage) {
+        break
+      }
+      offset += limit
+    }
+
+    return Array.from(tableIds)
+  }
+
+  async createAttributeType(
+    _: GraphQLParent,
+    args: MutationCreateAttributeTypeArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args,
       [
-        BaseResolver.validationRules.required('input', 'Create attribute type input'),
+        BaseResolver.validationRules.required(
+          'input',
+          'Create attribute type input',
+        ),
         BaseResolver.validationRules.required('input.identifier', 'Identifier'),
         BaseResolver.validationRules.required('input.name', 'Name'),
         BaseResolver.validationRules.required('input.dataType', 'Data type'),
@@ -79,12 +133,19 @@ export class AttributeMutations extends BaseResolver {
     }))
   }
 
-  async updateAttributeType(_: GraphQLParent, args: MutationUpdateAttributeTypeArgs, _context?: GraphQLContext) {
+  async updateAttributeType(
+    _: GraphQLParent,
+    args: MutationUpdateAttributeTypeArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args,
       [
         BaseResolver.validationRules.required('id', 'Attribute type ID'),
-        BaseResolver.validationRules.required('input', 'Update attribute type input'),
+        BaseResolver.validationRules.required(
+          'input',
+          'Update attribute type input',
+        ),
         BaseResolver.validationRules.nonEmpty('id', 'Attribute type ID'),
       ],
       'updateAttributeType',
@@ -92,22 +153,35 @@ export class AttributeMutations extends BaseResolver {
 
     return this.handleMutation(
       async () => {
-        const existingAttributeType = await this.attributeTypeRepository.findById(args.id)
+        const existingAttributeType =
+          await this.attributeTypeRepository.findById(args.id)
         if (!existingAttributeType) {
           throw new Error('Attribute type not found')
         }
 
-        const updatedAttributeType = await this.attributeTypeRepository.update(args.id, {
-          identifier: args.input.name || undefined,
-          description: args.input.description || undefined,
-          jsonType: undefined, // Not available in input
-          format: undefined, // Not available in input
-          validationSchema:
-            args.input.constraints && typeof args.input.constraints === 'object'
-              ? (args.input.constraints as Record<string, unknown>)
-              : undefined,
-          defaultValue: args.input.defaultValue || undefined,
-        })
+        const affectedTableIds = await this.getTableIdsUsingAttributeType(
+          args.id,
+        )
+        const updatedAttributeType = await this.attributeTypeRepository.update(
+          args.id,
+          {
+            identifier: args.input.name || undefined,
+            description: args.input.description || undefined,
+            jsonType: undefined, // Not available in input
+            format: undefined, // Not available in input
+            validationSchema:
+              args.input.constraints &&
+              typeof args.input.constraints === 'object'
+                ? (args.input.constraints as Record<string, unknown>)
+                : undefined,
+            defaultValue: args.input.defaultValue || undefined,
+          },
+        )
+
+        await this.refreshTableSchemaCache(
+          affectedTableIds,
+          'updateAttributeType',
+        )
 
         return updatedAttributeType
       },
@@ -120,7 +194,11 @@ export class AttributeMutations extends BaseResolver {
     }))
   }
 
-  async deleteAttributeType(_: GraphQLParent, args: MutationDeleteAttributeTypeArgs, _context?: GraphQLContext) {
+  async deleteAttributeType(
+    _: GraphQLParent,
+    args: MutationDeleteAttributeTypeArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args,
       [
@@ -132,12 +210,20 @@ export class AttributeMutations extends BaseResolver {
 
     return this.handleMutation(
       async () => {
-        const existingAttributeType = await this.attributeTypeRepository.findById(args.id)
+        const existingAttributeType =
+          await this.attributeTypeRepository.findById(args.id)
         if (!existingAttributeType) {
           throw new Error('Attribute type not found')
         }
 
+        const affectedTableIds = await this.getTableIdsUsingAttributeType(
+          args.id,
+        )
         await this.attributeTypeRepository.delete(args.id)
+        await this.refreshTableSchemaCache(
+          affectedTableIds,
+          'deleteAttributeType',
+        )
         return null
       },
       'deleteAttributeType',
@@ -148,16 +234,29 @@ export class AttributeMutations extends BaseResolver {
     }))
   }
 
-  async createAttribute(_: GraphQLParent, args: MutationCreateAttributeArgs, _context?: GraphQLContext) {
+  async createAttribute(
+    _: GraphQLParent,
+    args: MutationCreateAttributeArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args,
       [
-        BaseResolver.validationRules.required('input', 'Create attribute input'),
+        BaseResolver.validationRules.required(
+          'input',
+          'Create attribute input',
+        ),
         BaseResolver.validationRules.required('input.identifier', 'Identifier'),
-        BaseResolver.validationRules.required('input.attributeTypeId', 'Attribute type ID'),
+        BaseResolver.validationRules.required(
+          'input.attributeTypeId',
+          'Attribute type ID',
+        ),
         BaseResolver.validationRules.required('input.tableId', 'Table ID'),
         BaseResolver.validationRules.nonEmpty('input.identifier', 'Identifier'),
-        BaseResolver.validationRules.nonEmpty('input.attributeTypeId', 'Attribute type ID'),
+        BaseResolver.validationRules.nonEmpty(
+          'input.attributeTypeId',
+          'Attribute type ID',
+        ),
         BaseResolver.validationRules.nonEmpty('input.tableId', 'Table ID'),
       ],
       'createAttribute',
@@ -173,6 +272,10 @@ export class AttributeMutations extends BaseResolver {
         })
 
         this.tabularSyncHook?.notifyByTableId(args.input.tableId)
+        await this.refreshTableSchemaCache(
+          result.attribute.tableId,
+          'createAttribute',
+        )
 
         return result
       },
@@ -185,12 +288,19 @@ export class AttributeMutations extends BaseResolver {
     }))
   }
 
-  async updateAttribute(_: GraphQLParent, args: MutationUpdateAttributeArgs, _context?: GraphQLContext) {
+  async updateAttribute(
+    _: GraphQLParent,
+    args: MutationUpdateAttributeArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args,
       [
         BaseResolver.validationRules.required('id', 'Attribute ID'),
-        BaseResolver.validationRules.required('input', 'Update attribute input'),
+        BaseResolver.validationRules.required(
+          'input',
+          'Update attribute input',
+        ),
         BaseResolver.validationRules.nonEmpty('id', 'Attribute ID'),
       ],
       'updateAttribute',
@@ -198,19 +308,28 @@ export class AttributeMutations extends BaseResolver {
 
     return this.handleMutation(
       async () => {
-        const existingAttribute = await this.attributeRepository.findById(args.id)
+        const existingAttribute = await this.attributeRepository.findById(
+          args.id,
+        )
         if (!existingAttribute) {
           throw new Error('Attribute not found')
         }
 
-        const updatedAttribute = await this.attributeRepository.update(args.id, {
-          identifier: args.input.name || undefined,
-          description: args.input.description || undefined,
-          isRequired: undefined, // Not available in input
-          defaultValue: undefined, // Not available in input
-        })
+        const updatedAttribute = await this.attributeRepository.update(
+          args.id,
+          {
+            identifier: args.input.name || undefined,
+            description: args.input.description || undefined,
+            isRequired: undefined, // Not available in input
+            defaultValue: undefined, // Not available in input
+          },
+        )
 
         this.tabularSyncHook?.notifyByTableId(existingAttribute.getTableId())
+        await this.refreshTableSchemaCache(
+          existingAttribute.getTableId(),
+          'updateAttribute',
+        )
 
         return updatedAttribute
       },
@@ -223,7 +342,11 @@ export class AttributeMutations extends BaseResolver {
     }))
   }
 
-  async deleteAttribute(_: GraphQLParent, args: MutationDeleteAttributeArgs, _context?: GraphQLContext) {
+  async deleteAttribute(
+    _: GraphQLParent,
+    args: MutationDeleteAttributeArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args,
       [
@@ -235,13 +358,19 @@ export class AttributeMutations extends BaseResolver {
 
     return this.handleMutation(
       async () => {
-        const existingAttribute = await this.attributeRepository.findById(args.id)
+        const existingAttribute = await this.attributeRepository.findById(
+          args.id,
+        )
         if (!existingAttribute) {
           throw new Error('Attribute not found')
         }
 
         await this.attributeRepository.delete(args.id)
         this.tabularSyncHook?.notifyByTableId(existingAttribute.getTableId())
+        await this.refreshTableSchemaCache(
+          existingAttribute.getTableId(),
+          'deleteAttribute',
+        )
         return null
       },
       'deleteAttribute',
@@ -264,7 +393,8 @@ export class AttributeMutations extends BaseResolver {
       }>
     },
   ) {
-    const results: Array<{ attribute: AttributeDto | null; errors: string[] }> = []
+    const results: Array<{ attribute: AttributeDto | null; errors: string[] }> =
+      []
     let totalCreated = 0
     let totalFailed = 0
 
@@ -289,6 +419,17 @@ export class AttributeMutations extends BaseResolver {
           errors: [error instanceof Error ? error.message : 'Unknown error'],
         })
       }
+    }
+
+    const createdTableIds = results
+      .map((result) => result.attribute?.tableId)
+      .filter((tableId): tableId is string => typeof tableId === 'string')
+
+    if (createdTableIds.length > 0) {
+      await this.refreshTableSchemaCache(
+        createdTableIds,
+        'batchCreateAttributes',
+      )
     }
 
     return {

@@ -4,12 +4,25 @@ import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import { refreshMcpCacheForTableSchema } from '@/presentation/mcp/factory/TableMcpServerFactory.js'
 import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
-import type { AttributeData, NodeAttributeData, TableAttributesData } from '../types/ApiResponseTypes.js'
+import type {
+  AttributeData,
+  NodeAttributeData,
+  TableAttributesData,
+} from '../types/ApiResponseTypes.js'
 import { ResponseHelper } from '../utils/responseHelpers.js'
 
-type AttributeBodyRequest<TBody> = Request<Record<string, string>, unknown, TBody>
-type AttributeRequest<TParams extends object, TBody = unknown> = Request<TParams, unknown, TBody>
+type AttributeBodyRequest<TBody> = Request<
+  Record<string, string>,
+  unknown,
+  TBody
+>
+type AttributeRequest<TParams extends object, TBody = unknown> = Request<
+  TParams,
+  unknown,
+  TBody
+>
 
 interface SetNodeAttributeBody {
   input?: {
@@ -69,12 +82,37 @@ export class AttributeApiController {
     this.responseHelper = new ResponseHelper(logger)
   }
 
-  async setNodeAttribute(req: AttributeBodyRequest<SetNodeAttributeBody>, res: Response): Promise<void> {
+  private async refreshTableSchemaCache(
+    tableId: string,
+    operation: string,
+  ): Promise<void> {
+    const cacheResult = await refreshMcpCacheForTableSchema(tableId)
+    if (cacheResult.refreshed.length > 0) {
+      this.logger.info('MCP table schema cache refreshed', {
+        operation,
+        refreshed: cacheResult.refreshed,
+      })
+    }
+    if (cacheResult.failed.length > 0) {
+      this.logger.warn('MCP table schema cache refresh failed', {
+        operation,
+        failed: cacheResult.failed,
+      })
+    }
+  }
+
+  async setNodeAttribute(
+    req: AttributeBodyRequest<SetNodeAttributeBody>,
+    res: Response,
+  ): Promise<void> {
     try {
       const { input } = req.body
 
       if (!input?.nodeId || !input.attributeId || input.value === undefined) {
-        this.responseHelper.validationError(res, 'input with nodeId, attributeId, and value is required')
+        this.responseHelper.validationError(
+          res,
+          'input with nodeId, attributeId, and value is required',
+        )
         return
       }
 
@@ -100,12 +138,25 @@ export class AttributeApiController {
     }
   }
 
-  async createAttribute(req: AttributeBodyRequest<CreateAttributeBody>, res: Response): Promise<void> {
+  async createAttribute(
+    req: AttributeBodyRequest<CreateAttributeBody>,
+    res: Response,
+  ): Promise<void> {
     try {
-      const { tableId, identifier, attributeTypeId = '1', description, isRequired = false, metadata } = req.body
+      const {
+        tableId,
+        identifier,
+        attributeTypeId = '1',
+        description,
+        isRequired = false,
+        metadata,
+      } = req.body
 
       if (!tableId || !identifier) {
-        this.responseHelper.validationError(res, 'tableId and identifier are required')
+        this.responseHelper.validationError(
+          res,
+          'tableId and identifier are required',
+        )
         return
       }
 
@@ -127,6 +178,11 @@ export class AttributeApiController {
         attributeTypeId: createResult.attribute.attributeTypeId,
       }
 
+      await this.refreshTableSchemaCache(
+        createResult.attribute.tableId,
+        'createAttribute',
+      )
+
       this.responseHelper.success(res, result)
     } catch (error) {
       this.responseHelper.handleError(res, error, 'Create attribute')
@@ -147,7 +203,9 @@ export class AttributeApiController {
       }
 
       // Use attribute repository to update attribute
-      const attribute = await this.attributeRepository.findById(attributeId as AttributeId)
+      const attribute = await this.attributeRepository.findById(
+        attributeId as AttributeId,
+      )
       if (!attribute) {
         this.responseHelper.notFound(res, `Attribute with id ${attributeId}`)
         return
@@ -180,13 +238,21 @@ export class AttributeApiController {
         metadata: updatedAttribute.getParsedMetadata(),
       }
 
+      await this.refreshTableSchemaCache(
+        attribute.getTableId(),
+        'updateAttribute',
+      )
+
       this.responseHelper.success(res, result)
     } catch (error) {
       this.responseHelper.handleError(res, error, 'Update attribute')
     }
   }
 
-  async deleteAttribute(req: AttributeRequest<UpdateAttributeParams>, res: Response): Promise<void> {
+  async deleteAttribute(
+    req: AttributeRequest<UpdateAttributeParams>,
+    res: Response,
+  ): Promise<void> {
     try {
       const { attributeId } = req.params
 
@@ -196,7 +262,9 @@ export class AttributeApiController {
       }
 
       // Use attribute repository to delete attribute
-      const attribute = await this.attributeRepository.findById(attributeId as AttributeId)
+      const attribute = await this.attributeRepository.findById(
+        attributeId as AttributeId,
+      )
       if (!attribute) {
         this.responseHelper.notFound(res, `Attribute with id ${attributeId}`)
         return
@@ -209,13 +277,21 @@ export class AttributeApiController {
         deleted: true,
       }
 
+      await this.refreshTableSchemaCache(
+        attribute.getTableId(),
+        'deleteAttribute',
+      )
+
       this.responseHelper.success(res, result)
     } catch (error) {
       this.responseHelper.handleError(res, error, 'Delete attribute')
     }
   }
 
-  async getTableAttributes(req: AttributeRequest<TableParams>, res: Response): Promise<void> {
+  async getTableAttributes(
+    req: AttributeRequest<TableParams>,
+    res: Response,
+  ): Promise<void> {
     try {
       const { tableId } = req.params
 
@@ -225,7 +301,9 @@ export class AttributeApiController {
       }
 
       // Use attribute repository to get table attributes
-      const attributesResult = await this.attributeRepository.findByTableId(tableId as TableId)
+      const attributesResult = await this.attributeRepository.findByTableId(
+        tableId as TableId,
+      )
       const attributes = attributesResult.data || []
 
       const result: TableAttributesData = {
@@ -245,29 +323,44 @@ export class AttributeApiController {
     }
   }
 
-  async removeNodeAttribute(req: AttributeBodyRequest<RemoveNodeAttributeBody>, res: Response): Promise<void> {
+  async removeNodeAttribute(
+    req: AttributeBodyRequest<RemoveNodeAttributeBody>,
+    res: Response,
+  ): Promise<void> {
     try {
       const { nodeId, attributeId } = req.body
 
       if (!nodeId || !attributeId) {
-        this.responseHelper.validationError(res, 'nodeId and attributeId are required')
+        this.responseHelper.validationError(
+          res,
+          'nodeId and attributeId are required',
+        )
         return
       }
 
       // Use node attribute repository to remove node attribute
-      const nodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
-        nodeId as NodeId,
-        attributeId as AttributeId,
-      )
+      const nodeAttribute =
+        await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
+          nodeId as NodeId,
+          attributeId as AttributeId,
+        )
 
       if (!nodeAttribute) {
-        this.responseHelper.notFound(res, `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`)
+        this.responseHelper.notFound(
+          res,
+          `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`,
+        )
         return
       }
 
       const nodeAttributeId = nodeAttribute.getId()
       if (!nodeAttributeId) {
-        this.responseHelper.error(res, 500, 'Node attribute ID is null', 'Remove node attribute')
+        this.responseHelper.error(
+          res,
+          500,
+          'Node attribute ID is null',
+          'Remove node attribute',
+        )
         return
       }
       await this.nodeAttributeRepository.delete(nodeAttributeId)
@@ -292,18 +385,25 @@ export class AttributeApiController {
       const { nodeId, attributeId, value } = req.body
 
       if (!nodeId || !attributeId || value === undefined) {
-        this.responseHelper.validationError(res, 'nodeId, attributeId, and value are required')
+        this.responseHelper.validationError(
+          res,
+          'nodeId, attributeId, and value are required',
+        )
         return
       }
 
       // Use node attribute repository to update node attribute value
-      const nodeAttribute = await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
-        nodeId as NodeId,
-        attributeId as AttributeId,
-      )
+      const nodeAttribute =
+        await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
+          nodeId as NodeId,
+          attributeId as AttributeId,
+        )
 
       if (!nodeAttribute) {
-        this.responseHelper.notFound(res, `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`)
+        this.responseHelper.notFound(
+          res,
+          `Node attribute for nodeId: ${nodeId}, attributeId: ${attributeId}`,
+        )
         return
       }
 
@@ -323,7 +423,10 @@ export class AttributeApiController {
     }
   }
 
-  async getNodeAttributes(req: AttributeRequest<NodeParams>, res: Response): Promise<void> {
+  async getNodeAttributes(
+    req: AttributeRequest<NodeParams>,
+    res: Response,
+  ): Promise<void> {
     try {
       const { nodeId } = req.params
 
@@ -333,7 +436,9 @@ export class AttributeApiController {
       }
 
       // Use node attribute repository to get node attributes
-      const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(nodeId as NodeId)
+      const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(
+        nodeId as NodeId,
+      )
 
       const result = {
         nodeId,

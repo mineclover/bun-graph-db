@@ -11,6 +11,7 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
+import { removeMcpCacheForTableSchema } from '@/presentation/mcp/factory/TableMcpServerFactory.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
@@ -29,26 +30,43 @@ export class TableMutations extends BaseResolver {
   }
 
   private getErrorCode(error: unknown, fallback: string): string {
-    if (typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string') {
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      'code' in error &&
+      typeof error.code === 'string'
+    ) {
       return error.code
     }
 
     return fallback
   }
 
-  async createTable(_: GraphQLParent, args: CreateTableArgs, _context?: GraphQLContext) {
+  async createTable(
+    _: GraphQLParent,
+    args: CreateTableArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args as unknown as Record<string, unknown>,
       [
         BaseResolver.validationRules.required('input', 'Create table input'),
-        BaseResolver.validationRules.required('input.identifier', 'Table identifier'),
-        BaseResolver.validationRules.nonEmpty('input.identifier', 'Table identifier'),
+        BaseResolver.validationRules.required(
+          'input.identifier',
+          'Table identifier',
+        ),
+        BaseResolver.validationRules.nonEmpty(
+          'input.identifier',
+          'Table identifier',
+        ),
       ],
       'createTable',
     )
 
     try {
-      this.logger.info('Executing mutation: createTable', { input: args.input })
+      this.logger.info('Executing mutation: createTable', {
+        input: args.input,
+      })
 
       const result = await this.createTableUseCase.execute({
         identifier: args.input.identifier,
@@ -57,7 +75,9 @@ export class TableMutations extends BaseResolver {
 
       this.tabularSyncHook?.notifyByIdentifier(result.table.identifier)
 
-      this.logger.info('Mutation completed: createTable', { input: args.input })
+      this.logger.info('Mutation completed: createTable', {
+        input: args.input,
+      })
 
       return {
         success: !!result,
@@ -72,7 +92,9 @@ export class TableMutations extends BaseResolver {
 
       const errorCode = this.getErrorCode(
         error,
-        (error as Error).message?.includes('already exists') ? 'CREATE_TABLE_ERROR' : 'INTERNAL_ERROR',
+        (error as Error).message?.includes('already exists')
+          ? 'CREATE_TABLE_ERROR'
+          : 'INTERNAL_ERROR',
       )
       const errorMessage = (error as Error).message || 'Unknown error occurred'
 
@@ -84,7 +106,11 @@ export class TableMutations extends BaseResolver {
     }
   }
 
-  async updateTable(_: GraphQLParent, args: UpdateTableArgs, _context?: GraphQLContext) {
+  async updateTable(
+    _: GraphQLParent,
+    args: UpdateTableArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args as unknown as Record<string, unknown>,
       [
@@ -96,7 +122,10 @@ export class TableMutations extends BaseResolver {
     )
 
     try {
-      this.logger.info('Executing mutation: updateTable', { id: args.id, input: args.input })
+      this.logger.info('Executing mutation: updateTable', {
+        id: args.id,
+        input: args.input,
+      })
 
       const existingTable = await this.tableRepository.findById(args.id)
       if (!existingTable) {
@@ -113,7 +142,10 @@ export class TableMutations extends BaseResolver {
 
       this.tabularSyncHook?.notifyByIdentifier(existingTable.identifier)
 
-      this.logger.info('Mutation completed: updateTable', { id: args.id, input: args.input })
+      this.logger.info('Mutation completed: updateTable', {
+        id: args.id,
+        input: args.input,
+      })
 
       return {
         success: !!updatedTable,
@@ -135,7 +167,11 @@ export class TableMutations extends BaseResolver {
     }
   }
 
-  async deleteTable(_: GraphQLParent, args: DeleteTableArgs, _context?: GraphQLContext) {
+  async deleteTable(
+    _: GraphQLParent,
+    args: DeleteTableArgs,
+    _context?: GraphQLContext,
+  ) {
     this.validateArgs(
       args as unknown as Record<string, unknown>,
       [
@@ -164,6 +200,18 @@ export class TableMutations extends BaseResolver {
       })
 
       this.tabularSyncHook?.notifyClearByIdentifier(existingTable.identifier)
+      const cacheResult = removeMcpCacheForTableSchema([
+        args.id,
+        existingTable.identifier,
+      ])
+      if (cacheResult.removed.length > 0) {
+        this.logger.info(
+          'Removed table-scoped MCP schema cache after table deletion',
+          {
+            removed: cacheResult.removed,
+          },
+        )
+      }
 
       this.logger.info('Table deletion completed successfully', {
         id: args.id,
@@ -206,9 +254,18 @@ export class TableMutations extends BaseResolver {
 
   async batchCreateTables(
     _: GraphQLParent,
-    args: { tables: Array<{ identifier: string; description?: string; name?: string }> },
+    args: {
+      tables: Array<{
+        identifier: string
+        description?: string
+        name?: string
+      }>
+    },
   ) {
-    const results: Array<{ table: (TableDto & { name: string }) | null; errors: string[] }> = []
+    const results: Array<{
+      table: (TableDto & { name: string }) | null
+      errors: string[]
+    }> = []
     let totalCreated = 0
     let totalFailed = 0
 
@@ -257,7 +314,10 @@ export class TableMutations extends BaseResolver {
           force: true,
         })
         if (existingTable) {
-          this.tabularSyncHook?.notifyClearByIdentifier(existingTable.identifier)
+          this.tabularSyncHook?.notifyClearByIdentifier(
+            existingTable.identifier,
+          )
+          removeMcpCacheForTableSchema([tableId, existingTable.identifier])
         }
         deletedCount++
       } catch (error) {
