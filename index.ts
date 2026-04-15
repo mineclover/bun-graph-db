@@ -284,6 +284,7 @@ const attributeController = new AttributeApiController(
   attributeRepository as IAttributeRepository,
   nodeAttributeRepository as INodeAttributeRepository,
   logger,
+  queryTemplateRepository as IQueryTemplateRepository,
 )
 const graphController = new GraphApiController(
   logger,

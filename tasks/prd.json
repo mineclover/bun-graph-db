@@ -143,11 +143,12 @@
         "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
       ],
       "priority": 6,
-      "passes": false,
+      "passes": true,
       "notes": "PRD review improvement: template/docs invalidation is downstream from schema cache invalidation and should not be mixed into MCP tools/list wiring.",
       "dependsOn": [
         "US-005"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-007",
@@ -204,6 +205,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T18:53:57.791Z"
+    "updatedAt": "2026-04-15T19:04:32.871Z"
   }
 }

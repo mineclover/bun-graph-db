@@ -1,0 +1,151 @@
+# Iteration 2 Log
+
+## Metadata
+
+- **Task ID**: US-005
+- **Task Title**: Invalidate table-scoped MCP schema cache on schema changes
+- **Description**: As an MCP user, I want table-scoped MCP tools to refresh after table schema changes so that stale input schemas do not remain cached.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-15T18:43:00.403Z
+- **Ended At**: 2026-04-15T18:53:57.787Z
+- **Duration**: 10m 57s
+- **Input Tokens**: 10208902
+- **Output Tokens**: 26265
+- **Total Tokens**: 10235167
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll first read the local agent guidance and the ralph progress notes, then map the schema/cache paths before editing.
+[94m[shell][0m $ /bin/zsh -lc pwd
+[94m[shell][0m $ /bin/zsh -lc "rg --files -g 'AGENTS.md' -g '.ralph-tui/progress.md' -g 'package.json'"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+There are existing unrelated ralph session/task changes in the worktree, so I’ll avoid touching them except the required progress note. I didn’t get the hidden guidance/progress files with the first search, so I’m checking with unrestricted file listing next.
+[94m[shell][0m $ /bin/zsh -lc "rg --files -uu -g 'AGENTS.md' -g '.ralph-tui/progress.md'"
+[94m[shell][0m $ /bin/zsh -lc 'ls -la'
+[94m[shell][0m $ /bin/zsh -lc 'find .. -name AGENTS.md -print'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' package.json"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' CLAUDE.md"
+The progress note confirms US-004 changed the table MCP projection path and left lint warnings in `TableSchemaProjection.ts`. I’m now tracing the attribute/table mutation use cases and the MCP table server factory so the invalidation stays table-scoped.
+[94m[shell][0m $ /bin/zsh -lc 'rg "TableMcpServerFactory|refreshServerForTable|table-scoped|TableMcpServer" src tests...
+[94m[shell][0m $ /bin/zsh -lc 'rg "AttributeType|CreateAttribute|UpdateAttribute|DeleteAttribute|deleteAttribute|attr...
+[94m[shell][0m $ /bin/zsh -lc 'rg "DeleteTable|deleteTable|RemoveTable|Table.*delete|delete.*Table" src/application s...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/presentation/mcp/factory/TableMcpServerFactory.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,280p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/application/use-cases/attributes/CreateAttribute.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/application/use-cases/attribute-types/UpdateAttributeType.ts"
+
+[91m[Error: sed: src/application/use-cases/attribute-types/UpdateAttributeType.ts: No such file or directory
+][0m
+[94m[shell][0m $ /bin/zsh -lc "sed -n '260,560p' src/presentation/mcp/factory/TableMcpServerFactory.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg \"project\\(|getProjected|addTableCrudTools|create-node|update-node|attributes\" sr...
+[94m[shell][0m $ /bin/zsh -lc "rg --files src/application/use-cases | rg 'Attribute|Table'"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/infrastructure/container/modules/UseCaseModule.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' src/presentation/graphql/mutations/AttributeMutations.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' src/presentation/graphql/mutations/TableMutations.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/application/use-cases/tables/DeleteTable.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/domain/repositories/IAttributeRepository.ts"
+Attribute updates/deletes currently live in GraphQL mutations using repositories directly, while create goes through a use case. I’m checking REST routes/controllers too so invalidation covers every exposed schema-change path rather than just one transport.
+[94m[shell][0m $ /bin/zsh -lc 'rg "createAttribute|updateAttribute|deleteAttribute|attributeType|attributes" src/pres...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,360p' src/presentation/http/controllers/GraphDbApiController.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' src/presentation/http/routes/ApiRoutes.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/domain/repositories/IAttributeTypeRepository.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,430p' src/presentation/http/controllers/AttributeApiController.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,300p' src/presentation/mcp/routes/mcp-routes.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '300,520p' src/presentation/mcp/routes/mcp-routes.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,280p' tests/integration/mcp-table-projection-tools-list.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '300,620p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '620,980p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '980,1380p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1380,1760p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg \"private async executeGraphQL|executeGraphQL\\(\" -n src/presentation/mcp/factory/...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '2060,2260p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '2260,2350p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,320p' src/infrastructure/database/sqlite/SqliteAttributeTypeRepository.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/presentation/graphql/mutations/TemplateMutations.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '260,560p' src/presentation/graphql/mutations/TemplateMutations.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg \"new AttributeMutations|AttributeMutations\\(\" -n src tests"
+[94m[shell][0m $ /bin/zsh -lc "rg \"new AttributeApiController|AttributeApiController\\(\" -n src tests"
+[94m[shell][0m $ /bin/zsh -lc "rg \"new TableMutations|TableMutations\\(\" -n src tests"
+[94m[shell][0m $ /bin/zsh -lc 'rg "createMcpRoutes|createTableMcpMiddleware|McpRoutes" -n src tests index.ts'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '360,520p' src/infrastructure/container/modules/GraphQLModule.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '760,860p' tests/unit/rest-api-controllers.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '330,400p' tests/unit/rest-api-controllers.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '300,360p' index.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg \"AttributeApiController\" -n src index.ts tests --glob '"'!tests/unit/rest-api-con...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '250,310p' index.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/presentation/graphql/base/BaseResolver.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/presentation/graphql/schema/mutations/attribute-mutations.graphql ...
+I found an existing table-scoped factory with `refreshServerForTable`, but no schema-change caller. I’m going to add a narrow cache invalidation boundary there, then call it from attribute schema mutations and REST attribute endpoints; table delete will remove only the affected table cache.
+[94m[shell][0m $ /bin/zsh -lc "rg \"TableMcpServerFactory\" tests src --glob '*test.ts'"
+I’ve added the invalidation hooks. Next I’m adding focused tests: one checks the factory refresh boundary only touches cached table servers, and one exercises a cached table MCP schema through a real GraphQL attribute-create mutation.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,300p' src/presentation/graphql/mutations/AttributeMutations.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/presentation/mcp/factory/TableMcpServerFactory.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/integration/mcp-table-projection-tools-list.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '250,460p' src/presentation/mcp/factory/TableMcpServerFactory.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg \"findByAttributeTypeId|async update\\(|async delete\\(\" -n src/infrastructure/dat...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '335,430p' src/infrastructure/database/sqlite/SqliteAttributeRepository.ts"
+The new integration test now mutates through GraphQL after the MCP server has already cached the table tools, then asks `tools/list` again and checks the projected schema changed. I’m running the focused tests and typecheck next to catch wiring or typing issues.
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-sch...
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/integration/mcp-table-projection-tools-list.test.ts'
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/mcp-table-server-factory-cache.test.ts'
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+Focused tests and typecheck are passing. I’m formatting the touched files now, then I’ll rerun the focused checks plus lint.
+[94m[shell][0m $ /bin/zsh -lc 'bunx biome format --write src/presentation/mcp/factory/TableMcpServerFactory.ts src/pr...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,140p' src/presentation/graphql/mutations/AttributeMutations.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '300,420p' src/presentation/mcp/factory/TableMcpServerFactory.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/unit/mcp-table-server-factory-cache.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/integration/mcp-table-projection-tools-list.test.ts"
+[94m[shell][0m $ /bin/zsh -lc 'git diff --stat'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' biome.jsonc"
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/mcp-table-server-factory-cache.test.ts tests/integration/mcp-table...
+[94m[shell][0m $ /bin/zsh -lc 'bun run lint --max-diagnostics=20'
+[94m[shell][0m $ /bin/zsh -lc 'git diff --stat'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+Lint only surfaced the two pre-existing `TableSchemaProjection.ts` warnings plus one warning in my new factory test; I fixed the new one. I’m rerunning typecheck, lint, and the focused tests now.
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/mcp-table-server-factory-cache.test.ts tests/integration/mcp-table...
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+[94m[shell][0m $ /bin/zsh -lc 'bun run lint --max-diagnostics=20'
+[94m[shell][0m $ /bin/zsh -lc 'git diff --check'
+[94m[shell][0m $ /bin/zsh -lc 'git diff --ignore-space-change -- src/presentation/mcp/factory/TableMcpServerFactory.t...
+[94m[shell][0m $ /bin/zsh -lc 'bunx biome format --help'
+The main checks are green, with only the two known projection lint warnings left. The previous formatter pass was too noisy for the existing code style, so I’m reformatting the touched files with the repo’s prevailing quote/indent style to keep the diff focused.
+[94m[shell][0m $ /bin/zsh -lc 'bunx biome format --write --javascript-formatter-indent-style=space --javascript-forma...
+[94m[shell][0m $ /bin/zsh -lc 'git diff --stat'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,140p' src/presentation/graphql/mutations/AttributeMutations.ts && sed -n '1,...
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/mcp-table-server-factory-cache.test.ts tests/integration/mcp-table...
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+[94m[shell][0m $ /bin/zsh -lc 'bun run lint --max-diagnostics=20'
+The implementation and focused checks are complete. I’m updating `.ralph-tui/progress.md` with the US-005 summary and the reusable table-scoped cache invalidation pattern before the final status.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'git diff --stat -- .ralph-tui/progress.md src/presentation/graphql/mutations/Attribute...
+[94m[shell][0m $ /bin/zsh -lc 'bunx biome format --write --javascript-formatter-indent-style=space --javascript-forma...
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/mcp-table-server-factory-cache.test.ts tests/integration/mcp-table...
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+[94m[shell][0m $ /bin/zsh -lc 'bun run lint --max-diagnostics=20'
+[94m[shell][0m $ /bin/zsh -lc 'git diff --name-only -- .ralph-tui/progress.md src/presentation/graphql/mutations/Attr...
+Implemented US-005 and updated `.ralph-tui/progress.md`.
+
+What changed:
+- Added table-scoped schema cache invalidation in [TableMcpServerFactory.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/src/presentation/mcp/factory/TableMcpServerFactory.ts).
+- Wired attribute create/update/delete invalidation through GraphQL and REST in [AttributeMutations.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/src/presentation/graphql/mutations/AttributeMutations.ts) and [AttributeApiController.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/src/presentation/http/controllers/AttributeApiController.ts).
+- Wired AttributeType update/delete to refresh all affected table caches.
+- Removed table-scoped MCP cache entries on table delete in [TableMutations.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/src/presentation/graphql/mutations/TableMutations.ts).
+- Added focused cache behavior and MCP schema refresh tests in [mcp-table-server-factory-cache.test.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/tests/unit/mcp-table-server-factory-cache.test.ts) and [mcp-table-projection-tools-list.test.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/tests/integration/mcp-table-projection-tools-list.test.ts).
+
+Verification:
+- `bun test tests/unit/mcp-table-server-factory-cache.test.ts tests/integration/mcp-table-projection-tools-list.test.ts tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-schema-projection-service.test.ts`: pass
+- `bun run typecheck`: pass
+- `bun run lint --max-diagnostics=20`: pass with the same 2 pre-existing warnings in `src/core/schema/TableSchemaProjection.ts`
+
+I did not create any commits. Existing unrelated ralph/session task files were left untouched.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+2026-04-15T18:43:00.672355Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", resource_metadata=\"https://mcp.cloudflare.com/.well-known/oauth-protected-resource/mcp\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })

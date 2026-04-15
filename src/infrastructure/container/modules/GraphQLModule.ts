@@ -478,6 +478,9 @@ export function registerGraphQLModule(container: DIContainer): void {
         RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       )) as IAttributeTypeRepository
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
+      const queryTemplateRepository = (await c.resolve(
+        RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
+      )) as IQueryTemplateRepository
       const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK)
       const simpleLogger = createConsoleLogger()
       return new AttributeMutations(
@@ -487,6 +490,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         attributeRepository,
         simpleLogger,
         tabularSyncHook,
+        queryTemplateRepository,
       )
     },
     [
@@ -494,6 +498,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE,
       RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
       CommonTokens.TABULAR_SYNC_HOOK,
     ],
   )

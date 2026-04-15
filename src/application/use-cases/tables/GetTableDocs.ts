@@ -4,6 +4,7 @@ import { queryTemplateToDto } from '@/application/dtos/QueryTemplateDto.js'
 import type { DocDto, GetTableDocsInput, GetTableDocsOutput, TableDocsDto } from '@/application/dtos/TableDocsDto.js'
 import * as TableDto from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { projectTableSchema } from '@/core/schema/TableSchemaProjection.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
@@ -22,6 +23,23 @@ interface AttributeDtoWithTypeInfo {
   attributeType?: {
     dataType?: string
   }
+}
+
+interface AttributeTypeForFreshness {
+  getId(): string
+  getIdentifier(): string
+  getJsonType(): string
+  getFormat?: () => string | null
+  getDescription?: () => string | null
+  getParsedValidationSchema?: () => unknown
+  getParsedReferenceConfig?: () => unknown
+  getParsedDefaultValue?: () => unknown
+  getParsedExamples?: () => unknown
+  getValidationSchema?: () => unknown
+  getReferenceConfig?: () => unknown
+  getDefaultValue?: () => unknown
+  getExamples?: () => unknown
+  getUpdatedAt?: () => Date | string
 }
 
 interface TableDocsCollection {
@@ -98,6 +116,59 @@ export class GetTableDocsUseCase {
     }
   }
 
+  private createSchemaFreshnessMarker(
+    table: { id: string; identifier: string; description?: string | null; updatedAt?: Date | string },
+    attributes: Array<{
+      getId(): string
+      getTableId(): string
+      getIdentifier(): string
+      getName(): string | null
+      getDescription(): string | null
+      getAttributeTypeId(): string
+      getIsRequired(): boolean
+      getParsedMetadata(): unknown
+      getUpdatedAt(): Date | string
+    }>,
+    attributeTypes: AttributeTypeForFreshness[],
+  ): string {
+    const uniqueAttributeTypes = Array.from(
+      new Map(attributeTypes.map((attributeType) => [attributeType.getId(), attributeType])).values(),
+    )
+    const projection = projectTableSchema({
+      table: {
+        id: table.id,
+        identifier: table.identifier,
+        description: table.description,
+        updatedAt: table.updatedAt,
+      },
+      attributes: attributes.map((attribute) => ({
+        id: attribute.getId(),
+        tableId: attribute.getTableId(),
+        identifier: attribute.getIdentifier(),
+        name: attribute.getName(),
+        description: attribute.getDescription(),
+        attributeTypeId: attribute.getAttributeTypeId(),
+        isRequired: attribute.getIsRequired(),
+        metadata: attribute.getParsedMetadata(),
+        updatedAt: attribute.getUpdatedAt(),
+      })),
+      attributeTypes: uniqueAttributeTypes.map((attributeType) => ({
+        id: attributeType.getId(),
+        identifier: attributeType.getIdentifier(),
+        jsonType: attributeType.getJsonType(),
+        format: attributeType.getFormat?.() ?? null,
+        description: attributeType.getDescription?.() ?? null,
+        validationSchema: attributeType.getParsedValidationSchema?.() ?? attributeType.getValidationSchema?.(),
+        referenceConfig: attributeType.getParsedReferenceConfig?.() ?? attributeType.getReferenceConfig?.(),
+        defaultValue: attributeType.getParsedDefaultValue?.() ?? attributeType.getDefaultValue?.(),
+        examples: attributeType.getParsedExamples?.() ?? attributeType.getExamples?.(),
+        updatedAt: attributeType.getUpdatedAt?.(),
+      })),
+    })
+
+    return projection.versionHash
+  }
+
   async execute(input: GetTableDocsInput): Promise<GetTableDocsOutput> {
     this.logger.info('GetTableDocs use case started', { input })
 
@@ -122,6 +193,7 @@ export class GetTableDocsUseCase {
       const attributeDtos = AttributeDto.fromEntities(attributesResult.data || [])
       const attributeDtoById = new Map(attributeDtos.map((attributeDto) => [attributeDto.id, attributeDto]))
       const attributeEntities = attributesResult.data || []
+      const attributeTypesForFreshness: AttributeTypeForFreshness[] = []
       const aiMetadataAttributes = await Promise.all(
         attributeEntities.map(async (attribute) => {
           const attributeDto = attributeDtoById.get(attribute.getId())
@@ -130,6 +202,10 @@ export class GetTableDocsUseCase {
             (this.attributeTypeRepository.findByIdentifier
               ? await this.attributeTypeRepository.findByIdentifier(attribute.getAttributeTypeId())
               : null)
+
+          if (attributeType) {
+            attributeTypesForFreshness.push(attributeType as AttributeTypeForFreshness)
+          }
 
           const metadata = (attribute.getParsedMetadata() || {}) as AttributeMetadata
           const explicitSearchable = metadata.searchable
@@ -147,6 +223,11 @@ export class GetTableDocsUseCase {
             },
           }
         }),
+      )
+      const projectionVersionHash = this.createSchemaFreshnessMarker(
+        table,
+        attributeEntities,
+        attributeTypesForFreshness,
       )
 
       // Get docs if requested
@@ -257,7 +338,7 @@ export class GetTableDocsUseCase {
       // Generate AI metadata if requested
       let aiMetadata: TableDocsDto['aiMetadata']
       if (input.includeAiMetadata) {
-        aiMetadata = await this.aiMetadataAdapter.generateAiMetadata(
+        const generatedAiMetadata = await this.aiMetadataAdapter.generateAiMetadata(
           table,
           aiMetadataAttributes,
           relatedTemplates?.map((template) => ({
@@ -268,6 +349,13 @@ export class GetTableDocsUseCase {
           sampleData,
           input.sampleLimit || 5,
         )
+        aiMetadata = {
+          ...generatedAiMetadata,
+          schemaInfo: {
+            ...generatedAiMetadata.schemaInfo,
+            projectionVersionHash,
+          },
+        }
       }
 
       // Build final table documentation structure
@@ -276,6 +364,7 @@ export class GetTableDocsUseCase {
         schema: {
           attributes: attributeDtos,
           attributeCount: attributeDtos.length,
+          projectionVersionHash,
         },
         docs,
         relatedTemplates,

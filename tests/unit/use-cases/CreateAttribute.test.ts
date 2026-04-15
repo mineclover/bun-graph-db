@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { CreateAttributeInput } from '@/application/dtos/AttributeDto.js'
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
+import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
@@ -330,6 +331,55 @@ describe('CreateAttributeUseCase', () => {
       expect(result.attribute).toBeDefined()
       expect(result.attribute.identifier).toBe('meta_attr')
       expect(mockAttributeRepository.save).toHaveBeenCalled()
+    })
+
+    it('should mark generated table templates stale after attribute creation', async () => {
+      const input: CreateAttributeInput = {
+        tableId: 'table-1',
+        identifier: 'schema_attr',
+        name: 'Schema Attribute',
+        attributeTypeId: 'attr-type-1',
+      }
+
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
+      const attributeType = createTestAttributeType('attr-type-1', 'string', 'string')
+      const createdAttribute = createTestAttribute(
+        'attr-1',
+        'table-1',
+        'schema_attr',
+        'Schema Attribute',
+        'attr-type-1',
+      )
+
+      mockTableRepository.findById = mock(async () => table)
+      mockAttributeTypeRepository.findById = mock(async () => attributeType)
+      mockAttributeRepository.findByTableIdAndIdentifier = mock()
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(createdAttribute)
+      const staleTemplate = {
+        getId: () => 'template-1',
+        getTags: () => ['table:table-1', 'auto-generated', 'create'],
+      } as unknown as QueryTemplate
+      mockQueryTemplateRepository.search = mock(async () => ({
+        items: [staleTemplate],
+        total: 1,
+        hasNextPage: false,
+        hasPreviousPage: false,
+      }))
+      mockQueryTemplateRepository.update = mock(async (_id, _updates) => ({
+        getTags: () => _updates.tags ?? [],
+      }) as unknown as QueryTemplate)
+
+      await useCase.execute(input)
+
+      expect(mockQueryTemplateRepository.update).toHaveBeenCalledWith(
+        'template-1',
+        expect.objectContaining({
+          tags: expect.arrayContaining(['schema-stale']),
+        }),
+      )
+      const [, updates] = mockQueryTemplateRepository.update.mock.calls[0]
+      expect(updates.tags?.some((tag) => tag.startsWith('schema-stale-at:'))).toBe(true)
     })
   })
 

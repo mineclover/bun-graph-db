@@ -129,6 +129,7 @@ type TableDocumentation {
 type TableSchema {
   attributes: [Attribute!]!
   attributeCount: Int!
+  projectionVersionHash: String
 }
 
 type AttributeDocumentation {
@@ -196,6 +197,7 @@ type AISchemaInfo {
   requiredFields: [String!]!
   searchableFields: [String!]!
   relationshipCapabilities: [String!]!
+  projectionVersionHash: String
 }
 
 type AIUsagePatterns {

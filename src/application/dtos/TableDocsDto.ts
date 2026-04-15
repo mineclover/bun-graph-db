@@ -16,6 +16,7 @@ export interface TableDocsDto {
   schema: {
     attributes: AttributeDto[]
     attributeCount: number
+    projectionVersionHash?: string
   }
   docs?: {
     usage?: DocDto
@@ -34,6 +35,7 @@ export interface TableDocsDto {
       requiredFields: string[] // 필수 속성들
       searchableFields: string[] // 검색 가능한 속성들
       relationshipCapabilities: string[] // 가능한 관계 타입들
+      projectionVersionHash?: string
     }
     usagePatterns: {
       commonQueries: { pattern: string; description: string; example: string }[]

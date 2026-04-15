@@ -3,10 +3,10 @@
   "sessionId": "fd10ed77-50db-49a2-9378-ae54015d31bb",
   "status": "running",
   "startedAt": "2026-04-15T18:27:52.039Z",
-  "updatedAt": "2026-04-15T18:53:57.791Z",
-  "currentIteration": 1,
+  "updatedAt": "2026-04-15T19:04:32.871Z",
+  "currentIteration": 2,
   "maxIterations": 0,
-  "tasksCompleted": 1,
+  "tasksCompleted": 2,
   "isPaused": false,
   "agentPlugin": "codex",
   "trackerState": {
@@ -24,6 +24,16 @@
       "durationMs": 902453,
       "startedAt": "2026-04-15T18:27:56.770Z",
       "endedAt": "2026-04-15T18:42:59.223Z"
+    },
+    {
+      "iteration": 2,
+      "status": "completed",
+      "taskId": "US-005",
+      "taskTitle": "Invalidate table-scoped MCP schema cache on schema changes",
+      "taskCompleted": true,
+      "durationMs": 657384,
+      "startedAt": "2026-04-15T18:43:00.403Z",
+      "endedAt": "2026-04-15T18:53:57.787Z"
     }
   ],
   "skippedTaskIds": [],
