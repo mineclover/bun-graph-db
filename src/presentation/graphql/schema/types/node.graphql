@@ -141,10 +141,14 @@ input CreatePersonNodeInput {
 
 input UpdateNodeInput {
   nodeId: ID
+  tableId: ID
+  tableIdentifier: String
   content: String
   title: String
   description: String
   metadata: JSON
+  attributes: JSON
+  attributesByIdentifier: [AttributeByIdentifierInput!]
 }
 
 input NodeAttributeInput {

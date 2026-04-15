@@ -1,0 +1,134 @@
+# Iteration 3 Log
+
+## Metadata
+
+- **Task ID**: US-003
+- **Task Title**: Validate createNode attributes with table projection
+- **Description**: As a data user, I want createNode attribute payloads validated against the current table projection so that invalid dynamic table data is rejected consistently.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-15T10:50:33.038Z
+- **Ended At**: 2026-04-15T11:01:54.282Z
+- **Duration**: 11m 21s
+- **Input Tokens**: 9383731
+- **Output Tokens**: 26754
+- **Total Tokens**: 9410485
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll first read the local instructions and progress notes, then trace the createNode path across GraphQL, REST, and MCP before editing. After that I’ll add the projection-based validation and run the focused checks.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'rg --files'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc 'find .. -name AGENTS.md -print'
+The progress notes confirm US-002 added projection wiring for table-scoped MCP, but create/update execution still maps projected objects into the older `attributesByIdentifier` mutation shape. I’m now tracing where all createNode callers converge so the validation lands once in the shared use case.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/unit/use-cases/CreateNode.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/application/use-cases/nodes/CreateNode.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/core/schema/TableSchemaProjection.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/application/services/TableSchemaProjectionService.ts"
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"createNode|CreateNode|attributesByIdentifier|create_node\" src tests samples -...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '180,420p' src/core/schema/TableSchemaProjection.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '220,430p' tests/unit/use-cases/CreateNode.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,120p' src/application/dtos/NodeDto.ts && sed -n '1,220p' src/domain/entities...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '200,260p' src/infrastructure/container/modules/UseCaseModule.ts && sed -n '1,1...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '150,370p' src/presentation/graphql/mutations/NodeMutations.ts && sed -n '840,9...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '300,520p' src/core/schema/TableSchemaProjection.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' src/shared/exceptions/DomainException.ts && sed -n '1,180p' src/shared...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,140p' src/core/types/GraphQLTypes.ts && sed -n '340,370p' src/core/types/Gra...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/unit/schema/table-schema-projection.test.ts && sed -n '1,260p' t...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/unit/use-cases/test-helpers.ts"
+The shared path is `CreateNodeUseCase.execute`: GraphQL `createNode`, REST `POST /api/nodes`, and table MCP’s projected create tool all end up there either directly or via `createNodeWithAttributes` once I route that mutation through the use case. There is already a projection validator in `TableSchemaProjection.ts`, so the implementation should wire that into the use case instead of introducing a second validator.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/infrastructure/container/modules/UseCaseModule.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,120p' src/infrastructure/container/tokens/UseCaseTokens.ts && sed -n '1,140p...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,120p' index.ts && rg -n \"new TableSchemaProjectionService|TableSchemaProjec...
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"TableSchemaProjectionService|projectionService|PROJECT|SCHEMA\" src/infrastruc...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,120p' src/presentation/graphql/mutations/NodeMutations.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' src/presentation/http/utils/errorHelpers.ts && sed -n '1,220p' src/pre...
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"exceptionToErrorResponse|formatGraphQLError|context|VALIDATION_ERROR|toErrorMe...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '500,570p' src/presentation/graphql/schema/types/node.graphql && sed -n '1,80p'...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '2170,2205p' src/presentation/mcp/factory/TableMcpServer.ts && rg -n \"toAttrib...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '460,500p' src/presentation/http/controllers/GraphDbApiController.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '2290,2315p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1038,1140p' src/presentation/graphql/mutations/NodeMutations.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '260,330p' src/presentation/mcp/schema/SchemaMapper.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '2315,2335p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' tests/integration/mcp-table-projection-tools-list.test.ts"
+I’m going to make the shared use case accept a narrow projection provider, validate `attributes` against `validateProjectedNodeInput` before saving the node, and change `createNodeWithAttributes` so the MCP create tool no longer bypasses that path. I’ll also preserve transport compatibility by coercing stringified MCP/GraphQL attribute values back to projected JSON types before validation.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,115p' src/presentation/graphql/mutations/NodeMutations.ts && sed -n '220,370...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,180p' src/domain/entities/NodeAttribute.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '260,340p' tests/unit/use-cases/CreateNode.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '340,430p' tests/unit/use-cases/CreateNode.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/application/use-cases/nodes/CreateNode.ts && sed -n '1,115p' src/p...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '320,360p' src/presentation/graphql/mutations/NodeMutations.ts && sed -n '945,9...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '360,390p' src/presentation/graphql/mutations/NodeMutations.ts && sed -n '990,1...
+The shared path is wired now. I’m running the focused use-case and projection tests first so I can catch type and behavior mistakes before broad checks.
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/use-cases/CreateNode.test.ts'
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-sch...
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"tools/call|callTool|method === 'tools/call'|executeTool\" src/presentation/mcp...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '2080,2145p' src/presentation/mcp/factory/TableMcpServer.ts && sed -n '310,380p...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1360,1415p' src/presentation/mcp/factory/TableMcpServer.ts && sed -n '1415,148...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '2195,2275p' src/presentation/mcp/factory/TableMcpServer.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '2275,2305p' src/presentation/mcp/factory/TableMcpServer.ts"
+The focused tests are green. I also adjusted MCP execution so a GraphQL mutation payload with `success: false` becomes an MCP tool error instead of a superficially successful tool call. Next I’m running typecheck to catch any signature or strict typing issues from the new projection provider wiring.
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/integration/mcp-table-projection-tools-list.test.ts'
+Typecheck passed, and the existing table MCP projection tools-list integration test still passes. I’m going to run the node GraphQL mutation smoke next, then lint; that gives coverage for the GraphQL create path after routing `createNodeWithAttributes` through the use case.
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/node-mutations-isolated.test.ts'
+[94m[shell][0m $ /bin/zsh -lc 'bun run lint --max-diagnostics=20'
+
+[91m[Error: 151 |       nextPort = candidate + 1 > TEST_PORT_END ? TEST_PORT_START : candidate + 1
+152 |       return candidate
+153 |     }
+154 |   }
+155 | 
+156 |   throw new Error('Test port range exhausted (5500-5999). Too many concurrent test servers.')
+                  ^
+error: Test port range exhausted (5500-5999). Too many concurrent test servers.
+      at allocatePort (/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/tests/fixtures/test-graphql-server.ts:156:13)
+      at async startServerFo][0m
+The socket-based `tests/node-mutations-isolated.test.ts` hit the known sandbox port-allocation issue (`Test port range exhausted (5500-5999)`), so I’m treating that as environmental rather than a code failure. Lint exited 0 with the two pre-existing projection warnings already recorded in prior progress; I’m rerunning typecheck after the final MCP payload handling change.
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-sch...
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/use-cases/CreateNode.test.ts'
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/integration/mcp-table-projection-tools-list.test.ts'
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- src/application/use-cases/nodes/CreateNode.ts src/infrastructure/container...
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+The implementation diff is limited to the shared create path, presentation error formatting, MCP mutation result handling, DI wiring, and focused use-case tests. I’m updating the Ralph progress log now with the reusable patterns and verification results, including the socket-bound test limitation.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'git diff --check'
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,120p' src/shared/utils/sanitizeText.ts"
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/rest-api-controllers.test.ts'
+[94m[shell][0m $ /bin/zsh -lc 'git diff --check && git status --short'
+Implemented US-003.
+
+Projection-based createNode validation now lives in the shared use case at [CreateNode.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/src/application/use-cases/nodes/CreateNode.ts). The DI composition root wires a narrow `project({ tableId })` provider in [UseCaseModule.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/src/infrastructure/container/modules/UseCaseModule.ts), and GraphQL `createNodeWithAttributes` now routes through the same use case in [NodeMutations.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/src/presentation/graphql/mutations/NodeMutations.ts). REST and GraphQL error responses now fan out structured projection validation errors, and MCP tool execution now treats failed GraphQL mutation payloads as tool errors.
+
+Focused validation coverage was added in [CreateNode.test.ts](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/tests/unit/use-cases/CreateNode.test.ts) for valid input, missing required attributes, unknown attributes, enum violations, and numeric constraint violations. I also updated [progress.md](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/.ralph-tui/progress.md) with the US-003 entry and new reusable patterns.
+
+Verification:
+- `bun test tests/unit/use-cases/CreateNode.test.ts`: pass
+- `bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-schema-projection-service.test.ts`: pass
+- `bun test tests/unit/rest-api-controllers.test.ts`: pass
+- `bun test tests/integration/mcp-table-projection-tools-list.test.ts`: pass
+- `bun run typecheck`: pass
+- `bun run lint --max-diagnostics=20`: pass, with the same two pre-existing warnings in `src/core/schema/TableSchemaProjection.ts`
+- `bun test tests/node-mutations-isolated.test.ts`: blocked by the known socket-based sandbox issue, `Test port range exhausted (5500-5999)`
+
+I did not create any commits. Pre-existing unrelated dirty files like `.omx/state/skill-active-state.json`, `.ralph-tui/session.json`, `tasks/prd.json`, and the US-002 iteration log were left alone.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+2026-04-15T10:50:33.751464Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", resource_metadata=\"https://mcp.cloudflare.com/.well-known/oauth-protected-resource/mcp\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
+2026-04-15T10:50:33.921089Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer error=\"invalid_request\", error_description=\"No access token was provided in this request\", resource_metadata=\"https://mcp.supabase.com/.well-known/oauth-protected-resource/mcp\"" })
+2026-04-15T10:50:33.992949Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer resource_metadata=https://mcp.stripe.com/.well-known/oauth-protected-resource" })
+2026-04-15T10:54:28.298831Z ERROR codex_core::tools::router: error=apply_patch verification failed: Failed to find expected lines in /Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/src/presentation/graphql/mutations/NodeMutations.ts:
+interface BatchAttributeUpdateResult {
+  nodeId: string
+  attributeId: string
+  value: string | null
+  errors: BatchMutationError[]
+}

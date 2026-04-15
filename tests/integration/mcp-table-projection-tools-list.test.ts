@@ -117,7 +117,10 @@ describe('Table MCP tools/list projection schemas', () => {
       tableIdentifier: 'projection_tasks',
       diagnostics: [],
     }))
-    expect(updateNodeTool?.inputSchema.properties.attributes).toEqual(attributesSchema)
+    expect(updateNodeTool?.inputSchema.properties.attributes).toEqual({
+      ...attributesSchema,
+      required: [],
+    })
   })
 })
 

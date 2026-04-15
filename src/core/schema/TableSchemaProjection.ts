@@ -343,6 +343,90 @@ export function validateProjectedNodeInput(
   return errors.length === 0 ? { valid: true, errors: [] } : { valid: false, errors }
 }
 
+export function validateProjectedNodeUpdateInput(
+  data: unknown,
+  projection: TableSchemaProjection,
+): ProjectionValidationResult {
+  const errors: ProjectionValidationError[] = []
+
+  if (!isRecord(data)) {
+    return {
+      valid: false,
+      errors: [{
+        path: '#',
+        code: 'type',
+        message: 'Node update input must be an object',
+        expected: 'object',
+        received: typeof data,
+      }],
+    }
+  }
+
+  if (data.tableId !== undefined && data.tableId !== projection.tableId) {
+    errors.push({
+      path: '#/tableId',
+      code: 'const',
+      message: `tableId must be '${projection.tableId}'`,
+      expected: projection.tableId,
+      received: data.tableId,
+    })
+  }
+
+  if (data.tableIdentifier !== undefined && data.tableIdentifier !== projection.tableIdentifier) {
+    errors.push({
+      path: '#/tableIdentifier',
+      code: 'const',
+      message: `tableIdentifier must be '${projection.tableIdentifier}'`,
+      expected: projection.tableIdentifier,
+      received: data.tableIdentifier,
+    })
+  }
+
+  if (data.content !== undefined && typeof data.content !== 'string') {
+    errors.push({
+      path: '#/content',
+      code: 'type',
+      message: 'content must be a string',
+      expected: 'string',
+      received: typeof data.content,
+    })
+  }
+
+  if (data.attributes === undefined) {
+    return errors.length === 0 ? { valid: true, errors: [] } : { valid: false, errors }
+  }
+
+  if (!isRecord(data.attributes)) {
+    errors.push({
+      path: '#/attributes',
+      code: 'type',
+      message: 'attributes must be an object',
+      expected: 'object',
+      received: typeof data.attributes,
+    })
+    return { valid: false, errors }
+  }
+
+  for (const [name, value] of Object.entries(data.attributes)) {
+    const schema = projection.attributeValueSchemas[name]
+    const source = projection.sources[`${refToDef(projection.names.nodeAttributes)}/properties/${escapePointer(name)}`]
+
+    if (!schema) {
+      errors.push({
+        path: `#/attributes/${escapePointer(name)}`,
+        code: 'additional-property',
+        message: `Attribute '${name}' is not defined for table '${projection.tableIdentifier}'`,
+        source,
+      })
+      continue
+    }
+
+    errors.push(...validateValue(value, schema, `#/attributes/${escapePointer(name)}`, source))
+  }
+
+  return errors.length === 0 ? { valid: true, errors: [] } : { valid: false, errors }
+}
+
 function attributeTypeToSchema(
   attributeType: TableProjectionAttributeType,
   source: ProjectionSource,

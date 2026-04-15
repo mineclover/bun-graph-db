@@ -41,6 +41,9 @@ export interface CreateNodeInput {
 }
 
 export interface UpdateNodeInput {
+  nodeId?: string
+  tableId?: string
+  tableIdentifier?: string
   title?: string | null
   content?: string
   description?: string | null

@@ -2,6 +2,7 @@ import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
+import type { UpdateNodeUseCase } from '@/application/use-cases/nodes/UpdateNode.js'
 import type { ExecuteTemplateWithGraphQLUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithGraphQL.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
@@ -17,6 +18,7 @@ export class GraphDbApiController {
     protected readonly logger: ILogger,
     private readonly createTableUseCase?: CreateTableUseCase,
     private readonly createNodeUseCase?: CreateNodeUseCase,
+    private readonly updateNodeUseCase?: UpdateNodeUseCase,
     private readonly searchNodesUseCase?: SearchNodesUseCase,
     private readonly createRelationUseCase?: CreateRelationUseCase,
     private readonly tableRepository?: ITableRepository,
@@ -169,6 +171,44 @@ export class GraphDbApiController {
       sendSuccess(res, result.node)
     } catch (error) {
       sendHandleError(res, this.logger, error, 'Create node')
+    }
+  }
+
+  async updateNode(req: Request, res: Response): Promise<void> {
+    try {
+      const nodeId = req.params.nodeId || req.body.nodeId || req.body.id
+      const { tableId, tableIdentifier, content, title, description, metadata, attributes } = req.body
+
+      if (!nodeId) {
+        sendValidationError(res, 'nodeId is required')
+        return
+      }
+
+      if (!this.updateNodeUseCase) {
+        sendSuccess(res, {
+          id: nodeId,
+          tableId: tableId || null,
+          content: content || null,
+          title: title || null,
+          description: description || null,
+          metadata: metadata || null,
+        })
+        return
+      }
+
+      const result = await this.updateNodeUseCase.execute(nodeId, {
+        tableId,
+        tableIdentifier,
+        content,
+        title,
+        description,
+        metadata,
+        attributes: this.normalizeAttributes(attributes),
+      })
+
+      sendSuccess(res, result.node)
+    } catch (error) {
+      sendHandleError(res, this.logger, error, 'Update node')
     }
   }
 

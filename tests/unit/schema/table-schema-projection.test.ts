@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import {
   projectTableSchema,
   validateProjectedNodeInput,
+  validateProjectedNodeUpdateInput,
   type TableProjectionInput,
 } from '../../../src/core/schema/TableSchemaProjection'
 
@@ -159,6 +160,38 @@ describe('TableSchemaProjection', () => {
         owner_email: 'dev@example.com',
       },
     }, second)).toEqual({ valid: true, errors: [] })
+  })
+
+  it('validates partial node update input without requiring all required attributes', () => {
+    const projection = projectTableSchema(sampleInput())
+
+    expect(validateProjectedNodeUpdateInput({
+      tableId: 'table_tasks',
+      attributes: {
+        priority: 3,
+      },
+    }, projection)).toEqual({ valid: true, errors: [] })
+
+    const invalid = validateProjectedNodeUpdateInput({
+      tableId: 'table_tasks',
+      attributes: {
+        status: 'blocked',
+        priority: 9,
+        extra: true,
+      },
+    }, projection)
+
+    expect(invalid.valid).toBe(false)
+    if (!invalid.valid) {
+      expect(invalid.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ path: '#/attributes/status', code: 'enum' }),
+        expect.objectContaining({ path: '#/attributes/priority', code: 'maximum' }),
+        expect.objectContaining({ path: '#/attributes/extra', code: 'additional-property' }),
+      ]))
+      expect(invalid.errors).not.toEqual(expect.arrayContaining([
+        expect.objectContaining({ path: '#/attributes/owner_email', code: 'required' }),
+      ]))
+    }
   })
 
   it('reports diagnostics for missing attribute type and invalid validation schema', () => {

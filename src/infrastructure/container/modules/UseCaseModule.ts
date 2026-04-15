@@ -12,6 +12,7 @@ import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImport
 import { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
+import { UpdateNodeUseCase } from '@/application/use-cases/nodes/UpdateNode.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
 import { ExecuteTemplateWithGraphQLUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithGraphQL.js'
 import { ExecuteTemplateWithSubscriptionUseCase } from '@/application/use-cases/query-templates/ExecuteTemplateWithSubscriptionUseCase.js'
@@ -287,6 +288,53 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.NODE_SEARCH_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
+    ],
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.UPDATE_NODE_USE_CASE,
+    async (c) => {
+      const nodeRepository = await resolveAs<ConstructorParameters<typeof UpdateNodeUseCase>[0]>(
+        c,
+        RepositoryTokens.NODE_REPOSITORY,
+      )
+      const nodeAttributeRepository = await resolveAs<ConstructorParameters<typeof UpdateNodeUseCase>[1]>(
+        c,
+        RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      )
+      const tableRepository = await resolveAs<ConstructorParameters<typeof UpdateNodeUseCase>[2]>(
+        c,
+        RepositoryTokens.TABLE_REPOSITORY,
+      )
+      const attributeRepository = await resolveAs<ConstructorParameters<typeof UpdateNodeUseCase>[3]>(
+        c,
+        RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      )
+      const attributeTypeRepository = await resolveAs<ConstructorParameters<typeof TableSchemaProjectionService>[2]>(
+        c,
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      )
+      const projectionService = new TableSchemaProjectionService(
+        tableRepository,
+        attributeRepository,
+        attributeTypeRepository,
+        simpleLogger,
+      )
+      return new UpdateNodeUseCase(
+        nodeRepository,
+        nodeAttributeRepository,
+        tableRepository,
+        attributeRepository,
+        simpleLogger,
+        projectionService,
+      )
+    },
+    [
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
     ],
   )
 

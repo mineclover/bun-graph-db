@@ -6,6 +6,7 @@ import type { ILogger } from './src/application/ports/ILogger'
 import type { CreateAttributeUseCase } from './src/application/use-cases/attributes/CreateAttribute'
 import type { CreateNodeUseCase } from './src/application/use-cases/nodes/CreateNode'
 import type { SearchNodesUseCase } from './src/application/use-cases/nodes/SearchNodes'
+import type { UpdateNodeUseCase } from './src/application/use-cases/nodes/UpdateNode'
 import type { ExecuteTemplateWithGraphQLUseCase } from './src/application/use-cases/query-templates/ExecuteTemplateWithGraphQL'
 import type { CreateRelationUseCase } from './src/application/use-cases/relations/CreateRelation'
 import type { SearchRelatedNodesUseCase } from './src/application/use-cases/relations/SearchRelatedNodes'
@@ -233,6 +234,7 @@ const [
   createTableUseCase,
   createAttributeUseCase,
   createNodeUseCase,
+  updateNodeUseCase,
   createRelationUseCase,
   executeTemplateWithGraphQLUseCase,
   attributeRepository,
@@ -249,6 +251,7 @@ const [
   container.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE),
   container.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE),
   container.resolve(UseCaseTokens.CREATE_NODE_USE_CASE),
+  container.resolve(UseCaseTokens.UPDATE_NODE_USE_CASE),
   container.resolve(UseCaseTokens.CREATE_RELATION_USE_CASE),
   container.resolve(UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE),
   container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY),
@@ -268,6 +271,7 @@ const graphDbController = new GraphDbApiController(
   logger,
   createTableUseCase as CreateTableUseCase | undefined,
   createNodeUseCase as CreateNodeUseCase | undefined,
+  updateNodeUseCase as UpdateNodeUseCase | undefined,
   searchNodesUseCase as SearchNodesUseCase | undefined,
   createRelationUseCase as CreateRelationUseCase | undefined,
   tableRepository as ITableRepository | undefined,
@@ -332,7 +336,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
   try {
     // Parse request body for POST/PUT requests
     let body: unknown = {}
-    if (method === 'POST' || method === 'PUT') {
+    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
       try {
         body = await request.json()
       } catch {
@@ -395,6 +399,10 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       await graphController.getTableDocs(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/nodes') {
       await graphDbController.createNode(expressReq, expressRes)
+    } else if ((method === 'PUT' || method === 'PATCH') && pathname.startsWith('/api/nodes/')) {
+      const nodeId = pathname.split('/')[3] || ''
+      req.params.nodeId = nodeId
+      await graphDbController.updateNode(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/nodes/search') {
       await graphDbController.searchNodes(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/relations') {

@@ -2,6 +2,7 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import type { NodeDto } from '@/application/dtos/NodeDto.js'
 import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { UpdateNodeUseCase } from '@/application/use-cases/nodes/UpdateNode.js'
 import type {
   CreateNodeArgs,
   DeleteNodeArgs,
@@ -103,6 +104,7 @@ export class NodeMutations extends BaseResolver {
 
   constructor(
     private readonly createNodeUseCase: CreateNodeUseCase | null,
+    private readonly updateNodeUseCase: UpdateNodeUseCase | null,
     private readonly nodeRepository: INodeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly tableRepository: ITableRepository,
@@ -270,6 +272,56 @@ export class NodeMutations extends BaseResolver {
     }]
   }
 
+  private async normalizeUpdateAttributes(
+    input: UpdateNodeArgs['input'],
+  ): Promise<Record<string, unknown> | undefined> {
+    if (Array.isArray(input.attributesByIdentifier)) {
+      return Object.fromEntries(
+        input.attributesByIdentifier.map((attribute) => [attribute.identifier, attribute.value]),
+      )
+    }
+
+    if (input.attributes === undefined) {
+      return undefined
+    }
+
+    if (Array.isArray(input.attributes)) {
+      return Object.fromEntries(
+        (
+          await Promise.all(
+            input.attributes.map(async (attributeInput) => {
+              if (
+                typeof attributeInput !== 'object' ||
+                attributeInput === null ||
+                !('attributeId' in attributeInput) ||
+                !('value' in attributeInput)
+              ) {
+                return null
+              }
+
+              const attributeId = String(attributeInput.attributeId)
+              const attribute = await this.attributeRepository.findById(attributeId)
+              if (!attribute) {
+                this.logger.warn('Attribute not found during updateNode; preserving input for validation', {
+                  attributeId,
+                })
+                return [attributeId, attributeInput.value] as const
+              }
+
+              return [attribute.getIdentifier(), attributeInput.value] as const
+            }),
+          )
+        ).filter((entry): entry is readonly [string, string] => entry !== null),
+      )
+    }
+
+    if (typeof input.attributes === 'object' && input.attributes !== null) {
+      return input.attributes as Record<string, unknown>
+    }
+
+    return undefined
+  }
+
   async createNode(_: GraphQLParent, args: CreateNodeArgs, _context?: GraphQLContext) {
     if (containsUnsafeJsonKeys(args.input.metadata)) {
       throw new Error('Unsafe metadata keys are not allowed')
@@ -401,20 +453,48 @@ export class NodeMutations extends BaseResolver {
         'updateNode',
       )
 
+      const normalizedAttributes = await this.normalizeUpdateAttributes(args.input)
+
       if (
         args.input.content === undefined &&
         args.input.title === undefined &&
         args.input.description === undefined &&
-        args.input.metadata === undefined
+        args.input.metadata === undefined &&
+        normalizedAttributes === undefined
       ) {
-        throw new Error('At least one node field must be provided')
+        throw new Error('At least one node field or attribute must be provided')
       }
 
       this.logger.info('Executing mutation: updateNode', { id: nodeId, input: args.input })
 
+      if (this.updateNodeUseCase) {
+        const result = await this.updateNodeUseCase.execute(nodeId as string, {
+          nodeId: nodeId as string,
+          tableId: args.input.tableId,
+          tableIdentifier: args.input.tableIdentifier,
+          content: args.input.content,
+          title: args.input.title,
+          description: args.input.description,
+          metadata: args.input.metadata,
+          attributes: normalizedAttributes,
+        })
+
+        this.tabularSyncHook?.notifyByTableId(result.node.tableId)
+
+        return {
+          success: true,
+          node: result.node,
+          errors: [],
+        }
+      }
+
       const existingNode = await this.nodeRepository.findById(nodeId as string)
       if (!existingNode) {
         throw new Error('Node not found')
+      }
+
+      if (normalizedAttributes !== undefined) {
+        throw new Error('UpdateNode attributes require UpdateNodeUseCase')
       }
 
       const updatedNode = await this.nodeRepository.update(nodeId as string, {
@@ -448,12 +528,7 @@ export class NodeMutations extends BaseResolver {
       return {
         success: false,
         node: null,
-        errors: [
-          {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            code: 'INTERNAL_ERROR',
-          },
-        ],
+        errors: this.formatMutationErrors(error),
       }
     }
   }

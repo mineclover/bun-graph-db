@@ -425,6 +425,10 @@ export function registerGraphQLModule(container: DIContainer): void {
         c,
         UseCaseTokens.CREATE_NODE_USE_CASE,
       )
+      const updateNodeUseCase = await resolveAs<ConstructorParameters<typeof NodeMutations>[1]>(
+        c,
+        UseCaseTokens.UPDATE_NODE_USE_CASE,
+      )
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
       const nodeAttributeRepository = await resolveAs<INodeAttributeRepository>(
         c,
@@ -437,6 +441,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       const simpleLogger = createConsoleLogger()
       return new NodeMutations(
         createNodeUseCase,
+        updateNodeUseCase,
         nodeRepository,
         nodeAttributeRepository,
         tableRepository,
@@ -448,6 +453,7 @@ export function registerGraphQLModule(container: DIContainer): void {
     },
     [
       UseCaseTokens.CREATE_NODE_USE_CASE,
+      UseCaseTokens.UPDATE_NODE_USE_CASE,
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,

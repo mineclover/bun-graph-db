@@ -25,6 +25,8 @@ export function createApiRoutes(
 
   // Node Operations
   router.post('/nodes', (req, res) => graphDbController.createNode(req, res))
+  router.put('/nodes/:nodeId', (req, res) => graphDbController.updateNode(req, res))
+  router.patch('/nodes/:nodeId', (req, res) => graphDbController.updateNode(req, res))
   router.get('/nodes/search', (req, res) => graphDbController.searchNodes(req, res))
   router.get('/nodes/:nodeId/connected', (req, res) => graphController.getConnectedNodes(req, res))
   router.get('/nodes/:nodeId/relations', (req, res) => graphController.getNodeRelations(req, res))
@@ -99,6 +101,7 @@ export const API_ENDPOINT_MAPPING = {
   createTable: 'POST /api/tables',
   searchTables: 'GET /api/tables/search',
   createNode: 'POST /api/nodes',
+  updateNode: 'PUT/PATCH /api/nodes/:nodeId',
   searchNodes: 'GET /api/nodes/search',
   createRelation: 'POST /api/relations',
   createTemplate: 'POST /api/templates',

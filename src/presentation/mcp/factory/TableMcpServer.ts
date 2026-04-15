@@ -1051,17 +1051,17 @@ export class TableMcpServer {
       graphqlOperation: {
         operationType: 'mutation',
         query: `
-          mutation SetTableNodeAttributes($input: SetNodeAttributesByIdentifierInput!) {
-            setNodeAttributesByIdentifier(input: $input) {
+          mutation UpdateTableNode($id: ID!, $input: UpdateNodeInput!) {
+            updateNode(id: $id, input: $input) {
               success
-              nodeAttributes {
+              node {
                 id
-                attributeId
-                value
-                attribute {
-                  identifier
-                  name
-                }
+                tableId
+                content
+                title
+                description
+                createdAt
+                updatedAt
               }
               errors {
                 message
@@ -1153,12 +1153,16 @@ export class TableMcpServer {
   private createUpdateNodeInputSchemaFromCreateSchema(
     createInputSchema: ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema>,
   ): ReturnType<typeof SchemaMapper.mapTableProjectionToMcpInputSchema> {
-    const attributesSchema = createInputSchema.properties.attributes ?? {
+    const createAttributesSchema = createInputSchema.properties.attributes ?? {
       type: 'object',
       description: `Attribute values for table ${this.tableId}`,
       properties: {},
       required: [],
       additionalProperties: true,
+    }
+    const attributesSchema = {
+      ...createAttributesSchema,
+      required: [],
     }
 
     return {
@@ -2172,9 +2176,11 @@ export class TableMcpServer {
         }
       } else if (tool.name === `update-table-${this.tableId}-node`) {
         variables = {
+          id: args.nodeId,
           input: {
             nodeId: args.nodeId,
-            attributesByIdentifier: this.toAttributesByIdentifier(args.attributes),
+            tableId: this.tableId,
+            attributes: args.attributes,
           },
         }
       } else if (tool.name.includes('get-table-') && tool.name.includes('-attributes')) {

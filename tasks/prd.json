@@ -94,11 +94,12 @@
         "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
       ],
       "priority": 4,
-      "passes": false,
+      "passes": true,
       "notes": "This is separate from createNode because partial-update required-field semantics are different and should not be conflated.",
       "dependsOn": [
         "US-003"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-005",
@@ -202,6 +203,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T11:01:54.284Z"
+    "updatedAt": "2026-04-15T18:42:59.226Z"
   }
 }

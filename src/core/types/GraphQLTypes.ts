@@ -364,10 +364,20 @@ export interface UpdateNodeArgs {
   id?: string
   input: {
     nodeId?: string
+    tableId?: string
+    tableIdentifier?: string
     content?: string
     title?: string | null
     description?: string | null
     metadata?: PropertyRecord
+    attributes?: PropertyRecord | Array<{
+      attributeId: string
+      value: string
+    }>
+    attributesByIdentifier?: Array<{
+      identifier: string
+      value: string
+    }>
   }
 }
 
