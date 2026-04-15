@@ -9,6 +9,7 @@ after each iteration and it's included in prompts for context.
 - Runtime updateNode validation should stay separate from createNode validation: transports normalize table context and identifier-keyed attributes, then `UpdateNodeUseCase` applies `validateProjectedNodeUpdateInput` so partial updates do not require all required create attributes.
 - Downstream table docs/AI metadata freshness should be represented with the table schema projection `versionHash`, while persisted generated templates can be invalidated independently by marking `auto-generated` + `table:<id>` templates with stale metadata.
 - Future shared schema extraction should keep pure projection/value-validation functions separate from repository/file/cache orchestration; generated transport shapes remain adapters over projections until both systems share the same value-level primitives.
+- Projection integration smoke tests can use an isolated in-process GraphQL Yoga instance plus table MCP middleware and a `fetch` adapter for the GraphQL endpoint; this exercises GraphQL mutations and table-scoped MCP cache refresh without relying on sandbox socket allocation.
 
 ---
 
@@ -75,4 +76,21 @@ after each iteration and it's included in prompts for context.
   - Patterns discovered: the candidate shared boundary is the value-level schema graph contract, not either system's repository, file loader, cache, transport, or generated output layer.
   - Patterns discovered: extraction should wait until both systems can consume the same projection/refs/diagnostics/sources/versionHash shape without mirror adapters.
   - Gotchas encountered: documentation needs to name current downstream integrations, but those integrations should be evidence for the boundary rather than responsibilities moved into the shared engine.
+---
+
+## 2026-04-16 - US-008
+- Added a projection-driven GraphQL + table-scoped MCP smoke test that starts an isolated in-process GraphQL/MCP helper, creates a table, creates two attribute types, creates table attributes, and fetches table-scoped `tools/list`.
+- Verified the table-scoped create-node tool input schema includes the created `status` enum attribute and `rank` integer attribute.
+- Updated the `status` attribute type through GraphQL and verified the cached table MCP tool schema refreshes with the expanded enum and a changed projection `versionHash`.
+- Verified GraphQL table lookup still works after the MCP schema refresh path, then cleaned up the isolated test database/container/fetch adapter.
+- `bun test tests/integration/projection-graphql-mcp-smoke.test.ts`: pass.
+- `bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-schema-projection-service.test.ts tests/integration/mcp-table-projection-tools-list.test.ts tests/integration/projection-graphql-mcp-smoke.test.ts`: pass.
+- `bun run build`: pass.
+- `bun run typecheck`: pass.
+- `bun run lint --max-diagnostics=20`: pass with the same 2 pre-existing warnings in `src/core/schema/TableSchemaProjection.ts`.
+- Files changed: `tests/integration/projection-graphql-mcp-smoke.test.ts`, `.ralph-tui/progress.md`.
+- **Learnings:**
+  - Patterns discovered: a table-scoped MCP smoke can prove cache refresh by listing tools once to create the cached table server, mutating the attribute type via GraphQL, then listing tools again and comparing the projection-backed schema/hash.
+  - Patterns discovered: the in-process Yoga + table MCP middleware helper is the right integration boundary in this sandbox when the socket-based isolated server helper cannot allocate ports.
+  - Gotchas encountered: the socket-based `startServerForSuite` path still fails here with the pre-existing `Test port range exhausted (5500-5999)` allocator issue, so this story uses the accepted equivalent helper instead.
 ---

@@ -195,17 +195,18 @@
         "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
       ],
       "priority": 8,
-      "passes": false,
+      "passes": true,
       "notes": "Final integration story. Includes smoke verification instead of browser/UI checks.",
       "dependsOn": [
         "US-003",
         "US-004",
         "US-006",
         "US-007"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T19:08:12.804Z"
+    "updatedAt": "2026-04-15T19:15:34.260Z"
   }
 }

@@ -1,0 +1,84 @@
+# Iteration 4 Log
+
+## Metadata
+
+- **Task ID**: US-007
+- **Task Title**: Document future shared SchemaEngine boundary
+- **Description**: As an OA SDK and bun-graph-db maintainer, I want a clear shared schema engine boundary documented before extracting shared code so that the systems can converge without over-coupling.
+- **Status**: completed
+- **Task Completed**: Yes
+- **Promise Detected**: Yes
+- **Started At**: 2026-04-15T19:04:34.023Z
+- **Ended At**: 2026-04-15T19:08:12.803Z
+- **Duration**: 3m 38s
+- **Input Tokens**: 1391413
+- **Output Tokens**: 9787
+- **Total Tokens**: 1401200
+- **Agent**: codex
+- **Sandbox Mode**: auto
+- **Sandbox Network**: Enabled
+--- RAW OUTPUT ---
+I’ll first load the local instructions and the existing progress/design context so the doc lands in the right place and doesn’t fight existing conventions. After that I’ll make the documentation-only change and run the focused checks.
+[94m[shell][0m $ /bin/zsh -lc pwd
+[94m[shell][0m $ /bin/zsh -lc "rg --files -g 'AGENTS.md' -g '.ralph-tui/progress.md' -g '*SCHEMA_PROJECTION*'"
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+There are existing uncommitted ralph-tui/session files and a US-006 log; I’ll leave those untouched unless the task requires reading them. The first file scan only found the schema projection experiment, so I’m checking hidden paths next.
+[94m[shell][0m $ /bin/zsh -lc "rg --files -uu -g 'AGENTS.md'"
+[94m[shell][0m $ /bin/zsh -lc "rg --files -uu -g 'progress.md'"
+[94m[shell][0m $ /bin/zsh -lc "rg --files -uu -g '.ralph-tui/progress.md'"
+[94m[shell][0m $ done'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' docs/development/SCHEMA_PROJECTION_EXPERIMENT.md"
+The repo has no ancestor AGENTS.md in scope, so the prompt rules and progress log are the operative local guidance. US-006 is already recorded as complete, and the projection experiment doc names the exact pure/projection-service split this story needs to preserve.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' package.json"
+[94m[shell][0m $ /bin/zsh -lc 'rg -n "US-007|SchemaEngine|SCHEMA_PROJECTION_EXPERIMENT|TableSchemaProjectionService|p...
+[94m[shell][0m $ /bin/zsh -lc 'rg --files docs src/application/services src/core/schema tests/unit/schema tests/integ...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '130,190p' tasks/prd.json"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' src/core/schema/TableSchemaProjection.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' docs/development/DEPENDENCY_INJECTION_SPEC.md"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' src/application/services/TableSchemaProjectionService.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '260,460p' src/core/schema/TableSchemaProjection.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,240p' src/presentation/mcp/schema/SchemaMapper.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' tests/unit/schema/table-schema-projection.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,180p' tests/unit/schema/table-schema-projection-service.test.ts"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' docs/development/README-recreate-complex-templates.md"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' docs/README.md"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,220p' docs/development/FOLDER_STRUCTURE.md"
+[94m[shell][0m $ /bin/zsh -lc 'rg -n "development|SCHEMA_PROJECTION|Schema Projection|design" docs/README.md docs/dev...
+I’m going to keep this as a design note under `docs/development/`, because the existing projection experiment is there and the story is intentionally pre-extraction. I’m also checking nearby OA SDK references for naming so the mapping section uses the project’s vocabulary instead of inventing new terms.
+[94m[shell][0m $ /bin/zsh -lc 'ls -la /Users/junwoobang/workflow/oa-sdk'
+[94m[shell][0m $ /bin/zsh -lc "rg -n \"SchemaEngine|schema engine|source coordinate|sourceCoordinates|diagnostic|\\"'...
+[94m[shell][0m $ /bin/zsh -lc 'find /Users/junwoobang/workflow/oa-sdk -maxdepth 3 -type f -name AGENTS.md -print'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '60,170p' /Users/junwoobang/workflow/oa-sdk/docs/guides/schema-algebra.md"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '88,120p' /Users/junwoobang/workflow/oa-sdk/docs/internal/spec.md"
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,170p' /Users/junwoobang/workflow/oa-sdk/docs/internal/architecture/006-incre...
+[94m[shell][0m $ /bin/zsh -lc "sed -n '80,150p' /Users/junwoobang/workflow/oa-sdk/docs/internal/api-index.md"
+I have enough context now: OA SDK already has pure schema folds, ref graph diagnostics, source-location indexing, typegen alias metadata, and an optional WorkspaceIndex; bun-graph-db has a pure `TableSchemaProjection` plus repository-backed `TableSchemaProjectionService`. I’m going to add a boundary doc that treats those as compatible concepts without proposing a package extraction in this story.
+The design doc is in place and indexed from `docs/README.md`. I’m doing a quick readback now, then I’ll run the projection tests, typecheck, and lint before recording the ralph progress entry.
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' docs/development/SHARED_SCHEMA_ENGINE_BOUNDARY.md"
+[94m[shell][0m $ /bin/zsh -lc "LC_ALL=C grep -n '["'^ -~]'"' docs/development/SHARED_SCHEMA_ENGINE_BOUNDARY.md"
+[94m[shell][0m $ /bin/zsh -lc 'git diff -- docs/development/SHARED_SCHEMA_ENGINE_BOUNDARY.md docs/README.md'
+The doc covers the requested boundary points and keeps extraction explicitly out of scope. I’m running the focused projection checks now, including the table-scoped MCP projection test that has caught cache/projection drift in earlier stories.
+[94m[shell][0m $ /bin/zsh -lc 'bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-sch...
+Focused projection tests passed. Next I’m running the broader static checks requested by the story; if lint still reports the known `TableSchemaProjection.ts` warnings, I’ll record them as pre-existing like the prior entries did.
+[94m[shell][0m $ /bin/zsh -lc 'bun run typecheck'
+[94m[shell][0m $ /bin/zsh -lc 'bun run lint --max-diagnostics=20'
+Typecheck passed, and lint completed with only the two known warnings in `src/core/schema/TableSchemaProjection.ts`. I’m updating the progress log now with the implemented files, verification results, and the reusable boundary pattern that came out of this doc.
+[94m[shell][0m $ /bin/zsh -lc 'git status --short'
+[94m[shell][0m $ /bin/zsh -lc "sed -n '1,260p' .ralph-tui/progress.md"
+[94m[shell][0m $ /bin/zsh -lc 'git diff --stat'
+Implemented US-007 as documentation/design only.
+
+Added [docs/development/SHARED_SCHEMA_ENGINE_BOUNDARY.md](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/docs/development/SHARED_SCHEMA_ENGINE_BOUNDARY.md), covering the future `SchemaEngine` interface, pure vs repository-backed boundaries, generated projection rationale, OA SDK to bun-graph-db concept mapping, non-shared scope, and extraction criteria. Linked it from [docs/README.md](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/docs/README.md). Updated [.ralph-tui/progress.md](/Users/junwoobang/workflow/oa-sdk/references/bun-graph-db/.ralph-tui/progress.md) with the US-007 entry and one reusable codebase pattern.
+
+Verification:
+- `bun test tests/unit/schema/table-schema-projection.test.ts tests/unit/schema/table-schema-projection-service.test.ts tests/integration/mcp-table-projection-tools-list.test.ts`: pass
+- `bun run typecheck`: pass
+- `bun run lint --max-diagnostics=20`: pass with the same 2 pre-existing warnings in `src/core/schema/TableSchemaProjection.ts`
+
+Note: pre-existing uncommitted changes in `.ralph-tui/session*.json`, `tasks/prd.json`, and the US-006 iteration log were left untouched.
+
+<promise>COMPLETE</promise>
+
+--- STDERR ---
+2026-04-15T19:04:34.301788Z ERROR rmcp::transport::worker: worker quit with fatal: Transport channel closed, when AuthRequired(AuthRequiredError { www_authenticate_header: "Bearer realm=\"OAuth\", resource_metadata=\"https://mcp.cloudflare.com/.well-known/oauth-protected-resource/mcp\", error=\"invalid_token\", error_description=\"Missing or invalid access token\"" })
