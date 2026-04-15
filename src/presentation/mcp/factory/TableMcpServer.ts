@@ -2281,6 +2281,15 @@ export class TableMcpServer {
         }
       }
 
+      const mutationPayload = this.getOperationResultPayload(result.data)
+      if (mutationPayload?.success === false) {
+        return {
+          success: false,
+          errors: Array.isArray(mutationPayload.errors) ? mutationPayload.errors : [],
+          data: result.data,
+        }
+      }
+
       return {
         success: true,
         data: result.data,
@@ -2294,6 +2303,17 @@ export class TableMcpServer {
         data: null,
       }
     }
+  }
+
+  private getOperationResultPayload(data: unknown): { success?: boolean; errors?: unknown[] } | undefined {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      return undefined
+    }
+
+    return Object.values(data as Record<string, unknown>).find(
+      (value): value is { success?: boolean; errors?: unknown[] } =>
+        typeof value === 'object' && value !== null && !Array.isArray(value) && 'success' in value,
+    )
   }
 
   private toAttributesByIdentifier(attributes: unknown): Array<{ identifier: string; value: string }> {

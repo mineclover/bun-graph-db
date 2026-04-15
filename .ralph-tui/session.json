@@ -3,10 +3,10 @@
   "sessionId": "024391db-16c8-4546-8ced-92494963825b",
   "status": "running",
   "startedAt": "2026-04-15T10:34:48.083Z",
-  "updatedAt": "2026-04-15T10:50:31.846Z",
-  "currentIteration": 1,
+  "updatedAt": "2026-04-15T11:01:54.285Z",
+  "currentIteration": 2,
   "maxIterations": 0,
-  "tasksCompleted": 1,
+  "tasksCompleted": 2,
   "isPaused": false,
   "agentPlugin": "codex",
   "trackerState": {
@@ -23,8 +23,8 @@
       {
         "id": "US-002",
         "title": "Wire projection service into table-scoped MCP tools/list",
-        "status": "open",
-        "completedInSession": false
+        "status": "completed",
+        "completedInSession": true
       },
       {
         "id": "US-003",
@@ -74,6 +74,16 @@
       "durationMs": 308850,
       "startedAt": "2026-04-15T10:34:54.847Z",
       "endedAt": "2026-04-15T10:40:03.697Z"
+    },
+    {
+      "iteration": 2,
+      "status": "completed",
+      "taskId": "US-002",
+      "taskTitle": "Wire projection service into table-scoped MCP tools/list",
+      "taskCompleted": true,
+      "durationMs": 627012,
+      "startedAt": "2026-04-15T10:40:04.831Z",
+      "endedAt": "2026-04-15T10:50:31.843Z"
     }
   ],
   "skippedTaskIds": [],

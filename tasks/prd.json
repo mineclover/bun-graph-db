@@ -68,11 +68,12 @@
         "bun run lint --max-diagnostics=20 passes, or failures are documented as pre-existing and unrelated."
       ],
       "priority": 3,
-      "passes": false,
+      "passes": true,
       "notes": "Keep validation logic projection-based; do not add a separate hand-written validator for createNode.",
       "dependsOn": [
         "US-002"
-      ]
+      ],
+      "completionNotes": "Completed by agent"
     },
     {
       "id": "US-004",
@@ -201,6 +202,6 @@
     }
   ],
   "metadata": {
-    "updatedAt": "2026-04-15T10:50:31.845Z"
+    "updatedAt": "2026-04-15T11:01:54.284Z"
   }
 }

@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { CreateNodeInput } from '@/application/dtos/NodeDto.js'
-import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
-import type { Attribute } from '@/domain/entities/Attribute.js'
+import { CreateNodeUseCase, type TableSchemaProjectionProvider } from '@/application/use-cases/nodes/CreateNode.js'
+import { projectTableSchema } from '@/core/schema/TableSchemaProjection.js'
+import { Attribute } from '@/domain/entities/Attribute.js'
 import type { Node } from '@/domain/entities/Node.js'
 import type { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
@@ -112,6 +113,76 @@ function createAttributeRepositoryMock(): AttributeRepositoryMock {
     countByTableId: mock(async (_tableId: string) => 0),
     deleteByTableId: mock(async (_tableId: string) => {}),
   } satisfies AttributeRepositoryMock
+}
+
+function createProjectionAttributes(): Attribute[] {
+  return [
+    Attribute.fromDatabase('attr-status', 'table-1', 'status', 'Status', 'type-status', null, true, null, new Date(), new Date()),
+    Attribute.fromDatabase('attr-effort', 'table-1', 'effort', 'Effort', 'type-effort', null, false, null, new Date(), new Date()),
+  ]
+}
+
+function createTaskProjectionProvider(): TableSchemaProjectionProvider {
+  const projection = projectTableSchema({
+    table: {
+      id: 'table-1',
+      identifier: 'test-table',
+      description: 'Test Table',
+    },
+    attributeTypes: [
+      {
+        id: 'type-status',
+        identifier: 'status',
+        jsonType: 'string',
+        validationSchema: JSON.stringify({ enum: ['todo', 'doing', 'done'] }),
+      },
+      {
+        id: 'type-effort',
+        identifier: 'effort',
+        jsonType: 'integer',
+        validationSchema: JSON.stringify({ minimum: 1, maximum: 5 }),
+      },
+    ],
+    attributes: [
+      {
+        id: 'attr-status',
+        tableId: 'table-1',
+        identifier: 'status',
+        attributeTypeId: 'type-status',
+        isRequired: true,
+      },
+      {
+        id: 'attr-effort',
+        tableId: 'table-1',
+        identifier: 'effort',
+        attributeTypeId: 'type-effort',
+        isRequired: false,
+      },
+    ],
+  })
+
+  return {
+    project: mock(async () => projection),
+  }
+}
+
+async function expectProjectionValidationError(
+  action: Promise<unknown>,
+  expected: { code: string; field: string },
+): Promise<void> {
+  try {
+    await action
+    throw new Error('Expected projection validation to fail')
+  } catch (error) {
+    expect(error).toBeInstanceOf(ValidationException)
+    const context = (error as ValidationException).context
+    const validationErrors = context?.validationErrors
+
+    expect(Array.isArray(validationErrors)).toBe(true)
+    expect(validationErrors).toEqual(expect.arrayContaining([
+      expect.objectContaining(expected),
+    ]))
+  }
 }
 
 describe('CreateNodeUseCase', () => {
@@ -282,7 +353,7 @@ describe('CreateNodeUseCase', () => {
       )
     })
 
-    it('should skip attributes that do not exist', async () => {
+    it('should reject attributes that do not exist', async () => {
       const input: CreateNodeInput = {
         tableId: 'table-1',
         content: 'Test Content',
@@ -292,20 +363,126 @@ describe('CreateNodeUseCase', () => {
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
-      const createdNode = createTestNode('node-1', 'table-1', 'Test Content')
 
       mockTableRepository.findById = mock(async () => table)
-      mockNodeRepository.findByTableIdAndContent = mock().mockResolvedValueOnce(null).mockResolvedValueOnce(createdNode)
+      mockNodeRepository.findByTableIdAndContent = mock(async () => null)
       mockAttributeRepository.findByTableId = mock(async () => ({
         data: [],
         metadata: {},
       }))
 
+      await expectProjectionValidationError(
+        useCase.execute(input),
+        { code: 'additional-property', field: 'attributes.non-existent-attr' },
+      )
+
+      expect(mockNodeRepository.save).not.toHaveBeenCalled()
+      expect(mockNodeAttributeRepository.save).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Projection Attribute Validation', () => {
+    beforeEach(() => {
+      const projectionProvider = createTaskProjectionProvider()
+      useCase = new CreateNodeUseCase(
+        mockNodeRepository,
+        mockNodeAttributeRepository,
+        mockTableRepository,
+        mockAttributeRepository,
+        mockLogger,
+        projectionProvider,
+      )
+      mockTableRepository.findById = mock(async () => createTestTable('table-1', 'test-table', 'Test Table'))
+      mockNodeRepository.findByTableIdAndContent = mock(async () => null)
+    })
+
+    it('should create a node when projected attributes are valid', async () => {
+      const input: CreateNodeInput = {
+        tableId: 'table-1',
+        content: 'Projected Content',
+        attributes: {
+          status: 'doing',
+          effort: 3,
+        },
+      }
+
+      const table = createTestTable('table-1', 'test-table', 'Test Table')
+      const createdNode = createTestNode('node-1', 'table-1', 'Projected Content')
+
+      mockTableRepository.findById = mock(async () => table)
+      mockNodeRepository.findByTableIdAndContent = mock().mockResolvedValueOnce(null).mockResolvedValueOnce(createdNode)
+      mockAttributeRepository.findByTableId = mock(async () => createPaginatedResult(createProjectionAttributes()))
+
       const result = await useCase.execute(input)
 
-      expect(result.node).toBeDefined()
-      expect(mockNodeAttributeRepository.save).not.toHaveBeenCalled()
-      expect(mockLogger.warn).toHaveBeenCalledWith("Attribute 'non-existent-attr' not found for table, skipping")
+      expect(result.node.attributes).toEqual({
+        status: 'doing',
+        effort: 3,
+      })
+      expect(mockNodeRepository.save).toHaveBeenCalled()
+      expect(mockNodeAttributeRepository.save).toHaveBeenCalledTimes(2)
+    })
+
+    it('should reject missing required projected attributes', async () => {
+      await expectProjectionValidationError(
+        useCase.execute({
+          tableId: 'table-1',
+          content: 'Missing status',
+          attributes: {
+            effort: 3,
+          },
+        }),
+        { code: 'required', field: 'attributes.status' },
+      )
+
+      expect(mockNodeRepository.save).not.toHaveBeenCalled()
+    })
+
+    it('should reject unknown projected attributes', async () => {
+      await expectProjectionValidationError(
+        useCase.execute({
+          tableId: 'table-1',
+          content: 'Unknown attribute',
+          attributes: {
+            status: 'todo',
+            unknown_attr: true,
+          },
+        }),
+        { code: 'additional-property', field: 'attributes.unknown_attr' },
+      )
+
+      expect(mockNodeRepository.save).not.toHaveBeenCalled()
+    })
+
+    it('should reject enum violations from projected attributes', async () => {
+      await expectProjectionValidationError(
+        useCase.execute({
+          tableId: 'table-1',
+          content: 'Invalid status',
+          attributes: {
+            status: 'blocked',
+          },
+        }),
+        { code: 'enum', field: 'attributes.status' },
+      )
+
+      expect(mockNodeRepository.save).not.toHaveBeenCalled()
+    })
+
+    it('should reject numeric constraint violations from projected attributes', async () => {
+      await expectProjectionValidationError(
+        useCase.execute({
+          tableId: 'table-1',
+          content: 'Invalid effort',
+          attributes: {
+            status: 'doing',
+            effort: 9,
+          },
+        }),
+        { code: 'maximum', field: 'attributes.effort' },
+      )
+
+      expect(mockNodeRepository.save).not.toHaveBeenCalled()
     })
   })
 

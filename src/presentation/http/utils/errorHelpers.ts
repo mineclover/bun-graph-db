@@ -2,10 +2,13 @@
 
 export function toErrorMeta(error: unknown): Record<string, unknown> {
   if (error instanceof Error) {
+    const context = 'context' in error ? (error as Error & { context?: unknown }).context : undefined
+
     return {
       name: error.name,
       message: error.message,
       stack: error.stack,
+      ...(context && typeof context === 'object' ? { context } : {}),
     }
   }
 

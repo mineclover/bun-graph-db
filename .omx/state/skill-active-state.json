@@ -1,11 +1,11 @@
 {
   "version": 1,
   "active": false,
-  "skill": "autopilot",
-  "keyword": "I want a",
+  "skill": "ralph",
+  "keyword": "ralph",
   "phase": "completing",
-  "activated_at": "2026-04-15T10:40:03.778Z",
-  "updated_at": "2026-04-15T10:40:03.779Z",
+  "activated_at": "2026-04-15T11:01:54.344Z",
+  "updated_at": "2026-04-15T11:01:54.344Z",
   "source": "keyword-detector",
   "input_lock": null
 }

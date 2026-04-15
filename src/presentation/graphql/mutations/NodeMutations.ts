@@ -87,9 +87,16 @@ import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttrib
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import { BaseException } from '@/shared/exceptions/DomainException.js'
 import { containsUnsafeJsonKeys, sanitizeJsonValue, type SafeJsonValue } from '@/shared/utils/safeJson.js'
 import { sanitizeTextContent } from '@/shared/utils/sanitizeText.js'
 import { BaseResolver } from '../base/BaseResolver.js'
+
+type MutationErrorPayload = {
+  message: string
+  code: string
+  field?: string
+}
 
 export class NodeMutations extends BaseResolver {
   protected logger: ILogger
@@ -185,7 +192,11 @@ export class NodeMutations extends BaseResolver {
             (input.attributes || []).map(async (attributeInput) => {
               const attribute = await this.attributeRepository.findById(attributeInput.attributeId)
               if (!attribute) {
-                return null
+                this.logger.warn('Attribute not found during createNodeInternal; preserving input for validation', {
+                  attributeId: attributeInput.attributeId,
+                  tableId: input.tableId,
+                })
+                return [attributeInput.attributeId, attributeInput.value] as const
               }
 
               return [attribute.getIdentifier(), attributeInput.value] as const
@@ -235,6 +246,28 @@ export class NodeMutations extends BaseResolver {
       field: field || null,
       details: error instanceof Error ? { name: error.name } : {},
     }
+  }
+
+  private formatMutationErrors(error: unknown): MutationErrorPayload[] {
+    const context = error instanceof BaseException ? error.context : undefined
+    const validationErrors = context?.validationErrors
+
+    if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+      return validationErrors
+        .filter((validationError): validationError is Record<string, unknown> =>
+          typeof validationError === 'object' && validationError !== null,
+        )
+        .map((validationError) => ({
+          message: typeof validationError.message === 'string' ? validationError.message : 'Validation error',
+          code: typeof validationError.code === 'string' ? validationError.code : 'VALIDATION_ERROR',
+          field: typeof validationError.field === 'string' ? validationError.field : undefined,
+        }))
+    }
+
+    return [{
+      message: error instanceof Error ? error.message : 'Unknown error',
+      code: error instanceof BaseException ? error.code : 'INTERNAL_ERROR',
+    }]
   }
 
   async createNode(_: GraphQLParent, args: CreateNodeArgs, _context?: GraphQLContext) {
@@ -310,11 +343,11 @@ export class NodeMutations extends BaseResolver {
             (args.input.attributes || []).map(async (attributeInput) => {
               const attribute = await this.attributeRepository.findById(attributeInput.attributeId)
               if (!attribute) {
-                this.logger.warn('Attribute not found during createNode; skipping value assignment', {
+                this.logger.warn('Attribute not found during createNode; preserving input for validation', {
                   attributeId: attributeInput.attributeId,
                   tableId: args.input.tableId,
                 })
-                return null
+                return [attributeInput.attributeId, attributeInput.value] as const
               }
 
               return [attribute.getIdentifier(), attributeInput.value] as const
@@ -345,12 +378,7 @@ export class NodeMutations extends BaseResolver {
       return {
         success: false,
         node: null,
-        errors: [
-          {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            code: 'INTERNAL_ERROR',
-          },
-        ],
+        errors: this.formatMutationErrors(error),
       }
     }
   }
@@ -846,12 +874,7 @@ export class NodeMutations extends BaseResolver {
         success: false,
         node: null,
         attributes: [],
-        errors: [
-          {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            code: 'INTERNAL_ERROR',
-          },
-        ],
+        errors: this.formatMutationErrors(error),
       }
     }
   }
@@ -876,6 +899,30 @@ export class NodeMutations extends BaseResolver {
       )
 
       this.logger.info('Executing mutation: createNodeWithAttributes', { input: args.input })
+
+      if (this.createNodeUseCase) {
+        const attributes = Object.fromEntries(
+          args.input.attributesByIdentifier.map((attribute) => [attribute.identifier, attribute.value]),
+        )
+
+        const result = await this.createNodeUseCase.execute({
+          tableId: args.input.tableId,
+          content: args.input.content,
+          attributes,
+        })
+
+        const savedAttributes = await this.nodeAttributeRepository.findByNodeId(result.node.id)
+        const { nodeAttributeFromEntity } = await import('@/application/dtos/NodeDto.js')
+
+        this.tabularSyncHook?.notifyByTableId(args.input.tableId)
+
+        return {
+          success: true,
+          node: result.node,
+          attributes: savedAttributes.map((attribute) => nodeAttributeFromEntity(attribute)),
+          errors: [],
+        }
+      }
 
       // Step 1: Validate that the table exists
       const table = await this.tableRepository.findById(args.input.tableId)
@@ -960,12 +1007,7 @@ export class NodeMutations extends BaseResolver {
         success: false,
         node: null,
         attributes: [],
-        errors: [
-          {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            code: 'INTERNAL_ERROR',
-          },
-        ],
+        errors: this.formatMutationErrors(error),
       }
     }
   }

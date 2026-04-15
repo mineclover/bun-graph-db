@@ -1,6 +1,7 @@
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import { ActivateDocUseCase } from '@/application/use-cases/docs/ActivateDoc.js'
+import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
 import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
 import { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
@@ -226,12 +227,23 @@ export function registerUseCaseModule(container: DIContainer): void {
         c,
         RepositoryTokens.ATTRIBUTE_REPOSITORY,
       )
+      const attributeTypeRepository = await resolveAs<ConstructorParameters<typeof TableSchemaProjectionService>[2]>(
+        c,
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      )
+      const projectionService = new TableSchemaProjectionService(
+        tableRepository,
+        attributeRepository,
+        attributeTypeRepository,
+        simpleLogger,
+      )
       return new CreateNodeUseCase(
         nodeRepository,
         nodeAttributeRepository,
         tableRepository,
         attributeRepository,
         simpleLogger,
+        projectionService,
       )
     },
     [
@@ -239,6 +251,7 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
     ],
   )
 

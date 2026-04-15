@@ -10,6 +10,25 @@ export interface ApiResponse<T = unknown> {
   errors?: Array<{ message: string; code?: string; field?: string }>
 }
 
+function formatErrorList(error: unknown, message: string, code?: string): Array<{ message: string; code?: string; field?: string }> | undefined {
+  const context = error instanceof BaseException ? error.context : undefined
+  const validationErrors = context?.validationErrors
+
+  if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+    return validationErrors
+      .filter((validationError): validationError is Record<string, unknown> =>
+        typeof validationError === 'object' && validationError !== null,
+      )
+      .map((validationError) => ({
+        message: typeof validationError.message === 'string' ? validationError.message : 'Validation error',
+        code: typeof validationError.code === 'string' ? validationError.code : code,
+        field: typeof validationError.field === 'string' ? validationError.field : undefined,
+      }))
+  }
+
+  return code ? [{ message, code }] : undefined
+}
+
 // Function-based response helpers for HTTP responses
 // More functional approach without the need for class instantiation
 
@@ -47,7 +66,7 @@ export function sendHandleError(res: Response, logger: ILogger, error: unknown, 
   res.status(statusCode).json({
     success: false,
     error: message,
-    errors: code ? [{ message, code }] : undefined,
+    errors: formatErrorList(error, message, code),
   } satisfies ApiResponse)
 }
 
