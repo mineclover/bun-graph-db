@@ -905,6 +905,23 @@ describe('GraphApiController Unit Tests', () => {
         error: 'profile must be component-bundle or operation-contract',
       })
     })
+
+    test('should reject empty projection profile strings', async () => {
+      const req = createMockRequest({
+        params: { tableId: 'table-123' },
+        query: { profile: '' },
+      })
+      const res = createMockResponse()
+
+      await controller.getTableOpenApiProjection(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(400)
+      expect(mockTableSchemaProjectionService.project).not.toHaveBeenCalled()
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'profile must be component-bundle or operation-contract',
+      })
+    })
   })
 })
 

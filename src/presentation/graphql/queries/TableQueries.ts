@@ -1,6 +1,7 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
+import { GraphQLError } from 'graphql'
 import type {
   GraphQLContext,
   GraphQLParent,
@@ -151,7 +152,9 @@ export class TableQueries extends BaseResolver {
     }
     const profile = normalizeProjectionProfile(args.profile)
     if (!profile) {
-      throw new Error('profile must be component-bundle or operation-contract')
+      throw new GraphQLError('profile must be component-bundle or operation-contract', {
+        extensions: { code: 'INVALID_PROJECTION_PROFILE' },
+      })
     }
 
     return this.handleQuery(
@@ -188,7 +191,7 @@ export class TableQueries extends BaseResolver {
 }
 
 function normalizeProjectionProfile(value: unknown): 'component-bundle' | 'operation-contract' | undefined {
-  const profile = typeof value === 'string' && value.length > 0 ? value : 'component-bundle'
+  const profile = value === undefined ? 'component-bundle' : value
   if (profile === 'component-bundle' || profile === 'operation-contract') return profile
   return undefined
 }

@@ -428,6 +428,21 @@ describe("Projection GraphQL + table MCP smoke", () => {
 				`/schema-engine/tables/${table.identifier}/nodes/{nodeId}`,
 			]);
 
+			const invalidProfileProjection = await graphqlExpectErrors(
+				`
+          query TableProjectionInvalidProfile($tableId: ID!, $profile: String!) {
+            tableOpenApiProjection(tableId: $tableId, profile: $profile)
+          }
+        `,
+				{
+					tableId: table.id,
+					profile: "",
+				},
+			);
+			expect(invalidProfileProjection.errors?.[0]?.message).toContain(
+				"profile must be component-bundle or operation-contract",
+			);
+
 			const beforeTools = await listTableMcpTools(table.id);
 			const beforeProjectionTool = getProjectionTool(beforeTools, table.id);
 			const beforeCreateNodeTool = getCreateNodeTool(beforeTools, table.id);
@@ -651,6 +666,23 @@ describe("Projection GraphQL + table MCP smoke", () => {
 		expect(result.data).toBeDefined();
 
 		return result.data as TData;
+	}
+
+	async function graphqlExpectErrors(
+		query: string,
+		variables?: Record<string, unknown>,
+	): Promise<GraphQLResponse<unknown>> {
+		const response = await fetch(GRAPHQL_ENDPOINT, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({ query, variables }),
+		});
+		expect(response.status).toBe(200);
+
+		const result = (await response.json()) as GraphQLResponse<unknown>;
+		expect(result.errors?.length).toBeGreaterThan(0);
+
+		return result;
 	}
 
 	async function createAttributeType(input: {

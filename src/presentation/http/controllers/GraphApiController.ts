@@ -555,7 +555,7 @@ export class GraphApiController {
 }
 
 function normalizeProjectionProfile(value: unknown): 'component-bundle' | 'operation-contract' | undefined {
-  const profile = typeof value === 'string' && value.length > 0 ? value : 'component-bundle'
+  const profile = value === undefined ? 'component-bundle' : value
   if (profile === 'component-bundle' || profile === 'operation-contract') return profile
   return undefined
 }
