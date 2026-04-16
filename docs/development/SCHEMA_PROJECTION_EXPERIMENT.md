@@ -20,16 +20,30 @@ Implementation:
 - `src/core/schema/TableSchemaProjection.ts`
 - `src/application/services/TableSchemaProjectionService.ts`
 - `src/presentation/mcp/schema/SchemaMapper.ts` (`mapTableProjectionToMcpInputSchema`)
+- `src/application/use-cases/nodes/CreateNode.ts`
+- `src/application/use-cases/nodes/UpdateNode.ts`
+- `src/presentation/mcp/factory/TableMcpServer.ts`
+- `src/presentation/mcp/factory/TableMcpServerFactory.ts`
+- `src/application/services/TableTemplateAutoGenerator.ts`
+- `src/application/use-cases/tables/GetTableDocs.ts`
 
 Focused tests:
 
 - `tests/unit/schema/table-schema-projection.test.ts`
 - `tests/unit/schema/table-schema-projection-service.test.ts`
+- `tests/unit/use-cases/CreateNode.test.ts`
+- `tests/unit/use-cases/UpdateNode.test.ts`
+- `tests/unit/mcp-table-server-factory-cache.test.ts`
+- `tests/unit/table-docs-freshness.test.ts`
+- `tests/unit/table-template-auto-generator.test.ts`
+- `tests/integration/mcp-table-projection-tools-list.test.ts`
+- `tests/integration/projection-graphql-mcp-smoke.test.ts`
 
 The prototype exports:
 
 - `projectTableSchema(input)`
 - `validateProjectedNodeInput(data, projection)`
+- `validateProjectedNodeUpdateInput(data, projection)`
 - `TableSchemaProjectionService.project({ tableId | identifier })`
 - `SchemaMapper.mapTableProjectionToMcpInputSchema(projection)`
 
@@ -90,8 +104,24 @@ This keeps repository access in the application layer while `src/core/schema/Tab
 - `minLength` / `maxLength`
 - `pattern`
 - `email`, `uuid`, `date-time` formats
+- nested object `required`, `properties`, and `additionalProperties: false`
+- array `minItems`, `maxItems`, and recursive `items`
 
-This is intentionally small. It proves the projection model without replacing the full MCP `SchemaMapper` or table runtime.
+`validateProjectedNodeUpdateInput()` validates partial node updates against the same projection but does not require all create-time required attributes.
+
+This remains intentionally scoped. It proves projection-backed value validation without replacing every existing `SchemaMapper` path at once.
+
+## Runtime Integration Status
+
+Projection is now used beyond the pure experiment:
+
+- table-scoped MCP `tools/list` create/update node tools expose projection-derived `inputSchema`
+- `CreateNodeUseCase` validates identifier-keyed attributes against the current projection
+- `UpdateNodeUseCase` validates partial attribute updates without requiring all create-time required fields
+- table schema changes refresh cached table-scoped MCP servers through `TableMcpServerFactory`
+- generated table templates can be marked stale after schema changes
+- `GetTableDocsUseCase` exposes projection freshness via `projectionVersionHash`
+- integration smoke covers GraphQL table/attribute changes and table-scoped MCP schema refresh
 
 ## Integration Direction
 
@@ -120,7 +150,29 @@ The table-specific shape should be a generated projection, not a fixed API contr
 
 ## Follow-up Questions
 
-- Should `versionHash` use a cryptographic hash when this moves from experiment to runtime cache?
 - Should source coordinates use `tableId`, `attributeId`, and `attributeTypeId` as first-class diagnostic locations?
-- Should projection invalidation call `TableMcpServerFactory.refreshServerForTable(tableId)` after attribute changes?
-- Should table create/update tools consume `TableSchemaProjectionService` directly, or should projection be cached per table-scoped MCP server?
+- Should projection validation eventually delegate to a shared JSON Schema validator for full Draft 2020-12 coverage?
+- Should table-scoped MCP schema caches store projection artifacts directly or continue recomputing through `TableSchemaProjectionService` on refresh?
+- Should debug logging in attribute DTO/repository mapping be removed or gated before production use?
+
+## Verification Snapshot
+
+Validated on 2026-04-16:
+
+```bash
+bun test tests/unit/schema/table-schema-projection.test.ts \
+  tests/unit/schema/table-schema-projection-service.test.ts \
+  tests/unit/use-cases/CreateNode.test.ts \
+  tests/unit/use-cases/UpdateNode.test.ts \
+  tests/integration/mcp-table-projection-tools-list.test.ts \
+  tests/integration/projection-graphql-mcp-smoke.test.ts
+
+bun run typecheck
+bun run lint --max-diagnostics=20
+```
+
+Result:
+
+- focused projection/runtime tests: pass
+- typecheck: pass
+- lint: pass with no warnings after projection lint cleanup

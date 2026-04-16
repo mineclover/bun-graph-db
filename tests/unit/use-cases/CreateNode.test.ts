@@ -166,6 +166,30 @@ function createTaskProjectionProvider(): TableSchemaProjectionProvider {
   }
 }
 
+function createBrokenProjectionProvider(): TableSchemaProjectionProvider {
+  const projection = projectTableSchema({
+    table: {
+      id: 'table-1',
+      identifier: 'test-table',
+      description: 'Test Table',
+    },
+    attributeTypes: [],
+    attributes: [
+      {
+        id: 'attr-missing',
+        tableId: 'table-1',
+        identifier: 'missing_type',
+        attributeTypeId: 'missing-type',
+        isRequired: true,
+      },
+    ],
+  })
+
+  return {
+    project: mock(async () => projection),
+  }
+}
+
 async function expectProjectionValidationError(
   action: Promise<unknown>,
   expected: { code: string; field: string },
@@ -483,6 +507,44 @@ describe('CreateNodeUseCase', () => {
       )
 
       expect(mockNodeRepository.save).not.toHaveBeenCalled()
+    })
+
+    it('should reject unusable projections before creating a node', async () => {
+      useCase = new CreateNodeUseCase(
+        mockNodeRepository,
+        mockNodeAttributeRepository,
+        mockTableRepository,
+        mockAttributeRepository,
+        mockLogger,
+        createBrokenProjectionProvider(),
+      )
+
+      await expectProjectionValidationError(
+        useCase.execute({
+          tableId: 'table-1',
+          content: 'Broken projection',
+        }),
+        { code: 'attribute-type-not-found', field: 'projection.diagnostics' },
+      )
+
+      expect(mockNodeRepository.save).not.toHaveBeenCalled()
+      expect(mockNodeAttributeRepository.save).not.toHaveBeenCalled()
+    })
+
+    it('should reject unsafe projected attribute object keys', async () => {
+      await expectProjectionValidationError(
+        useCase.execute({
+          tableId: 'table-1',
+          content: 'Unsafe object',
+          attributes: {
+            status: JSON.parse('{"__proto__":{"polluted":true}}'),
+          },
+        }),
+        { code: 'unsafe-json-key', field: 'attributes.status' },
+      )
+
+      expect(mockNodeRepository.save).not.toHaveBeenCalled()
+      expect(mockNodeAttributeRepository.save).not.toHaveBeenCalled()
     })
   })
 

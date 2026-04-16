@@ -61,3 +61,7 @@ exported-templates/
 backups/
 generated/*.md
 .turbo/
+
+# Agent/runtime metadata
+.omx/
+.ralph-tui/

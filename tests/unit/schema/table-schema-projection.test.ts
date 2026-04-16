@@ -33,6 +33,28 @@ function sampleInput(): TableProjectionInput {
         jsonType: 'string',
         format: 'email',
       },
+      {
+        id: 'type_address',
+        identifier: 'address',
+        jsonType: 'object',
+        validationSchema: JSON.stringify({
+          required: ['city'],
+          properties: {
+            city: { type: 'string', minLength: 2 },
+          },
+          additionalProperties: false,
+        }),
+      },
+      {
+        id: 'type_tags',
+        identifier: 'tags',
+        jsonType: 'array',
+        validationSchema: JSON.stringify({
+          minItems: 1,
+          uniqueItems: true,
+          items: { type: 'string', pattern: '^[a-z]+$' },
+        }),
+      },
     ],
     attributes: [
       {
@@ -55,6 +77,20 @@ function sampleInput(): TableProjectionInput {
         identifier: 'owner_email',
         attributeTypeId: 'type_owner_email',
         isRequired: true,
+      },
+      {
+        id: 'attr_address',
+        tableId: 'table_tasks',
+        identifier: 'address',
+        attributeTypeId: 'type_address',
+        isRequired: false,
+      },
+      {
+        id: 'attr_tags',
+        tableId: 'table_tasks',
+        identifier: 'tags',
+        attributeTypeId: 'type_tags',
+        isRequired: false,
       },
     ],
   }
@@ -190,6 +226,59 @@ describe('TableSchemaProjection', () => {
       ]))
       expect(invalid.errors).not.toEqual(expect.arrayContaining([
         expect.objectContaining({ path: '#/attributes/owner_email', code: 'required' }),
+      ]))
+    }
+  })
+
+  it('validates nested object and array attribute schemas', () => {
+    const projection = projectTableSchema(sampleInput())
+
+    expect(validateProjectedNodeInput({
+      tableId: 'table_tasks',
+      content: 'Nested values',
+      attributes: {
+        status: 'todo',
+        owner_email: 'dev@example.com',
+        address: { city: 'Seoul' },
+        tags: ['alpha', 'beta'],
+      },
+    }, projection)).toEqual({ valid: true, errors: [] })
+
+    const invalid = validateProjectedNodeInput({
+      tableId: 'table_tasks',
+      content: 'Nested values',
+      attributes: {
+        status: 'todo',
+        owner_email: 'dev@example.com',
+        address: { zip: 123 },
+        tags: ['OK', 3],
+      },
+    }, projection)
+
+    expect(invalid.valid).toBe(false)
+    if (!invalid.valid) {
+      expect(invalid.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ path: '#/attributes/address/city', code: 'required' }),
+        expect.objectContaining({ path: '#/attributes/address/zip', code: 'additional-property' }),
+        expect.objectContaining({ path: '#/attributes/tags/0', code: 'pattern' }),
+        expect.objectContaining({ path: '#/attributes/tags/1', code: 'type' }),
+      ]))
+    }
+
+    const duplicateItems = validateProjectedNodeInput({
+      tableId: 'table_tasks',
+      content: 'Duplicate tags',
+      attributes: {
+        status: 'todo',
+        owner_email: 'dev@example.com',
+        tags: ['alpha', 'alpha'],
+      },
+    }, projection)
+
+    expect(duplicateItems.valid).toBe(false)
+    if (!duplicateItems.valid) {
+      expect(duplicateItems.errors).toEqual(expect.arrayContaining([
+        expect.objectContaining({ path: '#/attributes/tags', code: 'uniqueItems' }),
       ]))
     }
   })

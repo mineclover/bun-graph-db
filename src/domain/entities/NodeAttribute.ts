@@ -1,6 +1,6 @@
 import type { AttributeId, NodeId } from '@/core/types/CommonTypes.js'
 import { DomainException } from '@/shared/exceptions/DomainException.js'
-import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
+import { parseSafeJson, type SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export class NodeAttribute {
   constructor(
@@ -69,8 +69,12 @@ export class NodeAttribute {
 
   // Try to parse value as JSON if applicable
   getParsedValue(): SafeJsonValue | string {
+    if (this.value.length === 0) {
+      return this.value
+    }
+
     try {
-      return JSON.parse(this.value)
+      return parseSafeJson(this.value) as SafeJsonValue
     } catch {
       return this.value
     }

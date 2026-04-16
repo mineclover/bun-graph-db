@@ -3,6 +3,10 @@ import { fromEntity as nodeFromEntity } from '@/application/dtos/NodeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import {
+  projectionDiagnosticErrors,
+  unsafeProjectedAttributeValueErrors,
+} from '@/application/use-cases/nodes/ProjectionValidationUtils.js'
+import {
   validateProjectedNodeInput,
   type JsonSchema,
   type ProjectionValidationError,
@@ -174,7 +178,17 @@ export class CreateNodeUseCase {
     }
 
     const projection = await this.projectionProvider.project({ tableId: input.tableId })
+    const projectionErrors = projectionDiagnosticErrors(projection)
+    if (projectionErrors.length > 0) {
+      throw this.createProjectionValidationException(projectionErrors, projection)
+    }
+
     const attributes = this.coerceProjectedAttributeValues(input.attributes ?? {}, projection)
+    const unsafeAttributeErrors = unsafeProjectedAttributeValueErrors(attributes)
+    if (unsafeAttributeErrors.length > 0) {
+      throw this.createProjectionValidationException(unsafeAttributeErrors, projection)
+    }
+
     const validation = validateProjectedNodeInput({
       tableId: input.tableId,
       content: input.content,

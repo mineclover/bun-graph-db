@@ -134,6 +134,7 @@ tests/
 - **[아키텍처 개요](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 시스템 설계
 - **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)** - 기여 & 설정
 - **[최신 시스템 평가](docs/development/SYSTEM_EVALUATION_2026-03-30.md)** - 실제 검증 결과와 known issues
+- **[스키마 Projection 실험](docs/development/SCHEMA_PROJECTION_EXPERIMENT.md)** - 동적 테이블 스키마를 `$defs`/`$ref` projection으로 만들고 MCP/runtime validation에 연결
 - **[테스팅 전략](docs/development/TESTING.md)** - 품질 보증
 - **[리포지토리 패턴](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 데이터 접근
 

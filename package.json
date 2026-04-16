@@ -36,6 +36,7 @@
     "codegen": "graphql-codegen"
   },
   "devDependencies": {
+    "@oa-sdk/openapi-projection-contract": "file:../../packages/openapi-projection-contract",
     "@biomejs/biome": "^2.4.9",
     "@graphql-codegen/cli": "^6.2.1",
     "@graphql-codegen/introspection": "^5.0.1",

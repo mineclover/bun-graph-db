@@ -14,6 +14,9 @@ export type JsonSchema = {
   required?: string[]
   items?: JsonSchema
   additionalProperties?: boolean | JsonSchema
+  minItems?: number
+  maxItems?: number
+  uniqueItems?: boolean
   minLength?: number
   maxLength?: number
   pattern?: string
@@ -206,7 +209,8 @@ export function projectTableSchema(input: TableProjectionInput): TableSchemaProj
     })
 
     nodeAttributeProperties[attribute.identifier] = valueRef
-    attributeValueSchemas[attribute.identifier] = defs[typeName]!
+    const valueSchema = defs[typeName]
+    if (valueSchema) attributeValueSchemas[attribute.identifier] = valueSchema
     if (attribute.isRequired) requiredAttributes.push(attribute.identifier)
   }
 
@@ -314,7 +318,7 @@ export function validateProjectedNodeInput(
   }
 
   for (const required of projection.requiredAttributes) {
-    if (!Object.prototype.hasOwnProperty.call(data.attributes, required)) {
+    if (!Object.hasOwn(data.attributes, required)) {
       errors.push({
         path: `#/attributes/${escapePointer(required)}`,
         code: 'required',
@@ -516,6 +520,97 @@ function validateValue(
     if (schema.maximum !== undefined && value > schema.maximum) {
       errors.push({ path, code: 'maximum', message: `Number is greater than ${schema.maximum}`, expected: schema.maximum, received: value, source })
     }
+  }
+
+  if (isRecord(value)) {
+    errors.push(...validateObjectValue(value, schema, path, source))
+  }
+
+  if (Array.isArray(value)) {
+    errors.push(...validateArrayValue(value, schema, path, source))
+  }
+
+  return errors
+}
+
+function validateObjectValue(
+  value: Record<string, unknown>,
+  schema: JsonSchema,
+  path: string,
+  source: ProjectionSource | undefined,
+): ProjectionValidationError[] {
+  const errors: ProjectionValidationError[] = []
+  const properties = schema.properties ?? {}
+
+  for (const required of schema.required ?? []) {
+    if (!Object.hasOwn(value, required)) {
+      errors.push({
+        path: `${path}/${escapePointer(required)}`,
+        code: 'required',
+        message: `Missing required property '${required}'`,
+        source,
+      })
+    }
+  }
+
+  for (const [propertyName, propertyValue] of Object.entries(value)) {
+    const propertySchema = properties[propertyName]
+    if (!propertySchema) {
+      if (schema.additionalProperties === false) {
+        errors.push({
+          path: `${path}/${escapePointer(propertyName)}`,
+          code: 'additional-property',
+          message: `Property '${propertyName}' is not allowed`,
+          source,
+        })
+      }
+      continue
+    }
+    errors.push(...validateValue(propertyValue, propertySchema, `${path}/${escapePointer(propertyName)}`, source))
+  }
+
+  return errors
+}
+
+function validateArrayValue(
+  value: unknown[],
+  schema: JsonSchema,
+  path: string,
+  source: ProjectionSource | undefined,
+): ProjectionValidationError[] {
+  const errors: ProjectionValidationError[] = []
+
+  if (schema.minItems !== undefined && value.length < schema.minItems) {
+    errors.push({ path, code: 'minItems', message: `Array has fewer than ${schema.minItems} items`, expected: schema.minItems, received: value.length, source })
+  }
+
+  if (schema.maxItems !== undefined && value.length > schema.maxItems) {
+    errors.push({ path, code: 'maxItems', message: `Array has more than ${schema.maxItems} items`, expected: schema.maxItems, received: value.length, source })
+  }
+
+  if (schema.uniqueItems === true) {
+    const seen = new Set<string>()
+    for (const item of value) {
+      const key = JSON.stringify(sortJson(item))
+      if (seen.has(key)) {
+        errors.push({
+          path,
+          code: 'uniqueItems',
+          message: 'Array items must be unique',
+          expected: true,
+          received: value,
+          source,
+        })
+        break
+      }
+      seen.add(key)
+    }
+  }
+
+  if (schema.items) {
+    value.forEach((item, index) => {
+      errors.push(...validateValue(item, schema.items as JsonSchema, `${path}/${index}`, source))
+    })
   }
 
   return errors

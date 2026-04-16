@@ -20,6 +20,7 @@ Welcome to the Bun Graph DB documentation! This directory contains all project d
 - [Testing Guide](./development/TESTING.md) - Testing strategies and setup
 - [Development Environment](./development/DEVELOPMENT_ENVIRONMENT_GUIDE.md) - Local setup guide
 - [System Evaluation Snapshot](./development/SYSTEM_EVALUATION_2026-03-30.md) - Latest verified runtime and test status
+- [Schema Projection Experiment](./development/SCHEMA_PROJECTION_EXPERIMENT.md) - Runtime table schema projection and MCP validation integration
 - [Shared SchemaEngine Boundary](./development/SHARED_SCHEMA_ENGINE_BOUNDARY.md) - Future OA SDK/bun-graph-db schema engine boundary
 - [Dependency Injection](./development/DEPENDENCY_INJECTION_SPEC.md) - DI specifications
 - [Folder Structure](./development/FOLDER_STRUCTURE.md) - Project organization
