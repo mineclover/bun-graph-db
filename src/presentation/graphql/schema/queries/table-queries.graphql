@@ -22,4 +22,8 @@ extend type Query {
     includeUsageStats: Boolean = false
     includeAiMetadata: Boolean = false
   ): TableDocumentation
+
+  # Export a table schema as an OpenAPI 3.2 projection envelope.
+  # profile supports "component-bundle" and "operation-contract".
+  tableOpenApiProjection(tableId: ID, identifier: String, profile: String = "component-bundle"): JSON
 }

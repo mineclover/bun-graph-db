@@ -1,8 +1,13 @@
 import type { Request, Response } from 'express'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
+import {
+  toTableSchemaOpenApiOperationContractProjectionResult,
+  toTableSchemaOpenApiProjectionResult,
+} from '@/core/schema/TableSchemaOpenApiProjection.js'
 import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
@@ -64,6 +69,7 @@ export class GraphApiController {
     private readonly tableRepository: ITableRepository,
     private readonly nodeRelationRepository: INodeRelationRepository,
     port?: number,
+    private readonly tableSchemaProjectionService?: Pick<TableSchemaProjectionService, 'project'>,
   ) {
     // Use the same port as the server instance
     const serverPort = port || 4000
@@ -143,6 +149,35 @@ export class GraphApiController {
       this.responseHelper.success(res, result.tableDocs)
     } catch (error) {
       this.responseHelper.handleError(res, error, 'Get table docs')
+    }
+  }
+
+  async getTableOpenApiProjection(req: Request, res: Response): Promise<void> {
+    try {
+      const { tableId } = req.params
+      const profile = normalizeProjectionProfile(req.query.profile)
+
+      if (!tableId) {
+        this.responseHelper.validationError(res, 'tableId is required')
+        return
+      }
+      if (!profile) {
+        this.responseHelper.validationError(res, 'profile must be component-bundle or operation-contract')
+        return
+      }
+      if (!this.tableSchemaProjectionService) {
+        this.responseHelper.error(res, 503, 'Table schema projection service is not configured', 'Get table OpenAPI projection')
+        return
+      }
+
+      const projection = await this.tableSchemaProjectionService.project({ tableId })
+      const result = profile === 'operation-contract'
+        ? toTableSchemaOpenApiOperationContractProjectionResult(projection)
+        : toTableSchemaOpenApiProjectionResult(projection)
+
+      this.responseHelper.success(res, result)
+    } catch (error) {
+      this.responseHelper.handleError(res, error, 'Get table OpenAPI projection')
     }
   }
 
@@ -517,4 +552,10 @@ export class GraphApiController {
       this.responseHelper.handleError(res, error, 'Get node relations')
     }
   }
+}
+
+function normalizeProjectionProfile(value: unknown): 'component-bundle' | 'operation-contract' | undefined {
+  const profile = typeof value === 'string' && value.length > 0 ? value : 'component-bundle'
+  if (profile === 'component-bundle' || profile === 'operation-contract') return profile
+  return undefined
 }

@@ -1,4 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import type {
   GraphQLContext,
@@ -9,7 +10,11 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
-import { UseCaseTokens } from '@/infrastructure/container/tokens/UseCaseTokens.js'
+import { RepositoryTokens, UseCaseTokens } from '@/infrastructure/container/tokens/index.js'
+import {
+  toTableSchemaOpenApiOperationContractProjectionResult,
+  toTableSchemaOpenApiProjectionResult,
+} from '@/core/schema/TableSchemaOpenApiProjection.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class TableQueries extends BaseResolver {
@@ -131,4 +136,59 @@ export class TableQueries extends BaseResolver {
       { tableId: args.tableId, identifier: args.identifier },
     )
   }
+
+  async tableOpenApiProjection(
+    _: GraphQLParent,
+    args: {
+      tableId?: string
+      identifier?: string
+      profile?: string
+    },
+    _context?: GraphQLContext,
+  ) {
+    if (!args.tableId && !args.identifier) {
+      throw new Error('Either tableId or identifier must be provided')
+    }
+    const profile = normalizeProjectionProfile(args.profile)
+    if (!profile) {
+      throw new Error('profile must be component-bundle or operation-contract')
+    }
+
+    return this.handleQuery(
+      async () => {
+        const projectionService = await this.createProjectionService()
+        const request = args.tableId
+          ? { tableId: args.tableId } as const
+          : args.identifier
+            ? { identifier: args.identifier } as const
+            : undefined
+        if (!request) throw new Error('Either tableId or identifier must be provided')
+
+        const projection = await projectionService.project(request)
+
+        return profile === 'operation-contract'
+          ? toTableSchemaOpenApiOperationContractProjectionResult(projection)
+          : toTableSchemaOpenApiProjectionResult(projection)
+      },
+      'tableOpenApiProjection',
+      { tableId: args.tableId, identifier: args.identifier, profile },
+    )
+  }
+
+  private async createProjectionService(): Promise<TableSchemaProjectionService> {
+    const attributeRepository = await this.container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
+    const attributeTypeRepository = await this.container.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
+    return new TableSchemaProjectionService(
+      this.tableRepository,
+      attributeRepository as ConstructorParameters<typeof TableSchemaProjectionService>[1],
+      attributeTypeRepository as ConstructorParameters<typeof TableSchemaProjectionService>[2],
+      this.logger,
+    )
+  }
+}
+
+function normalizeProjectionProfile(value: unknown): 'component-bundle' | 'operation-contract' | undefined {
+  const profile = typeof value === 'string' && value.length > 0 ? value : 'component-bundle'
+  if (profile === 'component-bundle' || profile === 'operation-contract') return profile
+  return undefined
 }

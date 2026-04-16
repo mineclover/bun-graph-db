@@ -286,6 +286,12 @@ const attributeController = new AttributeApiController(
   logger,
   queryTemplateRepository as IQueryTemplateRepository,
 )
+const tableSchemaProjectionService = new TableSchemaProjectionService(
+  tableRepository as ITableRepository,
+  attributeRepository as IAttributeRepository,
+  attributeTypeRepository as IAttributeTypeRepository,
+  logger,
+)
 const graphController = new GraphApiController(
   logger,
   getTableDocsUseCase as GetTableDocsUseCase,
@@ -294,6 +300,7 @@ const graphController = new GraphApiController(
   tableRepository as ITableRepository,
   nodeRelationRepository as INodeRelationRepository,
   graphqlConfig.port,
+  tableSchemaProjectionService,
 )
 const _mcpToolController = new McpToolController(logger, graphqlConfig.port)
 const tabularSyncConfigStore = await container.resolve(CommonTokens.TABULAR_SYNC_CONFIG_STORE)
@@ -312,13 +319,6 @@ const mcpServer = new McpHttpServer(
   `http://localhost:${graphqlConfig.port}/api`,
 )
 await mcpServer.initialize()
-
-const tableSchemaProjectionService = new TableSchemaProjectionService(
-  tableRepository as ITableRepository,
-  attributeRepository as IAttributeRepository,
-  attributeTypeRepository as IAttributeTypeRepository,
-  logger,
-)
 
 // Create table MCP middleware
 const tableMcpMiddleware = createTableMcpMiddleware({

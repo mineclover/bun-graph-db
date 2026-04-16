@@ -414,6 +414,9 @@ export class GraphQLSchemaBuilder {
         tableDocumentation: (_: GraphQLParent, args: Record<string, unknown>) =>
           callResolver(deps.tableResolver, 'tableDocumentation', _, args) ??
           callResolver(deps.tableQueries, 'tableDocumentation', _, args),
+        tableOpenApiProjection: (_: GraphQLParent, args: Record<string, unknown>) =>
+          callResolver(deps.tableResolver, 'tableOpenApiProjection', _, args) ??
+          callResolver(deps.tableQueries, 'tableOpenApiProjection', _, args),
 
         // Attribute type queries
         attributeType: (_: GraphQLParent, args: Record<string, unknown>) =>

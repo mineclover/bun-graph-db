@@ -172,6 +172,77 @@ describe("Projection GraphQL + table MCP smoke", () => {
 				attributeTypeId: rankType.id,
 			});
 
+			const componentProjection = await graphql<{
+				tableOpenApiProjection: {
+					profile: string;
+					projection: {
+						openapi: string;
+						components: { schemas: Record<string, unknown> };
+					};
+					refs: unknown[];
+					sources: Record<string, unknown>;
+					diagnostics: unknown[];
+				};
+			}>(
+				`
+          query TableProjection($tableId: ID!, $profile: String!) {
+            tableOpenApiProjection(tableId: $tableId, profile: $profile)
+          }
+        `,
+				{
+					tableId: table.id,
+					profile: "component-bundle",
+				},
+			);
+			expect(componentProjection.tableOpenApiProjection.profile).toBe(
+				"component-bundle",
+			);
+			expect(
+				Object.keys(
+					componentProjection.tableOpenApiProjection.projection.components
+						.schemas,
+				),
+			).toEqual(
+				expect.arrayContaining([
+					expect.stringContaining("NodeInput_"),
+					expect.stringContaining("NodeAttributes_"),
+					expect.stringContaining("AttributeType_"),
+				]),
+			);
+			expect(componentProjection.tableOpenApiProjection.refs.length).toBeGreaterThan(0);
+			expect(
+				Object.keys(componentProjection.tableOpenApiProjection.sources).length,
+			).toBeGreaterThan(0);
+			expect(componentProjection.tableOpenApiProjection.diagnostics).toEqual([]);
+
+			const operationProjection = await graphql<{
+				tableOpenApiProjection: {
+					profile: string;
+					projection: {
+						paths: Record<string, Record<string, unknown>>;
+					};
+				};
+			}>(
+				`
+          query TableOperationProjection($identifier: String!, $profile: String!) {
+            tableOpenApiProjection(identifier: $identifier, profile: $profile)
+          }
+        `,
+				{
+					identifier: table.identifier,
+					profile: "operation-contract",
+				},
+			);
+			expect(operationProjection.tableOpenApiProjection.profile).toBe(
+				"operation-contract",
+			);
+			expect(
+				Object.keys(operationProjection.tableOpenApiProjection.projection.paths),
+			).toEqual([
+				`/schema-engine/tables/${table.identifier}/nodes`,
+				`/schema-engine/tables/${table.identifier}/nodes/{nodeId}`,
+			]);
+
 			const beforeTools = await listTableMcpTools(table.id);
 			const beforeCreateNodeTool = getCreateNodeTool(beforeTools, table.id);
 			const beforeUpdateNodeTool = getUpdateNodeTool(beforeTools, table.id);

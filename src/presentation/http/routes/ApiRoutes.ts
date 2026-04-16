@@ -21,6 +21,7 @@ export function createApiRoutes(
   router.get('/tables', (req, res) => graphController.getTables(req, res))
   router.get('/tables/search', (req, res) => graphDbController.searchTables(req, res))
   router.get('/tables/:tableId/docs', (req, res) => graphController.getTableDocs(req, res))
+  router.get('/tables/:tableId/openapi-projection', (req, res) => graphController.getTableOpenApiProjection(req, res))
   router.post('/tables/:tableId/export', (req, res) => graphController.exportTableWithNodes(req, res))
 
   // Node Operations
@@ -119,6 +120,7 @@ export const API_ENDPOINT_MAPPING = {
   getNodeAttributes: 'GET /api/nodes/:nodeId/attributes',
   getTables: 'GET /api/tables',
   getTableDocs: 'GET /api/tables/:tableId/docs',
+  getTableOpenApiProjection: 'GET /api/tables/:tableId/openapi-projection',
   exportTableWithNodes: 'POST /api/tables/:tableId/export',
   searchRelations: 'GET /api/relations/search',
   getConnectedNodes: 'GET /api/nodes/:nodeId/connected',

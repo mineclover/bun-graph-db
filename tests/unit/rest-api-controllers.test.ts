@@ -11,6 +11,7 @@
 import { beforeEach, describe, expect, mock, test } from 'bun:test'
 import type { Request, Response } from 'express'
 import { AttributeApiController } from '../../src/presentation/http/controllers/AttributeApiController'
+import { projectTableSchema } from '../../src/core/schema/TableSchemaProjection'
 import { GraphApiController } from '../../src/presentation/http/controllers/GraphApiController'
 import { GraphDbApiController } from '../../src/presentation/http/controllers/GraphDbApiController'
 
@@ -64,14 +65,10 @@ global.fetch = mock(() =>
   }),
 )
 
-// Mock node:fs/promises and node:path for file operations
+// Mock node:fs/promises for file operations
 mock.module('node:fs/promises', () => ({
   mkdir: mock(() => Promise.resolve()),
   writeFile: mock(() => Promise.resolve()),
-}))
-
-mock.module('node:path', () => ({
-  dirname: mock(() => '/tmp'),
 }))
 
 // Mock Express Request/Response objects
@@ -606,6 +603,32 @@ const mockNodeRelationRepository = {
   findConnectedNodes: mock(() => Promise.resolve([])),
 }
 
+const mockTableSchemaProjectionService = {
+  project: mock(async () => projectTableSchema({
+    table: {
+      id: 'table-123',
+      identifier: 'test_table',
+    },
+    attributeTypes: [
+      {
+        id: 'type-status',
+        identifier: 'status',
+        jsonType: 'string',
+        validationSchema: JSON.stringify({ enum: ['todo', 'done'] }),
+      },
+    ],
+    attributes: [
+      {
+        id: 'attr-status',
+        tableId: 'table-123',
+        identifier: 'status',
+        attributeTypeId: 'type-status',
+        isRequired: true,
+      },
+    ],
+  })),
+}
+
 describe('GraphApiController Unit Tests', () => {
   let controller: GraphApiController
 
@@ -618,6 +641,7 @@ describe('GraphApiController Unit Tests', () => {
       mockTableRepository as any,
       mockNodeRelationRepository as any,
       4000,
+      mockTableSchemaProjectionService as any,
     )
     // Clear all mocks
     mockLogger.debug.mockClear()
@@ -630,6 +654,7 @@ describe('GraphApiController Unit Tests', () => {
     mockTableRepository.findAll.mockClear()
     mockNodeRelationRepository.findShortestPath.mockClear()
     mockNodeRelationRepository.findConnectedNodes.mockClear()
+    mockTableSchemaProjectionService.project.mockClear()
   })
 
   describe('getTables', () => {
@@ -815,6 +840,72 @@ describe('GraphApiController Unit Tests', () => {
       })
     })
   })
+
+  describe('getTableOpenApiProjection', () => {
+    test('should export component-bundle projection for a table', async () => {
+      const req = createMockRequest({
+        params: { tableId: 'table-123' },
+        query: { profile: 'component-bundle' },
+      })
+      const res = createMockResponse()
+
+      await controller.getTableOpenApiProjection(req, res)
+
+      expect(mockTableSchemaProjectionService.project).toHaveBeenCalledWith({ tableId: 'table-123' })
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: expect.objectContaining({
+          profile: 'component-bundle',
+          projection: expect.objectContaining({
+            openapi: '3.2.0',
+            components: expect.objectContaining({
+              schemas: expect.objectContaining({
+                NodeInput_TestTable: expect.any(Object),
+              }),
+            }),
+          }),
+        }),
+      })
+    })
+
+    test('should export operation-contract projection for a table', async () => {
+      const req = createMockRequest({
+        params: { tableId: 'table-123' },
+        query: { profile: 'operation-contract' },
+      })
+      const res = createMockResponse()
+
+      await controller.getTableOpenApiProjection(req, res)
+
+      expect(res.json).toHaveBeenCalledWith({
+        success: true,
+        data: expect.objectContaining({
+          profile: 'operation-contract',
+          projection: expect.objectContaining({
+            paths: expect.objectContaining({
+              '/schema-engine/tables/test_table/nodes': expect.any(Object),
+            }),
+          }),
+        }),
+      })
+    })
+
+    test('should reject unsupported projection profiles', async () => {
+      const req = createMockRequest({
+        params: { tableId: 'table-123' },
+        query: { profile: 'full-api-document' },
+      })
+      const res = createMockResponse()
+
+      await controller.getTableOpenApiProjection(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(400)
+      expect(res.json).toHaveBeenCalledWith({
+        success: false,
+        error: 'profile must be component-bundle or operation-contract',
+      })
+    })
+  })
 })
 
 describe('Controller Response Format Consistency', () => {
@@ -834,6 +925,8 @@ describe('Controller Response Format Consistency', () => {
         mockSearchRelatedNodesUseCase as any,
         mockTableRepository as any,
         mockNodeRelationRepository as any,
+        undefined,
+        mockTableSchemaProjectionService as any,
       ),
     ]
 
