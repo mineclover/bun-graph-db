@@ -6,8 +6,10 @@
  */
 
 import { readFile } from 'node:fs/promises'
+import { validateOpenApiProjection } from '@oa-sdk/openapi-projection-contract'
 import Ajv from 'ajv'
 import { McpToolRegistry } from '../../application/services/McpToolRegistry.ts'
+import { toRootMcpToolOpenApiProjectionResult } from '../../core/schema/RootMcpToolOpenApiProjection.js'
 import { RestApiClient } from '../../application/services/RestApiClient.js'
 import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
 import { API_ENDPOINT_MAPPING } from '../../presentation/http/routes/ApiRoutes.js'
@@ -46,6 +48,10 @@ interface SearchNodesToolArgs {
   tableId?: string
   search?: string
   limit?: number
+}
+
+interface RootOpenApiProjectionToolArgs {
+  profile?: string
 }
 
 interface GetTableDocsToolArgs {
@@ -472,6 +478,9 @@ export class McpHttpServer {
         case 'searchNodes':
           return await this.handleSearchNodesTool(id, args)
 
+        case 'get-root-openapi-projection':
+          return await this.handleRootOpenApiProjectionTool(id, args)
+
         case 'getTableDocs':
           return await this.handleGetTableDocs(id, args)
 
@@ -708,6 +717,73 @@ export class McpHttpServer {
           },
         ],
         isError: false,
+      },
+    }
+  }
+
+  private async handleRootOpenApiProjectionTool(
+    id: string | number | undefined,
+    args: McpToolArgs,
+  ): Promise<McpResponse> {
+    const projectionArgs = args as RootOpenApiProjectionToolArgs
+    const profile = projectionArgs.profile === undefined ? 'component-bundle' : projectionArgs.profile
+
+    if (profile !== 'component-bundle') {
+      const diagnostic = {
+        severity: 'error' as const,
+        code: 'openapi-projection/invalid-profile',
+        message: 'profile must be component-bundle',
+      }
+      return {
+        jsonrpc: '2.0',
+        id,
+        result: {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(
+                {
+                  projection: null,
+                  validation: {
+                    valid: false,
+                    diagnostics: [diagnostic],
+                  },
+                  error: {
+                    code: diagnostic.code,
+                    message: diagnostic.message,
+                  },
+                },
+                null,
+                2,
+              ),
+            },
+          ],
+          isError: true,
+        },
+      }
+    }
+
+    const projection = toRootMcpToolOpenApiProjectionResult(this.toolRegistry.listTools().tools)
+    const validation = validateOpenApiProjection(projection)
+
+    return {
+      jsonrpc: '2.0',
+      id,
+      result: {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                projection,
+                validation,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+        isError: !validation.valid,
       },
     }
   }

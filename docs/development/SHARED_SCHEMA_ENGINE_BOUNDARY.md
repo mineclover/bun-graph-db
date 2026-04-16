@@ -136,9 +136,14 @@ Mapping status:
 |---|---|---|---|
 | `component-bundle` | Table metadata projected as reusable OpenAPI `components.schemas` with empty `paths`. | Not the primary OA SDK builder output. | Component validators, docs/AI metadata, MCP projection export, and tooling that needs reusable schemas without operation paths. |
 | `operation-contract` | Table create/update node request contracts with synthetic table-specific paths, requestBody refs, and a required update `nodeId` path parameter. | Possible future operation-level validation fixtures. | MCP tools/list schema generation, MCP projection export, request payload contract tests, and clients that need operation input shapes without a complete API document. |
-| `full-api-document` | Only after bun-graph-db has a complete API document surface, not table-scoped schema material. | Definition Builder target output and `oa-gen build-spec` programmatic validation. | OpenAPI validators, generated clients/routers/types/mocks, and complete API exchange artifacts. |
+| `full-api-document` | Stable bun-graph-db REST and MCP protocol endpoints only, with table projections linked through export operations instead of inlined. | Definition Builder target output and `oa-gen build-spec` programmatic validation. | OpenAPI validators, stable client/router/type/mock flows, and complete API exchange artifacts for fixed endpoint contracts. |
 
 Profiles describe the emitted OpenAPI 3.2 projection shape. They do not make the producer's native model shared.
+
+The bun-graph-db full-document scope is defined in
+[FULL_OPENAPI_DOCUMENT_SCOPE.md](./FULL_OPENAPI_DOCUMENT_SCOPE.md). Runtime
+table shapes remain `component-bundle` or `operation-contract` projection
+artifacts with their own `versionHash`.
 
 ## Pure Engine vs Projection Services
 

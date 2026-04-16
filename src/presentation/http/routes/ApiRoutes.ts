@@ -15,6 +15,7 @@ export function createApiRoutes(
   // System Operations
   router.get('/health', (req, res) => graphDbController.healthCheck(req, res))
   router.get('/stats', (req, res) => graphDbController.systemStats(req, res))
+  router.get('/openapi', (req, res) => graphDbController.getOpenApiDocument(req, res))
 
   // Table Operations
   router.post('/tables', (req, res) => graphDbController.createTable(req, res))
@@ -99,6 +100,7 @@ export const API_ENDPOINT_MAPPING = {
   // MCP Tool Name -> REST API Endpoint
   healthCheck: 'GET /api/health',
   systemStats: 'GET /api/stats',
+  getOpenApiDocument: 'GET /api/openapi',
   createTable: 'POST /api/tables',
   searchTables: 'GET /api/tables/search',
   createNode: 'POST /api/nodes',

@@ -106,6 +106,7 @@ type MinimalControllerRequest = {
 
 type MinimalControllerResponse = {
   status: (code: number) => MinimalControllerResponse
+  type: (contentType: string) => MinimalControllerResponse
   json: (data: unknown) => void
   send: (data: unknown) => void
 }
@@ -333,6 +334,10 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
   const url = new URL(request.url)
   const pathname = url.pathname
   const method = request.method
+  const tableOpenApiProjectionMatch =
+    method === 'GET'
+      ? pathname.match(/^\/api\/tables\/([^/]+)\/openapi-projection$/)
+      : null
 
   try {
     // Parse request body for POST/PUT requests
@@ -358,10 +363,15 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
 
     let responseData: unknown
     let statusCode = 200
+    let contentType = 'application/json'
 
     const res: MinimalControllerResponse = {
       status: (code: number) => {
         statusCode = code
+        return res
+      },
+      type: (nextContentType: string) => {
+        contentType = nextContentType
         return res
       },
       json: (data: unknown) => {
@@ -388,6 +398,8 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
           version: '1.0.0',
         },
       }
+    } else if (method === 'GET' && pathname === '/api/openapi') {
+      await graphDbController.getOpenApiDocument(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/stats') {
       await graphDbController.systemStats(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/tables') {
@@ -398,6 +410,9 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
       await graphController.getTables(expressReq, expressRes)
     } else if (method === 'GET' && pathname === '/api/tables/docs') {
       await graphController.getTableDocs(expressReq, expressRes)
+    } else if (tableOpenApiProjectionMatch) {
+      req.params.tableId = decodeURIComponent(tableOpenApiProjectionMatch[1] || '')
+      await graphController.getTableOpenApiProjection(expressReq, expressRes)
     } else if (method === 'POST' && pathname === '/api/nodes') {
       await graphDbController.createNode(expressReq, expressRes)
     } else if ((method === 'PUT' || method === 'PATCH') && pathname.startsWith('/api/nodes/')) {
@@ -469,7 +484,7 @@ const handleApiRequest = async (request: Request): Promise<Response> => {
     // Return response
     return new Response(typeof responseData === 'string' ? responseData : JSON.stringify(responseData), {
       status: statusCode,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': contentType },
     })
   } catch (error) {
     logger.error('API request error:', toErrorMeta(error))

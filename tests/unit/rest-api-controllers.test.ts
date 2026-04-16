@@ -88,6 +88,7 @@ function createMockRequest(overrides: Partial<Request> = {}): Request {
 function createMockResponse() {
   const res = {
     status: mock((_code: number) => res),
+    type: mock((_contentType: string) => res),
     json: mock((_data: any) => {}),
     send: mock((_data: any) => {}),
   } as unknown as Response
@@ -152,6 +153,47 @@ describe('GraphDbApiController Unit Tests', () => {
         error: 'Health check failed',
       })
       expect(mockLogger.error).toHaveBeenCalled()
+    })
+  })
+
+  describe('getOpenApiDocument', () => {
+    test('should return the static OpenAPI document as application/json', async () => {
+      const req = createMockRequest({
+        params: {
+          tableId: 'should-not-be-required',
+        },
+      })
+      const res = createMockResponse()
+
+      await controller.getOpenApiDocument(req, res)
+
+      expect(res.status).toHaveBeenCalledWith(200)
+      expect(res.type).toHaveBeenCalledWith('application/json')
+      expect(res.json).toHaveBeenCalledTimes(1)
+
+      const document = (res.json as any).mock.calls[0][0]
+      expect(document).toEqual(
+        expect.objectContaining({
+          openapi: '3.2.0',
+          info: expect.objectContaining({
+            title: 'bun-graph-db API',
+          }),
+          paths: expect.objectContaining({
+            '/api/openapi': expect.objectContaining({
+              get: expect.objectContaining({
+                operationId: 'getOpenApiDocument',
+              }),
+            }),
+            '/api/tables/{tableId}/openapi-projection': expect.any(Object),
+            '/mcp': expect.any(Object),
+            '/sub/{tableId}/mcp': expect.any(Object),
+          }),
+        }),
+      )
+      expect(document).not.toHaveProperty('success')
+      expect(document.paths['/api/openapi'].get.parameters).toBeUndefined()
+      expect(JSON.stringify(document)).not.toContain('NodeInput_')
+      expect(JSON.stringify(document)).not.toContain('/schema-engine/tables/')
     })
   })
 

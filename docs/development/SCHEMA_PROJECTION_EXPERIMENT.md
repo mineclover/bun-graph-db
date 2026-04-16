@@ -266,6 +266,11 @@ searchNodes(filter)
 
 The table-specific shape should be a generated projection, not a fixed API contract.
 
+For the static OpenAPI full-document boundary, see
+[FULL_OPENAPI_DOCUMENT_SCOPE.md](./FULL_OPENAPI_DOCUMENT_SCOPE.md). The full
+document is for stable REST and MCP protocol endpoints; table projections stay
+linked projection artifacts with their own profile and `versionHash`.
+
 ## Follow-up Questions
 
 - Should source coordinates use `tableId`, `attributeId`, and `attributeTypeId` as first-class diagnostic locations?

@@ -324,9 +324,32 @@ export class McpToolRegistry {
       },
     }
 
+    const rootOpenApiProjectionTool: McpToolDefinition = {
+      name: 'get-root-openapi-projection',
+      description:
+        'Export a root MCP OpenAPI 3.2 component-bundle projection with argument schemas derived from tools/list inputSchema contracts.',
+      operationType: 'query',
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          profile: {
+            type: 'string',
+            enum: ['component-bundle'],
+            default: 'component-bundle',
+            description: 'Projection profile to return. Root MCP tool contracts currently export component-bundle.',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+      },
+    }
+
     this.register(healthCheckTool)
     this.register(createTableTool)
     this.register(searchNodesTool)
+    this.register(rootOpenApiProjectionTool)
 
     const systemStatsTool: McpToolDefinition = {
       name: 'systemStats',

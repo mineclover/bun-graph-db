@@ -10,6 +10,7 @@ import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { buildBunGraphDbOpenApiDocument } from '@/core/schema/BunGraphDbOpenApiDocument.js'
 import type { ExportTemplateData, HealthCheckData, ImportTemplateData } from '../types/ApiResponseTypes.js'
 import { sendHandleError, sendSuccess, sendValidationError } from '../utils/responseHelpers.js'
 
@@ -59,6 +60,14 @@ export class GraphDbApiController {
       sendSuccess(res, result)
     } catch (error) {
       sendHandleError(res, this.logger, error, 'System stats')
+    }
+  }
+
+  async getOpenApiDocument(_req: Request, res: Response): Promise<void> {
+    try {
+      res.status(200).type('application/json').json(buildBunGraphDbOpenApiDocument())
+    } catch (error) {
+      sendHandleError(res, this.logger, error, 'Get OpenAPI document')
     }
   }
 
