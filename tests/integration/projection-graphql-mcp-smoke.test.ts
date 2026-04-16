@@ -1,4 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import {
+	OPENAPI_PROJECTION_VERSION_HASH_EXTENSION,
+	validateOpenApiProjection,
+} from "@oa-sdk/openapi-projection-contract";
 import { TableSchemaProjectionService } from "../../src/application/services/TableSchemaProjectionService";
 import type { IAttributeRepository } from "../../src/domain/repositories/IAttributeRepository";
 import type { IAttributeTypeRepository } from "../../src/domain/repositories/IAttributeTypeRepository";
@@ -57,6 +61,44 @@ type ListedTool = {
 	_meta?: Record<string, any>;
 };
 
+type ProjectionProfile = "component-bundle" | "operation-contract";
+
+type ProjectionEnvelope = {
+	profile: ProjectionProfile;
+	projection: {
+		openapi: string;
+		paths: Record<string, Record<string, unknown>>;
+		components?: {
+			schemas?: Record<string, unknown>;
+		};
+		[OPENAPI_PROJECTION_VERSION_HASH_EXTENSION]?: string;
+	};
+	refs: unknown[];
+	sources: Record<string, unknown>;
+	diagnostics: unknown[];
+	versionHash: string;
+	typeTargets: unknown[];
+};
+
+type ProjectionToolOutput = {
+	projection: ProjectionEnvelope | null;
+	validation: {
+		valid: boolean;
+		diagnostics: unknown[];
+	};
+};
+
+type ToolCallResponse = {
+	result?: {
+		content?: Array<{
+			type?: string;
+			text?: string;
+		}>;
+		isError?: boolean;
+	};
+	error?: unknown;
+};
+
 describe("Projection GraphQL + table MCP smoke", () => {
 	let container: DIContainer;
 	let testEnvironment: TestEnvironment;
@@ -106,6 +148,149 @@ describe("Projection GraphQL + table MCP smoke", () => {
 		restoreDatabasePath?.();
 		await testEnvironment.cleanup();
 	}, TEST_TIMEOUT);
+
+	test(
+		"exports a newly created table OpenAPI projection through table-scoped MCP",
+		async () => {
+			const suffix = Date.now();
+			const tableIdentifier = `mcp_projection_export_${suffix}`;
+			const statusTypeIdentifier = `mcp_export_status_${suffix}`;
+			const priorityTypeIdentifier = `mcp_export_priority_${suffix}`;
+
+			const tableResult = await graphql<{
+				createTable: MutationPayload<{ table: CreatedTable }>;
+			}>(
+				`
+          mutation CreateMcpProjectionExportTable($input: CreateTableInput!) {
+            createTable(input: $input) {
+              success
+              table {
+                id
+                identifier
+              }
+              errors {
+                message
+                code
+                field
+              }
+            }
+          }
+        `,
+				{
+					input: {
+						identifier: tableIdentifier,
+						description: "MCP projection export integration table",
+					},
+				},
+			);
+			const table = expectSuccessfulMutation(
+				tableResult.createTable,
+				"createTable",
+			).table;
+
+			const statusType = await createAttributeType({
+				identifier: statusTypeIdentifier,
+				name: "Export Status",
+				dataType: "string",
+				constraints: { enum: ["draft", "ready", "archived"] },
+			});
+			const priorityType = await createAttributeType({
+				identifier: priorityTypeIdentifier,
+				name: "Export Priority",
+				dataType: "integer",
+				constraints: { minimum: 1, maximum: 5 },
+			});
+
+			await createAttribute({
+				tableId: table.id,
+				identifier: "status",
+				name: "Status",
+				attributeTypeId: statusType.id,
+			});
+			await createAttribute({
+				tableId: table.id,
+				identifier: "priority",
+				name: "Priority",
+				attributeTypeId: priorityType.id,
+			});
+
+			const tools = await listTableMcpTools(table.id);
+			const projectionTool = tools.find(
+				(tool) => tool.name === `get-openapi-projection-${table.id}`,
+			);
+			expect(projectionTool).toBeDefined();
+			if (!projectionTool) {
+				throw new Error("Expected MCP projection export tool");
+			}
+
+			const componentCall = await callTableMcpTool(
+				table.id,
+				projectionTool.name,
+				{ profile: "component-bundle" },
+			);
+			const componentOutput = readProjectionToolOutput(componentCall);
+			expect(componentCall.result?.isError).toBe(false);
+			expectProjectionOutput(componentOutput);
+			expect(componentOutput.validation).toEqual(
+				validateOpenApiProjection(componentOutput.projection),
+			);
+			expect(componentOutput.validation).toEqual({
+				valid: true,
+				diagnostics: [],
+			});
+			expectProjectionEnvelopeFields(
+				componentOutput.projection,
+				"component-bundle",
+			);
+			const componentSchemas =
+				componentOutput.projection.projection.components?.schemas;
+			expect(componentSchemas).toBeDefined();
+			expect(Object.keys(componentSchemas ?? {})).toEqual(
+				expect.arrayContaining([
+					expect.stringContaining("NodeInput_"),
+					expect.stringContaining("NodeAttributes_"),
+					expect.stringContaining("AttributeType_"),
+				]),
+			);
+
+			const operationCall = await callTableMcpTool(
+				table.id,
+				projectionTool.name,
+				{ profile: "operation-contract" },
+			);
+			const operationOutput = readProjectionToolOutput(operationCall);
+			expect(operationCall.result?.isError).toBe(false);
+			expectProjectionOutput(operationOutput);
+			expect(operationOutput.validation).toEqual(
+				validateOpenApiProjection(operationOutput.projection),
+			);
+			expect(operationOutput.validation).toEqual({
+				valid: true,
+				diagnostics: [],
+			});
+			expectProjectionEnvelopeFields(
+				operationOutput.projection,
+				"operation-contract",
+			);
+			expect(operationOutput.projection.projection.paths).toEqual(
+				expect.objectContaining({
+					[`/schema-engine/tables/${table.identifier}/nodes`]:
+						expect.objectContaining({
+							post: expect.objectContaining({
+								operationId: expect.stringContaining("create"),
+							}),
+						}),
+					[`/schema-engine/tables/${table.identifier}/nodes/{nodeId}`]:
+						expect.objectContaining({
+							patch: expect.objectContaining({
+								operationId: expect.stringContaining("update"),
+							}),
+						}),
+				}),
+			);
+		},
+		TEST_TIMEOUT,
+	);
 
 	test(
 		"refreshes table-scoped MCP schema after GraphQL projection changes",
@@ -244,6 +429,7 @@ describe("Projection GraphQL + table MCP smoke", () => {
 			]);
 
 			const beforeTools = await listTableMcpTools(table.id);
+			const beforeProjectionTool = getProjectionTool(beforeTools, table.id);
 			const beforeCreateNodeTool = getCreateNodeTool(beforeTools, table.id);
 			const beforeUpdateNodeTool = getUpdateNodeTool(beforeTools, table.id);
 			const beforeAttributesSchema =
@@ -251,6 +437,7 @@ describe("Projection GraphQL + table MCP smoke", () => {
 			const beforeProjectionHash =
 				beforeCreateNodeTool._meta?.tableSchemaProjection?.versionHash;
 
+			expect(beforeProjectionHash).toBeDefined();
 			expect(beforeAttributesSchema.properties.status).toEqual(
 				expect.objectContaining({
 					type: "string",
@@ -274,6 +461,44 @@ describe("Projection GraphQL + table MCP smoke", () => {
 					tableIdentifier,
 				}),
 			);
+			const beforeProjectionCall = await callTableMcpTool(
+				table.id,
+				beforeProjectionTool.name,
+				{ profile: "component-bundle" },
+			);
+			const beforeProjectionOutput =
+				readProjectionToolOutput(beforeProjectionCall);
+			expect(beforeProjectionCall.result?.isError).toBe(false);
+			expectProjectionOutput(beforeProjectionOutput);
+			expect(beforeProjectionOutput.validation).toEqual(
+				validateOpenApiProjection(beforeProjectionOutput.projection),
+			);
+			expect(beforeProjectionOutput.projection.versionHash).toBe(
+				beforeProjectionHash,
+			);
+			expect(
+				beforeProjectionOutput.projection.projection[
+					OPENAPI_PROJECTION_VERSION_HASH_EXTENSION
+				],
+			).toBe(beforeProjectionOutput.projection.versionHash);
+			const beforeProjectionSchemas = expectProjectionComponentSchemas(
+				beforeProjectionOutput.projection,
+			);
+			const beforeNodeAttributesSchema = getComponentSchemaByPrefix(
+				beforeProjectionSchemas,
+				"NodeAttributes_",
+			);
+			expect(beforeNodeAttributesSchema.properties.status).toEqual(
+				expect.objectContaining({
+					$ref: expect.stringContaining("AttributeType_SmokeStatus"),
+				}),
+			);
+			const beforeStatusTypeSchema = getComponentSchemaByPrefix(
+				beforeProjectionSchemas,
+				"AttributeType_SmokeStatus",
+			);
+			expect(beforeStatusTypeSchema.enum).toEqual(["todo", "doing"]);
+
 			expect(beforeUpdateNodeTool.inputSchema.required).toEqual(["nodeId"]);
 			expect(beforeUpdateNodeTool.inputSchema.properties.attributes).toEqual(
 				expect.objectContaining({
@@ -315,6 +540,7 @@ describe("Projection GraphQL + table MCP smoke", () => {
 			);
 
 			const afterTools = await listTableMcpTools(table.id);
+			const afterProjectionTool = getProjectionTool(afterTools, table.id);
 			const afterCreateNodeTool = getCreateNodeTool(afterTools, table.id);
 			const afterUpdateNodeTool = getUpdateNodeTool(afterTools, table.id);
 			const afterAttributesSchema =
@@ -345,6 +571,47 @@ describe("Projection GraphQL + table MCP smoke", () => {
 					enum: ["todo", "doing", "done"],
 				}),
 			);
+			expect(
+				afterUpdateNodeTool._meta?.tableSchemaProjection?.versionHash,
+			).toBe(afterProjectionHash);
+			const afterProjectionCall = await callTableMcpTool(
+				table.id,
+				afterProjectionTool.name,
+				{ profile: "component-bundle" },
+			);
+			const afterProjectionOutput = readProjectionToolOutput(afterProjectionCall);
+			expect(afterProjectionCall.result?.isError).toBe(false);
+			expectProjectionOutput(afterProjectionOutput);
+			expect(afterProjectionOutput.validation).toEqual(
+				validateOpenApiProjection(afterProjectionOutput.projection),
+			);
+			expect(afterProjectionOutput.projection.versionHash).toBe(
+				afterProjectionHash,
+			);
+			expect(afterProjectionOutput.projection.versionHash).not.toBe(
+				beforeProjectionOutput.projection.versionHash,
+			);
+			expect(
+				afterProjectionOutput.projection.projection[
+					OPENAPI_PROJECTION_VERSION_HASH_EXTENSION
+				],
+			).toBe(afterProjectionOutput.projection.versionHash);
+			const afterProjectionSchemas = expectProjectionComponentSchemas(
+				afterProjectionOutput.projection,
+			);
+			const afterNodeAttributesSchema = getComponentSchemaByPrefix(
+				afterProjectionSchemas,
+				"NodeAttributes_",
+			);
+			expect(afterNodeAttributesSchema.properties.status).toEqual(
+				beforeNodeAttributesSchema.properties.status,
+			);
+			const afterStatusTypeSchema = getComponentSchemaByPrefix(
+				afterProjectionSchemas,
+				"AttributeType_SmokeStatus",
+			);
+			expect(afterStatusTypeSchema.enum).toEqual(["todo", "doing", "done"]);
+			expect(afterStatusTypeSchema.enum).not.toEqual(beforeStatusTypeSchema.enum);
 
 			const lookupResult = await graphql<{
 				table: CreatedTable | null;
@@ -482,6 +749,112 @@ describe("Projection GraphQL + table MCP smoke", () => {
 		expect(Array.isArray(result.result?.tools)).toBe(true);
 
 		return result.result.tools as ListedTool[];
+	}
+
+	async function callTableMcpTool(
+		tableId: string,
+		toolName: string,
+		args: Record<string, unknown>,
+	): Promise<ToolCallResponse> {
+		const response = await tableMcpMiddleware(
+			new Request(`${MCP_BASE_URL}/sub/${tableId}/mcp`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					jsonrpc: "2.0",
+					id: `tools-call-${tableId}`,
+					method: "tools/call",
+					params: {
+						name: toolName,
+						arguments: args,
+					},
+				}),
+			}),
+		);
+
+		expect(response.status).toBe(200);
+
+		const result = (await response.json()) as ToolCallResponse;
+		expect(result.error).toBeUndefined();
+
+		return result;
+	}
+
+	function readProjectionToolOutput(
+		response: ToolCallResponse,
+	): ProjectionToolOutput {
+		const text = response.result?.content?.find(
+			(entry) => typeof entry.text === "string",
+		)?.text;
+		expect(text).toBeDefined();
+		if (!text) {
+			throw new Error("Expected projection MCP tool to return text content");
+		}
+
+		return JSON.parse(text) as ProjectionToolOutput;
+	}
+
+	function expectProjectionOutput(
+		output: ProjectionToolOutput,
+	): asserts output is ProjectionToolOutput & { projection: ProjectionEnvelope } {
+		expect(output.projection).not.toBeNull();
+		if (!output.projection) {
+			throw new Error("Expected MCP projection output");
+		}
+	}
+
+	function expectProjectionEnvelopeFields(
+		projection: ProjectionEnvelope,
+		profile: ProjectionProfile,
+	): void {
+		expect(projection).toEqual(
+			expect.objectContaining({
+				profile,
+				refs: expect.any(Array),
+				sources: expect.any(Object),
+				diagnostics: expect.any(Array),
+				versionHash: expect.any(String),
+				typeTargets: expect.any(Array),
+			}),
+		);
+		expect(projection.refs.length).toBeGreaterThan(0);
+		expect(Object.keys(projection.sources).length).toBeGreaterThan(0);
+		expect(projection.diagnostics).toEqual([]);
+		expect(projection.versionHash.length).toBeGreaterThan(0);
+		expect(projection.typeTargets.length).toBeGreaterThan(0);
+	}
+
+	function expectProjectionComponentSchemas(
+		projection: ProjectionEnvelope,
+	): Record<string, any> {
+		const schemas = projection.projection.components?.schemas;
+		expect(schemas).toBeDefined();
+		if (!schemas) {
+			throw new Error("Expected projection components.schemas");
+		}
+		return schemas as Record<string, any>;
+	}
+
+	function getComponentSchemaByPrefix(
+		schemas: Record<string, any>,
+		prefix: string,
+	): Record<string, any> {
+		const entry = Object.entries(schemas).find(([name]) =>
+			name.startsWith(prefix),
+		);
+		expect(entry).toBeDefined();
+		if (!entry) {
+			throw new Error(`Expected component schema starting with ${prefix}`);
+		}
+		return entry[1] as Record<string, any>;
+	}
+
+	function getProjectionTool(tools: ListedTool[], tableId: string): ListedTool {
+		const tool = tools.find(
+			(candidate) => candidate.name === `get-openapi-projection-${tableId}`,
+		);
+		expect(tool).toBeDefined();
+		return tool as ListedTool;
 	}
 
 	function getCreateNodeTool(tools: ListedTool[], tableId: string): ListedTool {

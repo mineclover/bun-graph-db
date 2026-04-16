@@ -46,6 +46,8 @@ The prototype exports:
 - `validateProjectedNodeUpdateInput(data, projection)`
 - `TableSchemaProjectionService.project({ tableId | identifier })`
 - `SchemaMapper.mapTableProjectionToMcpInputSchema(projection)`
+- `SchemaMapper.mapOpenApiProjectionToMcpNodeToolSchemas(projection)`
+- table-scoped MCP `get-openapi-projection-{tableId}` export tool
 
 ## Projection Shape
 
@@ -116,12 +118,127 @@ This remains intentionally scoped. It proves projection-backed value validation 
 Projection is now used beyond the pure experiment:
 
 - table-scoped MCP `tools/list` create/update node tools expose projection-derived `inputSchema`
+- table-scoped MCP `tools/call` can export the current OpenAPI projection through `get-openapi-projection-{tableId}`
 - `CreateNodeUseCase` validates identifier-keyed attributes against the current projection
 - `UpdateNodeUseCase` validates partial attribute updates without requiring all create-time required fields
 - table schema changes refresh cached table-scoped MCP servers through `TableMcpServerFactory`
 - generated table templates can be marked stale after schema changes
 - `GetTableDocsUseCase` exposes projection freshness via `projectionVersionHash`
 - integration smoke covers GraphQL table/attribute changes and table-scoped MCP schema refresh
+
+## MCP Projection Export Usage
+
+MCP is a consumer surface for table schema projections, not the source of
+truth. The source path remains:
+
+```txt
+Table + Attribute + AttributeType repositories
+  -> TableSchemaProjectionService.project()
+  -> TableSchemaOpenApiProjection adapter
+  -> shared validateOpenApiProjection()
+  -> MCP / REST / GraphQL consumers
+```
+
+REST and GraphQL projection export remain available for non-MCP clients:
+
+- REST: `GET /api/tables/:tableId/openapi-projection?profile=component-bundle`
+- GraphQL: `tableOpenApiProjection(tableId: ID, identifier: String, profile: String = "component-bundle"): JSON`
+
+The table-scoped MCP server exposes the same projection through the tool named
+`get-openapi-projection-{tableId}` at `/sub/:tableId/mcp`. The tool accepts one
+optional argument:
+
+| Profile | Use when | Shape |
+|---|---|---|
+| `component-bundle` | A client needs reusable OpenAPI 3.2 component schemas for the table. This is the default. | Empty `paths` and populated `components.schemas`. |
+| `operation-contract` | A client needs create/update request contracts for table nodes. | `paths` contains table node operations with request bodies that reference reusable schemas. |
+
+Example JSON-RPC call for the default component bundle:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "projection-component-bundle",
+  "method": "tools/call",
+  "params": {
+    "name": "get-openapi-projection-project_tasks",
+    "arguments": {
+      "profile": "component-bundle"
+    }
+  }
+}
+```
+
+Example JSON-RPC call for the operation contract profile:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": "projection-operation-contract",
+  "method": "tools/call",
+  "params": {
+    "name": "get-openapi-projection-project_tasks",
+    "arguments": {
+      "profile": "operation-contract"
+    }
+  }
+}
+```
+
+The MCP tool content is JSON text with this shape:
+
+```json
+{
+  "projection": {
+    "profile": "component-bundle",
+    "projection": {
+      "openapi": "3.2.0",
+      "info": {
+        "title": "Table schema components for project_tasks",
+        "version": "..."
+      },
+      "paths": {},
+      "components": {
+        "schemas": {}
+      },
+      "x-schema-engine-profile": "component-bundle",
+      "x-schema-engine-version-hash": "..."
+    },
+    "refs": [],
+    "diagnostics": [],
+    "sources": {},
+    "versionHash": "...",
+    "typeTargets": []
+  },
+  "validation": {
+    "valid": true,
+    "diagnostics": []
+  }
+}
+```
+
+`validation` is the direct result of
+`validateOpenApiProjection(output.projection)`. When the projection is valid,
+MCP returns `result.isError: false`. When projection diagnostics contain errors,
+the tool still returns JSON content with `projection` and `validation`, but
+`validation.valid` is `false` and MCP marks `result.isError: true`.
+
+Troubleshooting:
+
+- Unsupported profiles such as `full-api-document` are rejected by the MCP tool.
+  The response has `projection: null`, `validation.valid: false`, and an
+  `openapi-projection/invalid-profile` diagnostic. Table-scoped MCP currently
+  supports only `component-bundle` and `operation-contract`.
+- If the table MCP server was created without `TableSchemaProjectionService`,
+  the response has `projection: null`, `validation.valid: false`, and an
+  `openapi-projection/service-unavailable` diagnostic.
+- If `tools/list` shows `_meta.tableSchemaProjection.usable: false` on
+  create/update node tools, the server fell back to safe generic MCP input
+  schemas because the current table projection has error diagnostics. Call
+  `get-openapi-projection-{tableId}` and inspect both `projection.diagnostics`
+  and `validation.diagnostics` for the failing database source coordinates.
+- Invalid projections are not JSON-RPC transport failures. Clients should parse
+  the tool content and branch on `validation.valid` plus `result.isError`.
 
 ## Integration Direction
 
@@ -132,9 +249,10 @@ Preferred integration:
 ```txt
 Table + Attribute + AttributeType
   -> TableSchemaProjection
-  -> SchemaMapper.mapTableProjectionToMcpInputSchema()
+  -> TableSchemaOpenApiProjection adapter
+  -> SchemaMapper.mapOpenApiProjectionToMcpNodeToolSchemas()
   -> runtime data validation
-  -> docs / AI metadata
+  -> REST / GraphQL / MCP / docs / AI metadata
   -> optional generated helper types
 ```
 
@@ -164,11 +282,13 @@ bun test tests/unit/schema/table-schema-projection.test.ts \
   tests/unit/schema/table-schema-projection-service.test.ts \
   tests/unit/use-cases/CreateNode.test.ts \
   tests/unit/use-cases/UpdateNode.test.ts \
+  tests/unit/mcp-openapi-projection-tool-handler.test.ts \
   tests/integration/mcp-table-projection-tools-list.test.ts \
   tests/integration/projection-graphql-mcp-smoke.test.ts
 
 bun run typecheck
 bun run lint --max-diagnostics=20
+bun run build
 ```
 
 Result:
@@ -176,3 +296,4 @@ Result:
 - focused projection/runtime tests: pass
 - typecheck: pass
 - lint: pass with no warnings after projection lint cleanup
+- build: pass

@@ -23,6 +23,7 @@ As-is, sharing is limited to the OpenAPI projection contract and validation boun
 - OpenAPI 3.2 is the validation and exchange projection interface. OA SDK emits `full-api-document`; bun-graph-db emits `component-bundle` for reusable table schemas and `operation-contract` for create/update node request contracts.
 - `@oa-sdk/openapi-projection-contract` is a contract and validation package, not a shared source loader or engine. It defines result types, profiles, root-level `x-schema-engine-*` projection metadata, and `validateOpenApiProjection()`.
 - bun-graph-db table-scoped MCP tools/list schema generation consumes the OpenAPI operation-contract projection first and keeps the direct table projection mapper only as a compatibility fallback.
+- bun-graph-db table-scoped MCP tools/call can export current OpenAPI projection results through `get-openapi-projection-{tableId}` without making MCP the source of truth.
 
 To-be, implementation sharing remains optional and gated:
 
@@ -133,8 +134,8 @@ Mapping status:
 
 | Profile | bun-graph-db use | OA SDK use | Intended consumers |
 |---|---|---|---|
-| `component-bundle` | Table metadata projected as reusable OpenAPI `components.schemas` with empty `paths`. | Not the primary OA SDK builder output. | Component validators, docs/AI metadata, and tooling that needs reusable schemas without operation paths. |
-| `operation-contract` | Table create/update node request contracts with synthetic table-specific paths, requestBody refs, and a required update `nodeId` path parameter. | Possible future operation-level validation fixtures. | MCP tools/list schema generation, request payload contract tests, and clients that need operation input shapes without a complete API document. |
+| `component-bundle` | Table metadata projected as reusable OpenAPI `components.schemas` with empty `paths`. | Not the primary OA SDK builder output. | Component validators, docs/AI metadata, MCP projection export, and tooling that needs reusable schemas without operation paths. |
+| `operation-contract` | Table create/update node request contracts with synthetic table-specific paths, requestBody refs, and a required update `nodeId` path parameter. | Possible future operation-level validation fixtures. | MCP tools/list schema generation, MCP projection export, request payload contract tests, and clients that need operation input shapes without a complete API document. |
 | `full-api-document` | Only after bun-graph-db has a complete API document surface, not table-scoped schema material. | Definition Builder target output and `oa-gen build-spec` programmatic validation. | OpenAPI validators, generated clients/routers/types/mocks, and complete API exchange artifacts. |
 
 Profiles describe the emitted OpenAPI 3.2 projection shape. They do not make the producer's native model shared.
@@ -253,6 +254,7 @@ Downstream adapters then consume the projection:
 
 - `src/core/schema/TableSchemaOpenApiProjection.ts` maps table projections into `component-bundle` and `operation-contract` OpenAPI 3.2 projections.
 - `src/presentation/mcp/schema/SchemaMapper.ts` maps `operation-contract` projections into MCP input schemas, with direct table projection mapping retained only as a compatibility fallback.
+- `src/presentation/mcp/factory/TableMcpServer.ts` exposes current table OpenAPI projection artifacts through `get-openapi-projection-{tableId}` as an MCP consumer surface.
 - Table-scoped MCP cache invalidation refreshes only already-cached matching table servers and removes cached servers when a table is deleted.
 - `GetTableDocsUseCase` exposes the projection `versionHash` as docs and AI metadata freshness.
 - Generated templates are invalidated independently by marking matching `auto-generated` and `table:<id>` templates stale.

@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { validateOpenApiProjection } from "@oa-sdk/openapi-projection-contract";
 import type { Database } from "bun:sqlite";
 import { TableSchemaProjectionService } from "../../src/application/services/TableSchemaProjectionService";
 import { projectTableSchema } from "../../src/core/schema/TableSchemaProjection";
@@ -82,6 +83,28 @@ describe("Table MCP tools/list projection schemas", () => {
 		expect(
 			tools.some((tool) => tool.name === `get-table-${tableId}-attributes`),
 		).toBe(true);
+
+		const openApiProjectionTool = tools.find(
+			(tool) => tool.name === `get-openapi-projection-${tableId}`,
+		);
+		expect(openApiProjectionTool).toBeDefined();
+		expect(openApiProjectionTool?.description).toContain(
+			"OpenAPI 3.2 projection artifact for the current table",
+		);
+		expect(openApiProjectionTool?.inputSchema).toEqual(
+			expect.objectContaining({
+				type: "object",
+				required: [],
+				additionalProperties: false,
+				properties: expect.objectContaining({
+					profile: expect.objectContaining({
+						type: "string",
+						enum: ["component-bundle", "operation-contract"],
+						default: "component-bundle",
+					}),
+				}),
+			}),
+		);
 
 		const createNodeTool = tools.find(
 			(tool) => tool.name === `create-table-${tableId}-node`,
@@ -226,6 +249,213 @@ describe("Table MCP tools/list projection schemas", () => {
 		);
 	});
 
+	test("lists projection export tool without projection service and reports service absence on call", async () => {
+		const db = testEnvironment.database.getConnection();
+		const tableId = seedProjectedTable(db, "projection_no_service_tasks");
+		const yoga = await createGraphQLYoga(container);
+		const graphqlEndpoint = "http://mcp-projection-no-service.test/graphql";
+		connectGraphqlFetchToYoga(graphqlEndpoint, yoga, originalFetch);
+
+		const tableMcpMiddleware = createTableMcpMiddleware({
+			graphqlEndpoint,
+			restApiBaseUrl: "http://mcp-projection-no-service.test/api",
+		});
+
+		const tools = await listTableMcpTools(tableMcpMiddleware, tableId);
+		const openApiProjectionTool = tools.find(
+			(tool) => tool.name === `get-openapi-projection-${tableId}`,
+		);
+
+		expect(openApiProjectionTool).toBeDefined();
+		expect(openApiProjectionTool?.description).toContain(
+			"OpenAPI 3.2 projection artifact for the current table",
+		);
+		expect(openApiProjectionTool?.inputSchema).toEqual(
+			expect.objectContaining({
+				type: "object",
+				required: [],
+				additionalProperties: false,
+				properties: expect.objectContaining({
+					profile: expect.objectContaining({
+						type: "string",
+						enum: ["component-bundle", "operation-contract"],
+						default: "component-bundle",
+					}),
+				}),
+			}),
+		);
+
+		const callResult = await callTableMcpTool(
+			tableMcpMiddleware,
+			tableId,
+			`get-openapi-projection-${tableId}`,
+			{},
+		);
+		const output = readToolTextPayload(callResult);
+
+		expect(callResult.result.isError).toBe(true);
+		expect(output).toEqual(
+			expect.objectContaining({
+				projection: null,
+				validation: expect.objectContaining({
+					valid: false,
+					diagnostics: expect.arrayContaining([
+						expect.objectContaining({
+							severity: "error",
+							code: "openapi-projection/service-unavailable",
+						}),
+					]),
+				}),
+				error: expect.objectContaining({
+					code: "openapi-projection/service-unavailable",
+					message:
+						"Table schema projection service is not configured for this table MCP server.",
+				}),
+			}),
+		);
+	});
+
+	test("exports current table OpenAPI projection result and validation for supported profiles", async () => {
+		const db = testEnvironment.database.getConnection();
+		const tableId = seedProjectedTable(db, "projection_export_tasks");
+		const yoga = await createGraphQLYoga(container);
+		const graphqlEndpoint = "http://mcp-projection-export.test/graphql";
+		connectGraphqlFetchToYoga(graphqlEndpoint, yoga, originalFetch);
+
+		const realProjectionService = new TableSchemaProjectionService(
+			(await container.resolve(
+				RepositoryTokens.TABLE_REPOSITORY,
+			)) as ITableRepository,
+			(await container.resolve(
+				RepositoryTokens.ATTRIBUTE_REPOSITORY,
+			)) as IAttributeRepository,
+			(await container.resolve(
+				RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+			)) as IAttributeTypeRepository,
+		);
+		const projectCalls: Array<{ tableId: string }> = [];
+		const tableMcpMiddleware = createTableMcpMiddleware({
+			graphqlEndpoint,
+			restApiBaseUrl: "http://mcp-projection-export.test/api",
+			projectionService: {
+				project: async (request) => {
+					projectCalls.push({ tableId: request.tableId });
+					return realProjectionService.project(request);
+				},
+			},
+		});
+
+		await listTableMcpTools(tableMcpMiddleware, tableId);
+		projectCalls.length = 0;
+
+		const componentCall = await callTableMcpTool(
+			tableMcpMiddleware,
+			tableId,
+			`get-openapi-projection-${tableId}`,
+			{},
+		);
+		const componentOutput = readToolTextPayload(componentCall);
+		const componentProjection = componentOutput.projection;
+
+		expect(componentCall.result.isError).toBe(false);
+		expect(projectCalls).toEqual([{ tableId }]);
+		expect(componentOutput.validation).toEqual(
+			validateOpenApiProjection(componentProjection),
+		);
+		expect(componentOutput.validation).toEqual({
+			valid: true,
+			diagnostics: [],
+		});
+		expectProjectionEnvelopeFields(componentProjection, "component-bundle");
+		expect(componentProjection.projection.paths).toEqual({});
+		expect(componentProjection.projection.components.schemas).toEqual(
+			expect.objectContaining({
+				NodeAttributes_ProjectionExportTasks: expect.objectContaining({
+					type: "object",
+				}),
+			}),
+		);
+
+		const operationCall = await callTableMcpTool(
+			tableMcpMiddleware,
+			tableId,
+			`get-openapi-projection-${tableId}`,
+			{ profile: "operation-contract" },
+		);
+		const operationOutput = readToolTextPayload(operationCall);
+		const operationProjection = operationOutput.projection;
+
+		expect(operationCall.result.isError).toBe(false);
+		expect(projectCalls).toEqual([{ tableId }, { tableId }]);
+		expect(operationOutput.validation).toEqual(
+			validateOpenApiProjection(operationProjection),
+		);
+		expect(operationOutput.validation).toEqual({
+			valid: true,
+			diagnostics: [],
+		});
+		expectProjectionEnvelopeFields(operationProjection, "operation-contract");
+		expect(operationProjection.projection.paths).toEqual(
+			expect.objectContaining({
+				"/schema-engine/tables/projection_export_tasks/nodes":
+					expect.objectContaining({
+						post: expect.objectContaining({
+							operationId: "createProjectionExportTasksNode",
+						}),
+					}),
+				"/schema-engine/tables/projection_export_tasks/nodes/{nodeId}":
+					expect.objectContaining({
+						patch: expect.objectContaining({
+							operationId: "updateProjectionExportTasksNode",
+						}),
+					}),
+			}),
+		);
+	});
+
+	test("returns structured projection error for unsupported profile", async () => {
+		const db = testEnvironment.database.getConnection();
+		const tableId = seedProjectedTable(db, "projection_invalid_profile_tasks");
+		const yoga = await createGraphQLYoga(container);
+		const graphqlEndpoint = "http://mcp-projection-invalid-profile.test/graphql";
+		connectGraphqlFetchToYoga(graphqlEndpoint, yoga, originalFetch);
+
+		const tableMcpMiddleware = createTableMcpMiddleware({
+			graphqlEndpoint,
+			restApiBaseUrl: "http://mcp-projection-invalid-profile.test/api",
+		});
+
+		const callResult = await callTableMcpTool(
+			tableMcpMiddleware,
+			tableId,
+			`get-openapi-projection-${tableId}`,
+			{ profile: "full-api-document" },
+		);
+		const output = readToolTextPayload(callResult);
+
+		expect(callResult.result.isError).toBe(true);
+		expect(output).toEqual(
+			expect.objectContaining({
+				projection: null,
+				validation: expect.objectContaining({
+					valid: false,
+					diagnostics: expect.arrayContaining([
+						expect.objectContaining({
+							severity: "error",
+							code: "openapi-projection/invalid-profile",
+							message:
+								"profile must be component-bundle or operation-contract",
+						}),
+					]),
+				}),
+				error: expect.objectContaining({
+					code: "openapi-projection/invalid-profile",
+					message: "profile must be component-bundle or operation-contract",
+				}),
+			}),
+		);
+	});
+
 	test("marks projection error diagnostics unusable on table-scoped tools", async () => {
 		const db = testEnvironment.database.getConnection();
 		const tableId = seedProjectedTable(db, "projection_broken_tasks");
@@ -261,6 +491,9 @@ describe("Table MCP tools/list projection schemas", () => {
 		const createNodeTool = tools.find(
 			(tool) => tool.name === `create-table-${tableId}-node`,
 		);
+		const updateNodeTool = tools.find(
+			(tool) => tool.name === `update-table-${tableId}-node`,
+		);
 
 		expect(createNodeTool?.inputSchema.properties.attributes).toEqual(
 			expect.objectContaining({
@@ -268,7 +501,33 @@ describe("Table MCP tools/list projection schemas", () => {
 				additionalProperties: true,
 			}),
 		);
+		expect(updateNodeTool?.inputSchema).toEqual(
+			expect.objectContaining({
+				type: "object",
+				required: ["nodeId", "attributes"],
+				properties: expect.objectContaining({
+					nodeId: expect.objectContaining({ type: "string" }),
+					attributes: expect.objectContaining({
+						type: "object",
+						additionalProperties: true,
+						required: [],
+					}),
+				}),
+			}),
+		);
 		expect(createNodeTool?._meta?.tableSchemaProjection).toEqual(
+			expect.objectContaining({
+				available: true,
+				usable: false,
+				profile: "operation-contract",
+				schemaSource: "openapi-projection",
+				tableId,
+				errors: expect.arrayContaining([
+					expect.objectContaining({ code: "attribute-type-not-found" }),
+				]),
+			}),
+		);
+		expect(updateNodeTool?._meta?.tableSchemaProjection).toEqual(
 			expect.objectContaining({
 				available: true,
 				usable: false,
@@ -285,9 +544,12 @@ describe("Table MCP tools/list projection schemas", () => {
 
 type ListedTool = {
 	name: string;
+	description: string;
 	inputSchema: {
+		type?: string;
 		properties: Record<string, any>;
 		required: string[];
+		additionalProperties?: boolean;
 	};
 	_meta?: Record<string, any>;
 };
@@ -331,6 +593,77 @@ async function listTableMcpTools(
 
 	const result = await response!.json();
 	return result.result.tools as ListedTool[];
+}
+
+async function callTableMcpTool(
+	tableMcpMiddleware: ReturnType<typeof createTableMcpMiddleware>,
+	tableId: string,
+	toolName: string,
+	args: Record<string, unknown>,
+): Promise<{
+	result: {
+		content: Array<{ type: string; text: string }>;
+		isError: boolean;
+	};
+}> {
+	const response = await tableMcpMiddleware(
+		new Request(`http://mcp-projection.test/sub/${tableId}/mcp`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				jsonrpc: "2.0",
+				id: "tools-call",
+				method: "tools/call",
+				params: {
+					name: toolName,
+					arguments: args,
+				},
+			}),
+		}),
+	);
+
+	expect(response).not.toBeNull();
+	expect(response?.status).toBe(200);
+
+	const result = await response!.json();
+	expect(result.error).toBeUndefined();
+	return result;
+}
+
+function readToolTextPayload(callResult: {
+	result: { content: Array<{ text: string }> };
+}): Record<string, any> {
+	const textContent = callResult.result.content.find(
+		(content) => typeof content.text === "string",
+	);
+	expect(textContent).toBeDefined();
+	return JSON.parse(textContent!.text);
+}
+
+function expectProjectionEnvelopeFields(
+	projection: Record<string, any>,
+	profile: "component-bundle" | "operation-contract",
+): void {
+	expect(projection).toEqual(
+		expect.objectContaining({
+			profile,
+			projection: expect.objectContaining({
+				openapi: "3.2.0",
+				"x-schema-engine-profile": profile,
+				"x-schema-engine-version-hash": projection.versionHash,
+				"x-schema-engine-refs": projection.refs,
+				"x-schema-engine-sources": projection.sources,
+			}),
+			refs: expect.any(Array),
+			diagnostics: expect.any(Array),
+			sources: expect.any(Object),
+			versionHash: expect.any(String),
+			typeTargets: expect.any(Array),
+		}),
+	);
+	expect(projection.refs.length).toBeGreaterThan(0);
+	expect(Object.keys(projection.sources).length).toBeGreaterThan(0);
+	expect(projection.typeTargets.length).toBeGreaterThan(0);
 }
 
 function seedProjectedTable(

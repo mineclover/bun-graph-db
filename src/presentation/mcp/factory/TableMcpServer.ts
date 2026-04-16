@@ -12,9 +12,12 @@ import type { TableSchemaProjectionService } from "../../../application/services
 import {
 	validateOpenApiProjection,
 	type SchemaDiagnostic,
+	type SchemaValidateResult,
 } from "@oa-sdk/openapi-projection-contract";
 import {
+	toTableSchemaOpenApiProjectionResult,
 	toTableSchemaOpenApiOperationContractProjectionResult,
+	type TableSchemaOpenApiProjectionResult,
 	type TableSchemaOpenApiOperationContractProjectionResult,
 } from "../../../core/schema/TableSchemaOpenApiProjection.js";
 import type {
@@ -77,6 +80,20 @@ type TableSchemaProjectionProvider = Pick<
 	"project"
 >;
 
+type OpenApiProjectionProfile = "component-bundle" | "operation-contract";
+
+type TableOpenApiProjectionToolOutput = {
+	projection:
+		| TableSchemaOpenApiProjectionResult
+		| TableSchemaOpenApiOperationContractProjectionResult
+		| null;
+	validation: SchemaValidateResult;
+	error?: {
+		code: string;
+		message: string;
+	};
+};
+
 interface TableMcpServerOptions {
 	projectionService?: TableSchemaProjectionProvider;
 }
@@ -138,6 +155,9 @@ export class TableMcpServer {
 
 			// Add validation tools
 			this.addValidationTools();
+
+			// Add OpenAPI projection export contract
+			this.addOpenApiProjectionTool();
 
 			// Add schema discovery tools
 			this.addSchemaDiscoveryTools();
@@ -248,6 +268,38 @@ export class TableMcpServer {
 		};
 
 		this.tableTools.set(aiMetadataTool.name, aiMetadataTool);
+	}
+
+	/**
+	 * Add OpenAPI projection export tool contract for this table.
+	 *
+	 * Output contract: when executed, this tool returns a JSON-serializable
+	 * `{ projection, validation }` object. `projection` is the
+	 * OpenApiProjectionResult for the selected profile and current table;
+	 * `validation` is the result of validateOpenApiProjection(projection).
+	 */
+	private addOpenApiProjectionTool(): void {
+		const openApiProjectionTool: McpToolDefinition = {
+			name: `get-openapi-projection-${this.tableId}`,
+			description: `Returns an OpenAPI 3.2 projection artifact for the current table ${this.tableId}. Use profile 'component-bundle' for reusable component schemas or 'operation-contract' for create/update operation contracts.`,
+			inputSchema: {
+				type: "object",
+				properties: {
+					profile: {
+						type: "string",
+						enum: ["component-bundle", "operation-contract"],
+						default: "component-bundle",
+						description:
+							"Projection profile to return. Defaults to component-bundle.",
+					},
+				},
+				required: [],
+				additionalProperties: false,
+			},
+			operationType: "query",
+		};
+
+		this.tableTools.set(openApiProjectionTool.name, openApiProjectionTool);
 	}
 
 	/**
@@ -1682,6 +1734,22 @@ export class TableMcpServer {
 						isError: result.errors && result.errors.length > 0,
 					},
 				};
+			} else if (toolName === `get-openapi-projection-${this.tableId}`) {
+				const result = await this.executeOpenApiProjectionTool(args);
+
+				return {
+					jsonrpc: "2.0",
+					id,
+					result: {
+						content: [
+							{
+								type: "text",
+								text: JSON.stringify(result, null, 2),
+							},
+						],
+						isError: result.validation.valid === false || Boolean(result.error),
+					},
+				};
 			} else {
 				// This is a template tool - execute via executeTemplateWithGraphQL
 				const result = await this.executeTemplate(toolName, args);
@@ -1709,6 +1777,80 @@ export class TableMcpServer {
 				`Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
 			);
 		}
+	}
+
+	private async executeOpenApiProjectionTool(
+		variables: any,
+	): Promise<TableOpenApiProjectionToolOutput> {
+		const profile = this.normalizeOpenApiProjectionProfile(variables.profile);
+		if (!profile) {
+			return this.createOpenApiProjectionToolError(
+				"openapi-projection/invalid-profile",
+				"profile must be component-bundle or operation-contract",
+			);
+		}
+
+		if (!this.projectionService) {
+			return this.createOpenApiProjectionToolError(
+				"openapi-projection/service-unavailable",
+				"Table schema projection service is not configured for this table MCP server.",
+			);
+		}
+
+		try {
+			const tableProjection = await this.projectionService.project({
+				tableId: this.tableId,
+			});
+			const projection =
+				profile === "operation-contract"
+					? toTableSchemaOpenApiOperationContractProjectionResult(
+							tableProjection,
+						)
+					: toTableSchemaOpenApiProjectionResult(tableProjection);
+
+			return {
+				projection,
+				validation: validateOpenApiProjection(projection),
+			};
+		} catch (error) {
+			return this.createOpenApiProjectionToolError(
+				"openapi-projection/export-failed",
+				error instanceof Error ? error.message : String(error),
+			);
+		}
+	}
+
+	private normalizeOpenApiProjectionProfile(
+		value: unknown,
+	): OpenApiProjectionProfile | undefined {
+		const profile = value === undefined ? "component-bundle" : value;
+		if (profile === "component-bundle" || profile === "operation-contract") {
+			return profile;
+		}
+		return undefined;
+	}
+
+	private createOpenApiProjectionToolError(
+		code: string,
+		message: string,
+	): TableOpenApiProjectionToolOutput {
+		return {
+			projection: null,
+			validation: {
+				valid: false,
+				diagnostics: [
+					{
+						severity: "error",
+						code,
+						message,
+					},
+				],
+			},
+			error: {
+				code,
+				message,
+			},
+		};
 	}
 
 	/**
