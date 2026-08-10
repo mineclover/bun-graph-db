@@ -37,7 +37,13 @@ export interface INodeSearchRepository {
     tableId: TableId,
     searchQuery: SearchQuery,
     availableAttributes: AttributeTypeInfo[],
-  ): Promise<PaginatedResult<{ node: import('@/domain/entities/Node.js').Node; attributes?: Record<string, unknown> }>>
+  ): Promise<
+    PaginatedResult<{
+      node: import('@/domain/entities/Node.js').Node
+      attributes?: Record<string, unknown>
+      relevanceScore?: number
+    }>
+  >
 }
 
 export class SearchNodesUseCase {
@@ -101,7 +107,10 @@ export class SearchNodesUseCase {
       const result = await this.nodeSearchRepository.searchNodes(input.tableId as TableId, searchQuery, attributeInfo)
 
       // Convert to DTOs
-      const nodeDtos = (result.data || []).map((nodeData) => nodeFromEntity(nodeData.node, nodeData.attributes || {}))
+      const nodeDtos = (result.data || []).map((nodeData) => ({
+        ...nodeFromEntity(nodeData.node, nodeData.attributes || {}),
+        ...(nodeData.relevanceScore !== undefined ? { relevanceScore: nodeData.relevanceScore } : {}),
+      }))
 
       this.logger.info('Node search completed', {
         tableId: input.tableId,

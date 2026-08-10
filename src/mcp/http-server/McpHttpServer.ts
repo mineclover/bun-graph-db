@@ -1,18 +1,34 @@
 /**
- * MCP HTTP Server implementing 2025-06-18 specification
+ * MCP HTTP Server implementing dual-era MCP compatibility.
  *
- * Official spec: https://modelcontextprotocol.io/specification/2025-06-18/basic/transports
- * Lifecycle: http://modelcontextprotocol.io/specification/2025-06-18/basic/lifecycle
+ * Modern requests use MCP 2026-07-28's stateless, per-request metadata model.
+ * Existing initialize-based clients continue to use the 2025-06-18 path.
  */
 
 import { readFile } from 'node:fs/promises'
 import { validateOpenApiProjection } from '@oa-sdk/openapi-projection-contract'
 import Ajv from 'ajv'
-import { McpToolRegistry } from '../../application/services/McpToolRegistry.ts'
+import {
+  McpToolRegistry,
+  type McpToolAction,
+  type McpToolAudience,
+  type ResolvedMcpToolAccess,
+} from '../../application/services/McpToolRegistry.ts'
 import { toRootMcpToolOpenApiProjectionResult } from '../../core/schema/RootMcpToolOpenApiProjection.js'
 import { RestApiClient } from '../../application/services/RestApiClient.js'
-import { GraphQLOperationExecutor } from '../../models/GraphQLOperation.ts'
+import {
+  GraphQLOperationExecutor,
+  type GraphQLOperation,
+  type GraphQLExecutionResult,
+  type GraphQLVariables,
+} from '../../models/GraphQLOperation.ts'
 import { API_ENDPOINT_MAPPING } from '../../presentation/http/routes/ApiRoutes.js'
+import {
+  SUPPORTED_MCP_PROTOCOL_VERSIONS,
+  isModernMcpRequest,
+  validateModernMcpRequest,
+  withModernResult,
+} from './modern-protocol.js'
 
 interface McpRequest {
   jsonrpc: '2.0'
@@ -21,7 +37,7 @@ interface McpRequest {
   params?: unknown
 }
 
-interface McpResponse {
+export interface McpResponse {
   jsonrpc: '2.0'
   id?: string | number | null
   result?: unknown
@@ -38,6 +54,8 @@ interface McpToolCallParams {
   name?: string
   arguments?: McpToolArgs
 }
+
+type McpRequestAudience = McpToolAudience
 
 interface CreateTableToolArgs {
   identifier?: string
@@ -156,6 +174,9 @@ export class McpHttpServer {
   private graphqlExecutor: GraphQLOperationExecutor
   private restApiClient: RestApiClient
   private initialized: boolean = false
+  private initializationPromise: Promise<void> | undefined
+  private closePromise: Promise<void> | undefined
+  private closed: boolean = false
   private protocolVersion: string = '2025-06-18'
   private ajv: Ajv
 
@@ -163,6 +184,12 @@ export class McpHttpServer {
   private capabilities = {
     tools: {},
     logging: {},
+  }
+
+  // `logging` was deprecated in MCP 2026-07-28, so only advertise tools to
+  // stateless clients. Keep the legacy capability set above for 2025 clients.
+  private modernCapabilities = {
+    tools: {},
   }
 
   // Server info
@@ -173,30 +200,100 @@ export class McpHttpServer {
       'GraphQL-based graph database with AI integration. Manage tables, nodes, relationships, and execute graph queries via Model Context Protocol.',
   }
 
-  constructor(graphqlEndpoint: string, restApiBaseUrl?: string) {
+  constructor(graphqlEndpoint: string, restApiBaseUrl?: string, internalBridgeToken = process.env.BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN) {
     this.toolRegistry = new McpToolRegistry()
-    this.graphqlExecutor = new GraphQLOperationExecutor(graphqlEndpoint)
-    this.restApiClient = new RestApiClient(restApiBaseUrl || 'http://localhost:4000/api')
+    this.graphqlExecutor = new GraphQLOperationExecutor(graphqlEndpoint, internalBridgeToken)
+    this.restApiClient = new RestApiClient(restApiBaseUrl || 'http://localhost:4000/api', internalBridgeToken)
     this.ajv = new Ajv()
   }
 
   async initialize(): Promise<void> {
+    this.assertOpen()
     if (this.initialized) return
+    if (this.initializationPromise) return this.initializationPromise
 
-    console.log('Initializing MCP server...')
+    this.initializationPromise = (async () => {
+      console.log('Initializing MCP server...')
 
-    // Initialize tools (contract + built-in tools)
-    await this.toolRegistry.initialize()
+      // Initialize tools (contract + built-in tools)
+      await this.toolRegistry.initialize()
+      this.assertOpen()
 
-    const toolCount = (await this.toolRegistry.getAllTools()).length
-    console.log(`Loaded ${toolCount} MCP tools`)
+      const toolCount = (await this.toolRegistry.getAllTools()).length
+      console.log(`Loaded ${toolCount} MCP tools`)
 
-    this.initialized = true
-    console.log('MCP server initialized successfully')
+      this.initialized = true
+      console.log('MCP server initialized successfully')
+    })()
+
+    try {
+      await this.initializationPromise
+    } finally {
+      this.initializationPromise = undefined
+    }
+  }
+
+  /**
+   * Release the server's in-memory lifecycle state. HTTP transports own their
+   * sockets, so this server only needs to close its request-facing state.
+   */
+  async close(): Promise<void> {
+    if (this.closePromise) return this.closePromise
+
+    this.closed = true
+    this.closePromise = (async () => {
+      try {
+        await this.initializationPromise
+      } catch {
+        // A failed initialization has no additional resources to release.
+      }
+
+      this.initialized = false
+      this.ajv.removeSchema()
+    })()
+
+    return this.closePromise
+  }
+
+  isClosed(): boolean {
+    return this.closed
+  }
+
+  /**
+   * Table-scoped servers use this typed boundary instead of reaching into the
+   * root server's private GraphQL executor.
+   */
+  async executeGraphQLOperation<TData = unknown>(
+    operation: GraphQLOperation,
+    variables?: GraphQLVariables,
+  ): Promise<GraphQLExecutionResult<TData>> {
+    this.assertOpen()
+    return this.graphqlExecutor.execute(operation, variables) as Promise<GraphQLExecutionResult<TData>>
+  }
+
+  /**
+   * Compatibility entry point for table-scoped legacy initialize requests.
+   */
+  async handleLegacyInitialize(id: string | number | undefined, params: unknown): Promise<McpResponse> {
+    if (!isMcpInitializeParams(params)) {
+      return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'Initialize params required')
+    }
+
+    return this.handleInitialize(id, params)
+  }
+
+  getToolAction(name: string): McpToolAction | undefined {
+    return this.toolRegistry.getTool(name).tool?.access?.action
+  }
+
+  resolveToolAccess(name: string, argumentsValue: unknown): ResolvedMcpToolAccess | undefined {
+    return this.toolRegistry.resolveAccess(name, argumentsValue)
   }
 
   // Main HTTP request handler according to MCP HTTP transport spec
-  async handleRequest(request: Request): Promise<Response> {
+  async handleRequest(request: Request, audience?: McpRequestAudience): Promise<Response> {
+    if (this.closed) return this.createClosedResponse()
+
     // Validate HTTP method
     if (request.method !== 'POST' && request.method !== 'GET') {
       return this.createErrorResponse(null, -32600, 'Invalid Request', 'Only POST and GET methods are supported')
@@ -250,6 +347,8 @@ export class McpHttpServer {
     try {
       await this.initialize()
 
+      if (this.closed) return this.createClosedResponse()
+
       const body = await request.text()
       if (!body) {
         return this.createErrorResponse(null, -32600, 'Invalid Request', 'Empty request body')
@@ -267,8 +366,12 @@ export class McpHttpServer {
         return this.createErrorResponse(jsonRpcRequest.id, -32600, 'Invalid Request', 'Invalid JSON-RPC version')
       }
 
+      if (isModernMcpRequest(jsonRpcRequest, request.headers)) {
+        return await this.handleModernRequest(jsonRpcRequest, request.headers, audience)
+      }
+
       // Route the request based on method
-      const result = await this.handleMethod(jsonRpcRequest)
+      const result = await this.handleMethod(jsonRpcRequest, audience)
 
       return new Response(JSON.stringify(result), {
         status: 200,
@@ -278,6 +381,7 @@ export class McpHttpServer {
         },
       })
     } catch (error) {
+      if (this.closed) return this.createClosedResponse()
       console.error('MCP request error:', error)
       return this.createErrorResponse(
         null,
@@ -288,7 +392,73 @@ export class McpHttpServer {
     }
   }
 
-  private async handleMethod(request: McpRequest): Promise<McpResponse> {
+  private async handleModernRequest(
+    request: McpRequest,
+    headers: Headers,
+    audience?: McpRequestAudience,
+  ): Promise<Response> {
+    const validationError = validateModernMcpRequest(request, headers)
+    if (validationError) {
+      return new Response(JSON.stringify(this.createErrorMcpResponse(request.id, validationError.code, validationError.message, validationError.data)), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    let response: McpResponse
+    switch (request.method) {
+      case 'server/discover':
+        response = {
+          jsonrpc: '2.0',
+          id: request.id,
+          result: {
+            supportedVersions: [...SUPPORTED_MCP_PROTOCOL_VERSIONS],
+            capabilities: this.modernCapabilities,
+            instructions: 'Manage tables, nodes, relationships, and graph queries through the available tools.',
+            ttlMs: 300000,
+            cacheScope: 'public',
+          },
+        }
+        break
+      case 'tools/list': {
+        const listed = await this.handleToolsList(request.id, audience)
+        const result = listed.result as { tools?: unknown[] } | undefined
+        response = {
+          ...listed,
+          result: {
+            ...result,
+            tools: [...(result?.tools ?? [])].sort((left, right) => {
+              const leftName = typeof (left as { name?: unknown }).name === 'string' ? (left as { name: string }).name : ''
+              const rightName = typeof (right as { name?: unknown }).name === 'string' ? (right as { name: string }).name : ''
+              return leftName < rightName ? -1 : leftName > rightName ? 1 : 0
+            }),
+            ttlMs: 300000,
+            cacheScope: audience ? 'private' : 'public',
+          },
+        }
+        break
+      }
+      case 'tools/call':
+        response = await this.handleToolsCall(request.id, request.params as McpToolCallParams | undefined, audience)
+        break
+      default:
+        response = this.createErrorMcpResponse(request.id, -32601, 'Method not found', `Unknown method: ${request.method}`)
+    }
+
+    if (response.error || !response.result || typeof response.result !== 'object' || Array.isArray(response.result)) {
+      return new Response(JSON.stringify(response), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+
+    return new Response(
+      JSON.stringify({
+        ...response,
+        result: withModernResult(response.result as Record<string, unknown>, this.serverInfo),
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' } },
+    )
+  }
+
+  private async handleMethod(request: McpRequest, audience?: McpRequestAudience): Promise<McpResponse> {
     const { method, params, id } = request
 
     try {
@@ -301,10 +471,10 @@ export class McpHttpServer {
           return this.createNotificationResponse()
 
         case 'tools/list':
-          return await this.handleToolsList(id)
+          return await this.handleToolsList(id, audience)
 
         case 'tools/call':
-          return await this.handleToolsCall(id, params as McpToolCallParams | undefined)
+          return await this.handleToolsCall(id, params as McpToolCallParams | undefined, audience)
 
         default:
           return this.createErrorMcpResponse(id, -32601, 'Method not found', `Unknown method: ${method}`)
@@ -345,8 +515,8 @@ export class McpHttpServer {
     }
   }
 
-  private async handleToolsList(id: string | number | undefined): Promise<McpResponse> {
-    const listedTools = this.toolRegistry.listTools().tools
+  private async handleToolsList(id: string | number | undefined, audience?: McpRequestAudience): Promise<McpResponse> {
+    const listedTools = this.toolRegistry.listTools(audience).tools
 
     return {
       jsonrpc: '2.0',
@@ -357,7 +527,11 @@ export class McpHttpServer {
     }
   }
 
-  private async handleToolsCall(id: string | number | undefined, params?: McpToolCallParams): Promise<McpResponse> {
+  private async handleToolsCall(
+    id: string | number | undefined,
+    params?: McpToolCallParams,
+    audience?: McpRequestAudience,
+  ): Promise<McpResponse> {
     if (!params?.name) {
       return this.createErrorMcpResponse(id, -32602, 'Invalid params', 'Tool name required')
     }
@@ -388,6 +562,10 @@ export class McpHttpServer {
       }
 
       const tool = toolLookup.tool
+
+      if (audience?.role === 'reader' && tool.access?.action !== 'read') {
+        return this.createErrorMcpResponse(id, -32602, `Tool not found: ${name}`)
+      }
 
       // Validate input against tool's input schema
       if (tool.inputSchema) {
@@ -430,7 +608,7 @@ export class McpHttpServer {
       // Handle custom tools that require special processing
       if (tool.graphqlOperation?.operationType === 'custom') {
         console.log(`Handling custom tool: ${name}`)
-        return await this.handleCustomTool(id, name, args || {})
+        return await this.handleCustomTool(id, name, args || {}, audience)
       }
 
       // Validate tool has GraphQL operation for non-custom tools
@@ -466,7 +644,12 @@ export class McpHttpServer {
     }
   }
 
-  private async handleCustomTool(id: string | number | undefined, toolName: string, args: McpToolArgs): Promise<McpResponse> {
+  private async handleCustomTool(
+    id: string | number | undefined,
+    toolName: string,
+    args: McpToolArgs,
+    audience?: McpRequestAudience,
+  ): Promise<McpResponse> {
     try {
       switch (toolName) {
         case 'healthCheck':
@@ -479,7 +662,7 @@ export class McpHttpServer {
           return await this.handleSearchNodesTool(id, args)
 
         case 'get-root-openapi-projection':
-          return await this.handleRootOpenApiProjectionTool(id, args)
+          return await this.handleRootOpenApiProjectionTool(id, args, audience)
 
         case 'getTableDocs':
           return await this.handleGetTableDocs(id, args)
@@ -724,6 +907,7 @@ export class McpHttpServer {
   private async handleRootOpenApiProjectionTool(
     id: string | number | undefined,
     args: McpToolArgs,
+    audience?: McpRequestAudience,
   ): Promise<McpResponse> {
     const projectionArgs = args as RootOpenApiProjectionToolArgs
     const profile = projectionArgs.profile === undefined ? 'component-bundle' : projectionArgs.profile
@@ -763,7 +947,7 @@ export class McpHttpServer {
       }
     }
 
-    const projection = toRootMcpToolOpenApiProjectionResult(this.toolRegistry.listTools().tools)
+    const projection = toRootMcpToolOpenApiProjectionResult(this.toolRegistry.listTools(audience).tools)
     const validation = validateOpenApiProjection(projection)
 
     return {
@@ -1360,8 +1544,7 @@ export class McpHttpServer {
   }
 
   private isSupportedProtocolVersion(version: string): boolean {
-    const supportedVersions = ['2024-11-05', '2025-06-18']
-    return supportedVersions.includes(version)
+    return (SUPPORTED_MCP_PROTOCOL_VERSIONS as readonly string[]).includes(version)
   }
 
   private negotiateProtocolVersion(clientVersion: string): string {
@@ -1762,4 +1945,26 @@ export class McpHttpServer {
       }
     }
   }
+
+  private assertOpen(): void {
+    if (this.closed) {
+      throw new Error('MCP server is closed')
+    }
+  }
+
+  private createClosedResponse(): Response {
+    return new Response(
+      JSON.stringify(this.createErrorMcpResponse(null, -32000, 'Server unavailable', 'MCP server is shutting down or closed')),
+      {
+        status: 503,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      },
+    )
+  }
+}
+
+function isMcpInitializeParams(value: unknown): value is McpInitializeParams {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const params = value as Record<string, unknown>
+  return typeof params.protocolVersion === 'string' && typeof params.capabilities === 'object' && params.capabilities !== null
 }

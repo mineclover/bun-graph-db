@@ -83,7 +83,7 @@ bun test tests/unit/use-cases/CreateTable.test.ts
 - ✅ Lint: passes with `bun run lint --max-diagnostics=20`
 - ✅ Build: `bun run build` passes
 - ✅ Full lane run: `bun run test` passes
-- 📄 Details: [SYSTEM_EVALUATION_2026-03-30.md](./SYSTEM_EVALUATION_2026-03-30.md)
+- 📄 운영 완료 조건: [운영 준비도 명세](../../specs/008-production-readiness/spec.md)
 
 ### Code Quality
 

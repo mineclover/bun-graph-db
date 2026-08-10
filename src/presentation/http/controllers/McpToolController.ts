@@ -1,10 +1,10 @@
-import type { Request, Response } from 'express'
+import type { HttpControllerRequest as Request, HttpControllerResponse as Response } from '../adapters/BunControllerAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { BulkTemplateImportTool } from '@/application/services/BulkTemplateImportTool.js'
 import { RestApiClient } from '@/application/services/RestApiClient.js'
 import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 
-type HttpBodyRequest<TBody> = Request<Record<string, string>, unknown, TBody>
+type HttpBodyRequest<TBody> = Request<Record<string, string>, TBody>
 type ToolParameters = Record<string, unknown>
 
 interface GraphQLErrorPayload {

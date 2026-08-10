@@ -1,0 +1,317 @@
+import { describe, expect, test } from 'bun:test'
+import { AccessControl, authorizeExternalRequest } from '../../src/application/security/AccessControl'
+
+function request(headers: HeadersInit = {}): Request {
+  return new Request('http://localhost/sub/alpha/mcp', { headers })
+}
+
+const tableWrite = {
+  action: 'write' as const,
+  endpoint: '/sub/alpha/mcp',
+  tableId: 'alpha',
+}
+
+describe('AccessControl', () => {
+  test('requires credentials when enabled', () => {
+    const control = AccessControl.fromEnvironment({ NODE_ENV: 'production' })
+    const decision = control.authorize(request(), tableWrite)
+
+    expect(decision).toEqual({ allowed: false, status: 401, code: 'authentication_required' })
+  })
+
+  test('allows a table-scoped writer only for its table', () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({ writerToken: { id: 'writer-a', role: 'writer', tableIds: ['alpha'] } }),
+    })
+
+    const allowed = control.authorize(request({ Authorization: 'Bearer writerToken' }), tableWrite)
+    const hidden = control.authorize(request({ Authorization: 'Bearer writerToken' }), { ...tableWrite, tableId: 'beta' })
+
+    expect(allowed).toEqual({
+      allowed: true,
+      principal: { id: 'writer-a', role: 'writer', tableIds: ['alpha'] },
+    })
+    expect(hidden).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
+
+  test('does not let a reader perform writes', () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({ readerToken: { role: 'reader', tableIds: ['*'] } }),
+    })
+    const decision = control.authorize(request({ 'X-API-Key': 'readerToken' }), tableWrite)
+
+    expect(decision).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+  })
+
+  test('rejects disallowed browser origins before credentials are evaluated', () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ALLOWED_ORIGINS: 'https://app.example.test',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({ adminToken: { role: 'admin' } }),
+    })
+    const decision = control.authorize(
+      request({ Authorization: 'Bearer adminToken', Origin: 'https://attacker.example.test' }),
+      tableWrite,
+    )
+
+    expect(decision).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
+
+  test('applies a per-principal rate limit', () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({ writerToken: { role: 'writer' } }),
+      BUN_GRAPH_DB_RATE_LIMIT_ENABLED: 'true',
+      BUN_GRAPH_DB_RATE_LIMIT_MAX: '1',
+      BUN_GRAPH_DB_RATE_LIMIT_WINDOW_MS: '60000',
+    })
+
+    expect(control.authorize(request({ Authorization: 'Bearer writerToken' }), tableWrite).allowed).toBe(true)
+    expect(control.authorize(request({ Authorization: 'Bearer writerToken' }), tableWrite)).toEqual({
+      allowed: false,
+      status: 429,
+      code: 'rate_limited',
+    })
+  })
+
+  test('classifies MCP tool calls and GraphQL mutations as writes', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        reader: { id: 'reader', role: 'reader' },
+        writer: { id: 'writer', role: 'writer' },
+      }),
+    })
+
+    const list = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer reader' },
+        body: JSON.stringify({ method: 'tools/list' }),
+      }),
+    )
+    expect(list.allowed).toBe(true)
+
+    const healthCheck = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer reader' },
+        body: JSON.stringify({ method: 'tools/call', params: { name: 'healthCheck' } }),
+      }),
+      (name) => (name === 'healthCheck' ? { action: 'read' } : undefined),
+    )
+    expect(healthCheck.allowed).toBe(true)
+
+    const toolCall = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer reader' },
+        body: JSON.stringify({ method: 'tools/call', params: { name: 'createTable' } }),
+      }),
+      (name) => (name === 'createTable' ? { action: 'write' } : undefined),
+    )
+    expect(toolCall).toMatchObject({ allowed: false, status: 403, code: 'forbidden' })
+
+    const mutation = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writer' },
+        body: JSON.stringify({ query: 'mutation { createNode(input: {}) { id } }' }),
+      }),
+    )
+    expect(mutation.allowed).toBe(true)
+  })
+
+  test('applies table scope to root MCP calls when the contract extracts a table argument', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        writer: { role: 'writer', tableIds: ['alpha'] },
+      }),
+    })
+
+    const decision = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writer' },
+        body: JSON.stringify({
+          method: 'tools/call',
+          params: { name: 'createAttribute', arguments: { tableId: 'beta' } },
+        }),
+      }),
+      (name, argumentsValue) => {
+        if (name !== 'createAttribute' || !argumentsValue || typeof argumentsValue !== 'object') return undefined
+        return { action: 'write', tableId: (argumentsValue as { tableId?: string }).tableId }
+      },
+    )
+
+    expect(decision).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
+
+  test('applies table scope to GraphQL variables and literal input arguments', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        writer: { role: 'writer', tableIds: ['alpha'] },
+      }),
+    })
+
+    const variableDecision = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writer' },
+        body: JSON.stringify({
+          query: 'mutation Update($input: UpdateNodeInput!) { updateNode(input: $input) { id } }',
+          variables: { input: { tableId: 'beta' } },
+        }),
+      }),
+    )
+    expect(variableDecision).toEqual({ allowed: false, status: 404, code: 'not_found' })
+
+    const literalDecision = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writer' },
+        body: JSON.stringify({
+          query: 'mutation { createNode(input: { tableIdentifier: "beta" }) { id } }',
+        }),
+      }),
+    )
+    expect(literalDecision).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
+
+  test('does not allow REST to bypass authentication or table-scoped write policy', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        writer: { role: 'writer', tableIds: ['alpha'] },
+      }),
+    })
+    const body = JSON.stringify({ tableId: 'beta', content: 'restricted write' })
+
+    const unauthenticated = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/api/nodes', { method: 'POST', body }),
+    )
+    expect(unauthenticated).toEqual({ allowed: false, status: 401, code: 'authentication_required' })
+
+    const outOfScope = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/api/nodes', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writer', 'Content-Type': 'application/json' },
+        body,
+      }),
+    )
+    expect(outOfScope).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
+
+  test('resolves node ownership before allowing ID-only GraphQL reads or mutations', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        writer: { role: 'writer', tableIds: ['alpha'] },
+        reader: { role: 'reader', tableIds: ['alpha'] },
+      }),
+    })
+    const resolver = { resolveNodeTableId: async () => 'beta' }
+
+    const mutation = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writer' },
+        body: JSON.stringify({ query: 'mutation { deleteNode(id: "node-in-beta") { success } }' }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(mutation).toEqual({ allowed: false, status: 404, code: 'not_found' })
+
+    const read = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer reader' },
+        body: JSON.stringify({ query: 'query { node(id: "node-in-beta") { id } }' }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(read).toEqual({ allowed: false, status: 404, code: 'not_found' })
+
+    const missing = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writer' },
+        body: JSON.stringify({ query: 'mutation { deleteNode(id: "missing-node") { success } }' }),
+      }),
+      undefined,
+      { resolveNodeTableId: async () => undefined },
+    )
+    expect(missing).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
+
+  test('accepts only the configured internal bridge bearer token as the MCP bridge principal', async () => {
+    const bridgeToken = 'a'.repeat(48)
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN: bridgeToken,
+    })
+
+    const decision = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/api/tables', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${bridgeToken}` },
+        body: JSON.stringify({ identifier: 'bridge-created' }),
+      }),
+    )
+    expect(decision).toEqual({
+      allowed: true,
+      principal: { id: 'internal-mcp-bridge', role: 'admin', tableIds: ['*'] },
+    })
+  })
+
+  test('rejects oversized requests and GraphQL queries beyond the configured complexity', async () => {
+    const oversizedControl = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({ reader: { role: 'reader' } }),
+      BUN_GRAPH_DB_MAX_REQUEST_BYTES: '1',
+    })
+    const oversized = await authorizeExternalRequest(
+      oversizedControl,
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer reader' },
+        body: JSON.stringify({ method: 'tools/list' }),
+      }),
+    )
+    expect(oversized).toMatchObject({ allowed: false, status: 413, code: 'request_too_large' })
+
+    const complexityControl = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({ reader: { role: 'reader' } }),
+      BUN_GRAPH_DB_GRAPHQL_MAX_COMPLEXITY: '1',
+    })
+    const tooComplex = await authorizeExternalRequest(
+      complexityControl,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer reader' },
+        body: JSON.stringify({ query: 'query { first { second } }' }),
+      }),
+    )
+    expect(tooComplex).toMatchObject({ allowed: false, status: 400, code: 'query_too_complex' })
+  })
+})

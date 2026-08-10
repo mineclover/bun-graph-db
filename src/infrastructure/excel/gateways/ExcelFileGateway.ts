@@ -1,24 +1,176 @@
+import { randomUUID } from 'node:crypto'
+import { mkdir, rename, rm } from 'node:fs/promises'
+import { dirname, extname } from 'node:path'
+import * as XLSX from 'xlsx'
 import type { ResolvedSyncTargetSelection } from '../TabularSyncTargetRegistry.js'
+import { SheetMatrixSerializer } from '../SheetMatrixSerializer.js'
 import type { ExcelTableRow } from '../types/ExcelRowSchema.js'
-import type {
-  TabularDestinationGateway,
-  TabularWritePlan,
-} from './TabularDestinationGateway.js'
+import type { TabularDestinationGateway, TabularWritePlan } from './TabularDestinationGateway.js'
+
+type CellValue = string | number | boolean | null
+type SheetMatrix = CellValue[][]
+
+const workbookMetadataColumns = ['tableIdentifier', 'tableId', 'sheetName', 'description', 'lastSyncedAt', 'rowCount']
+const schemaMetadataColumns = [
+  'tableIdentifier',
+  'sheetName',
+  'columnName',
+  'sourceType',
+  'sourceKey',
+  'dataType',
+  'required',
+  'searchable',
+  'order',
+]
 
 export class ExcelFileGateway implements TabularDestinationGateway {
+  private readonly matrixSerializer = new SheetMatrixSerializer()
+
   supports(selection: ResolvedSyncTargetSelection): boolean {
     return selection.target.kind === 'excel-file'
   }
 
-  async readRows(
-    _selection: ResolvedSyncTargetSelection,
-  ): Promise<ExcelTableRow[]> {
-    return []
+  async readRows(selection: ResolvedSyncTargetSelection): Promise<ExcelTableRow[]> {
+    const workbookPath = this.workbookPath(selection)
+    const workbook = await this.readWorkbook(workbookPath)
+    if (!workbook) return []
+
+    return this.matrixSerializer.fromMatrix(this.readMatrix(workbook, selection.sheetName))
   }
 
-  async writeSheet(_plan: TabularWritePlan): Promise<void> {
-    throw new Error(
-      'ExcelFileGateway.writeSheet is not implemented yet. Introduce a real xlsx writer in the next phase.',
+  async verifyWritable(selection: ResolvedSyncTargetSelection): Promise<void> {
+    const workbookPath = this.workbookPath(selection)
+    await this.readWorkbook(workbookPath)
+
+    const temporaryPath = `${workbookPath}.${randomUUID()}.probe`
+    await mkdir(dirname(workbookPath), { recursive: true })
+    try {
+      await Bun.write(temporaryPath, new Uint8Array())
+    } finally {
+      await rm(temporaryPath, { force: true })
+    }
+  }
+
+  async writeSheet(plan: TabularWritePlan): Promise<void> {
+    const workbookPath = this.workbookPath(plan.selection)
+    const workbook = (await this.readWorkbook(workbookPath)) || XLSX.utils.book_new()
+    const tableMatrix = this.matrixSerializer.toMatrix(plan.schema, plan.rows)
+
+    this.replaceSheet(workbook, plan.selection.sheetName, tableMatrix)
+    this.upsertMetadataRows(
+      workbook,
+      plan.metadataUpdate.metadataSheetName,
+      workbookMetadataColumns,
+      plan.metadataUpdate.tableRows.map((row) => this.toCellRecord(row)),
+      'tableIdentifier',
+    )
+    this.upsertMetadataRows(
+      workbook,
+      plan.metadataUpdate.schemaSheetName,
+      schemaMetadataColumns,
+      plan.metadataUpdate.schemaRows.map((row) => this.toCellRecord(row)),
+      'tableIdentifier',
+    )
+
+    await this.writeWorkbookAtomically(workbookPath, workbook, plan.selection.sheetName)
+  }
+
+  private workbookPath(selection: ResolvedSyncTargetSelection): string {
+    if (selection.target.kind !== 'excel-file' || !selection.target.workbookPath.trim()) {
+      throw new Error(`Excel target '${selection.target.id}' requires a workbookPath.`)
+    }
+
+    const extension = extname(selection.target.workbookPath).toLowerCase()
+    if (extension !== '.xlsx') {
+      throw new Error(`Excel target '${selection.target.id}' must use a .xlsx workbookPath.`)
+    }
+
+    return selection.target.workbookPath
+  }
+
+  private async readWorkbook(workbookPath: string): Promise<XLSX.WorkBook | null> {
+    const file = Bun.file(workbookPath)
+    if (!(await file.exists())) return null
+    return XLSX.read(await file.arrayBuffer(), { type: 'array' })
+  }
+
+  private readMatrix(workbook: XLSX.WorkBook, sheetName: string): SheetMatrix {
+    const sheet = workbook.Sheets[sheetName]
+    if (!sheet) return []
+
+    return XLSX.utils
+      .sheet_to_json<unknown[]>(sheet, { header: 1, defval: null, raw: true })
+      .map((row) => row.map((cell) => this.toCellValue(cell)))
+  }
+
+  private replaceSheet(workbook: XLSX.WorkBook, sheetName: string, matrix: SheetMatrix): void {
+    workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet(matrix)
+    if (!workbook.SheetNames.includes(sheetName)) workbook.SheetNames.push(sheetName)
+  }
+
+  private upsertMetadataRows(
+    workbook: XLSX.WorkBook,
+    sheetName: string,
+    columns: string[],
+    rows: Array<Record<string, CellValue | undefined>>,
+    keyColumn: string,
+  ): void {
+    const existingRows = this.toRecords(this.readMatrix(workbook, sheetName), columns)
+    const replacements = new Map(rows.map((row) => [String(row[keyColumn] || ''), row]))
+    const retained = existingRows.filter((row) => !replacements.has(String(row[keyColumn] || '')))
+    const merged = [...retained, ...rows].sort((left, right) =>
+      String(left[keyColumn] || '').localeCompare(String(right[keyColumn] || '')),
+    )
+    const matrix: SheetMatrix = [columns, ...merged.map((row) => columns.map((column) => row[column] ?? null))]
+
+    this.replaceSheet(workbook, sheetName, matrix)
+  }
+
+  private toRecords(matrix: SheetMatrix, fallbackColumns: string[]): Array<Record<string, CellValue>> {
+    const [header, ...rows] = matrix
+    const columns = header?.length ? header.map((column) => String(column || '')) : fallbackColumns
+    if (columns.length === 0) return []
+
+    return rows
+      .filter((row) => row.some((value) => value !== null && value !== ''))
+      .map((row) => Object.fromEntries(columns.map((column, index) => [column, row[index] ?? null])))
+  }
+
+  private async writeWorkbookAtomically(
+    workbookPath: string,
+    workbook: XLSX.WorkBook,
+    expectedSheetName: string,
+  ): Promise<void> {
+    const directory = dirname(workbookPath)
+    const temporaryPath = `${workbookPath}.${randomUUID()}.tmp.xlsx`
+    await mkdir(directory, { recursive: true })
+
+    try {
+      const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer', compression: true })
+      await Bun.write(temporaryPath, output)
+
+      const verifiedWorkbook = await this.readWorkbook(temporaryPath)
+      if (!verifiedWorkbook?.Sheets[expectedSheetName]) {
+        throw new Error(`Excel workbook verification failed for sheet '${expectedSheetName}'.`)
+      }
+
+      await rename(temporaryPath, workbookPath)
+    } catch (error) {
+      await rm(temporaryPath, { force: true })
+      throw error
+    }
+  }
+
+  private toCellValue(value: unknown): CellValue {
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' || value === null) {
+      return value
+    }
+    return value === undefined ? null : String(value)
+  }
+
+  private toCellRecord(value: object): Record<string, CellValue | undefined> {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, item === undefined ? undefined : this.toCellValue(item)]),
     )
   }
 }

@@ -1,4 +1,4 @@
-import type { Response } from 'express'
+import type { HttpControllerResponse as Response } from '../adapters/BunControllerAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { BaseException } from '@/shared/exceptions/DomainException.js'
 import { toErrorMeta } from './errorHelpers.js'

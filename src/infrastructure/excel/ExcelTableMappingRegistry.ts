@@ -41,7 +41,7 @@ export class ExcelTableMappingRegistry {
 
   getSheetName(tableIdentifier: string): string | null {
     const rule = this.getRule(tableIdentifier)
-    if (!rule || rule.enabled !== true) {
+    if (rule?.enabled !== true) {
       return null
     }
 

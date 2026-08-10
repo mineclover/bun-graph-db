@@ -48,17 +48,21 @@ export class TableMcpServerFactory {
   private restApiBaseUrl: string
   private logger?: ILogger
   private projectionService?: Pick<TableSchemaProjectionService, 'project'>
+  private internalBridgeToken: string | undefined
 
   constructor(
     graphqlEndpoint: string,
     restApiBaseUrl: string,
     logger?: ILogger,
     projectionService?: Pick<TableSchemaProjectionService, 'project'>,
+    internalBridgeToken = process.env.BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN,
   ) {
     this.graphqlEndpoint = graphqlEndpoint
     this.restApiBaseUrl = restApiBaseUrl
     this.logger = logger
     this.projectionService = projectionService
+    const token = internalBridgeToken?.trim()
+    this.internalBridgeToken = token || undefined
 
     // Set as global instance
     globalFactoryInstance = this
@@ -172,6 +176,7 @@ export class TableMcpServerFactory {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...this.internalAuthorizationHeaders(this.graphqlEndpoint),
         },
         body: JSON.stringify({
           query: `
@@ -233,6 +238,7 @@ export class TableMcpServerFactory {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          ...this.internalAuthorizationHeaders(this.restApiBaseUrl),
         },
       })
 
@@ -329,12 +335,31 @@ export class TableMcpServerFactory {
     return typeof value === 'string' ? value : String(value)
   }
 
+  private isLoopbackUrl(value: string): boolean {
+    try {
+      const hostname = new URL(value).hostname
+      return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1'
+    } catch {
+      return false
+    }
+  }
+
+  private internalAuthorizationHeaders(url: string): HeadersInit {
+    return this.internalBridgeToken && this.isLoopbackUrl(url)
+      ? { Authorization: `Bearer ${this.internalBridgeToken}` }
+      : {}
+  }
+
   /**
    * Remove cached server for a table
    */
   removeServerForTable(tableId: string): boolean {
+    const server = this.servers.get(tableId)
     const removed = this.servers.delete(tableId)
     if (removed) {
+      void server?.close().catch((error) => {
+        this.logger?.warn(`Failed to close cached MCP server for table ${tableId}`, { error })
+      })
       this.logger?.info(`Removed cached MCP server for table ${tableId}`)
     }
     return removed
@@ -344,8 +369,18 @@ export class TableMcpServerFactory {
    * Refresh server for a table (remove and recreate)
    */
   async refreshServerForTable(tableId: string): Promise<TableMcpServer | null> {
-    this.removeServerForTable(tableId)
+    await this.closeServerForTable(tableId)
     return await this.getServerForTable(tableId)
+  }
+
+  private async closeServerForTable(tableId: string): Promise<boolean> {
+    const server = this.servers.get(tableId)
+    if (!server) return false
+
+    this.servers.delete(tableId)
+    await server.close()
+    this.logger?.info(`Closed cached MCP server for table ${tableId}`)
+    return true
   }
 
   /**
@@ -497,9 +532,19 @@ export class TableMcpServerFactory {
    * Clear all cached servers
    */
   clearAll(): void {
-    const count = this.servers.size
+    void this.closeAll()
+  }
+
+  /** Close all cached table MCP servers and release their per-table tool state. */
+  async closeAll(): Promise<void> {
+    const servers = Array.from(this.servers.values())
     this.servers.clear()
-    this.logger?.info(`Cleared ${count} cached MCP servers`)
+    const results = await Promise.allSettled(servers.map((server) => server.close()))
+    const failures = results.filter((result) => result.status === 'rejected')
+    if (failures.length > 0) {
+      this.logger?.warn(`Failed to close ${failures.length} cached MCP server(s)`)
+    }
+    this.logger?.info(`Closed ${servers.length} cached MCP servers`)
   }
 
   /**

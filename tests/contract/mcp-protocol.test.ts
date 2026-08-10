@@ -240,6 +240,48 @@ describe('MCP Protocol Compliance Contract Tests', () => {
   })
 
   describe('MCP-Specific Protocol Requirements', () => {
+    test('should support the MCP 2026-07-28 stateless discovery request', async () => {
+      const request = {
+        jsonrpc: '2.0',
+        method: 'server/discover',
+        params: {
+          _meta: {
+            'io.modelcontextprotocol/protocolVersion': '2026-07-28',
+            'io.modelcontextprotocol/clientCapabilities': {},
+            'io.modelcontextprotocol/clientInfo': { name: 'test', version: '1.0.0' },
+          },
+        },
+        id: 7,
+      }
+
+      const response = await fetch(mcpEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'MCP-Protocol-Version': '2026-07-28',
+          'Mcp-Method': 'server/discover',
+        },
+        body: JSON.stringify(request),
+      })
+      const data: McpResponse = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data).toMatchObject({
+        jsonrpc: '2.0',
+        id: request.id,
+        result: {
+          supportedVersions: expect.arrayContaining(['2026-07-28']),
+          capabilities: { tools: {} },
+          resultType: 'complete',
+          _meta: {
+            'io.modelcontextprotocol/serverInfo': expect.objectContaining({
+              name: 'Bun Graph Database - MCP Server',
+            }),
+          },
+        },
+      })
+    })
+
     test('should support MCP protocol version 2025-06-18', async () => {
       const request: McpRequest = {
         jsonrpc: '2.0',

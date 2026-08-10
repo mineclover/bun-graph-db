@@ -8,6 +8,7 @@ import {
   SystemInitializationUseCase,
 } from '../../../application/use-cases/system/SystemInitializationUseCase'
 import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
+import { TabularSyncConfigActivationService } from '@/application/services/TabularSyncConfigActivationService.js'
 import type { TabularSyncConfig } from '@/infrastructure/excel/TabularSyncConfig.js'
 import type { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
 import type { DIContainer } from '../../../infrastructure/container/DIContainer'
@@ -56,16 +57,21 @@ export class SystemResolver extends BaseResolver {
   private systemInitializationUseCase: SystemInitializationUseCase
   private readonly tabularSyncConfigStore: TabularSyncConfigStore | null
   private readonly tabularSyncHook: BestEffortTabularSyncHook | null
+  private readonly tabularSyncConfigActivationService: TabularSyncConfigActivationService | null
 
   constructor(
     container: DIContainer,
     tabularSyncConfigStore?: TabularSyncConfigStore | null,
     tabularSyncHook?: BestEffortTabularSyncHook | null,
+    tabularSyncConfigActivationService?: TabularSyncConfigActivationService | null,
   ) {
     super()
     this.systemInitializationUseCase = new SystemInitializationUseCase(container)
     this.tabularSyncConfigStore = tabularSyncConfigStore || null
     this.tabularSyncHook = tabularSyncHook || null
+    this.tabularSyncConfigActivationService =
+      tabularSyncConfigActivationService ||
+      (this.tabularSyncConfigStore ? new TabularSyncConfigActivationService(this.tabularSyncConfigStore) : null)
   }
 
   /**
@@ -140,11 +146,11 @@ export class SystemResolver extends BaseResolver {
     args: { input: { configKey: string; config: Record<string, unknown>; active?: boolean } },
   ) {
     try {
-      if (!this.tabularSyncConfigStore) {
-        throw new Error('Tabular sync config store is not available')
+      if (!this.tabularSyncConfigStore || !this.tabularSyncConfigActivationService) {
+        throw new Error('Tabular sync config activation service is not available')
       }
 
-      this.tabularSyncConfigStore.saveConfig(
+      await this.tabularSyncConfigActivationService.saveConfig(
         args.input.configKey,
         args.input.config as unknown as TabularSyncConfig,
         { active: args.input.active !== false },
@@ -171,12 +177,11 @@ export class SystemResolver extends BaseResolver {
     args: { configKey: string },
   ) {
     try {
-      if (!this.tabularSyncConfigStore) {
-        throw new Error('Tabular sync config store is not available')
+      if (!this.tabularSyncConfigStore || !this.tabularSyncConfigActivationService) {
+        throw new Error('Tabular sync config activation service is not available')
       }
 
-      this.tabularSyncConfigStore.activateConfig(args.configKey)
-      const activeConfig = this.tabularSyncConfigStore.getActiveConfigRecord()
+      const activeConfig = await this.tabularSyncConfigActivationService.activateConfig(args.configKey)
 
       return {
         success: true,

@@ -17,6 +17,7 @@ import type { JsonExportService } from '@/domain/services/JsonExportService.js'
 import type { JsonlBackupService } from '@/domain/services/JsonlBackupService.js'
 import type { SQLiteBackupService } from '@/domain/services/SQLiteBackupService.js'
 import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
+import type { TabularSyncConfigActivationService } from '@/application/services/TabularSyncConfigActivationService.js'
 import type { Database } from 'bun:sqlite'
 import type { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
 import type { TabularSyncEventStore } from '@/infrastructure/excel/TabularSyncEventStore.js'
@@ -350,6 +351,18 @@ export function registerGraphQLModule(container: DIContainer): void {
   )
 
   container.registerSingleton(
+    CommonTokens.TABULAR_SYNC_CONFIG_ACTIVATION_SERVICE,
+    async (c) => {
+      const { TabularSyncConfigActivationService } = await import(
+        '@/application/services/TabularSyncConfigActivationService.js'
+      )
+      const store = await resolveAs<TabularSyncConfigStore>(c, CommonTokens.TABULAR_SYNC_CONFIG_STORE)
+      return new TabularSyncConfigActivationService(store)
+    },
+    [CommonTokens.TABULAR_SYNC_CONFIG_STORE],
+  )
+
+  container.registerSingleton(
     CommonTokens.TABULAR_SYNC_HOOK,
     async (c) => {
       const { BestEffortTabularSyncHook } = await import('@/application/services/BestEffortTabularSyncHook.js')
@@ -592,10 +605,18 @@ export function registerGraphQLModule(container: DIContainer): void {
     async (c) => {
       const { SystemResolver } = await import('@/presentation/graphql/resolvers/SystemResolver.js')
       const tabularSyncConfigStore = await resolveAs<TabularSyncConfigStore>(c, CommonTokens.TABULAR_SYNC_CONFIG_STORE)
+      const tabularSyncConfigActivationService = await resolveAs<TabularSyncConfigActivationService>(
+        c,
+        CommonTokens.TABULAR_SYNC_CONFIG_ACTIVATION_SERVICE,
+      )
       const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK)
-      return new SystemResolver(c, tabularSyncConfigStore, tabularSyncHook)
+      return new SystemResolver(c, tabularSyncConfigStore, tabularSyncHook, tabularSyncConfigActivationService)
     },
-    [CommonTokens.TABULAR_SYNC_CONFIG_STORE, CommonTokens.TABULAR_SYNC_HOOK],
+    [
+      CommonTokens.TABULAR_SYNC_CONFIG_STORE,
+      CommonTokens.TABULAR_SYNC_CONFIG_ACTIVATION_SERVICE,
+      CommonTokens.TABULAR_SYNC_HOOK,
+    ],
   )
 
   // Node Resolver - Unified resolver with queries, mutations, and field resolvers

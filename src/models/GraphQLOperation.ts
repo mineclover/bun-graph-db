@@ -176,9 +176,12 @@ export function validateGraphQLOperationVariables(
 
 export class GraphQLOperationExecutor {
   private graphqlEndpoint: string
+  private authorizationHeader: string | undefined
 
-  constructor(endpoint: string = 'http://localhost:4000/graphql') {
+  constructor(endpoint: string = 'http://localhost:4000/graphql', internalBridgeToken?: string) {
     this.graphqlEndpoint = endpoint
+    const token = internalBridgeToken?.trim()
+    this.authorizationHeader = token && isLoopbackUrl(endpoint) ? `Bearer ${token}` : undefined
   }
 
   async execute(operation: GraphQLOperation, variables?: GraphQLVariables): Promise<GraphQLExecutionResult> {
@@ -204,6 +207,7 @@ export class GraphQLOperationExecutor {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(this.authorizationHeader ? { Authorization: this.authorizationHeader } : {}),
         },
         body: JSON.stringify({
           query: operation.query,
@@ -237,6 +241,15 @@ export class GraphQLOperationExecutor {
 
   async executeWithContext(context: GraphQLExecutionContext): Promise<GraphQLExecutionResult> {
     return this.execute(context.operation, context.variables)
+  }
+}
+
+function isLoopbackUrl(value: string): boolean {
+  try {
+    const hostname = new URL(value).hostname
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1'
+  } catch {
+    return false
   }
 }
 

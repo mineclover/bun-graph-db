@@ -93,7 +93,7 @@ query {
 ### Core Documentation
 - **[CLAUDE.md](../../CLAUDE.md)** - Project overview and features
 - **[API Reference](../api/doc-api-reference.md)** - Complete API documentation
-- **[Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)** - System design
+- **[아키텍처 개요](../architecture/overview.md)** - System design
 
 ### Advanced Topics
 - **[Template System Guide](../templates/template-system-guide.md)** - Template creation and usage

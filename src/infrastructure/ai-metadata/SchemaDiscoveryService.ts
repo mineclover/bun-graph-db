@@ -124,7 +124,7 @@ export class SchemaDiscoveryService {
 
     const filterType = this.schema.types.find((type) => type.name === 'SearchNodesFilter')
 
-    if (!filterType || filterType.kind !== 'INPUT_OBJECT' || !filterType.inputFields) {
+    if (filterType?.kind !== 'INPUT_OBJECT' || !filterType.inputFields) {
       throw new Error('SearchNodesFilter type not found in schema')
     }
 

@@ -1,376 +1,69 @@
-# MCP (Model Context Protocol) Documentation
+---
+docType: reference
+sourceLocale: ko
+canonical: true
+lastVerified: "2026-08-11"
+---
 
-**Bun Graph Database의 완전한 MCP 시스템 문서화**
+# Bun Graph DB MCP 참조
 
-[![MCP Protocol](https://img.shields.io/badge/MCP-2025--06--18-blue)](https://modelcontextprotocol.io)
-[![Architecture](https://img.shields.io/badge/Architecture-Proxy--First-green)](./MCP_SYSTEM_ARCHITECTURE.md)
-[![Tools](https://img.shields.io/badge/Tools-23%20Active-orange)](./MCP_TOOLS_EXTENSION_REFERENCE.md)
+루트 MCP 서버는 `/mcp`, 테이블 범위 MCP 서버는 `/sub/:tableId/mcp`에서 JSON-RPC 2.0 over HTTP로 제공된다. 공개 도구의 이름, 입력 JSON Schema, `read`·`write` 성격, 테이블 범위는 [`McpToolRegistry`](../../src/application/services/McpToolRegistry.ts)의 단일 계약이 기준이다.
 
-## 🎯 개요
+운영 모델과 권한 경계는 [아키텍처 개요](../architecture/overview.md), 완료 조건은 [운영 준비도 명세](../../specs/008-production-readiness/spec.md)를 따른다.
 
-이 디렉토리는 Bun Graph Database의 MCP (Model Context Protocol) 시스템에 대한 종합적인 문서를 제공합니다. **프록시-퍼스트 아키텍처**를 기반으로 한 고성능 GraphQL-MCP 브리지 시스템의 설계, 구현, 확장 방법을 다룹니다.
+## 지원 프로토콜
 
-## 📚 문서 구조
+| 프로토콜 버전 | 요청 모델 |
+| --- | --- |
+| `2026-07-28` | 요청별 메타데이터를 사용하는 stateless 경로 |
+| `2025-06-18` | initialize 기반 호환 경로 |
+| `2024-11-05` | initialize 기반 레거시 호환 경로 |
 
-### 핵심 문서
-- **[MCP_SYSTEM_ARCHITECTURE.md](./MCP_SYSTEM_ARCHITECTURE.md)** - 시스템 아키텍처 및 설계 원칙
-- **[MCP_TOOLS_EXTENSION_REFERENCE.md](./MCP_TOOLS_EXTENSION_REFERENCE.md)** - 도구 개발 및 확장 가이드
+`2026-07-28` 요청은 `MCP-Protocol-Version` 및 `Mcp-Method` 헤더와 `params._meta`의 프로토콜 정보가 일치해야 한다. `tools/call`은 `Mcp-Name` 헤더도 도구 이름과 일치해야 한다.
 
-### 실전 예제
-- **[examples/](./examples/)** - 실제 사용 가능한 도구 정의 및 테스트 스크립트
-  - `practical-tools-extension.json` - 실전 도구 확장 예제
-  - `sample-tools-extension.json` - 샘플 도구 정의
-  - `test-extension-tools.sh` - 자동화된 테스트 스크립트
+## 인증과 권한
 
-## 🚀 빠른 시작
+production에서는 인증이 기본으로 활성화된다. 외부 클라이언트는 `Authorization: Bearer <token>` 또는 `X-API-Key: <token>`을 보낸다.
 
-### 1. MCP 서버 시작
 ```bash
-# 개발 서버 실행 (MCP 포함)
-bun run dev
-
-# MCP 엔드포인트 확인
-curl -X POST http://localhost:4000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": "init",
-    "method": "initialize",
-    "params": {
-      "protocolVersion": "2025-06-18",
-      "capabilities": {},
-      "clientInfo": {"name": "test", "version": "1.0.0"}
-    }
-  }'
+export BUN_GRAPH_DB_ACCESS_TOKENS='{
+  "reader-token": { "id": "analytics", "role": "reader", "tableIds": ["public"] },
+  "writer-token": { "id": "automation", "role": "writer", "tableIds": ["orders"] }
+}'
+export BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN='at-least-32-characters-of-random-secret'
 ```
 
-### 2. 도구 목록 확인
+`reader`는 읽기 도구만 발견·실행할 수 있다. `writer`는 허용된 테이블 범위에서 쓰기 작업을 수행할 수 있고, `admin`은 전역 작업을 수행할 수 있다. 범위를 벗어난 테이블·노드 요청은 존재 여부를 노출하지 않는 응답으로 거부된다.
+
+`BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN`은 인증된 서비스에서 필수다. MCP가 내부 GraphQL·REST 브리지를 호출할 때만 일반 Bearer 자격 증명으로 전달하며, 외부 클라이언트용 토큰과 분리해 보관해야 한다.
+
+## 최신 클라이언트 요청 예시
+
 ```bash
 curl -X POST http://localhost:4000/mcp \
-  -H "Content-Type: application/json" \
+  -H 'Content-Type: application/json' \
+  -H 'MCP-Protocol-Version: 2026-07-28' \
+  -H 'Mcp-Method: tools/list' \
   -d '{
     "jsonrpc": "2.0",
     "id": "list",
     "method": "tools/list",
-    "params": {}
-  }'
-```
-
-### 3. 기본 도구 사용
-```bash
-# 시스템 건강도 체크
-curl -X POST http://localhost:4000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "id": "health",
-    "method": "tools/call",
     "params": {
-      "name": "healthCheck",
-      "arguments": {}
+      "_meta": {
+        "io.modelcontextprotocol/protocolVersion": "2026-07-28",
+        "io.modelcontextprotocol/clientCapabilities": {}
+      }
     }
   }'
 ```
 
-### 4. 테스트 스위트 실행
+인증된 서버에는 위 요청에 `-H 'Authorization: Bearer <token>'`을 추가한다. 반환된 도구 목록은 호출 주체의 역할과 테이블 범위에 따라 달라질 수 있다.
+
+## 검증 명령
+
 ```bash
-# 전체 MCP 기능 테스트
-./docs/mcp/examples/test-extension-tools.sh
-```
-
-## 🏗️ 시스템 아키텍처
-
-### 프록시-퍼스트 설계
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Claude MCP    │    │   HTTP Server    │    │   GraphQL       │
-│     Client      │◄──►│ (MCP 2025-06-18) │◄──►│   Operations    │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-                              │
-                              ▼
-                       ┌──────────────────┐
-                       │   Tool Registry  │
-                       │  (Auto-loaded)   │
-                       └──────────────────┘
-```
-
-### 핵심 특징
-- **87% 표준 프록시**: GraphQL 직접 실행으로 최고 성능
-- **13% 커스텀 최적화**: 복잡한 비즈니스 로직 처리
-- **완전 타입 안전성**: JSON Schema + GraphQL 검증
-- **자동 도구 등록**: 계약 파일 기반 자동 로딩
-
-## 🔧 도구 분류
-
-### 표준 프록시 도구 (20/23)
-**특징**: GraphQL 쿼리/뮤테이션 직접 실행
-- 시스템 상태: `healthCheck`, `systemStats`
-- 테이블 관리: `createTable`, `searchTables`, `getTables`
-- 노드 작업: `createNode`, `searchNodes`
-- 속성 관리: `createAttribute`, `setNodeAttribute`
-- 템플릿 시스템: `createTemplate`, `executeTemplateWithGraphQL`
-
-### 커스텀 최적화 도구 (3/23)
-**특징**: 복합 데이터 처리 및 비즈니스 로직
-- `getTableDocs`: 테이블 종합 문서화
-- `setNodeAttribute`: 스마트 속성 관리
-- `removeNodeAttribute`: 안전한 속성 제거
-
-## 📊 성능 지표
-
-### 실행 시간 벤치마크
-| 도구 유형 | 평균 실행 시간 | 오버헤드 |
-|----------|----------------|------------|
-| **표준 프록시** | 5-15ms | ~2ms |
-| **커스텀 최적화** | 20-50ms | ~10ms |
-| **복합 데이터** | 50-150ms | ~30ms |
-
-### 처리량
-- **동시 요청**: 15-20 TPS
-- **메모리 사용량**: 평균 8MB
-- **응답 성공률**: 99.7%
-
-## 🛠️ 개발 워크플로우
-
-### 새 도구 추가 (표준 프록시)
-1. **GraphQL 스키마 확장**
-2. **리졸버 구현**
-3. **MCP 도구 계약 정의**
-4. **스키마 빌더 등록**
-5. **테스트 및 검증**
-
-### 새 도구 추가 (커스텀 최적화)
-1. **비즈니스 로직 분석**
-2. **handleCustomTool 확장**
-3. **복합 데이터 처리 구현**
-4. **성능 최적화**
-5. **종합 테스트**
-
-### 개발 명령어
-```bash
-# 개발 서버 (핫리로드)
-bun run dev
-
-# 타입 검증
+bun test tests/unit/mcp-modern-protocol.test.ts tests/unit/mcp-tool-contract.test.ts tests/unit/mcp-internal-bridge.test.ts
 bun run typecheck
-
-# 테스트 실행
-bun test
-
-# MCP 도구 테스트
-./docs/mcp/examples/test-extension-tools.sh
 ```
 
-## 🧪 테스트 및 검증
-
-### 자동화된 테스트
-```bash
-# 전체 MCP 기능 테스트
-./docs/mcp/examples/test-extension-tools.sh
-
-# 결과 예시:
-# ✅ MCP 서버 연결 성공
-# ✅ 도구 목록 조회 성공 (총 23 개 도구)
-# ✅ healthCheck 도구 실행 성공
-# ✅ 성능 테스트 통과 (5개 동시 요청: 145ms)
-```
-
-### 수동 테스트
-```bash
-# Claude Desktop에서 테스트
-# 1. MCP 설정에 서버 추가
-# 2. 도구 목록 확인
-# 3. 각 도구 기능 검증
-```
-
-## 📖 사용 예제
-
-### 기본 작업 플로우
-```bash
-# 1. 테이블 생성
-curl -X POST http://localhost:4000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "createTable",
-      "arguments": {
-        "identifier": "my_table",
-        "description": "테스트 테이블"
-      }
-    }
-  }'
-
-# 2. 노드 추가
-curl -X POST http://localhost:4000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "createNode",
-      "arguments": {
-        "tableId": "TABLE_ID",
-        "content": "테스트 노드"
-      }
-    }
-  }'
-
-# 3. 테이블 문서화 (커스텀 도구)
-curl -X POST http://localhost:4000/mcp \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc": "2.0",
-    "method": "tools/call",
-    "params": {
-      "name": "getTableDocs",
-      "arguments": {
-        "tableId": "TABLE_ID",
-        "includeUsageStats": true
-      }
-    }
-  }'
-```
-
-## 🔍 디버깅 가이드
-
-### 일반적인 문제 해결
-
-#### 1. MCP 서버 연결 실패
-```bash
-# 서버 상태 확인
-curl -I http://localhost:4000/mcp
-
-# 포트 사용 확인
-lsof -i :4000
-
-# 개발 서버 재시작
-bun run dev
-```
-
-#### 2. 도구 실행 오류
-```bash
-# 도구 목록 확인
-curl -X POST http://localhost:4000/mcp \
-  -d '{"jsonrpc":"2.0","method":"tools/list","params":{}}'
-
-# 스키마 검증 확인
-curl -X POST http://localhost:4000/mcp \
-  -d '{
-    "jsonrpc":"2.0",
-    "method":"tools/call",
-    "params":{
-      "name":"TOOL_NAME",
-      "arguments":{}
-    }
-  }'
-```
-
-#### 3. 성능 문제
-```bash
-# 시스템 통계 확인
-curl -X POST http://localhost:4000/mcp \
-  -d '{
-    "jsonrpc":"2.0",
-    "method":"tools/call",
-    "params":{"name":"systemStats","arguments":{}}
-  }'
-```
-
-## 🚀 확장 및 커스터마이징
-
-### 새 도구 추가 템플릿
-```json
-{
-  "name": "yourCustomTool",
-  "description": "도구 설명",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "param": {"type": "string", "description": "파라미터 설명"}
-    },
-    "required": ["param"]
-  },
-  "graphqlOperation": {
-    "operationType": "query",
-    "query": "query yourTool($param: String!) { yourOperation(input: {param: $param}) { success result } }"
-  }
-}
-```
-
-### 커스텀 최적화 추가
-```typescript
-// src/mcp/http-server/McpHttpServer.ts
-private async handleCustomTool(id: string, toolName: string, args: any) {
-  switch (toolName) {
-    case 'yourCustomTool':
-      return await this.handleYourCustomTool(id, args)
-    // ... 기존 케이스들
-  }
-}
-```
-
-## 📊 모니터링 및 메트릭
-
-### 성능 모니터링
-- **응답 시간**: 평균 10-50ms
-- **처리량**: 15-20 TPS
-- **성공률**: 99.7%
-- **메모리 사용량**: 8-12MB
-
-### 로그 분석
-```bash
-# MCP 관련 로그 확인
-tail -f logs/mcp.log | grep "MCP Tool"
-
-# 에러 로그 필터링
-tail -f logs/error.log | grep "MCP"
-```
-
-## 🔗 관련 링크
-
-### 공식 문서
-- [MCP Specification 2025-06-18](https://modelcontextprotocol.io/specification/2025-06-18/)
-- [JSON-RPC 2.0 Specification](https://www.jsonrpc.org/specification)
-- [GraphQL Specification](https://spec.graphql.org/)
-
-### 프로젝트 문서
-- [GraphQL API Reference](../api/doc-api-reference.md)
-- [Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)
-- [Development Environment](../development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)
-
-## 📝 기여 가이드
-
-### 문서 업데이트
-1. 새로운 도구 추가 시 해당 문서 업데이트
-2. 성능 지표 변경 시 벤치마크 섹션 갱신
-3. 예제 코드는 실제 작동하는 코드로 유지
-
-### 코드 기여
-1. MCP 도구 추가 시 테스트 케이스 포함
-2. 커스텀 최적화는 성능 벤치마크 제공
-3. 문서화는 한국어/영어 병행
-
-## 📞 지원 및 문의
-
-### 기술 지원
-- **GitHub Issues**: 버그 리포트 및 기능 요청
-- **Discord**: 실시간 기술 지원 (링크 필요)
-- **Email**: 중요한 기술 문의
-
-### FAQ
-**Q: MCP 서버가 시작되지 않아요**
-A: `bun run dev`로 개발 서버를 먼저 시작하고, 포트 4000이 사용 가능한지 확인하세요.
-
-**Q: 새 도구가 목록에 나타나지 않아요**
-A: `specs/005-graphql-mcp-graphql/contracts/graphql-tools.json`에 도구 정의가 올바르게 추가되었는지 확인하고 서버를 재시작하세요.
-
-**Q: 커스텀 도구 성능이 느려요**
-A: 병렬 처리 패턴을 적용하고, 불필요한 데이터 조회를 최소화하세요. 자세한 내용은 [성능 최적화 가이드](./MCP_TOOLS_EXTENSION_REFERENCE.md#성능-최적화)를 참조하세요.
-
----
-
-**이 문서는 MCP 시스템의 발전과 함께 지속적으로 업데이트됩니다.**
-
-*최종 업데이트: 2025-09-22*
+과거 프록시 비율·고정 도구 수·성능 수치는 현재 계약의 일부가 아니므로 이 참조 문서에서 다루지 않는다. 새 도구는 GraphQL 구현, 단일 MCP 계약, 권한 메타데이터, 계약 테스트를 같은 변경에서 갱신해야 한다.

@@ -37,13 +37,13 @@ export class TabularSyncTargetRegistry {
 
   resolve(tableIdentifier: string): ResolvedSyncTargetSelection | null {
     const route = this.getRoute(tableIdentifier)
-    if (!route || route.enabled !== true) {
+    if (route?.enabled !== true) {
       return null
     }
 
     const target = this.getTarget(route.targetId)
 
-    if (!target || target.enabled !== true) {
+    if (target?.enabled !== true) {
       return null
     }
 

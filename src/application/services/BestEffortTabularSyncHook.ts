@@ -7,7 +7,11 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { TabularSyncConfig } from '@/infrastructure/excel/TabularSyncConfig.js'
 import type { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
-import type { TabularSyncEventStore } from '@/infrastructure/excel/TabularSyncEventStore.js'
+import type {
+  TabularSyncEventStore,
+  TabularSyncJobMode,
+  TabularSyncJobRecord,
+} from '@/infrastructure/excel/TabularSyncEventStore.js'
 import {
   createTabularDestinationGateways,
   ExcelSchemaProjector,
@@ -16,7 +20,7 @@ import {
   TabularSyncTargetRegistry,
 } from '@/infrastructure/excel/index.js'
 
-type PendingSyncMode = 'sync' | 'clear'
+type PendingSyncMode = TabularSyncJobMode
 
 interface PendingSyncEntry {
   mode: PendingSyncMode
@@ -97,6 +101,7 @@ export interface TabularSyncStatusSnapshot {
     lastCreatedAt: string
     latestErrorMessage: string | null
   }>
+  persistedJobs: TabularSyncJobRecord[]
 }
 
 export interface TabularSyncStatusFilters {
@@ -123,6 +128,11 @@ export class BestEffortTabularSyncHook {
   private totalFailed = 0
   private lastSuccessAt: string | null = null
   private lastFailureAt: string | null = null
+  private readonly durableWorkerId = `tabular-sync-${crypto.randomUUID()}`
+  private durableDrainTimer: ReturnType<typeof setTimeout> | null = null
+  private durableDrainRunning = false
+  private readonly durableLeaseDurationMs = 60_000
+  private readonly durableMaxAttempts = 5
 
   constructor(
     private readonly tableRepository: ITableRepository,
@@ -135,10 +145,18 @@ export class BestEffortTabularSyncHook {
     private readonly eventStore?: TabularSyncEventStore,
   ) {
     this.refreshRuntime()
+    if (this.eventStore) {
+      const recovered = this.eventStore.recoverUnfinishedJobs()
+      if (recovered > 0) {
+        this.logger.info('Recovered unfinished tabular sync jobs', { recovered })
+      }
+      this.requestDurableDrain()
+    }
   }
 
   isEnabled(): boolean {
     this.refreshRuntime()
+    this.requestDurableDrain()
     return this.bridge !== null
   }
 
@@ -214,6 +232,14 @@ export class BestEffortTabularSyncHook {
   }
 
   async flush(): Promise<void> {
+    if (this.eventStore) {
+      for (const job of this.eventStore.listJobs({ limit: 1000 })) {
+        this.eventStore.makeJobDue(job.tableIdentifier)
+      }
+      await this.processDurableJobs()
+      return
+    }
+
     await Promise.all(
       Array.from(this.pendingSyncs.keys()).map((tableIdentifier) =>
         this.schedule(tableIdentifier, this.pendingSyncs.get(tableIdentifier)?.mode || 'sync', true),
@@ -223,6 +249,7 @@ export class BestEffortTabularSyncHook {
 
   getStatus(filters: TabularSyncStatusFilters = {}): TabularSyncStatusSnapshot {
     this.refreshRuntime()
+    this.requestDurableDrain()
     const resolvedWindow = this.resolveWindowPreset(filters.windowPreset)
     const createdAfter = filters.createdAfter ?? resolvedWindow.createdAfter
     const createdBefore = filters.createdBefore ?? resolvedWindow.createdBefore
@@ -230,13 +257,22 @@ export class BestEffortTabularSyncHook {
       .map<TabularSyncTableMetric>((metric) => ({ ...metric }))
       .sort((left, right) => left.tableIdentifier.localeCompare(right.tableIdentifier))
     const aggregateMetrics = this.eventStore?.getAggregateMetrics()
+    const persistedJobs = this.eventStore?.listJobs({
+      tableIdentifier: filters.tableIdentifier,
+      limit: filters.limit,
+    }) || []
+    const activePersistedJobs = persistedJobs.filter((job) =>
+      job.status === 'queued' || job.status === 'running' || job.status === 'retry_wait',
+    )
 
     return {
       enabled: this.isEnabled(),
       configSource: this.configSource,
       syncDebounceMs: this.syncDebounceMs,
-      pendingCount: this.pendingSyncs.size,
-      pendingTables: Array.from(this.pendingSyncs.keys()).sort(),
+      pendingCount: this.eventStore ? activePersistedJobs.length : this.pendingSyncs.size,
+      pendingTables: this.eventStore
+        ? activePersistedJobs.map((job) => job.tableIdentifier).sort()
+        : Array.from(this.pendingSyncs.keys()).sort(),
       totalNotifications: this.totalNotifications,
       totalExecutions: aggregateMetrics?.totalEvents ?? this.totalExecutions,
       totalSucceeded: aggregateMetrics?.totalSuccess ?? this.totalSucceeded,
@@ -263,6 +299,7 @@ export class BestEffortTabularSyncHook {
           createdAfter,
           createdBefore,
         }) || [],
+      persistedJobs,
     }
   }
 
@@ -307,6 +344,10 @@ export class BestEffortTabularSyncHook {
       return false
     }
 
+    if (this.eventStore) {
+      return await this.scheduleDurable(tableIdentifier, mode, waitForCompletion)
+    }
+
     const metric = this.getOrCreateMetric(tableIdentifier)
     const scheduledAt = new Date().toISOString()
     this.totalNotifications++
@@ -345,6 +386,200 @@ export class BestEffortTabularSyncHook {
     return await new Promise<boolean>((resolve) => {
       entry.resolvers.push(resolve)
     })
+  }
+
+  /**
+   * SQLite is the source of truth for scheduled work.  The timer merely wakes
+   * this process at the next due time; an interrupted process can reconstruct
+   * the same work from the table on its next start.
+   */
+  private async scheduleDurable(
+    tableIdentifier: string,
+    mode: PendingSyncMode,
+    waitForCompletion: boolean,
+  ): Promise<boolean> {
+    const metric = this.getOrCreateMetric(tableIdentifier)
+    const scheduledAt = new Date().toISOString()
+    this.totalNotifications++
+    metric.notifications++
+    metric.pending = true
+    metric.lastMode = mode
+    metric.lastScheduledAt = scheduledAt
+
+    const job = this.eventStore?.enqueueJob({
+      tableIdentifier,
+      mode,
+      nextAttemptAt: new Date(Date.now() + this.syncDebounceMs).toISOString(),
+    })
+    if (!job) {
+      return false
+    }
+
+    if (!waitForCompletion) {
+      this.requestDurableDrain()
+      return false
+    }
+
+    // Explicit resync keeps the existing synchronous API: force its first
+    // delivery now and report whether that execution completed successfully.
+    this.eventStore?.makeJobDue(tableIdentifier)
+    const succeeded = await this.waitForDurableOutcome(job.id)
+    const settled = this.eventStore?.getJobById(job.id)
+    metric.pending = settled?.status === 'queued' || settled?.status === 'running' || settled?.status === 'retry_wait'
+    return succeeded
+  }
+
+  private async waitForDurableOutcome(jobId: number): Promise<boolean> {
+    while (true) {
+      await this.processDurableJobs()
+      const current = this.eventStore?.getJobById(jobId)
+      if (!current) {
+        return false
+      }
+      if (current.status === 'succeeded') {
+        return true
+      }
+      // The initial delivery failed. A retry remains scheduled in SQLite, but
+      // callers of the long-standing explicit resync API receive that failure
+      // rather than waiting through every background retry interval.
+      if (current.status === 'retry_wait' || current.status === 'failed' || current.status === 'paused') {
+        return false
+      }
+      await new Promise<void>((resolve) => setTimeout(resolve, 5))
+    }
+  }
+
+  private requestDurableDrain(): void {
+    if (!this.eventStore || !this.bridge || this.durableDrainRunning) {
+      return
+    }
+    const nextDueAt = this.eventStore.getNextDueAt()
+    if (!nextDueAt) {
+      return
+    }
+    const delay = Math.max(0, Math.min(Date.parse(nextDueAt) - Date.now(), 2_147_483_647))
+    if (this.durableDrainTimer) {
+      clearTimeout(this.durableDrainTimer)
+    }
+    this.durableDrainTimer = setTimeout(() => {
+      this.durableDrainTimer = null
+      void this.processDurableJobs()
+    }, delay)
+  }
+
+  private async processDurableJobs(): Promise<void> {
+    if (!this.eventStore || !this.bridge || this.durableDrainRunning) {
+      return
+    }
+
+    this.durableDrainRunning = true
+    try {
+      while (this.bridge) {
+        const job = this.eventStore.claimNextDueJob({
+          workerId: this.durableWorkerId,
+          leaseDurationMs: this.durableLeaseDurationMs,
+        })
+        if (!job) {
+          return
+        }
+        await this.executeDurableJob(job)
+      }
+    } finally {
+      this.durableDrainRunning = false
+      this.requestDurableDrain()
+    }
+  }
+
+  private async executeDurableJob(job: TabularSyncJobRecord): Promise<void> {
+    const metric = this.getOrCreateMetric(job.tableIdentifier)
+    const startedAt = new Date().toISOString()
+    this.totalExecutions++
+    metric.executions++
+    metric.pending = true
+    metric.lastMode = job.mode
+    metric.lastStartedAt = startedAt
+
+    try {
+      if (job.mode === 'clear') {
+        await this.bridge?.clearByIdentifier(job.tableIdentifier)
+      } else {
+        await this.bridge?.syncByIdentifier(job.tableIdentifier)
+      }
+      const completedAt = new Date().toISOString()
+      const updated = this.eventStore?.completeJobSuccess(job)
+      this.totalSucceeded++
+      this.lastSuccessAt = completedAt
+      metric.successes++
+      metric.lastCompletedAt = completedAt
+      metric.lastSuccessAt = completedAt
+      metric.lastError = null
+      metric.pending = updated?.status === 'queued'
+      this.eventStore?.recordEvent({
+        tableIdentifier: job.tableIdentifier,
+        mode: job.mode,
+        status: 'success',
+      })
+    } catch (error) {
+      const completedAt = new Date().toISOString()
+      const message = error instanceof Error ? error.message : String(error)
+      const retryDelayMs = this.getRetryDelayMs(job.attempts)
+      const updated = this.eventStore?.completeJobFailure({
+        job,
+        error: message,
+        maxAttempts: this.durableMaxAttempts,
+        retryDelayMs,
+      })
+      this.totalFailed++
+      this.lastFailureAt = completedAt
+      metric.failures++
+      metric.lastCompletedAt = completedAt
+      metric.lastFailureAt = completedAt
+      metric.lastError = message
+      metric.pending = updated?.status === 'queued' || updated?.status === 'retry_wait'
+      this.recordFailure({
+        tableIdentifier: job.tableIdentifier,
+        mode: job.mode,
+        error: message,
+        occurredAt: completedAt,
+      })
+      this.eventStore?.recordEvent({
+        tableIdentifier: job.tableIdentifier,
+        mode: job.mode,
+        status: 'failure',
+        errorMessage: message,
+      })
+      this.logger.warn('Durable tabular sync job failed', {
+        tableIdentifier: job.tableIdentifier,
+        mode: job.mode,
+        attempts: job.attempts,
+        retryDelayMs,
+        error: message,
+      })
+    }
+  }
+
+  private getRetryDelayMs(attempts: number): number {
+    return Math.min(60_000, 1_000 * 2 ** Math.max(0, attempts - 1))
+  }
+
+  pauseByIdentifier(tableIdentifier: string): TabularSyncJobRecord | null {
+    const job = this.eventStore?.pauseJob(tableIdentifier) || null
+    if (job) {
+      this.getOrCreateMetric(tableIdentifier).pending = false
+    }
+    return job
+  }
+
+  resumeByIdentifier(tableIdentifier: string): TabularSyncJobRecord | null {
+    const job = this.eventStore?.resumeJob(tableIdentifier) || null
+    this.requestDurableDrain()
+    return job
+  }
+
+  retryByIdentifier(tableIdentifier: string): TabularSyncJobRecord | null {
+    const job = this.eventStore?.retryJob(tableIdentifier) || null
+    this.requestDurableDrain()
+    return job
   }
 
   private createTimer(

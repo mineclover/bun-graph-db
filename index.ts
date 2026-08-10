@@ -1,8 +1,8 @@
-import type { Request as ExpressRequest, Response as ExpressResponse } from 'express'
 import type { DefinitionNode, DocumentNode, ExecutionResult, OperationDefinitionNode } from 'graphql'
 import { createYoga } from 'graphql-yoga'
 import { randomUUID } from 'node:crypto'
 import type { ILogger } from './src/application/ports/ILogger'
+import { AccessControl, authorizeExternalRequest } from './src/application/security/AccessControl'
 import type { CreateAttributeUseCase } from './src/application/use-cases/attributes/CreateAttribute'
 import type { CreateNodeUseCase } from './src/application/use-cases/nodes/CreateNode'
 import type { SearchNodesUseCase } from './src/application/use-cases/nodes/SearchNodes'
@@ -20,10 +20,11 @@ import type { IAttributeRepository } from './src/domain/repositories/IAttributeR
 import type { IAttributeTypeRepository } from './src/domain/repositories/IAttributeTypeRepository'
 import type { INodeAttributeRepository } from './src/domain/repositories/INodeAttributeRepository'
 import type { INodeRelationRepository } from './src/domain/repositories/INodeRelationRepository'
+import type { INodeRepository } from './src/domain/repositories/INodeRepository'
 import type { IQueryTemplateRepository } from './src/domain/repositories/IQueryTemplateRepository'
 import type { IRelationTypeRepository } from './src/domain/repositories/IRelationTypeRepository'
 import type { ITableRepository } from './src/domain/repositories/ITableRepository'
-import { createContainer } from './src/infrastructure/container/ContainerBootstrap'
+import { createContainer, disposeContainer } from './src/infrastructure/container/ContainerBootstrap'
 import { CommonTokens } from './src/infrastructure/container/tokens/CommonTokens'
 import { UseCaseTokens } from './src/infrastructure/container/tokens/UseCaseTokens'
 import { GraphQLSchemaBuilder } from './src/presentation/graphql/GraphQLSchemaBuilder'
@@ -93,23 +94,14 @@ const schemaBuilder = new GraphQLSchemaBuilder(container)
 const schema = await schemaBuilder.build()
 
 const logger = await container.resolve<ILogger>(CommonTokens.LOGGER)
-
-type MinimalControllerRequest = {
-  method: string
-  url: string
-  path: string
-  query: Record<string, string>
-  params: Record<string, string>
-  headers: Record<string, string>
-  body: unknown
+const accessControl = AccessControl.fromEnvironment(process.env, logger)
+const internalBridgeToken = process.env.BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN?.trim()
+if (accessControl.isAuthenticationRequired() && (!internalBridgeToken || internalBridgeToken.length < 32)) {
+  throw new Error(
+    'BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN must be a non-empty high-entropy (32+ character) token when authentication is enabled.',
+  )
 }
-
-type MinimalControllerResponse = {
-  status: (code: number) => MinimalControllerResponse
-  type: (contentType: string) => MinimalControllerResponse
-  json: (data: unknown) => void
-  send: (data: unknown) => void
-}
+const nodeRepositoryForAccess = await container.resolve<INodeRepository>(RepositoryTokens.NODE_REPOSITORY)
 
 // Initialize AutoPersistenceService
 const autoPersistence = await container.resolve<AutoPersistenceService>(CommonTokens.AUTO_PERSISTENCE_SERVICE)
@@ -129,6 +121,7 @@ const yoga = createYoga({
     requestId: request.headers.get('x-request-id') || randomUUID(),
     startTime: new Date(),
     requestCache: new Map(),
+    principal: accessControl.principalFor(request),
   }),
   logging: {
     debug: (...args) => logger.debug('GraphQL Debug', { args }),
@@ -223,6 +216,7 @@ import { GraphApiController } from './src/presentation/http/controllers/GraphApi
 // Import controllers
 import { GraphDbApiController } from './src/presentation/http/controllers/GraphDbApiController'
 import { McpToolController } from './src/presentation/http/controllers/McpToolController'
+import { createBunApiRouter } from './src/presentation/http/routes/BunApiRouter'
 // Import route handlers
 import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes'
 import { createTabularSyncHandler } from './src/presentation/http/routes/TabularSyncRoutes'
@@ -305,19 +299,30 @@ const graphController = new GraphApiController(
 )
 const _mcpToolController = new McpToolController(logger, graphqlConfig.port)
 const tabularSyncConfigStore = await container.resolve(CommonTokens.TABULAR_SYNC_CONFIG_STORE)
+const tabularSyncConfigActivationService = await container.resolve(
+  CommonTokens.TABULAR_SYNC_CONFIG_ACTIVATION_SERVICE,
+)
 const tabularSyncHook = await container.resolve(CommonTokens.TABULAR_SYNC_HOOK)
 
 // Create route handlers in parallel
 const [schemaHandler, templateFileHandler, tabularSyncHandler] = await Promise.all([
   createSchemaHandler(container),
   createTemplateFileHandler(container),
-  Promise.resolve(createTabularSyncHandler(tabularSyncConfigStore as never, logger, tabularSyncHook as never)),
+  Promise.resolve(
+    createTabularSyncHandler(
+      tabularSyncConfigStore as never,
+      logger,
+      tabularSyncHook as never,
+      tabularSyncConfigActivationService as never,
+    ),
+  ),
 ])
 
 // Create MCP HTTP server with REST API base URL
 const mcpServer = new McpHttpServer(
   `http://localhost:${graphqlConfig.port}/graphql`,
   `http://localhost:${graphqlConfig.port}/api`,
+  internalBridgeToken,
 )
 await mcpServer.initialize()
 
@@ -329,176 +334,31 @@ const tableMcpMiddleware = createTableMcpMiddleware({
   projectionService: tableSchemaProjectionService,
 })
 
-// Direct API route handler without Express
-const handleApiRequest = async (request: Request): Promise<Response> => {
-  const url = new URL(request.url)
-  const pathname = url.pathname
-  const method = request.method
-  const tableOpenApiProjectionMatch =
-    method === 'GET'
-      ? pathname.match(/^\/api\/tables\/([^/]+)\/openapi-projection$/)
-      : null
-
-  try {
-    // Parse request body for POST/PUT requests
-    let body: unknown = {}
-    if (method === 'POST' || method === 'PUT' || method === 'PATCH') {
-      try {
-        body = await request.json()
-      } catch {
-        body = {}
-      }
-    }
-
-    // Create request and response objects compatible with controllers
-    const req: MinimalControllerRequest = {
-      method,
-      url: pathname + url.search,
-      path: pathname,
-      query: Object.fromEntries(url.searchParams.entries()),
-      params: {},
-      headers: Object.fromEntries(request.headers.entries()),
-      body,
-    }
-
-    let responseData: unknown
-    let statusCode = 200
-    let contentType = 'application/json'
-
-    const res: MinimalControllerResponse = {
-      status: (code: number) => {
-        statusCode = code
-        return res
-      },
-      type: (nextContentType: string) => {
-        contentType = nextContentType
-        return res
-      },
-      json: (data: unknown) => {
-        responseData = data
-      },
-      send: (data: unknown) => {
-        responseData = data
-      },
-    }
-
-    const expressReq = req as unknown as ExpressRequest
-    const expressRes = res as unknown as ExpressResponse
-
-    // Route matching and execution
-    if (method === 'GET' && pathname === '/api/health') {
-      logger.info('Health check endpoint called')
-      // Simple direct response to test the framework first
-      responseData = {
-        success: true,
-        data: {
-          status: 'OK',
-          timestamp: new Date().toISOString(),
-          database: 'Connected',
-          version: '1.0.0',
-        },
-      }
-    } else if (method === 'GET' && pathname === '/api/openapi') {
-      await graphDbController.getOpenApiDocument(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/stats') {
-      await graphDbController.systemStats(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/tables') {
-      await graphDbController.createTable(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/tables/search') {
-      await graphDbController.searchTables(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/tables') {
-      await graphController.getTables(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/tables/docs') {
-      await graphController.getTableDocs(expressReq, expressRes)
-    } else if (tableOpenApiProjectionMatch) {
-      req.params.tableId = decodeURIComponent(tableOpenApiProjectionMatch[1] || '')
-      await graphController.getTableOpenApiProjection(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/nodes') {
-      await graphDbController.createNode(expressReq, expressRes)
-    } else if ((method === 'PUT' || method === 'PATCH') && pathname.startsWith('/api/nodes/')) {
-      const nodeId = pathname.split('/')[3] || ''
-      req.params.nodeId = nodeId
-      await graphDbController.updateNode(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/nodes/search') {
-      await graphDbController.searchNodes(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/relations') {
-      await graphDbController.createRelation(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/templates') {
-      await graphDbController.createTemplate(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/templates/search') {
-      await graphDbController.searchTemplates(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/templates/execute') {
-      await graphDbController.executeTemplateWithGraphQL(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/attributes') {
-      await attributeController.createAttribute(expressReq, expressRes)
-    } else if (method === 'GET' && pathname.startsWith('/api/nodes/') && pathname.endsWith('/attributes')) {
-      // Extract nodeId from path like /api/nodes/123/attributes
-      const nodeId = pathname.split('/')[3] || ''
-      req.params.nodeId = nodeId
-      await attributeController.getNodeAttributes(expressReq, expressRes)
-    } else if (method === 'POST' && pathname.startsWith('/api/tables/') && pathname.endsWith('/export')) {
-      // Extract tableId from path like /api/tables/123/export
-      const tableId = pathname.split('/')[3] || ''
-      req.params.tableId = tableId
-      await graphController.exportTableWithNodes(expressReq, expressRes)
-
-      // MCP Tool Operations (Bridge between GraphQL and local services)
-    } else if (method === 'GET' && pathname === '/api/mcp-tools') {
-      await _mcpToolController.listMcpTools(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/mcp-tools/call') {
-      await _mcpToolController.callMcpTool(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/mcp-tools/bulk-import-templates') {
-      await _mcpToolController.bulkImportTemplates(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/mcp-tools/list-available-templates') {
-      await _mcpToolController.listAvailableTemplates(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/mcp-tools/import-status') {
-      await _mcpToolController.getImportStatus(expressReq, expressRes)
-
-      // New template management tools
-    } else if (method === 'POST' && pathname === '/api/mcp-tools/create-template') {
-      await _mcpToolController.createTemplate(expressReq, expressRes)
-    } else if (method === 'PUT' && pathname === '/api/mcp-tools/update-template') {
-      await _mcpToolController.updateTemplate(expressReq, expressRes)
-    } else if (method === 'DELETE' && pathname === '/api/mcp-tools/delete-template') {
-      await _mcpToolController.deleteTemplate(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/mcp-tools/validate-template') {
-      await _mcpToolController.validateTemplate(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/mcp-tools/search-templates') {
-      await _mcpToolController.searchTemplates(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/mcp-tools/get-template-metadata') {
-      await _mcpToolController.getTemplateMetadata(expressReq, expressRes)
-
-      // System initialization tools
-    } else if (method === 'POST' && pathname === '/api/mcp-tools/initialize-system') {
-      await _mcpToolController.initializeSystem(expressReq, expressRes)
-    } else if (method === 'GET' && pathname === '/api/mcp-tools/get-system-status') {
-      await _mcpToolController.getSystemStatus(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/mcp-tools/quick-reset') {
-      await _mcpToolController.quickReset(expressReq, expressRes)
-    } else if (method === 'POST' && pathname === '/api/mcp-tools/setup-demo') {
-      await _mcpToolController.setupDemo(expressReq, expressRes)
-    } else {
-      return new Response('Not Found', { status: 404 })
-    }
-
-    // Return response
-    return new Response(typeof responseData === 'string' ? responseData : JSON.stringify(responseData), {
-      status: statusCode,
-      headers: { 'Content-Type': contentType },
-    })
-  } catch (error) {
-    logger.error('API request error:', toErrorMeta(error))
-    return new Response(JSON.stringify({ success: false, error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-}
+const apiRouter = createBunApiRouter({
+  logger,
+  graphDbController,
+  attributeController,
+  graphController,
+  mcpToolController: _mcpToolController,
+})
 
 // Combined request handler
 const requestHandler = async (request: Request): Promise<Response> => {
   const url = new URL(request.url)
   const pathname = url.pathname
+
+  const accessDecision = await authorizeExternalRequest(accessControl, request, (toolName, argumentsValue) =>
+    mcpServer.resolveToolAccess(toolName, argumentsValue),
+    {
+      resolveNodeTableId: async (nodeId) => {
+        const node = await nodeRepositoryForAccess.findById(nodeId)
+        return node ? String(node.getTableId()) : undefined
+      },
+    },
+  )
+  if (!accessDecision.allowed) {
+    return accessControl.responseFor(accessDecision)
+  }
 
   // Serve static HTML for root path
   if (pathname === '/') {
@@ -535,19 +395,19 @@ const requestHandler = async (request: Request): Promise<Response> => {
   }
 
   // Handle table MCP requests - must come before general MCP handler
-  const tableMcpResponse = await tableMcpMiddleware(request)
+  const tableMcpResponse = await tableMcpMiddleware(request, accessDecision.principal)
   if (tableMcpResponse) {
     return tableMcpResponse
   }
 
   // Handle REST API requests
   if (pathname.startsWith('/api/')) {
-    return await handleApiRequest(request)
+    return await apiRouter(request)
   }
 
   // Handle MCP requests
   if (pathname === '/mcp' && request.method === 'POST') {
-    return await mcpServer.handleRequest(request)
+    return await mcpServer.handleRequest(request, accessDecision.principal)
   }
 
   // Handle GraphQL requests
@@ -618,16 +478,18 @@ const shutdown = async () => {
     })
     logger.info('✅ HTTP server stopped')
 
-    // 2. Close MCP server connections if available
-    if (mcpServer) {
-      logger.info('🔌 Stopping MCP server...')
-      // Note: Add proper cleanup method to McpHttpServer if available
-      logger.info('✅ MCP server stopped')
+    // 2. Close root and table-scoped MCP lifecycle state before releasing DI.
+    logger.info('🔌 Stopping MCP servers...')
+    const mcpShutdown = await Promise.allSettled([mcpServer.close(), tableMcpMiddleware.close()])
+    const mcpShutdownFailures = mcpShutdown.filter((result) => result.status === 'rejected')
+    if (mcpShutdownFailures.length > 0) {
+      throw new Error(`Failed to stop ${mcpShutdownFailures.length} MCP server lifecycle(s).`)
     }
+    logger.info('✅ MCP servers stopped')
 
-    // 3. Close any database connections (if needed in the future)
-    // await database?.close()
-    // logger.info('✅ Database connections closed')
+    // 3. Release DI-owned SQLite connections and disposable singletons.
+    await disposeContainer()
+    logger.info('✅ Database connections closed')
 
     logger.info('✅ Graceful shutdown completed')
   } catch (error) {

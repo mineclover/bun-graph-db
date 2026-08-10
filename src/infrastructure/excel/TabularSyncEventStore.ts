@@ -1,5 +1,46 @@
 import type { Database } from 'bun:sqlite'
 
+export type TabularSyncJobMode = 'sync' | 'clear'
+export type TabularSyncJobStatus =
+  | 'queued'
+  | 'running'
+  | 'retry_wait'
+  | 'paused'
+  | 'succeeded'
+  | 'failed'
+
+interface TabularSyncJobRow {
+  id: number
+  table_identifier: string
+  mode: TabularSyncJobMode
+  status: TabularSyncJobStatus
+  attempts: number
+  next_attempt_at: string | null
+  lease_owner: string | null
+  lease_expires_at: string | null
+  last_error: string | null
+  revision: number
+  created_at: string
+  updated_at: string
+  completed_at: string | null
+}
+
+export interface TabularSyncJobRecord {
+  id: number
+  tableIdentifier: string
+  mode: TabularSyncJobMode
+  status: TabularSyncJobStatus
+  attempts: number
+  nextAttemptAt: string | null
+  leaseOwner: string | null
+  leaseExpiresAt: string | null
+  lastError: string | null
+  revision: number
+  createdAt: string
+  updatedAt: string
+  completedAt: string | null
+}
+
 interface TabularSyncEventRow {
   id: number
   table_identifier: string
@@ -57,6 +98,281 @@ export interface TabularSyncAggregateMetrics {
 
 export class TabularSyncEventStore {
   constructor(private readonly db: Database) {}
+
+  /**
+   * Creates or refreshes the one pending delivery for a table.  A revision is
+   * incremented on every notification so a write that arrives while a worker
+   * holds a lease is delivered by a subsequent run rather than being lost.
+   */
+  enqueueJob(input: { tableIdentifier: string; mode: TabularSyncJobMode; nextAttemptAt?: string }): TabularSyncJobRecord {
+    const nextAttemptAt = input.nextAttemptAt || new Date().toISOString()
+    this.db.run(
+      `
+        INSERT INTO tabular_sync_jobs (
+          table_identifier, mode, status, attempts, next_attempt_at, revision, created_at, updated_at
+        ) VALUES (?, ?, 'queued', 0, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ON CONFLICT(table_identifier) DO UPDATE SET
+          mode = CASE
+            WHEN tabular_sync_jobs.mode = 'clear' OR excluded.mode = 'clear' THEN 'clear'
+            ELSE excluded.mode
+          END,
+          status = CASE
+            WHEN tabular_sync_jobs.status = 'paused' THEN 'paused'
+            WHEN tabular_sync_jobs.status = 'running' THEN 'running'
+            ELSE 'queued'
+          END,
+          attempts = CASE
+            WHEN tabular_sync_jobs.status IN ('succeeded', 'failed') THEN 0
+            ELSE tabular_sync_jobs.attempts
+          END,
+          next_attempt_at = CASE
+            WHEN tabular_sync_jobs.status IN ('paused', 'running') THEN tabular_sync_jobs.next_attempt_at
+            ELSE excluded.next_attempt_at
+          END,
+          lease_owner = CASE WHEN tabular_sync_jobs.status = 'running' THEN tabular_sync_jobs.lease_owner ELSE NULL END,
+          lease_expires_at = CASE WHEN tabular_sync_jobs.status = 'running' THEN tabular_sync_jobs.lease_expires_at ELSE NULL END,
+          last_error = CASE
+            WHEN tabular_sync_jobs.status IN ('succeeded', 'failed') THEN NULL
+            ELSE tabular_sync_jobs.last_error
+          END,
+          revision = tabular_sync_jobs.revision + 1,
+          completed_at = NULL,
+          updated_at = CURRENT_TIMESTAMP
+      `,
+      [input.tableIdentifier, input.mode, nextAttemptAt],
+    )
+
+    const job = this.getJobByTable(input.tableIdentifier)
+    if (!job) {
+      throw new Error(`Failed to enqueue tabular sync job for ${input.tableIdentifier}`)
+    }
+    return job
+  }
+
+  getJobById(id: number): TabularSyncJobRecord | null {
+    const row = this.db
+      .query<TabularSyncJobRow, [number]>(
+        `SELECT * FROM tabular_sync_jobs WHERE id = ?`,
+      )
+      .get(id)
+    return row ? this.toJobRecord(row) : null
+  }
+
+  getJobByTable(tableIdentifier: string): TabularSyncJobRecord | null {
+    const row = this.db
+      .query<TabularSyncJobRow, [string]>(
+        `SELECT * FROM tabular_sync_jobs WHERE table_identifier = ?`,
+      )
+      .get(tableIdentifier)
+    return row ? this.toJobRecord(row) : null
+  }
+
+  listJobs(filters: {
+    tableIdentifier?: string | null
+    status?: TabularSyncJobStatus | null
+    limit?: number
+  } = {}): TabularSyncJobRecord[] {
+    const conditions: string[] = []
+    const params: Array<string | number> = []
+    if (filters.tableIdentifier) {
+      conditions.push('table_identifier = ?')
+      params.push(filters.tableIdentifier)
+    }
+    if (filters.status) {
+      conditions.push('status = ?')
+      params.push(filters.status)
+    }
+    params.push(filters.limit ?? 50)
+    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : ''
+    return this.db
+      .query<TabularSyncJobRow, Array<string | number>>(
+        `SELECT * FROM tabular_sync_jobs ${whereClause} ORDER BY updated_at DESC, id DESC LIMIT ?`,
+      )
+      .all(...params)
+      .map((row) => this.toJobRecord(row))
+  }
+
+  /** Returns unfinished work to the queue when a service process starts. */
+  recoverUnfinishedJobs(now = new Date().toISOString()): number {
+    const result = this.db.run(
+      `
+        UPDATE tabular_sync_jobs
+        SET status = 'retry_wait', next_attempt_at = ?, lease_owner = NULL, lease_expires_at = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE status = 'running'
+      `,
+      [now],
+    )
+    return result.changes
+  }
+
+  /** Claims one due job under a time-bounded lease. This is atomic in SQLite. */
+  claimNextDueJob(input: {
+    workerId: string
+    leaseDurationMs: number
+    now?: Date
+  }): TabularSyncJobRecord | null {
+    const now = input.now || new Date()
+    const nowIso = now.toISOString()
+    const leaseExpiresAt = new Date(now.getTime() + input.leaseDurationMs).toISOString()
+    const claim = this.db.transaction(() => {
+      this.db.run(
+        `
+          UPDATE tabular_sync_jobs
+          SET status = 'retry_wait', next_attempt_at = ?, lease_owner = NULL, lease_expires_at = NULL,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE status = 'running' AND lease_expires_at IS NOT NULL AND datetime(lease_expires_at) <= datetime(?)
+        `,
+        [nowIso, nowIso],
+      )
+      const candidate = this.db
+        .query<{ id: number }, [string]>(
+          `
+            SELECT id FROM tabular_sync_jobs
+            WHERE status IN ('queued', 'retry_wait')
+              AND (next_attempt_at IS NULL OR datetime(next_attempt_at) <= datetime(?))
+            ORDER BY CASE status WHEN 'queued' THEN 0 ELSE 1 END, next_attempt_at ASC, id ASC
+            LIMIT 1
+          `,
+        )
+        .get(nowIso)
+      if (!candidate) {
+        return null
+      }
+      this.db.run(
+        `
+          UPDATE tabular_sync_jobs
+          SET status = 'running', attempts = attempts + 1, lease_owner = ?, lease_expires_at = ?,
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `,
+        [input.workerId, leaseExpiresAt, candidate.id],
+      )
+      return this.getJobById(candidate.id)
+    })
+    return claim()
+  }
+
+  completeJobSuccess(job: Pick<TabularSyncJobRecord, 'id' | 'revision' | 'leaseOwner'>): TabularSyncJobRecord | null {
+    this.db.run(
+      `
+        UPDATE tabular_sync_jobs
+        SET status = CASE WHEN revision = ? THEN 'succeeded' ELSE 'queued' END,
+            next_attempt_at = CASE WHEN revision = ? THEN NULL ELSE ? END,
+            lease_owner = NULL, lease_expires_at = NULL, last_error = NULL,
+            completed_at = CASE WHEN revision = ? THEN CURRENT_TIMESTAMP ELSE NULL END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND status = 'running' AND lease_owner = ?
+      `,
+      [job.revision, job.revision, new Date().toISOString(), job.revision, job.id, job.leaseOwner],
+    )
+    return this.getJobById(job.id)
+  }
+
+  completeJobFailure(input: {
+    job: Pick<TabularSyncJobRecord, 'id' | 'revision' | 'leaseOwner' | 'attempts'>
+    error: string
+    maxAttempts: number
+    retryDelayMs: number
+  }): TabularSyncJobRecord | null {
+    const shouldRetry = input.job.attempts < input.maxAttempts
+    const nextAttemptAt = new Date(Date.now() + input.retryDelayMs).toISOString()
+    const nextStatus: TabularSyncJobStatus = shouldRetry ? 'retry_wait' : 'failed'
+    this.db.run(
+      `
+        UPDATE tabular_sync_jobs
+        SET status = CASE WHEN revision <> ? THEN 'queued' ELSE ? END,
+            next_attempt_at = CASE
+              WHEN revision <> ? THEN ?
+              WHEN ? = 'retry_wait' THEN ?
+              ELSE NULL
+            END,
+            lease_owner = NULL, lease_expires_at = NULL, last_error = ?,
+            completed_at = CASE WHEN revision = ? AND ? = 'failed' THEN CURRENT_TIMESTAMP ELSE NULL END,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ? AND status = 'running' AND lease_owner = ?
+      `,
+      [
+        input.job.revision,
+        nextStatus,
+        input.job.revision,
+        new Date().toISOString(),
+        nextStatus,
+        nextAttemptAt,
+        input.error,
+        input.job.revision,
+        nextStatus,
+        input.job.id,
+        input.job.leaseOwner,
+      ],
+    )
+    return this.getJobById(input.job.id)
+  }
+
+  pauseJob(tableIdentifier: string): TabularSyncJobRecord | null {
+    this.db.run(
+      `
+        UPDATE tabular_sync_jobs
+        SET status = 'paused', lease_owner = NULL, lease_expires_at = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE table_identifier = ? AND status <> 'succeeded'
+      `,
+      [tableIdentifier],
+    )
+    return this.getJobByTable(tableIdentifier)
+  }
+
+  resumeJob(tableIdentifier: string): TabularSyncJobRecord | null {
+    this.db.run(
+      `
+        UPDATE tabular_sync_jobs
+        SET status = 'queued', attempts = 0, next_attempt_at = ?, lease_owner = NULL, lease_expires_at = NULL,
+            last_error = NULL, completed_at = NULL, revision = revision + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE table_identifier = ? AND status IN ('paused', 'failed')
+      `,
+      [new Date().toISOString(), tableIdentifier],
+    )
+    return this.getJobByTable(tableIdentifier)
+  }
+
+  retryJob(tableIdentifier: string): TabularSyncJobRecord | null {
+    this.db.run(
+      `
+        UPDATE tabular_sync_jobs
+        SET status = 'queued', attempts = 0, next_attempt_at = ?, lease_owner = NULL, lease_expires_at = NULL,
+            last_error = NULL, completed_at = NULL, revision = revision + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE table_identifier = ? AND status IN ('paused', 'failed', 'retry_wait')
+      `,
+      [new Date().toISOString(), tableIdentifier],
+    )
+    return this.getJobByTable(tableIdentifier)
+  }
+
+  makeJobDue(tableIdentifier: string): TabularSyncJobRecord | null {
+    this.db.run(
+      `
+        UPDATE tabular_sync_jobs
+        SET status = 'queued', next_attempt_at = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE table_identifier = ? AND status IN ('queued', 'retry_wait')
+      `,
+      [new Date().toISOString(), tableIdentifier],
+    )
+    return this.getJobByTable(tableIdentifier)
+  }
+
+  getNextDueAt(): string | null {
+    const row = this.db
+      .query<{ next_attempt_at: string | null }, []>(
+        `
+          SELECT next_attempt_at FROM tabular_sync_jobs
+          WHERE status IN ('queued', 'retry_wait')
+          ORDER BY CASE WHEN next_attempt_at IS NULL THEN 0 ELSE 1 END, next_attempt_at ASC
+          LIMIT 1
+        `,
+      )
+      .get()
+    return row?.next_attempt_at || null
+  }
 
   recordEvent(input: {
     tableIdentifier: string
@@ -243,6 +559,24 @@ export class TabularSyncEventStore {
       totalFailure: row.total_failure || 0,
       lastSuccessAt: row.last_success_at,
       lastFailureAt: row.last_failure_at,
+    }
+  }
+
+  private toJobRecord(row: TabularSyncJobRow): TabularSyncJobRecord {
+    return {
+      id: row.id,
+      tableIdentifier: row.table_identifier,
+      mode: row.mode,
+      status: row.status,
+      attempts: row.attempts,
+      nextAttemptAt: row.next_attempt_at,
+      leaseOwner: row.lease_owner,
+      leaseExpiresAt: row.lease_expires_at,
+      lastError: row.last_error,
+      revision: row.revision,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      completedAt: row.completed_at,
     }
   }
 }

@@ -1,4 +1,5 @@
 import type { Database } from 'bun:sqlite'
+import { extname } from 'node:path'
 import type { TabularSyncConfig } from './TabularSyncConfig.js'
 import type { GoogleSheetsTargetConfig, TabularSyncTargetConfig } from './TabularSyncConfig.js'
 
@@ -181,9 +182,13 @@ export class TabularSyncConfigStore {
 
   private validateTargetForActivation(target: TabularSyncTargetConfig): void {
     if (target.kind === 'excel-file') {
-      throw new Error(
-        `Excel target '${target.id}' is preview-only until Excel write support is implemented.`,
-      )
+      if (!target.workbookPath?.trim()) {
+        throw new Error(`Excel target '${target.id}' requires a workbookPath before activation.`)
+      }
+      if (extname(target.workbookPath).toLowerCase() !== '.xlsx') {
+        throw new Error(`Excel target '${target.id}' must use a .xlsx workbookPath.`)
+      }
+      return
     }
 
     const googleTarget = target as GoogleSheetsTargetConfig

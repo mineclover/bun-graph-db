@@ -128,7 +128,7 @@ curl -X POST http://localhost:4141/mcp \
 # {"data":{"healthCheck":{"status":"OK","database":true,"version":"1.0.0"}}}
 ```
 
-> Note: the latest lane-based full-suite status is tracked in [../development/SYSTEM_EVALUATION_2026-03-30.md](../development/SYSTEM_EVALUATION_2026-03-30.md). Core server flows are verified and `bun run test` is currently passing.
+> 현재 운영 기능의 완료 조건은 [운영 준비도 명세](../../specs/008-production-readiness/spec.md)를, 최신 검증 명령은 [테스트 가이드](../development/TESTING.md)를 따른다.
 
 ### Stopping the Server
 
@@ -715,7 +715,7 @@ query {
 1. **API Documentation**: [docs/api/doc-api-reference.md](../../api/doc-api-reference.md)
 2. **Template Guide**: [docs/templates/template-system-guide.md](../../templates/template-system-guide.md)
 3. **Test Coverage Report**: [claudedocs/test-coverage-report.md](../../claudedocs/test-coverage-report.md)
-4. **Architecture Overview**: [docs/architecture/ARCHITECTURE_OVERVIEW.md](../../architecture/ARCHITECTURE_OVERVIEW.md)
+4. **Architecture Overview**: [아키텍처 개요](../architecture/overview.md)
 
 ### Advanced Features
 

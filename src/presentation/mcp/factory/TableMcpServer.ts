@@ -7,7 +7,11 @@
  * Sequential: Implements after comprehensive testing
  */
 
-import type { McpToolDefinition } from "../../../application/services/McpToolRegistry";
+import type {
+	McpToolAudience,
+	McpToolDefinition,
+} from "../../../application/services/McpToolRegistry";
+import { ROOT_MCP_TOOL_CONTRACT_VERSION } from "../../../application/services/McpToolRegistry";
 import type { TableSchemaProjectionService } from "../../../application/services/TableSchemaProjectionService";
 import {
 	validateOpenApiProjection,
@@ -33,6 +37,12 @@ import type { FlatJsonExport } from "../../../core/types/JsonExport.js";
 import { FormatMapperService } from "../../../domain/services/FormatMapperService.js";
 import { SchemaDiscoveryService } from "../../../infrastructure/ai-metadata/SchemaDiscoveryService";
 import { McpHttpServer } from "../../../mcp/http-server/McpHttpServer";
+import {
+	SUPPORTED_MCP_PROTOCOL_VERSIONS,
+	isModernMcpRequest,
+	validateModernMcpRequest,
+	withModernResult,
+} from "../../../mcp/http-server/modern-protocol.js";
 import {
 	McpDataValidator,
 	McpSchemaValidator,
@@ -105,6 +115,8 @@ export class TableMcpServer {
 	private tableId: string;
 	private tableTools: Map<string, McpToolDefinition> = new Map();
 	private tableInitialized: boolean = false;
+	private closed: boolean = false;
+	private closePromise: Promise<void> | undefined;
 	private mcpServer: McpHttpServer;
 	private schemaDiscoveryService: SchemaDiscoveryService | null = null;
 	private formatMapperService: FormatMapperService;
@@ -126,6 +138,7 @@ export class TableMcpServer {
 	 * Initialize table-specific MCP server
 	 */
 	async initialize(): Promise<void> {
+		if (this.closed) throw new Error(`Table MCP server for ${this.tableId} is closed`);
 		if (this.tableInitialized) return;
 
 		console.log(`Initializing Table MCP Server for table: ${this.tableId}`);
@@ -583,9 +596,8 @@ export class TableMcpServer {
 	 */
 	private async getGraphQLSchema(): Promise<any> {
 		try {
-			// Access the GraphQL executor to get schema via introspection
-			const graphqlExecutor = (this.mcpServer as any).graphqlExecutor;
-			if (graphqlExecutor) {
+			// Use the typed root-server boundary for GraphQL introspection.
+			{
 				// Use introspection query to get schema
 				const introspectionQuery = `
           query IntrospectionQuery {
@@ -635,7 +647,7 @@ export class TableMcpServer {
           }
         `;
 
-				const result = await graphqlExecutor.execute({
+				const result = await this.mcpServer.executeGraphQLOperation<any>({
 					operationName: "IntrospectionQuery",
 					operationType: "query",
 					query: introspectionQuery,
@@ -1536,7 +1548,7 @@ export class TableMcpServer {
 				operationType: "query" as const,
 			};
 
-			const result = await (this.mcpServer as any).graphqlExecutor.execute(
+			const result = await this.mcpServer.executeGraphQLOperation<any>(
 				operation,
 			);
 
@@ -1617,12 +1629,17 @@ export class TableMcpServer {
 	/**
 	 * Override tools/list to return ONLY table-specific tools
 	 */
-	async handleToolsList(id: string | number | undefined): Promise<McpResponse> {
+	async handleToolsList(
+		id: string | number | undefined,
+		audience?: McpToolAudience,
+	): Promise<McpResponse> {
 		await this.initialize();
 
 		// Return ONLY table-specific tools - no base tools inheritance
 		// Sub-table MCP servers should be isolated and table-focused
-		const tableSpecificTools = Array.from(this.tableTools.values());
+		const tableSpecificTools = Array.from(this.tableTools.values()).filter(
+			(tool) => audience?.role !== "reader" || tool.operationType === "query",
+		);
 
 		return {
 			jsonrpc: "2.0",
@@ -1632,7 +1649,12 @@ export class TableMcpServer {
 					name: tool.name,
 					description: tool.description,
 					inputSchema: tool.inputSchema,
-					...(tool._meta ? { _meta: tool._meta } : {}),
+					_meta: {
+						...tool._meta,
+						contractVersion: ROOT_MCP_TOOL_CONTRACT_VERSION,
+						action: tool.operationType === "query" ? "read" : "write",
+						scope: "table",
+					},
 					...(tool.annotations ? { annotations: tool.annotations } : {}),
 				})),
 			},
@@ -1645,6 +1667,7 @@ export class TableMcpServer {
 	async handleToolsCall(
 		id: string | number | undefined,
 		params: any,
+		audience?: McpToolAudience,
 	): Promise<McpResponse> {
 		if (!params?.name) {
 			return this.createErrorResponse(
@@ -1667,6 +1690,12 @@ export class TableMcpServer {
 		console.log(`🔍 Tool found in table tools: ${this.tableTools.has(name)}`);
 
 		if (this.tableTools.has(name)) {
+			if (
+				audience?.role === "reader" &&
+				this.tableTools.get(name)?.operationType !== "query"
+			) {
+				return this.createErrorResponse(id, -32601, "Method not found");
+			}
 			console.log(`✅ Executing table-specific tool: ${name}`);
 			return await this.executeTableTool(id, name, args || {});
 		}
@@ -1946,14 +1975,14 @@ export class TableMcpServer {
 				operationType: "mutation" as const,
 			};
 
-			const result = await (this.mcpServer as any).graphqlExecutor.execute(
+			const result = await this.mcpServer.executeGraphQLOperation<any>(
 				operation,
 			);
 
 			if (result.errors && result.errors.length > 0) {
 				return {
 					success: false,
-					error: result.errors[0].message,
+					error: result.errors[0]?.message || "GraphQL execution failed",
 					data: null,
 				};
 			}
@@ -2034,14 +2063,14 @@ export class TableMcpServer {
 				operationType: "query" as const,
 			};
 
-			const result = await (this.mcpServer as any).graphqlExecutor.execute(
+			const result = await this.mcpServer.executeGraphQLOperation<any>(
 				operation,
 			);
 
 			if (result.errors && result.errors.length > 0) {
 				return {
 					success: false,
-					error: result.errors[0].message,
+					error: result.errors[0]?.message || "GraphQL execution failed",
 					data: null,
 				};
 			}
@@ -2403,7 +2432,7 @@ export class TableMcpServer {
 				operationType: "query" as const,
 			};
 
-			const result = await (this.mcpServer as any).graphqlExecutor.execute(
+			const result = await this.mcpServer.executeGraphQLOperation<any>(
 				operation,
 			);
 
@@ -2439,7 +2468,7 @@ export class TableMcpServer {
 	): { valid: boolean; errors: string[] } {
 		const errors: string[] = [];
 
-		if (!schema || schema.type !== "object") {
+		if (schema?.type !== "object") {
 			return { valid: true, errors: [] };
 		}
 
@@ -2520,32 +2549,150 @@ export class TableMcpServer {
 	 * Refresh table templates (useful for dynamic updates)
 	 */
 	async refreshTableTemplates(): Promise<void> {
+		if (this.closed) throw new Error(`Table MCP server for ${this.tableId} is closed`);
 		console.log(`Refreshing templates for table ${this.tableId}`);
 		this.tableTools.clear();
 		await this.loadTableTemplates();
 	}
 
+	/** Release table-specific tools and the shared HTTP MCP server. */
+	async close(): Promise<void> {
+		if (this.closePromise) return this.closePromise;
+
+		this.closed = true;
+		this.closePromise = (async () => {
+			this.tableTools.clear();
+			this.schemaDiscoveryService = null;
+			this.tableInitialized = false;
+			await this.mcpServer.close();
+		})();
+
+		return this.closePromise;
+	}
+
+	isClosed(): boolean {
+		return this.closed;
+	}
+
 	/**
 	 * Handle MCP requests by delegating to appropriate handlers
 	 */
-	async handleRequest(request: Request): Promise<Response> {
+	async handleRequest(
+		request: Request,
+		audience?: McpToolAudience,
+	): Promise<Response> {
+		if (this.closed) return this.createClosedResponse();
 		try {
 			const body = await request.text();
-			const jsonRpcRequest = JSON.parse(body);
+			const jsonRpcRequest = JSON.parse(body) as _McpRequest;
 
 			const { method, id, params } = jsonRpcRequest;
+			if (isModernMcpRequest(jsonRpcRequest, request.headers)) {
+				const validationError = validateModernMcpRequest(
+					jsonRpcRequest,
+					request.headers,
+				);
+				if (validationError) {
+					return new Response(
+						JSON.stringify(
+							this.createErrorResponse(
+								id,
+								validationError.code,
+								validationError.message,
+								validationError.data,
+							),
+						),
+						{
+							status: 400,
+							headers: { "Content-Type": "application/json" },
+						},
+					);
+				}
+
+				let modernResult: McpResponse;
+				switch (method) {
+					case "server/discover":
+						modernResult = {
+							jsonrpc: "2.0",
+							id,
+							result: {
+								supportedVersions: [...SUPPORTED_MCP_PROTOCOL_VERSIONS],
+								capabilities: { tools: {} },
+								instructions: `Use the table-scoped tools for '${this.tableId}'.`,
+								ttlMs: 300000,
+								cacheScope: "public",
+							},
+						};
+						break;
+					case "tools/list": {
+						const listed = await this.handleToolsList(id, audience);
+						const listedResult = listed.result as { tools?: unknown[] } | undefined;
+						modernResult = {
+							...listed,
+							result: {
+								...listedResult,
+								tools: [...(listedResult?.tools ?? [])].sort((left, right) => {
+									const leftName =
+										typeof (left as { name?: unknown }).name === "string"
+											? (left as { name: string }).name
+											: "";
+									const rightName =
+										typeof (right as { name?: unknown }).name === "string"
+											? (right as { name: string }).name
+											: "";
+									return leftName.localeCompare(rightName);
+								}),
+								ttlMs: 300000,
+								cacheScope: audience ? "private" : "public",
+							},
+						};
+						break;
+					}
+					case "tools/call":
+						modernResult = await this.handleToolsCall(id, params, audience);
+						break;
+					default:
+						modernResult = this.createErrorResponse(
+							id,
+							-32601,
+							"Method not found",
+							`Unknown method: ${method}`,
+						);
+				}
+
+				if (modernResult.error || !modernResult.result || typeof modernResult.result !== "object") {
+					return new Response(JSON.stringify(modernResult), {
+						status: 200,
+						headers: { "Content-Type": "application/json" },
+					});
+				}
+
+				return new Response(
+					JSON.stringify({
+						...modernResult,
+						result: withModernResult(modernResult.result, this.getServerInfo()),
+					}),
+					{
+						status: 200,
+						headers: {
+							"Content-Type": "application/json",
+							"Cache-Control": "no-cache",
+						},
+					},
+				);
+			}
 
 			let result: McpResponse;
 
 			switch (method) {
 				case "initialize":
-					result = await (this.mcpServer as any).handleInitialize(id, params);
+					result = await this.mcpServer.handleLegacyInitialize(id, params);
 					break;
 				case "tools/list":
-					result = await this.handleToolsList(id);
+					result = await this.handleToolsList(id, audience);
 					break;
 				case "tools/call":
-					result = await this.handleToolsCall(id, params);
+					result = await this.handleToolsCall(id, params, audience);
 					break;
 				default:
 					result = this.createErrorResponse(id, -32601, "Method not found");
@@ -2566,6 +2713,16 @@ export class TableMcpServer {
 				headers: { "Content-Type": "application/json" },
 			});
 		}
+	}
+
+	private createClosedResponse(): Response {
+		return new Response(
+			JSON.stringify(this.createErrorResponse(null, -32000, "Server unavailable", "MCP server is shutting down or closed")),
+			{
+				status: 503,
+				headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+			},
+		);
 	}
 
 	/**
@@ -2760,10 +2917,17 @@ export class TableMcpServer {
 			const operationName = this.extractOperationName(
 				tool.graphqlOperation.query || "",
 			);
+			const query = tool.graphqlOperation.query;
+			if (!query) {
+				return {
+					success: false,
+					errors: [{ message: `Tool ${tool.name} has no GraphQL query` }],
+				};
+			}
 
 			const operation = {
 				operationName: operationName,
-				query: tool.graphqlOperation.query,
+				query,
 				variables,
 				operationType: operationType as "query" | "mutation",
 			};
@@ -2776,7 +2940,7 @@ export class TableMcpServer {
 				},
 			);
 
-			const result = await (this.mcpServer as any).graphqlExecutor.execute(
+			const result = await this.mcpServer.executeGraphQLOperation<any>(
 				operation,
 			);
 

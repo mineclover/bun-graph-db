@@ -2,7 +2,7 @@
  * T018: MCP tool registry service
  *
  * Purpose: Central registry for tool definitions with discovery capabilities
- * Must Include: Load from contracts/graphql-tools.json, tools/list, tool lookup
+ * Must Include: Load the versioned root tool contract, tools/list, tool lookup
  * Integration: Tool discovery for MCP protocol
  */
 
@@ -20,6 +20,20 @@ export interface McpToolInputSchema {
   additionalProperties?: unknown
 }
 
+export const ROOT_MCP_TOOL_CONTRACT_VERSION = '2026-08-10.1'
+
+export type McpToolAction = 'read' | 'write'
+
+export interface McpToolAccessContract {
+  action: McpToolAction
+  scope: 'global' | 'table'
+  tableIdArgument?: 'tableId' | 'tableIdentifier'
+}
+
+export interface ResolvedMcpToolAccess extends McpToolAccessContract {
+  tableId?: string
+}
+
 export interface McpToolDefinition {
   name: string
   description: string
@@ -31,6 +45,8 @@ export interface McpToolDefinition {
     operationType?: string
     query?: string
   }
+  contractVersion?: string
+  access?: McpToolAccessContract
 }
 
 export interface ToolDiscoveryResult {
@@ -40,6 +56,12 @@ export interface ToolDiscoveryResult {
     inputSchema: McpToolInputSchema
   }>
 }
+
+export interface McpToolAudience {
+  role: AccessRole
+}
+
+type AccessRole = 'reader' | 'writer' | 'admin'
 
 export interface ToolLookupResult {
   found: boolean
@@ -56,10 +78,9 @@ export class McpToolRegistry {
    */
   async loadFromContract(): Promise<void> {
     try {
-      // Contract loading is disabled pending implementation of contract file system
-      console.log('MCP Tool Registry: Contract loading temporarily disabled')
+      this.loadBuiltInContract()
       this.loaded = true
-      console.log(`Loaded ${this.tools.size} tools from contract (empty registry)`)
+      console.log(`Loaded ${this.tools.size} tools from root contract ${ROOT_MCP_TOOL_CONTRACT_VERSION}`)
     } catch (error) {
       console.error('Failed to load tools from contract:', error)
       throw new Error(`Tool registry initialization failed: ${error}`)
@@ -74,7 +95,7 @@ export class McpToolRegistry {
       throw new Error(`Tool "${tool.name}" is already registered`)
     }
 
-    this.tools.set(tool.name, tool)
+    this.tools.set(tool.name, this.withContractMetadata(tool))
   }
 
   /**
@@ -106,14 +127,17 @@ export class McpToolRegistry {
   /**
    * List all available tools (MCP tools/list implementation)
    */
-  listTools(): ToolDiscoveryResult {
-    const tools = Array.from(this.tools.values()).map((tool) => ({
+  listTools(audience?: McpToolAudience): ToolDiscoveryResult {
+    const tools = Array.from(this.tools.values())
+      .filter((tool) => this.isVisibleTo(tool, audience))
+      .sort((left, right) => left.name.localeCompare(right.name))
+      .map((tool) => ({
       name: tool.name,
       description: tool.description,
       inputSchema: tool.inputSchema,
       ...(tool._meta ? { _meta: tool._meta } : {}),
       ...(tool.annotations ? { annotations: tool.annotations } : {}),
-    }))
+      }))
 
     return { tools }
   }
@@ -137,6 +161,15 @@ export class McpToolRegistry {
    */
   getToolCount(): number {
     return this.tools.size
+  }
+
+  resolveAccess(name: string, argumentsValue: unknown): ResolvedMcpToolAccess | undefined {
+    const access = this.tools.get(name)?.access
+    if (!access) return undefined
+
+    if (!access.tableIdArgument || !isRecord(argumentsValue)) return access
+    const tableId = argumentsValue[access.tableIdArgument]
+    return typeof tableId === 'string' && tableId.trim() ? { ...access, tableId: tableId.trim() } : access
   }
 
   /**
@@ -241,13 +274,12 @@ export class McpToolRegistry {
    */
   async initialize(): Promise<void> {
     await this.loadFromContract()
-    await this.registerBuiltInTools()
   }
 
   /**
    * Register built-in MCP tools
    */
-  private async registerBuiltInTools(): Promise<void> {
+  private loadBuiltInContract(): void {
     const healthCheckTool: McpToolDefinition = {
       name: 'healthCheck',
       description: 'Check GraphQL server health status and runtime readiness.',
@@ -1677,8 +1709,43 @@ export class McpToolRegistry {
 
     this.register(importJsonlTool)
 
-    console.log(`MCP Tool Registry: Registered ${this.getToolCount()} built-in tools`)
+    console.log(`MCP Tool Registry: Loaded ${this.getToolCount()} root tool contract entries`)
   }
+
+  private withContractMetadata(tool: McpToolDefinition): McpToolDefinition {
+    const action: McpToolAction = tool.access?.action || (tool.operationType === 'query' ? 'read' : 'write')
+    const tableIdArgument = tool.access?.tableIdArgument || this.requiredTableIdArgument(tool.inputSchema)
+    const scope = tool.access?.scope || (tableIdArgument ? 'table' : 'global')
+    const contractVersion = tool.contractVersion || ROOT_MCP_TOOL_CONTRACT_VERSION
+
+    return {
+      ...tool,
+      contractVersion,
+      access: { action, scope, ...(tableIdArgument ? { tableIdArgument } : {}) },
+      _meta: {
+        ...tool._meta,
+        contractVersion,
+        action,
+        scope,
+      },
+    }
+  }
+
+  private requiredTableIdArgument(inputSchema: McpToolInputSchema): 'tableId' | 'tableIdentifier' | undefined {
+    const required = Array.isArray(inputSchema.required) ? inputSchema.required : []
+    if (required.includes('tableId')) return 'tableId'
+    if (required.includes('tableIdentifier')) return 'tableIdentifier'
+    return undefined
+  }
+
+  private isVisibleTo(tool: McpToolDefinition, audience?: McpToolAudience): boolean {
+    if (audience?.role !== 'reader') return true
+    return tool.access?.action === 'read'
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
 /**

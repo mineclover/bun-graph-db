@@ -22,11 +22,13 @@ interface NodeWithAttributesRow {
   attribute_identifier: string | null
   attribute_value: string | null
   attribute_data_type: string | null
+  relevance_score: number | null
 }
 
 export interface NodeSearchResult {
   node: Node
   attributes: Record<string, SafeJsonValue>
+  relevanceScore?: number
 }
 
 type SqliteParam = string | number | boolean | null
@@ -41,12 +43,14 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     availableAttributes: AttributeTypeInfo[],
   ): Promise<PaginatedResult<NodeSearchResult>> {
     try {
+      const fullTextIndexAvailable = this.hasFullTextIndex()
       // Build the SQL query from the search query
       const { query: dataQuery, params: dataParams } = this.buildSearchQuery(
         tableId,
         searchQuery,
         availableAttributes,
         false,
+        fullTextIndexAvailable,
       )
 
       const { query: countQuery, params: countParams } = this.buildSearchQuery(
@@ -54,6 +58,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
         searchQuery,
         availableAttributes,
         true,
+        fullTextIndexAvailable,
       )
 
       // Execute count query
@@ -80,6 +85,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
               new Date(row.node_updated_at),
             ),
             attributes: {},
+            relevanceScore: row.relevance_score === null ? undefined : Math.max(0, -row.relevance_score),
           })
         }
 
@@ -120,8 +126,11 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     searchQuery: SearchQuery,
     availableAttributes: AttributeTypeInfo[],
     isCountQuery: boolean,
+    fullTextIndexAvailable: boolean,
   ): { query: string; params: SqliteParams } {
     const params: SqliteParams = [tableId]
+
+    const usesFullTextSearch = fullTextIndexAvailable && this.usesTextSearch(searchQuery)
 
     // Base query structure
     let query = isCountQuery
@@ -131,20 +140,22 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
                 n.metadata as node_metadata,
                 n.created_at as node_created_at, n.updated_at as node_updated_at,
                 a.id as attribute_id, a.identifier as attribute_identifier, 
-                nav.value as attribute_value, at.json_type as attribute_data_type`
+                nav.value as attribute_value, at.json_type as attribute_data_type,
+                ${usesFullTextSearch ? 'bm25(node_search_fts)' : 'NULL'} as relevance_score`
 
     query += `
       FROM nodes n
       LEFT JOIN node_attributes nav ON n.id = nav.node_id
       LEFT JOIN attributes a ON nav.attribute_id = a.id
       LEFT JOIN attribute_types at ON a.attribute_type_id = at.id
+      ${usesFullTextSearch ? 'LEFT JOIN node_search_fts ON node_search_fts.node_id = n.id' : ''}
       WHERE n.table_id = ?`
 
     // Add search conditions
     if (searchQuery.conditions && searchQuery.conditions.length > 0) {
       const conditionClauses = searchQuery.conditions.map((condition) => {
         const filterClauses = condition.filters.map((filter) => {
-          return this.buildFilterClause(filter, availableAttributes, params)
+          return this.buildFilterClause(filter, availableAttributes, params, fullTextIndexAvailable, tableId)
         })
 
         return `(${filterClauses.join(` ${condition.logicalOperator.toUpperCase()} `)})`
@@ -155,8 +166,13 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
     // Add text search if present
     if (searchQuery.textSearch) {
-      query += ` AND nav.value LIKE ?`
-      params.push(`%${searchQuery.textSearch}%`)
+      if (fullTextIndexAvailable) {
+        query += ` AND n.id IN (SELECT node_id FROM node_search_fts WHERE table_id = ? AND node_search_fts MATCH ?)`
+        params.push(tableId, this.toFtsQuery(searchQuery.textSearch))
+      } else {
+        query += ` AND (n.content LIKE ? OR nav.value LIKE ?)`
+        params.push(`%${searchQuery.textSearch}%`, `%${searchQuery.textSearch}%`)
+      }
     }
 
     // Add enhanced sorting for data queries using SortStrategyFactory
@@ -185,6 +201,8 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
           // Fallback to default sorting
           query += ' ORDER BY n.created_at DESC'
         }
+      } else if (usesFullTextSearch) {
+        query += ' ORDER BY bm25(node_search_fts), n.id ASC'
       } else {
         query += ' ORDER BY n.created_at DESC'
       }
@@ -203,9 +221,15 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
     filter: SearchFilter,
     availableAttributes: AttributeTypeInfo[],
     params: SqliteParams,
+    fullTextIndexAvailable: boolean,
+    tableId: TableId,
   ): string {
     // Handle text search - search both content and attribute values
     if (filter.field === '_text_search') {
+      if (fullTextIndexAvailable) {
+        params.push(tableId, this.toFtsQuery(filter.value))
+        return 'n.id IN (SELECT node_id FROM node_search_fts WHERE table_id = ? AND node_search_fts MATCH ?)'
+      }
       params.push(`%${filter.value}%`, `%${filter.value}%`)
       return '(n.content LIKE ? OR nav.value LIKE ?)'
     }
@@ -294,6 +318,30 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
       default:
         throw new DatabaseException(`Unsupported operator: ${filter.operator}`)
     }
+  }
+
+  private hasFullTextIndex(): boolean {
+    const result = this.db
+      .query<{ name: string }, [string]>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+      .get('node_search_fts')
+    return Boolean(result)
+  }
+
+  private usesTextSearch(searchQuery: SearchQuery): boolean {
+    return Boolean(
+      searchQuery.textSearch ||
+        searchQuery.conditions.some((condition) => condition.filters.some((filter) => filter.field === '_text_search')),
+    )
+  }
+
+  private toFtsQuery(value: unknown): string {
+    const terms = String(value)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((term) => `"${term.replaceAll('"', '""')}"`)
+
+    return terms.length > 0 ? terms.join(' AND ') : '""'
   }
 
   private buildComparisonClause(dataType: string, operator: string): string {

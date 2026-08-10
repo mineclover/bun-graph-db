@@ -27,7 +27,6 @@
     "noPropertyAccessFromIndexSignature": false,
 
     // Path mapping and additional options
-    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
       "~/*": ["./src/*"]

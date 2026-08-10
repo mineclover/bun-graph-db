@@ -9,9 +9,12 @@ interface ApiResponse<T = unknown> {
 
 export class RestApiClient {
   private baseUrl: string
+  private authorizationHeader: string | undefined
 
-  constructor(baseUrl: string) {
+  constructor(baseUrl: string, internalBridgeToken?: string) {
     this.baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+    const token = internalBridgeToken?.trim()
+    this.authorizationHeader = token && isLoopbackUrl(this.baseUrl) ? `Bearer ${token}` : undefined
   }
 
   private async makeRequest<T = unknown>(
@@ -33,6 +36,7 @@ export class RestApiClient {
         method,
         headers: {
           'Content-Type': 'application/json',
+          ...(this.authorizationHeader ? { Authorization: this.authorizationHeader } : {}),
         },
       }
 
@@ -220,4 +224,13 @@ export class RestApiClient {
   }
 
   // 나머지 API 메서드들도 필요에 따라 추가...
+}
+
+function isLoopbackUrl(value: string): boolean {
+  try {
+    const hostname = new URL(value).hostname
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1'
+  } catch {
+    return false
+  }
 }

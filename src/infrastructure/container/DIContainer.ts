@@ -14,10 +14,20 @@ export interface ServiceRegistration<T = unknown> {
 
 export type ServiceFactory<T = unknown> = (container: DIContainer) => T | Promise<T>
 
+type DisposableService = {
+  dispose?: () => void | Promise<void>
+  close?: () => void | Promise<void>
+  [Symbol.dispose]?: () => void
+  [Symbol.asyncDispose]?: () => Promise<void>
+}
+
 export class DIContainer {
   private registrations = new Map<ServiceToken, ServiceRegistration>()
   private singletonInstances = new Map<ServiceToken, unknown>()
+  private ownedSingletonTokens = new Set<ServiceToken>()
   private pendingSingletons = new Map<ServiceToken, Promise<unknown>>()
+  private disposePromise: Promise<void> | undefined
+  private disposed = false
 
   /**
    * Register a transient service (new instance each time)
@@ -48,6 +58,7 @@ export class DIContainer {
    */
   registerInstance<T>(token: ServiceToken<T>, instance: T): void {
     this.singletonInstances.set(token, instance)
+    this.ownedSingletonTokens.add(token)
     this.registrations.set(token, {
       token,
       factory: () => instance,
@@ -60,6 +71,9 @@ export class DIContainer {
    * Resolve a service by token
    */
   async resolve<T>(token: ServiceToken<T>): Promise<T> {
+    if (this.disposed) {
+      throw new Error('Cannot resolve a service from a disposed container')
+    }
     return this.resolveWithChain(token, [])
   }
 
@@ -101,6 +115,7 @@ export class DIContainer {
       // Cache singleton
       if (registration.singleton) {
         this.singletonInstances.set(token, instance)
+        this.ownedSingletonTokens.add(token)
       }
 
       return instance
@@ -158,13 +173,58 @@ export class DIContainer {
   clear(): void {
     this.registrations.clear()
     this.singletonInstances.clear()
+    this.ownedSingletonTokens.clear()
     this.pendingSingletons.clear()
+  }
+
+  /**
+   * Releases singleton resources in reverse creation order. Services may expose
+   * `Symbol.asyncDispose`, `Symbol.dispose`, `dispose`, or `close`; this keeps
+   * infrastructure adapters such as Bun's SQLite connection out of shutdown
+   * wiring in individual transports.
+   */
+  dispose(): Promise<void> {
+    if (!this.disposePromise) {
+      this.disposed = true
+      this.disposePromise = this.disposeSingletons()
+    }
+    return this.disposePromise
+  }
+
+  private async disposeSingletons(): Promise<void> {
+    await Promise.allSettled(this.pendingSingletons.values())
+
+    const instances = Array.from(this.ownedSingletonTokens)
+      .reverse()
+      .map((token) => this.singletonInstances.get(token))
+    const disposedInstances = new Set<unknown>()
+    this.clear()
+
+    const errors: unknown[] = []
+    for (const instance of instances) {
+      if (disposedInstances.has(instance)) {
+        continue
+      }
+      disposedInstances.add(instance)
+      try {
+        await disposeService(instance)
+      } catch (error) {
+        errors.push(error)
+      }
+    }
+
+    if (errors.length > 0) {
+      throw new AggregateError(errors, 'Failed to dispose one or more container services')
+    }
   }
 
   /**
    * Create a child container that inherits parent registrations
    */
   createChild(): DIContainer {
+    if (this.disposed) {
+      throw new Error('Cannot create a child from a disposed container')
+    }
     const child = new DIContainer()
 
     // Copy parent registrations
@@ -178,5 +238,30 @@ export class DIContainer {
     }
 
     return child
+  }
+}
+
+async function disposeService(instance: unknown): Promise<void> {
+  if (!instance || (typeof instance !== 'object' && typeof instance !== 'function')) {
+    return
+  }
+
+  const disposable = instance as DisposableService
+  const asyncDispose = disposable[Symbol.asyncDispose]
+  if (asyncDispose) {
+    await asyncDispose.call(disposable)
+    return
+  }
+  const syncDispose = disposable[Symbol.dispose]
+  if (syncDispose) {
+    syncDispose.call(disposable)
+    return
+  }
+  if (disposable.dispose) {
+    await disposable.dispose()
+    return
+  }
+  if (disposable.close) {
+    await disposable.close()
   }
 }

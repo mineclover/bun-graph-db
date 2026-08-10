@@ -1,117 +1,50 @@
-# Tabular Sync Review TODO
+---
+docType: explanation
+sourceLocale: ko
+canonical: true
+lastVerified: "2026-08-11"
+---
 
-Last updated: 2026-04-07
+# Tabular Sync 운영 상태와 후속 결정
 
-## Purpose
+이 문서는 표 형식 동기화의 현재 운영 경계와 아직 제품 결정을 기다리는 항목을 설명한다. 기능 완료 조건은 [운영 준비도 명세](../../specs/008-production-readiness/spec.md), 전체 구조는 [아키텍처 개요](../architecture/overview.md)를 기준으로 한다.
 
-This document captures follow-up work after the tabular sync structure review.
+## 현재 보장
 
-The goal is to distinguish:
+- 활성 설정은 모든 활성 경로의 실제 gateway 준비 상태를 확인한 뒤에만 바뀐다. 검사 실패는 기존 활성 설정을 보존한다.
+- Excel 대상은 `.xlsx`만 허용한다. 활성화 검사는 workbook 읽기 또는 생성 경로, 대상 디렉터리 쓰기 probe를 확인한다.
+- Excel 쓰기는 임시 파일을 다시 열어 검증한 뒤 원자적으로 교체한다. 실패하면 기존 workbook을 보존한다.
+- 동기화 알림은 `tabular_sync_jobs`에서 테이블별 하나의 작업으로 병합된다. 작업 상태는 `queued`, `running`, `retry_wait`, `paused`, `succeeded`, `failed`다.
+- 작업자는 60초 lease로 작업을 claim한다. 재기동 시 미완료 lease를 복구하고, 실패는 최대 다섯 번 지수 백오프로 재시도한다.
+- 운영자는 `/api/tabular-sync-status/:tableIdentifier/pause`, `resume`, `retry`로 전달 작업을 제어한다. 이벤트 이력과 집계는 SQLite에 남는다.
 
-- what has already been hardened
-- what still needs product/architecture decisions
-- what should remain intentionally deferred
+## 의도적으로 제외한 범위
 
-## Already Addressed
+- Excel 또는 Google Sheets를 원본 데이터베이스로 사용하는 읽기
+- workbook에서 SQLite로의 양방향·실시간 reverse import
+- 여러 서비스 인스턴스가 하나의 SQLite 파일을 공유하는 작업 처리 모델
 
-- active config is reloaded by the hook without requiring process restart
-- route resolution now fails closed when `route.targetId` is invalid
-- Google Sheets connection tests fail when adapter or `spreadsheetId` is missing
-- Excel targets cannot be activated as live sync configs while Excel write support is still missing
-- top-level sync totals are derived from persisted event history instead of process-only counters
-- unit/integration coverage exists for:
-  - config validation
-  - hook reload behavior
-  - fail-closed route resolution
-  - MCP/HTTP admin behavior
+## 제품 결정을 기다리는 항목
 
-## Open Follow-ups
+### Transport 노출 정책
 
-### 1. Transport Policy Cleanup
+`google-tools-http`은 기본 경로다. `pipe-builder-table-adapter`와 `google-tools-submodule`을 UI에서 계속 노출할지, 수동 고급 설정으로 제한할지는 운영 사용량을 근거로 결정해야 한다. 결정 전에는 기존 설정 호환성을 깨지 않는다.
 
-Current status:
+### 이벤트 보존 정책
 
-- `google-tools-http` is the recommended default
-- `pipe-builder-table-adapter` still exists as an advanced path
-- `google-tools-submodule` still exists as a legacy compatibility path
+이벤트와 전달 작업은 영속되지만 보존 기간은 아직 설정되지 않았다. 운영 환경은 데이터량과 감사 요구사항에 맞춘 보관·삭제 정책을 결정해야 한다. 대량 이력 집계가 병목이 되면 별도 집계 테이블 또는 외부 관측 도구를 검토한다.
 
-Follow-up:
+### 외부 알림
 
-- decide whether `google-tools-submodule` should be formally removed
-- decide whether `pipe-builder-table-adapter` should stay exposed in UI or move fully into advanced/manual config only
-- update docs and quick-setup wording consistently once the transport policy is finalized
+반복 실패는 API와 관리 화면에서 확인할 수 있다. Pager, email, webhook 같은 외부 알림은 제공하지 않는다. 필요한 경우 실패 횟수와 대상 범위를 포함하는 별도 운영 통합으로 설계한다.
 
-### 2. Excel Writer Implementation
+## 검증 범위
 
-Current status:
+다음 테스트는 설정 보존, Excel 준비 상태, 지원되지 않는 gateway 거부, 전달 작업 복구·재시도를 검증한다.
 
-- Excel targets are preview-only
-- activation of Excel live sync is intentionally blocked
-- `ExcelFileGateway.writeSheet()` remains unimplemented
-
-Follow-up:
-
-- choose actual `.xlsx` writer dependency
-- implement workbook read/write semantics
-- define atomic write and backup behavior for local files
-- add realistic smoke/integration coverage for Excel file output
-
-### 3. Connection Management UX
-
-Current status:
-
-- quick setup exists
-- mapping preview exists
-- draft config connection test exists
-
-Follow-up:
-
-- add `Load Active Config` into quick setup fields
-- make transport guidance context-sensitive
-- surface stronger validation hints before save/activate
-- separate “recommended path” from “advanced path” more clearly
-
-### 4. Persisted Metrics Model
-
-Current status:
-
-- events are persisted
-- summaries are aggregated
-- headline counts derive from persisted event history
-
-Follow-up:
-
-- decide whether queue/pending state also needs persistence
-- decide whether derived metrics should move into a dedicated persisted aggregate table for large histories
-- add retention/cleanup policy for `tabular_sync_events`
-
-### 5. Observability and Recovery
-
-Current status:
-
-- recent failures are visible
-- summary and raw event filtering work
-- manual resync exists
-
-Follow-up:
-
-- add retry policy/backoff decisions
-- add pause/disable target behavior
-- add export/download for events/summary if needed
-- consider external alert hooks for repeated failures
-
-## Deferred On Purpose
-
-- Excel as source-of-truth for reads
-- bidirectional sync from workbook back into SQLite
-- real-time reverse import from user-edited Excel files
-- fully replacing SQLite with Excel/Sheets storage
-
-## Recommendation
-
-Near-term priority should be:
-
-1. finalize transport policy
-2. keep Google Sheets as the primary supported live target
-3. implement Excel writer separately as a focused delivery track
-4. avoid presenting Excel as fully supported until write path and tests are complete
+```bash
+bun test tests/unit/tabular-sync-config-activation-service.test.ts \
+  tests/unit/tabular-sync-event-store.test.ts \
+  tests/unit/best-effort-tabular-sync-hook.test.ts \
+  tests/integration/tabular-sync-config-management.test.ts
+```

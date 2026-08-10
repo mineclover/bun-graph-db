@@ -8,6 +8,7 @@ export interface NodeDto extends BaseEntityDto, WithDescription {
   tableId: string
   content: string
   title: string | null
+  relevanceScore?: number
   metadata?: SafeJsonValue | null
   attributes?: Record<string, unknown> // Will be populated with node attribute values
 }

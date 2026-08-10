@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express'
+import type { HttpControllerRequest as Request, HttpControllerResponse as Response } from '../adapters/BunControllerAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { TableTemplateAutoGenerator } from '@/application/services/TableTemplateAutoGenerator.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
@@ -15,16 +15,8 @@ import type {
 } from '../types/ApiResponseTypes.js'
 import { ResponseHelper } from '../utils/responseHelpers.js'
 
-type AttributeBodyRequest<TBody> = Request<
-  Record<string, string>,
-  unknown,
-  TBody
->
-type AttributeRequest<TParams extends object, TBody = unknown> = Request<
-  TParams,
-  unknown,
-  TBody
->
+type AttributeBodyRequest<TBody> = Request<Record<string, string>, TBody>
+type AttributeRequest<TParams extends object, TBody = unknown> = Request<TParams, TBody>
 
 interface SetNodeAttributeBody {
   input?: {

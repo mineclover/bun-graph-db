@@ -49,16 +49,16 @@ describe('TabularSyncConfigStore', () => {
     db.close()
   })
 
-  test('should reject activating preview-only Excel configs', () => {
+  test('should activate Excel configs with a valid workbook path', () => {
     const { db, store } = createStore()
 
     store.saveConfig(
-      'excel-preview',
+      'excel-live',
       {
         defaultTargetId: 'excel-preview',
         targets: [
           {
-            id: 'excel-preview',
+            id: 'excel-live',
             kind: 'excel-file',
             workbookPath: '/tmp/demo.xlsx',
           },
@@ -66,16 +66,15 @@ describe('TabularSyncConfigStore', () => {
         routes: [
           {
             tableIdentifier: 'users',
-            targetId: 'excel-preview',
+            targetId: 'excel-live',
           },
         ],
       },
       { active: false },
     )
 
-    expect(() => store.activateConfig('excel-preview')).toThrow(
-      "Excel target 'excel-preview' is preview-only",
-    )
+    expect(() => store.activateConfig('excel-live')).not.toThrow()
+    expect(store.getActiveConfigRecord()?.configKey).toBe('excel-live')
 
     db.close()
   })

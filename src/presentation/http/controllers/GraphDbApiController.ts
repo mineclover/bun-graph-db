@@ -1,4 +1,4 @@
-import type { Request, Response } from 'express'
+import type { HttpControllerRequest as Request, HttpControllerResponse as Response } from '../adapters/BunControllerAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'

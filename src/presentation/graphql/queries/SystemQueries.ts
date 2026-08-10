@@ -190,6 +190,7 @@ export class SystemQueries {
         tables: [],
         persistedEvents: [],
         persistedSummary: [],
+        persistedJobs: [],
       }
     )
   }

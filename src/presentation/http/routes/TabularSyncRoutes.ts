@@ -1,5 +1,6 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
+import { TabularSyncConfigActivationService } from '@/application/services/TabularSyncConfigActivationService.js'
 import type { TabularSyncConfig } from '@/infrastructure/excel/TabularSyncConfig.js'
 import { TabularSyncConnectionInspector } from '@/infrastructure/excel/TabularSyncConnectionInspector.js'
 import type { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
@@ -257,10 +258,10 @@ function htmlPage(): string {
         const badge = document.getElementById('quickTargetBadge');
         const help = document.getElementById('quickSetupHelp');
         badge.className = 'badge ' + (isGoogle ? 'badge-ok' : 'badge-warn');
-        badge.textContent = isGoogle ? 'Google Sheets Recommended' : 'Excel Preview Only';
+        badge.textContent = isGoogle ? 'Google Sheets Recommended' : 'Excel File Ready';
         help.textContent = isGoogle
           ? 'Spreadsheet URL 또는 Spreadsheet ID를 넣고 Google Sheets draft를 생성하세요.'
-          : 'Excel file writer는 아직 미구현입니다. 경로/매핑 preview와 config 저장 용도로 먼저 사용하세요.';
+          : 'Excel 파일은 .xlsx 쓰기, 활성화 전 준비 상태 검사, 원자적 교체를 지원합니다. 유효한 workbook 경로를 입력해 draft를 생성하세요.';
       }
 
       function buildQuickConfig(kind) {
@@ -317,7 +318,7 @@ function htmlPage(): string {
         document.getElementById('configJson').value = JSON.stringify(config, null, 2);
         document.getElementById('quickSetupStatus').textContent =
           kind === 'excel-file'
-            ? 'Excel draft inserted into config editor (preview-only)'
+            ? 'Excel draft inserted into config editor (.xlsx write target)'
             : 'Google Sheets draft inserted into config editor';
       }
 
@@ -590,6 +591,7 @@ export function createTabularSyncHandler(
   store: TabularSyncConfigStore,
   logger: ILogger,
   hook?: BestEffortTabularSyncHook,
+  activationService: TabularSyncConfigActivationService = new TabularSyncConfigActivationService(store),
 ) {
   const inspector = new TabularSyncConnectionInspector()
   const getStatus = (filters?: {
@@ -617,6 +619,7 @@ export function createTabularSyncHandler(
       tables: [],
       persistedEvents: [],
       persistedSummary: [],
+      persistedJobs: [],
     }
 
   return async (request: Request): Promise<Response | null> => {
@@ -715,11 +718,24 @@ export function createTabularSyncHandler(
         )
       }
 
-      store.saveConfig(body.configKey, body.config, { active: body.active !== false })
-      return Response.json({
-        success: true,
-        config: store.getConfigRecordByKey(body.configKey),
-      })
+      try {
+        const config = await activationService.saveConfig(body.configKey, body.config, {
+          active: body.active !== false,
+        })
+        return Response.json({
+          success: true,
+          config,
+        })
+      } catch (error) {
+        logger.warn('Failed to save active tabular sync config', {
+          configKey: body.configKey,
+          error: error instanceof Error ? error.message : String(error),
+        })
+        return Response.json(
+          { success: false, error: error instanceof Error ? error.message : String(error) },
+          { status: 400 },
+        )
+      }
     }
 
     if (request.method === 'POST' && pathname === '/api/tabular-sync-test') {
@@ -759,10 +775,10 @@ export function createTabularSyncHandler(
       }
 
       try {
-        store.activateConfig(decodeURIComponent(configKey))
+        const config = await activationService.activateConfig(decodeURIComponent(configKey))
         return Response.json({
           success: true,
-          config: store.getActiveConfigRecord(),
+          config,
         })
       } catch (error) {
         logger.warn('Failed to activate tabular sync config', {
@@ -799,6 +815,32 @@ export function createTabularSyncHandler(
         tableIdentifier: body.tableIdentifier,
         status: getStatus(),
       })
+    }
+
+    const durableJobAction = pathname.match(/^\/api\/tabular-sync-status\/([^/]+)\/(pause|resume|retry)$/)
+    if (request.method === 'POST' && durableJobAction) {
+      const [, encodedTableIdentifier, action] = durableJobAction
+      const tableIdentifier = encodedTableIdentifier ? decodeURIComponent(encodedTableIdentifier) : ''
+      if (!tableIdentifier || !action) {
+        return Response.json({ success: false, error: 'tableIdentifier and action are required' }, { status: 400 })
+      }
+      if (!hook) {
+        return Response.json(
+          { success: false, error: 'tabular sync hook is not available', status: getStatus() },
+          { status: 400 },
+        )
+      }
+
+      const job =
+        action === 'pause'
+          ? hook.pauseByIdentifier(tableIdentifier)
+          : action === 'resume'
+            ? hook.resumeByIdentifier(tableIdentifier)
+            : hook.retryByIdentifier(tableIdentifier)
+      if (!job) {
+        return Response.json({ success: false, error: 'tabular sync job was not found' }, { status: 404 })
+      }
+      return Response.json({ success: true, job, status: getStatus() })
     }
 
     return null

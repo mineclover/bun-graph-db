@@ -37,20 +37,18 @@ describe('Tabular Sync Config Management', () => {
         expect(graphqlUrl).toBeDefined()
 
         const alphaConfig = {
-          defaultTargetId: 'google-sheets-primary',
+          defaultTargetId: 'excel-primary',
           targets: [
             {
-              id: 'google-sheets-primary',
-              kind: 'google-sheets',
-              transport: 'google-tools-http',
-              spreadsheetId: 'spreadsheet-alpha',
-              googleToolsBaseUrl: 'http://localhost:5678',
+              id: 'excel-primary',
+              kind: 'excel-file',
+              workbookPath: '/tmp/bun-graph-db-tabular-sync-alpha.xlsx',
             },
           ],
           routes: [
             {
               tableIdentifier: 'users',
-              targetId: 'google-sheets-primary',
+              targetId: 'excel-primary',
               sheetName: 'users',
             },
           ],
@@ -64,7 +62,7 @@ describe('Tabular Sync Config Management', () => {
               kind: 'google-sheets',
               transport: 'google-tools-http',
               spreadsheetId: 'spreadsheet-beta',
-              googleToolsBaseUrl: 'http://localhost:5678',
+              googleToolsBaseUrl: 'http://127.0.0.1:9',
             },
           ],
           routes: [
@@ -188,8 +186,7 @@ describe('Tabular Sync Config Management', () => {
         )
 
         expect(activateBeta.errors).toBeUndefined()
-        expect(activateBeta.data?.activateTabularSyncConfig.success).toBe(true)
-        expect(activateBeta.data?.activateTabularSyncConfig.config.configKey).toBe('beta')
+        expect(activateBeta.data?.activateTabularSyncConfig.success).toBe(false)
 
         const activeAfter = await graphqlRequest<{
           tabularSyncConfig: { configKey: string; isActive: boolean; config: Record<string, unknown> }
@@ -207,7 +204,7 @@ describe('Tabular Sync Config Management', () => {
         )
 
         expect(activeAfter.errors).toBeUndefined()
-        expect(activeAfter.data?.tabularSyncConfig.configKey).toBe('beta')
+        expect(activeAfter.data?.tabularSyncConfig.configKey).toBe('alpha')
       },
     )
   })
@@ -228,20 +225,18 @@ describe('Tabular Sync Config Management', () => {
             configKey: 'http-alpha',
             active: true,
             config: {
-              defaultTargetId: 'google-sheets-primary',
+              defaultTargetId: 'local-excel',
               targets: [
                 {
-                  id: 'google-sheets-primary',
-                  kind: 'google-sheets',
-                  transport: 'google-tools-http',
-                  spreadsheetId: 'spreadsheet-http-alpha',
-                  googleToolsBaseUrl: 'http://localhost:5678',
+                  id: 'local-excel',
+                  kind: 'excel-file',
+                  workbookPath: '/tmp/bun-graph-db-tabular-sync-http-alpha.xlsx',
                 },
               ],
               routes: [
                 {
                   tableIdentifier: 'users',
-                  targetId: 'google-sheets-primary',
+                  targetId: 'local-excel',
                   sheetName: 'users',
                 },
               ],

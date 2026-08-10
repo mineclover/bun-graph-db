@@ -1,5 +1,7 @@
 # MCP Tools Extension Reference
 
+> **역사적 확장 참고 자료**: 이 문서의 고정 도구 수와 프록시 비율은 현재 운영 계약이 아니다. 현재 도구 이름·입력·권한 범위는 [`McpToolRegistry`](../../src/application/services/McpToolRegistry.ts)와 [MCP 참조](./README.md)를 기준으로 확인한다.
+
 **버전**: 2.0.0
 **최종 업데이트**: 2025-09-22
 **대상**: 개발자, 시스템 아키텍트
@@ -21,7 +23,7 @@
 
 ## 🏗️ 도구 분류 시스템
 
-### 표준 프록시 도구 (87% - 20/23)
+### 표준 GraphQL 실행 경로
 **특징**: GraphQL 쿼리/뮤테이션을 직접 실행하여 최고 성능 달성
 
 ```typescript
@@ -39,7 +41,7 @@ const result = await graphqlExecutor.execute({
 - ✅ 표준 GraphQL 스키마로 완전히 표현 가능한 작업
 - ✅ 파라미터 변환이 간단한 경우
 
-### 커스텀 최적화 도구 (13% - 3/23)
+### 전용 처리 경로
 **특징**: 복잡한 비즈니스 로직과 데이터 가공이 필요한 경우
 
 ```typescript

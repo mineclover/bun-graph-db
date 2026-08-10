@@ -8,6 +8,7 @@
  */
 
 import type { ILogger } from '../../../application/ports/ILogger'
+import type { McpToolAudience } from '../../../application/services/McpToolRegistry'
 import type { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
 import type { TableMcpServer } from '../factory/TableMcpServer'
 import { TableMcpServerFactory } from '../factory/TableMcpServerFactory'
@@ -46,7 +47,7 @@ export class McpRoutes {
    * Handle MCP requests for table-specific endpoints
    * Route pattern: `/sub/:tableId/mcp`
    */
-  async handleTableMcpRequest(request: Request): Promise<Response> {
+  async handleTableMcpRequest(request: Request, audience?: McpToolAudience): Promise<Response> {
     const url = new URL(request.url)
     const pathname = url.pathname
 
@@ -89,7 +90,7 @@ export class McpRoutes {
       }
 
       // Handle POST requests (JSON-RPC)
-      return await this.handlePostRequest(request, mcpServer, tableId)
+      return await this.handlePostRequest(request, mcpServer, tableId, audience)
     } catch (error) {
       this.logger?.error(`MCP request error for table ${tableId}:`, { error })
       return this.createErrorResponse(
@@ -130,7 +131,12 @@ export class McpRoutes {
   /**
    * Handle POST requests (JSON-RPC)
    */
-  private async handlePostRequest(request: Request, mcpServer: TableMcpServer, tableId: string): Promise<Response> {
+  private async handlePostRequest(
+    request: Request,
+    mcpServer: TableMcpServer,
+    tableId: string,
+    audience?: McpToolAudience,
+  ): Promise<Response> {
     try {
       // Validate Content-Type
       const contentType = request.headers.get('Content-Type')
@@ -152,7 +158,7 @@ export class McpRoutes {
       }
 
       // Validate JSON-RPC format
-      if (!jsonRpcRequest || jsonRpcRequest.jsonrpc !== '2.0') {
+      if (jsonRpcRequest?.jsonrpc !== '2.0') {
         return this.createErrorResponse(
           jsonRpcRequest?.id || null,
           -32600,
@@ -172,7 +178,7 @@ export class McpRoutes {
       })
 
       // Delegate to the table-specific MCP server
-      return await mcpServer.handleRequest(mcpRequest)
+      return await mcpServer.handleRequest(mcpRequest, audience)
     } catch (error) {
       this.logger?.error(`Error processing POST request for table ${tableId}:`, { error })
       return this.createErrorResponse(
@@ -328,6 +334,11 @@ export class McpRoutes {
     this.factory.clearAll()
   }
 
+  /** Close all cached table MCP servers during application shutdown. */
+  async close(): Promise<void> {
+    await this.factory.closeAll()
+  }
+
   /**
    * Refresh server for specific table
    */
@@ -352,18 +363,26 @@ export function createMcpRoutes(config: McpRouteConfig): McpRoutes {
 /**
  * Middleware for handling table MCP requests in Bun server
  */
-export function createTableMcpMiddleware(config: McpRouteConfig) {
+export interface TableMcpMiddleware {
+  (request: Request, audience?: McpToolAudience): Promise<Response | null>
+  close(): Promise<void>
+}
+
+export function createTableMcpMiddleware(config: McpRouteConfig): TableMcpMiddleware {
   const mcpRoutes = new McpRoutes(config)
 
-  return async (request: Request): Promise<Response | null> => {
+  const middleware = async (request: Request, audience?: McpToolAudience): Promise<Response | null> => {
     const url = new URL(request.url)
     const pathname = url.pathname
 
     // Check if this is a table MCP request
     if (pathname.match(/^\/sub\/[^/]+\/mcp\/?$/)) {
-      return await mcpRoutes.handleTableMcpRequest(request)
+      return await mcpRoutes.handleTableMcpRequest(request, audience)
     }
 
     return null // Not handled by this middleware
   }
+
+  middleware.close = () => mcpRoutes.close()
+  return middleware
 }

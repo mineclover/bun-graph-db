@@ -29,7 +29,7 @@ export async function createContainer(): Promise<DIContainer> {
   }
 
   if (containerInstance && containerDatabasePath !== databasePath) {
-    containerInstance.clear()
+    await disposeContainer()
   }
 
   const container = new DIContainer()
@@ -61,10 +61,19 @@ export function getContainer(): DIContainer {
 /**
  * Reset the container (for testing)
  */
-export function resetContainer(): void {
-  containerInstance?.clear()
+export async function disposeContainer(): Promise<void> {
+  const container = containerInstance
   containerInstance = undefined
   containerDatabasePath = undefined
+  await container?.dispose()
+}
+
+/**
+ * @deprecated Use disposeContainer() and await it so database connections and
+ * other infrastructure resources are released deterministically.
+ */
+export async function resetContainer(): Promise<void> {
+  await disposeContainer()
 }
 
 /**
