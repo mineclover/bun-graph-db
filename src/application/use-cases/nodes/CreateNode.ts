@@ -18,6 +18,10 @@ import { Node } from '@/domain/entities/Node.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type {
+  INodeMutationRepository,
+  NodeAttributeMutation,
+} from '@/domain/repositories/INodeMutationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
@@ -33,6 +37,7 @@ export class CreateNodeUseCase {
     private readonly attributeRepository: IAttributeRepository,
     private readonly logger: ILogger,
     private readonly projectionProvider?: TableSchemaProjectionProvider,
+    private readonly nodeMutationRepository?: INodeMutationRepository,
   ) {}
 
   async execute(input: CreateNodeInput): Promise<CreateNodeOutput> {
@@ -40,7 +45,7 @@ export class CreateNodeUseCase {
     const sanitizedTitle = sanitizeTextContent(input.title) ?? undefined
     const sanitizedDescription = sanitizeTextContent(input.description) ?? undefined
 
-    this.logger.info('Creating new node', {
+    this.logger.debug('Creating new node', {
       tableId: input.tableId,
       content: sanitizedContent,
     })
@@ -71,8 +76,7 @@ export class CreateNodeUseCase {
       let attributesByIdentifier = new Map<string, Attribute>()
 
       if (attributes) {
-        const attributesResult = await this.attributeRepository.findByTableId(input.tableId as TableId)
-        const availableAttributes = attributesResult.data ?? attributesResult.nodes ?? []
+        const availableAttributes = await this.loadAllTableAttributes(input.tableId as TableId)
         attributesByIdentifier = new Map(
           availableAttributes.map((attribute) => [attribute.getIdentifier(), attribute]),
         )
@@ -100,18 +104,8 @@ export class CreateNodeUseCase {
         sanitizedDescription,
         input.metadata,
       )
-
-      // Save node to repository
-      await this.nodeRepository.save(node)
-
-      // Retrieve the saved node with the generated ID
-      const savedNode = await this.nodeRepository.findByTableIdAndContent(input.tableId as TableId, sanitizedContent)
-      if (!savedNode) {
-        throw new Error('Failed to retrieve saved node')
-      }
-
-      // Process attributes if provided
       const attributeValues: Record<string, unknown> = {}
+      const attributeMutations: NodeAttributeMutation[] = []
 
       if (attributes) {
         for (const [attributeIdentifier, value] of Object.entries(attributes)) {
@@ -133,22 +127,19 @@ export class CreateNodeUseCase {
             continue
           }
 
-          // Create node attribute
-          const nodeAttribute = NodeAttribute.create(
-            savedNode.getId() as NodeId,
-            attribute.getId() as AttributeId,
-            typeof value === 'string' ? value : JSON.stringify(value),
-          )
-
-          // Save node attribute
-          await this.nodeAttributeRepository.save(nodeAttribute)
-
-          // Store for response
+          attributeMutations.push({
+            attributeId: attribute.getId() as AttributeId,
+            value: typeof value === 'string' ? value : JSON.stringify(value),
+          })
           attributeValues[attributeIdentifier] = value
         }
       }
 
-      this.logger.info('Node created successfully', {
+      const savedNode = this.nodeMutationRepository
+        ? await this.nodeMutationRepository.create(node, attributeMutations)
+        : await this.saveLegacy(node, attributeMutations, input.tableId as TableId, sanitizedContent)
+
+      this.logger.debug('Node created successfully', {
         id: savedNode.getId(),
         content: savedNode.getContent(),
         attributeCount: Object.keys(attributeValues).length,
@@ -166,6 +157,41 @@ export class CreateNodeUseCase {
         error: error instanceof Error ? error.message : String(error),
       })
       throw error
+    }
+  }
+
+  private async saveLegacy(
+    node: Node,
+    attributes: readonly NodeAttributeMutation[],
+    tableId: TableId,
+    content: string,
+  ): Promise<Node> {
+    await this.nodeRepository.save(node)
+    const savedNode = await this.nodeRepository.findByTableIdAndContent(tableId, content)
+    if (!savedNode) throw new Error('Failed to retrieve saved node')
+
+    for (const attribute of attributes) {
+      await this.nodeAttributeRepository.save(NodeAttribute.create(
+        savedNode.getId() as NodeId,
+        attribute.attributeId,
+        attribute.value,
+      ))
+    }
+    return savedNode
+  }
+
+  private async loadAllTableAttributes(tableId: TableId): Promise<Attribute[]> {
+    const attributes: Attribute[] = []
+    const limit = 500
+    let offset = 0
+
+    while (true) {
+      const result = await this.attributeRepository.findByTableId(tableId, { limit, offset })
+      const page = result.data ?? result.nodes ?? []
+      attributes.push(...page)
+      offset += page.length
+      const total = result.total ?? result.totalCount ?? attributes.length
+      if (page.length === 0 || offset >= total) return attributes
     }
   }
 

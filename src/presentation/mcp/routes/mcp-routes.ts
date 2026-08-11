@@ -10,14 +10,21 @@
 import type { ILogger } from '../../../application/ports/ILogger'
 import type { McpToolAudience } from '../../../application/services/McpToolRegistry'
 import type { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
-import type { TableMcpServer } from '../factory/TableMcpServer'
-import { TableMcpServerFactory } from '../factory/TableMcpServerFactory'
+import type {
+  TableMcpJsonRpcRequest,
+  TableMcpServer,
+} from '../factory/TableMcpServer'
+import {
+  TableMcpServerFactory,
+  type TableMcpServerCacheOptions,
+} from '../factory/TableMcpServerFactory'
 
 export interface McpRouteConfig {
   graphqlEndpoint: string
   restApiBaseUrl: string
   logger?: ILogger
   projectionService?: Pick<TableSchemaProjectionService, 'project'>
+  cache?: TableMcpServerCacheOptions
 }
 
 interface JsonRpcRequest {
@@ -39,6 +46,8 @@ export class McpRoutes {
       config.restApiBaseUrl,
       config.logger,
       config.projectionService,
+      undefined,
+      config.cache,
     )
     this.logger = config.logger
   }
@@ -170,15 +179,14 @@ export class McpRoutes {
       // Add table context to request for logging
       this.logger?.debug(`JSON-RPC method ${jsonRpcRequest.method} for table ${tableId}`)
 
-      // Create a new request with the JSON-RPC body for the MCP server
-      const mcpRequest = new Request(request.url, {
-        method: 'POST',
-        headers: request.headers,
-        body: body,
-      })
-
-      // Delegate to the table-specific MCP server
-      return await mcpServer.handleRequest(mcpRequest, audience)
+      // The route already parsed the body to enforce its HTTP/JSON-RPC error
+      // contract. Pass the parsed envelope through instead of cloning and
+      // parsing the same request again in TableMcpServer.
+      return await mcpServer.handleParsedRequest(
+        jsonRpcRequest as TableMcpJsonRpcRequest,
+        request.headers,
+        audience,
+      )
     } catch (error) {
       this.logger?.error(`Error processing POST request for table ${tableId}:`, { error })
       return this.createErrorResponse(

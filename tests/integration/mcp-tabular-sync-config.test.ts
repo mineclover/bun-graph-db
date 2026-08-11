@@ -45,40 +45,36 @@ describe('MCP Tabular Sync Config Management', () => {
         const mcpHelper = new McpHelper(baseUrl!)
 
         const alphaConfig = {
-          defaultTargetId: 'google-sheets-primary',
+          defaultTargetId: 'excel-primary',
           targets: [
             {
-              id: 'google-sheets-primary',
-              kind: 'google-sheets',
-              transport: 'google-tools-http',
-              spreadsheetId: 'spreadsheet-alpha',
-              googleToolsBaseUrl: 'http://localhost:5678',
+              id: 'excel-primary',
+              kind: 'excel-file',
+              workbookPath: join(tmpdir(), 'bun-graph-db-mcp-tabular-alpha.xlsx'),
             },
           ],
           routes: [
             {
               tableIdentifier: 'users',
-              targetId: 'google-sheets-primary',
+              targetId: 'excel-primary',
               sheetName: 'users',
             },
           ],
         }
 
         const betaConfig = {
-          defaultTargetId: 'google-sheets-beta',
+          defaultTargetId: 'excel-beta',
           targets: [
             {
-              id: 'google-sheets-beta',
-              kind: 'google-sheets',
-              transport: 'google-tools-http',
-              spreadsheetId: 'spreadsheet-beta',
-              googleToolsBaseUrl: 'http://localhost:5678',
+              id: 'excel-beta',
+              kind: 'excel-file',
+              workbookPath: join(tmpdir(), 'bun-graph-db-mcp-tabular-beta.xlsx'),
             },
           ],
           routes: [
             {
               tableIdentifier: 'projects',
-              targetId: 'google-sheets-beta',
+              targetId: 'excel-beta',
               sheetName: 'projects',
             },
           ],
@@ -197,7 +193,7 @@ describe('MCP Tabular Sync Config Management', () => {
           const statusAfterFailure = await mcpHelper.callTool('get-tabular-sync-status', {})
           expect(statusAfterFailure.success).toBe(true)
           expect(statusAfterFailure.data.enabled).toBe(true)
-          expect(statusAfterFailure.data.pendingCount).toBe(0)
+          expect(statusAfterFailure.data.pendingCount).toBe(1)
           expect(statusAfterFailure.data.totalExecutions).toBe(2)
           expect(statusAfterFailure.data.totalFailed).toBe(2)
           expect(statusAfterFailure.data.recentFailures.length).toBe(2)

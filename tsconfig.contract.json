@@ -1,0 +1,22 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"allowJs": false,
+		"noEmit": true,
+		"types": ["bun"]
+	},
+	// Blocking TypeScript 7 coverage for the green projection/CI boundary, not all legacy tests.
+	// The base config still includes index.ts and src/**/*.ts; explicit files add boundary scripts/tests.
+	"files": [
+		"scripts/ci-versions.ts",
+		"scripts/check-codegen.ts",
+		"scripts/test-lanes.ts",
+		"scripts/export-oa-sdk-projection-artifacts.ts",
+		"scripts/fixtures/oa-sdk-projection-fixture.ts",
+		"tests/unit/test-lanes-script.test.ts",
+		"tests/contract/oa-sdk-projection-artifacts.test.ts",
+		"tests/unit/schema/schema-engine-vocabulary-adapter.test.ts",
+		"tests/unit/schema/table-schema-projection.test.ts",
+		"tests/unit/schema/table-schema-projection-service.test.ts"
+	]
+}

@@ -79,9 +79,15 @@ export type TableSchemaOpenApiOperationContractDocument =
 export type TableSchemaOpenApiOperationContractProjectionResult =
   OpenApiProjectionResult<TableSchemaOpenApiOperationContractDocument>
 
+const componentProjectionCache = new WeakMap<TableSchemaProjection, TableSchemaOpenApiProjectionResult>()
+const operationProjectionCache = new WeakMap<TableSchemaProjection, TableSchemaOpenApiOperationContractProjectionResult>()
+
 export function toTableSchemaOpenApiProjectionResult(
   projection: TableSchemaProjection,
 ): TableSchemaOpenApiProjectionResult {
+  const cached = componentProjectionCache.get(projection)
+  if (cached) return cached
+
   const schemas = mapDefsToComponentSchemas(projection.document.$defs ?? {})
   const sources = mapProjectionSources(projection.sources)
   const baseResult: OpenApiProjectionResult<TableSchemaOpenApiComponentBundle> = {
@@ -104,15 +110,20 @@ export function toTableSchemaOpenApiProjectionResult(
     typeTargets: toSchemaTypeTargets(projection, sources),
   }
 
-  return {
+  const result = deepFreeze({
     ...baseResult,
     projection: attachOpenApiProjectionExtensions(baseResult),
-  }
+  })
+  componentProjectionCache.set(projection, result)
+  return result
 }
 
 export function toTableSchemaOpenApiOperationContractProjectionResult(
   projection: TableSchemaProjection,
 ): TableSchemaOpenApiOperationContractProjectionResult {
+  const cached = operationProjectionCache.get(projection)
+  if (cached) return cached
+
   const baseSchemas = mapDefsToComponentSchemas(projection.document.$defs ?? {})
   const createInputName = schemaName('NodeCreateInput', projection.tableIdentifier)
   const updateAttributesName = schemaName('NodeUpdateAttributes', projection.tableIdentifier)
@@ -150,10 +161,12 @@ export function toTableSchemaOpenApiOperationContractProjectionResult(
     ]),
   }
 
-  return {
+  const result = deepFreeze({
     ...baseResult,
     projection: attachOpenApiProjectionExtensions(baseResult),
-  }
+  })
+  operationProjectionCache.set(projection, result)
+  return result
 }
 
 function mapDefsToComponentSchemas(defs: Record<string, JsonSchema>): Record<string, JsonSchema> {
@@ -353,6 +366,13 @@ function toSchemaSourceCoordinate(source: ProjectionSource): SchemaSourceCoordin
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function deepFreeze<T>(value: T, seen = new WeakSet<object>()): T {
+  if (typeof value !== 'object' || value === null || seen.has(value)) return value
+  seen.add(value)
+  for (const child of Object.values(value)) deepFreeze(child, seen)
+  return Object.freeze(value)
 }
 
 function escapePointer(segment: string): string {

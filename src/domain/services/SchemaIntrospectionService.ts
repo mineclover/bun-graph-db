@@ -214,7 +214,7 @@ export class SchemaIntrospectionService {
 
       // Extract operation info
       const operation = document.definitions[0]
-      if (!operation || operation.kind !== 'OperationDefinition') {
+      if (operation?.kind !== 'OperationDefinition') {
         throw new Error('Invalid query: No operation definition found')
       }
 

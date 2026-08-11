@@ -179,7 +179,7 @@ export class DIContainer {
 
   /**
    * Releases singleton resources in reverse creation order. Services may expose
-   * `Symbol.asyncDispose`, `Symbol.dispose`, `dispose`, or `close`; this keeps
+   * `Symbol.asyncDispose`, `dispose`, `close`, or `Symbol.dispose`; this keeps
    * infrastructure adapters such as Bun's SQLite connection out of shutdown
    * wiring in individual transports.
    */
@@ -252,16 +252,19 @@ async function disposeService(instance: unknown): Promise<void> {
     await asyncDispose.call(disposable)
     return
   }
-  const syncDispose = disposable[Symbol.dispose]
-  if (syncDispose) {
-    syncDispose.call(disposable)
-    return
-  }
   if (disposable.dispose) {
     await disposable.dispose()
     return
   }
   if (disposable.close) {
+    // Prefer an explicit graceful close to a synchronous disposal hook. Bun's
+    // Database Symbol.dispose performs strict close(true), which rejects while
+    // prepared statements are still unwinding; close() uses deferred close.
     await disposable.close()
+    return
+  }
+  const syncDispose = disposable[Symbol.dispose]
+  if (syncDispose) {
+    syncDispose.call(disposable)
   }
 }

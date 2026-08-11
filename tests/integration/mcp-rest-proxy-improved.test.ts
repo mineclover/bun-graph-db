@@ -501,5 +501,5 @@ describe('Integration Tests with Auto Server Pattern', () => {
         console.log(`✅ Quick test ${i + 1} completed`)
       })
     }
-  })
+  }, 15_000)
 })

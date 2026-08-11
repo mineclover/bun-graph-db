@@ -98,7 +98,7 @@ export function validateGraphQLOperation(operation: GraphQLOperation): {
       const ast = parse(operation.query)
       const operationDef = ast.definitions[0] as OperationDefinitionNode
 
-      if (!operationDef || operationDef.kind !== 'OperationDefinition') {
+      if (operationDef?.kind !== 'OperationDefinition') {
         errors.push('Query must contain a valid GraphQL operation definition')
       } else {
         // Validate operation type matches

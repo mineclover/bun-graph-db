@@ -113,6 +113,7 @@ export class TabularSyncEventStore {
         ) VALUES (?, ?, 'queued', 0, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         ON CONFLICT(table_identifier) DO UPDATE SET
           mode = CASE
+            WHEN tabular_sync_jobs.status IN ('succeeded', 'failed') THEN excluded.mode
             WHEN tabular_sync_jobs.mode = 'clear' OR excluded.mode = 'clear' THEN 'clear'
             ELSE excluded.mode
           END,

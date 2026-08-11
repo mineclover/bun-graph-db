@@ -1,5 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
+import type { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import { GraphQLError } from 'graphql'
 import type {
@@ -11,7 +11,7 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { DIContainer } from '@/infrastructure/container/DIContainer.js'
-import { RepositoryTokens, UseCaseTokens } from '@/infrastructure/container/tokens/index.js'
+import { CommonTokens, UseCaseTokens } from '@/infrastructure/container/tokens/index.js'
 import {
   toTableSchemaOpenApiOperationContractProjectionResult,
   toTableSchemaOpenApiProjectionResult,
@@ -179,14 +179,7 @@ export class TableQueries extends BaseResolver {
   }
 
   private async createProjectionService(): Promise<TableSchemaProjectionService> {
-    const attributeRepository = await this.container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)
-    const attributeTypeRepository = await this.container.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)
-    return new TableSchemaProjectionService(
-      this.tableRepository,
-      attributeRepository as ConstructorParameters<typeof TableSchemaProjectionService>[1],
-      attributeTypeRepository as ConstructorParameters<typeof TableSchemaProjectionService>[2],
-      this.logger,
-    )
+    return this.container.resolve(CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE) as Promise<TableSchemaProjectionService>
   }
 }
 

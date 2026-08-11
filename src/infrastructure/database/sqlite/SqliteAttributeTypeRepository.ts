@@ -5,6 +5,7 @@ import type {
   IAttributeTypeRepository,
 } from '@/domain/repositories/IAttributeTypeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface AttributeTypeRow {
@@ -52,7 +53,7 @@ export class SqliteAttributeTypeRepository
           attributeTypeData.updated_at,
         ])
 
-        console.log('New attribute type created with ID:', result.lastInsertRowid)
+        debugDatabase('attribute type created', () => ({ id: result.lastInsertRowid }))
       } catch (error) {
         console.error('Save error:', error)
         throw new DatabaseException(`Failed to save attribute type: ${error}`)

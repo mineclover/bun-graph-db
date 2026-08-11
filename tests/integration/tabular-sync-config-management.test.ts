@@ -145,7 +145,10 @@ describe('Tabular Sync Config Management', () => {
 
         expect(listResult.errors).toBeUndefined()
         expect(listResult.data?.tabularSyncConfigs.length).toBe(2)
-        expect(listResult.data?.tabularSyncConfigs[0]?.configKey).toBe('alpha')
+        expect(listResult.data?.tabularSyncConfigs.map(({ configKey }) => configKey)).toEqual([
+          'beta',
+          'alpha',
+        ])
 
         const activeBefore = await graphqlRequest<{
           tabularSyncConfig: { configKey: string; isActive: boolean; config: Record<string, unknown> }
@@ -262,7 +265,7 @@ describe('Tabular Sync Config Management', () => {
         expect(adminHtml).toContain('Build Google Draft')
         expect(adminHtml).toContain('Build Excel Draft')
         expect(adminHtml).toContain('Google Sheets Recommended')
-        expect(adminHtml).toContain('Excel Preview Only')
+        expect(adminHtml).toContain('Excel File Ready')
         expect(adminHtml).toContain('resolved id:')
 
         const listResponse = await fetch(`${baseUrl}/api/tabular-sync-configs`)

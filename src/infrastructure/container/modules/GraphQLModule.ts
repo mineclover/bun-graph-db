@@ -1,5 +1,6 @@
 import type { GraphQLSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import type { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import type { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
@@ -21,6 +22,7 @@ import type { TabularSyncConfigActivationService } from '@/application/services/
 import type { Database } from 'bun:sqlite'
 import type { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
 import type { TabularSyncEventStore } from '@/infrastructure/excel/TabularSyncEventStore.js'
+import { debugApplication } from '@/shared/utils/debugLog.js'
 import {
   AttributeFieldResolvers,
   DocFieldResolvers,
@@ -59,7 +61,7 @@ function createConsoleLogger(prefix: string = 'INFO'): ILogger {
     info: (message, meta) => console.log(`[${prefix}] ${message}`, meta || ''),
     warn: (message, meta) => console.warn(`[${prefix}] ${message}`, meta || ''),
     error: (message, meta) => console.error(`[${prefix}] ${message}`, meta || ''),
-    debug: (message, meta) => console.debug(`[${prefix}] ${message}`, meta || ''),
+    debug: (message, meta) => debugApplication(`[${prefix}] ${message}`, meta ? () => meta : undefined),
   }
 }
 
@@ -71,6 +73,29 @@ async function resolveAs<T>(container: DIContainer, token: ServiceToken): Promis
  * GraphQL module - registers GraphQL resolvers and schema
  */
 export function registerGraphQLModule(container: DIContainer): void {
+  container.registerSingleton(
+    CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE,
+    async (c) => {
+      const tableRepository = await resolveAs<ITableRepository>(c, RepositoryTokens.TABLE_REPOSITORY)
+      const attributeRepository = await resolveAs<IAttributeRepository>(c, RepositoryTokens.ATTRIBUTE_REPOSITORY)
+      const attributeTypeRepository = await resolveAs<IAttributeTypeRepository>(
+        c,
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      )
+      return new TableSchemaProjectionService(
+        tableRepository,
+        attributeRepository,
+        attributeTypeRepository,
+        createConsoleLogger('TableSchemaProjection'),
+      )
+    },
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+    ],
+  )
+
   // Query resolvers
   container.registerSingleton(
     GraphQLTokens.TABLE_QUERIES,
@@ -334,7 +359,14 @@ export function registerGraphQLModule(container: DIContainer): void {
       const { AutoPersistenceService } = await import('@/domain/services/AutoPersistenceService.js')
       const jsonlBackupService = await resolveAs<JsonlBackupService>(c, CommonTokens.JSONL_BACKUP_SERVICE)
       const simpleLogger = createConsoleLogger('AutoPersistence')
-      return new AutoPersistenceService(jsonlBackupService, simpleLogger)
+      const debounceMs = Number.parseInt(process.env.JSONL_AUTO_SAVE_DEBOUNCE_MS ?? '', 10)
+      return new AutoPersistenceService(jsonlBackupService, simpleLogger, {
+        autoRestoreOnStartup: process.env.JSONL_AUTO_RESTORE !== 'false',
+        autoBackupOnShutdown: process.env.JSONL_AUTO_BACKUP_ON_SHUTDOWN !== 'false',
+        autoSaveOnWrite: process.env.JSONL_AUTO_SAVE_ON_WRITE === 'true',
+        autoSaveDebounceMs: Number.isSafeInteger(debounceMs) && debounceMs > 0 ? debounceMs : 30_000,
+        backupDir: process.env.JSONL_BACKUP_DIR || './backups/jsonl',
+      })
     },
     [CommonTokens.JSONL_BACKUP_SERVICE],
   )
@@ -368,6 +400,10 @@ export function registerGraphQLModule(container: DIContainer): void {
       const { BestEffortTabularSyncHook } = await import('@/application/services/BestEffortTabularSyncHook.js')
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
+      const attributeTypeRepository = await resolveAs<IAttributeTypeRepository>(
+        c,
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      )
       const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
       const nodeAttributeRepository = await resolveAs<INodeAttributeRepository>(
         c,
@@ -379,6 +415,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       return new BestEffortTabularSyncHook(
         tableRepository,
         attributeRepository,
+        attributeTypeRepository,
         nodeRepository,
         nodeAttributeRepository,
         simpleLogger,
@@ -390,6 +427,7 @@ export function registerGraphQLModule(container: DIContainer): void {
     [
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       CommonTokens.TABULAR_SYNC_CONFIG_STORE,

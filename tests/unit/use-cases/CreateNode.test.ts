@@ -334,7 +334,7 @@ describe('CreateNodeUseCase', () => {
       expect(result.node.title).toBe('Test Title')
       expect(result.node.description).toBe('Test Description')
       expect(mockNodeRepository.save).toHaveBeenCalled()
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating new node', {
+      expect(mockLogger.debug).toHaveBeenCalledWith('Creating new node', {
         tableId: input.tableId,
         content: input.content,
       })
@@ -367,7 +367,7 @@ describe('CreateNodeUseCase', () => {
       expect(result.node).toBeDefined()
       expect(result.node.content).toBe('Test Content')
       expect(mockNodeAttributeRepository.save).toHaveBeenCalledTimes(2)
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         'Node created successfully',
         expect.objectContaining({
           id: 'node-1',
@@ -607,11 +607,11 @@ describe('CreateNodeUseCase', () => {
 
       await useCase.execute(input)
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Creating new node', {
+      expect(mockLogger.debug).toHaveBeenCalledWith('Creating new node', {
         tableId: 'table-1',
         content: 'Test Content',
       })
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         'Node created successfully',
         expect.objectContaining({
           id: 'node-1',

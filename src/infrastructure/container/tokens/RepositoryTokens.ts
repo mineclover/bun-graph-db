@@ -8,6 +8,7 @@ export const RepositoryTokens = {
   ATTRIBUTE_TYPE_REPOSITORY: Symbol.for('AttributeTypeRepository'),
   ATTRIBUTE_REPOSITORY: Symbol.for('AttributeRepository'),
   NODE_REPOSITORY: Symbol.for('NodeRepository'),
+  NODE_MUTATION_REPOSITORY: Symbol.for('NodeMutationRepository'),
   NODE_ATTRIBUTE_REPOSITORY: Symbol.for('NodeAttributeRepository'),
   NODE_RELATION_REPOSITORY: Symbol.for('NodeRelationRepository'),
   RELATION_TYPE_REPOSITORY: Symbol.for('RelationTypeRepository'),

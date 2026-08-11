@@ -155,6 +155,7 @@ async function main() {
   const bridge = new TabularTableSyncBridge(
     tableRepository,
     attributeRepository,
+    attributeTypeRepository,
     nodeRepository,
     nodeAttributeRepository,
     syncService,

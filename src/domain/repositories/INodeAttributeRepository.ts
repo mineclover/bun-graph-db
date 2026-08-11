@@ -7,6 +7,7 @@ export interface INodeAttributeRepository {
   findById(id: string): Promise<NodeAttribute | null>
   findByNodeIdAndAttributeId(nodeId: NodeId, attributeId: AttributeId): Promise<NodeAttribute | null>
   findByNodeId(nodeId: NodeId): Promise<NodeAttribute[]>
+  findByNodeIds(nodeIds: NodeId[]): Promise<NodeAttribute[]>
   findByAttributeId(attributeId: AttributeId, options?: PaginationOptions): Promise<PaginatedResult<NodeAttribute>>
   update(nodeAttribute: NodeAttribute): Promise<void>
   delete(id: string): Promise<void>

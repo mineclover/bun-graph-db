@@ -19,6 +19,17 @@ import {
 import { SchemaMapper } from "@/presentation/mcp/schema/SchemaMapper.js";
 
 describe("shared schema engine vocabulary adapter", () => {
+	it("reuses immutable-by-contract adapter results for the same table projection", () => {
+		const tableProjection = projectTableSchema(sampleInput());
+
+		expect(toTableSchemaOpenApiProjectionResult(tableProjection)).toBe(
+			toTableSchemaOpenApiProjectionResult(tableProjection),
+		);
+		expect(toTableSchemaOpenApiOperationContractProjectionResult(tableProjection)).toBe(
+			toTableSchemaOpenApiOperationContractProjectionResult(tableProjection),
+		);
+	});
+
 	it("maps table schema projections to valid OpenAPI component bundles", () => {
 		const tableProjection = projectTableSchema(sampleInput());
 		const projection = toTableSchemaOpenApiProjectionResult(tableProjection);

@@ -47,7 +47,7 @@ export class CreateRelationUseCase {
   ) {}
 
   async execute(input: CreateRelationInput): Promise<CreateRelationOutput> {
-    this.logger.info('Creating new node relation', {
+    this.logger.debug('Creating new node relation', {
       tableId: input.tableId,
       sourceNodeId: input.sourceNodeId,
       sourceExternalId: input.sourceExternalId,
@@ -132,7 +132,7 @@ export class CreateRelationUseCase {
         throw new Error('Failed to retrieve saved node relation')
       }
 
-      this.logger.info('Node relation created successfully', {
+      this.logger.debug('Node relation created successfully', {
         id: savedRelation.getId(),
         sourceExternalId: savedRelation.getSourceExternalId(),
         targetExternalId: savedRelation.getTargetExternalId(),

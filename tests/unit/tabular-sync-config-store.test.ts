@@ -40,6 +40,7 @@ describe('TabularSyncConfigStore', () => {
 
     const listed = store.listConfigs()
     expect(listed.length).toBe(2)
+    expect(listed.map(({ configKey }) => configKey)).toEqual(['beta', 'alpha'])
     expect(store.getActiveConfigRecord()?.configKey).toBe('alpha')
     expect(store.getConfigRecordByKey('beta')?.config.defaultTargetId).toBe('beta')
 

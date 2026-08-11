@@ -87,6 +87,7 @@ describe("bun-graph-db static OpenAPI document builder", () => {
 		expect(operation?.parameters).toEqual([
 			{ $ref: "#/components/parameters/TableId" },
 			{ $ref: "#/components/parameters/ProjectionProfile" },
+			{ $ref: "#/components/parameters/ProjectionIfNoneMatch" },
 		]);
 		expect(operation?.responses["200"]?.content?.["application/json"].schema).toEqual({
 			$ref: "#/components/schemas/OpenApiProjectionRestResponse",
@@ -94,6 +95,13 @@ describe("bun-graph-db static OpenAPI document builder", () => {
 		expect(operation?.responses["400"]?.content?.["application/json"].schema).toEqual({
 			$ref: "#/components/schemas/TableOpenApiProjectionBadRequestResponse",
 		});
+		expect(operation?.responses["200"]?.headers).toEqual(expect.objectContaining({
+			ETag: expect.any(Object),
+			"Cache-Control": expect.any(Object),
+		}));
+		expect(operation?.responses["304"]).toEqual(expect.objectContaining({
+			headers: expect.objectContaining({ ETag: expect.any(Object) }),
+		}));
 		expect(document.components.parameters.TableId).toEqual({
 			name: "tableId",
 			in: "path",
@@ -109,6 +117,13 @@ describe("bun-graph-db static OpenAPI document builder", () => {
 			description:
 				"Projection profile to export. Defaults to component-bundle when omitted. Unsupported values return HTTP 400.",
 			schema: { $ref: "#/components/schemas/TableOpenApiProjectionProfile" },
+		});
+		expect(document.components.parameters.ProjectionIfNoneMatch).toEqual({
+			name: "If-None-Match",
+			in: "header",
+			required: false,
+			description: "Previously observed quoted projection version hash. A match returns HTTP 304.",
+			schema: { type: "string" },
 		});
 		expect(document.components.schemas.TableOpenApiProjectionProfile).toEqual({
 			type: "string",

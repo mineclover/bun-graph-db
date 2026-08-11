@@ -9,6 +9,7 @@ import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
 import type { AttributeUpdateData, IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface AttributeRow {
@@ -68,7 +69,7 @@ export class SqliteAttributeRepository
           attributeData.updated_at,
         ])
 
-        console.log('New attribute created with ID:', result.lastInsertRowid)
+        debugDatabase('attribute created', () => ({ id: result.lastInsertRowid }))
       } catch (error) {
         console.error('Save error:', error)
         throw new DatabaseException(`Failed to save attribute: ${error}`)
@@ -295,24 +296,24 @@ export class SqliteAttributeRepository
   }
 
   protected mapRowToEntity(row: AttributeRow): Attribute {
-    console.log('DEBUG: mapRowToEntity row data:', {
+    debugDatabase('mapping attribute row', () => ({
       id: row.id,
       table_id: row.table_id,
       identifier: row.identifier,
-      name: row.name, // Add name field debugging
+      name: row.name,
       attribute_type_id: row.attribute_type_id,
       description: row.description,
       is_required: row.is_required,
       metadata: row.metadata,
       created_at: row.created_at,
       updated_at: row.updated_at,
-    })
+    }))
 
     const attribute = Attribute.fromDatabase(
       row.id.toString(),
       row.table_id.toString(),
       row.identifier,
-      row.name, // Add name parameter
+      row.name,
       row.attribute_type_id.toString(),
       row.description,
       row.is_required,
@@ -321,13 +322,13 @@ export class SqliteAttributeRepository
       new Date(row.updated_at),
     )
 
-    console.log('DEBUG: created attribute:', {
+    debugDatabase('attribute mapped', () => ({
       id: attribute.getId(),
       tableId: attribute.getTableId(),
       identifier: attribute.getIdentifier(),
-      name: attribute.getName(), // Add name debugging
+      name: attribute.getName(),
       attributeTypeId: attribute.getAttributeTypeId(),
-    })
+    }))
 
     return attribute
   }

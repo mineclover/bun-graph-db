@@ -24,6 +24,16 @@ describe("Table MCP tools/list projection schemas", () => {
 	let testEnvironment: TestEnvironment;
 	let restoreDatabasePath: () => void;
 	let originalFetch: typeof fetch;
+	const tableMcpMiddlewares: Array<
+		ReturnType<typeof createTableMcpMiddleware>
+	> = [];
+	const createTrackedTableMcpMiddleware = (
+		config: Parameters<typeof createTableMcpMiddleware>[0],
+	) => {
+		const middleware = createTableMcpMiddleware(config);
+		tableMcpMiddlewares.push(middleware);
+		return middleware;
+	};
 
 	beforeAll(async () => {
 		originalFetch = globalThis.fetch;
@@ -46,7 +56,8 @@ describe("Table MCP tools/list projection schemas", () => {
 
 	afterAll(async () => {
 		globalThis.fetch = originalFetch;
-		resetContainer();
+		await Promise.all(tableMcpMiddlewares.map((middleware) => middleware.close()));
+		await resetContainer();
 		restoreDatabasePath?.();
 		await testEnvironment.cleanup();
 	});
@@ -69,7 +80,7 @@ describe("Table MCP tools/list projection schemas", () => {
 				RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
 			)) as IAttributeTypeRepository,
 		);
-		const tableMcpMiddleware = createTableMcpMiddleware({
+		const tableMcpMiddleware = createTrackedTableMcpMiddleware({
 			graphqlEndpoint,
 			restApiBaseUrl: "http://mcp-projection.test/api",
 			projectionService,
@@ -186,7 +197,7 @@ describe("Table MCP tools/list projection schemas", () => {
 				RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
 			)) as IAttributeTypeRepository,
 		);
-		const tableMcpMiddleware = createTableMcpMiddleware({
+		const tableMcpMiddleware = createTrackedTableMcpMiddleware({
 			graphqlEndpoint,
 			restApiBaseUrl: "http://mcp-projection-refresh.test/api",
 			projectionService,
@@ -256,7 +267,7 @@ describe("Table MCP tools/list projection schemas", () => {
 		const graphqlEndpoint = "http://mcp-projection-no-service.test/graphql";
 		connectGraphqlFetchToYoga(graphqlEndpoint, yoga, originalFetch);
 
-		const tableMcpMiddleware = createTableMcpMiddleware({
+		const tableMcpMiddleware = createTrackedTableMcpMiddleware({
 			graphqlEndpoint,
 			restApiBaseUrl: "http://mcp-projection-no-service.test/api",
 		});
@@ -334,7 +345,7 @@ describe("Table MCP tools/list projection schemas", () => {
 			)) as IAttributeTypeRepository,
 		);
 		const projectCalls: Array<{ tableId: string }> = [];
-		const tableMcpMiddleware = createTableMcpMiddleware({
+		const tableMcpMiddleware = createTrackedTableMcpMiddleware({
 			graphqlEndpoint,
 			restApiBaseUrl: "http://mcp-projection-export.test/api",
 			projectionService: {
@@ -420,7 +431,7 @@ describe("Table MCP tools/list projection schemas", () => {
 		const graphqlEndpoint = "http://mcp-projection-invalid-profile.test/graphql";
 		connectGraphqlFetchToYoga(graphqlEndpoint, yoga, originalFetch);
 
-		const tableMcpMiddleware = createTableMcpMiddleware({
+		const tableMcpMiddleware = createTrackedTableMcpMiddleware({
 			graphqlEndpoint,
 			restApiBaseUrl: "http://mcp-projection-invalid-profile.test/api",
 		});
@@ -479,7 +490,7 @@ describe("Table MCP tools/list projection schemas", () => {
 				},
 			],
 		});
-		const tableMcpMiddleware = createTableMcpMiddleware({
+		const tableMcpMiddleware = createTrackedTableMcpMiddleware({
 			graphqlEndpoint,
 			restApiBaseUrl: "http://mcp-projection-broken.test/api",
 			projectionService: {

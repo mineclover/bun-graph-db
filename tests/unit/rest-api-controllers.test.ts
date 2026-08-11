@@ -89,6 +89,7 @@ function createMockResponse() {
   const res = {
     status: mock((_code: number) => res),
     type: mock((_contentType: string) => res),
+    setHeader: mock((_name: string, _value: string) => res),
     json: mock((_data: any) => {}),
     send: mock((_data: any) => {}),
   } as unknown as Response
@@ -930,6 +931,59 @@ describe('GraphApiController Unit Tests', () => {
           }),
         }),
       })
+    })
+
+    test('returns 304 when the projection ETag matches', async () => {
+      const initialRequest = createMockRequest({
+        params: { tableId: 'table-123' },
+        query: { profile: 'component-bundle' },
+      })
+      const initialResponse = createMockResponse() as Response & {
+        setHeader: ReturnType<typeof mock>
+      }
+      await controller.getTableOpenApiProjection(initialRequest, initialResponse)
+      const etag = initialResponse.setHeader.mock.calls.find(([name]) => name === 'ETag')?.[1]
+      expect(etag).toMatch(/^"sha256-/)
+
+      mockTableSchemaProjectionService.project.mockClear()
+      const req = createMockRequest({
+        params: { tableId: 'table-123' },
+        query: { profile: 'component-bundle' },
+        headers: { 'if-none-match': etag },
+      })
+      const res = createMockResponse() as Response & {
+        setHeader: ReturnType<typeof mock>
+        status: ReturnType<typeof mock>
+        send: ReturnType<typeof mock>
+        json: ReturnType<typeof mock>
+      }
+
+      await controller.getTableOpenApiProjection(req, res)
+
+      expect(res.setHeader).toHaveBeenCalledWith('ETag', etag)
+      expect(res.status).toHaveBeenCalledWith(304)
+      expect(res.send).toHaveBeenCalledWith('')
+      expect(res.json).not.toHaveBeenCalled()
+    })
+
+    test('uses different strong ETags for different projection profiles', async () => {
+      const componentResponse = createMockResponse() as Response & { setHeader: ReturnType<typeof mock> }
+      const operationResponse = createMockResponse() as Response & { setHeader: ReturnType<typeof mock> }
+
+      await controller.getTableOpenApiProjection(createMockRequest({
+        params: { tableId: 'table-123' },
+        query: { profile: 'component-bundle' },
+      }), componentResponse)
+      await controller.getTableOpenApiProjection(createMockRequest({
+        params: { tableId: 'table-123' },
+        query: { profile: 'operation-contract' },
+      }), operationResponse)
+
+      const componentEtag = componentResponse.setHeader.mock.calls.find(([name]) => name === 'ETag')?.[1]
+      const operationEtag = operationResponse.setHeader.mock.calls.find(([name]) => name === 'ETag')?.[1]
+      expect(componentEtag).toMatch(/^"sha256-/)
+      expect(operationEtag).toMatch(/^"sha256-/)
+      expect(componentEtag).not.toBe(operationEtag)
     })
 
     test('should reject unsupported projection profiles', async () => {

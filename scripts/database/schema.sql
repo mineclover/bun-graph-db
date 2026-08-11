@@ -170,6 +170,7 @@ CREATE TABLE IF NOT EXISTS relation_types (
 CREATE TRIGGER IF NOT EXISTS update_tables_updated_at
     AFTER UPDATE ON tables
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE tables SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -178,6 +179,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS update_nodes_updated_at
     AFTER UPDATE ON nodes
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE nodes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -186,6 +188,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS update_attribute_types_updated_at
     AFTER UPDATE ON attribute_types
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE attribute_types SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -194,6 +197,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS update_attributes_updated_at
     AFTER UPDATE ON attributes
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE attributes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -202,6 +206,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS update_node_attributes_updated_at
     AFTER UPDATE ON node_attributes
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE node_attributes SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -210,6 +215,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS update_docs_updated_at
     AFTER UPDATE ON docs
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE docs SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -218,6 +224,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS update_templates_updated_at
     AFTER UPDATE ON templates
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE templates SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -226,6 +233,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS update_node_relations_updated_at
     AFTER UPDATE ON node_relations
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE node_relations SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -234,6 +242,7 @@ END;
 CREATE TRIGGER IF NOT EXISTS update_relation_types_updated_at
     AFTER UPDATE ON relation_types
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE relation_types SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -308,6 +317,7 @@ CREATE TABLE IF NOT EXISTS template_executions (
   success BOOLEAN NOT NULL DEFAULT TRUE,
   error_message TEXT,
   user_context TEXT, -- User/session info
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
 );
@@ -316,6 +326,7 @@ CREATE TABLE IF NOT EXISTS template_executions (
 CREATE TRIGGER IF NOT EXISTS update_template_executions_updated_at
     AFTER UPDATE ON template_executions
     FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
     UPDATE template_executions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
 END;
@@ -329,11 +340,8 @@ BEGIN
   SET
     usage_count = usage_count + 1,
     last_used_at = NEW.executed_at,
-    avg_execution_time_ms = (
-      SELECT AVG(execution_time_ms)
-      FROM template_executions
-      WHERE template_id = NEW.template_id
-    )
+    avg_execution_time_ms =
+      ((avg_execution_time_ms * usage_count) + NEW.execution_time_ms) / (usage_count + 1)
   WHERE id = NEW.template_id;
 END;
 
@@ -431,10 +439,7 @@ WHERE source_external_id = 'internal' AND target_external_id = 'internal';
 -- =================================================================================
 
 -- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_nodes_table_content ON nodes(table_id, content);
-CREATE INDEX IF NOT EXISTS idx_attribute_types_identifier ON attribute_types(identifier);
 CREATE INDEX IF NOT EXISTS idx_attribute_types_json_type ON attribute_types(json_type);
-CREATE INDEX IF NOT EXISTS idx_attributes_table_identifier ON attributes(table_id, identifier);
 CREATE INDEX IF NOT EXISTS idx_attributes_type ON attributes(attribute_type_id);
 CREATE INDEX IF NOT EXISTS idx_docs_table_category ON docs(table_id, category);
 CREATE INDEX IF NOT EXISTS idx_docs_version ON docs(version);
@@ -444,7 +449,6 @@ CREATE INDEX IF NOT EXISTS idx_docs_active ON docs(is_active);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_docs_unique_active 
 ON docs(table_id, category) WHERE is_active = TRUE;
 -- Templates (query templates) indexes
-CREATE INDEX IF NOT EXISTS idx_templates_identifier ON templates(identifier);
 CREATE INDEX IF NOT EXISTS idx_templates_query_name ON templates(query_name);
 CREATE INDEX IF NOT EXISTS idx_templates_operation_type ON templates(operation_type);
 CREATE INDEX IF NOT EXISTS idx_templates_active ON templates(is_active);
@@ -460,6 +464,8 @@ CREATE INDEX IF NOT EXISTS idx_templates_active_performance ON templates(is_acti
 CREATE INDEX IF NOT EXISTS idx_templates_hot_queries ON templates(usage_count DESC, last_used_at DESC) WHERE is_active = 1;
 CREATE INDEX IF NOT EXISTS idx_node_attributes_node ON node_attributes(node_id);
 CREATE INDEX IF NOT EXISTS idx_node_attributes_attr ON node_attributes(attribute_id);
+CREATE INDEX IF NOT EXISTS idx_node_attributes_attr_value_node ON node_attributes(attribute_id, value, node_id);
+CREATE INDEX IF NOT EXISTS idx_nodes_table_created_id ON nodes(table_id, created_at DESC, id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_source ON node_relations(source_node_id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_target ON node_relations(target_node_id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_source_ext ON node_relations(source_external_id);

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import type { HttpControllerRequest as Request, HttpControllerResponse as Response } from '../adapters/BunControllerAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
@@ -174,6 +175,15 @@ export class GraphApiController {
       const result = profile === 'operation-contract'
         ? toTableSchemaOpenApiOperationContractProjectionResult(projection)
         : toTableSchemaOpenApiProjectionResult(projection)
+      const etag = createRepresentationEtag({ success: true, data: result })
+      res.setHeader?.('ETag', etag)
+      res.setHeader?.('Cache-Control', 'private, must-revalidate')
+      const ifNoneMatch = req.headers['if-none-match']
+      const requestedEtags = Array.isArray(ifNoneMatch) ? ifNoneMatch : ifNoneMatch?.split(',')
+      if (requestedEtags?.some((candidate) => candidate.trim() === etag || candidate.trim() === '*')) {
+        res.status(304).send('')
+        return
+      }
 
       this.responseHelper.success(res, result)
     } catch (error) {
@@ -552,6 +562,11 @@ export class GraphApiController {
       this.responseHelper.handleError(res, error, 'Get node relations')
     }
   }
+}
+
+function createRepresentationEtag(value: unknown): string {
+  const digest = createHash('sha256').update(JSON.stringify(value)).digest('base64url')
+  return `"sha256-${digest}"`
 }
 
 function normalizeProjectionProfile(value: unknown): 'component-bundle' | 'operation-contract' | undefined {

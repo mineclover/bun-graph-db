@@ -103,20 +103,8 @@ export class CreateAttributeUseCase {
         throw new Error('Failed to retrieve saved attribute')
       }
 
-      console.log('DEBUG: Attribute created successfully:', {
-        id: savedAttribute.getId(),
-        identifier: savedAttribute.getIdentifier(),
-        name: savedAttribute.getName(),
-        tableId: savedAttribute.getTableId(),
-      })
-
       // Convert to DTO
       const attributeDto = attributeFromEntity(savedAttribute)
-      console.log('DEBUG: Converted to DTO:', {
-        id: attributeDto.id,
-        identifier: attributeDto.identifier,
-        name: attributeDto.name,
-      })
 
       // Auto-generate attribute-specific template
       try {

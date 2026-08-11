@@ -2,6 +2,7 @@ import type { AttributeId, NodeId, PaginatedResult, PaginationOptions } from '@/
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface NodeAttributeRow {
@@ -42,7 +43,7 @@ export class SqliteNodeAttributeRepository
           data.updated_at,
         ])
 
-        console.log('New node attribute created with ID:', result.lastInsertRowid)
+        debugDatabase('node attribute created', () => ({ id: result.lastInsertRowid }))
       } catch (error) {
         console.error('Save error:', error)
         throw new DatabaseException(`Failed to save node attribute: ${error}`)
@@ -82,6 +83,24 @@ export class SqliteNodeAttributeRepository
       return rows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
       throw new DatabaseException(`Failed to find node attributes: ${error}`)
+    }
+  }
+
+  async findByNodeIds(nodeIds: NodeId[]): Promise<NodeAttribute[]> {
+    if (nodeIds.length === 0) return []
+    const placeholders = nodeIds.map(() => '?').join(',')
+    const query = `
+      SELECT id, node_id, attribute_id, value, created_at, updated_at
+      FROM node_attributes
+      WHERE node_id IN (${placeholders})
+      ORDER BY node_id, attribute_id
+    `
+
+    try {
+      const rows = this.db.query<NodeAttributeRow, string[]>(query).all(...nodeIds)
+      return rows.map((row) => this.mapRowToEntity(row))
+    } catch (error) {
+      throw new DatabaseException(`Failed to find node attributes by node ids: ${error}`)
     }
   }
 

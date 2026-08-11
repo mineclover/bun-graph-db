@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { getDatabasePath } from '@/config/database.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { configureSqliteDatabase } from './SqlitePragmas.js'
 
 export class SqliteConnection {
   private static instance: SqliteConnection
@@ -31,12 +32,7 @@ export class SqliteConnection {
     try {
       const dbPath = getDatabasePath()
       this.db = new Database(dbPath)
-
-      // Enable foreign keys
-      this.db.exec('PRAGMA foreign_keys = ON')
-
-      // Set reasonable timeout
-      this.db.exec('PRAGMA busy_timeout = 30000')
+      configureSqliteDatabase(this.db, dbPath)
 
       // Initialize schema
       this.initializeSchema()

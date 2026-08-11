@@ -1,0 +1,11 @@
+{
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"types": ["bun", "node"]
+	},
+	"include": [
+		"benchmark-hotpaths.ts",
+		"../tests/unit/benchmark-hotpaths.test.ts"
+	],
+	"exclude": []
+}

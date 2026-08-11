@@ -41,6 +41,7 @@ export type OpenApiRequestBody = {
 
 export type OpenApiResponse = {
 	description: string;
+	headers?: Record<string, { description: string; schema: OpenApiSchema | OpenApiReference }>;
 	content?: Record<string, OpenApiMediaType>;
 };
 
@@ -110,12 +111,20 @@ export function buildBunGraphDbOpenApiDocument(): BunGraphDbOpenApiDocument {
 					parameters: [
 						ref("#/components/parameters/TableId"),
 						ref("#/components/parameters/ProjectionProfile"),
+						ref("#/components/parameters/ProjectionIfNoneMatch"),
 					],
 					responses: {
-						"200": jsonResponse(
-							"REST success envelope containing the table OpenAPI projection.",
-							"#/components/schemas/OpenApiProjectionRestResponse",
-						),
+						"200": {
+							...jsonResponse(
+								"REST success envelope containing the table OpenAPI projection.",
+								"#/components/schemas/OpenApiProjectionRestResponse",
+							),
+							headers: projectionCacheHeaders(),
+						},
+						"304": {
+							description: "The current projection version matches If-None-Match; no response body is returned.",
+							headers: projectionCacheHeaders(),
+						},
 						"400": jsonResponse(
 							"Invalid table id or projection profile.",
 							"#/components/schemas/TableOpenApiProjectionBadRequestResponse",
@@ -213,6 +222,13 @@ function createCommonParameters(): Record<string, OpenApiParameter> {
 				"Projection profile to export. Defaults to component-bundle when omitted. Unsupported values return HTTP 400.",
 			schema: ref("#/components/schemas/TableOpenApiProjectionProfile"),
 		},
+		ProjectionIfNoneMatch: {
+			name: "If-None-Match",
+			in: "header",
+			required: false,
+			description: "Previously observed quoted projection version hash. A match returns HTTP 304.",
+			schema: { type: "string" },
+		},
 	};
 }
 
@@ -238,7 +254,7 @@ function createReusableSchemas(): Record<string, OpenApiSchema> {
 					additionalProperties: true,
 				},
 			},
-			additionalProperties: true,
+				additionalProperties: true,
 		},
 		TableOpenApiProjectionProfile: {
 			type: "string",
@@ -655,6 +671,19 @@ function jsonResponse(description: string, schemaRef: string): OpenApiResponse {
 			[JSON_MEDIA_TYPE]: {
 				schema: ref(schemaRef),
 			},
+		},
+	};
+}
+
+function projectionCacheHeaders(): NonNullable<OpenApiResponse['headers']> {
+	return {
+		ETag: {
+			description: "Quoted content hash for the current runtime table projection.",
+			schema: { type: "string" },
+		},
+		"Cache-Control": {
+			description: "Projection responses require revalidation before reuse.",
+			schema: { type: "string", const: "private, must-revalidate" },
 		},
 	};
 }

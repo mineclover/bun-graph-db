@@ -239,9 +239,10 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
     })
 
-    test('should validate createRelation tool parameters', async () => {
+    test('does not advertise the retired createRelation MCP alias', async () => {
       const toolDef = tools.find((t) => t.name === 'createRelation')
-      expect(toolDef).toBeDefined()
+      expect(toolDef).toBeUndefined()
+      if (!toolDef) return
 
       // Test with valid parameters
       const validRequest: ToolCallRequest = {
@@ -299,9 +300,10 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
     })
 
-    test('should validate executeTemplateWithGraphQL tool parameters', async () => {
+    test('does not advertise the retired executeTemplateWithGraphQL MCP alias', async () => {
       const toolDef = tools.find((t) => t.name === 'executeTemplateWithGraphQL')
-      expect(toolDef).toBeDefined()
+      expect(toolDef).toBeUndefined()
+      if (!toolDef) return
 
       // Test with valid parameters
       const validRequest: ToolCallRequest = {
@@ -357,9 +359,10 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
     })
 
-    test('should validate exportTableWithNodes tool parameters', async () => {
+    test('does not advertise the retired exportTableWithNodes MCP alias', async () => {
       const toolDef = tools.find((t) => t.name === 'exportTableWithNodes')
-      expect(toolDef).toBeDefined()
+      expect(toolDef).toBeUndefined()
+      if (!toolDef) return
 
       // Test with valid parameters (empty object)
       const validRequest: ToolCallRequest = {
@@ -417,9 +420,10 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
     })
 
-    test('should validate exportTemplate tool parameters', async () => {
+    test('does not advertise the retired exportTemplate MCP alias', async () => {
       const toolDef = tools.find((t) => t.name === 'exportTemplate')
-      expect(toolDef).toBeDefined()
+      expect(toolDef).toBeUndefined()
+      if (!toolDef) return
 
       // Test with valid parameters
       const validRequest: ToolCallRequest = {
@@ -473,9 +477,10 @@ describe('Tool Schema Validation Contract Tests', () => {
       }
     })
 
-    test('should validate importTemplate tool parameters', async () => {
+    test('does not advertise the retired importTemplate MCP alias', async () => {
       const toolDef = tools.find((t) => t.name === 'importTemplate')
-      expect(toolDef).toBeDefined()
+      expect(toolDef).toBeUndefined()
+      if (!toolDef) return
 
       // Test with valid parameters
       const validRequest: ToolCallRequest = {

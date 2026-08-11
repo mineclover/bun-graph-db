@@ -67,7 +67,7 @@ interface Template {
 	tableId?: string;
 }
 
-interface _McpRequest {
+export interface TableMcpJsonRpcRequest {
 	jsonrpc: "2.0";
 	id?: string | number;
 	method: string;
@@ -108,6 +108,12 @@ interface TableMcpServerOptions {
 	projectionService?: TableSchemaProjectionProvider;
 }
 
+interface TableToolsListCacheEntry {
+	legacyResult: Record<string, unknown>;
+	legacyResultJson: string;
+	modernResultJson: string;
+}
+
 /**
  * Table-specific MCP Server that provides templates as discoverable tools
  */
@@ -121,6 +127,10 @@ export class TableMcpServer {
 	private schemaDiscoveryService: SchemaDiscoveryService | null = null;
 	private formatMapperService: FormatMapperService;
 	private projectionService?: TableSchemaProjectionProvider;
+	private toolsListCache: Map<string, TableToolsListCacheEntry> = new Map();
+	private readonly debugHotpathEnabled =
+		process.env.BUN_GRAPH_DB_MCP_DEBUG === "1" ||
+		process.env.BUN_GRAPH_DB_MCP_DEBUG === "true";
 
 	constructor(
 		tableId: string,
@@ -140,8 +150,9 @@ export class TableMcpServer {
 	async initialize(): Promise<void> {
 		if (this.closed) throw new Error(`Table MCP server for ${this.tableId} is closed`);
 		if (this.tableInitialized) return;
+		this.invalidateToolsListCache();
 
-		console.log(`Initializing Table MCP Server for table: ${this.tableId}`);
+		this.debugHotpath(`Initializing Table MCP Server for table: ${this.tableId}`);
 
 		// First initialize the base MCP server
 		await this.mcpServer.initialize();
@@ -153,7 +164,7 @@ export class TableMcpServer {
 		await this.loadTableTemplates();
 
 		this.tableInitialized = true;
-		console.log(
+		this.debugHotpath(
 			`Table MCP Server initialized for table ${this.tableId} with ${this.tableTools.size} tools`,
 		);
 	}
@@ -181,7 +192,7 @@ export class TableMcpServer {
 			// Query templates associated with this table
 			const templates = await this.getTableTemplates(this.tableId);
 
-			console.log(
+			this.debugHotpath(
 				`Found ${templates.length} templates for table ${this.tableId}`,
 			);
 
@@ -198,7 +209,7 @@ export class TableMcpServer {
 				}
 			});
 
-			console.log(
+			this.debugHotpath(
 				`Converted ${this.tableTools.size} tools (including aiMetadata) for table ${this.tableId}`,
 			);
 		} catch (error) {
@@ -360,7 +371,7 @@ export class TableMcpServer {
 		this.tableTools.set(validateInputSchemaTool.name, validateInputSchemaTool);
 		this.tableTools.set(validateDataTool.name, validateDataTool);
 
-		console.log(`Added 2 validation tools for table ${this.tableId}`);
+		this.debugHotpath(`Added 2 validation tools for table ${this.tableId}`);
 	}
 
 	/**
@@ -427,7 +438,7 @@ export class TableMcpServer {
 				generateSearchExamplesTool,
 			);
 
-			console.log(`Added 3 schema discovery tools for table ${this.tableId}`);
+			this.debugHotpath(`Added 3 schema discovery tools for table ${this.tableId}`);
 		} catch (error) {
 			console.error(
 				`Failed to add schema discovery tools for table ${this.tableId}:`,
@@ -582,7 +593,7 @@ export class TableMcpServer {
 			this.tableTools.set(validateMappingTool.name, validateMappingTool);
 			this.tableTools.set(listPresetsTool.name, listPresetsTool);
 
-			console.log(`Added 5 format mapper tools for table ${this.tableId}`);
+			this.debugHotpath(`Added 5 format mapper tools for table ${this.tableId}`);
 		} catch (error) {
 			console.error(
 				`Failed to add format mapper tools for table ${this.tableId}:`,
@@ -1635,30 +1646,91 @@ export class TableMcpServer {
 	): Promise<McpResponse> {
 		await this.initialize();
 
-		// Return ONLY table-specific tools - no base tools inheritance
-		// Sub-table MCP servers should be isolated and table-focused
-		const tableSpecificTools = Array.from(this.tableTools.values()).filter(
-			(tool) => audience?.role !== "reader" || tool.operationType === "query",
-		);
-
 		return {
 			jsonrpc: "2.0",
 			id,
-			result: {
-				tools: tableSpecificTools.map((tool) => ({
-					name: tool.name,
-					description: tool.description,
-					inputSchema: tool.inputSchema,
-					_meta: {
-						...tool._meta,
-						contractVersion: ROOT_MCP_TOOL_CONTRACT_VERSION,
-						action: tool.operationType === "query" ? "read" : "write",
-						scope: "table",
-					},
-					...(tool.annotations ? { annotations: tool.annotations } : {}),
-				})),
-			},
+			result: this.getToolsListCacheEntry(audience).legacyResult,
 		};
+	}
+
+	private getToolsListCacheEntry(
+		audience?: McpToolAudience,
+	): TableToolsListCacheEntry {
+		const cacheKey = audience?.role ?? "public";
+		const cached = this.toolsListCache.get(cacheKey);
+		if (cached) return cached;
+
+		// Return ONLY table-specific tools - no base tools inheritance.
+		// Sorting and projection are intentionally done once per audience because
+		// tools are immutable between initialize/refresh/close lifecycle events.
+		const tools = Array.from(this.tableTools.values())
+			.filter(
+				(tool) => audience?.role !== "reader" || tool.operationType === "query",
+			)
+			.sort((left, right) => left.name.localeCompare(right.name))
+			.map((tool) => ({
+				name: tool.name,
+				description: tool.description,
+				inputSchema: tool.inputSchema,
+				_meta: {
+					...tool._meta,
+					contractVersion: ROOT_MCP_TOOL_CONTRACT_VERSION,
+					action: tool.operationType === "query" ? "read" : "write",
+					scope: "table",
+				},
+				...(tool.annotations ? { annotations: tool.annotations } : {}),
+			}));
+		const legacyResult: Record<string, unknown> = { tools };
+		const modernResult = withModernResult(
+			{
+				...legacyResult,
+				ttlMs: 300000,
+				cacheScope: audience ? "private" : "public",
+			},
+			this.getServerInfo(),
+		);
+		const entry = {
+			legacyResult,
+			legacyResultJson: JSON.stringify(legacyResult),
+			modernResultJson: JSON.stringify(modernResult),
+		};
+		this.toolsListCache.set(cacheKey, entry);
+		return entry;
+	}
+
+	private createCachedToolsListResponse(
+		id: string | number | undefined,
+		audience: McpToolAudience | undefined,
+		modern: boolean,
+	): Response {
+		const cached = this.getToolsListCacheEntry(audience);
+		const resultJson = modern
+			? cached.modernResultJson
+			: cached.legacyResultJson;
+		return new Response(this.serializeJsonRpcResult(id, resultJson), {
+			status: 200,
+			headers: {
+				"Content-Type": "application/json",
+				...(modern ? { "Cache-Control": "no-cache" } : {}),
+			},
+		});
+	}
+
+	private serializeJsonRpcResult(
+		id: string | number | undefined,
+		resultJson: string,
+	): string {
+		const serializedId =
+			id === undefined ? "" : `,"id":${JSON.stringify(id)}`;
+		return `{"jsonrpc":"2.0"${serializedId},"result":${resultJson}}`;
+	}
+
+	private invalidateToolsListCache(): void {
+		this.toolsListCache.clear();
+	}
+
+	private debugHotpath(...args: unknown[]): void {
+		if (this.debugHotpathEnabled) console.debug(...args);
 	}
 
 	/**
@@ -1683,11 +1755,11 @@ export class TableMcpServer {
 		await this.initialize();
 
 		// Check if this is a table-specific tool
-		console.log(`🔍 Looking for tool: ${name}`);
-		console.log(
+		this.debugHotpath(`🔍 Looking for tool: ${name}`);
+		this.debugHotpath(
 			`🔍 Available table tools: ${Array.from(this.tableTools.keys()).join(", ")}`,
 		);
-		console.log(`🔍 Tool found in table tools: ${this.tableTools.has(name)}`);
+		this.debugHotpath(`🔍 Tool found in table tools: ${this.tableTools.has(name)}`);
 
 		if (this.tableTools.has(name)) {
 			if (
@@ -1696,12 +1768,12 @@ export class TableMcpServer {
 			) {
 				return this.createErrorResponse(id, -32601, "Method not found");
 			}
-			console.log(`✅ Executing table-specific tool: ${name}`);
+			this.debugHotpath(`✅ Executing table-specific tool: ${name}`);
 			return await this.executeTableTool(id, name, args || {});
 		}
 
 		// Do NOT delegate to base MCP server - sub-table MCP should be isolated
-		console.log(`❌ Tool not found in table-specific tools: ${name}`);
+		this.debugHotpath(`❌ Tool not found in table-specific tools: ${name}`);
 		return this.createErrorResponse(
 			id,
 			-32601,
@@ -2170,13 +2242,13 @@ export class TableMcpServer {
 		try {
 			// Lazy initialization of SchemaDiscoveryService
 			if (!this.schemaDiscoveryService) {
-				console.log(
+				this.debugHotpath(
 					`Initializing SchemaDiscoveryService for table ${this.tableId}`,
 				);
 				const schema = await this.getGraphQLSchema();
 				if (schema) {
 					this.schemaDiscoveryService = new SchemaDiscoveryService(schema);
-					console.log(
+					this.debugHotpath(
 						`SchemaDiscoveryService initialized successfully for table ${this.tableId}`,
 					);
 				} else {
@@ -2550,7 +2622,8 @@ export class TableMcpServer {
 	 */
 	async refreshTableTemplates(): Promise<void> {
 		if (this.closed) throw new Error(`Table MCP server for ${this.tableId} is closed`);
-		console.log(`Refreshing templates for table ${this.tableId}`);
+		this.debugHotpath(`Refreshing templates for table ${this.tableId}`);
+		this.invalidateToolsListCache();
 		this.tableTools.clear();
 		await this.loadTableTemplates();
 	}
@@ -2561,6 +2634,7 @@ export class TableMcpServer {
 
 		this.closed = true;
 		this.closePromise = (async () => {
+			this.invalidateToolsListCache();
 			this.tableTools.clear();
 			this.schemaDiscoveryService = null;
 			this.tableInitialized = false;
@@ -2584,13 +2658,43 @@ export class TableMcpServer {
 		if (this.closed) return this.createClosedResponse();
 		try {
 			const body = await request.text();
-			const jsonRpcRequest = JSON.parse(body) as _McpRequest;
+			const jsonRpcRequest = JSON.parse(body) as TableMcpJsonRpcRequest;
+			return await this.handleParsedRequest(
+				jsonRpcRequest,
+				request.headers,
+				audience,
+			);
+		} catch (_error) {
+			const errorResponse = this.createErrorResponse(
+				null,
+				-32700,
+				"Parse error",
+			);
+			return new Response(JSON.stringify(errorResponse), {
+				status: 400,
+				headers: { "Content-Type": "application/json" },
+			});
+		}
+	}
 
+	/**
+	 * Request boundary for transports that have already parsed and validated the
+	 * JSON body. Keeping it separate avoids cloning a Request and parsing the
+	 * same payload twice in the table route while preserving handleRequest for
+	 * direct transports.
+	 */
+	async handleParsedRequest(
+		jsonRpcRequest: TableMcpJsonRpcRequest,
+		headers: Headers,
+		audience?: McpToolAudience,
+	): Promise<Response> {
+		if (this.closed) return this.createClosedResponse();
+		try {
 			const { method, id, params } = jsonRpcRequest;
-			if (isModernMcpRequest(jsonRpcRequest, request.headers)) {
+			if (isModernMcpRequest(jsonRpcRequest, headers)) {
 				const validationError = validateModernMcpRequest(
 					jsonRpcRequest,
-					request.headers,
+					headers,
 				);
 				if (validationError) {
 					return new Response(
@@ -2609,6 +2713,11 @@ export class TableMcpServer {
 					);
 				}
 
+				if (method === "tools/list") {
+					await this.initialize();
+					return this.createCachedToolsListResponse(id, audience, true);
+				}
+
 				let modernResult: McpResponse;
 				switch (method) {
 					case "server/discover":
@@ -2624,30 +2733,6 @@ export class TableMcpServer {
 							},
 						};
 						break;
-					case "tools/list": {
-						const listed = await this.handleToolsList(id, audience);
-						const listedResult = listed.result as { tools?: unknown[] } | undefined;
-						modernResult = {
-							...listed,
-							result: {
-								...listedResult,
-								tools: [...(listedResult?.tools ?? [])].sort((left, right) => {
-									const leftName =
-										typeof (left as { name?: unknown }).name === "string"
-											? (left as { name: string }).name
-											: "";
-									const rightName =
-										typeof (right as { name?: unknown }).name === "string"
-											? (right as { name: string }).name
-											: "";
-									return leftName.localeCompare(rightName);
-								}),
-								ttlMs: 300000,
-								cacheScope: audience ? "private" : "public",
-							},
-						};
-						break;
-					}
 					case "tools/call":
 						modernResult = await this.handleToolsCall(id, params, audience);
 						break;
@@ -2682,14 +2767,16 @@ export class TableMcpServer {
 				);
 			}
 
+			if (method === "tools/list") {
+				await this.initialize();
+				return this.createCachedToolsListResponse(id, audience, false);
+			}
+
 			let result: McpResponse;
 
 			switch (method) {
 				case "initialize":
 					result = await this.mcpServer.handleLegacyInitialize(id, params);
-					break;
-				case "tools/list":
-					result = await this.handleToolsList(id, audience);
 					break;
 				case "tools/call":
 					result = await this.handleToolsCall(id, params, audience);
@@ -2932,7 +3019,7 @@ export class TableMcpServer {
 				operationType: operationType as "query" | "mutation",
 			};
 
-			console.log(
+			this.debugHotpath(
 				`🔧 Executing GraphQL ${operationType} for tool ${tool.name}:`,
 				{
 					operation: operationType,

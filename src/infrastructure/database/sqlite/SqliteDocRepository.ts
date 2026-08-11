@@ -7,6 +7,7 @@ import type {
   IDocRepository,
 } from '@/domain/repositories/IDocRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 type SqliteParams = Array<string | number | boolean | null>
@@ -51,7 +52,7 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
           docData.updated_at.toISOString(),
         ])
 
-        console.log('New doc created with ID:', result.lastInsertRowid)
+        debugDatabase('doc created', () => ({ id: result.lastInsertRowid }))
       } catch (error) {
         console.error('Save doc error:', error)
         throw new DatabaseException(`Failed to save doc: ${error}`)

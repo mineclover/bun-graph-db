@@ -7,7 +7,7 @@
 
 import { readFile } from 'node:fs/promises'
 import { validateOpenApiProjection } from '@oa-sdk/openapi-projection-contract'
-import Ajv from 'ajv'
+import Ajv, { type ValidateFunction } from 'ajv'
 import {
   McpToolRegistry,
   type McpToolAction,
@@ -169,6 +169,12 @@ interface McpInitializeParams {
   }
 }
 
+interface RootToolsListCacheEntry {
+  legacyResult: Record<string, unknown>
+  legacyResultJson: string
+  modernResultJson: string
+}
+
 export class McpHttpServer {
   private toolRegistry: McpToolRegistry
   private graphqlExecutor: GraphQLOperationExecutor
@@ -179,6 +185,10 @@ export class McpHttpServer {
   private closed: boolean = false
   private protocolVersion: string = '2025-06-18'
   private ajv: Ajv
+  private validatorCache: WeakMap<object, ValidateFunction> = new WeakMap()
+  private toolsListCache: Map<string, RootToolsListCacheEntry> = new Map()
+  private readonly debugHotpathEnabled =
+    process.env.BUN_GRAPH_DB_MCP_DEBUG === '1' || process.env.BUN_GRAPH_DB_MCP_DEBUG === 'true'
 
   // Server capabilities according to MCP spec
   private capabilities = {
@@ -213,17 +223,18 @@ export class McpHttpServer {
     if (this.initializationPromise) return this.initializationPromise
 
     this.initializationPromise = (async () => {
-      console.log('Initializing MCP server...')
+      this.debugHotpath('Initializing MCP server...')
 
       // Initialize tools (contract + built-in tools)
       await this.toolRegistry.initialize()
       this.assertOpen()
+      this.toolsListCache.clear()
 
       const toolCount = (await this.toolRegistry.getAllTools()).length
-      console.log(`Loaded ${toolCount} MCP tools`)
+      this.debugHotpath(`Loaded ${toolCount} MCP tools`)
 
       this.initialized = true
-      console.log('MCP server initialized successfully')
+      this.debugHotpath('MCP server initialized successfully')
     })()
 
     try {
@@ -249,6 +260,8 @@ export class McpHttpServer {
       }
 
       this.initialized = false
+      this.toolsListCache.clear()
+      this.validatorCache = new WeakMap()
       this.ajv.removeSchema()
     })()
 
@@ -370,6 +383,10 @@ export class McpHttpServer {
         return await this.handleModernRequest(jsonRpcRequest, request.headers, audience)
       }
 
+      if (jsonRpcRequest.method === 'tools/list') {
+        return this.createCachedToolsListResponse(jsonRpcRequest.id, audience, false)
+      }
+
       // Route the request based on method
       const result = await this.handleMethod(jsonRpcRequest, audience)
 
@@ -405,6 +422,10 @@ export class McpHttpServer {
       })
     }
 
+    if (request.method === 'tools/list') {
+      return this.createCachedToolsListResponse(request.id, audience, true)
+    }
+
     let response: McpResponse
     switch (request.method) {
       case 'server/discover':
@@ -420,24 +441,6 @@ export class McpHttpServer {
           },
         }
         break
-      case 'tools/list': {
-        const listed = await this.handleToolsList(request.id, audience)
-        const result = listed.result as { tools?: unknown[] } | undefined
-        response = {
-          ...listed,
-          result: {
-            ...result,
-            tools: [...(result?.tools ?? [])].sort((left, right) => {
-              const leftName = typeof (left as { name?: unknown }).name === 'string' ? (left as { name: string }).name : ''
-              const rightName = typeof (right as { name?: unknown }).name === 'string' ? (right as { name: string }).name : ''
-              return leftName < rightName ? -1 : leftName > rightName ? 1 : 0
-            }),
-            ttlMs: 300000,
-            cacheScope: audience ? 'private' : 'public',
-          },
-        }
-        break
-      }
       case 'tools/call':
         response = await this.handleToolsCall(request.id, request.params as McpToolCallParams | undefined, audience)
         break
@@ -516,15 +519,59 @@ export class McpHttpServer {
   }
 
   private async handleToolsList(id: string | number | undefined, audience?: McpRequestAudience): Promise<McpResponse> {
-    const listedTools = this.toolRegistry.listTools(audience).tools
-
     return {
       jsonrpc: '2.0',
       id,
-      result: {
-        tools: listedTools,
-      },
+      result: this.getToolsListCacheEntry(audience).legacyResult,
     }
+  }
+
+  private getToolsListCacheEntry(audience?: McpRequestAudience): RootToolsListCacheEntry {
+    const cacheKey = audience?.role ?? 'public'
+    const cached = this.toolsListCache.get(cacheKey)
+    if (cached) return cached
+
+    // McpToolRegistry returns a deterministic ordering. Cache the projected
+    // list and its wire representations until the registry lifecycle changes.
+    const legacyResult: Record<string, unknown> = {
+      tools: this.toolRegistry.listTools(audience).tools,
+    }
+    const modernResult = withModernResult(
+      {
+        ...legacyResult,
+        ttlMs: 300000,
+        cacheScope: audience ? 'private' : 'public',
+      },
+      this.serverInfo,
+    )
+    const entry = {
+      legacyResult,
+      legacyResultJson: JSON.stringify(legacyResult),
+      modernResultJson: JSON.stringify(modernResult),
+    }
+    this.toolsListCache.set(cacheKey, entry)
+    return entry
+  }
+
+  private createCachedToolsListResponse(
+    id: string | number | undefined,
+    audience: McpRequestAudience | undefined,
+    modern: boolean,
+  ): Response {
+    const cached = this.getToolsListCacheEntry(audience)
+    const resultJson = modern ? cached.modernResultJson : cached.legacyResultJson
+    return new Response(this.serializeJsonRpcResult(id, resultJson), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+      },
+    })
+  }
+
+  private serializeJsonRpcResult(id: string | number | undefined, resultJson: string): string {
+    const serializedId = id === undefined ? '' : `,"id":${JSON.stringify(id)}`
+    return `{"jsonrpc":"2.0"${serializedId},"result":${resultJson}}`
   }
 
   private async handleToolsCall(
@@ -569,7 +616,7 @@ export class McpHttpServer {
 
       // Validate input against tool's input schema
       if (tool.inputSchema) {
-        const validate = this.ajv.compile(tool.inputSchema)
+        const validate = this.getOrCompileValidator(tool.inputSchema)
         const valid = validate(args || {})
 
         if (!valid) {
@@ -607,7 +654,7 @@ export class McpHttpServer {
 
       // Handle custom tools that require special processing
       if (tool.graphqlOperation?.operationType === 'custom') {
-        console.log(`Handling custom tool: ${name}`)
+        this.debugHotpath(`Handling custom tool: ${name}`)
         return await this.handleCustomTool(id, name, args || {}, audience)
       }
 
@@ -642,6 +689,15 @@ export class McpHttpServer {
         `Tool execution failed: ${error instanceof Error ? error.message : String(error)}`,
       )
     }
+  }
+
+  private getOrCompileValidator(schema: object): ValidateFunction {
+    const cached = this.validatorCache.get(schema)
+    if (cached) return cached
+
+    const validator = this.ajv.compile(schema)
+    this.validatorCache.set(schema, validator)
+    return validator
   }
 
   private async handleCustomTool(
@@ -1184,8 +1240,8 @@ export class McpHttpServer {
         )
       }
 
-      console.log(`🚀 Starting bulk template import: ${filePaths.length} files`)
-      console.log(`Options: overwrite=${overwriteExisting}, dryRun=${dryRun}, batch=${batchSize}`)
+      this.debugHotpath(`🚀 Starting bulk template import: ${filePaths.length} files`)
+      this.debugHotpath(`Options: overwrite=${overwriteExisting}, dryRun=${dryRun}, batch=${batchSize}`)
 
       const results = []
       let successful = 0
@@ -1196,7 +1252,7 @@ export class McpHttpServer {
       // Process files in parallel batches
       for (let i = 0; i < filePaths.length; i += batchSize) {
         const batch = filePaths.slice(i, i + batchSize)
-        console.log(`📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filePaths.length / batchSize)}`)
+        this.debugHotpath(`📦 Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(filePaths.length / batchSize)}`)
 
         const batchResults = await Promise.allSettled(
           batch.map((filePath) =>
@@ -1241,8 +1297,8 @@ export class McpHttpServer {
         duration,
       }
 
-      console.log(`✅ Bulk import completed in ${duration}ms`)
-      console.log(`📊 Results: ${successful} successful, ${failed} failed, ${skipped} skipped`)
+      this.debugHotpath(`✅ Bulk import completed in ${duration}ms`)
+      this.debugHotpath(`📊 Results: ${successful} successful, ${failed} failed, ${skipped} skipped`)
 
       return {
         jsonrpc: '2.0',
@@ -1286,7 +1342,7 @@ export class McpHttpServer {
       const filename = filePath.split('/').pop() || 'unknown'
       const identifier = filename.replace('_v1-0-0.json', '').replace('.json', '')
 
-      console.log(`📝 Processing: ${identifier}`)
+      this.debugHotpath(`📝 Processing: ${identifier}`)
 
       // Read and parse the template file
       const fileContent = await readFile(filePath, 'utf-8')
@@ -1330,13 +1386,13 @@ export class McpHttpServer {
       })
 
       if (importResult.success) {
-        console.log(`✅ ${identifier}: imported successfully`)
+        this.debugHotpath(`✅ ${identifier}: imported successfully`)
         return {
           identifier: templateData.template.identifier || identifier,
           success: true,
         }
       } else {
-        console.log(`❌ ${identifier}: ${importResult.error}`)
+        this.debugHotpath(`❌ ${identifier}: ${importResult.error}`)
         return {
           identifier: templateData.template.identifier || identifier,
           success: false,
@@ -1345,7 +1401,7 @@ export class McpHttpServer {
       }
     } catch (error) {
       const identifier = filePath.split('/').pop()?.replace('.json', '') || 'unknown'
-      console.log(`💥 ${identifier}: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      this.debugHotpath(`💥 ${identifier}: ${error instanceof Error ? error.message : 'Unknown error'}`)
 
       return {
         identifier,
@@ -1950,6 +2006,10 @@ export class McpHttpServer {
     if (this.closed) {
       throw new Error('MCP server is closed')
     }
+  }
+
+  private debugHotpath(...args: unknown[]): void {
+    if (this.debugHotpathEnabled) console.debug(...args)
   }
 
   private createClosedResponse(): Response {

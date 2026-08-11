@@ -137,7 +137,7 @@ export class TabularSyncConfigStore {
         `
           SELECT id, config_key, config_json, is_active, created_at, updated_at
           FROM tabular_sync_configs
-          ORDER BY updated_at DESC
+          ORDER BY updated_at DESC, id DESC
         `,
       )
       .all()

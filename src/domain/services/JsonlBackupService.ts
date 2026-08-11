@@ -7,8 +7,11 @@
  * - Line-by-line format for streaming
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
+import { createReadStream, existsSync, mkdirSync } from 'node:fs'
+import { open, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import { createInterface } from 'node:readline'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type {
   JsonlAttributeEntry,
@@ -67,8 +70,9 @@ export class JsonlBackupService {
       this.ensureDirectory(join(outputDir, 'tables'))
 
       // Get tables to export
-      const allTables = await this.tableRepository.findAll({ limit: 1000 })
-      const allTablesData = allTables.data || []
+      const allTablesData = await this.collectAllPages((offset, limit) =>
+        this.tableRepository.findAll({ limit, offset }),
+      )
       const tablesToExport = options.tableIds
         ? allTablesData.filter((t) => options.tableIds?.includes(t.id))
         : allTablesData
@@ -107,14 +111,17 @@ export class JsonlBackupService {
           totalBytes += relationsFile.sizeBytes
           relationsExported = relationsFile.lineCount
         } catch (error) {
-          warnings.push(`Failed to export relations: ${error}`)
+          errors.push(`Failed to export relations: ${error}`)
         }
       }
 
-      // Write manifest
-      const manifest = await this.writeManifest(outputDir, files, tablesToExport)
-      totalBytes += manifest.sizeBytes
-      files.push(manifest)
+      // The manifest is the commit marker. Never replace a last-known-good
+      // manifest for a partial snapshot.
+      if (errors.length === 0) {
+        const manifest = await this.writeManifest(outputDir, files, tablesToExport)
+        totalBytes += manifest.sizeBytes
+        files.push(manifest)
+      }
 
       this.logger.info('JSONL export completed', {
         tablesExported,
@@ -197,7 +204,7 @@ export class JsonlBackupService {
         }
       }
 
-      const manifest: JsonlBackupManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
+      const manifest: JsonlBackupManifest = JSON.parse(await readFile(manifestPath, 'utf-8'))
 
       // Dry run check
       if (options.dryRun) {
@@ -246,7 +253,7 @@ export class JsonlBackupService {
           const relResult = await this.importRelations(options.inputDir, options.conflictResolution)
           relationsImported = relResult.imported
         } catch (error) {
-          warnings.push(`Failed to import relations: ${error}`)
+          errors.push(`Failed to import relations: ${error}`)
         }
       }
 
@@ -301,14 +308,16 @@ export class JsonlBackupService {
     const lines: string[] = []
 
     for (const table of tables) {
-      const attributesResult = await this.attributeRepository.findByTableId(table.id, {
-        limit: 1000,
-      })
+      const attributes = await this.collectAllPages((offset, limit) =>
+        this.attributeRepository.findByTableId(table.id, { limit, offset }),
+      )
+      const attributeTypeIds = [...new Set(attributes.map((attribute) => attribute.getAttributeTypeId()))]
+      const attributeTypes = await this.attributeTypeRepository.findByIds(attributeTypeIds)
+      const attributeTypesById = new Map(attributeTypes.map((attributeType) => [attributeType.getId(), attributeType]))
 
-      const attributeEntries: JsonlAttributeEntry[] = []
-      for (const attr of attributesResult.data || []) {
-        const attrType = await this.attributeTypeRepository.findById(attr.getAttributeTypeId())
-        attributeEntries.push({
+      const attributeEntries: JsonlAttributeEntry[] = attributes.map((attr) => {
+        const attrType = attributeTypesById.get(attr.getAttributeTypeId())
+        return {
           id: attr.getId(),
           identifier: attr.getIdentifier(),
           name: attr.getName(),
@@ -316,8 +325,8 @@ export class JsonlBackupService {
           attributeType: attrType?.getIdentifier() || 'unknown',
           description: attr.getDescription() || undefined,
           isRequired: attr.getIsRequired(),
-        })
-      }
+        }
+      })
 
       const schemaEntry: JsonlSchemaEntry = {
         type: 'table',
@@ -333,7 +342,7 @@ export class JsonlBackupService {
     }
 
     const content = lines.join('\n')
-    writeFileSync(schemaPath, content, 'utf-8')
+    await this.writeFileAtomically(schemaPath, content)
 
     return {
       path: schemaPath,
@@ -349,47 +358,70 @@ export class JsonlBackupService {
   ): Promise<JsonlExportedFile> {
     const tableDir = join(outputDir, 'tables')
     const filePath = join(tableDir, `${table.identifier}.jsonl`)
-    const lines: string[] = []
+    const attributes = await this.collectAllPages((offset, limit) =>
+      this.attributeRepository.findByTableId(table.id, { limit, offset }),
+    )
+    const attributeMap = new Map(attributes.map((attribute) => [attribute.getId(), attribute.getIdentifier()]))
+    const temporaryPath = this.temporaryPath(filePath)
+    const file = await open(temporaryPath, 'wx')
+    let lineCount = 0
+    let sizeBytes = 0
+    let offset = 0
+    const pageSize = 500
+    let fileClosed = false
+    let published = false
 
-    // Get all nodes for this table
-    const nodesResult = await this.nodeRepository.findByTableId(table.id, { limit: 100000 })
+    try {
+      while (true) {
+        const page = await this.nodeRepository.findByTableId(table.id, { limit: pageSize, offset })
+        const nodes = page.data ?? page.nodes ?? page.items ?? []
+        if (nodes.length === 0) break
 
-    // Get attributes for mapping
-    const attributesResult = await this.attributeRepository.findByTableId(table.id, {
-      limit: 1000,
-    })
-    const attributeMap = new Map((attributesResult.data || []).map((a) => [a.getId(), a.getIdentifier()]))
-
-    for (const node of nodesResult.data || []) {
-      const nodeEntry: JsonlNodeEntry = {
-        _id: node.getId(),
-        _title: node.getTitle() || '',
-        _content: node.getContent(),
-        _createdAt: node.getCreatedAt().toISOString(),
-        _updatedAt: node.getUpdatedAt().toISOString(),
-      }
-
-      // Get node attributes
-      const nodeAttrs = await this.nodeAttributeRepository.findByNodeId(node.getId())
-      for (const attr of nodeAttrs || []) {
-        const attrIdentifier = attributeMap.get(attr.getAttributeId())
-        if (attrIdentifier) {
-          nodeEntry[attrIdentifier] = attr.getValue()
+        const nodeAttributes = await this.nodeAttributeRepository.findByNodeIds(nodes.map((node) => node.getId()))
+        const attributesByNodeId = new Map<string, typeof nodeAttributes>()
+        for (const attribute of nodeAttributes) {
+          const nodeId = attribute.getNodeId()
+          const entries = attributesByNodeId.get(nodeId) ?? []
+          entries.push(attribute)
+          attributesByNodeId.set(nodeId, entries)
         }
+
+        const lines = nodes.map((node) => {
+          const nodeEntry: JsonlNodeEntry = {
+            _id: node.getId(),
+            _title: node.getTitle() || '',
+            _content: node.getContent(),
+            _createdAt: node.getCreatedAt().toISOString(),
+            _updatedAt: node.getUpdatedAt().toISOString(),
+          }
+          for (const attribute of attributesByNodeId.get(node.getId()) ?? []) {
+            const identifier = attributeMap.get(attribute.getAttributeId())
+            if (identifier) nodeEntry[identifier] = attribute.getValue()
+          }
+          return JSON.stringify(nodeEntry)
+        })
+        const chunk = `${lineCount > 0 ? '\n' : ''}${lines.join('\n')}`
+        await file.write(chunk)
+        lineCount += lines.length
+        sizeBytes += Buffer.byteLength(chunk, 'utf-8')
+        offset += nodes.length
+        if (nodes.length < pageSize) break
       }
-
-      lines.push(JSON.stringify(nodeEntry))
+      await file.close()
+      fileClosed = true
+      await rename(temporaryPath, filePath)
+      published = true
+    } finally {
+      if (!fileClosed) await file.close().catch(() => undefined)
+      if (!published) await rm(temporaryPath, { force: true }).catch(() => undefined)
     }
-
-    const content = lines.join('\n')
-    writeFileSync(filePath, content, 'utf-8')
 
     return {
       path: filePath,
       type: 'table',
       tableIdentifier: table.identifier,
-      lineCount: lines.length,
-      sizeBytes: Buffer.byteLength(content, 'utf-8'),
+      lineCount,
+      sizeBytes,
     }
   }
 
@@ -397,9 +429,11 @@ export class JsonlBackupService {
     const filePath = join(outputDir, 'relation-types.jsonl')
     const lines: string[] = []
 
-    const relationTypes = await this.relationTypeRepository.findAll({ limit: 1000 })
+    const relationTypes = await this.collectAllPages((offset, limit) =>
+      this.relationTypeRepository.findAll({ limit, offset }),
+    )
 
-    for (const rt of relationTypes.data || []) {
+    for (const rt of relationTypes) {
       const entry: JsonlRelationTypeEntry = {
         id: rt.getId(),
         identifier: rt.getIdentifier(),
@@ -410,7 +444,7 @@ export class JsonlBackupService {
     }
 
     const content = lines.join('\n')
-    writeFileSync(filePath, content, 'utf-8')
+    await this.writeFileAtomically(filePath, content)
 
     return {
       path: filePath,
@@ -422,36 +456,58 @@ export class JsonlBackupService {
 
   private async exportRelations(outputDir: string): Promise<JsonlExportedFile> {
     const filePath = join(outputDir, 'relations.jsonl')
-    const lines: string[] = []
+    const relationTypes = await this.collectAllPages((offset, limit) =>
+      this.relationTypeRepository.findAll({ limit, offset }),
+    )
+    const relationTypesById = new Map(relationTypes.map((relationType) => [relationType.getId(), relationType.getIdentifier()]))
+    const temporaryPath = this.temporaryPath(filePath)
+    const file = await open(temporaryPath, 'wx')
+    let lineCount = 0
+    let sizeBytes = 0
+    let offset = 0
+    const pageSize = 1000
+    let fileClosed = false
+    let published = false
 
-    const relations = await this.nodeRelationRepository.findAll({ limit: 100000 })
-
-    // Build relation type map
-    const relationTypes = await this.relationTypeRepository.findAll({ limit: 1000 })
-    const rtMap = new Map((relationTypes.data || []).map((rt) => [rt.getId(), rt.getIdentifier()]))
-
-    for (const rel of relations.data || []) {
-      const entry: JsonlRelationEntry = {
-        id: rel.getId(),
-        fromNodeId: rel.getSourceNodeId(),
-        toNodeId: rel.getTargetNodeId(),
-        relationTypeId: rel.getRelationTypeId(),
-        relationType: rtMap.get(rel.getRelationTypeId()) || 'unknown',
-        strength: rel.getStrength(),
-        properties: rel.getProperties() || undefined,
-        createdAt: rel.getCreatedAt().toISOString(),
+    try {
+      while (true) {
+        const page = await this.nodeRelationRepository.findAll({ limit: pageSize, offset })
+        const relations = page.data ?? page.nodes ?? page.items ?? []
+        if (relations.length === 0) break
+        const lines = relations.map((relation) => {
+          const entry: JsonlRelationEntry = {
+            id: relation.getId(),
+            fromNodeId: relation.getSourceNodeId(),
+            toNodeId: relation.getTargetNodeId(),
+            relationTypeId: relation.getRelationTypeId(),
+            relationType: relationTypesById.get(relation.getRelationTypeId()) || 'unknown',
+            strength: relation.getStrength(),
+            properties: relation.getProperties() || undefined,
+            createdAt: relation.getCreatedAt().toISOString(),
+          }
+          return JSON.stringify(entry)
+        })
+        const chunk = `${lineCount > 0 ? '\n' : ''}${lines.join('\n')}`
+        await file.write(chunk)
+        lineCount += lines.length
+        sizeBytes += Buffer.byteLength(chunk, 'utf-8')
+        offset += relations.length
+        if (relations.length < pageSize) break
       }
-      lines.push(JSON.stringify(entry))
+      await file.close()
+      fileClosed = true
+      await rename(temporaryPath, filePath)
+      published = true
+    } finally {
+      if (!fileClosed) await file.close().catch(() => undefined)
+      if (!published) await rm(temporaryPath, { force: true }).catch(() => undefined)
     }
-
-    const content = lines.join('\n')
-    writeFileSync(filePath, content, 'utf-8')
 
     return {
       path: filePath,
       type: 'relations',
-      lineCount: lines.length,
-      sizeBytes: Buffer.byteLength(content, 'utf-8'),
+      lineCount,
+      sizeBytes,
     }
   }
 
@@ -483,7 +539,7 @@ export class JsonlBackupService {
     }
 
     const content = JSON.stringify(manifest, null, 2)
-    writeFileSync(manifestPath, content, 'utf-8')
+    await this.writeFileAtomically(manifestPath, content)
 
     return {
       path: manifestPath,
@@ -508,11 +564,7 @@ export class JsonlBackupService {
       return { tablesCreated: 0, warnings }
     }
 
-    const content = readFileSync(schemaPath, 'utf-8')
-    const lines = content.split('\n').filter((l) => l.trim())
-
-    for (const line of lines) {
-      const entry: JsonlSchemaEntry = JSON.parse(line)
+    for await (const entry of this.readJsonLines<JsonlSchemaEntry>(schemaPath)) {
 
       // Check if table exists
       const existingTable = await this.tableRepository.findByIdentifier(entry.identifier)
@@ -549,11 +601,7 @@ export class JsonlBackupService {
       throw new Error(`Table ${tableIdentifier} not found`)
     }
 
-    const content = readFileSync(filePath, 'utf-8')
-    const lines = content.split('\n').filter((l) => l.trim())
-
-    for (const line of lines) {
-      const entry: JsonlNodeEntry = JSON.parse(line)
+    for await (const entry of this.readJsonLines<JsonlNodeEntry>(filePath)) {
 
       // Check if node with same content exists
       const existingNode = await this.nodeRepository.findByTableIdAndContent(table.id, entry._content || '')
@@ -596,16 +644,66 @@ export class JsonlBackupService {
       return { imported: 0 }
     }
 
-    const content = readFileSync(filePath, 'utf-8')
-    const lines = content.split('\n').filter((l) => l.trim())
-
     // For now, just count - full implementation needs CreateRelation use case
-    imported = lines.length
+    for await (const _entry of this.readJsonLines<JsonlRelationEntry>(filePath)) imported++
 
     return { imported }
   }
 
   // ===== Helper Methods =====
+
+  private async collectAllPages<T>(
+    loadPage: (offset: number, limit: number) => Promise<{
+      data?: T[]
+      nodes?: T[]
+      items?: T[]
+      total?: number
+      totalCount?: number
+    }>,
+    pageSize = 500,
+  ): Promise<T[]> {
+    const collected: T[] = []
+    let offset = 0
+
+    while (true) {
+      const page = await loadPage(offset, pageSize)
+      const items = page.data ?? page.nodes ?? page.items ?? []
+      if (items.length === 0) break
+      collected.push(...items)
+      offset += items.length
+      const total = page.total ?? page.totalCount
+      if (items.length < pageSize || (total !== undefined && offset >= total)) break
+    }
+
+    return collected
+  }
+
+  private async *readJsonLines<T>(filePath: string): AsyncGenerator<T> {
+    const input = createReadStream(filePath, { encoding: 'utf-8' })
+    const lines = createInterface({ input, crlfDelay: Number.POSITIVE_INFINITY })
+    try {
+      for await (const line of lines) {
+        if (line.trim()) yield JSON.parse(line) as T
+      }
+    } finally {
+      lines.close()
+      input.destroy()
+    }
+  }
+
+  private async writeFileAtomically(filePath: string, content: string): Promise<void> {
+    const temporaryPath = this.temporaryPath(filePath)
+    try {
+      await writeFile(temporaryPath, content, { encoding: 'utf-8', flag: 'wx' })
+      await rename(temporaryPath, filePath)
+    } finally {
+      await rm(temporaryPath, { force: true }).catch(() => undefined)
+    }
+  }
+
+  private temporaryPath(filePath: string): string {
+    return `${filePath}.${process.pid}.${randomUUID()}.tmp`
+  }
 
   private ensureDirectory(dir: string): void {
     if (!existsSync(dir)) {

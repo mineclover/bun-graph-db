@@ -19,6 +19,7 @@ export interface HttpControllerRequest<TParams extends object = Record<string, s
 export interface HttpControllerResponse {
   status(code: number): this
   type(contentType: string): this
+  setHeader?(name: string, value: string): this
   json(data: unknown): this
   send(data: unknown): this
 }
@@ -55,6 +56,7 @@ export async function createBunControllerContext(request: Request, params: Recor
   let responseData: unknown
   let statusCode = 200
   let contentType = 'application/json'
+  const responseHeaders = new Headers()
 
   const response: HttpControllerResponse = {
     status(code) {
@@ -63,6 +65,10 @@ export async function createBunControllerContext(request: Request, params: Recor
     },
     type(nextContentType) {
       contentType = nextContentType
+      return this
+    },
+    setHeader(name, value) {
+      responseHeaders.set(name, value)
       return this
     },
     json(data) {
@@ -88,9 +94,12 @@ export async function createBunControllerContext(request: Request, params: Recor
     response,
     toResponse: () => {
       const responseBody = typeof responseData === 'string' ? responseData : JSON.stringify(responseData)
-      return new Response(responseBody, {
+      const bodyForbidden = method === 'HEAD' || statusCode === 204 || statusCode === 205 || statusCode === 304
+      const headers = new Headers(responseHeaders)
+      if (!bodyForbidden) headers.set('Content-Type', contentType)
+      return new Response(bodyForbidden ? null : responseBody, {
         status: statusCode,
-        headers: { 'Content-Type': contentType },
+        headers,
       })
     },
   }

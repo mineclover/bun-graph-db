@@ -3,6 +3,7 @@ import type { NodeId, PaginatedResult, PaginationOptions, TableId } from '@/core
 import { Node } from '@/domain/entities/Node.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { stringifySafeJson, type SafeJsonValue } from '@/shared/utils/safeJson.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
@@ -48,7 +49,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
           nodeData.updated_at,
         ])
 
-        console.log('New node created with ID:', result.lastInsertRowid)
+        debugDatabase('node created', () => ({ id: result.lastInsertRowid }))
       } catch (error) {
         console.error('Save error:', error)
         throw new DatabaseException(`Failed to save node: ${error}`)
@@ -100,7 +101,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
       SELECT id, table_id, content, title, description, metadata, created_at, updated_at
       FROM nodes
       WHERE table_id = ?
-      ORDER BY created_at DESC
+      ORDER BY created_at DESC, id ASC
       LIMIT ? OFFSET ?
     `
 
@@ -133,7 +134,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
     const dataQuery = `
       SELECT id, table_id, content, title, description, metadata, created_at, updated_at
       FROM nodes
-      ORDER BY created_at DESC
+      ORDER BY created_at DESC, id ASC
       LIMIT ? OFFSET ?
     `
 
@@ -241,7 +242,7 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
       SELECT id, table_id, content, title, description, metadata, created_at, updated_at
       FROM nodes
       WHERE table_id = ? AND (content LIKE ? OR title LIKE ? OR description LIKE ?)
-      ORDER BY created_at DESC
+      ORDER BY created_at DESC, id ASC
       LIMIT ? OFFSET ?
     `
 

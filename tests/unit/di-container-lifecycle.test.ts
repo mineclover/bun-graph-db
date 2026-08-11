@@ -33,4 +33,19 @@ describe('DIContainer lifecycle', () => {
     await parent.dispose()
     expect(calls).toEqual(['parent'])
   })
+
+  test('prefers an explicit graceful close over synchronous disposal', async () => {
+    const container = new DIContainer()
+    const token = Symbol('dual-lifecycle-resource')
+    const calls: string[] = []
+
+    container.registerInstance(token, {
+      close: () => calls.push('close'),
+      [Symbol.dispose]: () => calls.push('strict-dispose'),
+    })
+
+    await container.dispose()
+
+    expect(calls).toEqual(['close'])
+  })
 })

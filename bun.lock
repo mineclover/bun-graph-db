@@ -21,7 +21,7 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
-        "@biomejs/biome": "^2.5.7",
+        "@biomejs/biome": "2.5.7",
         "@graphql-codegen/cli": "^7.2.0",
         "@graphql-codegen/introspection": "^6.1.0",
         "@graphql-codegen/typescript": "^6.1.0",
@@ -34,7 +34,7 @@
         "@types/node": "^26.2.0",
         "jest": "^30.4.2",
         "rimraf": "^6.1.3",
-        "typescript": "^7.0.2",
+        "typescript": "7.0.2",
       },
     },
   },

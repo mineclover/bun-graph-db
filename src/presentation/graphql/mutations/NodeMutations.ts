@@ -340,7 +340,7 @@ export class NodeMutations extends BaseResolver {
         'createNode',
       )
 
-      this.logger.info('Executing mutation: createNode', { input: args.input })
+      this.logger.debug('Executing mutation: createNode', { input: args.input })
 
       // Fallback implementation when CreateNodeUseCase is not available
       if (!this.createNodeUseCase) {
@@ -381,7 +381,10 @@ export class NodeMutations extends BaseResolver {
         const { fromEntity: nodeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
         // Return the expected GraphQL structure
-        this.tabularSyncHook?.notifyByTableId(args.input.tableId)
+        this.tabularSyncHook?.notifyByTableId(
+          args.input.tableId,
+          String(savedNode.getId()),
+        )
         return {
           success: true,
           node: nodeFromEntity(savedNode),
@@ -417,7 +420,7 @@ export class NodeMutations extends BaseResolver {
         attributes: Object.keys(normalizedAttributes).length > 0 ? normalizedAttributes : undefined,
       })
 
-      this.tabularSyncHook?.notifyByTableId(args.input.tableId)
+      this.tabularSyncHook?.notifyByTableId(args.input.tableId, result.node.id)
 
       return {
         success: true,
@@ -479,7 +482,10 @@ export class NodeMutations extends BaseResolver {
           attributes: normalizedAttributes,
         })
 
-        this.tabularSyncHook?.notifyByTableId(result.node.tableId)
+        this.tabularSyncHook?.notifyByTableId(
+          result.node.tableId,
+          result.node.id,
+        )
 
         return {
           success: true,
@@ -511,7 +517,10 @@ export class NodeMutations extends BaseResolver {
       // Import the NodeDto for proper formatting
       const { fromEntity: nodeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
-      this.tabularSyncHook?.notifyByTableId(existingNode.getTableId())
+      this.tabularSyncHook?.notifyByTableId(
+        existingNode.getTableId(),
+        String(nodeId),
+      )
 
       return {
         success: true,
@@ -554,7 +563,10 @@ export class NodeMutations extends BaseResolver {
       }
 
       await this.nodeRepository.delete(nodeId as string)
-      this.tabularSyncHook?.notifyByTableId(existingNode.getTableId())
+      this.tabularSyncHook?.notifyByTableId(
+        existingNode.getTableId(),
+        String(nodeId),
+      )
 
       return {
         success: true,
@@ -620,7 +632,10 @@ export class NodeMutations extends BaseResolver {
 
         const node = await this.nodeRepository.findById(args.input.nodeId)
         if (node) {
-          this.tabularSyncHook?.notifyByTableId(node.getTableId())
+          this.tabularSyncHook?.notifyByTableId(
+            node.getTableId(),
+            args.input.nodeId,
+          )
         }
 
         // Transform domain entity to DTO
@@ -702,7 +717,7 @@ export class NodeMutations extends BaseResolver {
 
       const node = await this.nodeRepository.findById(args.nodeId)
       if (node) {
-        this.tabularSyncHook?.notifyByTableId(node.getTableId())
+        this.tabularSyncHook?.notifyByTableId(node.getTableId(), args.nodeId)
       }
 
       return {
@@ -770,7 +785,7 @@ export class NodeMutations extends BaseResolver {
         const result = await this.nodeAttributeRepository.setNodeAttribute(args.nodeId, args.attributeId, args.value)
         const node = await this.nodeRepository.findById(args.nodeId)
         if (node) {
-          this.tabularSyncHook?.notifyByTableId(node.getTableId())
+          this.tabularSyncHook?.notifyByTableId(node.getTableId(), args.nodeId)
         }
 
         return {
@@ -786,7 +801,7 @@ export class NodeMutations extends BaseResolver {
       await this.nodeAttributeRepository.update(existingNodeAttribute)
       const node = await this.nodeRepository.findById(args.nodeId)
       if (node) {
-        this.tabularSyncHook?.notifyByTableId(node.getTableId())
+        this.tabularSyncHook?.notifyByTableId(node.getTableId(), args.nodeId)
       }
 
       return {
@@ -989,7 +1004,10 @@ export class NodeMutations extends BaseResolver {
         const savedAttributes = await this.nodeAttributeRepository.findByNodeId(result.node.id)
         const { nodeAttributeFromEntity } = await import('@/application/dtos/NodeDto.js')
 
-        this.tabularSyncHook?.notifyByTableId(args.input.tableId)
+        this.tabularSyncHook?.notifyByTableId(
+          args.input.tableId,
+          result.node.id,
+        )
 
         return {
           success: true,

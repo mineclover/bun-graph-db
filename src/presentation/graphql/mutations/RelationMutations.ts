@@ -133,7 +133,7 @@ export class RelationMutations extends BaseResolver {
         throw new ValidationException('Table ID and relation type ID are required')
       }
 
-      this.logger.info('Executing mutation: createRelation', { input: args.input })
+      this.logger.debug('Executing mutation: createRelation', { input: args.input })
 
       const result = await this.createRelationUseCase.execute({
         tableId: resolvedTableId,
@@ -323,27 +323,34 @@ export class RelationMutations extends BaseResolver {
     },
   ) {
     const results: Array<{ relation: Record<string, unknown> | null; errors: string[] }> = []
+    const relationTypeIds = new Map<string, string>()
     let totalCreated = 0
     let totalFailed = 0
 
     for (const relationInput of args.relations || []) {
       try {
         if (relationInput.relationshipType && !relationInput.relationTypeId) {
-          let relationType = await this.relationTypeRepository.findByIdentifier(relationInput.relationshipType)
-          if (!relationType) {
-            try {
-              const createdRelationType = await this.createRelationTypeUseCase.execute({
-                identifier: relationInput.relationshipType,
-                description: `${relationInput.relationshipType} relation`,
-                category: relationInput.relationshipType,
-              })
-              relationType = await this.relationTypeRepository.findById(createdRelationType.relationType.id)
-            } catch {
-              relationType = await this.relationTypeRepository.findByIdentifier(relationInput.relationshipType)
+          let relationTypeId = relationTypeIds.get(relationInput.relationshipType)
+          if (!relationTypeId) {
+            let relationType = await this.relationTypeRepository.findByIdentifier(relationInput.relationshipType)
+            if (!relationType) {
+              try {
+                const createdRelationType = await this.createRelationTypeUseCase.execute({
+                  identifier: relationInput.relationshipType,
+                  description: `${relationInput.relationshipType} relation`,
+                  category: relationInput.relationshipType,
+                })
+                relationType = await this.relationTypeRepository.findById(createdRelationType.relationType.id)
+              } catch {
+                relationType = await this.relationTypeRepository.findByIdentifier(relationInput.relationshipType)
+              }
             }
+
+            relationTypeId = relationType?.getId()
+            if (relationTypeId) relationTypeIds.set(relationInput.relationshipType, relationTypeId)
           }
 
-          relationInput.relationTypeId = relationType?.getId()
+          relationInput.relationTypeId = relationTypeId
         }
 
         const result = await this.createRelation(_, { input: relationInput })

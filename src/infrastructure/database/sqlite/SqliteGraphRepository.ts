@@ -9,6 +9,10 @@ import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 type SqliteParams = Array<string | number | boolean | null>
 
+const MAX_PATH_RESULTS = 100
+const MAX_DEPENDENCY_DEPTH = 10
+const MAX_DEPENDENCY_RESULTS = 100
+
 interface RelatedNodeRow {
   node_id: string
   node_table_id: string
@@ -39,6 +43,12 @@ interface DependencyResult {
   relationPath: string[]
 }
 
+interface DependencyEdgeRow {
+  source_node_id: string
+  target_node_id: string
+  relation_identifier: string
+}
+
 interface RelatedNodeSearchResult {
   node: Node
   attributes: Record<string, unknown>
@@ -66,7 +76,6 @@ export class SqliteGraphRepository implements IGraphRepository {
 
       // Process results
       const nodeMap = new Map<string, RelatedNodeSearchResult>()
-      const relations = new Set<string>()
 
       for (const row of rows) {
         // Add node if not already present
@@ -96,29 +105,26 @@ export class SqliteGraphRepository implements IGraphRepository {
           nodeData.attributes[row.attribute_identifier] = this.parseAttributeValue(row.attribute_value)
         }
 
-        // Add relation if present
-        if (row.source_node_id && row.target_node_id && row.relation_type_id) {
-          const relationKey = `${row.source_node_id}->${row.target_node_id}:${row.relation_type_id}`
-          if (!relations.has(relationKey)) {
-            relations.add(relationKey)
-          }
+        // The SQL order makes the first matching relation deterministic. Keep
+        // it while the rows are already being grouped instead of rescanning all
+        // joined rows once per node.
+        if (
+          nodeData.sourceNodeId === undefined &&
+          row.source_node_id &&
+          row.target_node_id &&
+          row.relation_type_id
+        ) {
+          nodeData.sourceNodeId = row.source_node_id
+          nodeData.targetNodeId = row.target_node_id
+          nodeData.relationTypeId = row.relation_type_id
+          nodeData.properties = row.relation_properties
+            ? (JSON.parse(row.relation_properties) as Record<string, SafeJsonValue>)
+            : undefined
+          nodeData.strength = row.relation_strength ?? undefined
         }
       }
 
-      const data = Array.from(nodeMap.values()).map((item) => {
-        const relationRow = rows.find((r) => r.node_id === item.node.getId())
-
-        return {
-          ...item,
-          sourceNodeId: relationRow?.source_node_id ?? undefined,
-          targetNodeId: relationRow?.target_node_id ?? undefined,
-          relationTypeId: relationRow?.relation_type_id ?? undefined,
-          properties: relationRow?.relation_properties
-            ? (JSON.parse(relationRow.relation_properties) as Record<string, SafeJsonValue>)
-            : undefined,
-          strength: relationRow?.relation_strength ?? undefined,
-        }
-      })
+      const data = Array.from(nodeMap.values())
 
       const limit = graphQuery.limit || 10
       const offset = graphQuery.offset || 0
@@ -179,7 +185,11 @@ export class SqliteGraphRepository implements IGraphRepository {
           JOIN node_relations nr ON pf.current_node = nr.source_node_id
           JOIN relation_types rt ON nr.relation_type_id = rt.id
           WHERE pf.depth < ?
-            AND json_extract(pf.path, '$[last]') != nr.target_node_id
+            AND NOT EXISTS (
+              SELECT 1
+              FROM json_each(pf.path) AS visited
+              WHERE CAST(visited.value AS TEXT) = CAST(nr.target_node_id AS TEXT)
+            )
             ${relationFilter}
         )
         SELECT 
@@ -190,7 +200,7 @@ export class SqliteGraphRepository implements IGraphRepository {
         FROM path_finder pf
         WHERE pf.current_node IN (${endNodeIds.map(() => '?').join(',')})
         ORDER BY pf.depth ASC
-        LIMIT 100
+        LIMIT ${MAX_PATH_RESULTS}
       `
 
       const params = [tableId, ...startNodeIds, maxDepth, ...(relationTypes || []), ...endNodeIds]
@@ -225,85 +235,69 @@ export class SqliteGraphRepository implements IGraphRepository {
     relationTypes?: string[],
   ): Promise<DependencyResult[]> {
     try {
-      const relationFilter =
-        relationTypes && relationTypes.length > 0
+      const visited = new Set([String(nodeId)])
+      let frontier = new Map<string, string[]>([[String(nodeId), []]])
+      const results: DependencyResult[] = []
+
+      for (let level = 1; level <= MAX_DEPENDENCY_DEPTH && frontier.size > 0; level += 1) {
+        const frontierIds = [...frontier.keys()]
+        const placeholders = frontierIds.map(() => '?').join(',')
+        const edgeCondition = direction === RelationDirection.OUTGOING
+          ? `nr.source_node_id IN (${placeholders})`
+          : direction === RelationDirection.INCOMING
+            ? `nr.target_node_id IN (${placeholders})`
+            : `(nr.source_node_id IN (${placeholders}) OR nr.target_node_id IN (${placeholders}))`
+        const relationFilter = relationTypes && relationTypes.length > 0
           ? `AND rt.identifier IN (${relationTypes.map(() => '?').join(',')})`
           : ''
+        const edgeParams: SqliteParams = [tableId, tableId, ...frontierIds]
+        if (direction === RelationDirection.BOTH) edgeParams.push(...frontierIds)
+        edgeParams.push(...(relationTypes ?? []))
 
-      // Build query based on direction
-      const directionCondition =
-        direction === RelationDirection.OUTGOING
-          ? 'nr.source_node_id = ?'
-          : direction === RelationDirection.INCOMING
-            ? 'nr.target_node_id = ?'
-            : '(nr.source_node_id = ? OR nr.target_node_id = ?)'
-
-      const query = `
-        WITH RECURSIVE dependency_chain AS (
-          -- Base case: starting node
-          SELECT 
-            ? as node_id,
-            0 as level,
-            json_array() as relation_path
-          
-          UNION ALL
-          
-          -- Recursive case: follow dependencies
-          SELECT 
-            ${
-              direction === RelationDirection.OUTGOING
-                ? 'nr.target_node_id'
-                : direction === RelationDirection.INCOMING
-                  ? 'nr.source_node_id'
-                  : 'CASE WHEN nr.source_node_id = dc.node_id THEN nr.target_node_id ELSE nr.source_node_id END'
-            } as node_id,
-            dc.level + 1,
-            json_insert(dc.relation_path, '$[' || dc.level || ']', rt.identifier) as relation_path
-          FROM dependency_chain dc
-          JOIN node_relations nr ON ${directionCondition.replace('?', 'dc.node_id')}
-          JOIN relation_types rt ON nr.relation_type_id = rt.id
-          JOIN nodes n ON ${
-            direction === RelationDirection.OUTGOING
-              ? 'nr.target_node_id'
-              : direction === RelationDirection.INCOMING
-                ? 'nr.source_node_id'
-                : 'CASE WHEN nr.source_node_id = dc.node_id THEN nr.target_node_id ELSE nr.source_node_id END'
-          } = n.id
-          WHERE n.table_id = ?
-            AND dc.level < 10
+        const edges = this.db.query<DependencyEdgeRow, SqliteParams>(`
+          SELECT CAST(nr.source_node_id AS TEXT) AS source_node_id,
+                 CAST(nr.target_node_id AS TEXT) AS target_node_id,
+                 rt.identifier AS relation_identifier
+          FROM node_relations nr
+          JOIN relation_types rt ON rt.id = nr.relation_type_id
+          JOIN nodes source_node ON source_node.id = nr.source_node_id
+          JOIN nodes target_node ON target_node.id = nr.target_node_id
+          WHERE source_node.table_id = ?
+            AND target_node.table_id = ?
+            AND ${edgeCondition}
             ${relationFilter}
-        )
-        SELECT DISTINCT
-          node_id as nodeId,
-          level,
-          relation_path as relation_path_json
-        FROM dependency_chain
-        WHERE level > 0
-        ORDER BY level ASC, node_id ASC
-        LIMIT 100
-      `
+          ORDER BY nr.source_node_id ASC, nr.target_node_id ASC, rt.identifier ASC
+        `).all(...edgeParams)
 
-      const params =
-        direction === RelationDirection.BOTH
-          ? [nodeId, nodeId, nodeId, tableId, ...(relationTypes || [])]
-          : [nodeId, nodeId, tableId, ...(relationTypes || [])]
+        const nextFrontier = new Map<string, string[]>()
+        for (const edge of edges) {
+          const currentNodeIds = direction === RelationDirection.OUTGOING
+            ? [edge.source_node_id]
+            : direction === RelationDirection.INCOMING
+              ? [edge.target_node_id]
+              : [edge.source_node_id, edge.target_node_id]
 
-      const rows = this.db
-        .query<
-          {
-            nodeId: string
-            level: number
-            relation_path_json: string
-          },
-          SqliteParams
-        >(query)
-        .all(...params)
+          for (const currentNodeId of currentNodeIds) {
+            const currentPath = frontier.get(currentNodeId)
+            if (!currentPath) continue
+            const nextNodeId = currentNodeId === edge.source_node_id
+              ? edge.target_node_id
+              : edge.source_node_id
+            if (visited.has(nextNodeId)) continue
+            visited.add(nextNodeId)
+            nextFrontier.set(nextNodeId, [...currentPath, edge.relation_identifier])
+          }
+        }
 
-      return rows.map((row) => ({
-        nodeId: row.nodeId,
-        level: row.level,
-        relationPath: JSON.parse(row.relation_path_json),
-      }))
+        const orderedNext = [...nextFrontier.entries()].sort(([left], [right]) => left.localeCompare(right))
+        for (const [nextNodeId, relationPath] of orderedNext) {
+          results.push({ nodeId: nextNodeId, level, relationPath })
+          if (results.length >= MAX_DEPENDENCY_RESULTS) return results
+        }
+        frontier = new Map(orderedNext)
+      }
+
+      return results
     } catch (error) {
       throw new DatabaseException(`Failed to get dependency chain: ${error}`)
     }
@@ -314,74 +308,97 @@ export class SqliteGraphRepository implements IGraphRepository {
     graphQuery: GraphQuery,
     isCountQuery: boolean,
   ): { query: string; params: SqliteParams } {
-    const params: SqliteParams = [tableId]
+    const nodeFilterParams: SqliteParams = []
+    const nodeConditions: string[] = []
+    if (graphQuery.nodeFilters) {
+      for (const [field, value] of Object.entries(graphQuery.nodeFilters)) {
+        nodeConditions.push(`EXISTS (
+          SELECT 1 FROM node_attributes nav2
+          JOIN attributes a2 ON nav2.attribute_id = a2.id
+          WHERE nav2.node_id = n.id AND a2.identifier = ? AND nav2.value = ?
+        )`)
+        nodeFilterParams.push(
+          field,
+          typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+            ? value
+            : JSON.stringify(value),
+        )
+      }
+    }
 
-    // Base query structure
-    let query = isCountQuery
-      ? 'SELECT COUNT(DISTINCT n.id) as count'
-      : `SELECT DISTINCT 
+    const relationFilterParams: SqliteParams = []
+    const relationConditions: string[] = []
+    if (graphQuery.relationFilters && graphQuery.relationFilters.length > 0) {
+      for (const filter of graphQuery.relationFilters) {
+        const conditions = ['1=1']
+        if (filter.relationTypes && filter.relationTypes.length > 0) {
+          conditions.push(`rt.identifier IN (${filter.relationTypes.map(() => '?').join(',')})`)
+          relationFilterParams.push(...filter.relationTypes)
+        }
+        if (filter.direction === RelationDirection.OUTGOING) {
+          conditions.push('n.id = nr.source_node_id')
+        } else if (filter.direction === RelationDirection.INCOMING) {
+          conditions.push('n.id = nr.target_node_id')
+        }
+        relationConditions.push(`(${conditions.join(' AND ')})`)
+      }
+    }
+
+    const nodeFilterSql = nodeConditions.length > 0 ? ` AND ${nodeConditions.join(' AND ')}` : ''
+    const relationFilterSql = relationConditions.length > 0 ? ` AND (${relationConditions.join(' OR ')})` : ''
+    const filterParams: SqliteParams = [tableId, ...nodeFilterParams, ...relationFilterParams]
+
+    if (isCountQuery) {
+      return {
+        query: `
+          SELECT COUNT(DISTINCT n.id) as count
+          FROM nodes n
+          LEFT JOIN node_relations nr ON (n.id = nr.source_node_id OR n.id = nr.target_node_id)
+          LEFT JOIN relation_types rt ON nr.relation_type_id = rt.id
+          WHERE n.table_id = ?
+            ${nodeFilterSql}
+            ${relationFilterSql}
+        `,
+        params: filterParams,
+      }
+    }
+
+    const limit = graphQuery.limit || 10
+    const offset = graphQuery.offset || 0
+    const hydrationFilterParams = relationConditions.length > 0 ? relationFilterParams : []
+
+    return {
+      query: `
+        WITH selected_nodes AS (
+          SELECT DISTINCT n.id, n.created_at
+          FROM nodes n
+          LEFT JOIN node_relations nr ON (n.id = nr.source_node_id OR n.id = nr.target_node_id)
+          LEFT JOIN relation_types rt ON nr.relation_type_id = rt.id
+          WHERE n.table_id = ?
+            ${nodeFilterSql}
+            ${relationFilterSql}
+          ORDER BY n.created_at DESC, n.id ASC
+          LIMIT ? OFFSET ?
+        )
+        SELECT DISTINCT
           n.id as node_id, n.table_id as node_table_id,
           n.content as node_content, n.title as node_title, n.description as node_description,
           n.created_at as node_created_at, n.updated_at as node_updated_at,
           nr.source_node_id, nr.target_node_id, rt.identifier as relation_type_id,
           nr.properties as relation_properties, nr.strength as relation_strength,
-          a.identifier as attribute_identifier, nav.value as attribute_value`
-
-    query += `
-      FROM nodes n
-      LEFT JOIN node_relations nr ON (n.id = nr.source_node_id OR n.id = nr.target_node_id)
-      LEFT JOIN relation_types rt ON nr.relation_type_id = rt.id
-      LEFT JOIN node_attributes nav ON n.id = nav.node_id
-      LEFT JOIN attributes a ON nav.attribute_id = a.id
-      WHERE n.table_id = ?`
-
-    // Add node filters
-    if (graphQuery.nodeFilters) {
-      for (const [field, value] of Object.entries(graphQuery.nodeFilters)) {
-        query += ` AND EXISTS (
-          SELECT 1 FROM node_attributes nav2
-          JOIN attributes a2 ON nav2.attribute_id = a2.id
-          WHERE nav2.node_id = n.id AND a2.identifier = ? AND nav2.value = ?
-        )`
-        params.push(field, typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? value : JSON.stringify(value))
-      }
+          a.identifier as attribute_identifier, nav.value as attribute_value
+        FROM selected_nodes selected
+        JOIN nodes n ON n.id = selected.id
+        LEFT JOIN node_relations nr ON (n.id = nr.source_node_id OR n.id = nr.target_node_id)
+        LEFT JOIN relation_types rt ON nr.relation_type_id = rt.id
+        LEFT JOIN node_attributes nav ON n.id = nav.node_id
+        LEFT JOIN attributes a ON nav.attribute_id = a.id
+        WHERE 1=1
+          ${relationFilterSql}
+        ORDER BY selected.created_at DESC, n.id ASC, nr.created_at DESC, rt.identifier ASC, a.identifier ASC
+      `,
+      params: [...filterParams, limit, offset, ...hydrationFilterParams],
     }
-
-    // Add relation filters
-    if (graphQuery.relationFilters && graphQuery.relationFilters.length > 0) {
-      const relationConditions = graphQuery.relationFilters
-        .map((filter) => {
-          let condition = '1=1'
-
-          if (filter.relationTypes && filter.relationTypes.length > 0) {
-            condition += ` AND rt.identifier IN (${filter.relationTypes.map(() => '?').join(',')})`
-            params.push(...filter.relationTypes)
-          }
-
-          if (filter.direction === RelationDirection.OUTGOING) {
-            condition += ' AND n.id = nr.source_node_id'
-          } else if (filter.direction === RelationDirection.INCOMING) {
-            condition += ' AND n.id = nr.target_node_id'
-          }
-
-          return `(${condition})`
-        })
-        .join(' OR ')
-
-      query += ` AND (${relationConditions})`
-    }
-
-    // Add sorting and pagination for data queries
-    if (!isCountQuery) {
-      query += ' ORDER BY n.created_at DESC'
-
-      const limit = graphQuery.limit || 10
-      const offset = graphQuery.offset || 0
-      query += ` LIMIT ? OFFSET ?`
-      params.push(limit, offset)
-    }
-
-    return { query, params }
   }
 
   private parseAttributeValue(value: string): unknown {

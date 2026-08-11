@@ -8,7 +8,7 @@
  */
 
 import type { ILogger } from '../../../application/ports/ILogger'
-import type { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
+import { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
 import { TableMcpServer } from './TableMcpServer'
 
 interface TableValidationResult {
@@ -34,6 +34,29 @@ interface TableMcpCacheRemovalResult {
   skipped: string[]
 }
 
+export interface TableMcpServerCacheOptions {
+  /** Maximum number of initialized table servers retained by this factory. */
+  maxServers?: number
+  /** How long a successful table lookup can be reused before revalidation. */
+  validationTtlMs?: number
+  /** Injectable clock used by deterministic cache lifecycle tests. */
+  now?: () => number
+}
+
+interface TableMcpServerCacheMetadata {
+  lastValidatedAt: number
+}
+
+const DEFAULT_MAX_TABLE_SERVERS = 64
+const DEFAULT_TABLE_VALIDATION_TTL_MS = 5 * 60 * 1000
+const MCP_DEBUG_ENABLED =
+  process.env.BUN_GRAPH_DB_MCP_DEBUG === '1' ||
+  process.env.BUN_GRAPH_DB_MCP_DEBUG === 'true'
+
+function debugMcpCache(message: string): void {
+  if (MCP_DEBUG_ENABLED) console.debug(message)
+}
+
 /**
  * Singleton instance for global access
  */
@@ -44,11 +67,18 @@ let globalFactoryInstance: TableMcpServerFactory | null = null
  */
 export class TableMcpServerFactory {
   private servers: Map<string, TableMcpServer> = new Map()
+  private serverMetadata: Map<string, TableMcpServerCacheMetadata> = new Map()
+  private serverFlights: Map<string, Promise<TableMcpServer | null>> = new Map()
+  private tableFlights: Map<string, Set<Promise<TableMcpServer | null>>> = new Map()
+  private cacheGenerations: Map<string, number> = new Map()
   private graphqlEndpoint: string
   private restApiBaseUrl: string
   private logger?: ILogger
   private projectionService?: Pick<TableSchemaProjectionService, 'project'>
   private internalBridgeToken: string | undefined
+  private maxServers: number
+  private validationTtlMs: number
+  private now: () => number
 
   constructor(
     graphqlEndpoint: string,
@@ -56,6 +86,7 @@ export class TableMcpServerFactory {
     logger?: ILogger,
     projectionService?: Pick<TableSchemaProjectionService, 'project'>,
     internalBridgeToken = process.env.BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN,
+    cacheOptions: TableMcpServerCacheOptions = {},
   ) {
     this.graphqlEndpoint = graphqlEndpoint
     this.restApiBaseUrl = restApiBaseUrl
@@ -63,6 +94,15 @@ export class TableMcpServerFactory {
     this.projectionService = projectionService
     const token = internalBridgeToken?.trim()
     this.internalBridgeToken = token || undefined
+    this.maxServers = this.normalizePositiveInteger(
+      cacheOptions.maxServers,
+      DEFAULT_MAX_TABLE_SERVERS,
+    )
+    this.validationTtlMs = this.normalizeNonNegativeInteger(
+      cacheOptions.validationTtlMs,
+      DEFAULT_TABLE_VALIDATION_TTL_MS,
+    )
+    this.now = cacheOptions.now ?? Date.now
 
     // Set as global instance
     globalFactoryInstance = this
@@ -79,48 +119,107 @@ export class TableMcpServerFactory {
    * Create or get existing MCP server for a table
    */
   async getServerForTable(tableId: string): Promise<TableMcpServer | null> {
+    const cachedServer = this.getFreshCachedServer(tableId)
+    if (cachedServer) return cachedServer
+
+    const activeFlight = this.serverFlights.get(tableId)
+    if (activeFlight) return activeFlight
+
+    const generation = this.getCacheGeneration(tableId)
+    const flight = this.resolveServerForTable(tableId, generation)
+    this.serverFlights.set(tableId, flight)
+    const tableFlights = this.tableFlights.get(tableId) ?? new Set()
+    tableFlights.add(flight)
+    this.tableFlights.set(tableId, tableFlights)
+
     try {
-      // First validate that the table exists
+      return await flight
+    } finally {
+      if (this.serverFlights.get(tableId) === flight) {
+        this.serverFlights.delete(tableId)
+      }
+      const trackedFlights = this.tableFlights.get(tableId)
+      trackedFlights?.delete(flight)
+      if (trackedFlights?.size === 0) {
+        this.tableFlights.delete(tableId)
+        this.cacheGenerations.delete(tableId)
+      }
+    }
+  }
+
+  private getFreshCachedServer(tableId: string): TableMcpServer | undefined {
+    const server = this.servers.get(tableId)
+    if (!server) return undefined
+
+    if (server.isClosed?.()) {
+      this.servers.delete(tableId)
+      this.serverMetadata.delete(tableId)
+      return undefined
+    }
+
+    const metadata = this.serverMetadata.get(tableId)
+    if (
+      metadata &&
+      this.now() - metadata.lastValidatedAt >= this.validationTtlMs
+    ) {
+      return undefined
+    }
+
+    // Servers injected by older callers/tests have no metadata. Treat their
+    // insertion as a successful validation rather than reintroducing a lookup
+    // on every cache hit.
+    if (!metadata) {
+      this.serverMetadata.set(tableId, { lastValidatedAt: this.now() })
+    }
+    this.touchCachedServer(tableId, server)
+    this.logger?.debug(`Returning cached MCP server for table ${tableId}`)
+    return server
+  }
+
+  private async resolveServerForTable(
+    tableId: string,
+    generation: number,
+  ): Promise<TableMcpServer | null> {
+    try {
       const validation = await this.validateTable(tableId)
+      if (this.getCacheGeneration(tableId) !== generation) return null
+
       if (!validation.exists) {
+        await this.evictServer(tableId, false)
         this.logger?.warn(
           `Table ${tableId} does not exist: ${validation.error}`,
         )
         return null
       }
 
-      // Check if we already have a server for this table
-      if (this.servers.has(tableId)) {
-        const existingServer = this.servers.get(tableId)
-        if (existingServer) {
-          this.logger?.debug(
-            `Returning existing MCP server for table ${tableId}`,
-          )
-          return existingServer
-        }
+      const existingServer = this.servers.get(tableId)
+      if (existingServer && !existingServer.isClosed?.()) {
+        this.serverMetadata.set(tableId, { lastValidatedAt: this.now() })
+        this.touchCachedServer(tableId, existingServer)
+        return existingServer
       }
 
-      // Create new server for this table
+      if (existingServer) {
+        await this.evictServer(tableId, false)
+      }
+
       this.logger?.info(`Creating new MCP server for table ${tableId}`)
-      const server = new TableMcpServer(
-        tableId,
-        this.graphqlEndpoint,
-        this.restApiBaseUrl,
-        {
-          projectionService: this.projectionService,
-        },
-      )
+      const server = await this.createServerForTable(tableId)
 
-      // Initialize the server
-      await server.initialize()
+      // An explicit refresh/removal that happened while validation or
+      // initialization was pending wins over the stale creation.
+      if (this.getCacheGeneration(tableId) !== generation) {
+        await server.close()
+        return null
+      }
 
-      // Cache the server
       this.servers.set(tableId, server)
+      this.serverMetadata.set(tableId, { lastValidatedAt: this.now() })
+      await this.enforceCacheLimit(tableId)
 
       this.logger?.info(
         `MCP server created for table ${tableId} with ${server.getTableToolsCount()} tools`,
       )
-
       return server
     } catch (error) {
       this.logger?.error(`Failed to create MCP server for table ${tableId}:`, {
@@ -128,6 +227,83 @@ export class TableMcpServerFactory {
       })
       return null
     }
+  }
+
+  private async createServerForTable(tableId: string): Promise<TableMcpServer> {
+    const server = new TableMcpServer(
+      tableId,
+      this.graphqlEndpoint,
+      this.restApiBaseUrl,
+      {
+        projectionService: this.projectionService,
+      },
+    )
+    try {
+      await server.initialize()
+      return server
+    } catch (error) {
+      await server.close().catch(() => undefined)
+      throw error
+    }
+  }
+
+  private touchCachedServer(tableId: string, server: TableMcpServer): void {
+    this.servers.delete(tableId)
+    this.servers.set(tableId, server)
+  }
+
+  private async enforceCacheLimit(protectedTableId: string): Promise<void> {
+    while (this.servers.size > this.maxServers) {
+      const oldestTableId = this.servers.keys().next().value as
+        | string
+        | undefined
+      if (!oldestTableId) return
+      if (oldestTableId === protectedTableId && this.servers.size === 1) return
+      await this.evictServer(oldestTableId, true)
+    }
+  }
+
+  private async evictServer(
+    tableId: string,
+    incrementGeneration: boolean,
+  ): Promise<boolean> {
+    const server = this.servers.get(tableId)
+    const hadFlight = this.tableFlights.has(tableId)
+    this.servers.delete(tableId)
+    this.serverMetadata.delete(tableId)
+    if (incrementGeneration) this.bumpCacheGeneration(tableId)
+    if (server) await server.close()
+    return Boolean(server || hadFlight)
+  }
+
+  private getCacheGeneration(tableId: string): number {
+    return this.cacheGenerations.get(tableId) ?? 0
+  }
+
+  private bumpCacheGeneration(tableId: string): void {
+    this.cacheGenerations.set(tableId, this.getCacheGeneration(tableId) + 1)
+    this.serverFlights.delete(tableId)
+    if (!this.tableFlights.has(tableId)) {
+      this.cacheGenerations.delete(tableId)
+    }
+  }
+
+  private normalizePositiveInteger(
+    value: number | undefined,
+    fallback: number,
+  ): number {
+    return Number.isFinite(value) && (value as number) > 0
+      ? Math.floor(value as number)
+      : fallback
+  }
+
+  private normalizeNonNegativeInteger(
+    value: number | undefined,
+    fallback: number,
+  ): number {
+    return Number.isFinite(value) && (value as number) >= 0
+      ? Math.floor(value as number)
+      : fallback
   }
 
   /**
@@ -355,7 +531,10 @@ export class TableMcpServerFactory {
    */
   removeServerForTable(tableId: string): boolean {
     const server = this.servers.get(tableId)
-    const removed = this.servers.delete(tableId)
+    const removed = Boolean(server || this.tableFlights.has(tableId))
+    this.servers.delete(tableId)
+    this.serverMetadata.delete(tableId)
+    this.bumpCacheGeneration(tableId)
     if (removed) {
       void server?.close().catch((error) => {
         this.logger?.warn(`Failed to close cached MCP server for table ${tableId}`, { error })
@@ -375,12 +554,15 @@ export class TableMcpServerFactory {
 
   private async closeServerForTable(tableId: string): Promise<boolean> {
     const server = this.servers.get(tableId)
-    if (!server) return false
-
+    const removed = Boolean(server || this.tableFlights.has(tableId))
     this.servers.delete(tableId)
-    await server.close()
-    this.logger?.info(`Closed cached MCP server for table ${tableId}`)
-    return true
+    this.serverMetadata.delete(tableId)
+    this.bumpCacheGeneration(tableId)
+    if (server) {
+      await server.close()
+      this.logger?.info(`Closed cached MCP server for table ${tableId}`)
+    }
+    return removed
   }
 
   /**
@@ -538,8 +720,19 @@ export class TableMcpServerFactory {
   /** Close all cached table MCP servers and release their per-table tool state. */
   async closeAll(): Promise<void> {
     const servers = Array.from(this.servers.values())
+    const flights = Array.from(this.tableFlights.values()).flatMap((entries) =>
+      Array.from(entries),
+    )
+    const tableIds = new Set([
+      ...this.servers.keys(),
+      ...this.tableFlights.keys(),
+    ])
+    for (const tableId of tableIds) this.bumpCacheGeneration(tableId)
     this.servers.clear()
+    this.serverMetadata.clear()
+    this.serverFlights.clear()
     const results = await Promise.allSettled(servers.map((server) => server.close()))
+    await Promise.allSettled(flights)
     const failures = results.filter((result) => result.status === 'rejected')
     if (failures.length > 0) {
       this.logger?.warn(`Failed to close ${failures.length} cached MCP server(s)`)
@@ -704,9 +897,7 @@ export async function refreshMcpCacheForTemplate(tags: string[]): Promise<{
 }> {
   const factory = TableMcpServerFactory.getInstance()
   if (!factory) {
-    console.warn(
-      '[MCP Cache] No factory instance available, skipping cache refresh',
-    )
+    debugMcpCache('[MCP Cache] No factory instance available, skipping cache refresh')
     return { refreshed: [], failed: [] }
   }
   return factory.refreshServersForTemplateTags(tags)
@@ -718,11 +909,20 @@ export async function refreshMcpCacheForTemplate(tags: string[]): Promise<{
 export async function refreshMcpCacheForTableSchema(
   tableReferences: string | string[],
 ): Promise<TableMcpCacheRefreshResult> {
+  const normalizedReferences = Array.from(
+    new Set(
+      (Array.isArray(tableReferences) ? tableReferences : [tableReferences])
+        .map((reference) => reference?.trim())
+        .filter(Boolean),
+    ),
+  )
+  for (const tableId of normalizedReferences) {
+    TableSchemaProjectionService.clearCache(tableId)
+  }
+
   const factory = TableMcpServerFactory.getInstance()
   if (!factory) {
-    console.warn(
-      '[MCP Cache] No factory instance available, skipping table schema cache refresh',
-    )
+    debugMcpCache('[MCP Cache] No factory instance available, skipping table schema cache refresh')
     return {
       refreshed: [],
       skipped: Array.isArray(tableReferences)
@@ -743,9 +943,7 @@ export function removeMcpCacheForTableSchema(
 ): TableMcpCacheRemovalResult {
   const factory = TableMcpServerFactory.getInstance()
   if (!factory) {
-    console.warn(
-      '[MCP Cache] No factory instance available, skipping table schema cache removal',
-    )
+    debugMcpCache('[MCP Cache] No factory instance available, skipping table schema cache removal')
     return {
       removed: [],
       skipped: Array.isArray(tableReferences)

@@ -608,7 +608,7 @@ describe('CreateRelationUseCase', () => {
 
       await useCase.execute(input)
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         'Creating new node relation',
         expect.objectContaining({
           tableId: 'table-1',
@@ -617,7 +617,7 @@ describe('CreateRelationUseCase', () => {
           relationTypeId: 'rel-type-1',
         }),
       )
-      expect(mockLogger.info).toHaveBeenCalledWith(
+      expect(mockLogger.debug).toHaveBeenCalledWith(
         'Node relation created successfully',
         expect.objectContaining({
           id: 'relation-1',

@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { getDatabasePath } from '@/config/database.js'
 import { applyDatabaseMigrations, createDatabaseMigrations } from '@/infrastructure/database/sqlite/DatabaseMigrationRunner.js'
+import { configureSqliteDatabase } from '@/infrastructure/database/sqlite/SqlitePragmas.js'
 import type { DIContainer } from '../DIContainer.js'
 import { DatabaseTokens } from '../tokens/index.js'
 
@@ -28,7 +29,7 @@ export function registerDatabaseModule(container: DIContainer): void {
       const database = new Database(config.url)
 
       try {
-        database.exec('PRAGMA foreign_keys = ON')
+        configureSqliteDatabase(database, config.url)
         const schemaPath = join(process.cwd(), 'scripts', 'database', 'schema.sql')
         const initialSchema = readFileSync(schemaPath, 'utf-8')
         applyDatabaseMigrations(database, createDatabaseMigrations(initialSchema))

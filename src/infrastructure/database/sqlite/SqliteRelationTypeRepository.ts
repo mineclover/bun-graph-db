@@ -2,6 +2,7 @@ import type { RelationTypeId } from '@/core/types/CommonTypes.js'
 import { RelationType } from '@/domain/entities/RelationType.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface RelationTypeRow {
@@ -39,7 +40,7 @@ export class SqliteRelationTypeRepository
           data.updated_at,
         ])
 
-        console.log('New relation type created with ID:', result.lastInsertRowid)
+        debugDatabase('relation type created', () => ({ id: result.lastInsertRowid }))
       } catch (error) {
         console.error('Save error:', error)
         throw new DatabaseException(`Failed to save relation type: ${error}`)

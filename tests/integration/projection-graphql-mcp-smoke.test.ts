@@ -144,7 +144,8 @@ describe("Projection GraphQL + table MCP smoke", () => {
 
 	afterAll(async () => {
 		globalThis.fetch = originalFetch;
-		resetContainer();
+		await tableMcpMiddleware?.close();
+		await resetContainer();
 		restoreDatabasePath?.();
 		await testEnvironment.cleanup();
 	}, TEST_TIMEOUT);

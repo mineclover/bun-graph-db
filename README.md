@@ -101,10 +101,23 @@ Claude 같은 AI 어시스턴트가 데이터 기능을 발견하고 사용할 �
 ### 명령어
 ```bash
 bun run dev              # 개발 서버 시작
-bun test                 # lane-based 전체 테스트 실행 (통과)
+bun test                 # 기본 테스트 실행
+bun run test:parallel-safe
+bun run test:serial-only
+bun run test:e2e
+bun run test:stress      # 예약/수동 부하 검증
+bun run benchmark:hotpaths:ci # 결정적 hot-path 측정과 correctness invariant
 bun run typecheck        # 타입 검증
-bun run check            # 포맷 + 린트 + 수정
+bun run check:static     # 버전 + lint + 타입 + codegen + build
 ```
+
+Hot-path 벤치마크는 검색, 그래프 순회, JSONL 다중 페이지 export,
+원자적 node/attribute 쓰기, projection cache miss/hit의 median/p95/p99와
+SQLite query plan을 함께 기록합니다. 기본 비교는 advisory이며 같은 fixture
+schema의 baseline을 넘겨 `--enforce`한 경우에만 회귀를 실패로 처리합니다.
+SQLite 자체가 이미 durable하므로 전체 JSONL write autosave는 기본적으로
+꺼져 있습니다. 필요한 배포에서만 `JSONL_AUTO_SAVE_ON_WRITE=true`로 명시해
+활성화하세요.
 
 ### 프로젝트 구조
 ```

@@ -17,12 +17,6 @@ export interface AttributeDto extends BaseEntityDto, WithIdentifier, WithDescrip
 }
 
 export function fromEntity(attribute: Attribute): AttributeDto {
-  console.log('DEBUG: AttributeDto.fromEntity input:', {
-    id: attribute.getId(),
-    attributeTypeId: attribute.getAttributeTypeId(),
-    attributeTypeIdType: typeof attribute.getAttributeTypeId(),
-  })
-
   const dto: AttributeDto = {
     id: attribute.getId(),
     tableId: attribute.getTableId(),
@@ -35,13 +29,6 @@ export function fromEntity(attribute: Attribute): AttributeDto {
     createdAt: attribute.getCreatedAt().toISOString(),
     updatedAt: attribute.getUpdatedAt().toISOString(),
   }
-
-  console.log('DEBUG: AttributeDto.fromEntity output:', {
-    id: dto.id,
-    name: dto.name,
-    attributeTypeId: dto.attributeTypeId,
-    attributeTypeIdType: typeof dto.attributeTypeId,
-  })
 
   return dto
 }

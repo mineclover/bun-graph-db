@@ -574,7 +574,7 @@ describe('AIMetadata Documentation E2E Tests', () => {
         SELECT id, title, content
         FROM nodes
         WHERE table_id = '${comprehensiveTableId}'
-        ORDER BY created_at
+        ORDER BY created_at DESC, id ASC
         LIMIT 5
       `)
         .all()

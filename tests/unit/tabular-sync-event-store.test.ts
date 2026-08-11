@@ -99,4 +99,32 @@ describe('TabularSyncEventStore durable jobs', () => {
     expect(store.retryJob('users')?.status).toBe('queued')
     expect(store.getJobByTable('users')?.attempts).toBe(0)
   })
+
+  test('keeps pending clear precedence but accepts sync after clear completes', () => {
+    const { db, store } = createStore()
+    databases.push(db)
+
+    store.enqueueJob({ tableIdentifier: 'users', mode: 'clear' })
+    const pendingSync = store.enqueueJob({
+      tableIdentifier: 'users',
+      mode: 'sync',
+    })
+    expect(pendingSync.mode).toBe('clear')
+
+    const clearClaim = store.claimNextDueJob({
+      workerId: 'worker-a',
+      leaseDurationMs: 60_000,
+    })
+    if (!clearClaim) {
+      throw new Error('Expected clear job to be claimed')
+    }
+    expect(store.completeJobSuccess(clearClaim)?.status).toBe('succeeded')
+
+    const nextSync = store.enqueueJob({
+      tableIdentifier: 'users',
+      mode: 'sync',
+    })
+    expect(nextSync.status).toBe('queued')
+    expect(nextSync.mode).toBe('sync')
+  })
 })

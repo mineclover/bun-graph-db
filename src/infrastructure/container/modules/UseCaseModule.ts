@@ -1,7 +1,7 @@
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
 import { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import { ActivateDocUseCase } from '@/application/use-cases/docs/ActivateDoc.js'
-import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
+import type { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
 import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
 import { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
@@ -23,14 +23,15 @@ import { SystemInitializationUseCase } from '@/application/use-cases/system/Syst
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
 import { DeleteTableUseCase } from '@/application/use-cases/tables/DeleteTable.js'
 import { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
+import { debugApplication } from '@/shared/utils/debugLog.js'
 import type { DIContainer, ServiceToken } from '../DIContainer.js'
-import { GraphQLTokens, RepositoryTokens, UseCaseTokens } from '../tokens/index.js'
+import { CommonTokens, GraphQLTokens, RepositoryTokens, UseCaseTokens } from '../tokens/index.js'
 
 const simpleLogger: ILogger = {
   info: (message, meta) => console.log(`[INFO] ${message}`, meta || ''),
   warn: (message, meta) => console.warn(`[WARN] ${message}`, meta || ''),
   error: (message, meta) => console.error(`[ERROR] ${message}`, meta || ''),
-  debug: (message, meta) => console.debug(`[DEBUG] ${message}`, meta || ''),
+  debug: (message, meta) => debugApplication(message, meta ? () => meta : undefined),
 }
 
 async function resolveAs<T>(container: DIContainer, token: ServiceToken): Promise<T> {
@@ -228,15 +229,13 @@ export function registerUseCaseModule(container: DIContainer): void {
         c,
         RepositoryTokens.ATTRIBUTE_REPOSITORY,
       )
-      const attributeTypeRepository = await resolveAs<ConstructorParameters<typeof TableSchemaProjectionService>[2]>(
+      const projectionService = await resolveAs<TableSchemaProjectionService>(
         c,
-        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+        CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE,
       )
-      const projectionService = new TableSchemaProjectionService(
-        tableRepository,
-        attributeRepository,
-        attributeTypeRepository,
-        simpleLogger,
+      const nodeMutationRepository = await resolveAs<ConstructorParameters<typeof CreateNodeUseCase>[6]>(
+        c,
+        RepositoryTokens.NODE_MUTATION_REPOSITORY,
       )
       return new CreateNodeUseCase(
         nodeRepository,
@@ -245,6 +244,7 @@ export function registerUseCaseModule(container: DIContainer): void {
         attributeRepository,
         simpleLogger,
         projectionService,
+        nodeMutationRepository,
       )
     },
     [
@@ -252,7 +252,8 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
-      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE,
+      RepositoryTokens.NODE_MUTATION_REPOSITORY,
     ],
   )
 
@@ -310,15 +311,13 @@ export function registerUseCaseModule(container: DIContainer): void {
         c,
         RepositoryTokens.ATTRIBUTE_REPOSITORY,
       )
-      const attributeTypeRepository = await resolveAs<ConstructorParameters<typeof TableSchemaProjectionService>[2]>(
+      const projectionService = await resolveAs<TableSchemaProjectionService>(
         c,
-        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+        CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE,
       )
-      const projectionService = new TableSchemaProjectionService(
-        tableRepository,
-        attributeRepository,
-        attributeTypeRepository,
-        simpleLogger,
+      const nodeMutationRepository = await resolveAs<ConstructorParameters<typeof UpdateNodeUseCase>[6]>(
+        c,
+        RepositoryTokens.NODE_MUTATION_REPOSITORY,
       )
       return new UpdateNodeUseCase(
         nodeRepository,
@@ -327,6 +326,7 @@ export function registerUseCaseModule(container: DIContainer): void {
         attributeRepository,
         simpleLogger,
         projectionService,
+        nodeMutationRepository,
       )
     },
     [
@@ -334,7 +334,8 @@ export function registerUseCaseModule(container: DIContainer): void {
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
-      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE,
+      RepositoryTokens.NODE_MUTATION_REPOSITORY,
     ],
   )
 

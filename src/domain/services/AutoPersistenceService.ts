@@ -20,9 +20,9 @@ export interface AutoPersistenceConfig {
   autoRestoreOnStartup: boolean
   /** Enable auto-backup on shutdown (default: true) */
   autoBackupOnShutdown: boolean
-  /** Enable auto-save after write operations (default: true) */
+  /** Enable full JSONL auto-save after write operations (default: false) */
   autoSaveOnWrite: boolean
-  /** Debounce delay for auto-save in ms (default: 5000) */
+  /** Debounce delay for auto-save in ms (default: 30000) */
   autoSaveDebounceMs: number
   /** Backup directory for JSONL files */
   backupDir: string
@@ -31,8 +31,10 @@ export interface AutoPersistenceConfig {
 const DEFAULT_CONFIG: AutoPersistenceConfig = {
   autoRestoreOnStartup: true,
   autoBackupOnShutdown: true,
-  autoSaveOnWrite: true,
-  autoSaveDebounceMs: 5000,
+  // SQLite is already durable. Full JSONL snapshots are intentionally opt-in
+  // because their cost grows with the entire database, not the changed rows.
+  autoSaveOnWrite: false,
+  autoSaveDebounceMs: 30000,
   backupDir: './backups/jsonl',
 }
 
@@ -40,6 +42,9 @@ export class AutoPersistenceService {
   private config: AutoPersistenceConfig
   private saveTimeout: Timer | null = null
   private isDirty = false
+  private dirtyGeneration = 0
+  private persistedGeneration = 0
+  private savePromise: Promise<{ success: boolean; error?: string }> | null = null
   private lastSaveTime: Date | null = null
   private isShuttingDown = false
 
@@ -111,6 +116,10 @@ export class AutoPersistenceService {
       this.saveTimeout = null
     }
 
+    if (this.savePromise) {
+      await this.savePromise
+    }
+
     if (!this.config.autoBackupOnShutdown) {
       this.logger.info('[AutoPersistence] Auto-backup on shutdown disabled')
       return { backed: false }
@@ -152,16 +161,9 @@ export class AutoPersistenceService {
     }
 
     this.isDirty = true
+    this.dirtyGeneration++
 
-    // Clear existing timeout
-    if (this.saveTimeout) {
-      clearTimeout(this.saveTimeout)
-    }
-
-    // Set new debounced save
-    this.saveTimeout = setTimeout(async () => {
-      await this.performAutoSave()
-    }, this.config.autoSaveDebounceMs)
+    this.scheduleAutoSave()
   }
 
   /**
@@ -174,7 +176,11 @@ export class AutoPersistenceService {
       this.saveTimeout = null
     }
 
-    return this.performAutoSave()
+    let result = await this.performAutoSave()
+    while (result.success && this.isDirty && !this.isShuttingDown) {
+      result = await this.performAutoSave()
+    }
+    return result
   }
 
   /**
@@ -185,12 +191,18 @@ export class AutoPersistenceService {
     lastSaveTime: Date | null
     config: AutoPersistenceConfig
     pendingSave: boolean
+    saveInProgress: boolean
+    dirtyGeneration: number
+    persistedGeneration: number
   } {
     return {
       isDirty: this.isDirty,
       lastSaveTime: this.lastSaveTime,
       config: this.config,
       pendingSave: this.saveTimeout !== null,
+      saveInProgress: this.savePromise !== null,
+      dirtyGeneration: this.dirtyGeneration,
+      persistedGeneration: this.persistedGeneration,
     }
   }
 
@@ -201,6 +213,25 @@ export class AutoPersistenceService {
       return { success: true }
     }
 
+    if (this.savePromise) return this.savePromise
+
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout)
+      this.saveTimeout = null
+    }
+
+    const generation = this.dirtyGeneration
+    const savePromise = this.exportGeneration(generation)
+    this.savePromise = savePromise
+    try {
+      return await savePromise
+    } finally {
+      if (this.savePromise === savePromise) this.savePromise = null
+      if (this.isDirty && !this.isShuttingDown) this.scheduleAutoSave()
+    }
+  }
+
+  private async exportGeneration(generation: number): Promise<{ success: boolean; error?: string }> {
     try {
       this.logger.debug('[AutoPersistence] Performing auto-save...')
 
@@ -211,7 +242,8 @@ export class AutoPersistenceService {
       })
 
       if (result.success) {
-        this.isDirty = false
+        this.persistedGeneration = Math.max(this.persistedGeneration, generation)
+        this.isDirty = this.dirtyGeneration > generation
         this.lastSaveTime = new Date()
         this.logger.debug('[AutoPersistence] Auto-save completed', {
           nodesExported: result.stats.nodesExported,
@@ -225,6 +257,15 @@ export class AutoPersistenceService {
       this.logger.error('[AutoPersistence] Auto-save failed', toErrorMeta(error))
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
+  }
+
+  private scheduleAutoSave(): void {
+    if (!this.config.autoSaveOnWrite || this.isShuttingDown) return
+    if (this.saveTimeout) clearTimeout(this.saveTimeout)
+    this.saveTimeout = setTimeout(() => {
+      this.saveTimeout = null
+      void this.performAutoSave()
+    }, this.config.autoSaveDebounceMs)
   }
 
   private findLatestBackup(): string | null {

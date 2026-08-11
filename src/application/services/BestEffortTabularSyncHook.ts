@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { TabularTableSyncBridge } from '@/application/services/TabularTableSyncBridge.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
@@ -26,6 +27,9 @@ interface PendingSyncEntry {
   mode: PendingSyncMode
   resolvers: Array<(success: boolean) => void>
   timer: ReturnType<typeof setTimeout>
+  dirtyNodeIds: Set<string>
+  forceFull: boolean
+  revision: number
 }
 
 type TabularSyncConfigSource = 'file' | 'db' | 'none'
@@ -73,6 +77,9 @@ export interface TabularSyncStatusSnapshot {
   enabled: boolean
   configSource: TabularSyncConfigSource
   syncDebounceMs: number
+  maxConcurrentTables?: number
+  activeExecutions?: number
+  peakConcurrentExecutions?: number
   pendingCount: number
   pendingTables: string[]
   totalNotifications: number
@@ -114,6 +121,11 @@ export interface TabularSyncStatusFilters {
   createdBefore?: string | null
 }
 
+export interface BestEffortTabularSyncHookOptions {
+  /** Maximum number of different tables that may sync concurrently. */
+  maxConcurrentTables?: number
+}
+
 export class BestEffortTabularSyncHook {
   private bridge: TabularTableSyncBridge | null = null
   private syncDebounceMs = 0
@@ -131,19 +143,36 @@ export class BestEffortTabularSyncHook {
   private readonly durableWorkerId = `tabular-sync-${crypto.randomUUID()}`
   private durableDrainTimer: ReturnType<typeof setTimeout> | null = null
   private durableDrainRunning = false
+  private disposed = false
   private readonly durableLeaseDurationMs = 60_000
   private readonly durableMaxAttempts = 5
+  private readonly maxConcurrentTables: number
+  private activeExecutions = 0
+  private peakConcurrentExecutions = 0
+  private readonly executionWaiters: Array<() => void> = []
+  private readonly tableExecutionTails = new Map<string, Promise<void>>()
+  private readonly tableNotificationRevisions = new Map<string, number>()
+  private readonly durableDirtyNodeRevisions = new Map<
+    string,
+    Map<string, number>
+  >()
+  private readonly durableFullSyncRevisions = new Map<string, number>()
 
   constructor(
     private readonly tableRepository: ITableRepository,
     private readonly attributeRepository: IAttributeRepository,
+    private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly nodeRepository: INodeRepository,
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     private readonly logger: ILogger,
     private readonly configPath: string | undefined = process.env.TABULAR_SYNC_CONFIG_FILE,
     private readonly configStore?: TabularSyncConfigStore,
     private readonly eventStore?: TabularSyncEventStore,
+    options: BestEffortTabularSyncHookOptions = {},
   ) {
+    this.maxConcurrentTables = resolveMaxConcurrentTables(
+      options.maxConcurrentTables,
+    )
     this.refreshRuntime()
     if (this.eventStore) {
       const recovered = this.eventStore.recoverUnfinishedJobs()
@@ -155,16 +184,54 @@ export class BestEffortTabularSyncHook {
   }
 
   isEnabled(): boolean {
+    if (this.disposed) {
+      return false
+    }
     this.refreshRuntime()
     this.requestDurableDrain()
     return this.bridge !== null
   }
 
-  notifyByIdentifier(tableIdentifier: string): void {
-    void this.schedule(tableIdentifier, 'sync', false)
+  async [Symbol.asyncDispose](): Promise<void> {
+    await this.dispose()
   }
 
-  notifyByTableId(tableId: string): void {
+  async dispose(): Promise<void> {
+    if (this.disposed) {
+      return
+    }
+    this.disposed = true
+    if (this.durableDrainTimer) {
+      clearTimeout(this.durableDrainTimer)
+      this.durableDrainTimer = null
+    }
+    for (const entry of this.pendingSyncs.values()) {
+      clearTimeout(entry.timer)
+      for (const resolve of entry.resolvers) {
+        resolve(false)
+      }
+    }
+    this.pendingSyncs.clear()
+    this.bridge = null
+    await Promise.allSettled(this.tableExecutionTails.values())
+  }
+
+  notifyByIdentifier(
+    tableIdentifier: string,
+    dirtyNodeIds?: string | readonly string[],
+  ): void {
+    void this.schedule(
+      tableIdentifier,
+      'sync',
+      false,
+      normalizeDirtyNodeIds(dirtyNodeIds),
+    )
+  }
+
+  notifyByTableId(
+    tableId: string,
+    dirtyNodeIds?: string | readonly string[],
+  ): void {
     void (async () => {
       this.refreshRuntime()
       if (!this.bridge) {
@@ -177,7 +244,12 @@ export class BestEffortTabularSyncHook {
           return
         }
 
-        await this.schedule(table.identifier, 'sync', false)
+        await this.schedule(
+          table.identifier,
+          'sync',
+          false,
+          normalizeDirtyNodeIds(dirtyNodeIds),
+        )
       } catch (error) {
         this.logger.warn('Best-effort tabular sync failed', {
           tableId,
@@ -197,7 +269,7 @@ export class BestEffortTabularSyncHook {
       return false
     }
 
-    return await this.schedule(tableIdentifier, 'sync', true)
+    return await this.schedule(tableIdentifier, 'sync', true, [])
   }
 
   async syncByTableId(tableId: string): Promise<boolean> {
@@ -212,7 +284,7 @@ export class BestEffortTabularSyncHook {
         return false
       }
 
-      return await this.schedule(table.identifier, 'sync', true)
+      return await this.schedule(table.identifier, 'sync', true, [])
     } catch (error) {
       this.logger.warn('Best-effort tabular sync failed', {
         tableId,
@@ -228,7 +300,7 @@ export class BestEffortTabularSyncHook {
       return false
     }
 
-    return await this.schedule(tableIdentifier, 'clear', true)
+    return await this.schedule(tableIdentifier, 'clear', true, [])
   }
 
   async flush(): Promise<void> {
@@ -242,7 +314,12 @@ export class BestEffortTabularSyncHook {
 
     await Promise.all(
       Array.from(this.pendingSyncs.keys()).map((tableIdentifier) =>
-        this.schedule(tableIdentifier, this.pendingSyncs.get(tableIdentifier)?.mode || 'sync', true),
+        this.schedule(
+          tableIdentifier,
+          this.pendingSyncs.get(tableIdentifier)?.mode || 'sync',
+          true,
+          [],
+        ),
       ),
     )
   }
@@ -269,6 +346,9 @@ export class BestEffortTabularSyncHook {
       enabled: this.isEnabled(),
       configSource: this.configSource,
       syncDebounceMs: this.syncDebounceMs,
+      maxConcurrentTables: this.maxConcurrentTables,
+      activeExecutions: this.activeExecutions,
+      peakConcurrentExecutions: this.peakConcurrentExecutions,
       pendingCount: this.eventStore ? activePersistedJobs.length : this.pendingSyncs.size,
       pendingTables: this.eventStore
         ? activePersistedJobs.map((job) => job.tableIdentifier).sort()
@@ -338,14 +418,32 @@ export class BestEffortTabularSyncHook {
     tableIdentifier: string,
     mode: PendingSyncMode,
     waitForCompletion: boolean,
+    dirtyNodeIds: readonly string[] = [],
   ): Promise<boolean> {
+    if (this.disposed) {
+      return false
+    }
     this.refreshRuntime()
     if (!this.bridge) {
       return false
     }
+    if (
+      typeof this.bridge.supportsIdentifier === 'function' &&
+      !this.bridge.supportsIdentifier(tableIdentifier)
+    ) {
+      this.logger.debug('Skipping tabular sync without an enabled route', {
+        tableIdentifier,
+      })
+      return false
+    }
 
     if (this.eventStore) {
-      return await this.scheduleDurable(tableIdentifier, mode, waitForCompletion)
+      return await this.scheduleDurable(
+        tableIdentifier,
+        mode,
+        waitForCompletion,
+        dirtyNodeIds,
+      )
     }
 
     const metric = this.getOrCreateMetric(tableIdentifier)
@@ -360,6 +458,12 @@ export class BestEffortTabularSyncHook {
     if (existing) {
       clearTimeout(existing.timer)
       existing.mode = existing.mode === 'clear' ? 'clear' : mode
+      existing.forceFull =
+        existing.forceFull || (mode === 'sync' && dirtyNodeIds.length === 0)
+      for (const nodeId of dirtyNodeIds) {
+        existing.dirtyNodeIds.add(nodeId)
+      }
+      existing.revision = this.nextTableNotificationRevision(tableIdentifier)
       existing.timer = this.createTimer(tableIdentifier, existing)
 
       if (!waitForCompletion) {
@@ -375,6 +479,9 @@ export class BestEffortTabularSyncHook {
       mode,
       resolvers: [],
       timer: setTimeout(() => {}, 0),
+      dirtyNodeIds: new Set(dirtyNodeIds),
+      forceFull: mode === 'sync' && dirtyNodeIds.length === 0,
+      revision: this.nextTableNotificationRevision(tableIdentifier),
     }
     entry.timer = this.createTimer(tableIdentifier, entry)
     this.pendingSyncs.set(tableIdentifier, entry)
@@ -397,6 +504,7 @@ export class BestEffortTabularSyncHook {
     tableIdentifier: string,
     mode: PendingSyncMode,
     waitForCompletion: boolean,
+    dirtyNodeIds: readonly string[],
   ): Promise<boolean> {
     const metric = this.getOrCreateMetric(tableIdentifier)
     const scheduledAt = new Date().toISOString()
@@ -414,6 +522,12 @@ export class BestEffortTabularSyncHook {
     if (!job) {
       return false
     }
+    this.recordDurableNotification(
+      tableIdentifier,
+      job.revision,
+      mode,
+      dirtyNodeIds,
+    )
 
     if (!waitForCompletion) {
       this.requestDurableDrain()
@@ -450,7 +564,12 @@ export class BestEffortTabularSyncHook {
   }
 
   private requestDurableDrain(): void {
-    if (!this.eventStore || !this.bridge || this.durableDrainRunning) {
+    if (
+      this.disposed ||
+      !this.eventStore ||
+      !this.bridge ||
+      this.durableDrainRunning
+    ) {
       return
     }
     const nextDueAt = this.eventStore.getNextDueAt()
@@ -474,16 +593,32 @@ export class BestEffortTabularSyncHook {
 
     this.durableDrainRunning = true
     try {
-      while (this.bridge) {
-        const job = this.eventStore.claimNextDueJob({
-          workerId: this.durableWorkerId,
-          leaseDurationMs: this.durableLeaseDurationMs,
-        })
-        if (!job) {
+      const running = new Set<Promise<void>>()
+      while (this.bridge && !this.disposed) {
+        while (running.size < this.maxConcurrentTables) {
+          const job = this.eventStore.claimNextDueJob({
+            workerId: this.durableWorkerId,
+            leaseDurationMs: this.durableLeaseDurationMs,
+          })
+          if (!job) {
+            break
+          }
+
+          let task: Promise<void>
+          task = this.runTableSerial(job.tableIdentifier, () =>
+            this.executeDurableJob(job),
+          ).finally(() => {
+            running.delete(task)
+          })
+          running.add(task)
+        }
+
+        if (running.size === 0) {
           return
         }
-        await this.executeDurableJob(job)
+        await Promise.race(running)
       }
+      await Promise.all(running)
     } finally {
       this.durableDrainRunning = false
       this.requestDurableDrain()
@@ -500,13 +635,41 @@ export class BestEffortTabularSyncHook {
     metric.lastStartedAt = startedAt
 
     try {
-      if (job.mode === 'clear') {
-        await this.bridge?.clearByIdentifier(job.tableIdentifier)
-      } else {
-        await this.bridge?.syncByIdentifier(job.tableIdentifier)
-      }
+      const dirtyNodeIds = this.getDurableDirtyNodeIds(
+        job.tableIdentifier,
+        job.revision,
+      )
+      const forceFullRevision =
+        this.durableFullSyncRevisions.get(job.tableIdentifier)
+      const forceFull =
+        forceFullRevision !== undefined && forceFullRevision <= job.revision
+      const result = await this.executeBridgeSync({
+        tableIdentifier: job.tableIdentifier,
+        mode: job.mode,
+        dirtyNodeIds,
+        forceFull,
+        revision: job.revision,
+      })
+      this.assertSyncSucceeded(result)
       const completedAt = new Date().toISOString()
       const updated = this.eventStore?.completeJobSuccess(job)
+      if (
+        !updated ||
+        (updated.status !== 'succeeded' && updated.status !== 'queued')
+      ) {
+        metric.pending =
+          updated?.status === 'queued' ||
+          updated?.status === 'running' ||
+          updated?.status === 'retry_wait'
+        this.logger.warn('Durable tabular sync completion lease was lost', {
+          tableIdentifier: job.tableIdentifier,
+          mode: job.mode,
+          claimedRevision: job.revision,
+          currentStatus: updated?.status ?? 'missing',
+        })
+        return
+      }
+      this.clearDurableNotificationState(job.tableIdentifier, job.revision)
       this.totalSucceeded++
       this.lastSuccessAt = completedAt
       metric.successes++
@@ -529,6 +692,23 @@ export class BestEffortTabularSyncHook {
         maxAttempts: this.durableMaxAttempts,
         retryDelayMs,
       })
+      if (
+        !updated ||
+        !['queued', 'retry_wait', 'failed'].includes(updated.status)
+      ) {
+        metric.pending =
+          updated?.status === 'queued' ||
+          updated?.status === 'running' ||
+          updated?.status === 'retry_wait'
+        this.logger.warn('Durable tabular sync failure lease was lost', {
+          tableIdentifier: job.tableIdentifier,
+          mode: job.mode,
+          claimedRevision: job.revision,
+          currentStatus: updated?.status ?? 'missing',
+          error: message,
+        })
+        return
+      }
       this.totalFailed++
       this.lastFailureAt = completedAt
       metric.failures++
@@ -556,6 +736,162 @@ export class BestEffortTabularSyncHook {
         error: message,
       })
     }
+  }
+
+  private async executeBridgeSync(input: {
+    tableIdentifier: string
+    mode: PendingSyncMode
+    dirtyNodeIds: readonly string[]
+    forceFull: boolean
+    revision: number
+  }): Promise<unknown> {
+    if (!this.bridge) {
+      throw new Error('Tabular sync bridge is not available.')
+    }
+    if (input.mode === 'clear') {
+      return await this.bridge.clearByIdentifier(input.tableIdentifier)
+    }
+    if (!input.forceFull && input.dirtyNodeIds.length > 0) {
+      return await this.bridge.syncDirtyByIdentifier(
+        input.tableIdentifier,
+        input.dirtyNodeIds,
+        input.revision,
+      )
+    }
+    return await this.bridge.syncByIdentifier(input.tableIdentifier)
+  }
+
+  private assertSyncSucceeded(result: unknown): void {
+    if (
+      typeof result === 'object' &&
+      result !== null &&
+      'synced' in result &&
+      result.synced === false
+    ) {
+      const reason =
+        'reason' in result && typeof result.reason === 'string'
+          ? result.reason
+          : 'Tabular sync did not write the configured destination.'
+      throw new Error(reason)
+    }
+  }
+
+  private nextTableNotificationRevision(tableIdentifier: string): number {
+    const revision =
+      (this.tableNotificationRevisions.get(tableIdentifier) ?? 0) + 1
+    this.tableNotificationRevisions.set(tableIdentifier, revision)
+    return revision
+  }
+
+  private recordDurableNotification(
+    tableIdentifier: string,
+    revision: number,
+    mode: PendingSyncMode,
+    dirtyNodeIds: readonly string[],
+  ): void {
+    if (mode !== 'sync' || dirtyNodeIds.length === 0) {
+      this.durableFullSyncRevisions.set(tableIdentifier, revision)
+      return
+    }
+
+    const revisions =
+      this.durableDirtyNodeRevisions.get(tableIdentifier) ?? new Map()
+    for (const nodeId of dirtyNodeIds) {
+      revisions.set(nodeId, revision)
+    }
+    this.durableDirtyNodeRevisions.set(tableIdentifier, revisions)
+  }
+
+  private getDurableDirtyNodeIds(
+    tableIdentifier: string,
+    revision: number,
+  ): string[] {
+    const revisions = this.durableDirtyNodeRevisions.get(tableIdentifier)
+    if (!revisions) {
+      return []
+    }
+    return [...revisions.entries()]
+      .filter(([, dirtyRevision]) => dirtyRevision <= revision)
+      .map(([nodeId]) => nodeId)
+      .sort()
+  }
+
+  private clearDurableNotificationState(
+    tableIdentifier: string,
+    revision: number,
+  ): void {
+    const revisions = this.durableDirtyNodeRevisions.get(tableIdentifier)
+    if (revisions) {
+      for (const [nodeId, dirtyRevision] of revisions) {
+        if (dirtyRevision <= revision) {
+          revisions.delete(nodeId)
+        }
+      }
+      if (revisions.size === 0) {
+        this.durableDirtyNodeRevisions.delete(tableIdentifier)
+      }
+    }
+
+    const fullRevision = this.durableFullSyncRevisions.get(tableIdentifier)
+    if (fullRevision !== undefined && fullRevision <= revision) {
+      this.durableFullSyncRevisions.delete(tableIdentifier)
+    }
+  }
+
+  private async runTableSerial<T>(
+    tableIdentifier: string,
+    operation: () => Promise<T>,
+  ): Promise<T> {
+    const previous =
+      this.tableExecutionTails.get(tableIdentifier) ?? Promise.resolve()
+    let releaseTable: () => void = () => {}
+    const current = new Promise<void>((resolve) => {
+      releaseTable = resolve
+    })
+    this.tableExecutionTails.set(tableIdentifier, current)
+
+    await previous
+    try {
+      return await this.withExecutionSlot(operation)
+    } finally {
+      releaseTable()
+      if (this.tableExecutionTails.get(tableIdentifier) === current) {
+        this.tableExecutionTails.delete(tableIdentifier)
+      }
+    }
+  }
+
+  private async withExecutionSlot<T>(operation: () => Promise<T>): Promise<T> {
+    await this.acquireExecutionSlot()
+    try {
+      return await operation()
+    } finally {
+      this.releaseExecutionSlot()
+    }
+  }
+
+  private async acquireExecutionSlot(): Promise<void> {
+    if (this.activeExecutions < this.maxConcurrentTables) {
+      this.activeExecutions++
+      this.peakConcurrentExecutions = Math.max(
+        this.peakConcurrentExecutions,
+        this.activeExecutions,
+      )
+      return
+    }
+
+    await new Promise<void>((resolve) => {
+      this.executionWaiters.push(resolve)
+    })
+  }
+
+  private releaseExecutionSlot(): void {
+    const next = this.executionWaiters.shift()
+    if (next) {
+      next()
+      return
+    }
+    this.activeExecutions--
   }
 
   private getRetryDelayMs(attempts: number): number {
@@ -587,6 +923,13 @@ export class BestEffortTabularSyncHook {
     entry: PendingSyncEntry,
   ): ReturnType<typeof setTimeout> {
     return setTimeout(async () => {
+      if (this.pendingSyncs.get(tableIdentifier) !== entry) {
+        return
+      }
+      // Remove the debounced batch before execution. Notifications received
+      // while it runs create a distinct trailing batch, which is serialized by
+      // runTableSerial rather than being lost or allowed to overlap.
+      this.pendingSyncs.delete(tableIdentifier)
       this.refreshRuntime()
       const metric = this.getOrCreateMetric(tableIdentifier)
       const startedAt = new Date().toISOString()
@@ -596,15 +939,16 @@ export class BestEffortTabularSyncHook {
       let executionSuccess = false
 
       try {
-        if (!this.bridge) {
-          return
-        }
-
-        if (entry.mode === 'clear') {
-          await this.bridge.clearByIdentifier(tableIdentifier)
-        } else {
-          await this.bridge.syncByIdentifier(tableIdentifier)
-        }
+        const result = await this.runTableSerial(tableIdentifier, () =>
+          this.executeBridgeSync({
+            tableIdentifier,
+            mode: entry.mode,
+            dirtyNodeIds: [...entry.dirtyNodeIds],
+            forceFull: entry.forceFull,
+            revision: entry.revision,
+          }),
+        )
+        this.assertSyncSucceeded(result)
 
         const completedAt = new Date().toISOString()
         this.totalSucceeded++
@@ -646,8 +990,9 @@ export class BestEffortTabularSyncHook {
           error: message,
         })
       } finally {
-        this.pendingSyncs.delete(tableIdentifier)
-        metric.pending = false
+        metric.pending =
+          this.pendingSyncs.has(tableIdentifier) ||
+          this.tableExecutionTails.has(tableIdentifier)
         for (const resolve of entry.resolvers) {
           resolve(executionSuccess)
         }
@@ -719,6 +1064,9 @@ export class BestEffortTabularSyncHook {
   }
 
   private refreshRuntime(): void {
+    if (this.disposed) {
+      return
+    }
     const { config, source, signature } = this.loadRuntimeConfig()
 
     if (signature === this.currentConfigSignature) {
@@ -743,6 +1091,7 @@ export class BestEffortTabularSyncHook {
       this.bridge = new TabularTableSyncBridge(
         this.tableRepository,
         this.attributeRepository,
+        this.attributeTypeRepository,
         this.nodeRepository,
         this.nodeAttributeRepository,
         syncService,
@@ -759,4 +1108,23 @@ export class BestEffortTabularSyncHook {
       })
     }
   }
+}
+
+function normalizeDirtyNodeIds(
+  value?: string | readonly string[],
+): string[] {
+  const values = typeof value === 'string' ? [value] : value ?? []
+  return [...new Set(values.map((nodeId) => nodeId.trim()).filter(Boolean))]
+}
+
+function resolveMaxConcurrentTables(configured?: number): number {
+  const environmentValue = Number.parseInt(
+    process.env.TABULAR_SYNC_MAX_CONCURRENCY ?? '',
+    10,
+  )
+  const candidate = configured ?? environmentValue
+  if (!Number.isFinite(candidate) || candidate < 1) {
+    return 2
+  }
+  return Math.min(16, Math.floor(candidate))
 }

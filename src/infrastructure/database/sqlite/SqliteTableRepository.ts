@@ -2,6 +2,7 @@ import type { PaginatedResult, TableId, TableSearchOptions } from '@/core/types/
 import { Table } from '@/domain/entities/Table.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 type SqliteParams = Array<string | number | boolean | null>
@@ -37,7 +38,7 @@ export class SqliteTableRepository extends BaseSqliteRepository<Table, TableId> 
           tableData.updated_at,
         ])
 
-        console.log('New table created with ID:', result.lastInsertRowid)
+        debugDatabase('table created', () => ({ id: result.lastInsertRowid }))
 
         // Return a new Table entity with the correct ID
         return Table.fromDatabase(

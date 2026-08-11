@@ -9,6 +9,9 @@ import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTyp
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
+const GRAPH_NODE_BATCH_SIZE = 500
+const GRAPH_ADJACENCY_BATCH_SIZE = 64
+
 interface ConnectedNodeResult {
   node: Node
   depth: number
@@ -20,6 +23,14 @@ interface ShortestPathQueueEntry {
   path: string[]
   relations: NodeRelation[]
   depth: number
+}
+
+type TraversalDirection = 'OUTGOING' | 'INCOMING' | 'BOTH'
+
+interface TraversalFrontierEntry {
+  nodeId: string
+  depth: number
+  path: string[]
 }
 
 interface ShortestPathResult {
@@ -142,10 +153,7 @@ export class NodeFieldResolvers extends BaseResolver {
             .map((relationType) => relationType.getId())
         : undefined
 
-      const visited = new Set<string>()
-      const result: ConnectedNodeResult[] = []
-
-      await this._traverseGraph(parent.id, depth, direction, resolvedRelationTypes, visited, result, 0)
+      const result = await this._traverseGraph(parent.id, depth, direction, resolvedRelationTypes)
 
       // Extract just the nodes from the result objects since GraphQL expects [TableNode!]!
       // Filter out the starting node itself and only return connected nodes
@@ -267,60 +275,57 @@ export class NodeFieldResolvers extends BaseResolver {
   // 그래프 탐색 헬퍼 메서드들
   private async _traverseGraph(
     nodeId: string,
-    remainingDepth: number,
-    direction: 'OUTGOING' | 'INCOMING' | 'BOTH',
+    maxDepth: number,
+    direction: TraversalDirection,
     relationTypes: string[] | undefined,
-    visited: Set<string>,
-    result: ConnectedNodeResult[],
-    currentDepth: number,
-  ): Promise<void> {
-    if (remainingDepth < 0 || visited.has(nodeId)) return
+  ): Promise<ConnectedNodeResult[]> {
+    if (maxDepth < 0) return []
 
-    visited.add(nodeId)
-    const node = await this.nodeRepository.findById(nodeId)
-    if (!node) return
+    const visited = new Set<string>([nodeId])
+    const relationTypeSet = relationTypes === undefined ? undefined : new Set(relationTypes)
+    const result: ConnectedNodeResult[] = []
+    let frontier: TraversalFrontierEntry[] = [{ nodeId, depth: 0, path: [nodeId] }]
 
-    result.push({
-      node,
-      depth: currentDepth,
-      path: Array.from(visited),
-    })
+    while (frontier.length > 0) {
+      const nodes = await this._loadNodesByIds(frontier.map((entry) => entry.nodeId))
+      const nodesById = new Map(nodes.map((node) => [node.getId(), node]))
+      const existingFrontier = frontier.filter((entry) => nodesById.has(entry.nodeId))
 
-    // 관련된 relation들 가져오기
-    const relations: NodeRelation[] = []
-
-    if (direction === 'OUTGOING' || direction === 'BOTH') {
-      const outgoing = await this.nodeRelationRepository.findBySourceNodeId(nodeId)
-      relations.push(...outgoing)
-    }
-
-    if (direction === 'INCOMING' || direction === 'BOTH') {
-      const incoming = await this.nodeRelationRepository.findByTargetNodeId(nodeId)
-      relations.push(...incoming)
-    }
-
-    // relationTypes 필터링
-    const filteredRelations = relationTypes
-      ? relations.filter((rel) => relationTypes.includes(rel.getRelationTypeId()))
-      : relations
-
-    // 다음 레벨 탐색
-    for (const relation of filteredRelations) {
-      const nextNodeId = relation.getSourceNodeId() === nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
-      if (!nextNodeId) {
-        continue
+      for (const entry of existingFrontier) {
+        const node = nodesById.get(entry.nodeId)
+        if (node !== undefined) {
+          result.push({ node, depth: entry.depth, path: entry.path })
+        }
       }
 
-      await this._traverseGraph(
-        nextNodeId,
-        remainingDepth - 1,
+      const currentDepth = frontier[0]?.depth ?? maxDepth
+      if (currentDepth >= maxDepth || existingFrontier.length === 0) break
+
+      const adjacency = await this._loadLevelAdjacency(
+        existingFrontier.map((entry) => entry.nodeId),
         direction,
-        relationTypes,
-        visited,
-        result,
-        currentDepth + 1,
       )
+      const nextFrontier: TraversalFrontierEntry[] = []
+
+      for (const entry of existingFrontier) {
+        for (const relation of adjacency.get(entry.nodeId) ?? []) {
+          if (relationTypeSet !== undefined && !relationTypeSet.has(relation.getRelationTypeId())) continue
+          const nextNodeId = relation.getRelatedNodeId(entry.nodeId)
+          if (nextNodeId === null || visited.has(nextNodeId)) continue
+
+          visited.add(nextNodeId)
+          nextFrontier.push({
+            nodeId: nextNodeId,
+            depth: entry.depth + 1,
+            path: [...entry.path, nextNodeId],
+          })
+        }
+      }
+
+      frontier = nextFrontier
     }
+
+    return result
   }
 
   private async _findShortestPath(
@@ -328,54 +333,96 @@ export class NodeFieldResolvers extends BaseResolver {
     targetId: string,
     maxDepth: number,
   ): Promise<ShortestPathResult | null> {
-    const queue: ShortestPathQueueEntry[] = [
+    let frontier: ShortestPathQueueEntry[] = [
       { nodeId: sourceId, path: [sourceId], relations: [], depth: 0 },
     ]
-    const visited = new Set<string>()
+    const visited = new Set<string>([sourceId])
 
-    while (queue.length > 0) {
-      const current = queue.shift()
-      if (!current) {
-        continue
-      }
-
-      if (current.nodeId === targetId) {
-        // 경로 찾음
-        const nodes = await Promise.all(current.path.map((id) => this.nodeRepository.findById(id)))
+    while (frontier.length > 0) {
+      const match = frontier.find((entry) => entry.nodeId === targetId)
+      if (match !== undefined) {
+        const nodes = await this._loadNodesByIds(match.path)
+        const nodesById = new Map(nodes.map((node) => [node.getId(), node]))
         return {
-          nodes: nodes.filter((node) => node !== null),
-          relations: current.relations,
-          distance: current.depth,
+          nodes: match.path.flatMap((id) => {
+            const node = nodesById.get(id)
+            return node === undefined ? [] : [node]
+          }),
+          relations: match.relations,
+          distance: match.depth,
         }
       }
 
-      if (current.depth >= maxDepth || visited.has(current.nodeId)) {
-        continue
-      }
+      const currentDepth = frontier[0]?.depth ?? maxDepth
+      if (currentDepth >= maxDepth) break
 
-      visited.add(current.nodeId)
+      const adjacency = await this._loadLevelAdjacency(
+        frontier.map((entry) => entry.nodeId),
+        'BOTH',
+      )
+      const nextFrontier: ShortestPathQueueEntry[] = []
 
-      // 연결된 노드들 탐색
-      const outgoing = await this.nodeRelationRepository.findBySourceNodeId(current.nodeId)
-      const incoming = await this.nodeRelationRepository.findByTargetNodeId(current.nodeId)
-
-      const allRelations = [...outgoing, ...incoming]
-
-      for (const relation of allRelations) {
-        const nextNodeId =
-          relation.getSourceNodeId() === current.nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
-
-        if (nextNodeId && !visited.has(nextNodeId) && !current.path.includes(nextNodeId)) {
-          queue.push({
-            nodeId: nextNodeId,
-            path: [...current.path, nextNodeId],
-            relations: [...current.relations, relation],
-            depth: current.depth + 1,
-          })
+      for (const current of frontier) {
+        for (const relation of adjacency.get(current.nodeId) ?? []) {
+          const nextNodeId = relation.getRelatedNodeId(current.nodeId)
+          if (nextNodeId !== null && !visited.has(nextNodeId) && !current.path.includes(nextNodeId)) {
+            visited.add(nextNodeId)
+            nextFrontier.push({
+              nodeId: nextNodeId,
+              path: [...current.path, nextNodeId],
+              relations: [...current.relations, relation],
+              depth: current.depth + 1,
+            })
+          }
         }
       }
+
+      frontier = nextFrontier
     }
 
     return null // 경로 없음
+  }
+
+  private async _loadNodesByIds(nodeIds: readonly string[]): Promise<Node[]> {
+    const uniqueNodeIds = [...new Set(nodeIds)]
+    const batches: string[][] = []
+    for (let index = 0; index < uniqueNodeIds.length; index += GRAPH_NODE_BATCH_SIZE) {
+      batches.push(uniqueNodeIds.slice(index, index + GRAPH_NODE_BATCH_SIZE))
+    }
+    return (await Promise.all(batches.map((batch) => this.nodeRepository.findByIds(batch)))).flat()
+  }
+
+  private async _loadLevelAdjacency(
+    nodeIds: readonly string[],
+    direction: TraversalDirection,
+  ): Promise<Map<string, NodeRelation[]>> {
+    const uniqueNodeIds = [...new Set(nodeIds)]
+    const adjacency = new Map(uniqueNodeIds.map((id) => [id, [] as NodeRelation[]]))
+
+    for (let index = 0; index < uniqueNodeIds.length; index += GRAPH_ADJACENCY_BATCH_SIZE) {
+      const nodeBatch = uniqueNodeIds.slice(index, index + GRAPH_ADJACENCY_BATCH_SIZE)
+      const queries: Array<Promise<{ nodeId: string; relations: NodeRelation[] }>> = []
+
+      for (const currentNodeId of nodeBatch) {
+        if (direction === 'OUTGOING' || direction === 'BOTH') {
+          queries.push(this.nodeRelationRepository.findBySourceNodeId(currentNodeId).then((relations) => ({
+            nodeId: currentNodeId,
+            relations,
+          })))
+        }
+        if (direction === 'INCOMING' || direction === 'BOTH') {
+          queries.push(this.nodeRelationRepository.findByTargetNodeId(currentNodeId).then((relations) => ({
+            nodeId: currentNodeId,
+            relations,
+          })))
+        }
+      }
+
+      for (const batch of await Promise.all(queries)) {
+        adjacency.get(batch.nodeId)?.push(...batch.relations)
+      }
+    }
+
+    return adjacency
   }
 }

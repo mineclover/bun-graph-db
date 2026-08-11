@@ -9,6 +9,7 @@ import type {
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
+import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
 
 interface NodeRelationRow {
@@ -63,7 +64,7 @@ export class SqliteNodeRelationRepository
           data.updated_at,
         ])
 
-        console.log('New node relation created with ID:', result.lastInsertRowid)
+        debugDatabase('node relation created', () => ({ id: result.lastInsertRowid }))
       } catch (error) {
         console.error('Save error:', error)
         throw new DatabaseException(`Failed to save node relation: ${error}`)

@@ -13,6 +13,8 @@
 //   validateMcpToolDefinition,
 // } from '../models/McpToolDefinition.ts'
 
+import { debugMcp } from '@/shared/utils/debugLog.js'
+
 export interface McpToolInputSchema {
   type?: unknown
   properties?: object
@@ -80,7 +82,10 @@ export class McpToolRegistry {
     try {
       this.loadBuiltInContract()
       this.loaded = true
-      console.log(`Loaded ${this.tools.size} tools from root contract ${ROOT_MCP_TOOL_CONTRACT_VERSION}`)
+      debugMcp('root tool contract loaded', () => ({
+        tools: this.tools.size,
+        version: ROOT_MCP_TOOL_CONTRACT_VERSION,
+      }))
     } catch (error) {
       console.error('Failed to load tools from contract:', error)
       throw new Error(`Tool registry initialization failed: ${error}`)
@@ -1709,7 +1714,7 @@ export class McpToolRegistry {
 
     this.register(importJsonlTool)
 
-    console.log(`MCP Tool Registry: Loaded ${this.getToolCount()} root tool contract entries`)
+    debugMcp('root tool registry initialized', () => ({ tools: this.getToolCount() }))
   }
 
   private withContractMetadata(tool: McpToolDefinition): McpToolDefinition {

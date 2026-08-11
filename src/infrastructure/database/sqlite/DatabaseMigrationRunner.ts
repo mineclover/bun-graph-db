@@ -11,6 +11,12 @@ interface AppliedMigration {
   name: string
 }
 
+interface TableColumn {
+  name: string
+  notnull: number
+  dflt_value: string | null
+}
+
 const MIGRATION_LEDGER_TABLE = 'schema_migrations'
 
 /**
@@ -170,7 +176,168 @@ export function createDatabaseMigrations(initialSchema: string): readonly Databa
         `)
       },
     },
+    {
+      version: 6,
+      name: 'node-search-page-indexes',
+      up: (database) => {
+        database.exec(`
+          CREATE INDEX IF NOT EXISTS idx_node_attributes_attr_value_node
+          ON node_attributes(attribute_id, value, node_id);
+
+          CREATE INDEX IF NOT EXISTS idx_nodes_table_created_id
+          ON nodes(table_id, created_at DESC, id);
+        `)
+      },
+    },
+    {
+      version: 7,
+      name: 'template-execution-timestamps-and-running-average',
+      up: (database) => {
+        normalizeTemplateExecutionTimestampContract(database)
+        installTemplateExecutionTriggers(database)
+      },
+    },
+    {
+      version: 8,
+      name: 'remove-redundant-unique-indexes',
+      up: (database) => {
+        // SQLite already maintains auto-indexes for the corresponding UNIQUE
+        // constraints, so these copies only amplify writes and consume space.
+        database.exec(`
+          DROP INDEX IF EXISTS idx_nodes_table_content;
+          DROP INDEX IF EXISTS idx_attribute_types_identifier;
+          DROP INDEX IF EXISTS idx_attributes_table_identifier;
+          DROP INDEX IF EXISTS idx_templates_identifier;
+        `)
+      },
+    },
+    {
+      version: 9,
+      name: 'skip-redundant-timestamp-writes',
+      up: (database) => {
+        for (const table of [
+          'tables',
+          'nodes',
+          'attribute_types',
+          'attributes',
+          'node_attributes',
+          'docs',
+          'templates',
+          'node_relations',
+          'relation_types',
+          'template_executions',
+        ]) {
+          const exists = database
+            .query<{ name: string }, [string]>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
+            .get(table)
+          if (!exists) continue
+          const columns = database.query<{ name: string }, []>(`PRAGMA table_info(${table})`).all()
+          if (!columns.some((column) => column.name === 'updated_at')) continue
+          database.exec(`
+            DROP TRIGGER IF EXISTS update_${table}_updated_at;
+            CREATE TRIGGER update_${table}_updated_at
+            AFTER UPDATE ON ${table}
+            FOR EACH ROW
+            WHEN NEW.updated_at IS OLD.updated_at
+            BEGIN
+              UPDATE ${table} SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+            END;
+          `)
+        }
+      },
+    },
+    {
+      version: 10,
+      name: 'normalize-template-execution-timestamp-contract',
+      up: (database) => {
+        // Repairs databases which may have run an earlier development build of
+        // migration 7 where updated_at was nullable and had no default.
+        normalizeTemplateExecutionTimestampContract(database)
+        installTemplateExecutionTriggers(database)
+      },
+    },
   ]
+}
+
+function normalizeTemplateExecutionTimestampContract(database: Database): void {
+  const tableExists = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'template_executions'")
+    .get()
+  if (!tableExists) return
+
+  const columns = database.query<TableColumn, []>('PRAGMA table_info(template_executions)').all()
+  const updatedAt = columns.find((column) => column.name === 'updated_at')
+  const normalizedDefault = updatedAt?.dflt_value?.replace(/[()'"\s]/g, '').toLowerCase()
+  if (updatedAt?.notnull === 1 && normalizedDefault === 'current_timestamp') return
+
+  const available = new Set(columns.map((column) => column.name))
+  const selectOr = (column: string, fallback: string): string => available.has(column) ? column : fallback
+
+  database.exec(`
+    DROP TRIGGER IF EXISTS update_template_executions_updated_at;
+    DROP TRIGGER IF EXISTS update_template_usage;
+    ALTER TABLE template_executions RENAME TO template_executions_legacy_timestamp;
+
+    CREATE TABLE template_executions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      template_id INTEGER NOT NULL,
+      executed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      execution_time_ms INTEGER NOT NULL,
+      variables_used TEXT,
+      result_count INTEGER DEFAULT 0,
+      success BOOLEAN NOT NULL DEFAULT TRUE,
+      error_message TEXT,
+      user_context TEXT,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (template_id) REFERENCES templates(id) ON DELETE CASCADE
+    );
+
+    INSERT INTO template_executions (
+      id, template_id, executed_at, execution_time_ms, variables_used,
+      result_count, success, error_message, user_context, updated_at
+    )
+    SELECT
+      id,
+      template_id,
+      executed_at,
+      execution_time_ms,
+      ${selectOr('variables_used', 'NULL')},
+      ${selectOr('result_count', '0')},
+      ${selectOr('success', 'TRUE')},
+      ${selectOr('error_message', 'NULL')},
+      ${selectOr('user_context', 'NULL')},
+      ${updatedAt ? 'coalesce(updated_at, executed_at, CURRENT_TIMESTAMP)' : 'coalesce(executed_at, CURRENT_TIMESTAMP)'}
+    FROM template_executions_legacy_timestamp;
+
+    DROP TABLE template_executions_legacy_timestamp;
+  `)
+}
+
+function installTemplateExecutionTriggers(database: Database): void {
+  database.exec(`
+    DROP TRIGGER IF EXISTS update_template_executions_updated_at;
+    CREATE TRIGGER update_template_executions_updated_at
+    AFTER UPDATE ON template_executions
+    FOR EACH ROW
+    WHEN NEW.updated_at IS OLD.updated_at
+    BEGIN
+      UPDATE template_executions SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+    END;
+
+    DROP TRIGGER IF EXISTS update_template_usage;
+    CREATE TRIGGER update_template_usage
+    AFTER INSERT ON template_executions
+    FOR EACH ROW
+    BEGIN
+      UPDATE templates
+      SET
+        usage_count = usage_count + 1,
+        last_used_at = NEW.executed_at,
+        avg_execution_time_ms =
+          ((avg_execution_time_ms * usage_count) + NEW.execution_time_ms) / (usage_count + 1)
+      WHERE id = NEW.template_id;
+    END;
+  `)
 }
 
 function assertMigrationDefinitions(migrations: readonly DatabaseMigration[]): void {

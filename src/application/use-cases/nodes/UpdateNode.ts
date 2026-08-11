@@ -14,8 +14,13 @@ import {
 } from '@/core/schema/TableSchemaProjection.js'
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type { Attribute } from '@/domain/entities/Attribute.js'
+import type { Node } from '@/domain/entities/Node.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type {
+  INodeMutationRepository,
+  NodeAttributeMutation,
+} from '@/domain/repositories/INodeMutationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
@@ -29,6 +34,7 @@ export class UpdateNodeUseCase {
     private readonly attributeRepository: IAttributeRepository,
     private readonly logger: ILogger,
     private readonly projectionProvider?: TableSchemaProjectionProvider,
+    private readonly nodeMutationRepository?: INodeMutationRepository,
   ) {}
 
   async execute(nodeId: string, input: UpdateNodeInput): Promise<UpdateNodeOutput> {
@@ -87,28 +93,34 @@ export class UpdateNodeUseCase {
         metadata: input.metadata,
       }
 
-      const hasNodeFieldUpdates = Object.values(updateFields).some((value) => value !== undefined)
-      const updatedNode = hasNodeFieldUpdates
-        ? await this.nodeRepository.update(nodeId as NodeId, updateFields)
-        : existingNode
-
+      const attributeMutations: NodeAttributeMutation[] = []
       if (attributes) {
         for (const [attributeIdentifier, value] of Object.entries(attributes)) {
+          if (value === undefined) continue
           const attribute = attributesByIdentifier.get(attributeIdentifier) as Attribute
-
-          if (value === undefined) {
-            continue
-          }
-
-          await this.nodeAttributeRepository.setNodeAttribute(
-            nodeId as NodeId,
-            attribute.getId() as AttributeId,
-            typeof value === 'string' ? value : JSON.stringify(value),
-          )
+          attributeMutations.push({
+            attributeId: attribute.getId() as AttributeId,
+            value: typeof value === 'string' ? value : JSON.stringify(value),
+          })
         }
       }
 
-      const attributeValues = await this.loadNodeAttributeValues(nodeId as NodeId)
+      const hasNodeFieldUpdates = Object.values(updateFields).some((value) => value !== undefined)
+      const updatedNode = this.nodeMutationRepository
+        ? await this.nodeMutationRepository.update(nodeId as NodeId, updateFields, attributeMutations)
+        : await this.updateLegacy(
+          nodeId as NodeId,
+          existingNode,
+          updateFields,
+          attributeMutations,
+          hasNodeFieldUpdates,
+        )
+
+      const attributeValues = await this.loadNodeAttributeValues(
+        nodeId as NodeId,
+        existingTableId as TableId,
+        attributesByIdentifier,
+      )
 
       this.logger.info('Node updated successfully', {
         nodeId,
@@ -136,8 +148,7 @@ export class UpdateNodeUseCase {
     attributes: Record<string, unknown>,
     projection?: TableSchemaProjection,
   ): Promise<Map<string, Attribute>> {
-    const attributesResult = await this.attributeRepository.findByTableId(tableId as TableId)
-    const availableAttributes = attributesResult.data ?? attributesResult.nodes ?? []
+    const availableAttributes = await this.loadAllTableAttributes(tableId as TableId)
     const attributesByIdentifier = new Map(
       availableAttributes.map((attribute) => [attribute.getIdentifier(), attribute]),
     )
@@ -287,12 +298,51 @@ export class UpdateNodeUseCase {
       .join('.')
   }
 
-  private async loadNodeAttributeValues(nodeId: NodeId): Promise<Record<string, unknown>> {
+  private async updateLegacy(
+    nodeId: NodeId,
+    existingNode: Node,
+    fields: Parameters<INodeRepository['update']>[1],
+    attributes: readonly NodeAttributeMutation[],
+    hasNodeFieldUpdates: boolean,
+  ): Promise<Node> {
+    const updatedNode = hasNodeFieldUpdates
+      ? await this.nodeRepository.update(nodeId, fields)
+      : existingNode
+    for (const attribute of attributes) {
+      await this.nodeAttributeRepository.setNodeAttribute(nodeId, attribute.attributeId, attribute.value)
+    }
+    return updatedNode
+  }
+
+  private async loadAllTableAttributes(tableId: TableId): Promise<Attribute[]> {
+    const attributes: Attribute[] = []
+    const limit = 500
+    let offset = 0
+
+    while (true) {
+      const result = await this.attributeRepository.findByTableId(tableId, { limit, offset })
+      const page = result.data ?? result.nodes ?? []
+      attributes.push(...page)
+      offset += page.length
+      const total = result.total ?? result.totalCount ?? attributes.length
+      if (page.length === 0 || offset >= total) return attributes
+    }
+  }
+
+  private async loadNodeAttributeValues(
+    nodeId: NodeId,
+    tableId: TableId,
+    knownByIdentifier: Map<string, Attribute>,
+  ): Promise<Record<string, unknown>> {
     const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(nodeId)
+    const tableAttributes = knownByIdentifier.size > 0
+      ? [...knownByIdentifier.values()]
+      : await this.loadAllTableAttributes(tableId)
+    const attributesById = new Map(tableAttributes.map((attribute) => [attribute.getId(), attribute]))
     const attributeValues: Record<string, unknown> = {}
 
     for (const nodeAttribute of nodeAttributes) {
-      const attribute = await this.attributeRepository.findById(nodeAttribute.getAttributeId())
+      const attribute = attributesById.get(nodeAttribute.getAttributeId())
       if (attribute) {
         attributeValues[attribute.getIdentifier()] = nodeAttribute.getParsedValue()
       }

@@ -5,10 +5,12 @@ import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/
 import { SqliteDocRepository } from '@/infrastructure/database/sqlite/SqliteDocRepository.js'
 import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
 import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/SqliteNodeAttributeRepository.js'
+import { SqliteNodeMutationRepository } from '@/infrastructure/database/sqlite/SqliteNodeMutationRepository.js'
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
 import { SqliteNodeSearchRepository } from '@/infrastructure/database/sqlite/SqliteNodeSearchRepository.js'
 import { SqliteRelationTypeRepository } from '@/infrastructure/database/sqlite/SqliteRelationTypeRepository.js'
+import { debugApplication } from '@/shared/utils/debugLog.js'
 // NOTE: SqliteTableRepository and SqliteQueryTemplateRepository are imported dynamically in factories
 // to avoid module loading hang when imported together
 
@@ -20,7 +22,7 @@ const createSimpleLogger = () => ({
   info: (msg: string, data?: unknown) => console.log(`[INFO] ${msg}`, data || ''),
   warn: (msg: string, data?: unknown) => console.warn(`[WARN] ${msg}`, data || ''),
   error: (msg: string, data?: unknown) => console.error(`[ERROR] ${msg}`, data || ''),
-  debug: (msg: string, data?: unknown) => console.debug(`[DEBUG] ${msg}`, data || ''),
+  debug: (msg: string, data?: unknown) => debugApplication(msg, data ? () => data : undefined),
 })
 
 /**
@@ -67,6 +69,15 @@ export function registerRepositoryModule(container: DIContainer): void {
     async (c) => {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as Database
       return new SqliteNodeRepository(connection)
+    },
+    [DatabaseTokens.DATABASE_CONNECTION],
+  )
+
+  container.registerSingleton(
+    RepositoryTokens.NODE_MUTATION_REPOSITORY,
+    async (c) => {
+      const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as Database
+      return new SqliteNodeMutationRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION],
   )
