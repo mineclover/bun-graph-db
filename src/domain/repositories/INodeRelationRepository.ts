@@ -8,6 +8,10 @@ import type {
 } from '@/core/types/CommonTypes.js'
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 
+export type GraphTraversalDirection = 'OUTGOING' | 'INCOMING' | 'BOTH'
+
+export type NodeRelationAdjacency = ReadonlyMap<NodeId, NodeRelation[]>
+
 export interface INodeRelationRepository {
   save(nodeRelation: NodeRelation): Promise<void>
   findById(id: NodeRelationId): Promise<NodeRelation | null>
@@ -52,6 +56,8 @@ export interface INodeRelationRepository {
   // 그래프 탐색용 메서드들
   findBySourceNodeId(sourceNodeId: NodeId): Promise<NodeRelation[]>
   findByTargetNodeId(targetNodeId: NodeId): Promise<NodeRelation[]>
+  /** Optional bulk read used by graph traversal; callers retain the per-node fallback. */
+  findAdjacentByNodeIds?(nodeIds: readonly NodeId[], direction: GraphTraversalDirection): Promise<NodeRelationAdjacency>
   findBySourceNodeIdAndRelationType(sourceNodeId: NodeId, relationTypeId: RelationTypeId): Promise<NodeRelation[]>
   findByTargetNodeIdAndRelationType(targetNodeId: NodeId, relationTypeId: RelationTypeId): Promise<NodeRelation[]>
   countBySourceNodeId(sourceNodeId: NodeId): Promise<number>

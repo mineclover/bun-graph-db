@@ -19,6 +19,7 @@ import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttrib
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
+import { GraphTraversalService } from '@/application/services/GraphTraversalService.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { NotFoundException } from '@/shared/exceptions/DomainException.js'
@@ -58,6 +59,7 @@ interface SearchNodesInput {
 
 export class NodeResolver extends BaseResolver {
   protected logger: ILogger
+  private readonly graphTraversal: GraphTraversalService
 
   constructor(
     private readonly createNodeUseCase: CreateNodeUseCase,
@@ -71,6 +73,7 @@ export class NodeResolver extends BaseResolver {
   ) {
     super()
     this.logger = logger
+    this.graphTraversal = new GraphTraversalService(nodeRepository, nodeRelationRepository)
   }
 
   // Query resolvers
@@ -639,26 +642,18 @@ export class NodeResolver extends BaseResolver {
     })
 
     try {
-      const depth = args?.depth || 1
+      const depth = args?.depth ?? 1
       const direction = args?.direction || 'BOTH'
       const relationTypes = args?.relationTypes
-
-      const visited = new Set<string>()
-      const result: Array<{ node: DomainNode; depth: number; path: string[] }> = []
-
-      await this._traverseGraph(node.id as NodeId, depth, direction, relationTypes, visited, result, 0)
-
-      // Extract just the nodes from the result objects
-      // Filter out the starting node itself and only return connected nodes
-      const connectedNodes = result
-        .filter((item) => item.node && item.node.getId() !== node.id)
-        .map((item) => item.node)
-        .filter((n) => n !== null)
+      const traversal = await this.graphTraversal.connectedNodesWithMetrics(node.id as NodeId, depth, direction, relationTypes)
+      const result = traversal.nodes
+      const connectedNodes = result.filter((entry) => entry.getId() !== node.id)
 
       this.logger.info('connectedNodes field resolver result', {
         parentId: node.id,
         resultLength: result.length,
         connectedNodesLength: connectedNodes.length,
+        traversal: traversal.metrics,
       })
 
       return connectedNodes
@@ -691,7 +686,7 @@ export class NodeResolver extends BaseResolver {
     const result = await this.handleFieldResolution(
       async () => {
         const { targetNodeId, maxDepth = 6 } = args
-        const path = await this._findShortestPath(node.id as NodeId, targetNodeId as NodeId, maxDepth)
+        const path = await this.graphTraversal.findShortestPath(node.id as NodeId, targetNodeId as NodeId, maxDepth)
 
         // Return just the nodes array
         return path ? path.nodes : []
@@ -703,117 +698,4 @@ export class NodeResolver extends BaseResolver {
     return result ?? []
   }
 
-  // Private helper methods for graph traversal
-  private async _traverseGraph(
-    nodeId: NodeId,
-    remainingDepth: number,
-    direction: 'OUTGOING' | 'INCOMING' | 'BOTH',
-    relationTypes: string[] | undefined,
-    visited: Set<string>,
-    result: Array<{ node: DomainNode; depth: number; path: string[] }>,
-    currentDepth: number,
-  ): Promise<void> {
-    if (remainingDepth <= 0 || visited.has(nodeId)) return
-
-    visited.add(nodeId)
-    const node = await this.nodeRepository.findById(nodeId)
-    if (!node) return
-
-    result.push({
-      node,
-      depth: currentDepth,
-      path: Array.from(visited),
-    })
-
-    // Get related relations
-    const relations: NodeRelation[] = []
-
-    if (direction === 'OUTGOING' || direction === 'BOTH') {
-      const outgoing = await this.nodeRelationRepository.findBySourceNodeId(nodeId)
-      relations.push(...outgoing)
-    }
-
-    if (direction === 'INCOMING' || direction === 'BOTH') {
-      const incoming = await this.nodeRelationRepository.findByTargetNodeId(nodeId)
-      relations.push(...incoming)
-    }
-
-    // Filter by relationTypes if specified
-    const filteredRelations = relationTypes
-      ? relations.filter((rel) => relationTypes.includes(rel.getRelationTypeId()))
-      : relations
-
-    // Traverse next level
-    for (const relation of filteredRelations) {
-      const nextNodeId = relation.getSourceNodeId() === nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
-
-      if (nextNodeId) {
-        await this._traverseGraph(
-          nextNodeId as NodeId,
-          remainingDepth - 1,
-          direction,
-          relationTypes,
-          visited,
-          result,
-          currentDepth + 1,
-        )
-      }
-    }
-  }
-
-  private async _findShortestPath(
-    sourceId: NodeId,
-    targetId: NodeId,
-    maxDepth: number,
-  ): Promise<{ nodes: DomainNode[]; relations: NodeRelation[]; distance: number } | null> {
-    const queue: Array<{ nodeId: NodeId; path: NodeId[]; relations: NodeRelation[]; depth: number }> = [
-      { nodeId: sourceId, path: [sourceId], relations: [], depth: 0 },
-    ]
-    const visited = new Set<string>()
-
-    while (queue.length > 0) {
-      const current = queue.shift()
-      if (!current) {
-        continue
-      }
-
-      if (current.nodeId === targetId) {
-        // Path found
-        const nodes = await Promise.all(current.path.map((id) => this.nodeRepository.findById(id)))
-        return {
-          nodes: nodes.filter((node) => node !== null),
-          relations: current.relations,
-          distance: current.depth,
-        }
-      }
-
-      if (current.depth >= maxDepth || visited.has(current.nodeId)) {
-        continue
-      }
-
-      visited.add(current.nodeId)
-
-      // Explore connected nodes
-      const outgoing = await this.nodeRelationRepository.findBySourceNodeId(current.nodeId)
-      const incoming = await this.nodeRelationRepository.findByTargetNodeId(current.nodeId)
-
-      const allRelations = [...outgoing, ...incoming]
-
-      for (const relation of allRelations) {
-        const nextNodeId =
-          relation.getSourceNodeId() === current.nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
-
-        if (nextNodeId && !visited.has(nextNodeId) && !current.path.includes(nextNodeId as NodeId)) {
-          queue.push({
-            nodeId: nextNodeId as NodeId,
-            path: [...current.path, nextNodeId as NodeId],
-            relations: [...current.relations, relation],
-            depth: current.depth + 1,
-          })
-        }
-      }
-    }
-
-    return null // No path found
-  }
 }

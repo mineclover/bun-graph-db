@@ -8,6 +8,10 @@ import type {
 } from '@/core/types/CommonTypes.js'
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type {
+  GraphTraversalDirection,
+  NodeRelationAdjacency,
+} from '@/domain/repositories/INodeRelationRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
@@ -518,6 +522,49 @@ export class SqliteNodeRelationRepository
       return rows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
       throw new DatabaseException(`Failed to find node relations by target node id: ${error}`)
+    }
+  }
+
+  async findAdjacentByNodeIds(
+    nodeIds: readonly NodeId[],
+    direction: GraphTraversalDirection,
+  ): Promise<NodeRelationAdjacency> {
+    const adjacency = new Map<NodeId, NodeRelation[]>(nodeIds.map((nodeId) => [nodeId, []]))
+    if (nodeIds.length === 0) return adjacency
+
+    const placeholders = nodeIds.map(() => '?').join(',')
+    const directionPredicate = direction === 'OUTGOING'
+      ? `source_node_id IN (${placeholders})`
+      : direction === 'INCOMING'
+        ? `target_node_id IN (${placeholders})`
+        : `(source_node_id IN (${placeholders}) OR target_node_id IN (${placeholders}))`
+    const query = `
+      SELECT id, table_id, source_node_id, source_external_id,
+             target_node_id, target_external_id, relation_type_id,
+             properties, strength, created_at, updated_at
+      FROM node_relations
+      WHERE ${directionPredicate}
+      ORDER BY created_at DESC, id DESC
+    `
+
+    try {
+      const params = direction === 'BOTH' ? [...nodeIds, ...nodeIds] : [...nodeIds]
+      const rows = this.db.query<NodeRelationRow, string[]>(query).all(...params)
+      const nodeIdSet = new Set(nodeIds)
+      for (const row of rows) {
+        const relation = this.mapRowToEntity(row)
+        const sourceNodeId = row.source_node_id === null ? null : String(row.source_node_id)
+        const targetNodeId = row.target_node_id === null ? null : String(row.target_node_id)
+        if ((direction === 'OUTGOING' || direction === 'BOTH') && sourceNodeId !== null && nodeIdSet.has(sourceNodeId)) {
+          adjacency.get(sourceNodeId)?.push(relation)
+        }
+        if ((direction === 'INCOMING' || direction === 'BOTH') && targetNodeId !== null && nodeIdSet.has(targetNodeId) && (direction === 'INCOMING' || targetNodeId !== sourceNodeId)) {
+          adjacency.get(targetNodeId)?.push(relation)
+        }
+      }
+      return adjacency
+    } catch (error) {
+      throw new DatabaseException(`Failed to find adjacent node relations: ${error}`)
     }
   }
 

@@ -1,16 +1,19 @@
 import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
 import { Database } from 'bun:sqlite'
 import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
+import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { RelationDepth, RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 
 describe('SqliteGraphRepository traversal and pagination', () => {
   let db: Database
   let repository: SqliteGraphRepository
+  let relationRepository: SqliteNodeRelationRepository
 
   beforeEach(() => {
     db = new Database(':memory:')
     createSchema(db)
     repository = new SqliteGraphRepository(db)
+    relationRepository = new SqliteNodeRelationRepository(db)
   })
 
   afterEach(() => {
@@ -140,6 +143,26 @@ describe('SqliteGraphRepository traversal and pagination', () => {
     expect(dependencies).toHaveLength(48)
     expect(new Set(dependencies.map((dependency) => dependency.nodeId)).size).toBe(48)
     expect(dependencies.filter((dependency) => dependency.level === 4)).toHaveLength(12)
+  })
+
+  test('loads outgoing, incoming and bidirectional adjacency in one bounded SQL read', async () => {
+    for (const nodeId of ['root', 'incoming', 'outgoing', 'self', 'other']) insertNode(db, nodeId)
+    insertRelation(db, 'root-outgoing', 'root', 'outgoing')
+    insertRelation(db, 'incoming-root', 'incoming', 'root')
+    insertRelation(db, 'root-self', 'root', 'root')
+    insertRelation(db, 'other-self', 'other', 'self')
+
+    const outgoing = await relationRepository.findAdjacentByNodeIds(['root', 'incoming'], 'OUTGOING')
+    expect(outgoing.get('root')?.map((relation) => relation.getId())).toEqual(['root-self', 'root-outgoing'])
+    expect(outgoing.get('incoming')?.map((relation) => relation.getId())).toEqual(['incoming-root'])
+
+    const incoming = await relationRepository.findAdjacentByNodeIds(['root', 'outgoing'], 'INCOMING')
+    expect(incoming.get('root')?.map((relation) => relation.getId())).toEqual(['root-self', 'incoming-root'])
+    expect(incoming.get('outgoing')?.map((relation) => relation.getId())).toEqual(['root-outgoing'])
+
+    const both = await relationRepository.findAdjacentByNodeIds(['root', 'self'], 'BOTH')
+    expect(both.get('root')?.map((relation) => relation.getId())).toEqual(['root-self', 'root-outgoing', 'incoming-root'])
+    expect(both.get('self')?.map((relation) => relation.getId())).toEqual(['other-self'])
   })
 })
 

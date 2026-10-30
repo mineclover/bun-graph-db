@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { GraphTraversalService } from '@/application/services/GraphTraversalService.js'
 import type { NodeParent } from '@/core/types/GraphQLTypes.js'
 import { Node } from '@/domain/entities/Node.js'
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
@@ -72,17 +73,103 @@ describe('NodeFieldResolvers graph traversal', () => {
     expect(exact.findByIdCalls).toBe(0)
     expect(exact.maxRelationLoadsInFlight()).toBeGreaterThan(1)
   })
+
+  test('keeps incoming, outgoing and bidirectional loading separate from BFS state', async () => {
+    const harness = createHarness(['root', 'incoming', 'outgoing'], [
+      relation('in', 'incoming', 'root'),
+      relation('out', 'root', 'outgoing'),
+    ])
+    for (const [direction, expected] of [
+      ['INCOMING', ['root', 'incoming']],
+      ['OUTGOING', ['root', 'outgoing']],
+      ['BOTH', ['root', 'outgoing', 'incoming']],
+    ] as const) {
+      const nodes = await harness.service.connectedNodes('root', 1, direction)
+      expect(nodes.map((entry) => entry.getId())).toEqual([...expected])
+    }
+  })
+
+  test('filters relation ids before discovery and keeps an empty filter distinct from no filter', async () => {
+    const harness = createHarness(['root', 'target'], [relation('edge', 'root', 'target')])
+    expect((await harness.service.connectedNodes('root', 1, 'BOTH', [])).map((entry) => entry.getId())).toEqual(['root'])
+    expect((await harness.service.connectedNodes('root', 1, 'BOTH', ['unknown'])).map((entry) => entry.getId())).toEqual(['root'])
+    expect((await harness.service.connectedNodes('root', 1, 'BOTH', ['depends-on'])).map((entry) => entry.getId())).toEqual(['root', 'target'])
+  })
+
+  test('returns zero-hop paths and does not expand beyond a zero-hop limit', async () => {
+    const harness = createHarness(['root', 'target'], [relation('edge', 'root', 'target')])
+    expect(await harness.resolver.connectedNodes(parent('root'), { depth: 0 })).toEqual([])
+    expect((await harness.service.connectedNodes('root', 0, 'BOTH')).map((entry) => entry.getId())).toEqual(['root'])
+    const path = await harness.service.findShortestPath('root', 'root', 0)
+    expect(path?.nodes.map((entry) => entry.getId())).toEqual(['root'])
+    expect(path?.relations).toEqual([])
+    expect(path?.distance).toBe(0)
+    expect(await harness.service.findShortestPath('root', 'target', 0)).toBeNull()
+  })
+
+  test('reassembles node and relation order even when the repository returns nodes in reverse order', async () => {
+    const harness = createHarness(['root', 'a', 'target'], [
+      relation('root-a', 'root', 'a'),
+      relation('a-target', 'a', 'target'),
+    ], true)
+    const path = await harness.service.findShortestPath('root', 'target', 2)
+    expect(path?.nodes.map((entry) => entry.getId())).toEqual(['root', 'a', 'target'])
+    expect(path?.relations.map((entry) => entry.getId())).toEqual(['root-a', 'a-target'])
+    expect(path?.distance).toBe(2)
+  })
+
+  test('bounds adjacency concurrency and splits large node hydration without truncating results', async () => {
+    const ids = Array.from({ length: 1_001 }, (_, index) => `child-${index}`)
+    const harness = createHarness(['root', ...ids], ids.map((id) => relation(`root-${id}`, 'root', id)))
+    const nodes = await harness.service.connectedNodes('root', 2, 'BOTH')
+    expect(nodes).toHaveLength(1_002)
+    expect(harness.nodeBatchCalls.map((batch) => batch.length)).toEqual([1, 500, 500, 1])
+    expect(harness.maxRelationLoadsInFlight()).toBeLessThanOrEqual(128)
+  })
+
+  test('uses bulk adjacency when the repository supplies it and preserves direction/filter semantics', async () => {
+    const harness = createHarness([
+      'root',
+      'incoming',
+      'outgoing',
+      'ignored',
+    ], [
+      relation('in', 'incoming', 'root'),
+      relation('out', 'root', 'outgoing'),
+      relationWithType('ignored-edge', 'root', 'ignored', 'other-type'),
+    ], false, true)
+
+    expect((await harness.service.connectedNodes('root', 1, 'INCOMING')).map((entry) => entry.getId())).toEqual(['root', 'incoming'])
+    expect((await harness.service.connectedNodes('root', 1, 'OUTGOING', ['depends-on'])).map((entry) => entry.getId())).toEqual(['root', 'outgoing'])
+    const both = await harness.service.connectedNodesWithMetrics('root', 1, 'BOTH', ['other-type'])
+    expect(both.nodes.map((entry) => entry.getId())).toEqual(['root', 'ignored'])
+    expect(both.metrics).toMatchObject({
+      nodeBatchCount: 2,
+      nodeIdsRequested: 2,
+      nodeIdsLoaded: 2,
+      adjacencyBatchCount: 1,
+      bulkAdjacencyBatchCount: 1,
+      perNodeAdjacencyCalls: 0,
+      relationsLoaded: 3,
+      maxFrontier: 1,
+    })
+    expect(harness.bulkRelationCalls).toBe(3)
+    expect(harness.perNodeRelationCalls).toBe(0)
+  })
 })
 
-function createHarness(nodeIds: readonly string[], relations: readonly NodeRelation[]) {
+function createHarness(nodeIds: readonly string[], relations: readonly NodeRelation[], reverseNodes = false, useBulk = false) {
   const nodesById = new Map(nodeIds.map((id) => [id, node(id)]))
   const nodeBatchCalls: string[][] = []
   let findByIdCalls = 0
   let relationLoadsInFlight = 0
   let maximumRelationLoadsInFlight = 0
+  let bulkRelationCalls = 0
+  let perNodeRelationCalls = 0
 
   const loadRelations = async (matching: NodeRelation[]): Promise<NodeRelation[]> => {
     relationLoadsInFlight += 1
+    perNodeRelationCalls += 1
     maximumRelationLoadsInFlight = Math.max(maximumRelationLoadsInFlight, relationLoadsInFlight)
     await Promise.resolve()
     relationLoadsInFlight -= 1
@@ -96,10 +183,11 @@ function createHarness(nodeIds: readonly string[], relations: readonly NodeRelat
     },
     findByIds: async (ids: string[]) => {
       nodeBatchCalls.push([...ids])
-      return ids.flatMap((id) => {
+      const foundNodes = ids.flatMap((id) => {
         const found = nodesById.get(id)
         return found === undefined ? [] : [found]
       })
+      return reverseNodes ? foundNodes.reverse() : foundNodes
     },
   } as unknown as INodeRepository
 
@@ -110,6 +198,21 @@ function createHarness(nodeIds: readonly string[], relations: readonly NodeRelat
     findByTargetNodeId: async (nodeId: string) => loadRelations(
       relations.filter((candidate) => candidate.getTargetNodeId() === nodeId),
     ),
+    ...(useBulk ? {
+      findAdjacentByNodeIds: async (nodeIds: readonly string[], direction: 'OUTGOING' | 'INCOMING' | 'BOTH') => {
+        bulkRelationCalls += 1
+        const result = new Map(nodeIds.map((nodeId) => [nodeId, [] as NodeRelation[]]))
+        for (const nodeId of nodeIds) {
+          const matching = relations.filter((candidate) => {
+            if (direction === 'OUTGOING') return candidate.getSourceNodeId() === nodeId
+            if (direction === 'INCOMING') return candidate.getTargetNodeId() === nodeId
+            return candidate.getSourceNodeId() === nodeId || candidate.getTargetNodeId() === nodeId
+          })
+          result.set(nodeId, matching)
+        }
+        return result
+      },
+    } : {}),
   } as unknown as INodeRelationRepository
 
   const resolver = new NodeFieldResolvers(
@@ -123,11 +226,18 @@ function createHarness(nodeIds: readonly string[], relations: readonly NodeRelat
 
   return {
     resolver,
+    service: new GraphTraversalService(nodeRepository, nodeRelationRepository),
     nodeBatchCalls,
     get findByIdCalls() {
       return findByIdCalls
     },
     maxRelationLoadsInFlight: () => maximumRelationLoadsInFlight,
+    get bulkRelationCalls() {
+      return bulkRelationCalls
+    },
+    get perNodeRelationCalls() {
+      return perNodeRelationCalls
+    },
   }
 }
 
@@ -137,6 +247,10 @@ function node(id: string): Node {
 }
 
 function relation(id: string, sourceNodeId: string, targetNodeId: string): NodeRelation {
+  return relationWithType(id, sourceNodeId, targetNodeId, 'depends-on')
+}
+
+function relationWithType(id: string, sourceNodeId: string, targetNodeId: string, relationTypeId: string): NodeRelation {
   const timestamp = new Date('2026-01-01T00:00:00.000Z')
   return NodeRelation.fromDatabase(
     id,
@@ -145,7 +259,7 @@ function relation(id: string, sourceNodeId: string, targetNodeId: string): NodeR
     'internal',
     targetNodeId,
     'internal',
-    'depends-on',
+    relationTypeId,
     null,
     1,
     timestamp,

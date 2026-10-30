@@ -151,11 +151,12 @@ export function registerGraphQLModule(container: DIContainer): void {
       const relationTypeRepository = (await c.resolve(
         RepositoryTokens.RELATION_TYPE_REPOSITORY,
       )) as IRelationTypeRepository
+      const graphRepository = (await c.resolve(RepositoryTokens.GRAPH_REPOSITORY)) as ConstructorParameters<typeof RelationQueries>[3]
       // Remove SearchRelatedNodesUseCase dependency to break circular reference
       const simpleLogger = createConsoleLogger()
-      return new RelationQueries(nodeRelationRepository, relationTypeRepository, nodeRepository, null, simpleLogger)
+      return new RelationQueries(nodeRelationRepository, relationTypeRepository, nodeRepository, graphRepository, null, simpleLogger)
     },
-    [RepositoryTokens.NODE_RELATION_REPOSITORY, RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.RELATION_TYPE_REPOSITORY],
+    [RepositoryTokens.NODE_RELATION_REPOSITORY, RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.RELATION_TYPE_REPOSITORY, RepositoryTokens.GRAPH_REPOSITORY],
   )
 
   container.registerSingleton(

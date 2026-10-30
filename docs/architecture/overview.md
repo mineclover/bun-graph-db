@@ -60,6 +60,10 @@ flowchart LR
 
 경계가 완전히 엄격한 것은 아니다. 표 형식 동기화처럼 애플리케이션 서비스가 인프라 구현 타입을 직접 사용하는 부분이 남아 있다. 새 기능은 이 결합을 더 넓히기보다 포트 또는 명시적인 작업 인터페이스를 추가해 의존 방향을 보존해야 한다.
 
+GraphQL의 `NodeFieldResolvers`와 legacy `NodeResolver` 탐색은 `GraphTraversalService`에 저장소 읽기와 batch를,
+`BreadthFirstSearch`에 frontier·중복 방문·경로 복원을 맡긴다. 리졸버에는 관계 identifier 해석과
+응답 처리를 둔다. 적용 범위와 기존 별도 탐색 경로는 [필드 탐색 계약](./graph-traversal.md)을 따른다.
+
 ## 요청 경로와 외부 계약
 
 `index.ts`의 단일 요청 핸들러는 인증 후 정적 화면, 파일·동기화·스키마 경로, 테이블 MCP, 전용 `BunApiRouter`, 루트 MCP, GraphQL을 순서대로 조립한다. `BunApiRouter`는 Bun `Request`를 기존 컨트롤러 계약에 맞추는 어댑터를 통해 REST 디스패치만 담당하므로, 서비스 기동·보안·종료 책임과 REST 경로 책임이 분리된다. GraphQL 스키마 빌더도 Query·Mutation 루트 조립을 별도 resolver 모듈에 위임한다. 주요 공개 경로는 다음과 같다.

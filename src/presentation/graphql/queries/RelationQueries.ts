@@ -1,5 +1,5 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
+import type { IGraphRepository, SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type {
   GraphQLContext,
   GraphQLParent,
@@ -22,6 +22,7 @@ export class RelationQueries extends BaseResolver {
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly nodeRepository: INodeRepository,
+    private readonly graphRepository: IGraphRepository | null,
     private readonly searchRelatedNodesUseCase: SearchRelatedNodesUseCase | null,
     logger: ILogger,
   ) {
@@ -304,49 +305,25 @@ export class RelationQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        const maxDepth = args.input.maxDepth || 5
-        const direction = args.input.direction || 'OUTGOING'
-
-        // Implementation for dependency chain analysis
-        const visitedNodes = new Set<string>()
-        const dependencyNodes: Array<{ id: string }> = []
-
-        const exploreDependencies = async (currentNodeId: string, currentDepth: number) => {
-          if (currentDepth >= maxDepth || visitedNodes.has(currentNodeId)) {
-            return
-          }
-
-          visitedNodes.add(currentNodeId)
-
-          // Find relations based on direction
-          const relations =
-            direction === 'OUTGOING'
-              ? await this.nodeRelationRepository.findBySourceNodeId(currentNodeId)
-              : await this.nodeRelationRepository.findByTargetNodeId(currentNodeId)
-
-          for (const relation of relations) {
-            // Filter by relation types if specified
-            if (
-              args.input.relationTypeIds?.length &&
-              !args.input.relationTypeIds.includes(relation.getRelationTypeId())
-            ) {
-              continue
-            }
-
-            const nextNodeId = direction === 'OUTGOING' ? relation.getTargetNodeId() : relation.getSourceNodeId()
-
-            if (nextNodeId && !visitedNodes.has(nextNodeId)) {
-              dependencyNodes.push({ id: nextNodeId })
-              await exploreDependencies(nextNodeId, currentDepth + 1)
-            }
-          }
+        const sourceNode = await this.nodeRepository.findById(args.input.nodeId)
+        if (!sourceNode || !this.graphRepository) {
+          return { nodes: [], totalCount: 0, totalConnections: 0, hasNextPage: false, hasPreviousPage: false }
         }
-
-        await exploreDependencies(args.input.nodeId, 0)
+        const direction = args.input.direction === 'INCOMING' ? RelationDirection.INCOMING : RelationDirection.OUTGOING
+        const dependencies = await this.graphRepository.getDependencyChain(
+          sourceNode.getTableId(),
+          args.input.nodeId,
+          direction,
+          args.input.relationTypeIds,
+        )
+        const dependencyNodes = dependencies.map((dependency) => ({ id: dependency.nodeId }))
 
         return {
           nodes: dependencyNodes,
           totalCount: dependencyNodes.length,
+          totalConnections: dependencyNodes.length,
+          hasNextPage: false,
+          hasPreviousPage: false,
         }
       },
       'getDependencyChain',
@@ -379,93 +356,48 @@ export class RelationQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        const maxDepth = args.input.maxDepth || 3
+        const maxDepth = args.input.maxDepth ?? 3
         const sourceNodeId = args.input.sourceNodeId
         const targetNodeId = args.input.targetNodeId
 
-        // BFS algorithm to find all paths between two nodes
-        const paths: Array<{
-          nodes: Array<{ id: string }>
-          relations: Array<{ id: string }>
-          length: number
-          totalWeight?: number
-        }> = []
+        const sourceNode = await this.nodeRepository.findById(sourceNodeId)
+        if (!sourceNode || !this.graphRepository) return []
 
-        interface PathState {
-          currentNodeId: string
-          visitedNodes: string[]
-          usedRelations: string[]
-          totalWeight: number
-        }
+        const storedPaths = await this.graphRepository.findPathsBetweenNodes(
+          sourceNode.getTableId(),
+          [sourceNodeId],
+          [targetNodeId],
+          maxDepth,
+          args.input.relationTypeIds,
+        )
+        const paths = await Promise.all(storedPaths.map(async (storedPath) => ({
+          nodes: storedPath.path.map((id) => ({ id })),
+          relations: await this.hydratePathRelations(storedPath.path, args.input.relationTypeIds),
+          length: storedPath.length,
+          totalWeight: storedPath.length,
+        })))
 
-        const queue: PathState[] = [
-          {
-            currentNodeId: sourceNodeId,
-            visitedNodes: [sourceNodeId],
-            usedRelations: [],
-            totalWeight: 0,
-          },
-        ]
+        return paths.sort((left, right) => left.length - right.length)
 
-        while (queue.length > 0) {
-          const state = queue.shift()
-          if (!state) {
-            continue
-          }
-
-          if (state.visitedNodes.length > maxDepth + 1) {
-            continue
-          }
-
-          if (state.currentNodeId === targetNodeId && state.visitedNodes.length > 1) {
-            // Found a path
-            paths.push({
-              nodes: state.visitedNodes.map((id) => ({ id })),
-              relations: state.usedRelations.map((id) => ({ id })),
-              length: state.visitedNodes.length - 1,
-              totalWeight: state.totalWeight,
-            })
-            continue
-          }
-
-          // Find outgoing relations from current node
-          const relations = await this.nodeRelationRepository.findBySourceNodeId(state.currentNodeId)
-
-          for (const relation of relations) {
-            const nextNodeId = relation.getTargetNodeId()
-
-            // Skip if nextNodeId is null
-            if (!nextNodeId) {
-              continue
-            }
-
-            // Avoid cycles
-            if (state.visitedNodes.includes(nextNodeId)) {
-              continue
-            }
-
-            // Filter by relation types if specified
-            if (
-              args.input.relationTypeIds?.length &&
-              !args.input.relationTypeIds.includes(relation.getRelationTypeId())
-            ) {
-              continue
-            }
-
-            queue.push({
-              currentNodeId: nextNodeId,
-              visitedNodes: [...state.visitedNodes, nextNodeId],
-              usedRelations: [...state.usedRelations, relation.getId()],
-              totalWeight: state.totalWeight + 1, // Simple weight calculation
-            })
-          }
-        }
-
-        // Sort paths by length (shortest first)
-        return paths.sort((a, b) => a.length - b.length)
       },
       'findPathsBetweenNodes',
       { input: args.input },
     )
+  }
+
+  private async hydratePathRelations(path: readonly string[], relationTypeIds?: readonly string[]): Promise<Array<{ id: string }>> {
+    const relationIds: Array<{ id: string }> = []
+    for (let index = 0; index < path.length - 1; index += 1) {
+      const sourceNodeId = path[index]
+      const targetNodeId = path[index + 1]
+      if (sourceNodeId === undefined || targetNodeId === undefined) continue
+      const relations = await this.nodeRelationRepository.findBySourceNodeId(sourceNodeId)
+      const relation = relations.find((candidate) =>
+        candidate.getTargetNodeId() === targetNodeId &&
+        (relationTypeIds === undefined || relationTypeIds.length === 0 || relationTypeIds.includes(candidate.getRelationTypeId())),
+      )
+      if (relation !== undefined) relationIds.push({ id: relation.getId() })
+    }
+    return relationIds
   }
 }

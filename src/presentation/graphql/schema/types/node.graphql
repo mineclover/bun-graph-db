@@ -63,11 +63,11 @@ type TableNode implements Node {
   # Advanced Graph Traversal Fields
   """
   Find all nodes connected to this node within specified parameters
-  Uses BFS/DFS algorithms to traverse the graph efficiently
+  Uses level-order BFS and returns each connected node once, excluding this node
   Supports depth control, direction filtering, and relationship type filtering
   """
   connectedNodes(
-    "Maximum traversal depth (default: 1, max recommended: 10)"
+    "Maximum hop count; zero returns no connected nodes (default: 1, max recommended: 10)"
     depth: Int = 1
     "Direction of relationships to follow (INCOMING, OUTGOING, or BOTH)"
     direction: String = "BOTH"
@@ -77,7 +77,8 @@ type TableNode implements Node {
 
   """
   Find the shortest path between this node and a target node
-  Uses BFS algorithm to guarantee shortest path discovery
+  Uses BFS over incoming and outgoing edges for one minimum-hop path; relationship strength is not a cost
+  Returns nodes in source-to-target order; equal-length ties follow adjacency order
   Returns empty array if no path exists within maxDepth
   """
   shortestPath(

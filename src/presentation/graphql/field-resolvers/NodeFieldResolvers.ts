@@ -1,7 +1,6 @@
+import { GraphTraversalService } from '@/application/services/GraphTraversalService.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { GraphQLContext, NodeParent } from '@/core/types/GraphQLTypes.js'
-import type { Node } from '@/domain/entities/Node.js'
-import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
@@ -9,38 +8,9 @@ import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTyp
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
-const GRAPH_NODE_BATCH_SIZE = 500
-const GRAPH_ADJACENCY_BATCH_SIZE = 64
-
-interface ConnectedNodeResult {
-  node: Node
-  depth: number
-  path: string[]
-}
-
-interface ShortestPathQueueEntry {
-  nodeId: string
-  path: string[]
-  relations: NodeRelation[]
-  depth: number
-}
-
-type TraversalDirection = 'OUTGOING' | 'INCOMING' | 'BOTH'
-
-interface TraversalFrontierEntry {
-  nodeId: string
-  depth: number
-  path: string[]
-}
-
-interface ShortestPathResult {
-  nodes: Node[]
-  relations: NodeRelation[]
-  distance: number
-}
-
 export class NodeFieldResolvers extends BaseResolver {
   protected logger: ILogger
+  private readonly graphTraversal: GraphTraversalService
 
   constructor(
     private readonly nodeRepository: INodeRepository,
@@ -52,6 +22,7 @@ export class NodeFieldResolvers extends BaseResolver {
   ) {
     super()
     this.logger = logger
+    this.graphTraversal = new GraphTraversalService(nodeRepository, nodeRelationRepository)
   }
 
   async table(parent: NodeParent, _args?: Record<string, never>, context?: GraphQLContext) {
@@ -136,7 +107,7 @@ export class NodeFieldResolvers extends BaseResolver {
     })
 
     try {
-      const depth = args?.depth || 1
+      const depth = args?.depth ?? 1
       const direction = args?.direction || 'BOTH'
       const relationTypes = args?.relationTypes
       const resolvedRelationTypes = relationTypes
@@ -153,19 +124,17 @@ export class NodeFieldResolvers extends BaseResolver {
             .map((relationType) => relationType.getId())
         : undefined
 
-      const result = await this._traverseGraph(parent.id, depth, direction, resolvedRelationTypes)
+      const traversal = await this.graphTraversal.connectedNodesWithMetrics(parent.id, depth, direction, resolvedRelationTypes)
+      const result = traversal.nodes
 
-      // Extract just the nodes from the result objects since GraphQL expects [TableNode!]!
-      // Filter out the starting node itself and only return connected nodes
-      const connectedNodes = result
-        .filter((item) => item.node && item.node.getId() !== parent.id)
-        .map((item) => item.node)
-        .filter((node) => node !== null)
+      // GraphQL exposes connected nodes without the starting node.
+      const connectedNodes = result.filter((node) => node.getId() !== parent.id)
 
       this.logger.info('connectedNodes field resolver result', {
         parentId: parent.id,
         resultLength: result.length,
         connectedNodesLength: connectedNodes.length,
+        traversal: traversal.metrics,
         connectedNodes: connectedNodes.map((n) => ({ id: n.getId(), content: n.getContent() })),
       })
 
@@ -195,7 +164,7 @@ export class NodeFieldResolvers extends BaseResolver {
     return this.handleFieldResolution(
       async () => {
         const { targetNodeId, maxDepth = 6 } = args
-        const path = await this._findShortestPath(parent.id, targetNodeId, maxDepth)
+        const path = await this.graphTraversal.findShortestPath(parent.id, targetNodeId, maxDepth)
 
         // Return just the nodes array since GraphQL expects [TableNode!]!
         return path ? path.nodes : []
@@ -272,157 +241,4 @@ export class NodeFieldResolvers extends BaseResolver {
     )
   }
 
-  // 그래프 탐색 헬퍼 메서드들
-  private async _traverseGraph(
-    nodeId: string,
-    maxDepth: number,
-    direction: TraversalDirection,
-    relationTypes: string[] | undefined,
-  ): Promise<ConnectedNodeResult[]> {
-    if (maxDepth < 0) return []
-
-    const visited = new Set<string>([nodeId])
-    const relationTypeSet = relationTypes === undefined ? undefined : new Set(relationTypes)
-    const result: ConnectedNodeResult[] = []
-    let frontier: TraversalFrontierEntry[] = [{ nodeId, depth: 0, path: [nodeId] }]
-
-    while (frontier.length > 0) {
-      const nodes = await this._loadNodesByIds(frontier.map((entry) => entry.nodeId))
-      const nodesById = new Map(nodes.map((node) => [node.getId(), node]))
-      const existingFrontier = frontier.filter((entry) => nodesById.has(entry.nodeId))
-
-      for (const entry of existingFrontier) {
-        const node = nodesById.get(entry.nodeId)
-        if (node !== undefined) {
-          result.push({ node, depth: entry.depth, path: entry.path })
-        }
-      }
-
-      const currentDepth = frontier[0]?.depth ?? maxDepth
-      if (currentDepth >= maxDepth || existingFrontier.length === 0) break
-
-      const adjacency = await this._loadLevelAdjacency(
-        existingFrontier.map((entry) => entry.nodeId),
-        direction,
-      )
-      const nextFrontier: TraversalFrontierEntry[] = []
-
-      for (const entry of existingFrontier) {
-        for (const relation of adjacency.get(entry.nodeId) ?? []) {
-          if (relationTypeSet !== undefined && !relationTypeSet.has(relation.getRelationTypeId())) continue
-          const nextNodeId = relation.getRelatedNodeId(entry.nodeId)
-          if (nextNodeId === null || visited.has(nextNodeId)) continue
-
-          visited.add(nextNodeId)
-          nextFrontier.push({
-            nodeId: nextNodeId,
-            depth: entry.depth + 1,
-            path: [...entry.path, nextNodeId],
-          })
-        }
-      }
-
-      frontier = nextFrontier
-    }
-
-    return result
-  }
-
-  private async _findShortestPath(
-    sourceId: string,
-    targetId: string,
-    maxDepth: number,
-  ): Promise<ShortestPathResult | null> {
-    let frontier: ShortestPathQueueEntry[] = [
-      { nodeId: sourceId, path: [sourceId], relations: [], depth: 0 },
-    ]
-    const visited = new Set<string>([sourceId])
-
-    while (frontier.length > 0) {
-      const match = frontier.find((entry) => entry.nodeId === targetId)
-      if (match !== undefined) {
-        const nodes = await this._loadNodesByIds(match.path)
-        const nodesById = new Map(nodes.map((node) => [node.getId(), node]))
-        return {
-          nodes: match.path.flatMap((id) => {
-            const node = nodesById.get(id)
-            return node === undefined ? [] : [node]
-          }),
-          relations: match.relations,
-          distance: match.depth,
-        }
-      }
-
-      const currentDepth = frontier[0]?.depth ?? maxDepth
-      if (currentDepth >= maxDepth) break
-
-      const adjacency = await this._loadLevelAdjacency(
-        frontier.map((entry) => entry.nodeId),
-        'BOTH',
-      )
-      const nextFrontier: ShortestPathQueueEntry[] = []
-
-      for (const current of frontier) {
-        for (const relation of adjacency.get(current.nodeId) ?? []) {
-          const nextNodeId = relation.getRelatedNodeId(current.nodeId)
-          if (nextNodeId !== null && !visited.has(nextNodeId) && !current.path.includes(nextNodeId)) {
-            visited.add(nextNodeId)
-            nextFrontier.push({
-              nodeId: nextNodeId,
-              path: [...current.path, nextNodeId],
-              relations: [...current.relations, relation],
-              depth: current.depth + 1,
-            })
-          }
-        }
-      }
-
-      frontier = nextFrontier
-    }
-
-    return null // 경로 없음
-  }
-
-  private async _loadNodesByIds(nodeIds: readonly string[]): Promise<Node[]> {
-    const uniqueNodeIds = [...new Set(nodeIds)]
-    const batches: string[][] = []
-    for (let index = 0; index < uniqueNodeIds.length; index += GRAPH_NODE_BATCH_SIZE) {
-      batches.push(uniqueNodeIds.slice(index, index + GRAPH_NODE_BATCH_SIZE))
-    }
-    return (await Promise.all(batches.map((batch) => this.nodeRepository.findByIds(batch)))).flat()
-  }
-
-  private async _loadLevelAdjacency(
-    nodeIds: readonly string[],
-    direction: TraversalDirection,
-  ): Promise<Map<string, NodeRelation[]>> {
-    const uniqueNodeIds = [...new Set(nodeIds)]
-    const adjacency = new Map(uniqueNodeIds.map((id) => [id, [] as NodeRelation[]]))
-
-    for (let index = 0; index < uniqueNodeIds.length; index += GRAPH_ADJACENCY_BATCH_SIZE) {
-      const nodeBatch = uniqueNodeIds.slice(index, index + GRAPH_ADJACENCY_BATCH_SIZE)
-      const queries: Array<Promise<{ nodeId: string; relations: NodeRelation[] }>> = []
-
-      for (const currentNodeId of nodeBatch) {
-        if (direction === 'OUTGOING' || direction === 'BOTH') {
-          queries.push(this.nodeRelationRepository.findBySourceNodeId(currentNodeId).then((relations) => ({
-            nodeId: currentNodeId,
-            relations,
-          })))
-        }
-        if (direction === 'INCOMING' || direction === 'BOTH') {
-          queries.push(this.nodeRelationRepository.findByTargetNodeId(currentNodeId).then((relations) => ({
-            nodeId: currentNodeId,
-            relations,
-          })))
-        }
-      }
-
-      for (const batch of await Promise.all(queries)) {
-        adjacency.get(batch.nodeId)?.push(...batch.relations)
-      }
-    }
-
-    return adjacency
-  }
 }

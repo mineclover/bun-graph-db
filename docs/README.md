@@ -13,6 +13,9 @@ lastVerified: "2026-08-11"
 
 - [운영 준비도 명세](../specs/008-production-readiness/spec.md)
 - [아키텍처 개요](./architecture/overview.md)
+- [GraphQL 필드 탐색 계약과 계층 경계](./architecture/graph-traversal.md)
+- [구현과 연결되는 문서 관리](./development/DOCUMENTATION_POLICY.md)
+- [벡터 검색과 대규모 저장소 비교 기준선](./architecture/vector-and-storage-comparison.md)
 - [MCP 참조](./mcp/README.md)
 - [의존성 업데이트 정책](./development/DEPENDENCY_UPDATE_WAVES.md)
 - [테스트 가이드](./development/TESTING.md)
