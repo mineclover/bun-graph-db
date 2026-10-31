@@ -42,13 +42,19 @@ Welcome to Bun Graph Database user documentation!
    - 성능 메트릭 및 벤치마크
    - **MCP 품질 보증 문서**
 
-### Quick References
+### Quick References & Operations
 
 6. **[Quick Reference Card](./QUICK_REFERENCE.md)**
    - Essential commands at a glance
    - Common GraphQL queries
    - Troubleshooting shortcuts
    - **Perfect for quick lookups**
+
+7. **[운영 및 관리 가이드 (한국어)](./OPERATIONS_GUIDE.md)** ⭐ NEW
+   - 배포 기동, 환경 변수, 역할·테이블 스코프 접근 제어(`AccessControl`)
+   - 스키마 마이그레이션(`v1..v13`) 및 동적 스키마 감사(`/api/tables/:tableId/schema/audit`)
+   - 영속 `Float32Array` 임베딩·4-신호 RRF 하이브리드 검색·JSONL 재해 복구·표 동기화 큐 운영
+   - **운영자 및 배포 관리자를 위한 공식 가이드**
 
 ---
 

@@ -18,6 +18,7 @@ import { toRootMcpToolOpenApiProjectionResult } from '../../core/schema/RootMcpT
 import { RestApiClient } from '../../application/services/RestApiClient.js'
 import {
   GraphQLOperationExecutor,
+  type FetchLike,
   type GraphQLOperation,
   type GraphQLExecutionResult,
   type GraphQLVariables,
@@ -210,10 +211,15 @@ export class McpHttpServer {
       'GraphQL-based graph database with AI integration. Manage tables, nodes, relationships, and execute graph queries via Model Context Protocol.',
   }
 
-  constructor(graphqlEndpoint: string, restApiBaseUrl?: string, internalBridgeToken = process.env.BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN) {
+  constructor(
+    graphqlEndpoint: string,
+    restApiBaseUrl?: string,
+    internalBridgeToken = process.env.BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN,
+    fetchImpl?: FetchLike,
+  ) {
     this.toolRegistry = new McpToolRegistry()
-    this.graphqlExecutor = new GraphQLOperationExecutor(graphqlEndpoint, internalBridgeToken)
-    this.restApiClient = new RestApiClient(restApiBaseUrl || 'http://localhost:4000/api', internalBridgeToken)
+    this.graphqlExecutor = new GraphQLOperationExecutor(graphqlEndpoint, internalBridgeToken, fetchImpl)
+    this.restApiClient = new RestApiClient(restApiBaseUrl || 'http://localhost:4000/api', internalBridgeToken, fetchImpl)
     this.ajv = new Ajv()
   }
 

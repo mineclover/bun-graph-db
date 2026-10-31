@@ -41,6 +41,7 @@ export class JsonlBackupQueries {
         })),
         hasRelations: manifest.hasRelations,
         hasSchema: manifest.hasSchema,
+        hasEmbeddings: Boolean(manifest.hasEmbeddings),
       }
     } catch (error) {
       this.logger.error('Failed to inspect JSONL backup', {
@@ -59,8 +60,10 @@ export class JsonlBackupQueries {
       input?: {
         outputDir?: string
         tableIds?: string[]
+        tableIdentifiers?: string[]
         includeRelations?: boolean
         includeSchema?: boolean
+        includeEmbeddings?: boolean
         prettyPrint?: boolean
       }
     },
@@ -71,8 +74,10 @@ export class JsonlBackupQueries {
       const result = await this.jsonlBackupService.export({
         outputDir: args.input?.outputDir,
         tableIds: args.input?.tableIds,
+        tableIdentifiers: args.input?.tableIdentifiers,
         includeRelations: args.input?.includeRelations,
         includeSchema: args.input?.includeSchema,
+        includeEmbeddings: args.input?.includeEmbeddings,
         prettyPrint: args.input?.prettyPrint,
       })
 
@@ -90,6 +95,7 @@ export class JsonlBackupQueries {
           tablesExported: result.stats.tablesExported,
           nodesExported: result.stats.nodesExported,
           relationsExported: result.stats.relationsExported,
+          embeddingsExported: result.stats.embeddingsExported ?? 0,
           totalBytes: result.stats.totalBytes,
         },
         errors: result.errors,
@@ -107,6 +113,7 @@ export class JsonlBackupQueries {
           tablesExported: 0,
           nodesExported: 0,
           relationsExported: 0,
+          embeddingsExported: 0,
           totalBytes: 0,
         },
         errors: [error instanceof Error ? error.message : String(error)],
@@ -125,6 +132,7 @@ export class JsonlBackupQueries {
         inputDir: string
         tableIdentifiers?: string[]
         conflictResolution: 'SKIP' | 'OVERWRITE' | 'MERGE'
+        includeEmbeddings?: boolean
         validateSchema?: boolean
         dryRun?: boolean
       }
@@ -137,6 +145,7 @@ export class JsonlBackupQueries {
         inputDir: args.input.inputDir,
         tableIdentifiers: args.input.tableIdentifiers,
         conflictResolution: args.input.conflictResolution.toLowerCase() as 'skip' | 'overwrite' | 'merge',
+        includeEmbeddings: args.input.includeEmbeddings,
         validateSchema: args.input.validateSchema,
         dryRun: args.input.dryRun,
       })
@@ -150,6 +159,7 @@ export class JsonlBackupQueries {
           nodesSkipped: result.stats.nodesSkipped,
           nodesUpdated: result.stats.nodesUpdated,
           relationsImported: result.stats.relationsImported,
+          embeddingsImported: result.stats.embeddingsImported ?? 0,
         },
         errors: result.errors,
         warnings: result.warnings,
@@ -167,6 +177,7 @@ export class JsonlBackupQueries {
           nodesSkipped: 0,
           nodesUpdated: 0,
           relationsImported: 0,
+          embeddingsImported: 0,
         },
         errors: [error instanceof Error ? error.message : String(error)],
         warnings: [],
@@ -180,6 +191,7 @@ export class JsonlBackupQueries {
       table: 'TABLE',
       relations: 'RELATIONS',
       'relation-types': 'RELATION_TYPES',
+      embeddings: 'EMBEDDINGS',
     }
     return mapping[type] || 'SCHEMA'
   }

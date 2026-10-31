@@ -25,4 +25,8 @@ extend type Query {
   customSortFunctions(dataType: SortDataType, search: String, tags: [String!]): [CustomSortFunction!]!
 
   customSortFunction(functionId: String!): CustomSortFunction
+
+  # Persistent node embedding & hybrid vector + FTS5 + N-hop graph search
+  nodeEmbedding(nodeId: ID!): NodeEmbedding
+  hybridSearchNodes(input: HybridSearchInput!): HybridSearchResult!
 }

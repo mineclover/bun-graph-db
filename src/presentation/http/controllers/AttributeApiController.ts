@@ -1,5 +1,6 @@
 import type { HttpControllerRequest as Request, HttpControllerResponse as Response } from '../adapters/BunControllerAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { NodeAttributeSchemaGate } from '@/application/services/NodeAttributeSchemaGate.js'
 import { TableTemplateAutoGenerator } from '@/application/services/TableTemplateAutoGenerator.js'
 import type { CreateAttributeUseCase } from '@/application/use-cases/attributes/CreateAttribute.js'
 import type { AttributeId, NodeId, TableId } from '@/core/types/CommonTypes.js'
@@ -7,6 +8,7 @@ import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepos
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { refreshMcpCacheForTableSchema } from '@/presentation/mcp/factory/TableMcpServerFactory.js'
+import { NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 import type {
   AttributeData,
@@ -73,6 +75,7 @@ export class AttributeApiController {
     private readonly nodeAttributeRepository: INodeAttributeRepository,
     readonly logger: ILogger,
     private readonly queryTemplateRepository?: IQueryTemplateRepository,
+    private readonly schemaGate?: NodeAttributeSchemaGate,
   ) {
     this.responseHelper = new ResponseHelper(logger)
   }
@@ -134,12 +137,25 @@ export class AttributeApiController {
       }
 
       const { nodeId, attributeId, value } = input
+      let resolvedAttributeId = attributeId as AttributeId
+      let serializedOrRawValue: SafeJsonValue = value
+
+      if (this.schemaGate) {
+        const { normalized } = await this.schemaGate.validateAndNormalizePatch(nodeId, [
+          { attributeIdOrIdentifier: attributeId, value },
+        ])
+        const target = normalized[0]
+        if (target) {
+          resolvedAttributeId = target.attributeId
+          serializedOrRawValue = target.canonicalValue
+        }
+      }
 
       // Use repository to set node attribute
       const nodeAttribute = await this.nodeAttributeRepository.setNodeAttribute(
         nodeId as NodeId,
-        attributeId as AttributeId,
-        value,
+        resolvedAttributeId,
+        serializedOrRawValue,
       )
 
       const result: NodeAttributeData = {
@@ -151,6 +167,14 @@ export class AttributeApiController {
 
       this.responseHelper.success(res, result)
     } catch (error) {
+      if (error instanceof ValidationException) {
+        this.responseHelper.validationError(res, error.message)
+        return
+      }
+      if (error instanceof NotFoundException) {
+        this.responseHelper.notFound(res, error.message)
+        return
+      }
       this.responseHelper.handleError(res, error, 'Set node attribute')
     }
   }
@@ -363,11 +387,17 @@ export class AttributeApiController {
         return
       }
 
+      let resolvedAttributeId = attributeId as AttributeId
+      if (this.schemaGate) {
+        const removal = await this.schemaGate.validateRemoval(nodeId, attributeId)
+        resolvedAttributeId = removal.resolvedAttributeId
+      }
+
       // Use node attribute repository to remove node attribute
       const nodeAttribute =
         await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
           nodeId as NodeId,
-          attributeId as AttributeId,
+          resolvedAttributeId,
         )
 
       if (!nodeAttribute) {
@@ -392,12 +422,20 @@ export class AttributeApiController {
 
       const result = {
         nodeId,
-        attributeId,
+        attributeId: resolvedAttributeId,
         removed: true,
       }
 
       this.responseHelper.success(res, result)
     } catch (error) {
+      if (error instanceof ValidationException) {
+        this.responseHelper.validationError(res, error.message)
+        return
+      }
+      if (error instanceof NotFoundException) {
+        this.responseHelper.notFound(res, error.message)
+        return
+      }
       this.responseHelper.handleError(res, error, 'Remove node attribute')
     }
   }
@@ -417,11 +455,24 @@ export class AttributeApiController {
         return
       }
 
+      let resolvedAttributeId = attributeId as AttributeId
+      let nextValue = value
+      if (this.schemaGate) {
+        const { normalized } = await this.schemaGate.validateAndNormalizePatch(nodeId, [
+          { attributeIdOrIdentifier: attributeId, value },
+        ])
+        const target = normalized[0]
+        if (target) {
+          resolvedAttributeId = target.attributeId
+          nextValue = target.canonicalValue
+        }
+      }
+
       // Use node attribute repository to update node attribute value
       const nodeAttribute =
         await this.nodeAttributeRepository.findByNodeIdAndAttributeId(
           nodeId as NodeId,
-          attributeId as AttributeId,
+          resolvedAttributeId,
         )
 
       if (!nodeAttribute) {
@@ -432,18 +483,26 @@ export class AttributeApiController {
         return
       }
 
-      nodeAttribute.updateValue(value)
+      nodeAttribute.updateValue(nextValue)
       await this.nodeAttributeRepository.update(nodeAttribute)
 
       const result = {
         nodeId,
-        attributeId,
+        attributeId: resolvedAttributeId,
         value: nodeAttribute.getValue(),
         updated: true,
       }
 
       this.responseHelper.success(res, result)
     } catch (error) {
+      if (error instanceof ValidationException) {
+        this.responseHelper.validationError(res, error.message)
+        return
+      }
+      if (error instanceof NotFoundException) {
+        this.responseHelper.notFound(res, error.message)
+        return
+      }
       this.responseHelper.handleError(res, error, 'Update node attribute value')
     }
   }

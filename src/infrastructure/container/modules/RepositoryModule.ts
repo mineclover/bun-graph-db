@@ -5,6 +5,7 @@ import { SqliteAttributeTypeRepository } from '@/infrastructure/database/sqlite/
 import { SqliteDocRepository } from '@/infrastructure/database/sqlite/SqliteDocRepository.js'
 import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
 import { SqliteNodeAttributeRepository } from '@/infrastructure/database/sqlite/SqliteNodeAttributeRepository.js'
+import { SqliteNodeEmbeddingRepository } from '@/infrastructure/database/sqlite/SqliteNodeEmbeddingRepository.js'
 import { SqliteNodeMutationRepository } from '@/infrastructure/database/sqlite/SqliteNodeMutationRepository.js'
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { SqliteNodeRepository } from '@/infrastructure/database/sqlite/SqliteNodeRepository.js'
@@ -131,6 +132,16 @@ export function registerRepositoryModule(container: DIContainer): void {
     async (c) => {
       const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as Database
       return new SqliteNodeSearchRepository(connection)
+    },
+    [DatabaseTokens.DATABASE_CONNECTION],
+  )
+
+  // Node embedding repository
+  container.registerSingleton(
+    RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+    async (c) => {
+      const connection = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as Database
+      return new SqliteNodeEmbeddingRepository(connection)
     },
     [DatabaseTokens.DATABASE_CONNECTION],
   )

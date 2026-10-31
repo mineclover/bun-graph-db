@@ -1504,6 +1504,7 @@ const BENCHMARK_SCHEMA_SQL = `
 		node_id INTEGER NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
 		attribute_id INTEGER NOT NULL REFERENCES attributes(id) ON DELETE CASCADE,
 		value TEXT NOT NULL,
+		value_num REAL,
 		created_at TEXT NOT NULL,
 		updated_at TEXT NOT NULL,
 		UNIQUE(node_id, attribute_id)
@@ -1539,16 +1540,31 @@ const BENCHMARK_SCHEMA_SQL = `
 	CREATE INDEX idx_node_attributes_attr ON node_attributes(attribute_id);
 	CREATE INDEX idx_node_attributes_attr_value_node
 		ON node_attributes(attribute_id, value, node_id);
+	CREATE INDEX idx_node_attributes_attr_num_node
+		ON node_attributes(attribute_id, value_num, node_id)
+		WHERE value_num IS NOT NULL;
 	CREATE INDEX idx_nodes_table_created_id
 		ON nodes(table_id, created_at DESC, id);
 	CREATE INDEX idx_node_relations_source ON node_relations(source_node_id);
 	CREATE INDEX idx_node_relations_target ON node_relations(target_node_id);
 	CREATE INDEX idx_node_relations_type ON node_relations(relation_type_id);
 	CREATE INDEX idx_node_relations_table ON node_relations(table_id);
+	CREATE INDEX idx_node_relations_src_type_dst
+		ON node_relations(source_node_id, relation_type_id, target_node_id)
+		WHERE source_node_id IS NOT NULL;
+	CREATE INDEX idx_node_relations_dst_type_src
+		ON node_relations(target_node_id, relation_type_id, source_node_id)
+		WHERE target_node_id IS NOT NULL;
 	CREATE VIRTUAL TABLE node_search_fts USING fts5(
 		node_id UNINDEXED,
 		table_id UNINDEXED,
 		content,
+		tokenize = 'unicode61 remove_diacritics 2'
+	);
+	CREATE VIRTUAL TABLE node_attribute_search_fts USING fts5(
+		node_id UNINDEXED,
+		table_id UNINDEXED,
+		value,
 		tokenize = 'unicode61 remove_diacritics 2'
 	);
 	CREATE TRIGGER node_search_fts_insert AFTER INSERT ON nodes BEGIN
@@ -1559,6 +1575,47 @@ const BENCHMARK_SCHEMA_SQL = `
 			new.table_id,
 			trim(coalesce(new.title, '') || ' ' || coalesce(new.description, '') || ' ' || coalesce(new.content, '') || ' ' || coalesce(new.metadata, ''))
 		);
+	END;
+	CREATE TRIGGER trg_node_attributes_sync_value_num_insert
+	AFTER INSERT ON node_attributes
+	FOR EACH ROW
+	BEGIN
+		UPDATE node_attributes
+		SET value_num = (
+			SELECT CASE
+				WHEN at.json_type IN ('number', 'integer')
+					AND trim(NEW.value) != ''
+					AND json_valid(trim(NEW.value)) = 1
+					AND json_type(trim(NEW.value)) IN ('integer', 'real')
+					THEN CAST(trim(NEW.value) AS REAL)
+				WHEN at.json_type = 'boolean'
+					THEN CASE lower(trim(NEW.value))
+						WHEN 'true' THEN 1.0
+						WHEN '1' THEN 1.0
+						WHEN 'false' THEN 0.0
+						WHEN '0' THEN 0.0
+						ELSE NULL
+					END
+				WHEN (
+					at.json_type = 'datetime'
+					OR (at.json_type = 'string' AND at.format IN ('date', 'date-time', 'datetime'))
+				)
+					THEN julianday(trim(NEW.value))
+				ELSE NULL
+			END
+			FROM attributes a
+			JOIN attribute_types at ON at.id = a.attribute_type_id
+			WHERE a.id = NEW.attribute_id
+		)
+		WHERE id = NEW.id;
+	END;
+	CREATE TRIGGER node_attribute_search_fts_insert
+	AFTER INSERT ON node_attributes
+	BEGIN
+		INSERT INTO node_attribute_search_fts(rowid, node_id, table_id, value)
+		SELECT new.rowid, new.node_id, n.table_id, coalesce(new.value, '')
+		FROM nodes n
+		WHERE n.id = new.node_id;
 	END;
 `;
 

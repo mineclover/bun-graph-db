@@ -7,7 +7,9 @@ import {
   unsafeProjectedAttributeValueErrors,
 } from '@/application/use-cases/nodes/ProjectionValidationUtils.js'
 import {
+  extractProjectedAttributeLookup,
   type JsonSchema,
+  type ProjectedAttributeLookup,
   type ProjectionValidationError,
   type TableSchemaProjection,
   validateProjectedNodeUpdateInput,
@@ -82,9 +84,16 @@ export class UpdateNodeUseCase {
         tableId: existingTableId,
         tableIdentifier: existingTable.identifier,
       })
-      const attributesByIdentifier = attributes
-        ? await this.loadTableAttributesByIdentifier(existingTableId, existingTable.identifier, attributes, projection)
-        : new Map<string, Attribute>()
+      const projectedLookup = projection ? extractProjectedAttributeLookup(projection) : null
+      const attributeIdsByIdentifier = attributes
+        ? await this.resolveAttributeIdsByIdentifier(
+          existingTableId,
+          existingTable.identifier,
+          attributes,
+          projection,
+          projectedLookup,
+        )
+        : new Map<string, AttributeId>()
 
       const updateFields = {
         content: sanitizedContent,
@@ -97,9 +106,9 @@ export class UpdateNodeUseCase {
       if (attributes) {
         for (const [attributeIdentifier, value] of Object.entries(attributes)) {
           if (value === undefined) continue
-          const attribute = attributesByIdentifier.get(attributeIdentifier) as Attribute
+          const attributeId = attributeIdsByIdentifier.get(attributeIdentifier) as AttributeId
           attributeMutations.push({
-            attributeId: attribute.getId() as AttributeId,
+            attributeId,
             value: typeof value === 'string' ? value : JSON.stringify(value),
           })
         }
@@ -119,7 +128,7 @@ export class UpdateNodeUseCase {
       const attributeValues = await this.loadNodeAttributeValues(
         nodeId as NodeId,
         existingTableId as TableId,
-        attributesByIdentifier,
+        projectedLookup,
       )
 
       this.logger.info('Node updated successfully', {
@@ -142,19 +151,30 @@ export class UpdateNodeUseCase {
     }
   }
 
-  private async loadTableAttributesByIdentifier(
+  private async resolveAttributeIdsByIdentifier(
     tableId: string,
     tableIdentifier: string,
     attributes: Record<string, unknown>,
     projection?: TableSchemaProjection,
-  ): Promise<Map<string, Attribute>> {
-    const availableAttributes = await this.loadAllTableAttributes(tableId as TableId)
-    const attributesByIdentifier = new Map(
-      availableAttributes.map((attribute) => [attribute.getIdentifier(), attribute]),
-    )
+    projectedLookup?: ProjectedAttributeLookup | null,
+  ): Promise<Map<string, AttributeId>> {
+    const attributeIdsByIdentifier = new Map<string, AttributeId>()
+    if (projectedLookup) {
+      for (const [identifier, id] of projectedLookup.attributeIdByIdentifier) {
+        attributeIdsByIdentifier.set(identifier, id as AttributeId)
+      }
+    } else {
+      const availableAttributes = await this.loadAllTableAttributes(tableId as TableId)
+      for (const attribute of availableAttributes) {
+        attributeIdsByIdentifier.set(
+          attribute.getIdentifier(),
+          attribute.getId() as AttributeId,
+        )
+      }
+    }
 
     for (const [attributeIdentifier, value] of Object.entries(attributes)) {
-      if (!attributesByIdentifier.has(attributeIdentifier)) {
+      if (!attributeIdsByIdentifier.has(attributeIdentifier)) {
         throw this.createProjectionValidationException(
           [{
             path: `#/attributes/${attributeIdentifier}`,
@@ -167,7 +187,7 @@ export class UpdateNodeUseCase {
       }
     }
 
-    return attributesByIdentifier
+    return attributeIdsByIdentifier
   }
 
   private async validateProjectedAttributes(
@@ -332,19 +352,24 @@ export class UpdateNodeUseCase {
   private async loadNodeAttributeValues(
     nodeId: NodeId,
     tableId: TableId,
-    knownByIdentifier: Map<string, Attribute>,
+    projectedLookup: ProjectedAttributeLookup | null,
   ): Promise<Record<string, unknown>> {
     const nodeAttributes = await this.nodeAttributeRepository.findByNodeId(nodeId)
-    const tableAttributes = knownByIdentifier.size > 0
-      ? [...knownByIdentifier.values()]
-      : await this.loadAllTableAttributes(tableId)
-    const attributesById = new Map(tableAttributes.map((attribute) => [attribute.getId(), attribute]))
+    let identifierById: ReadonlyMap<string, string>
+    if (projectedLookup) {
+      identifierById = projectedLookup.identifierByAttributeId
+    } else {
+      const tableAttributes = await this.loadAllTableAttributes(tableId)
+      identifierById = new Map(
+        tableAttributes.map((attribute) => [String(attribute.getId()), attribute.getIdentifier()]),
+      )
+    }
     const attributeValues: Record<string, unknown> = {}
 
     for (const nodeAttribute of nodeAttributes) {
-      const attribute = attributesById.get(nodeAttribute.getAttributeId())
-      if (attribute) {
-        attributeValues[attribute.getIdentifier()] = nodeAttribute.getParsedValue()
+      const identifier = identifierById.get(String(nodeAttribute.getAttributeId()))
+      if (identifier) {
+        attributeValues[identifier] = nodeAttribute.getParsedValue()
       }
     }
 

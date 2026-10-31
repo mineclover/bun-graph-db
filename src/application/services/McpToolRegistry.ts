@@ -60,7 +60,9 @@ export interface ToolDiscoveryResult {
 }
 
 export interface McpToolAudience {
+  id?: string
   role: AccessRole
+  tableIds?: readonly string[]
 }
 
 type AccessRole = 'reader' | 'writer' | 'admin'
@@ -1713,6 +1715,308 @@ export class McpToolRegistry {
     }
 
     this.register(importJsonlTool)
+
+    const setNodeEmbeddingTool: McpToolDefinition = {
+      name: 'set-node-embedding',
+      description:
+        'Store or update a persistent Float32 embedding vector and precomputed L2 norm for a node.',
+      operationType: 'mutation',
+      access: {
+        action: 'write',
+        scope: 'table',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['nodeId', 'vector'],
+        properties: {
+          nodeId: {
+            type: 'string',
+            minLength: 1,
+            description: 'Target node ID',
+          },
+          tableId: {
+            type: 'string',
+            description: 'Optional table ID assertion for the target node',
+          },
+          vector: {
+            type: 'array',
+            minItems: 1,
+            items: { type: 'number' },
+            description: 'Finite embedding vector values stored as IEEE-754 Float32',
+          },
+          model: {
+            type: 'string',
+            default: 'default',
+            description: 'Embedding model identifier',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation SetNodeEmbedding($input: SetNodeEmbeddingInput!) {
+            setNodeEmbedding(input: $input) {
+              success
+              embedding {
+                nodeId
+                tableId
+                dimension
+                model
+                vector
+                norm
+                createdAt
+                updatedAt
+              }
+              errors {
+                message
+                code
+                field
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(setNodeEmbeddingTool)
+
+    const getNodeEmbeddingTool: McpToolDefinition = {
+      name: 'get-node-embedding',
+      description: 'Fetch the persistent Float32 embedding vector and metadata for a node.',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'table',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['nodeId'],
+        properties: {
+          nodeId: {
+            type: 'string',
+            minLength: 1,
+            description: 'Target node ID',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: `
+          query GetNodeEmbedding($nodeId: ID!) {
+            nodeEmbedding(nodeId: $nodeId) {
+              nodeId
+              tableId
+              dimension
+              model
+              vector
+              norm
+              createdAt
+              updatedAt
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(getNodeEmbeddingTool)
+
+    const removeNodeEmbeddingTool: McpToolDefinition = {
+      name: 'remove-node-embedding',
+      description: 'Delete the persistent Float32 embedding vector stored for a node.',
+      operationType: 'mutation',
+      access: {
+        action: 'write',
+        scope: 'table',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['nodeId'],
+        properties: {
+          nodeId: {
+            type: 'string',
+            minLength: 1,
+            description: 'Target node ID',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'mutation',
+        query: `
+          mutation RemoveNodeEmbedding($nodeId: ID!) {
+            removeNodeEmbedding(nodeId: $nodeId) {
+              success
+              deleted
+              errors {
+                message
+                code
+                field
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(removeNodeEmbeddingTool)
+
+    const hybridSearchNodesTool: McpToolDefinition = {
+      name: 'hybrid-search-nodes',
+      description:
+        'Execute hybrid search combining N-hop graph neighborhood filtering, typed attribute filters, FTS5 BM25 lexical ranking, and Float32 cosine similarity via Reciprocal Rank Fusion (RRF).',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'table',
+        tableIdArgument: 'tableId',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableId'],
+        properties: {
+          tableId: {
+            type: 'string',
+            minLength: 1,
+            description: 'Table ID to search within',
+          },
+          textQuery: {
+            type: 'string',
+            description: 'Optional FTS5 full-text query ranked by BM25',
+          },
+          vector: {
+            type: 'array',
+            minItems: 1,
+            items: { type: 'number' },
+            description: 'Optional query embedding vector ranked by cosine similarity',
+          },
+          model: {
+            type: 'string',
+            description: 'Optional embedding model filter',
+          },
+          minVectorScore: {
+            type: 'number',
+            minimum: -1,
+            maximum: 1,
+            description: 'Minimum cosine similarity threshold (-1..1)',
+          },
+          filterQuery: {
+            type: 'string',
+            description: 'Optional typed attribute filter expression (e.g. score:>80 AND status:active)',
+          },
+          graph: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['anchorNodeIds'],
+            description: 'Optional N-hop graph neighborhood constraint',
+            properties: {
+              anchorNodeIds: {
+                type: 'array',
+                minItems: 1,
+                items: { type: 'string', minLength: 1 },
+                description: 'Seed node IDs for N-hop traversal',
+              },
+              maxDepth: {
+                type: 'integer',
+                minimum: 0,
+                maximum: 32,
+                default: 2,
+                description: 'Maximum hop distance from anchor nodes',
+              },
+              direction: {
+                type: 'string',
+                enum: ['INCOMING', 'OUTGOING', 'BOTH'],
+                default: 'BOTH',
+                description: 'Relation traversal direction',
+              },
+              relationTypes: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Optional relation type identifiers or IDs to traverse',
+              },
+              includeAnchors: {
+                type: 'boolean',
+                default: false,
+                description: 'Whether to include anchor nodes (hopDistance = 0) in candidate results',
+              },
+            },
+          },
+          weights: {
+            type: 'object',
+            additionalProperties: false,
+            description: 'Optional RRF signal weights',
+            properties: {
+              fts: { type: 'number', minimum: 0, default: 1.0 },
+              vector: { type: 'number', minimum: 0, default: 1.0 },
+              graph: { type: 'number', minimum: 0, default: 0.5 },
+            },
+          },
+          rrfK: {
+            type: 'number',
+            minimum: 1,
+            default: 60,
+            description: 'Reciprocal Rank Fusion smoothing constant k',
+          },
+          limit: {
+            type: 'integer',
+            minimum: 1,
+            maximum: 200,
+            default: 10,
+            description: 'Maximum number of results to return',
+          },
+          offset: {
+            type: 'integer',
+            minimum: 0,
+            default: 0,
+            description: 'Zero-based pagination offset',
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'query',
+        query: `
+          query HybridSearchNodes($input: HybridSearchInput!) {
+            hybridSearchNodes(input: $input) {
+              results {
+                node {
+                  id
+                  tableId
+                  content
+                  title
+                  description
+                  relevanceScore
+                  distance
+                  createdAt
+                  updatedAt
+                }
+                combinedScore
+                ftsScore
+                ftsRank
+                vectorScore
+                vectorRank
+                hopDistance
+              }
+              total
+              hasMore
+              hasNextPage
+              hasPreviousPage
+              metrics {
+                eligibleCandidates
+                graphCandidates
+                lexicalCandidates
+                vectorCandidates
+                scannedVectors
+                elapsedMs
+              }
+            }
+          }
+        `,
+      },
+    }
+
+    this.register(hybridSearchNodesTool)
 
     debugMcp('root tool registry initialized', () => ({ tools: this.getToolCount() }))
   }

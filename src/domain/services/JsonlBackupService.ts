@@ -13,9 +13,14 @@ import { open, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createInterface } from 'node:readline'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { NodeAttributeSchemaGate } from '@/application/services/NodeAttributeSchemaGate.js'
+import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
+import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { NodeId, RelationTypeId } from '@/core/types/CommonTypes.js'
 import type {
   JsonlAttributeEntry,
   JsonlBackupManifest,
+  JsonlEmbeddingEntry,
   JsonlExportedFile,
   JsonlExportOptions,
   JsonlExportResult,
@@ -26,14 +31,29 @@ import type {
   JsonlRelationTypeEntry,
   JsonlSchemaEntry,
 } from '@/core/types/JsonlBackup.js'
+import { Attribute } from '@/domain/entities/Attribute.js'
+import { AttributeType } from '@/domain/entities/AttributeType.js'
+import { Node } from '@/domain/entities/Node.js'
+import { NodeRelation } from '@/domain/entities/NodeRelation.js'
+import { RelationType } from '@/domain/entities/RelationType.js'
+import { Table } from '@/domain/entities/Table.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type {
+  INodeEmbeddingRepository,
+  UpsertNodeEmbeddingInput,
+} from '@/domain/repositories/INodeEmbeddingRepository.js'
+import type {
+  INodeMutationRepository,
+  NodeAttributeBatchWrite,
+} from '@/domain/repositories/INodeMutationRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
+import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export class JsonlBackupService {
   private readonly defaultBackupDir = './backups/jsonl'
@@ -47,6 +67,10 @@ export class JsonlBackupService {
     private readonly nodeRelationRepository: INodeRelationRepository,
     private readonly relationTypeRepository: IRelationTypeRepository,
     private readonly logger: ILogger,
+    private readonly createNodeUseCase?: Pick<CreateNodeUseCase, 'execute'>,
+    private readonly schemaGate?: NodeAttributeSchemaGate,
+    private readonly nodeEmbeddingRepository?: INodeEmbeddingRepository,
+    private readonly nodeMutationRepository?: INodeMutationRepository,
   ) {}
 
   /**
@@ -60,6 +84,7 @@ export class JsonlBackupService {
     let tablesExported = 0
     let nodesExported = 0
     let relationsExported = 0
+    let embeddingsExported: number | undefined
     let totalBytes = 0
 
     try {
@@ -73,9 +98,16 @@ export class JsonlBackupService {
       const allTablesData = await this.collectAllPages((offset, limit) =>
         this.tableRepository.findAll({ limit, offset }),
       )
-      const tablesToExport = options.tableIds
-        ? allTablesData.filter((t) => options.tableIds?.includes(t.id))
-        : allTablesData
+      const tablesToExport =
+        options.tableIds || options.tableIdentifiers
+          ? allTablesData.filter(
+              (t) =>
+                (options.tableIds ? options.tableIds.includes(t.id) : false) ||
+                (options.tableIdentifiers
+                  ? options.tableIdentifiers.includes(t.identifier)
+                  : false),
+            )
+          : allTablesData
 
       // Export schema if requested
       if (options.includeSchema !== false) {
@@ -115,6 +147,23 @@ export class JsonlBackupService {
         }
       }
 
+      // Export persistent node embeddings when explicitly requested
+      if (options.includeEmbeddings === true) {
+        if (!this.nodeEmbeddingRepository) {
+          warnings.push('includeEmbeddings requested, but nodeEmbeddingRepository is not configured')
+          embeddingsExported = 0
+        } else {
+          try {
+            const embeddingsFile = await this.exportEmbeddings(outputDir, tablesToExport)
+            files.push(embeddingsFile)
+            totalBytes += embeddingsFile.sizeBytes
+            embeddingsExported = embeddingsFile.lineCount
+          } catch (error) {
+            errors.push(`Failed to export embeddings: ${error}`)
+          }
+        }
+      }
+
       // The manifest is the commit marker. Never replace a last-known-good
       // manifest for a partial snapshot.
       if (errors.length === 0) {
@@ -127,6 +176,7 @@ export class JsonlBackupService {
         tablesExported,
         nodesExported,
         relationsExported,
+        ...(embeddingsExported !== undefined ? { embeddingsExported } : {}),
         totalBytes,
         fileCount: files.length,
       })
@@ -139,6 +189,7 @@ export class JsonlBackupService {
           tablesExported,
           nodesExported,
           relationsExported,
+          ...(embeddingsExported !== undefined ? { embeddingsExported } : {}),
           totalBytes,
         },
         errors,
@@ -156,6 +207,7 @@ export class JsonlBackupService {
           tablesExported,
           nodesExported,
           relationsExported,
+          ...(embeddingsExported !== undefined ? { embeddingsExported } : {}),
           totalBytes,
         },
         errors,
@@ -175,6 +227,7 @@ export class JsonlBackupService {
     let nodesSkipped = 0
     let nodesUpdated = 0
     let relationsImported = 0
+    let embeddingsImported: number | undefined
 
     try {
       this.logger.info('Starting JSONL import', { inputDir: options.inputDir, options })
@@ -218,6 +271,7 @@ export class JsonlBackupService {
             nodesSkipped: 0,
             nodesUpdated: 0,
             relationsImported: 0,
+            ...(manifest.hasEmbeddings ? { embeddingsImported: 0 } : {}),
           },
           errors,
           warnings: ['Dry run - no data imported'],
@@ -235,10 +289,16 @@ export class JsonlBackupService {
       const tablesToImport = options.tableIdentifiers
         ? manifest.tables.filter((t) => options.tableIdentifiers?.includes(t.identifier))
         : manifest.tables
+      const nodeIdMap = new Map<string, string>()
 
       for (const tableInfo of tablesToImport) {
         try {
-          const result = await this.importTableNodes(options.inputDir, tableInfo.identifier, options.conflictResolution)
+          const result = await this.importTableNodes(
+            options.inputDir,
+            tableInfo.identifier,
+            options.conflictResolution,
+            nodeIdMap,
+          )
           nodesImported += result.imported
           nodesSkipped += result.skipped
           nodesUpdated += result.updated
@@ -250,10 +310,34 @@ export class JsonlBackupService {
       // Import relations
       if (manifest.hasRelations) {
         try {
-          const relResult = await this.importRelations(options.inputDir, options.conflictResolution)
+          const relResult = await this.importRelations(
+            options.inputDir,
+            options.conflictResolution,
+            nodeIdMap,
+          )
           relationsImported = relResult.imported
+          warnings.push(...relResult.warnings)
         } catch (error) {
           errors.push(`Failed to import relations: ${error}`)
+        }
+      }
+
+      // Import embeddings when present in backup (unless explicitly disabled)
+      const shouldImportEmbeddings =
+        options.includeEmbeddings !== false &&
+        (Boolean(manifest.hasEmbeddings) || options.includeEmbeddings === true)
+      if (shouldImportEmbeddings) {
+        try {
+          const embResult = await this.importEmbeddings(
+            options.inputDir,
+            tablesToImport.map((t) => t.identifier),
+            options.conflictResolution,
+            nodeIdMap,
+          )
+          embeddingsImported = embResult.imported
+          warnings.push(...embResult.warnings)
+        } catch (error) {
+          errors.push(`Failed to import embeddings: ${error}`)
         }
       }
 
@@ -263,6 +347,7 @@ export class JsonlBackupService {
         nodesSkipped,
         nodesUpdated,
         relationsImported,
+        ...(embeddingsImported !== undefined ? { embeddingsImported } : {}),
       })
 
       return {
@@ -274,6 +359,7 @@ export class JsonlBackupService {
           nodesSkipped,
           nodesUpdated,
           relationsImported,
+          ...(embeddingsImported !== undefined ? { embeddingsImported } : {}),
         },
         errors,
         warnings,
@@ -285,7 +371,14 @@ export class JsonlBackupService {
       return {
         success: false,
         inputDir: options.inputDir,
-        stats: { tablesImported, nodesImported, nodesSkipped, nodesUpdated, relationsImported },
+        stats: {
+          tablesImported,
+          nodesImported,
+          nodesSkipped,
+          nodesUpdated,
+          relationsImported,
+          ...(embeddingsImported !== undefined ? { embeddingsImported } : {}),
+        },
         errors,
         warnings,
       }
@@ -511,6 +604,113 @@ export class JsonlBackupService {
     }
   }
 
+  private async exportEmbeddings(
+    outputDir: string,
+    tables: Array<{ id: string; identifier: string }>,
+  ): Promise<JsonlExportedFile> {
+    if (!this.nodeEmbeddingRepository) {
+      throw new Error('nodeEmbeddingRepository is required to export embeddings')
+    }
+
+    const filePath = join(outputDir, 'embeddings.jsonl')
+    const temporaryPath = this.temporaryPath(filePath)
+    const file = await open(temporaryPath, 'wx')
+    let lineCount = 0
+    let sizeBytes = 0
+    const pageSize = 500
+    let fileClosed = false
+    let published = false
+
+    try {
+      for (const table of tables) {
+        if (typeof this.nodeEmbeddingRepository.findByTableId === 'function') {
+          let offset = 0
+          while (true) {
+            const embeddings = await this.nodeEmbeddingRepository.findByTableId(
+              table.id,
+              { limit: pageSize, offset },
+            )
+            if (embeddings.length === 0) break
+
+            const contentById = await this.loadNodeContentsByIds(
+              embeddings.map((record) => record.nodeId),
+            )
+            const lines = embeddings.map((record) => {
+              const entry: JsonlEmbeddingEntry = {
+                nodeId: String(record.nodeId),
+                tableIdentifier: table.identifier,
+                nodeContent: contentById.get(String(record.nodeId)) ?? null,
+                model: record.model,
+                dimension: record.dimension,
+                vector: record.vector,
+                createdAt: record.createdAt,
+                updatedAt: record.updatedAt,
+              }
+              return JSON.stringify(entry)
+            })
+            const chunk = `${lineCount > 0 ? '\n' : ''}${lines.join('\n')}`
+            await file.write(chunk)
+            lineCount += lines.length
+            sizeBytes += Buffer.byteLength(chunk, 'utf-8')
+            offset += embeddings.length
+            if (embeddings.length < pageSize) break
+          }
+        } else {
+          let offset = 0
+          while (true) {
+            const page = await this.nodeRepository.findByTableId(table.id, {
+              limit: pageSize,
+              offset,
+            })
+            const nodes = page.data ?? page.nodes ?? page.items ?? []
+            if (nodes.length === 0) break
+
+            const lines: string[] = []
+            for (const node of nodes) {
+              const record = await this.nodeEmbeddingRepository.findByNodeId(
+                node.getId(),
+              )
+              if (!record) continue
+              const entry: JsonlEmbeddingEntry = {
+                nodeId: String(record.nodeId),
+                tableIdentifier: table.identifier,
+                nodeContent: node.getContent(),
+                model: record.model,
+                dimension: record.dimension,
+                vector: record.vector,
+                createdAt: record.createdAt,
+                updatedAt: record.updatedAt,
+              }
+              lines.push(JSON.stringify(entry))
+            }
+            if (lines.length > 0) {
+              const chunk = `${lineCount > 0 ? '\n' : ''}${lines.join('\n')}`
+              await file.write(chunk)
+              lineCount += lines.length
+              sizeBytes += Buffer.byteLength(chunk, 'utf-8')
+            }
+            offset += nodes.length
+            if (nodes.length < pageSize) break
+          }
+        }
+      }
+      await file.close()
+      fileClosed = true
+      await rename(temporaryPath, filePath)
+      published = true
+    } finally {
+      if (!fileClosed) await file.close().catch(() => undefined)
+      if (!published) await rm(temporaryPath, { force: true }).catch(() => undefined)
+    }
+
+    return {
+      path: filePath,
+      type: 'embeddings',
+      lineCount,
+      sizeBytes,
+    }
+  }
+
   private async writeManifest(
     outputDir: string,
     files: JsonlExportedFile[],
@@ -519,6 +719,7 @@ export class JsonlBackupService {
     const manifestPath = join(outputDir, 'manifest.json')
 
     const tableFiles = files.filter((f) => f.type === 'table')
+    const hasEmbeddings = files.some((f) => f.type === 'embeddings')
 
     const manifest: JsonlBackupManifest = {
       version: '1.0',
@@ -536,6 +737,7 @@ export class JsonlBackupService {
       }),
       hasRelations: files.some((f) => f.type === 'relations'),
       hasSchema: files.some((f) => f.type === 'schema'),
+      ...(hasEmbeddings ? { hasEmbeddings: true } : {}),
     }
 
     const content = JSON.stringify(manifest, null, 2)
@@ -553,7 +755,7 @@ export class JsonlBackupService {
 
   private async importSchema(
     inputDir: string,
-    _options: JsonlImportOptions,
+    options: JsonlImportOptions,
   ): Promise<{ tablesCreated: number; warnings: string[] }> {
     const schemaPath = join(inputDir, 'schema.jsonl')
     const warnings: string[] = []
@@ -564,18 +766,105 @@ export class JsonlBackupService {
       return { tablesCreated: 0, warnings }
     }
 
-    for await (const entry of this.readJsonLines<JsonlSchemaEntry>(schemaPath)) {
+    const allowedIdentifiers = options.tableIdentifiers
+      ? new Set(options.tableIdentifiers)
+      : null
+    const canPersistTables = typeof this.tableRepository.save === 'function'
+    const canPersistAttributes =
+      typeof this.attributeRepository.save === 'function' &&
+      typeof this.attributeRepository.findByTableIdAndIdentifier === 'function' &&
+      typeof this.attributeTypeRepository.findByIdentifier === 'function'
 
-      // Check if table exists
-      const existingTable = await this.tableRepository.findByIdentifier(entry.identifier)
-      if (existingTable) {
-        warnings.push(`Table ${entry.identifier} already exists, skipping`)
+    for await (const entry of this.readJsonLines<JsonlSchemaEntry>(schemaPath)) {
+      if (allowedIdentifiers && !allowedIdentifiers.has(entry.identifier)) {
         continue
       }
 
-      // Table creation would go here - for now, just count
-      // This needs integration with CreateTable use case
-      tablesCreated++
+      let targetTable = await this.tableRepository.findByIdentifier(entry.identifier)
+      if (targetTable) {
+        warnings.push(`Table ${entry.identifier} already exists, skipping`)
+      } else if (canPersistTables) {
+        const saved = await this.tableRepository.save(
+          Table.create(entry.identifier, entry.description),
+        )
+        targetTable =
+          (await this.tableRepository.findByIdentifier(entry.identifier)) ??
+          saved ??
+          null
+        tablesCreated++
+      } else {
+        tablesCreated++
+        continue
+      }
+
+      if (targetTable && canPersistAttributes && Array.isArray(entry.attributes)) {
+        let attributesCreated = false
+        for (const attrEntry of entry.attributes) {
+          const existingAttr = await this.attributeRepository.findByTableIdAndIdentifier(
+            targetTable.id,
+            attrEntry.identifier,
+          )
+          if (existingAttr) continue
+
+          let attrType = await this.attributeTypeRepository.findByIdentifier(
+            attrEntry.attributeType,
+          )
+          if (
+            !attrType &&
+            typeof this.attributeTypeRepository.save === 'function' &&
+            attrEntry.attributeType &&
+            attrEntry.attributeType !== 'unknown'
+          ) {
+            const primitiveTypes = new Set([
+              'string',
+              'number',
+              'integer',
+              'boolean',
+              'array',
+              'object',
+            ])
+            const inferredJsonType = primitiveTypes.has(attrEntry.attributeType)
+              ? attrEntry.attributeType
+              : 'string'
+            await this.attributeTypeRepository.save(
+              AttributeType.create(
+                attrEntry.attributeType,
+                inferredJsonType,
+                undefined,
+                attrEntry.description,
+              ),
+            )
+            attrType = await this.attributeTypeRepository.findByIdentifier(
+              attrEntry.attributeType,
+            )
+          }
+          if (!attrType) {
+            attrType = await this.attributeTypeRepository.findByIdentifier('string')
+          }
+          if (!attrType) {
+            warnings.push(
+              `Attribute type '${attrEntry.attributeType}' not available for '${entry.identifier}.${attrEntry.identifier}'`,
+            )
+            continue
+          }
+
+          await this.attributeRepository.save(
+            Attribute.create(
+              targetTable.id,
+              attrEntry.identifier,
+              attrType.getId(),
+              attrEntry.name || attrEntry.identifier,
+              attrEntry.description,
+              attrEntry.isRequired,
+            ),
+          )
+          attributesCreated = true
+        }
+
+        if (attributesCreated) {
+          TableSchemaProjectionService.clearCache(targetTable.id)
+        }
+      }
     }
 
     return { tablesCreated, warnings }
@@ -585,6 +874,7 @@ export class JsonlBackupService {
     inputDir: string,
     tableIdentifier: string,
     conflictResolution: 'skip' | 'overwrite' | 'merge',
+    nodeIdMap: Map<string, string>,
   ): Promise<{ imported: number; skipped: number; updated: number }> {
     const filePath = join(inputDir, 'tables', `${tableIdentifier}.jsonl`)
     let imported = 0
@@ -601,53 +891,404 @@ export class JsonlBackupService {
       throw new Error(`Table ${tableIdentifier} not found`)
     }
 
+    const tableGateContext = this.schemaGate
+      ? await this.schemaGate.prepareTableGate(table.id)
+      : null
+    const pendingAttributeWrites: NodeAttributeBatchWrite[] = []
+    const flushBatchSize = 500
+
+    const flushPendingAttributes = async (): Promise<void> => {
+      if (
+        pendingAttributeWrites.length === 0 ||
+        !this.nodeMutationRepository?.upsertAttributesBatch
+      ) {
+        return
+      }
+      const batch = pendingAttributeWrites.splice(0, pendingAttributeWrites.length)
+      await this.nodeMutationRepository.upsertAttributesBatch(batch)
+    }
+
     for await (const entry of this.readJsonLines<JsonlNodeEntry>(filePath)) {
+      const attributeEntries = Object.entries(entry).filter(([key]) => !key.startsWith('_'))
+      const attributesRecord = Object.fromEntries(attributeEntries)
 
       // Check if node with same content exists
       const existingNode = await this.nodeRepository.findByTableIdAndContent(table.id, entry._content || '')
 
       if (existingNode) {
+        if (entry._id) {
+          nodeIdMap.set(String(entry._id), String(existingNode.getId()))
+        }
         switch (conflictResolution) {
           case 'skip':
             skipped++
             continue
           case 'overwrite':
-            // Update node
             await this.nodeRepository.update(existingNode.getId(), {
               title: entry._title,
               content: entry._content || undefined,
             })
+            if (attributeEntries.length > 0 && this.schemaGate && tableGateContext) {
+              const normalized = this.schemaGate.validateAndNormalizePatchWithContext(
+                tableGateContext,
+                attributeEntries.map(([identifier, value]) => ({
+                  attributeIdOrIdentifier: identifier,
+                  value,
+                })),
+              )
+              if (this.nodeMutationRepository?.upsertAttributesBatch) {
+                for (const item of normalized) {
+                  pendingAttributeWrites.push({
+                    nodeId: existingNode.getId(),
+                    attributeId: item.attributeId,
+                    value: item.canonicalValue,
+                  })
+                }
+                if (pendingAttributeWrites.length >= flushBatchSize) {
+                  await flushPendingAttributes()
+                }
+              } else {
+                for (const item of normalized) {
+                  await this.nodeAttributeRepository.setNodeAttribute(
+                    existingNode.getId(),
+                    item.attributeId,
+                    item.canonicalValue,
+                  )
+                }
+              }
+            }
             updated++
             break
           case 'merge':
-            // Merge attributes only
+            if (attributeEntries.length > 0 && this.schemaGate && tableGateContext) {
+              const normalized = this.schemaGate.validateAndNormalizePatchWithContext(
+                tableGateContext,
+                attributeEntries.map(([identifier, value]) => ({
+                  attributeIdOrIdentifier: identifier,
+                  value,
+                })),
+              )
+              if (this.nodeMutationRepository?.upsertAttributesBatch) {
+                for (const item of normalized) {
+                  pendingAttributeWrites.push({
+                    nodeId: existingNode.getId(),
+                    attributeId: item.attributeId,
+                    value: item.canonicalValue,
+                  })
+                }
+                if (pendingAttributeWrites.length >= flushBatchSize) {
+                  await flushPendingAttributes()
+                }
+              } else {
+                for (const item of normalized) {
+                  await this.nodeAttributeRepository.setNodeAttribute(
+                    existingNode.getId(),
+                    item.attributeId,
+                    item.canonicalValue,
+                  )
+                }
+              }
+            }
             updated++
             break
         }
       } else {
-        // Import new node - would need CreateNode use case integration
+        if (this.createNodeUseCase) {
+          const created = await this.createNodeUseCase.execute({
+            tableId: table.id,
+            content: entry._content || '',
+            title: entry._title || undefined,
+            attributes: attributeEntries.length > 0 ? attributesRecord : undefined,
+          })
+          if (entry._id && created?.node?.id) {
+            nodeIdMap.set(String(entry._id), String(created.node.id))
+          }
+        } else if (typeof this.nodeRepository.save === 'function') {
+          await this.nodeRepository.save(
+            Node.create(table.id, entry._content || '', entry._title || undefined),
+          )
+          const savedNode = await this.nodeRepository.findByTableIdAndContent(
+            table.id,
+            entry._content || '',
+          )
+          if (entry._id && savedNode) {
+            nodeIdMap.set(String(entry._id), String(savedNode.getId()))
+          }
+        }
         imported++
       }
     }
+
+    await flushPendingAttributes()
 
     return { imported, skipped, updated }
   }
 
   private async importRelations(
     inputDir: string,
-    _conflictResolution: 'skip' | 'overwrite' | 'merge',
-  ): Promise<{ imported: number }> {
+    conflictResolution: 'skip' | 'overwrite' | 'merge',
+    nodeIdMap: ReadonlyMap<string, string>,
+  ): Promise<{ imported: number; warnings: string[] }> {
     const filePath = join(inputDir, 'relations.jsonl')
+    const warnings: string[] = []
     let imported = 0
 
     if (!existsSync(filePath)) {
-      return { imported: 0 }
+      return { imported: 0, warnings }
     }
 
-    // For now, just count - full implementation needs CreateRelation use case
-    for await (const _entry of this.readJsonLines<JsonlRelationEntry>(filePath)) imported++
+    const canPersistRelations =
+      typeof this.nodeRelationRepository.save === 'function' &&
+      typeof this.nodeRelationRepository.findBySourceNodeId === 'function' &&
+      typeof this.relationTypeRepository.findByIdentifier === 'function' &&
+      typeof this.nodeRepository.findById === 'function'
 
-    return { imported }
+    if (!canPersistRelations) {
+      for await (const _entry of this.readJsonLines<JsonlRelationEntry>(filePath)) imported++
+      return { imported, warnings }
+    }
+
+    const relationTypesPath = join(inputDir, 'relation-types.jsonl')
+    if (
+      existsSync(relationTypesPath) &&
+      typeof this.relationTypeRepository.save === 'function'
+    ) {
+      for await (const rtEntry of this.readJsonLines<JsonlRelationTypeEntry>(
+        relationTypesPath,
+      )) {
+        const existingRt = await this.relationTypeRepository.findByIdentifier(
+          rtEntry.identifier,
+        )
+        if (!existingRt) {
+          await this.relationTypeRepository.save(
+            RelationType.create(
+              rtEntry.identifier,
+              rtEntry.description,
+              rtEntry.category,
+            ),
+          )
+        }
+      }
+    }
+
+    const relationTypeIdByIdentifier = new Map<string, RelationTypeId>()
+
+    for await (const entry of this.readJsonLines<JsonlRelationEntry>(filePath)) {
+      const mappedSourceId = entry.fromNodeId
+        ? (nodeIdMap.get(String(entry.fromNodeId)) ?? String(entry.fromNodeId))
+        : null
+      const mappedTargetId = entry.toNodeId
+        ? (nodeIdMap.get(String(entry.toNodeId)) ?? String(entry.toNodeId))
+        : null
+      if (!mappedSourceId || !mappedTargetId) {
+        warnings.push(`Skipping relation '${entry.id}' with missing endpoint node ID`)
+        continue
+      }
+
+      const [sourceNode, targetNode] = await Promise.all([
+        this.nodeRepository.findById(mappedSourceId as NodeId),
+        this.nodeRepository.findById(mappedTargetId as NodeId),
+      ])
+      if (!sourceNode || !targetNode) {
+        warnings.push(
+          `Skipping relation '${entry.id}' (${entry.fromNodeId} -> ${entry.toNodeId}): endpoint node not imported`,
+        )
+        continue
+      }
+
+      let relationTypeId = relationTypeIdByIdentifier.get(entry.relationType)
+      if (!relationTypeId) {
+        let relationType = await this.relationTypeRepository.findByIdentifier(
+          entry.relationType,
+        )
+        if (
+          !relationType &&
+          typeof this.relationTypeRepository.save === 'function' &&
+          entry.relationType &&
+          entry.relationType !== 'unknown'
+        ) {
+          await this.relationTypeRepository.save(
+            RelationType.create(entry.relationType),
+          )
+          relationType = await this.relationTypeRepository.findByIdentifier(
+            entry.relationType,
+          )
+        }
+        if (!relationType) {
+          warnings.push(
+            `Relation type '${entry.relationType}' not found for relation '${entry.id}'`,
+          )
+          continue
+        }
+        relationTypeId = relationType.getId()
+        relationTypeIdByIdentifier.set(entry.relationType, relationTypeId)
+      }
+
+      const existingOutgoing = await this.nodeRelationRepository.findBySourceNodeId(
+        sourceNode.getId(),
+      )
+      const duplicate = existingOutgoing.find(
+        (rel) =>
+          String(rel.getTargetNodeId()) === String(targetNode.getId()) &&
+          String(rel.getRelationTypeId()) === String(relationTypeId),
+      )
+
+      if (duplicate) {
+        if (conflictResolution === 'skip') {
+          continue
+        }
+        if (typeof this.nodeRelationRepository.delete === 'function') {
+          await this.nodeRelationRepository.delete(duplicate.getId())
+        }
+      }
+
+      await this.nodeRelationRepository.save(
+        NodeRelation.create(
+          sourceNode.getTableId(),
+          sourceNode.getId(),
+          'internal',
+          targetNode.getId(),
+          'internal',
+          relationTypeId,
+          (entry.properties as Record<string, SafeJsonValue> | undefined) ?? null,
+          entry.strength,
+        ),
+      )
+      imported++
+    }
+
+    return { imported, warnings }
+  }
+
+  private async importEmbeddings(
+    inputDir: string,
+    allowedTableIdentifiers: readonly string[],
+    conflictResolution: 'skip' | 'overwrite' | 'merge',
+    nodeIdMap: ReadonlyMap<string, string>,
+  ): Promise<{ imported: number; warnings: string[] }> {
+    const filePath = join(inputDir, 'embeddings.jsonl')
+    const warnings: string[] = []
+    if (!existsSync(filePath)) {
+      return { imported: 0, warnings }
+    }
+    if (!this.nodeEmbeddingRepository) {
+      warnings.push('embeddings.jsonl found, but nodeEmbeddingRepository is not configured')
+      return { imported: 0, warnings }
+    }
+
+    const allowedSet =
+      allowedTableIdentifiers.length > 0 ? new Set(allowedTableIdentifiers) : null
+    const tablesByIdentifier = new Map<
+      string,
+      { id: string; identifier: string } | null
+    >()
+    const pendingBatch: UpsertNodeEmbeddingInput[] = []
+    let imported = 0
+    const batchSize = 500
+
+    const flushBatch = async (): Promise<void> => {
+      if (pendingBatch.length === 0 || !this.nodeEmbeddingRepository) return
+      const chunk = pendingBatch.splice(0, pendingBatch.length)
+      if (this.nodeEmbeddingRepository.upsertMany) {
+        const saved = await this.nodeEmbeddingRepository.upsertMany(chunk)
+        imported += saved.length
+      } else {
+        for (const item of chunk) {
+          await this.nodeEmbeddingRepository.upsert(item)
+          imported++
+        }
+      }
+    }
+
+    for await (const entry of this.readJsonLines<JsonlEmbeddingEntry>(filePath)) {
+      if (allowedSet && !allowedSet.has(entry.tableIdentifier)) {
+        continue
+      }
+
+      let table = tablesByIdentifier.get(entry.tableIdentifier)
+      if (table === undefined) {
+        const found = await this.tableRepository.findByIdentifier(entry.tableIdentifier)
+        table = found ? { id: found.id, identifier: found.identifier } : null
+        tablesByIdentifier.set(entry.tableIdentifier, table)
+      }
+      if (!table) {
+        warnings.push(
+          `Target table '${entry.tableIdentifier}' not found for embedding on node '${entry.nodeId}'`,
+        )
+        continue
+      }
+
+      let targetNode = null
+      const mappedNodeId = entry.nodeId ? nodeIdMap.get(String(entry.nodeId)) : undefined
+      if (mappedNodeId) {
+        const byMappedId = await this.nodeRepository.findById(mappedNodeId as NodeId)
+        if (byMappedId && String(byMappedId.getTableId()) === String(table.id)) {
+          targetNode = byMappedId
+        }
+      }
+      if (!targetNode && entry.nodeContent !== null) {
+        targetNode = await this.nodeRepository.findByTableIdAndContent(
+          table.id,
+          entry.nodeContent,
+        )
+      }
+      if (!targetNode && entry.nodeId) {
+        const byId = await this.nodeRepository.findById(entry.nodeId as NodeId)
+        if (byId && String(byId.getTableId()) === String(table.id)) {
+          targetNode = byId
+        }
+      }
+      if (!targetNode) {
+        warnings.push(
+          `Target node not found in table '${entry.tableIdentifier}' for embedding '${entry.nodeId}'`,
+        )
+        continue
+      }
+
+      if (conflictResolution === 'skip') {
+        const existing = await this.nodeEmbeddingRepository.findByNodeId(
+          targetNode.getId(),
+        )
+        if (existing) continue
+      }
+
+      pendingBatch.push({
+        nodeId: targetNode.getId(),
+        tableId: table.id,
+        vector: entry.vector,
+        model: entry.model,
+      })
+
+      if (pendingBatch.length >= batchSize) {
+        await flushBatch()
+      }
+    }
+
+    await flushBatch()
+    return { imported, warnings }
+  }
+
+  private async loadNodeContentsByIds(
+    nodeIds: readonly NodeId[],
+  ): Promise<Map<string, string | null>> {
+    const contentById = new Map<string, string | null>()
+    if (nodeIds.length === 0) return contentById
+
+    if (typeof this.nodeRepository.findByIds === 'function') {
+      const nodes = await this.nodeRepository.findByIds([...nodeIds])
+      for (const node of nodes) {
+        contentById.set(String(node.getId()), node.getContent())
+      }
+      return contentById
+    }
+
+    for (const nodeId of nodeIds) {
+      const node = await this.nodeRepository.findById(nodeId)
+      if (node) {
+        contentById.set(String(node.getId()), node.getContent())
+      }
+    }
+    return contentById
   }
 
   // ===== Helper Methods =====

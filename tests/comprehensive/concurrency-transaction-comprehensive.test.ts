@@ -771,14 +771,14 @@ describe('Concurrency and Transaction Comprehensive Tests', () => {
       `)
       const tableId = tableResponse.data.createTable.table.id
 
-      // Create attribute for counter testing
+      // Create attribute for counter testing (attributeTypeId "3" = integer)
       const attrResponse = await graphqlExecute(`
         mutation {
           createAttribute(input: {
             tableId: "${tableId}"
             identifier: "counter"
             name: "Counter"
-            attributeTypeId: "2"
+            attributeTypeId: "3"
           }) {
             attribute { id }
           }

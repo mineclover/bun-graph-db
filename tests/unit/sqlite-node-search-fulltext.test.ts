@@ -435,6 +435,105 @@ describe("SqliteNodeSearchRepository full-text search", () => {
 				?.relevanceScore,
 		).toBeNumber();
 	});
+
+	test("uses node_attribute_search_fts and idx_node_attributes_attr_num_node without full-table LIKE scans on migrated schemas", async () => {
+		const db = new Database(":memory:");
+		databases.push(db);
+		const { applyDatabaseMigrations, createDatabaseMigrations } = await import(
+			"../../src/infrastructure/database/sqlite/DatabaseMigrationRunner"
+		);
+		const baseSchema = await Bun.file(
+			new URL("../../scripts/database/schema.sql", import.meta.url),
+		).text();
+		applyDatabaseMigrations(db, createDatabaseMigrations(baseSchema));
+
+		db.exec(`
+      INSERT INTO tables (id, identifier, description) VALUES (1, 'metrics', 'Metrics');
+      INSERT INTO attribute_types (id, identifier, json_type, format) VALUES
+        (101, 'text_type', 'string', NULL),
+        (102, 'score_type', 'number', NULL),
+        (103, 'event_date', 'string', 'date');
+      INSERT INTO attributes (id, table_id, identifier, name, attribute_type_id) VALUES
+        (1, 1, 'notes', 'Notes', 101),
+        (2, 1, 'score', 'Score', 102),
+        (3, 1, 'occurred_on', 'Occurred On', 103);
+      INSERT INTO nodes (id, table_id, content, title) VALUES
+        (1, 1, 'node-a', 'Alpha'),
+        (2, 1, 'node-b', 'Beta'),
+        (3, 1, 'quantum kernel', 'Gamma');
+      INSERT INTO node_attributes (node_id, attribute_id, value) VALUES
+        (1, 1, 'quantum accelerator'), (1, 2, '92.5'), (1, 3, '2026-10-15'),
+        (2, 1, 'classical solver'),    (2, 2, '41.0'), (2, 3, '2026-09-01'),
+        (3, 1, 'baseline'),            (3, 2, '88.0'), (3, 3, '2026-10-20');
+    `);
+
+		const repository = new SqliteNodeSearchRepository(db);
+		const available = [
+			{ identifier: "notes", dataType: "string" },
+			{ identifier: "score", dataType: "number" },
+			{ identifier: "occurred_on", dataType: "datetime" },
+		];
+		const query = {
+			conditions: [
+				{
+					logicalOperator: "and" as const,
+					filters: [
+						{
+							field: "score",
+							operator: "gt" as const,
+							value: 80,
+							valueType: "number" as const,
+						},
+						{
+							field: "occurred_on",
+							operator: "range" as const,
+							value: { min: "2026-10-01", max: "2026-10-31" },
+							valueType: "datetime" as const,
+						},
+					],
+				},
+			],
+			textSearch: "quantum",
+			sortBy: [{ field: "score", direction: "desc" as const }],
+			limit: 10,
+			offset: 0,
+		};
+
+		const result = await repository.searchNodes("1", query, available);
+		expect(result.total).toBe(2);
+		expect(result.data.map((entry) => entry.node.getId())).toEqual(["1", "3"]);
+		expect(result.data[0]?.relevanceScore).toBeNumber();
+
+		const introspection = repository as unknown as {
+			buildNodeQuery(
+				tableId: string,
+				searchQuery: typeof query,
+				attrs: typeof available,
+				isCountQuery: boolean,
+				fts: boolean,
+			): { query: string; params: (string | number | boolean | null)[] };
+		};
+		const pageBuilt = introspection.buildNodeQuery(
+			"1",
+			query,
+			available,
+			false,
+			true,
+		);
+		const plan = db
+			.query<{ detail: string }, (string | number | boolean | null)[]>(
+				`EXPLAIN QUERY PLAN ${pageBuilt.query}`,
+			)
+			.all(...pageBuilt.params)
+			.map((row) => row.detail);
+
+		expect(
+			plan.some((detail) => detail.includes("idx_node_attributes_attr_num_node")),
+		).toBe(true);
+		expect(
+			plan.some((detail) => detail.includes("SCAN text_nav")),
+		).toBe(false);
+	});
 });
 
 function createAttributeSearchDatabase(withFts = false): Database {

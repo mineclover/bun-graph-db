@@ -59,10 +59,14 @@ describe('DatabaseMigrationRunner', () => {
     const appliedVersions = database.query<{ version: number }, []>('SELECT version FROM schema_migrations ORDER BY version').all()
     const jobColumns = database.query<{ name: string }, []>('PRAGMA table_info(tabular_sync_jobs)').all()
 
-    expect(appliedVersions.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    expect(appliedVersions.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
     expect(jobColumns.some((column) => column.name === 'revision')).toBe(true)
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_search_fts'").get()).toBeTruthy()
+    expect(database.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attribute_search_fts'").get()).toBeTruthy()
+    expect(database.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_embeddings'").get()).toBeTruthy()
+    expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_node_embeddings_table_dim'").get()).toBeTruthy()
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_node_attributes_attr_value_node'").get()).toBeTruthy()
+    expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_node_attributes_attr_num_node'").get()).toBeTruthy()
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_nodes_table_created_id'").get()).toBeTruthy()
     const updatedAtColumn = database
       .query<{ name: string; notnull: number; dflt_value: string | null }, []>('PRAGMA table_info(template_executions)')
@@ -146,6 +150,103 @@ describe('DatabaseMigrationRunner', () => {
     database.query('INSERT INTO schema_migrations (version, name) VALUES (99, \'future\')').run()
 
     expect(() => applyDatabaseMigrations(database, [])).toThrow('unknown to this service version')
+
+    database.close()
+  })
+
+  test('computes and maintains typed value_num on node_attributes across inserts, updates, and type evolution', () => {
+    const database = new Database(':memory:')
+    const schemaWithTypes = `
+      CREATE TABLE tables (id INTEGER PRIMARY KEY, identifier TEXT NOT NULL UNIQUE);
+      CREATE TABLE nodes (
+        id INTEGER PRIMARY KEY,
+        table_id INTEGER NOT NULL,
+        content TEXT NOT NULL,
+        title TEXT,
+        description TEXT,
+        metadata TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE TABLE attribute_types (
+        id INTEGER PRIMARY KEY,
+        identifier TEXT NOT NULL UNIQUE,
+        json_type TEXT NOT NULL,
+        format TEXT
+      );
+      CREATE TABLE attributes (
+        id INTEGER PRIMARY KEY,
+        table_id INTEGER NOT NULL,
+        identifier TEXT NOT NULL,
+        attribute_type_id INTEGER NOT NULL
+      );
+      CREATE TABLE node_attributes (
+        id INTEGER PRIMARY KEY,
+        node_id INTEGER NOT NULL,
+        attribute_id INTEGER NOT NULL,
+        value TEXT NOT NULL
+      );
+      CREATE TABLE templates (
+        id INTEGER PRIMARY KEY,
+        usage_count INTEGER NOT NULL DEFAULT 0,
+        last_used_at TEXT,
+        avg_execution_time_ms INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE TABLE template_executions (
+        id INTEGER PRIMARY KEY,
+        template_id INTEGER NOT NULL,
+        executed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        execution_time_ms INTEGER NOT NULL
+      );
+    `
+    applyDatabaseMigrations(database, createDatabaseMigrations(schemaWithTypes))
+
+    database.exec(`
+      INSERT INTO tables (id, identifier) VALUES (1, 'metrics');
+      INSERT INTO nodes (id, table_id, content) VALUES (10, 1, 'node-a');
+      INSERT INTO attribute_types (id, identifier, json_type, format) VALUES
+        (1, 'score', 'number', NULL),
+        (2, 'active', 'boolean', NULL),
+        (3, 'due_at', 'string', 'date-time'),
+        (4, 'label', 'string', NULL);
+      INSERT INTO attributes (id, table_id, identifier, attribute_type_id) VALUES
+        (101, 1, 'score', 1),
+        (102, 1, 'active', 2),
+        (103, 1, 'due_at', 3),
+        (104, 1, 'label', 4);
+      INSERT INTO node_attributes (id, node_id, attribute_id, value) VALUES
+        (1, 10, 101, '42.5'),
+        (2, 10, 102, 'true'),
+        (3, 10, 103, '2026-10-31T00:00:00.000Z'),
+        (4, 10, 104, '999');
+    `)
+
+    const rows = database
+      .query<{ id: number; value_num: number | null }, []>(
+        'SELECT id, value_num FROM node_attributes ORDER BY id ASC',
+      )
+      .all()
+
+    expect(rows[0]?.value_num).toBe(42.5)
+    expect(rows[1]?.value_num).toBe(1)
+    expect(typeof rows[2]?.value_num).toBe('number')
+    expect((rows[2]?.value_num ?? 0) > 2461000).toBe(true)
+    expect(rows[3]?.value_num).toBeNull()
+
+    // Update attribute value -> trigger updates value_num
+    database.query("UPDATE node_attributes SET value = 'false' WHERE id = 2").run()
+    expect(
+      database
+        .query<{ value_num: number | null }, []>('SELECT value_num FROM node_attributes WHERE id = 2')
+        .get()?.value_num,
+    ).toBe(0)
+
+    // Evolve attribute_types.json_type from string to integer -> trigger backfills value_num
+    database.query("UPDATE attribute_types SET json_type = 'integer' WHERE id = 4").run()
+    expect(
+      database
+        .query<{ value_num: number | null }, []>('SELECT value_num FROM node_attributes WHERE id = 4')
+        .get()?.value_num,
+    ).toBe(999)
 
     database.close()
   })

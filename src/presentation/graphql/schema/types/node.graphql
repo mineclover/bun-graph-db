@@ -717,3 +717,89 @@ enum CustomSortParameterType {
   ARRAY
   OBJECT
 }
+
+type NodeEmbedding {
+  nodeId: ID!
+  tableId: ID!
+  dimension: Int!
+  model: String!
+  vector: [Float!]!
+  norm: Float!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+input SetNodeEmbeddingInput {
+  nodeId: ID!
+  tableId: ID
+  vector: [Float!]!
+  model: String
+}
+
+type SetNodeEmbeddingPayload implements OperationResult {
+  success: Boolean!
+  embedding: NodeEmbedding
+  errors: [Error!]!
+}
+
+type RemoveNodeEmbeddingPayload implements OperationResult {
+  success: Boolean!
+  deleted: Boolean!
+  errors: [Error!]!
+}
+
+input HybridGraphFilterInput {
+  anchorNodeIds: [ID!]!
+  maxDepth: Int
+  direction: String
+  relationTypes: [String!]
+  includeAnchors: Boolean
+}
+
+input HybridSearchWeightsInput {
+  fts: Float
+  vector: Float
+  graph: Float
+}
+
+input HybridSearchInput {
+  tableId: ID!
+  textQuery: String
+  vector: [Float!]
+  model: String
+  minVectorScore: Float
+  filterQuery: String
+  graph: HybridGraphFilterInput
+  weights: HybridSearchWeightsInput
+  rrfK: Float
+  limit: Int
+  offset: Int
+}
+
+type HybridSearchHit {
+  node: TableNode!
+  combinedScore: Float!
+  ftsScore: Float
+  ftsRank: Int
+  vectorScore: Float
+  vectorRank: Int
+  hopDistance: Int
+}
+
+type HybridSearchMetrics {
+  eligibleCandidates: Int!
+  graphCandidates: Int
+  lexicalCandidates: Int!
+  vectorCandidates: Int!
+  scannedVectors: Int!
+  elapsedMs: Float!
+}
+
+type HybridSearchResult {
+  results: [HybridSearchHit!]!
+  total: Int!
+  hasMore: Boolean!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  metrics: HybridSearchMetrics!
+}

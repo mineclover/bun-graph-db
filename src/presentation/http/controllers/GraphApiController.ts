@@ -1,7 +1,12 @@
 import { createHash } from 'node:crypto'
 import type { HttpControllerRequest as Request, HttpControllerResponse as Response } from '../adapters/BunControllerAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { NodeAttributeSchemaGate } from '@/application/services/NodeAttributeSchemaGate.js'
 import type { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
+import type {
+  HybridSearchNodesInput,
+  HybridSearchNodesUseCase,
+} from '@/application/use-cases/nodes/HybridSearchNodes.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
@@ -11,9 +16,11 @@ import {
 } from '@/core/schema/TableSchemaOpenApiProjection.js'
 import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
+import type { INodeEmbeddingRepository } from '@/domain/repositories/INodeEmbeddingRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
+import type { FetchLike } from '@/models/GraphQLOperation.js'
 import { ResponseHelper } from '../utils/responseHelpers.js'
 
 interface GraphQLResponse<T = unknown> {
@@ -33,14 +40,24 @@ interface ExportTableResponse {
 }
 
 class GraphQLClient {
-  constructor(private endpoint: string) {}
+  private readonly authorizationHeader: string | undefined
+
+  constructor(
+    private endpoint: string,
+    private fetchImpl: FetchLike = fetch,
+    internalBridgeToken?: string,
+  ) {
+    const token = internalBridgeToken?.trim()
+    this.authorizationHeader = token ? `Bearer ${token}` : undefined
+  }
 
   async query<T = unknown>(query: string, variables?: Record<string, unknown>): Promise<GraphQLResponse<T>> {
     try {
-      const response = await fetch(this.endpoint, {
+      const response = await this.fetchImpl(this.endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(this.authorizationHeader ? { Authorization: this.authorizationHeader } : {}),
         },
         body: JSON.stringify({
           query,
@@ -71,10 +88,15 @@ export class GraphApiController {
     private readonly nodeRelationRepository: INodeRelationRepository,
     port?: number,
     private readonly tableSchemaProjectionService?: Pick<TableSchemaProjectionService, 'project'>,
+    fetchImpl?: FetchLike,
+    internalBridgeToken?: string,
+    private readonly schemaGate?: NodeAttributeSchemaGate,
+    private readonly nodeEmbeddingRepository?: INodeEmbeddingRepository,
+    private readonly hybridSearchNodesUseCase?: HybridSearchNodesUseCase,
   ) {
     // Use the same port as the server instance
     const serverPort = port || 4000
-    this.graphqlClient = new GraphQLClient(`http://localhost:${serverPort}/graphql`)
+    this.graphqlClient = new GraphQLClient(`http://localhost:${serverPort}/graphql`, fetchImpl, internalBridgeToken)
     this.responseHelper = new ResponseHelper(logger)
   }
 
@@ -188,6 +210,29 @@ export class GraphApiController {
       this.responseHelper.success(res, result)
     } catch (error) {
       this.responseHelper.handleError(res, error, 'Get table OpenAPI projection')
+    }
+  }
+
+  async getTableSchemaAudit(req: Request, res: Response): Promise<void> {
+    try {
+      const { tableId } = req.params
+      if (!tableId) {
+        this.responseHelper.validationError(res, 'tableId is required')
+        return
+      }
+      if (!this.schemaGate) {
+        this.responseHelper.error(res, 503, 'Node attribute schema gate is not configured', 'Get table schema audit')
+        return
+      }
+
+      const maxViolationsParam = req.query.maxViolations ? Number(req.query.maxViolations) : undefined
+      const report = await this.schemaGate.auditTableConformance(
+        { tableId },
+        { maxViolations: Number.isFinite(maxViolationsParam) ? maxViolationsParam : undefined },
+      )
+      this.responseHelper.success(res, report)
+    } catch (error) {
+      this.responseHelper.handleError(res, error, 'Get table schema audit')
     }
   }
 
@@ -560,6 +605,112 @@ export class GraphApiController {
       this.responseHelper.success(res, result)
     } catch (error) {
       this.responseHelper.handleError(res, error, 'Get node relations')
+    }
+  }
+
+  async setNodeEmbedding(req: Request, res: Response): Promise<void> {
+    try {
+      const { nodeId } = req.params
+      if (!nodeId) {
+        this.responseHelper.validationError(res, 'nodeId is required')
+        return
+      }
+      if (!this.nodeEmbeddingRepository) {
+        this.responseHelper.error(
+          res,
+          503,
+          'Node embedding repository is not configured',
+          'Set node embedding',
+        )
+        return
+      }
+
+      const body = (req.body ?? {}) as {
+        vector?: number[]
+        model?: string
+        tableId?: string
+      }
+      const embedding = await this.nodeEmbeddingRepository.upsert({
+        nodeId,
+        tableId: body.tableId,
+        vector: Array.isArray(body.vector) ? body.vector : [],
+        model: body.model,
+      })
+      this.responseHelper.success(res, embedding)
+    } catch (error) {
+      this.responseHelper.handleError(res, error, 'Set node embedding')
+    }
+  }
+
+  async getNodeEmbedding(req: Request, res: Response): Promise<void> {
+    try {
+      const { nodeId } = req.params
+      if (!nodeId) {
+        this.responseHelper.validationError(res, 'nodeId is required')
+        return
+      }
+      if (!this.nodeEmbeddingRepository) {
+        this.responseHelper.error(
+          res,
+          503,
+          'Node embedding repository is not configured',
+          'Get node embedding',
+        )
+        return
+      }
+
+      const embedding = await this.nodeEmbeddingRepository.findByNodeId(nodeId)
+      if (!embedding) {
+        this.responseHelper.notFound(res, 'Node embedding')
+        return
+      }
+      this.responseHelper.success(res, embedding)
+    } catch (error) {
+      this.responseHelper.handleError(res, error, 'Get node embedding')
+    }
+  }
+
+  async removeNodeEmbedding(req: Request, res: Response): Promise<void> {
+    try {
+      const { nodeId } = req.params
+      if (!nodeId) {
+        this.responseHelper.validationError(res, 'nodeId is required')
+        return
+      }
+      if (!this.nodeEmbeddingRepository) {
+        this.responseHelper.error(
+          res,
+          503,
+          'Node embedding repository is not configured',
+          'Remove node embedding',
+        )
+        return
+      }
+
+      const deleted = await this.nodeEmbeddingRepository.deleteByNodeId(nodeId)
+      this.responseHelper.success(res, { nodeId, deleted })
+    } catch (error) {
+      this.responseHelper.handleError(res, error, 'Remove node embedding')
+    }
+  }
+
+  async hybridSearchNodes(req: Request, res: Response): Promise<void> {
+    try {
+      if (!this.hybridSearchNodesUseCase) {
+        this.responseHelper.error(
+          res,
+          503,
+          'Hybrid search service is not configured',
+          'Hybrid search nodes',
+        )
+        return
+      }
+
+      const input = (req.body ?? {}) as HybridSearchNodesInput
+      const result = await this.hybridSearchNodesUseCase.execute(input)
+      this.responseHelper.success(res, result)
+    } catch (error) {
+      this.responseHelper.handleError(res, error, 'Hybrid search nodes')
     }
   }
 }

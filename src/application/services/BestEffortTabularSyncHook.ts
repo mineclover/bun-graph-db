@@ -13,13 +13,11 @@ import type {
   TabularSyncJobMode,
   TabularSyncJobRecord,
 } from '@/infrastructure/excel/TabularSyncEventStore.js'
-import {
-  createTabularDestinationGateways,
-  ExcelSchemaProjector,
-  TabularSyncPlanner,
-  TabularSyncService,
-  TabularSyncTargetRegistry,
-} from '@/infrastructure/excel/index.js'
+import { ExcelSchemaProjector } from '@/infrastructure/excel/ExcelSchemaProjector.js'
+import { createTabularDestinationGateways } from '@/infrastructure/excel/factories/TabularDestinationGatewayFactory.js'
+import { TabularSyncPlanner } from '@/infrastructure/excel/sync/TabularSyncPlanner.js'
+import { TabularSyncService } from '@/infrastructure/excel/sync/TabularSyncService.js'
+import { TabularSyncTargetRegistry } from '@/infrastructure/excel/TabularSyncTargetRegistry.js'
 
 type PendingSyncMode = TabularSyncJobMode
 
@@ -143,6 +141,7 @@ export class BestEffortTabularSyncHook {
   private readonly durableWorkerId = `tabular-sync-${crypto.randomUUID()}`
   private durableDrainTimer: ReturnType<typeof setTimeout> | null = null
   private durableDrainRunning = false
+  private activeDurableDrainPromise: Promise<void> | null = null
   private disposed = false
   private readonly durableLeaseDurationMs = 60_000
   private readonly durableMaxAttempts = 5
@@ -322,6 +321,31 @@ export class BestEffortTabularSyncHook {
         ),
       ),
     )
+  }
+
+  /**
+   * Settles any durable jobs that are already due (`nextAttemptAt <= now`) or
+   * currently in flight, without forcing future debounced or retry_wait jobs.
+   */
+  async settleDueJobs(): Promise<void> {
+    if (this.disposed) {
+      return
+    }
+    this.refreshRuntime()
+    if (!this.bridge || !this.eventStore) {
+      return
+    }
+    if (this.activeDurableDrainPromise) {
+      await this.activeDurableDrainPromise
+    }
+    const nextDueAt = this.eventStore.getNextDueAt()
+    if (nextDueAt && Date.parse(nextDueAt) <= Date.now()) {
+      if (this.durableDrainTimer) {
+        clearTimeout(this.durableDrainTimer)
+        this.durableDrainTimer = null
+      }
+      await this.processDurableJobs()
+    }
   }
 
   getStatus(filters: TabularSyncStatusFilters = {}): TabularSyncStatusSnapshot {
@@ -587,15 +611,19 @@ export class BestEffortTabularSyncHook {
   }
 
   private async processDurableJobs(): Promise<void> {
-    if (!this.eventStore || !this.bridge || this.durableDrainRunning) {
+    if (!this.eventStore || !this.bridge) {
+      return
+    }
+    if (this.activeDurableDrainPromise) {
+      await this.activeDurableDrainPromise
       return
     }
 
     this.durableDrainRunning = true
-    try {
+    const drainPromise = (async () => {
       const running = new Set<Promise<void>>()
       while (this.bridge && !this.disposed) {
-        while (running.size < this.maxConcurrentTables) {
+        while (running.size < this.maxConcurrentTables && this.eventStore) {
           const job = this.eventStore.claimNextDueJob({
             workerId: this.durableWorkerId,
             leaseDurationMs: this.durableLeaseDurationMs,
@@ -619,7 +647,13 @@ export class BestEffortTabularSyncHook {
         await Promise.race(running)
       }
       await Promise.all(running)
+    })()
+
+    this.activeDurableDrainPromise = drainPromise
+    try {
+      await drainPromise
     } finally {
+      this.activeDurableDrainPromise = null
       this.durableDrainRunning = false
       this.requestDurableDrain()
     }

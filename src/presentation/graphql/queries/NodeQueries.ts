@@ -1,4 +1,8 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type {
+  HybridSearchNodesInput,
+  HybridSearchNodesUseCase,
+} from '@/application/use-cases/nodes/HybridSearchNodes.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { fromEntity as nodeFromEntity, type NodeDto } from '@/application/dtos/NodeDto.js'
 import type {
@@ -11,6 +15,7 @@ import type {
   SearchNodesArgs,
 } from '@/core/types/GraphQLTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type { INodeEmbeddingRepository } from '@/domain/repositories/INodeEmbeddingRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
@@ -25,23 +30,36 @@ interface AttributeFilter {
 export class NodeQueries extends BaseResolver {
   protected logger: ILogger
   private searchNodesUseCase: SearchNodesUseCase | null = null
+  private hybridSearchNodesUseCase: HybridSearchNodesUseCase | null = null
   private attributeRepository: IAttributeRepository | null = null
+  private nodeEmbeddingRepository: INodeEmbeddingRepository | null = null
 
   constructor(
     private readonly nodeRepository: INodeRepository,
     private readonly searchNodesUseCaseResolver: (() => Promise<SearchNodesUseCase | null>) | SearchNodesUseCase | null,
     logger: ILogger,
     attributeRepository?: IAttributeRepository,
+    nodeEmbeddingRepository?: INodeEmbeddingRepository,
+    private readonly hybridSearchNodesUseCaseResolver?:
+      | (() => Promise<HybridSearchNodesUseCase | null>)
+      | HybridSearchNodesUseCase
+      | null,
   ) {
     super()
     this.logger = logger
     this.attributeRepository = attributeRepository || null
+    this.nodeEmbeddingRepository = nodeEmbeddingRepository || null
     // Handle both direct instance and resolver function
     if (typeof searchNodesUseCaseResolver === 'function') {
       // Lazy load the use case when first needed
       this.searchNodesUseCase = null
     } else {
       this.searchNodesUseCase = searchNodesUseCaseResolver
+    }
+    if (typeof hybridSearchNodesUseCaseResolver === 'function') {
+      this.hybridSearchNodesUseCase = null
+    } else {
+      this.hybridSearchNodesUseCase = hybridSearchNodesUseCaseResolver ?? null
     }
   }
 
@@ -470,6 +488,48 @@ export class NodeQueries extends BaseResolver {
       },
       'searchNodesByAttribute',
       { args },
+    )
+  }
+
+  async nodeEmbedding(_: GraphQLParent, args: { nodeId: string }, _context?: GraphQLContext) {
+    this.validateArgs(
+      args as unknown as Record<string, unknown>,
+      [
+        BaseResolver.validationRules.required('nodeId', 'Node ID'),
+        BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),
+      ],
+      'nodeEmbedding',
+    )
+
+    return this.handleQuery(
+      async () => {
+        if (!this.nodeEmbeddingRepository) {
+          throw new Error('Node embedding repository is not configured')
+        }
+        return await this.nodeEmbeddingRepository.findByNodeId(args.nodeId)
+      },
+      'nodeEmbedding',
+      { nodeId: args.nodeId },
+    )
+  }
+
+  async hybridSearchNodes(
+    _: GraphQLParent,
+    args: { input: HybridSearchNodesInput },
+    _context?: GraphQLContext,
+  ) {
+    return this.handleQuery(
+      async () => {
+        if (!this.hybridSearchNodesUseCase && typeof this.hybridSearchNodesUseCaseResolver === 'function') {
+          this.hybridSearchNodesUseCase = await this.hybridSearchNodesUseCaseResolver()
+        }
+        if (!this.hybridSearchNodesUseCase) {
+          throw new Error('HybridSearchNodesUseCase is not configured')
+        }
+        return await this.hybridSearchNodesUseCase.execute(args.input)
+      },
+      'hybridSearchNodes',
+      { tableId: args.input?.tableId },
     )
   }
 }

@@ -73,14 +73,10 @@ export class SearchNodesUseCase {
     }
 
     try {
-      // Get available attributes for this table
-      const attributes = await this.attributeRepository.findByTableId(input.tableId as TableId)
-      const attributeInfo: AttributeTypeInfo[] = await Promise.all(
-        (attributes.data || []).map(async (attr) => ({
-          identifier: attr.getIdentifier(),
-          dataType:
-            (await this.attributeRepository.getAttributeTypeForAttribute(attr.getId()))?.getIdentifier() || 'string',
-        })),
+      // Get available attributes for this table (single SQL JOIN when supported by repository)
+      const attributeInfo = await loadTableAttributeTypeInfo(
+        this.attributeRepository,
+        input.tableId as TableId,
       )
 
       // Parse search query if provided
@@ -152,4 +148,62 @@ export class SearchNodesUseCase {
       throw new ValidationException('Offset must be non-negative')
     }
   }
+}
+
+export async function loadTableAttributeTypeInfo(
+  attributeRepository: IAttributeRepository,
+  tableId: TableId,
+): Promise<AttributeTypeInfo[]> {
+  if (typeof attributeRepository.findAttributeTypeInfoByTableId === 'function') {
+    const summaries = await attributeRepository.findAttributeTypeInfoByTableId(tableId)
+    return summaries.map((summary) => ({
+      identifier: summary.identifier,
+      dataType: resolveSearchDataType({
+        getIdentifier: () => summary.typeIdentifier,
+        getJsonType: () => summary.jsonType,
+        getFormat: () => summary.format,
+      }),
+    }))
+  }
+
+  const attributes = await attributeRepository.findByTableId(tableId)
+  return Promise.all(
+    (attributes.data || []).map(async (attr) => {
+      const attributeType = await attributeRepository.getAttributeTypeForAttribute(attr.getId())
+      return {
+        identifier: attr.getIdentifier(),
+        dataType: resolveSearchDataType(attributeType),
+      }
+    }),
+  )
+}
+
+export function resolveSearchDataType(
+  attributeType:
+    | {
+        getIdentifier(): string
+        getJsonType?(): string
+        getFormat?(): string | null
+      }
+    | null
+    | undefined,
+): string {
+  if (!attributeType) return 'string'
+  const jsonType = attributeType.getJsonType?.()?.toLowerCase()
+  const format = attributeType.getFormat?.()?.toLowerCase() ?? null
+  const identifier = attributeType.getIdentifier().toLowerCase()
+
+  if (
+    jsonType === 'datetime' ||
+    identifier === 'datetime' ||
+    identifier === 'date' ||
+    (jsonType === 'string' && (format === 'date' || format === 'date-time' || format === 'datetime'))
+  ) {
+    return 'datetime'
+  }
+  if (jsonType === 'integer' || identifier === 'integer') return 'integer'
+  if (jsonType === 'number' || identifier === 'number') return 'number'
+  if (jsonType === 'boolean' || identifier === 'boolean') return 'boolean'
+  if (jsonType === 'object' || jsonType === 'array' || identifier === 'json') return 'json'
+  return 'string'
 }

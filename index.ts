@@ -5,6 +5,7 @@ import type { ILogger } from './src/application/ports/ILogger'
 import { AccessControl, authorizeExternalRequest } from './src/application/security/AccessControl'
 import type { CreateAttributeUseCase } from './src/application/use-cases/attributes/CreateAttribute'
 import type { CreateNodeUseCase } from './src/application/use-cases/nodes/CreateNode'
+import type { HybridSearchNodesUseCase } from './src/application/use-cases/nodes/HybridSearchNodes'
 import type { SearchNodesUseCase } from './src/application/use-cases/nodes/SearchNodes'
 import type { UpdateNodeUseCase } from './src/application/use-cases/nodes/UpdateNode'
 import type { ExecuteTemplateWithGraphQLUseCase } from './src/application/use-cases/query-templates/ExecuteTemplateWithGraphQL'
@@ -18,6 +19,7 @@ import { createGraphQLConfig } from './src/config/graphql'
 import type { AutoPersistenceService } from './src/domain/services/AutoPersistenceService'
 import type { IAttributeRepository } from './src/domain/repositories/IAttributeRepository'
 import type { INodeAttributeRepository } from './src/domain/repositories/INodeAttributeRepository'
+import type { INodeEmbeddingRepository } from './src/domain/repositories/INodeEmbeddingRepository'
 import type { INodeRelationRepository } from './src/domain/repositories/INodeRelationRepository'
 import type { INodeRepository } from './src/domain/repositories/INodeRepository'
 import type { IQueryTemplateRepository } from './src/domain/repositories/IQueryTemplateRepository'
@@ -210,18 +212,23 @@ const yoga = createYoga({
 
 import { RepositoryTokens } from './src/infrastructure/container/tokens/RepositoryTokens'
 import { McpHttpServer } from './src/mcp/http-server/McpHttpServer'
+import type { FetchLike } from './src/models/GraphQLOperation'
 import { AttributeApiController } from './src/presentation/http/controllers/AttributeApiController'
 import { GraphApiController } from './src/presentation/http/controllers/GraphApiController'
 // Import controllers
 import { GraphDbApiController } from './src/presentation/http/controllers/GraphDbApiController'
 import { McpToolController } from './src/presentation/http/controllers/McpToolController'
 import { createBunApiRouter } from './src/presentation/http/routes/BunApiRouter'
-// Import route handlers
-import { createSchemaHandler } from './src/presentation/http/routes/SchemaRoutes'
-import { createTabularSyncHandler } from './src/presentation/http/routes/TabularSyncRoutes'
-import { createTemplateFileHandler } from './src/presentation/http/routes/TemplateFileRoutes'
 // Import table MCP routes
 import { createTableMcpMiddleware } from './src/presentation/mcp/routes/mcp-routes'
+
+type OptionalRouteHandler = (request: Request) => Promise<Response | null>
+
+let requestHandler!: (request: Request) => Promise<Response>
+const inProcessFetch: FetchLike = async (input, init) => {
+  const internalRequest = input instanceof Request ? input : new Request(String(input), init)
+  return await requestHandler(internalRequest)
+}
 
 // Resolve dependencies from container in parallel
 const [
@@ -233,6 +240,7 @@ const [
   executeTemplateWithGraphQLUseCase,
   attributeRepository,
   tableSchemaProjectionService,
+  nodeAttributeSchemaGate,
   nodeAttributeRepository,
   getTableDocsUseCase,
   searchNodesUseCase,
@@ -241,6 +249,8 @@ const [
   nodeRelationRepository,
   relationTypeRepository,
   queryTemplateRepository,
+  nodeEmbeddingRepository,
+  hybridSearchNodesUseCase,
 ] = (await Promise.all([
   container.resolve(UseCaseTokens.CREATE_TABLE_USE_CASE),
   container.resolve(UseCaseTokens.CREATE_ATTRIBUTE_USE_CASE),
@@ -250,6 +260,7 @@ const [
   container.resolve(UseCaseTokens.EXECUTE_TEMPLATE_WITH_GRAPHQL_USE_CASE),
   container.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY),
   container.resolve(CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE),
+  container.resolve(CommonTokens.NODE_ATTRIBUTE_SCHEMA_GATE),
   container.resolve(RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY),
   container.resolve(UseCaseTokens.GET_TABLE_DOCS_USE_CASE),
   container.resolve(UseCaseTokens.SEARCH_NODES_USE_CASE),
@@ -258,6 +269,8 @@ const [
   container.resolve(RepositoryTokens.NODE_RELATION_REPOSITORY),
   container.resolve(RepositoryTokens.RELATION_TYPE_REPOSITORY),
   container.resolve(RepositoryTokens.QUERY_TEMPLATE_REPOSITORY),
+  container.resolve(RepositoryTokens.NODE_EMBEDDING_REPOSITORY),
+  container.resolve(UseCaseTokens.HYBRID_SEARCH_NODES_USE_CASE),
 ]))
 
 // Create controllers
@@ -279,6 +292,7 @@ const attributeController = new AttributeApiController(
   nodeAttributeRepository as INodeAttributeRepository,
   logger,
   queryTemplateRepository as IQueryTemplateRepository,
+  nodeAttributeSchemaGate as import('./src/application/services/NodeAttributeSchemaGate').NodeAttributeSchemaGate,
 )
 const graphController = new GraphApiController(
   logger,
@@ -289,42 +303,71 @@ const graphController = new GraphApiController(
   nodeRelationRepository as INodeRelationRepository,
   graphqlConfig.port,
   tableSchemaProjectionService as TableSchemaProjectionService,
+  inProcessFetch,
+  internalBridgeToken,
+  nodeAttributeSchemaGate as import('./src/application/services/NodeAttributeSchemaGate').NodeAttributeSchemaGate,
+  nodeEmbeddingRepository as INodeEmbeddingRepository,
+  hybridSearchNodesUseCase as HybridSearchNodesUseCase,
 )
-const _mcpToolController = new McpToolController(logger, graphqlConfig.port)
-const tabularSyncConfigStore = await container.resolve(CommonTokens.TABULAR_SYNC_CONFIG_STORE)
-const tabularSyncConfigActivationService = await container.resolve(
-  CommonTokens.TABULAR_SYNC_CONFIG_ACTIVATION_SERVICE,
+const _mcpToolController = new McpToolController(
+  logger,
+  graphqlConfig.port,
+  inProcessFetch,
+  internalBridgeToken,
 )
-const tabularSyncHook = await container.resolve(CommonTokens.TABULAR_SYNC_HOOK)
 
-// Create route handlers in parallel
-const [schemaHandler, templateFileHandler, tabularSyncHandler] = await Promise.all([
-  createSchemaHandler(container),
-  createTemplateFileHandler(container),
-  Promise.resolve(
-    createTabularSyncHandler(
-      tabularSyncConfigStore as never,
-      logger,
-      tabularSyncHook as never,
-      tabularSyncConfigActivationService as never,
-    ),
-  ),
-])
+let schemaHandlerPromise: Promise<OptionalRouteHandler> | undefined
+const getSchemaHandler = (): Promise<OptionalRouteHandler> => {
+  if (!schemaHandlerPromise) {
+    schemaHandlerPromise = import('./src/presentation/http/routes/SchemaRoutes').then(({ createSchemaHandler }) =>
+      createSchemaHandler(container),
+    )
+  }
+  return schemaHandlerPromise
+}
 
-// Create MCP HTTP server with REST API base URL
+let templateFileHandlerPromise: Promise<OptionalRouteHandler> | undefined
+const getTemplateFileHandler = (): Promise<OptionalRouteHandler> => {
+  if (!templateFileHandlerPromise) {
+    templateFileHandlerPromise = import('./src/presentation/http/routes/TemplateFileRoutes').then(
+      ({ createTemplateFileHandler }) => createTemplateFileHandler(container),
+    )
+  }
+  return templateFileHandlerPromise
+}
+
+let tabularSyncHandlerPromise: Promise<OptionalRouteHandler> | undefined
+const getTabularSyncHandler = (): Promise<OptionalRouteHandler> => {
+  if (!tabularSyncHandlerPromise) {
+    tabularSyncHandlerPromise = Promise.all([
+      import('./src/presentation/http/routes/TabularSyncRoutes'),
+      container.resolve(CommonTokens.TABULAR_SYNC_CONFIG_STORE),
+      container.resolve(CommonTokens.TABULAR_SYNC_CONFIG_ACTIVATION_SERVICE),
+      container.resolve(CommonTokens.TABULAR_SYNC_HOOK),
+    ]).then(([{ createTabularSyncHandler }, configStore, activationService, syncHook]) =>
+      createTabularSyncHandler(configStore as never, logger, syncHook as never, activationService as never),
+    )
+  }
+  return tabularSyncHandlerPromise
+}
+
+// Create MCP HTTP server with in-process transport dispatch
 const mcpServer = new McpHttpServer(
   `http://localhost:${graphqlConfig.port}/graphql`,
   `http://localhost:${graphqlConfig.port}/api`,
   internalBridgeToken,
+  inProcessFetch,
 )
 await mcpServer.initialize()
 
-// Create table MCP middleware
+// Create table MCP middleware with in-process transport dispatch
 const tableMcpMiddleware = createTableMcpMiddleware({
   graphqlEndpoint: `http://localhost:${graphqlConfig.port}/graphql`,
   restApiBaseUrl: `http://localhost:${graphqlConfig.port}/api`,
   logger,
   projectionService: tableSchemaProjectionService as TableSchemaProjectionService,
+  internalBridgeToken,
+  fetchImpl: inProcessFetch,
 })
 
 const apiRouter = createBunApiRouter({
@@ -335,17 +378,27 @@ const apiRouter = createBunApiRouter({
   mcpToolController: _mcpToolController,
 })
 
+const typedTableRepositoryForAccess = tableRepository as ITableRepository
+
 // Combined request handler
-const requestHandler = async (request: Request): Promise<Response> => {
+requestHandler = async (request: Request): Promise<Response> => {
   const url = new URL(request.url)
   const pathname = url.pathname
 
-  const accessDecision = await authorizeExternalRequest(accessControl, request, (toolName, argumentsValue) =>
-    mcpServer.resolveToolAccess(toolName, argumentsValue),
+  const accessDecision = await authorizeExternalRequest(
+    accessControl,
+    request,
+    (toolName, argumentsValue) => mcpServer.resolveToolAccess(toolName, argumentsValue),
     {
       resolveNodeTableId: async (nodeId) => {
         const node = await nodeRepositoryForAccess.findById(nodeId)
         return node ? String(node.getTableId()) : undefined
+      },
+      resolveTableIdentity: async (tableIdOrIdentifier) => {
+        const table =
+          (await typedTableRepositoryForAccess.findById(tableIdOrIdentifier)) ??
+          (await typedTableRepositoryForAccess.findByIdentifier(tableIdOrIdentifier))
+        return table ? { id: String(table.id), identifier: table.identifier } : undefined
       },
     },
   )
@@ -369,22 +422,34 @@ const requestHandler = async (request: Request): Promise<Response> => {
     }
   }
 
-  // Handle template file routes first
-  const templateFileResponse = await templateFileHandler(request)
-  if (templateFileResponse) {
-    return templateFileResponse
+  // Handle template file routes lazily on matching paths
+  if (pathname.startsWith('/api/template-files')) {
+    const templateFileResponse = await (await getTemplateFileHandler())(request)
+    if (templateFileResponse) {
+      return templateFileResponse
+    }
   }
 
-  // Handle tabular sync management routes
-  const tabularSyncResponse = await tabularSyncHandler(request)
-  if (tabularSyncResponse) {
-    return tabularSyncResponse
+  // Handle tabular sync management routes lazily on matching paths
+  if (pathname === '/tabular-sync' || pathname.startsWith('/api/tabular-sync')) {
+    const tabularSyncResponse = await (await getTabularSyncHandler())(request)
+    if (tabularSyncResponse) {
+      return tabularSyncResponse
+    }
   }
 
-  // Handle schema routes second
-  const schemaResponse = await schemaHandler(request)
-  if (schemaResponse) {
-    return schemaResponse
+  // Handle schema routes lazily on matching paths
+  if (
+    pathname === '/schema' ||
+    pathname.startsWith('/schema/') ||
+    pathname === '/schema.json' ||
+    pathname === '/introspection.json' ||
+    pathname === '/introspection'
+  ) {
+    const schemaResponse = await (await getSchemaHandler())(request)
+    if (schemaResponse) {
+      return schemaResponse
+    }
   }
 
   // Handle table MCP requests - must come before general MCP handler

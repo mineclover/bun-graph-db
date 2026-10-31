@@ -2,35 +2,43 @@
 docType: explanation
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-10-27"
+lastVerified: "2026-10-31"
 owner: "Bun Graph DB maintainers"
 sources:
   - src/domain/services/vector/ExactVectorIndex.ts
+  - src/domain/repositories/INodeEmbeddingRepository.ts
+  - src/infrastructure/database/sqlite/SqliteNodeEmbeddingRepository.ts
+  - src/application/use-cases/nodes/HybridSearchNodes.ts
   - src/infrastructure/database/sqlite/SqliteNodeRelationRepository.ts
   - scripts/benchmark-vector-storage.ts
 tests:
   - tests/unit/exact-vector-index.test.ts
+  - tests/unit/sqlite-node-embedding-and-hybrid-search.test.ts
   - tests/unit/sqlite-graph-repository-traversal.test.ts
+  - tests/unit/engine-optimizations-p0-p2.test.ts
 ---
 
-# 벡터 검색과 대규모 저장소 비교 기준선
+# 벡터·하이브리드 검색과 대규모 저장소 비교 기준선
 
 Kuzu의 vector 확장은 HNSW approximate nearest neighbor index를 제공한다.
-Bun Graph DB에는 아직 embedding 저장·ANN index·vector API가 없으므로, 먼저 정확한 cosine
-검색과 SQLite adjacency bulk read를 비교 기준선으로 고정한다. 이 문서는 Kuzu 성능을
-추정하거나 대체 구현이 완료됐다고 선언하지 않는다.
+Bun Graph DB는 단일 SQLite 파일 기반 영속 `Float32Array` 임베딩 저장소(`node_embeddings`),
+정확 코사인 검색(`SqliteNodeEmbeddingRepository`, `ExactVectorIndex`), 그리고 N-hop 그래프·타입 속성 필터·FTS5 BM25·벡터 코사인을 결합한 RRF 하이브리드 검색(`HybridSearchNodesUseCase`)을 제공한다.
+이 문서는 현재 정확 벡터·하이브리드 구현과 SQLite adjacency bulk read 기준선을 설명하며, Kuzu HNSW 성능을 추정하거나 근사 ANN 인덱스가 구현됐다고 선언하지 않는다.
 
 ## 현재 적용
 
-`ExactVectorIndex`는 dimension이 고정된 in-memory index다.
+1. **순수 인메모리 기준선 (`ExactVectorIndex`, `BoundedTopKCollector`)**:
+   - 고정 dimension에서 `upsert`, `delete`, `clear`, `search(topK, minScore)`를 제공한다.
+   - 정확 cosine similarity를 `O(N * D)`로 계산하고 `BoundedTopKCollector`(`O(N log K)`)로 상위 `K`건만 유지하며 score 내림차순·ID 오름차순으로 동률을 정렬한다.
+2. **영속 SQLite `Float32Array` 저장소 (`SqliteNodeEmbeddingRepository`)**:
+   - Migration 13(`persistent-node-embeddings`)이 `node_embeddings`(`vector_blob BLOB`, 사전 계산된 float32 L2 `norm`, `dimension`, `model`, `table_id`)와 `node_embedding_revisions` 카운터 트리거를 생성한다.
+   - 노드·테이블 삭제 트리거가 고아 임베딩을 자동 정리하며, 테이블별 write-through 캐시는 `(dimension, model)` 버킷별 연속(contiguous) `Float32Array` 슬랩과 `node_embedding_revisions` PK 조회(`O(1)`)로 외부 삭제·갱신까지 즉시 감지해 재동기화한다.
+   - `upsertMany` / GraphQL `batchSetNodeEmbeddings`는 단일 SQLite `IMMEDIATE` 트랜잭션으로 일괄 저장하며, `restrictToNodeIds` 후보 집합이 버킷 전체 슬롯보다 작으면 후보 오프셋만 직접 순회해 스캔 비용을 `O(|C| * D)`로 줄인다.
+3. **4-신호 RRF 하이브리드 검색 (`HybridSearchNodesUseCase`)**:
+   - 선택적 N-hop 그래프 이웃 거리(`GraphTraversalService.connectedNodeDistances`) ∩ 타입 EAV 속성 필터(`node_attributes.value_num` 부분 B-Tree pushdown) ∩ (`node_search_fts` / `node_attribute_search_fts` BM25 + `Float32Array` 코사인 유사도 + hop 근접도)를 Reciprocal Rank Fusion(RRF)으로 결합한다.
+   - GraphQL(`hybridSearchNodes`, `nodeEmbedding`, `setNodeEmbedding`, `removeNodeEmbedding`), REST(`/api/nodes/hybrid-search`, `/api/nodes/:nodeId/embedding`), 루트·테이블 MCP 도구에서 동일한 `AccessControl` 테이블 권한 경계를 통과한다.
 
-- `upsert`, `delete`, `clear`, `search(topK, minScore)`를 제공한다.
-- cosine similarity를 계산하고 score 내림차순, ID 오름차순으로 동률을 정렬한다.
-- 모든 vector를 스캔하므로 정확성 기준선이며 검색 비용은 O(N × D)다.
-- query metrics에 dimension, index size, scanned count, query elapsed time을 기록한다.
-- persistence, tenant/table scope, filter pushdown, update durability는 제공하지 않는다.
-
-SQLite 관계 저장소는 `findAdjacentByNodeIds`로 frontier node들을 한 SQL `IN` query에서 읽는다.
+SQLite 관계 저장소는 `findAdjacentByNodeIds`로 frontier node들을 한 SQL `IN` query(및 선택적 `relation_type_id IN (...)` pushdown)에서 읽는다.
 bulk 포트가 없는 저장소는 기존 per-node fallback으로 동작한다. benchmark는 같은 64개
 frontier와 4 edges/node를 사용해 두 경로의 결과 row 수를 먼저 일치시킨 뒤 시간을 잰다.
 
@@ -40,14 +48,14 @@ frontier와 4 edges/node를 사용해 두 경로의 결과 row 수를 먼저 일
 bun run benchmark:vector-storage
 ```
 
-2026-10-27 로컬 실행 결과는 다음과 같다. 수치는 Bun 1.3.9, in-memory SQLite,
+2026-10-31 로컬 실행 결과는 다음과 같다. 수치는 Bun 1.3.9, in-memory SQLite,
 dimension 64, 5회 반복의 median/p95이며, machine-specific advisory evidence다.
 
 | fixture size | exact vector median/p95 ms | SQLite bulk median/p95 ms | SQLite per-node median/p95 ms | scanned/rows |
 |---:|---:|---:|---:|---:|
-| 100 | 0.307 / 0.344 | 0.782 / 1.503 | 1.320 / 2.111 | 100 / 256 |
-| 1,000 | 0.601 / 0.673 | 0.653 / 1.144 | 8.557 / 10.033 | 1,000 / 256 |
-| 5,000 | 1.483 / 1.623 | 2.535 / 3.084 | 48.667 / 162.158 | 5,000 / 256 |
+| 100 | 0.048 / 0.095 | 0.659 / 0.903 | 1.320 / 1.981 | 100 / 256 |
+| 1,000 | 0.094 / 0.097 | 0.562 / 0.728 | 6.809 / 11.491 | 1,000 / 256 |
+| 5,000 | 0.185 / 0.216 | 1.922 / 2.263 | 32.392 / 33.428 | 5,000 / 256 |
 
 이 결과에서 확인할 수 있는 범위는 exact vector scan이 N에 따라 증가하고, 같은 adjacency
 결과를 bulk query로 읽는 경로가 64개 per-node query보다 이 fixture에서 짧았다는 점이다.
@@ -58,11 +66,11 @@ SQLite in-memory 실행이므로 disk WAL, page cache, filesystem, process RSS�
 
 | 축 | 현재 Bun 기준선 | Kuzu reference | 다음 실험 조건 |
 |---|---|---|---|
-| nearest neighbor | exact cosine, O(N × D), deterministic top-k | vector extension HNSW ANN | 같은 embeddings·metric·k·필터에서 recall@k, build/update/delete, cold/warm latency 측정 |
-| graph adjacency | SQLite `IN` bulk vs per-node fallback | columnar/CSR neighbor scan | 같은 frontier·edge 수에서 query plan, RSS, disk size, cold/warm, result equality 기록 |
-| persistence | in-memory vector index only | DB/index persistence와 extension lifecycle | restart recovery, index rebuild, schema/version migration을 통과해야 read model 채택 |
-| filtering | vector index 자체의 minScore만 | ANN filter semantics는 extension/query 구성에 따름 | table/tenant/permission filter를 candidate 단계 또는 rerank 단계에서 명시 |
-| consistency | application이 vector/node 변경을 묶지 않음 | transaction/WAL 기반 DB index lifecycle | node commit과 embedding/index update의 실패·재시도·staleness 계약 정의 |
+| nearest neighbor | exact cosine, O(N × D) 또는 후보 제한 O(\|C\| × D), deterministic top-k | vector extension HNSW ANN | 수만 건 이상에서 같은 embeddings·metric·k·필터로 recall@k, build/update/delete, cold/warm latency 비교 |
+| graph adjacency | SQLite `IN` bulk + `relation_type_id` pushdown vs per-node fallback | columnar/CSR neighbor scan | 같은 frontier·edge 수에서 query plan, RSS, disk size, cold/warm, result equality 기록 |
+| persistence | SQLite `node_embeddings` Float32 BLOB + revision-synced cache | DB/index persistence와 extension lifecycle | 대규모 디스크 fixture에서 cold cache reload 및 WAL checkpoint 비용 측정 |
+| filtering | table scope + N-hop graph + typed EAV (`value_num`) candidate pre-filter | ANN filter semantics는 extension/query 구성에 따름 | ANN 도입 시 pre-filter vs post-filter recall 저하 구간 정량화 |
+| consistency | SQLite FK/트리거 cascade + `node_embedding_revisions` 즉시 캐시 무효화 | transaction/WAL 기반 DB index lifecycle | 외부 임베딩 생성 파이프라인의 비동기 갱신·모델 버전 전환 정책 정의 |
 
 Kuzu source의 [HNSW 생성](https://github.com/kuzudb/kuzu/blob/89f0263cc7a1fd9c396d2c4953747a013556a7f9/extension/vector/src/function/create_hnsw_index.cpp)과
 [질의](https://github.com/kuzudb/kuzu/blob/89f0263cc7a1fd9c396d2c4953747a013556a7/extension/vector/src/function/query_hnsw_index.cpp)는

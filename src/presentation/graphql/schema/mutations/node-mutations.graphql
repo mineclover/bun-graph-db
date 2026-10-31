@@ -20,4 +20,8 @@ extend type Mutation {
   # Batch node attribute management
   setNodeAttributes(input: SetNodeAttributesInput!): SetNodeAttributesPayload!
   setNodeAttributesByIdentifier(input: SetNodeAttributesByIdentifierInput!): SetNodeAttributesByIdentifierPayload!
+
+  # Persistent node embedding management
+  setNodeEmbedding(input: SetNodeEmbeddingInput!): SetNodeEmbeddingPayload!
+  removeNodeEmbedding(nodeId: ID!): RemoveNodeEmbeddingPayload!
 }

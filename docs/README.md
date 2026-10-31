@@ -2,15 +2,16 @@
 docType: navigation
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-08-11"
+lastVerified: "2026-10-31"
 ---
 
 # Bun Graph DB 문서
 
-운영 경계와 완료 조건은 [운영 준비도 명세](../specs/008-production-readiness/spec.md)를 기준으로 한다. 시스템 구성과 선택의 이유는 [아키텍처 개요](./architecture/overview.md)에서 설명한다.
+운영 경계와 완료 조건은 [운영 준비도 명세](../specs/008-production-readiness/spec.md)를 기준으로 한다. 시스템 구성과 선택의 이유는 [아키텍처 개요](./architecture/overview.md)에서 설명하며, 실제 배포·보안·마이그레이션·백업·점검 절차는 [운영 및 관리 가이드](./guides/OPERATIONS_GUIDE.md)에 정리되어 있다.
 
 ## 운영과 개발
 
+- [운영 및 관리 가이드](./guides/OPERATIONS_GUIDE.md)
 - [운영 준비도 명세](../specs/008-production-readiness/spec.md)
 - [아키텍처 개요](./architecture/overview.md)
 - [GraphQL 필드 탐색 계약과 계층 경계](./architecture/graph-traversal.md)

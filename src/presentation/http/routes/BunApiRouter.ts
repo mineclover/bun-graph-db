@@ -35,6 +35,9 @@ export function createBunApiRouter({
     const method = request.method
     const tableOpenApiProjectionMatch =
       method === 'GET' ? pathname.match(/^\/api\/tables\/([^/]+)\/openapi-projection$/) : null
+    const tableSchemaAuditMatch =
+      method === 'GET' ? pathname.match(/^\/api\/tables\/([^/]+)\/schema\/audit$/) : null
+    const nodeEmbeddingMatch = pathname.match(/^\/api\/nodes\/([^/]+)\/embedding$/)
 
     const run = async (handler: HttpControllerHandler, params: Record<string, string> = {}): Promise<Response> => {
       const context = await createBunControllerContext(request, params)
@@ -82,6 +85,26 @@ export function createBunApiRouter({
           tableId: decodeURIComponent(tableOpenApiProjectionMatch[1] || ''),
         })
       }
+      if (tableSchemaAuditMatch) {
+        return await run(graphController.getTableSchemaAudit.bind(graphController), {
+          tableId: decodeURIComponent(tableSchemaAuditMatch[1] || ''),
+        })
+      }
+      if (nodeEmbeddingMatch) {
+        const nodeId = decodeURIComponent(nodeEmbeddingMatch[1] || '')
+        if (method === 'GET') {
+          return await run(graphController.getNodeEmbedding.bind(graphController), { nodeId })
+        }
+        if (method === 'PUT') {
+          return await run(graphController.setNodeEmbedding.bind(graphController), { nodeId })
+        }
+        if (method === 'DELETE') {
+          return await run(graphController.removeNodeEmbedding.bind(graphController), { nodeId })
+        }
+      }
+      if (method === 'POST' && pathname === '/api/nodes/hybrid-search') {
+        return await run(graphController.hybridSearchNodes.bind(graphController))
+      }
       if ((method === 'PUT' || method === 'PATCH') && pathname.startsWith('/api/nodes/')) {
         return await run(graphDbController.updateNode.bind(graphDbController), { nodeId: pathname.split('/')[3] || '' })
       }
@@ -105,6 +128,15 @@ export function createBunApiRouter({
       }
       if (method === 'POST' && pathname === '/api/attributes') {
         return await run(attributeController.createAttribute.bind(attributeController))
+      }
+      if (method === 'POST' && pathname === '/api/node-attributes') {
+        return await run(attributeController.setNodeAttribute.bind(attributeController))
+      }
+      if (method === 'PUT' && pathname === '/api/node-attributes') {
+        return await run(attributeController.updateNodeAttributeValue.bind(attributeController))
+      }
+      if (method === 'DELETE' && pathname === '/api/node-attributes') {
+        return await run(attributeController.removeNodeAttribute.bind(attributeController))
       }
       if (method === 'GET' && pathname.startsWith('/api/nodes/') && pathname.endsWith('/attributes')) {
         return await run(attributeController.getNodeAttributes.bind(attributeController), {

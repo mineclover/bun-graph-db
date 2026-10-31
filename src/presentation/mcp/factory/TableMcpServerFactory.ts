@@ -9,6 +9,7 @@
 
 import type { ILogger } from '../../../application/ports/ILogger'
 import { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
+import type { FetchLike } from '../../../models/GraphQLOperation.js'
 import { TableMcpServer } from './TableMcpServer'
 
 interface TableValidationResult {
@@ -76,6 +77,7 @@ export class TableMcpServerFactory {
   private logger?: ILogger
   private projectionService?: Pick<TableSchemaProjectionService, 'project'>
   private internalBridgeToken: string | undefined
+  private fetchImpl: FetchLike
   private maxServers: number
   private validationTtlMs: number
   private now: () => number
@@ -87,6 +89,7 @@ export class TableMcpServerFactory {
     projectionService?: Pick<TableSchemaProjectionService, 'project'>,
     internalBridgeToken = process.env.BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN,
     cacheOptions: TableMcpServerCacheOptions = {},
+    fetchImpl: FetchLike = fetch,
   ) {
     this.graphqlEndpoint = graphqlEndpoint
     this.restApiBaseUrl = restApiBaseUrl
@@ -94,6 +97,7 @@ export class TableMcpServerFactory {
     this.projectionService = projectionService
     const token = internalBridgeToken?.trim()
     this.internalBridgeToken = token || undefined
+    this.fetchImpl = fetchImpl
     this.maxServers = this.normalizePositiveInteger(
       cacheOptions.maxServers,
       DEFAULT_MAX_TABLE_SERVERS,
@@ -236,6 +240,8 @@ export class TableMcpServerFactory {
       this.restApiBaseUrl,
       {
         projectionService: this.projectionService,
+        internalBridgeToken: this.internalBridgeToken,
+        fetchImpl: this.fetchImpl,
       },
     )
     try {
@@ -348,7 +354,7 @@ export class TableMcpServerFactory {
     tableId: string,
   ): Promise<TableValidationResult> {
     try {
-      const response = await fetch(this.graphqlEndpoint, {
+      const response = await this.fetchImpl(this.graphqlEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -410,7 +416,7 @@ export class TableMcpServerFactory {
     tableId: string,
   ): Promise<TableValidationResult> {
     try {
-      const response = await fetch(`${this.restApiBaseUrl}/tables`, {
+      const response = await this.fetchImpl(`${this.restApiBaseUrl}/tables`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

@@ -17,6 +17,13 @@ export interface AttributeUpdateData {
   defaultValue?: SafeJsonValue
 }
 
+export interface TableAttributeTypeSummary {
+  identifier: string
+  typeIdentifier: string
+  jsonType: string
+  format: string | null
+}
+
 // Extends IFullRepository (provides: save, findById, findByIdentifier, findAll, delete,
 // exists, count, saveMany, findByIds, update) and ITableScopedRepository (provides:
 // findByParentId, countByParentId, deleteByParentId)
@@ -33,6 +40,7 @@ export interface IAttributeRepository
 
   findRequiredByTableId(tableId: TableId): Promise<Attribute[]>
   getAttributeTypeForAttribute(attributeId: AttributeId): Promise<AttributeType | null>
+  findAttributeTypeInfoByTableId?(tableId: TableId): Promise<TableAttributeTypeSummary[]>
 
   // Note: The following methods are inherited from base interfaces:
   // - findById, findByIdentifier, findAll from IFullRepository

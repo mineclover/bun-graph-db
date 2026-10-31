@@ -256,6 +256,27 @@ export function createDatabaseMigrations(initialSchema: string): readonly Databa
         installTemplateExecutionTriggers(database)
       },
     },
+    {
+      version: 11,
+      name: 'node-attributes-typed-value-num',
+      up: (database) => {
+        installTypedNodeAttributeProjection(database)
+      },
+    },
+    {
+      version: 12,
+      name: 'fts-attributes-and-relation-traversal-indexes',
+      up: (database) => {
+        installAttributeFullTextAndRelationTraversalIndexes(database)
+      },
+    },
+    {
+      version: 13,
+      name: 'persistent-node-embeddings',
+      up: (database) => {
+        installPersistentNodeEmbeddings(database)
+      },
+    },
   ]
 }
 
@@ -338,6 +359,271 @@ function installTemplateExecutionTriggers(database: Database): void {
       WHERE id = NEW.template_id;
     END;
   `)
+}
+
+function typedNumericValueSql(valueExpr: string, attributeIdExpr: string): string {
+  return `(
+    SELECT CASE
+      WHEN at.json_type IN ('number', 'integer')
+        AND trim(${valueExpr}) != ''
+        AND json_valid(trim(${valueExpr})) = 1
+        AND json_type(trim(${valueExpr})) IN ('integer', 'real')
+        THEN CAST(trim(${valueExpr}) AS REAL)
+      WHEN at.json_type = 'boolean'
+        THEN CASE lower(trim(${valueExpr}))
+          WHEN 'true' THEN 1.0
+          WHEN '1' THEN 1.0
+          WHEN 'false' THEN 0.0
+          WHEN '0' THEN 0.0
+          ELSE NULL
+        END
+      WHEN (
+        at.json_type = 'datetime'
+        OR (at.json_type = 'string' AND at.format IN ('date', 'date-time', 'datetime'))
+      )
+        THEN julianday(trim(${valueExpr}))
+      ELSE NULL
+    END
+    FROM attributes a
+    JOIN attribute_types at ON at.id = a.attribute_type_id
+    WHERE a.id = ${attributeIdExpr}
+  )`
+}
+
+function installTypedNodeAttributeProjection(database: Database): void {
+  const hasNodeAttributes = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'")
+    .get()
+  if (!hasNodeAttributes) return
+
+  const nodeAttrColumns = database.query<TableColumn, []>('PRAGMA table_info(node_attributes)').all()
+  if (!nodeAttrColumns.some((column) => column.name === 'value_num')) {
+    database.exec('ALTER TABLE node_attributes ADD COLUMN value_num REAL')
+  }
+
+  database.exec(`
+    CREATE INDEX IF NOT EXISTS idx_node_attributes_attr_num_node
+    ON node_attributes(attribute_id, value_num, node_id)
+    WHERE value_num IS NOT NULL;
+  `)
+
+  const hasAttributeTypes = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attribute_types'")
+    .get()
+  const attrColumns = database.query<TableColumn, []>('PRAGMA table_info(attributes)').all()
+  const hasAttributeTypeId = attrColumns.some((column) => column.name === 'attribute_type_id')
+  if (!hasAttributeTypes || !hasAttributeTypeId) return
+
+  database.exec(`
+    DROP TRIGGER IF EXISTS trg_node_attributes_sync_value_num_insert;
+    CREATE TRIGGER trg_node_attributes_sync_value_num_insert
+    AFTER INSERT ON node_attributes
+    FOR EACH ROW
+    BEGIN
+      UPDATE node_attributes
+      SET value_num = ${typedNumericValueSql('NEW.value', 'NEW.attribute_id')}
+      WHERE id = NEW.id;
+    END;
+
+    DROP TRIGGER IF EXISTS trg_node_attributes_sync_value_num_update;
+    CREATE TRIGGER trg_node_attributes_sync_value_num_update
+    AFTER UPDATE OF value, attribute_id ON node_attributes
+    FOR EACH ROW
+    BEGIN
+      UPDATE node_attributes
+      SET value_num = ${typedNumericValueSql('NEW.value', 'NEW.attribute_id')}
+      WHERE id = NEW.id;
+    END;
+
+    DROP TRIGGER IF EXISTS trg_attribute_types_refresh_value_num;
+    CREATE TRIGGER trg_attribute_types_refresh_value_num
+    AFTER UPDATE OF json_type, format ON attribute_types
+    FOR EACH ROW
+    BEGIN
+      UPDATE node_attributes
+      SET value_num = ${typedNumericValueSql('node_attributes.value', 'node_attributes.attribute_id')}
+      WHERE attribute_id IN (SELECT id FROM attributes WHERE attribute_type_id = NEW.id);
+    END;
+
+    UPDATE node_attributes
+    SET value_num = ${typedNumericValueSql('node_attributes.value', 'node_attributes.attribute_id')};
+  `)
+}
+
+function installAttributeFullTextAndRelationTraversalIndexes(database: Database): void {
+  const hasNodes = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'nodes'")
+    .get()
+  const hasNodeAttributes = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'")
+    .get()
+
+  if (hasNodes && hasNodeAttributes) {
+    database.exec(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS node_attribute_search_fts USING fts5(
+        node_id UNINDEXED,
+        table_id UNINDEXED,
+        value,
+        tokenize = 'unicode61 remove_diacritics 2'
+      );
+
+      DROP TRIGGER IF EXISTS node_attribute_search_fts_insert;
+      CREATE TRIGGER node_attribute_search_fts_insert
+      AFTER INSERT ON node_attributes
+      BEGIN
+        INSERT INTO node_attribute_search_fts(rowid, node_id, table_id, value)
+        SELECT new.rowid, new.node_id, n.table_id, coalesce(new.value, '')
+        FROM nodes n
+        WHERE n.id = new.node_id;
+      END;
+
+      DROP TRIGGER IF EXISTS node_attribute_search_fts_update;
+      CREATE TRIGGER node_attribute_search_fts_update
+      AFTER UPDATE OF node_id, value ON node_attributes
+      BEGIN
+        DELETE FROM node_attribute_search_fts WHERE rowid = old.rowid;
+        INSERT INTO node_attribute_search_fts(rowid, node_id, table_id, value)
+        SELECT new.rowid, new.node_id, n.table_id, coalesce(new.value, '')
+        FROM nodes n
+        WHERE n.id = new.node_id;
+      END;
+
+      DROP TRIGGER IF EXISTS node_attribute_search_fts_delete;
+      CREATE TRIGGER node_attribute_search_fts_delete
+      AFTER DELETE ON node_attributes
+      BEGIN
+        DELETE FROM node_attribute_search_fts WHERE rowid = old.rowid;
+      END;
+
+      DROP TRIGGER IF EXISTS nodes_attribute_search_fts_table_update;
+      CREATE TRIGGER nodes_attribute_search_fts_table_update
+      AFTER UPDATE OF table_id ON nodes
+      BEGIN
+        DELETE FROM node_attribute_search_fts
+        WHERE rowid IN (SELECT rowid FROM node_attributes WHERE node_id = new.id);
+        INSERT INTO node_attribute_search_fts(rowid, node_id, table_id, value)
+        SELECT na.rowid, na.node_id, new.table_id, coalesce(na.value, '')
+        FROM node_attributes na
+        WHERE na.node_id = new.id;
+      END;
+
+      INSERT INTO node_attribute_search_fts(rowid, node_id, table_id, value)
+      SELECT na.rowid, na.node_id, n.table_id, coalesce(na.value, '')
+      FROM node_attributes na
+      JOIN nodes n ON n.id = na.node_id
+      WHERE NOT EXISTS (
+        SELECT 1 FROM node_attribute_search_fts fts WHERE fts.rowid = na.rowid
+      );
+    `)
+  }
+
+  const hasNodeRelations = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_relations'")
+    .get()
+  if (hasNodeRelations) {
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_node_relations_src_type_dst
+      ON node_relations(source_node_id, relation_type_id, target_node_id)
+      WHERE source_node_id IS NOT NULL;
+
+      CREATE INDEX IF NOT EXISTS idx_node_relations_dst_type_src
+      ON node_relations(target_node_id, relation_type_id, source_node_id)
+      WHERE target_node_id IS NOT NULL;
+    `)
+  }
+}
+
+function installPersistentNodeEmbeddings(database: Database): void {
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS node_embeddings (
+      node_id INTEGER PRIMARY KEY,
+      table_id INTEGER NOT NULL,
+      dimension INTEGER NOT NULL CHECK (dimension > 0),
+      model TEXT NOT NULL DEFAULT 'default',
+      vector_blob BLOB NOT NULL,
+      norm REAL NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (node_id) REFERENCES nodes(id) ON DELETE CASCADE,
+      FOREIGN KEY (table_id) REFERENCES tables(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_node_embeddings_table_dim
+    ON node_embeddings(table_id, dimension);
+
+    CREATE TABLE IF NOT EXISTS node_embedding_revisions (
+      table_id INTEGER PRIMARY KEY,
+      revision INTEGER NOT NULL DEFAULT 1
+    );
+
+    DROP TRIGGER IF EXISTS node_embeddings_rev_insert;
+    CREATE TRIGGER node_embeddings_rev_insert
+    AFTER INSERT ON node_embeddings
+    BEGIN
+      INSERT INTO node_embedding_revisions(table_id, revision)
+      VALUES (new.table_id, 1)
+      ON CONFLICT(table_id) DO UPDATE SET revision = revision + 1;
+    END;
+
+    DROP TRIGGER IF EXISTS node_embeddings_rev_update;
+    CREATE TRIGGER node_embeddings_rev_update
+    AFTER UPDATE ON node_embeddings
+    BEGIN
+      INSERT INTO node_embedding_revisions(table_id, revision)
+      VALUES (new.table_id, 1)
+      ON CONFLICT(table_id) DO UPDATE SET revision = revision + 1;
+      INSERT INTO node_embedding_revisions(table_id, revision)
+      VALUES (old.table_id, 1)
+      ON CONFLICT(table_id) DO UPDATE SET revision = revision + 1;
+    END;
+
+    DROP TRIGGER IF EXISTS node_embeddings_rev_delete;
+    CREATE TRIGGER node_embeddings_rev_delete
+    AFTER DELETE ON node_embeddings
+    BEGIN
+      INSERT INTO node_embedding_revisions(table_id, revision)
+      VALUES (old.table_id, 1)
+      ON CONFLICT(table_id) DO UPDATE SET revision = revision + 1;
+    END;
+  `)
+
+  const hasNodes = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'nodes'")
+    .get()
+  if (hasNodes) {
+    database.exec(`
+      DROP TRIGGER IF EXISTS nodes_embeddings_table_update;
+      CREATE TRIGGER nodes_embeddings_table_update
+      AFTER UPDATE OF table_id ON nodes
+      BEGIN
+        UPDATE node_embeddings
+        SET table_id = new.table_id,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE node_id = new.id;
+      END;
+
+      DROP TRIGGER IF EXISTS nodes_embeddings_node_delete;
+      CREATE TRIGGER nodes_embeddings_node_delete
+      AFTER DELETE ON nodes
+      BEGIN
+        DELETE FROM node_embeddings WHERE node_id = old.id;
+      END;
+    `)
+  }
+
+  const hasTables = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'tables'")
+    .get()
+  if (hasTables) {
+    database.exec(`
+      DROP TRIGGER IF EXISTS tables_embeddings_table_delete;
+      CREATE TRIGGER tables_embeddings_table_delete
+      AFTER DELETE ON tables
+      BEGIN
+        DELETE FROM node_embeddings WHERE table_id = old.id;
+      END;
+    `)
+  }
 }
 
 function assertMigrationDefinitions(migrations: readonly DatabaseMigration[]): void {

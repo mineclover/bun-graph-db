@@ -57,7 +57,11 @@ export interface INodeRelationRepository {
   findBySourceNodeId(sourceNodeId: NodeId): Promise<NodeRelation[]>
   findByTargetNodeId(targetNodeId: NodeId): Promise<NodeRelation[]>
   /** Optional bulk read used by graph traversal; callers retain the per-node fallback. */
-  findAdjacentByNodeIds?(nodeIds: readonly NodeId[], direction: GraphTraversalDirection): Promise<NodeRelationAdjacency>
+  findAdjacentByNodeIds?(
+    nodeIds: readonly NodeId[],
+    direction: GraphTraversalDirection,
+    relationTypeIds?: readonly RelationTypeId[],
+  ): Promise<NodeRelationAdjacency>
   findBySourceNodeIdAndRelationType(sourceNodeId: NodeId, relationTypeId: RelationTypeId): Promise<NodeRelation[]>
   findByTargetNodeIdAndRelationType(targetNodeId: NodeId, relationTypeId: RelationTypeId): Promise<NodeRelation[]>
   countBySourceNodeId(sourceNodeId: NodeId): Promise<number>

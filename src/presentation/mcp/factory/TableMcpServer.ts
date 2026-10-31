@@ -7,6 +7,7 @@
  * Sequential: Implements after comprehensive testing
  */
 
+import { extractReferencedGraphqlScope } from "../../../application/security/AccessControl.js";
 import type {
 	McpToolAudience,
 	McpToolDefinition,
@@ -35,8 +36,9 @@ import type {
 import { PRESET_MAPPINGS } from "../../../core/types/FormatMapping.js";
 import type { FlatJsonExport } from "../../../core/types/JsonExport.js";
 import { FormatMapperService } from "../../../domain/services/FormatMapperService.js";
-import { SchemaDiscoveryService } from "../../../infrastructure/ai-metadata/SchemaDiscoveryService";
+import type { SchemaDiscoveryService } from "../../../infrastructure/ai-metadata/SchemaDiscoveryService";
 import { McpHttpServer } from "../../../mcp/http-server/McpHttpServer";
+import type { FetchLike } from "../../../models/GraphQLOperation.js";
 import {
 	SUPPORTED_MCP_PROTOCOL_VERSIONS,
 	isModernMcpRequest,
@@ -106,6 +108,8 @@ type TableOpenApiProjectionToolOutput = {
 
 interface TableMcpServerOptions {
 	projectionService?: TableSchemaProjectionProvider;
+	internalBridgeToken?: string;
+	fetchImpl?: FetchLike;
 }
 
 interface TableToolsListCacheEntry {
@@ -139,7 +143,12 @@ export class TableMcpServer {
 		options: TableMcpServerOptions = {},
 	) {
 		this.tableId = tableId;
-		this.mcpServer = new McpHttpServer(graphqlEndpoint, restApiBaseUrl);
+		this.mcpServer = new McpHttpServer(
+			graphqlEndpoint,
+			restApiBaseUrl,
+			options.internalBridgeToken,
+			options.fetchImpl,
+		);
 		this.formatMapperService = new FormatMapperService();
 		this.projectionService = options.projectionService;
 	}
@@ -1117,6 +1126,183 @@ export class TableMcpServer {
 			},
 		};
 
+		// 10. Set node embedding in this table
+		const setNodeEmbeddingTool: McpToolDefinition = {
+			name: `set-table-${this.tableId}-node-embedding`,
+			description: `[임베딩 저장] Store or update a persistent Float32 embedding vector for a node in table ${this.tableId}.`,
+			inputSchema: {
+				type: "object",
+				additionalProperties: false,
+				properties: {
+					nodeId: {
+						type: "string",
+						description: "Target node ID in this table",
+					},
+					vector: {
+						type: "array",
+						items: { type: "number" },
+						description: "Finite embedding vector values stored as Float32",
+					},
+					model: {
+						type: "string",
+						description: "Optional embedding model identifier",
+						default: "default",
+					},
+				},
+				required: ["nodeId", "vector"],
+			},
+			operationType: "mutation",
+			graphqlOperation: {
+				operationType: "mutation",
+				query: `
+          mutation SetTableNodeEmbedding($input: SetNodeEmbeddingInput!) {
+            setNodeEmbedding(input: $input) {
+              success
+              embedding {
+                nodeId
+                tableId
+                dimension
+                model
+                norm
+                createdAt
+                updatedAt
+              }
+              errors {
+                field
+                code
+                message
+              }
+            }
+          }
+        `,
+			},
+		};
+
+		// 11. Hybrid search nodes in this table (Graph N-hop + Typed Filter + FTS5 + Vector RRF)
+		const hybridSearchTableNodesTool: McpToolDefinition = {
+			name: `hybrid-search-table-${this.tableId}-nodes`,
+			description: `[하이브리드 검색] Combine N-hop graph neighborhood, typed attribute filters, FTS5 BM25, and Float32 cosine similarity via RRF in table ${this.tableId}.`,
+			inputSchema: {
+				type: "object",
+				additionalProperties: false,
+				properties: {
+					textQuery: {
+						type: "string",
+						description: "Optional FTS5 full-text query ranked by BM25",
+					},
+					vector: {
+						type: "array",
+						items: { type: "number" },
+						description: "Optional query embedding vector ranked by cosine similarity",
+					},
+					model: {
+						type: "string",
+						description: "Optional embedding model filter",
+					},
+					minVectorScore: {
+						type: "number",
+						description: "Minimum cosine similarity threshold (-1..1)",
+					},
+					filterQuery: {
+						type: "string",
+						description: "Optional typed attribute filter expression (e.g. score:>80)",
+					},
+					graph: {
+						type: "object",
+						additionalProperties: false,
+						required: ["anchorNodeIds"],
+						description: "Optional N-hop graph neighborhood constraint",
+						properties: {
+							anchorNodeIds: {
+								type: "array",
+								items: { type: "string" },
+							},
+							maxDepth: {
+								type: "integer",
+								default: 2,
+							},
+							direction: {
+								type: "string",
+								enum: ["INCOMING", "OUTGOING", "BOTH"],
+								default: "BOTH",
+							},
+							relationTypes: {
+								type: "array",
+								items: { type: "string" },
+							},
+							includeAnchors: {
+								type: "boolean",
+								default: false,
+							},
+						},
+					},
+					weights: {
+						type: "object",
+						additionalProperties: false,
+						properties: {
+							fts: { type: "number" },
+							vector: { type: "number" },
+							graph: { type: "number" },
+						},
+					},
+					rrfK: {
+						type: "number",
+						default: 60,
+					},
+					limit: {
+						type: "integer",
+						default: 10,
+					},
+					offset: {
+						type: "integer",
+						default: 0,
+					},
+				},
+				required: [],
+			},
+			operationType: "query",
+			graphqlOperation: {
+				operationType: "query",
+				query: `
+          query HybridSearchTableNodes($input: HybridSearchInput!) {
+            hybridSearchNodes(input: $input) {
+              results {
+                node {
+                  id
+                  tableId
+                  content
+                  title
+                  description
+                  relevanceScore
+                  distance
+                  createdAt
+                  updatedAt
+                }
+                combinedScore
+                ftsScore
+                ftsRank
+                vectorScore
+                vectorRank
+                hopDistance
+              }
+              total
+              hasMore
+              hasNextPage
+              hasPreviousPage
+              metrics {
+                eligibleCandidates
+                graphCandidates
+                lexicalCandidates
+                vectorCandidates
+                scannedVectors
+                elapsedMs
+              }
+            }
+          }
+        `,
+			},
+		};
+
 		// Add all tools to the registry
 		for (const tool of projectedNodeTools) {
 			this.tableTools.set(tool.name, tool);
@@ -1136,6 +1322,11 @@ export class TableMcpServer {
 			executeTableTemplateTool,
 		);
 		this.tableTools.set(updateTemplateTool.name, updateTemplateTool);
+		this.tableTools.set(setNodeEmbeddingTool.name, setNodeEmbeddingTool);
+		this.tableTools.set(
+			hybridSearchTableNodesTool.name,
+			hybridSearchTableNodesTool,
+		);
 	}
 
 	private async createProjectedNodeTools(): Promise<McpToolDefinition[]> {
@@ -1769,7 +1960,7 @@ export class TableMcpServer {
 				return this.createErrorResponse(id, -32601, "Method not found");
 			}
 			this.debugHotpath(`✅ Executing table-specific tool: ${name}`);
-			return await this.executeTableTool(id, name, args || {});
+			return await this.executeTableTool(id, name, args || {}, audience);
 		}
 
 		// Do NOT delegate to base MCP server - sub-table MCP should be isolated
@@ -1789,6 +1980,7 @@ export class TableMcpServer {
 		id: string | number | undefined,
 		toolName: string,
 		args: any,
+		audience?: McpToolAudience,
 	): Promise<McpResponse> {
 		try {
 			const tool = this.tableTools.get(toolName);
@@ -1820,7 +2012,7 @@ export class TableMcpServer {
 			// Check if this is a CRUD tool or a template tool
 			if (tool.operationType && tool.graphqlOperation) {
 				// This is a CRUD tool - execute GraphQL directly
-				const result = await this.executeGraphQL(tool, args);
+				const result = await this.executeGraphQL(tool, args, audience);
 
 				return {
 					jsonrpc: "2.0",
@@ -1853,7 +2045,7 @@ export class TableMcpServer {
 				};
 			} else {
 				// This is a template tool - execute via executeTemplateWithGraphQL
-				const result = await this.executeTemplate(toolName, args);
+				const result = await this.executeTemplate(toolName, args, audience);
 
 				return {
 					jsonrpc: "2.0",
@@ -1960,8 +2152,19 @@ export class TableMcpServer {
 	private async executeTemplate(
 		templateIdentifier: string,
 		variables: any,
+		audience?: McpToolAudience,
 	): Promise<any> {
 		try {
+			if (
+				audience?.role === "reader" &&
+				templateIdentifier === `import-with-mapping-${this.tableId}`
+			) {
+				return {
+					success: false,
+					error: "Forbidden: reader role cannot execute mutations",
+					data: null,
+				};
+			}
 			// Special handling for aiMetadata tool
 			if (templateIdentifier === `get-table-metadata-${this.tableId}`) {
 				return this.executeAiMetadataQuery(variables);
@@ -2247,6 +2450,9 @@ export class TableMcpServer {
 				);
 				const schema = await this.getGraphQLSchema();
 				if (schema) {
+					const { SchemaDiscoveryService } = await import(
+						"../../../infrastructure/ai-metadata/SchemaDiscoveryService"
+					);
 					this.schemaDiscoveryService = new SchemaDiscoveryService(schema);
 					this.debugHotpath(
 						`SchemaDiscoveryService initialized successfully for table ${this.tableId}`,
@@ -2863,6 +3069,7 @@ export class TableMcpServer {
 	private async executeGraphQL(
 		tool: McpToolDefinition,
 		args: any,
+		audience?: McpToolAudience,
 	): Promise<any> {
 		try {
 			if (!tool.graphqlOperation) {
@@ -2983,6 +3190,20 @@ export class TableMcpServer {
 					templateIdentifier,
 					variables: templateVariables,
 				};
+			} else if (tool.name === `set-table-${this.tableId}-node-embedding`) {
+				variables = {
+					input: {
+						...args,
+						tableId: this.tableId,
+					},
+				};
+			} else if (tool.name === `hybrid-search-table-${this.tableId}-nodes`) {
+				variables = {
+					input: {
+						...args,
+						tableId: this.tableId,
+					},
+				};
 			} else if (tool.name.includes("get-table-metadata-")) {
 				// CRUD: Get table metadata - metadata tool uses direct GraphQL execution
 				// Only pass the parameters that the GraphQL query expects
@@ -3010,6 +3231,63 @@ export class TableMcpServer {
 					success: false,
 					errors: [{ message: `Tool ${tool.name} has no GraphQL query` }],
 				};
+			}
+
+			if (audience) {
+				const scopeAnalysis = extractReferencedGraphqlScope(query, variables);
+				if (
+					audience.role === "reader" &&
+					(operationType === "mutation" || scopeAnalysis.action !== "read")
+				) {
+					return {
+						success: false,
+						errors: [
+							{ message: "Forbidden: reader role cannot execute write operations" },
+						],
+					};
+				}
+				if (audience.role === "writer" && scopeAnalysis.action === "admin") {
+					return {
+						success: false,
+						errors: [
+							{ message: "Forbidden: writer role cannot execute admin operations" },
+						],
+					};
+				}
+				if (audience.tableIds && !audience.tableIds.includes("*")) {
+					const allowedTables = new Set([this.tableId, ...audience.tableIds]);
+					const outOfScopeTable = scopeAnalysis.tableIds
+						.map((candidate) =>
+							candidate.startsWith("table:")
+								? candidate.slice("table:".length)
+								: candidate,
+						)
+						.find((candidate) => !allowedTables.has(candidate));
+					if (outOfScopeTable) {
+						return {
+							success: false,
+							errors: [
+								{
+									message: `Forbidden: operation targets table '${outOfScopeTable}' outside caller table scope`,
+								},
+							],
+						};
+					}
+					if (
+						scopeAnalysis.requiresGlobalScope &&
+						scopeAnalysis.nodeIds.length === 0
+					) {
+						return {
+							success: false,
+							errors: [
+								{
+									message:
+										"Forbidden: operation requires global scope outside caller table scope",
+								},
+							],
+						};
+					}
+				}
 			}
 
 			const operation = {

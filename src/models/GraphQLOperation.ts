@@ -174,17 +174,29 @@ export function validateGraphQLOperationVariables(
   }
 }
 
+export type FetchLike = (input: string | URL | Request, init?: RequestInit) => Promise<Response>
+
 export class GraphQLOperationExecutor {
   private graphqlEndpoint: string
   private authorizationHeader: string | undefined
+  private fetchImpl: FetchLike
 
-  constructor(endpoint: string = 'http://localhost:4000/graphql', internalBridgeToken?: string) {
+  constructor(
+    endpoint: string = 'http://localhost:4000/graphql',
+    internalBridgeToken?: string,
+    fetchImpl: FetchLike = fetch,
+  ) {
     this.graphqlEndpoint = endpoint
     const token = internalBridgeToken?.trim()
     this.authorizationHeader = token && isLoopbackUrl(endpoint) ? `Bearer ${token}` : undefined
+    this.fetchImpl = fetchImpl
   }
 
-  async execute(operation: GraphQLOperation, variables?: GraphQLVariables): Promise<GraphQLExecutionResult> {
+  async execute(
+    operation: GraphQLOperation,
+    variables?: GraphQLVariables,
+    options?: { headers?: Record<string, string> },
+  ): Promise<GraphQLExecutionResult> {
     const validation = validateGraphQLOperation(operation)
     if (!validation.valid) {
       return {
@@ -203,11 +215,12 @@ export class GraphQLOperationExecutor {
     }
 
     try {
-      const response = await fetch(this.graphqlEndpoint, {
+      const response = await this.fetchImpl(this.graphqlEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(this.authorizationHeader ? { Authorization: this.authorizationHeader } : {}),
+          ...(options?.headers ?? {}),
         },
         body: JSON.stringify({
           query: operation.query,

@@ -16,6 +16,7 @@ export const UseCaseTokens = {
   CREATE_NODE_USE_CASE: Symbol.for('CreateNodeUseCase'),
   UPDATE_NODE_USE_CASE: Symbol.for('UpdateNodeUseCase'),
   SEARCH_NODES_USE_CASE: Symbol.for('SearchNodesUseCase'),
+  HYBRID_SEARCH_NODES_USE_CASE: Symbol.for('HybridSearchNodesUseCase'),
 
   // Relation use cases
   CREATE_RELATION_USE_CASE: Symbol.for('CreateRelationUseCase'),

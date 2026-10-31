@@ -18,8 +18,8 @@ describe('Table Package System Integration', () => {
   })
 
   afterEach(async () => {
-    // Reset the container after tests
-    resetContainer()
+    await container?.dispose()
+    await resetContainer()
   })
 
   describe('GraphQL Integration', () => {

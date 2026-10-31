@@ -1,6 +1,7 @@
 import type { CreateAttributeInput, CreateAttributeOutput } from '@/application/dtos/AttributeDto.js'
 import { fromEntity as attributeFromEntity } from '@/application/dtos/AttributeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import { TableTemplateAutoGenerator } from '@/application/services/TableTemplateAutoGenerator.js'
 import type { AttributeTypeId, TableId } from '@/core/types/CommonTypes.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
@@ -88,6 +89,7 @@ export class CreateAttributeUseCase {
 
       // Save to repository
       await this.attributeRepository.save(attribute)
+      TableSchemaProjectionService.clearCache(table.id)
 
       // Retrieve the saved attribute with the generated ID
       const savedAttribute = await this.attributeRepository.findByTableIdAndIdentifier(

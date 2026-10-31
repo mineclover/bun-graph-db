@@ -2,6 +2,7 @@ import type { HttpControllerRequest as Request, HttpControllerResponse as Respon
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { BulkTemplateImportTool } from '@/application/services/BulkTemplateImportTool.js'
 import { RestApiClient } from '@/application/services/RestApiClient.js'
+import type { FetchLike } from '@/models/GraphQLOperation.js'
 import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 
 type HttpBodyRequest<TBody> = Request<Record<string, string>, TBody>
@@ -147,14 +148,21 @@ interface ExportTableNodesMutationData {
 export class McpToolController {
   private bulkImportTool: BulkTemplateImportTool
   private readonly graphqlUrl: string
+  private readonly fetchImpl: FetchLike
+  private readonly authorizationHeader: string | undefined
 
   constructor(
     private readonly logger: ILogger,
     port?: number,
+    fetchImpl: FetchLike = fetch,
+    internalBridgeToken?: string,
   ) {
     // Initialize the REST client pointing to our GraphQL server
     const serverPort = port || 4000
-    const restClient = new RestApiClient(`http://localhost:${serverPort}/api`)
+    const token = internalBridgeToken?.trim()
+    this.fetchImpl = fetchImpl
+    this.authorizationHeader = token ? `Bearer ${token}` : undefined
+    const restClient = new RestApiClient(`http://localhost:${serverPort}/api`, internalBridgeToken, fetchImpl)
     this.graphqlUrl = `http://localhost:${serverPort}/graphql`
 
     // Initialize the bulk import tool
@@ -597,10 +605,11 @@ export class McpToolController {
     query: string,
     variables: ToolParameters = {},
   ): Promise<TData | undefined> {
-    const response = await fetch(this.graphqlUrl, {
+    const response = await this.fetchImpl(this.graphqlUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(this.authorizationHeader ? { Authorization: this.authorizationHeader } : {}),
       },
       body: JSON.stringify({
         query,

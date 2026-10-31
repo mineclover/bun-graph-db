@@ -8,6 +8,7 @@ import {
   registerTablePackageModule,
   registerUseCaseModule,
 } from './modules/index.js'
+import { DatabaseTokens } from './tokens/index.js'
 
 /**
  * Container Bootstrap - Sets up the entire DI container
@@ -77,17 +78,17 @@ export async function resetContainer(): Promise<void> {
 }
 
 /**
- * Create a test container with mock implementations
+ * Create an isolated test container backed by an in-memory SQLite database.
  */
 export async function createTestContainer(): Promise<DIContainer> {
   const container = new DIContainer()
 
   registerCoreModule(container)
-
-  // Override database provider to use mock
-  process.env.DB_PROVIDER = 'mock'
-
   registerDatabaseModule(container)
+  container.registerSingleton(DatabaseTokens.DATABASE_CONFIG, async () => ({
+    url: ':memory:',
+    type: 'sqlite' as const,
+  }))
   registerRepositoryModule(container)
   registerTablePackageModule(container)
   registerUseCaseModule(container)

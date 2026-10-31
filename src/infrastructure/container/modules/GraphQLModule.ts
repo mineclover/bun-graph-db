@@ -3,12 +3,16 @@ import type { ILogger } from '@/application/ports/ILogger.js'
 import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import type { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import type { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
+import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import type { HybridSearchNodesUseCase } from '@/application/use-cases/nodes/HybridSearchNodes.js'
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { IDatabaseConnection } from '@/core/database/interfaces/IDatabaseConnection.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { IAttributeTypeRepository } from '@/domain/repositories/IAttributeTypeRepository.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttributeRepository.js'
+import type { INodeEmbeddingRepository } from '@/domain/repositories/INodeEmbeddingRepository.js'
+import type { INodeMutationRepository } from '@/domain/repositories/INodeMutationRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
@@ -96,6 +100,35 @@ export function registerGraphQLModule(container: DIContainer): void {
     ],
   )
 
+  container.registerSingleton(
+    CommonTokens.NODE_ATTRIBUTE_SCHEMA_GATE,
+    async (c) => {
+      const { NodeAttributeSchemaGate } = await import('@/application/services/NodeAttributeSchemaGate.js')
+      const projectionService = await resolveAs<TableSchemaProjectionService>(
+        c,
+        CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE,
+      )
+      const nodeRepository = await resolveAs<INodeRepository>(c, RepositoryTokens.NODE_REPOSITORY)
+      const attributeRepository = await resolveAs<IAttributeRepository>(c, RepositoryTokens.ATTRIBUTE_REPOSITORY)
+      const nodeAttributeRepository = await resolveAs<INodeAttributeRepository>(
+        c,
+        RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      )
+      return new NodeAttributeSchemaGate(
+        projectionService,
+        nodeRepository,
+        attributeRepository,
+        nodeAttributeRepository,
+      )
+    },
+    [
+      CommonTokens.TABLE_SCHEMA_PROJECTION_SERVICE,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+    ],
+  )
+
   // Query resolvers
   container.registerSingleton(
     GraphQLTokens.TABLE_QUERIES,
@@ -120,12 +153,34 @@ export function registerGraphQLModule(container: DIContainer): void {
           return null
         }
       }
+      const hybridSearchNodesUseCaseResolver = async (): Promise<HybridSearchNodesUseCase | null> => {
+        try {
+          return (await c.resolve(UseCaseTokens.HYBRID_SEARCH_NODES_USE_CASE)) as HybridSearchNodesUseCase
+        } catch (error) {
+          console.warn('[GraphQLModule] HybridSearchNodesUseCase not available:', error)
+          return null
+        }
+      }
       const simpleLogger = createConsoleLogger()
       // Resolve attributeRepository for identifier-based filtering
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
-      return new NodeQueries(nodeRepository, searchNodesUseCaseResolver, simpleLogger, attributeRepository)
+      const nodeEmbeddingRepository = (await c.resolve(
+        RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+      )) as INodeEmbeddingRepository
+      return new NodeQueries(
+        nodeRepository,
+        searchNodesUseCaseResolver,
+        simpleLogger,
+        attributeRepository,
+        nodeEmbeddingRepository,
+        hybridSearchNodesUseCaseResolver,
+      )
     },
-    [RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.ATTRIBUTE_REPOSITORY],
+    [
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+    ],
   )
 
   container.registerSingleton(
@@ -278,6 +333,21 @@ export function registerGraphQLModule(container: DIContainer): void {
       const relationTypeRepository = (await c.resolve(
         RepositoryTokens.RELATION_TYPE_REPOSITORY,
       )) as IRelationTypeRepository
+      const createNodeUseCase = await resolveAs<CreateNodeUseCase>(
+        c,
+        UseCaseTokens.CREATE_NODE_USE_CASE,
+      )
+      const schemaGate = await resolveAs<
+        import('@/application/services/NodeAttributeSchemaGate.js').NodeAttributeSchemaGate
+      >(c, CommonTokens.NODE_ATTRIBUTE_SCHEMA_GATE)
+      const nodeEmbeddingRepository = await resolveAs<INodeEmbeddingRepository>(
+        c,
+        RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+      )
+      const nodeMutationRepository = await resolveAs<INodeMutationRepository>(
+        c,
+        RepositoryTokens.NODE_MUTATION_REPOSITORY,
+      )
 
       const simpleLogger = createConsoleLogger('JsonlBackup')
 
@@ -290,6 +360,10 @@ export function registerGraphQLModule(container: DIContainer): void {
         nodeRelationRepository,
         relationTypeRepository,
         simpleLogger,
+        createNodeUseCase,
+        schemaGate,
+        nodeEmbeddingRepository,
+        nodeMutationRepository,
       )
     },
     [
@@ -300,6 +374,10 @@ export function registerGraphQLModule(container: DIContainer): void {
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
       RepositoryTokens.NODE_RELATION_REPOSITORY,
       RepositoryTokens.RELATION_TYPE_REPOSITORY,
+      UseCaseTokens.CREATE_NODE_USE_CASE,
+      CommonTokens.NODE_ATTRIBUTE_SCHEMA_GATE,
+      RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+      RepositoryTokens.NODE_MUTATION_REPOSITORY,
     ],
   )
 
@@ -490,6 +568,17 @@ export function registerGraphQLModule(container: DIContainer): void {
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
       const attributeTypeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)) as IAttributeTypeRepository
       const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK)
+      const schemaGate = await resolveAs<
+        import('@/application/services/NodeAttributeSchemaGate.js').NodeAttributeSchemaGate
+      >(c, CommonTokens.NODE_ATTRIBUTE_SCHEMA_GATE)
+      const nodeEmbeddingRepository = await resolveAs<INodeEmbeddingRepository>(
+        c,
+        RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+      )
+      const nodeMutationRepository = await resolveAs<INodeMutationRepository>(
+        c,
+        RepositoryTokens.NODE_MUTATION_REPOSITORY,
+      )
       const simpleLogger = createConsoleLogger()
       return new NodeMutations(
         createNodeUseCase,
@@ -501,6 +590,9 @@ export function registerGraphQLModule(container: DIContainer): void {
         attributeTypeRepository,
         simpleLogger,
         tabularSyncHook,
+        schemaGate,
+        nodeEmbeddingRepository,
+        nodeMutationRepository,
       )
     },
     [
@@ -512,6 +604,9 @@ export function registerGraphQLModule(container: DIContainer): void {
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       CommonTokens.TABULAR_SYNC_HOOK,
+      CommonTokens.NODE_ATTRIBUTE_SCHEMA_GATE,
+      RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+      RepositoryTokens.NODE_MUTATION_REPOSITORY,
     ],
   )
 
@@ -1058,11 +1153,19 @@ export function registerGraphQLModule(container: DIContainer): void {
           variables?: Record<string, unknown>,
           context?: unknown,
         ) => {
+          const resolvedContext =
+            context && typeof context === 'object'
+              ? context
+              : {
+                  requestId: `exec_${Date.now()}`,
+                  startTime: new Date(),
+                  requestCache: new Map<string, unknown>(),
+                }
           return execute({
             schema,
             document: typeof query === 'string' ? await (await import('graphql')).parse(query) : query,
             variableValues: variables,
-            contextValue: context,
+            contextValue: resolvedContext,
           })
         },
         getSchema: () => schema,

@@ -10,6 +10,8 @@ import { DomainException, ValidationException } from '@/shared/exceptions/Domain
 export abstract class BaseResolver {
   protected abstract logger: ILogger
   private performanceMetrics: PerformanceMetrics[] = []
+  private readonly transientBatchStates = new Map<string, unknown>()
+  private readonly contextBatchStates = new WeakMap<object, Map<string, unknown>>()
 
   /**
    * Handle GraphQL Query operations with standardized error handling and logging
@@ -200,6 +202,107 @@ export abstract class BaseResolver {
 
     resolvedContext.requestCache?.set(cacheKey, promise as Promise<unknown>)
     return promise
+  }
+
+  /**
+   * Coalesce concurrent per-parent field lookups within the same microtask tick
+   * into a single batched repository call, caching per-key promises for the
+   * lifetime of a GraphQL request when `context` is supplied.
+   */
+  protected withRequestBatchLoader<TValue>(
+    context: GraphQLContext | undefined,
+    namespace: string,
+    key: string | null | undefined,
+    batchLoader: (keys: readonly string[]) => Promise<ReadonlyMap<string, TValue>>,
+    defaultValue: TValue,
+  ): Promise<TValue> {
+    if (!key) {
+      return Promise.resolve(defaultValue)
+    }
+
+    interface PendingBatchEntry {
+      resolve: (value: TValue) => void
+      reject: (reason?: unknown) => void
+    }
+    interface PendingBatchState {
+      entriesByKey: Map<string, PendingBatchEntry[]>
+    }
+
+    const normalizedKey = String(key)
+    const cacheStore = context
+      ? this.extractContext(context).requestCache
+      : undefined
+    const valueCacheKey = `${namespace}:val:${normalizedKey}`
+
+    if (cacheStore) {
+      const existing = cacheStore.get(valueCacheKey) as Promise<TValue> | undefined
+      if (existing) {
+        return existing
+      }
+    }
+
+    const batchStateStore = cacheStore
+      ? this.getOrCreateContextBatchStore(cacheStore)
+      : this.transientBatchStates
+    const batchStateKey = `${namespace}:batch`
+    let batchState = batchStateStore.get(batchStateKey) as PendingBatchState | undefined
+
+    if (!batchState) {
+      batchState = { entriesByKey: new Map() }
+      batchStateStore.set(batchStateKey, batchState)
+
+      const scheduledBatch = batchState
+      queueMicrotask(() => {
+        if (batchStateStore.get(batchStateKey) === scheduledBatch) {
+          batchStateStore.delete(batchStateKey)
+        }
+
+        const keys = Array.from(scheduledBatch.entriesByKey.keys())
+        if (keys.length === 0) return
+
+        batchLoader(keys).then(
+          (loadedMap) => {
+            for (const [entryKey, waiters] of scheduledBatch.entriesByKey) {
+              const resolvedValue = loadedMap.has(entryKey)
+                ? (loadedMap.get(entryKey) as TValue)
+                : defaultValue
+              for (const waiter of waiters) {
+                waiter.resolve(resolvedValue)
+              }
+            }
+          },
+          (error) => {
+            for (const [entryKey, waiters] of scheduledBatch.entriesByKey) {
+              cacheStore?.delete(`${namespace}:val:${entryKey}`)
+              for (const waiter of waiters) {
+                waiter.reject(error)
+              }
+            }
+          },
+        )
+      })
+    }
+
+    const promise = new Promise<TValue>((resolve, reject) => {
+      let waiters = batchState.entriesByKey.get(normalizedKey)
+      if (!waiters) {
+        waiters = []
+        batchState.entriesByKey.set(normalizedKey, waiters)
+      }
+      waiters.push({ resolve, reject })
+    })
+
+    cacheStore?.set(valueCacheKey, promise as Promise<unknown>)
+    return promise
+  }
+
+  private getOrCreateContextBatchStore(owner: object): Map<string, unknown> {
+    let store = this.contextBatchStates.get(owner)
+    if (!store) {
+      store = new Map<string, unknown>()
+      this.contextBatchStates.set(owner, store)
+    }
+    return store
   }
 
   /**

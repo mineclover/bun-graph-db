@@ -1,11 +1,21 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, rename, rm } from 'node:fs/promises'
 import { dirname, extname } from 'node:path'
-import * as XLSX from 'xlsx'
+import type { WorkBook } from 'xlsx'
 import type { ResolvedSyncTargetSelection } from '../TabularSyncTargetRegistry.js'
 import { SheetMatrixSerializer } from '../SheetMatrixSerializer.js'
 import type { ExcelTableRow } from '../types/ExcelRowSchema.js'
 import type { TabularDestinationGateway, TabularWritePlan } from './TabularDestinationGateway.js'
+
+type XlsxModule = typeof import('xlsx')
+let xlsxModulePromise: Promise<XlsxModule> | undefined
+
+function loadXlsx(): Promise<XlsxModule> {
+  if (!xlsxModulePromise) {
+    xlsxModulePromise = import('xlsx')
+  }
+  return xlsxModulePromise
+}
 
 type CellValue = string | number | boolean | null
 type SheetMatrix = CellValue[][]
@@ -32,15 +42,17 @@ export class ExcelFileGateway implements TabularDestinationGateway {
 
   async readRows(selection: ResolvedSyncTargetSelection): Promise<ExcelTableRow[]> {
     const workbookPath = this.workbookPath(selection)
-    const workbook = await this.readWorkbook(workbookPath)
+    const XLSX = await loadXlsx()
+    const workbook = await this.readWorkbook(XLSX, workbookPath)
     if (!workbook) return []
 
-    return this.matrixSerializer.fromMatrix(this.readMatrix(workbook, selection.sheetName))
+    return this.matrixSerializer.fromMatrix(this.readMatrix(XLSX, workbook, selection.sheetName))
   }
 
   async verifyWritable(selection: ResolvedSyncTargetSelection): Promise<void> {
     const workbookPath = this.workbookPath(selection)
-    await this.readWorkbook(workbookPath)
+    const XLSX = await loadXlsx()
+    await this.readWorkbook(XLSX, workbookPath)
 
     const temporaryPath = `${workbookPath}.${randomUUID()}.probe`
     await mkdir(dirname(workbookPath), { recursive: true })
@@ -53,11 +65,13 @@ export class ExcelFileGateway implements TabularDestinationGateway {
 
   async writeSheet(plan: TabularWritePlan): Promise<void> {
     const workbookPath = this.workbookPath(plan.selection)
-    const workbook = (await this.readWorkbook(workbookPath)) || XLSX.utils.book_new()
+    const XLSX = await loadXlsx()
+    const workbook = (await this.readWorkbook(XLSX, workbookPath)) || XLSX.utils.book_new()
     const tableMatrix = this.matrixSerializer.toMatrix(plan.schema, plan.rows)
 
-    this.replaceSheet(workbook, plan.selection.sheetName, tableMatrix)
+    this.replaceSheet(XLSX, workbook, plan.selection.sheetName, tableMatrix)
     this.upsertMetadataRows(
+      XLSX,
       workbook,
       plan.metadataUpdate.metadataSheetName,
       workbookMetadataColumns,
@@ -65,6 +79,7 @@ export class ExcelFileGateway implements TabularDestinationGateway {
       'tableIdentifier',
     )
     this.upsertMetadataRows(
+      XLSX,
       workbook,
       plan.metadataUpdate.schemaSheetName,
       schemaMetadataColumns,
@@ -72,7 +87,7 @@ export class ExcelFileGateway implements TabularDestinationGateway {
       'tableIdentifier',
     )
 
-    await this.writeWorkbookAtomically(workbookPath, workbook, plan.selection.sheetName)
+    await this.writeWorkbookAtomically(XLSX, workbookPath, workbook, plan.selection.sheetName)
   }
 
   private workbookPath(selection: ResolvedSyncTargetSelection): string {
@@ -88,13 +103,13 @@ export class ExcelFileGateway implements TabularDestinationGateway {
     return selection.target.workbookPath
   }
 
-  private async readWorkbook(workbookPath: string): Promise<XLSX.WorkBook | null> {
+  private async readWorkbook(XLSX: XlsxModule, workbookPath: string): Promise<WorkBook | null> {
     const file = Bun.file(workbookPath)
     if (!(await file.exists())) return null
     return XLSX.read(await file.arrayBuffer(), { type: 'array' })
   }
 
-  private readMatrix(workbook: XLSX.WorkBook, sheetName: string): SheetMatrix {
+  private readMatrix(XLSX: XlsxModule, workbook: WorkBook, sheetName: string): SheetMatrix {
     const sheet = workbook.Sheets[sheetName]
     if (!sheet) return []
 
@@ -103,19 +118,20 @@ export class ExcelFileGateway implements TabularDestinationGateway {
       .map((row) => row.map((cell) => this.toCellValue(cell)))
   }
 
-  private replaceSheet(workbook: XLSX.WorkBook, sheetName: string, matrix: SheetMatrix): void {
+  private replaceSheet(XLSX: XlsxModule, workbook: WorkBook, sheetName: string, matrix: SheetMatrix): void {
     workbook.Sheets[sheetName] = XLSX.utils.aoa_to_sheet(matrix)
     if (!workbook.SheetNames.includes(sheetName)) workbook.SheetNames.push(sheetName)
   }
 
   private upsertMetadataRows(
-    workbook: XLSX.WorkBook,
+    XLSX: XlsxModule,
+    workbook: WorkBook,
     sheetName: string,
     columns: string[],
     rows: Array<Record<string, CellValue | undefined>>,
     keyColumn: string,
   ): void {
-    const existingRows = this.toRecords(this.readMatrix(workbook, sheetName), columns)
+    const existingRows = this.toRecords(this.readMatrix(XLSX, workbook, sheetName), columns)
     const replacements = new Map(rows.map((row) => [String(row[keyColumn] || ''), row]))
     const retained = existingRows.filter((row) => !replacements.has(String(row[keyColumn] || '')))
     const merged = [...retained, ...rows].sort((left, right) =>
@@ -123,7 +139,7 @@ export class ExcelFileGateway implements TabularDestinationGateway {
     )
     const matrix: SheetMatrix = [columns, ...merged.map((row) => columns.map((column) => row[column] ?? null))]
 
-    this.replaceSheet(workbook, sheetName, matrix)
+    this.replaceSheet(XLSX, workbook, sheetName, matrix)
   }
 
   private toRecords(matrix: SheetMatrix, fallbackColumns: string[]): Array<Record<string, CellValue>> {
@@ -137,8 +153,9 @@ export class ExcelFileGateway implements TabularDestinationGateway {
   }
 
   private async writeWorkbookAtomically(
+    XLSX: XlsxModule,
     workbookPath: string,
-    workbook: XLSX.WorkBook,
+    workbook: WorkBook,
     expectedSheetName: string,
   ): Promise<void> {
     const directory = dirname(workbookPath)
@@ -149,7 +166,7 @@ export class ExcelFileGateway implements TabularDestinationGateway {
       const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer', compression: true })
       await Bun.write(temporaryPath, output)
 
-      const verifiedWorkbook = await this.readWorkbook(temporaryPath)
+      const verifiedWorkbook = await this.readWorkbook(XLSX, temporaryPath)
       if (!verifiedWorkbook?.Sheets[expectedSheetName]) {
         throw new Error(`Excel workbook verification failed for sheet '${expectedSheetName}'.`)
       }

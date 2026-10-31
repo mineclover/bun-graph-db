@@ -53,6 +53,14 @@ interface AccessTokenDefinition {
 export interface ExternalResourceAccessResolver {
   /** Resolve a node's owning table before dispatching an external request. */
   resolveNodeTableId?: (nodeId: string) => Promise<string | undefined>
+  /**
+   * Resolve a table ID or identifier to its canonical `{ id, identifier }` pair
+   * so table-scoped tokens configured with either numeric IDs or identifiers
+   * match requests referencing `tableId`, `tableIdentifier`, or `nodeId`.
+   */
+  resolveTableIdentity?: (
+    tableIdOrIdentifier: string,
+  ) => Promise<{ id: string; identifier: string } | undefined>
 }
 
 interface RateLimitBucket {
@@ -390,6 +398,14 @@ export async function authorizeExternalRequest(
       if (payload.method === 'tools/call' && toolAccess?.tableId) requestedTableIds = [toolAccess.tableId]
       requiresGlobalScope = Boolean(payload.method === 'tools/call' && toolAccess?.scope === 'global')
       nodeIds = collectNodeIds(payload.params?.arguments)
+      if (
+        payload.method === 'tools/call' &&
+        toolAccess?.scope === 'table' &&
+        requestedTableIds.length === 0 &&
+        nodeIds.length === 0
+      ) {
+        unresolvedTableScopedResource = true
+      }
     } catch {
       action = 'admin'
       requiresGlobalScope = true
@@ -430,6 +446,27 @@ export async function authorizeExternalRequest(
     unresolvedTableScopedResource = resolved.some(({ tableId }) => !tableId)
   }
 
+  const principal = control.principalFor(request)
+  if (
+    resourceResolver?.resolveTableIdentity &&
+    requestedTableIds.length > 0 &&
+    principal &&
+    !principal.tableIds.includes('*') &&
+    requestedTableIds.some((tableId) => !principal.tableIds.includes(tableId))
+  ) {
+    const normalized = await Promise.all(
+      requestedTableIds.map(async (tableRef) => {
+        if (principal.tableIds.includes(tableRef)) return tableRef
+        const identity = await resourceResolver.resolveTableIdentity?.(tableRef)
+        if (!identity) return tableRef
+        if (principal.tableIds.includes(identity.id)) return identity.id
+        if (principal.tableIds.includes(identity.identifier)) return identity.identifier
+        return tableRef
+      }),
+    )
+    requestedTableIds = uniqueStrings(normalized)
+  }
+
   return control.authorize(request, {
     action,
     endpoint: pathname,
@@ -463,41 +500,78 @@ function estimateGraphqlComplexity(query: string): number {
   }
 }
 
+export function extractReferencedGraphqlScope(
+  query: string,
+  variables: unknown,
+): { action: AccessAction; tableIds: string[]; nodeIds: string[]; requiresGlobalScope: boolean } {
+  return analyzeGraphqlRequest(query, variables)
+}
+
 function analyzeGraphqlRequest(
   query: string,
   variables: unknown,
 ): { action: AccessAction; tableIds: string[]; nodeIds: string[]; requiresGlobalScope: boolean } {
   const tableIds = new Set<string>()
-  collectTableIds(variables, tableIds)
   const nodeIds = new Set<string>()
   let isMutation = false
   let healthCheckOnly = true
   let hasRootField = false
-  let knownTableScopedMutation = false
+  let hasUnscopedRootField = false
+  let hasAdminRootField = false
 
   try {
     const document = parse(query)
     for (const definition of document.definitions) {
       if (definition.kind !== Kind.OPERATION_DEFINITION) continue
-      isMutation ||= definition.operation === 'mutation'
+      const operationIsMutation = definition.operation === 'mutation'
+      isMutation ||= operationIsMutation
       for (const selection of definition.selectionSet.selections) {
         if (selection.kind !== Kind.FIELD) {
           healthCheckOnly = false
+          hasUnscopedRootField = true
+          if (operationIsMutation) hasAdminRootField = true
           continue
         }
         hasRootField = true
         const fieldName = selection.name.value
-        if (tableScopedMutationFields.has(fieldName)) knownTableScopedMutation = true
-        if (fieldName !== 'healthCheck') healthCheckOnly = false
+        if (fieldName === 'healthCheck' || fieldName === '__typename') {
+          continue
+        }
+        healthCheckOnly = false
+
+        const fieldTableIds = new Set<string>()
+        const fieldNodeIds = new Set<string>()
+        const directTableArgNames = rootTableIdArgByField.get(fieldName)
+
         for (const argument of selection.arguments || []) {
+          const argName = argument.name.value
           const argumentValue = graphQlValueToUnknown(argument.value, variables)
-          collectTableIds(argumentValue, tableIds)
-          if (isTableIdKey(argument.name.value)) collectTableIds(argumentValue, tableIds, argument.name.value)
-          if (isNodeIdKey(argument.name.value) || (rootNodeIdFields.has(fieldName) && argument.name.value === 'id')) {
-            if (typeof argumentValue === 'string' && argumentValue.trim()) nodeIds.add(argumentValue.trim())
-            else collectNodeIds(argumentValue, nodeIds)
+          collectTableIds(argumentValue, fieldTableIds)
+          if (isTableIdKey(argName)) {
+            collectTableIds(argumentValue, fieldTableIds, argName)
           }
-          collectNodeIds(argumentValue, nodeIds)
+          if (directTableArgNames?.has(argName) && typeof argumentValue === 'string' && argumentValue.trim()) {
+            fieldTableIds.add(argumentValue.trim())
+          }
+          if (isNodeIdKey(argName) || (rootNodeIdFields.has(fieldName) && argName === 'id')) {
+            if (typeof argumentValue === 'string' && argumentValue.trim()) fieldNodeIds.add(argumentValue.trim())
+            else collectNodeIds(argumentValue, fieldNodeIds)
+          }
+          collectNodeIds(argumentValue, fieldNodeIds)
+        }
+
+        for (const id of fieldTableIds) tableIds.add(id)
+        for (const id of fieldNodeIds) nodeIds.add(id)
+
+        const fieldHasScope = fieldTableIds.size > 0 || fieldNodeIds.size > 0
+        if (adminOnlyGraphqlRootFields.has(fieldName)) {
+          hasAdminRootField = true
+          hasUnscopedRootField = true
+        } else if (!fieldHasScope) {
+          hasUnscopedRootField = true
+          if (operationIsMutation && !tableScopedMutationFields.has(fieldName)) {
+            hasAdminRootField = true
+          }
         }
       }
     }
@@ -507,11 +581,13 @@ function analyzeGraphqlRequest(
 
   const requestedTableIds = uniqueStrings([...tableIds])
   const requestedNodeIds = uniqueStrings([...nodeIds])
-  const isGlobalOperation = requestedTableIds.length === 0 && requestedNodeIds.length === 0 && !(hasRootField && healthCheckOnly)
+  const isGlobalOperation =
+    hasUnscopedRootField ||
+    (requestedTableIds.length === 0 && requestedNodeIds.length === 0 && !(hasRootField && healthCheckOnly))
   return {
-    // An unscoped mutation changes global state. A scoped mutation can be
-    // performed by a writer after its resource/table ownership is checked.
-    action: isMutation && isGlobalOperation && !knownTableScopedMutation ? 'admin' : isMutation ? 'write' : 'read',
+    // Admin-only root fields and unscoped non-table mutations require admin.
+    // Every root field must carry its own scope unless the caller holds global ('*') access.
+    action: hasAdminRootField ? 'admin' : isMutation ? 'write' : 'read',
     tableIds: requestedTableIds,
     nodeIds: requestedNodeIds,
     requiresGlobalScope: isGlobalOperation,
@@ -539,13 +615,57 @@ function isTableIdKey(key: string): boolean {
   return key === 'tableId' || key === 'tableIdentifier' || key === 'targetTableId' || key === 'tableIds' || key === 'tableIdentifiers'
 }
 
+const rootTableIdArgByField = new Map<string, ReadonlySet<string>>([
+  ['table', new Set(['id'])],
+  ['tableByIdentifier', new Set(['identifier'])],
+  ['tableOpenApiProjection', new Set(['tableId', 'identifier'])],
+])
+
 const rootNodeIdFields = new Set([
   'node',
+  'nodeEmbedding',
   'deleteNode',
   'updateNode',
+  'removeNodeEmbedding',
   'getNodeAttributes',
   'getConnectedNodes',
   'getNodeRelations',
+])
+
+const adminOnlyGraphqlRootFields = new Set([
+  'inspectJsonlBackup',
+  'exportJsonl',
+  'importJsonl',
+  'listBackups',
+  'backupMetrics',
+  'backupDatabase',
+  'restoreDatabase',
+  'applyRetentionPolicy',
+  'importSchema',
+  'exportAllTables',
+  'exportTableWithNodes',
+  'exportTableToFile',
+  'importTablePackage',
+  'importTableFromFile',
+  'batchImportTablePackages',
+  'validateTablePackage',
+  'createTable',
+  'updateTable',
+  'deleteTable',
+  'batchCreateTables',
+  'batchDeleteTables',
+  'createAttributeType',
+  'updateAttributeType',
+  'deleteAttributeType',
+  'createRelationType',
+  'updateRelationType',
+  'deleteRelationType',
+  'createTemplate',
+  'updateTemplate',
+  'deleteTemplate',
+  'activateTemplate',
+  'deactivateTemplate',
+  'batchOperationWithRollback',
 ])
 
 const tableScopedMutationFields = new Set([
@@ -554,17 +674,41 @@ const tableScopedMutationFields = new Set([
   'createPersonNode',
   'updateNode',
   'deleteNode',
+  'batchCreateNodes',
+  'batchCreateNodesTransactional',
+  'batchCreateNodesWithProgress',
+  'batchUpdateNodes',
+  'batchDeleteNodes',
+  'createAttribute',
+  'updateAttribute',
+  'deleteAttribute',
+  'batchCreateAttributes',
   'setNodeAttribute',
   'setNodeAttributes',
   'setNodeAttributesByIdentifier',
+  'batchSetNodeAttributes',
   'updateNodeAttributeValue',
   'removeNodeAttribute',
   'bulkSetNodeAttributes',
+  'setNodeEmbedding',
+  'batchSetNodeEmbeddings',
+  'removeNodeEmbedding',
   'createRelation',
+  'updateRelation',
+  'deleteRelation',
+  'batchCreateRelations',
 ])
 
 function isNodeIdKey(key: string): boolean {
-  return key === 'nodeId' || key === 'sourceNodeId' || key === 'targetNodeId' || key === 'fromNodeId' || key === 'toNodeId'
+  return (
+    key === 'nodeId' ||
+    key === 'nodeIds' ||
+    key === 'sourceNodeId' ||
+    key === 'targetNodeId' ||
+    key === 'fromNodeId' ||
+    key === 'toNodeId' ||
+    key === 'anchorNodeIds'
+  )
 }
 
 function collectNodeIds(value: unknown, nodeIds: Set<string> = new Set(), key?: string): string[] {
@@ -621,7 +765,7 @@ function classifyApiAccess(
   })
   const nodeIds = new Set<string>(collectNodeIds(body))
   const nodePathMatch = pathname.match(/^\/api\/nodes\/([^/]+)(?:\/|$)/)
-  if (nodePathMatch?.[1] && !['search', 'shortest-path'].includes(nodePathMatch[1])) {
+  if (nodePathMatch?.[1] && !['search', 'shortest-path', 'hybrid-search'].includes(nodePathMatch[1])) {
     nodeIds.add(decodeURIComponent(nodePathMatch[1]))
   }
   const tablePathMatch = pathname.match(/^\/api\/tables\/([^/]+)(?:\/|$)/)
@@ -640,7 +784,10 @@ function classifyApiAccess(
     (pathname === '/api/tables' && method !== 'GET')
   if (isAdminRoute) return { action: 'admin', tableIds: [], nodeIds: [], requiresGlobalScope: true }
 
-  const safeMethod = method === 'GET' || method === 'HEAD'
+  const safeMethod =
+    method === 'GET' ||
+    method === 'HEAD' ||
+    (method === 'POST' && pathname === '/api/nodes/hybrid-search')
   const requestedTableIds = uniqueStrings([...tableIds])
   const requestedNodeIds = uniqueStrings([...nodeIds])
   const hasScope = requestedTableIds.length > 0 || requestedNodeIds.length > 0

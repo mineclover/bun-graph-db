@@ -2,7 +2,7 @@
 docType: explanation
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-08-11"
+lastVerified: "2026-10-31"
 ---
 
 # MCP 시스템 아키텍처
@@ -34,6 +34,6 @@ flowchart LR
 
 ## 보안 경계
 
-외부 MCP 요청은 REST·GraphQL과 같은 접근 제어를 통과한다. 역할, 테이블 범위, 요청 크기, Origin, 요청 빈도와 도구의 read·write 성격이 권한 판정에 사용된다. 내부 GraphQL·REST 브리지는 loopback 주소만 신뢰하지 않고 `BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN`을 Bearer 자격 증명으로 전달한다.
+외부 MCP 요청은 REST·GraphQL과 같은 접근 제어를 통과한다. 역할, 테이블 범위, 요청 크기, Origin, 요청 빈도와 도구의 read·write 성격이 권한 판정에 사용된다. 단일 프로세스 실행에서는 TCP loopback 소켓 왕복 대신 프로세스 내 `FetchLike`(`inProcessFetch`)를 통해 GraphQL·REST 핸들러를 직접 호출하되, 동일하게 `BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN` Bearer 자격 증명과 `AccessControl` 검증을 통과한다. 테이블 MCP의 GraphQL 실행은 AST 분석(`extractReferencedGraphqlScope`)으로 mutation 및 타 테이블 참조 우회를 차단한다.
 
 요청 형식, 환경 변수, 검증 명령은 [MCP 참조](./README.md)에서 확인한다. 전체 서비스의 요청 경계와 데이터 흐름은 [아키텍처 개요](../architecture/overview.md)를 따른다.

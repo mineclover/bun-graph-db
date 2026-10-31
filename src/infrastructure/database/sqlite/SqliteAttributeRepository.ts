@@ -7,7 +7,11 @@ import type {
 } from '@/core/types/CommonTypes.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
-import type { AttributeUpdateData, IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
+import type {
+  AttributeUpdateData,
+  IAttributeRepository,
+  TableAttributeTypeSummary,
+} from '@/domain/repositories/IAttributeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
@@ -148,6 +152,42 @@ export class SqliteAttributeRepository
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find attributes by table id: ${error}`)
+    }
+  }
+
+  async findAttributeTypeInfoByTableId(tableId: TableId): Promise<TableAttributeTypeSummary[]> {
+    const query = `
+      SELECT a.identifier AS identifier,
+             COALESCE(at.identifier, 'string') AS type_identifier,
+             COALESCE(at.json_type, 'string') AS json_type,
+             at.format AS format
+      FROM attributes a
+      LEFT JOIN attribute_types at ON at.id = a.attribute_type_id
+      WHERE a.table_id = ?
+      ORDER BY a.created_at ASC, a.id ASC
+    `
+
+    try {
+      const rows = this.db
+        .query<
+          {
+            identifier: string
+            type_identifier: string
+            json_type: string
+            format: string | null
+          },
+          [string]
+        >(query)
+        .all(tableId)
+
+      return rows.map((row) => ({
+        identifier: row.identifier,
+        typeIdentifier: row.type_identifier,
+        jsonType: row.json_type,
+        format: row.format,
+      }))
+    } catch (error) {
+      throw new DatabaseException(`Failed to load attribute type summaries by table id: ${error}`)
     }
   }
 

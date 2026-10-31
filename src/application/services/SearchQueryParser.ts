@@ -16,6 +16,11 @@ export class SearchQueryParser {
 
   private normalizeValueType(dataType: string): SearchValueType {
     switch (dataType) {
+      case 'integer':
+        return 'number'
+      case 'date':
+      case 'date-time':
+        return 'datetime'
       case 'number':
       case 'datetime':
       case 'json':

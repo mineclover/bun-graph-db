@@ -1,4 +1,5 @@
 import { API_ENDPOINT_MAPPING } from '../../presentation/http/routes/ApiRoutes.js'
+import type { FetchLike } from '@/models/GraphQLOperation.js'
 import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 interface ApiResponse<T = unknown> {
@@ -10,11 +11,13 @@ interface ApiResponse<T = unknown> {
 export class RestApiClient {
   private baseUrl: string
   private authorizationHeader: string | undefined
+  private fetchImpl: FetchLike
 
-  constructor(baseUrl: string, internalBridgeToken?: string) {
+  constructor(baseUrl: string, internalBridgeToken?: string, fetchImpl: FetchLike = fetch) {
     this.baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
     const token = internalBridgeToken?.trim()
     this.authorizationHeader = token && isLoopbackUrl(this.baseUrl) ? `Bearer ${token}` : undefined
+    this.fetchImpl = fetchImpl
   }
 
   private async makeRequest<T = unknown>(
@@ -44,7 +47,7 @@ export class RestApiClient {
         options.body = JSON.stringify(data)
       }
 
-      const response = await fetch(url, options)
+      const response = await this.fetchImpl(url, options)
 
       if (!response.ok) {
         const text = await response.text()

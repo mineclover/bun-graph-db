@@ -457,97 +457,71 @@ export class GraphQLSchemaBuilder {
         relevanceScore: (parent: GraphQLParent) => getNumberValue(parent, 'relevanceScore') ?? 1,
         distance: (parent: GraphQLParent) => getNumberValue(parent, 'distance') ?? 0,
         tableId: (parent: GraphQLParent) => getStringValue(parent, 'tableId') ?? callStringMethod(parent, 'getTableId') ?? null,
-        table: (parent: GraphQLParent) =>
-          callFieldResolverWithFallback<
+        table: (parent: GraphQLParent, _args: Record<string, never>, context: GraphQLContext) =>
+          callFieldResolver<
             Parameters<typeof deps.nodeFieldResolvers.table>[0],
-            ReturnType<typeof deps.nodeFieldResolvers.table>
-          >(deps.nodeResolver, 'table_field', deps.nodeFieldResolvers, 'table', parent),
-        attributes: (parent: GraphQLParent) =>
-          callFieldResolverWithFallback<
+            ReturnType<typeof deps.nodeFieldResolvers.table>,
+            [GraphQLContext?]
+          >(deps.nodeResolver, 'table_field', parent, context) ??
+          deps.nodeFieldResolvers.table(castParent(parent), _args, context),
+        attributes: (parent: GraphQLParent, _args: Record<string, never>, context: GraphQLContext) =>
+          callFieldResolver<
             Parameters<typeof deps.nodeFieldResolvers.attributes>[0],
-            ReturnType<typeof deps.nodeFieldResolvers.attributes>
-          >(
-            deps.nodeResolver,
-            'attributes_field',
-            deps.nodeFieldResolvers,
-            'attributes',
-            parent,
-          ),
-        attributeCount: (parent: GraphQLParent) =>
-          callFieldResolverWithFallback<
+            ReturnType<typeof deps.nodeFieldResolvers.attributes>,
+            [GraphQLContext?]
+          >(deps.nodeResolver, 'attributes_field', parent, context) ??
+          deps.nodeFieldResolvers.attributes(castParent(parent), _args, context),
+        attributeCount: (parent: GraphQLParent, _args: Record<string, never>, context: GraphQLContext) =>
+          callFieldResolver<
             Parameters<typeof deps.nodeFieldResolvers.attributeCount>[0],
-            ReturnType<typeof deps.nodeFieldResolvers.attributeCount>
-          >(
-            deps.nodeResolver,
-            'attributeCount_field',
-            deps.nodeFieldResolvers,
-            'attributeCount',
-            parent,
-          ),
-        outgoingRelations: (parent: GraphQLParent) =>
-          callFieldResolverWithFallback<
+            ReturnType<typeof deps.nodeFieldResolvers.attributeCount>,
+            [GraphQLContext?]
+          >(deps.nodeResolver, 'attributeCount_field', parent, context) ??
+          deps.nodeFieldResolvers.attributeCount(castParent(parent), _args, context),
+        outgoingRelations: (parent: GraphQLParent, _args: Record<string, never>, context: GraphQLContext) =>
+          callFieldResolver<
             Parameters<typeof deps.nodeFieldResolvers.outgoingRelations>[0],
-            ReturnType<typeof deps.nodeFieldResolvers.outgoingRelations>
-          >(
-            deps.nodeResolver,
-            'outgoingRelations_field',
-            deps.nodeFieldResolvers,
-            'outgoingRelations',
-            parent,
-          ),
-        incomingRelations: (parent: GraphQLParent) =>
-          callFieldResolverWithFallback<
+            ReturnType<typeof deps.nodeFieldResolvers.outgoingRelations>,
+            [GraphQLContext?]
+          >(deps.nodeResolver, 'outgoingRelations_field', parent, context) ??
+          deps.nodeFieldResolvers.outgoingRelations(castParent(parent), _args, context),
+        incomingRelations: (parent: GraphQLParent, _args: Record<string, never>, context: GraphQLContext) =>
+          callFieldResolver<
             Parameters<typeof deps.nodeFieldResolvers.incomingRelations>[0],
-            ReturnType<typeof deps.nodeFieldResolvers.incomingRelations>
-          >(
-            deps.nodeResolver,
-            'incomingRelations_field',
-            deps.nodeFieldResolvers,
-            'incomingRelations',
-            parent,
-          ),
-        relations: async (parent: GraphQLParent) => {
-          const outgoing =
-            (await (callFieldResolverWithFallback<
+            ReturnType<typeof deps.nodeFieldResolvers.incomingRelations>,
+            [GraphQLContext?]
+          >(deps.nodeResolver, 'incomingRelations_field', parent, context) ??
+          deps.nodeFieldResolvers.incomingRelations(castParent(parent), _args, context),
+        relations: async (parent: GraphQLParent, _args: Record<string, never>, context: GraphQLContext) => {
+          const [outgoing, incoming] = await Promise.all([
+            callFieldResolver<
               Parameters<typeof deps.nodeFieldResolvers.outgoingRelations>[0],
-              ReturnType<typeof deps.nodeFieldResolvers.outgoingRelations>
-            >(
-              deps.nodeResolver,
-              'outgoingRelations_field',
-              deps.nodeFieldResolvers,
-              'outgoingRelations',
-              parent,
-            ))) || []
-          const incoming =
-            (await (callFieldResolverWithFallback<
+              ReturnType<typeof deps.nodeFieldResolvers.outgoingRelations>,
+              [GraphQLContext?]
+            >(deps.nodeResolver, 'outgoingRelations_field', parent, context) ??
+              deps.nodeFieldResolvers.outgoingRelations(castParent(parent), _args, context),
+            callFieldResolver<
               Parameters<typeof deps.nodeFieldResolvers.incomingRelations>[0],
-              ReturnType<typeof deps.nodeFieldResolvers.incomingRelations>
-            >(
-              deps.nodeResolver,
-              'incomingRelations_field',
-              deps.nodeFieldResolvers,
-              'incomingRelations',
-              parent,
-            ))) || []
-          return [...outgoing, ...incoming]
+              ReturnType<typeof deps.nodeFieldResolvers.incomingRelations>,
+              [GraphQLContext?]
+            >(deps.nodeResolver, 'incomingRelations_field', parent, context) ??
+              deps.nodeFieldResolvers.incomingRelations(castParent(parent), _args, context),
+          ])
+          return [...(outgoing || []), ...(incoming || [])]
         },
-        relationCount: (parent: GraphQLParent) =>
-          callFieldResolverWithFallback<
+        relationCount: (parent: GraphQLParent, _args: Record<string, never>, context: GraphQLContext) =>
+          callFieldResolver<
             Parameters<typeof deps.nodeFieldResolvers.relationCount>[0],
-            ReturnType<typeof deps.nodeFieldResolvers.relationCount>
-          >(
-            deps.nodeResolver,
-            'relationCount_field',
-            deps.nodeFieldResolvers,
-            'relationCount',
-            parent,
-          ),
+            ReturnType<typeof deps.nodeFieldResolvers.relationCount>,
+            [GraphQLContext?]
+          >(deps.nodeResolver, 'relationCount_field', parent, context) ??
+          deps.nodeFieldResolvers.relationCount(castParent(parent), _args, context),
         // Graph traversal field resolvers
-        connectedNodes: (parent: GraphQLParent, args: Record<string, unknown>) =>
+        connectedNodes: (parent: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
           callFieldResolverWithFallback<
             Parameters<typeof deps.nodeFieldResolvers.connectedNodes>[0],
             ReturnType<typeof deps.nodeFieldResolvers.connectedNodes>,
-            [Parameters<typeof deps.nodeFieldResolvers.connectedNodes>[1]]
+            [Parameters<typeof deps.nodeFieldResolvers.connectedNodes>[1], GraphQLContext?]
           >(
             deps.nodeResolver,
             'connectedNodes_field',
@@ -555,12 +529,13 @@ export class GraphQLSchemaBuilder {
             'connectedNodes',
             parent,
             castArgs<Parameters<typeof deps.nodeFieldResolvers.connectedNodes>[1]>(args),
+            context,
           ),
-        shortestPath: (parent: GraphQLParent, args: Record<string, unknown>) =>
+        shortestPath: (parent: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
           callFieldResolverWithFallback<
             Parameters<typeof deps.nodeFieldResolvers.shortestPath>[0],
             ReturnType<typeof deps.nodeFieldResolvers.shortestPath>,
-            [Parameters<typeof deps.nodeFieldResolvers.shortestPath>[1]]
+            [Parameters<typeof deps.nodeFieldResolvers.shortestPath>[1], GraphQLContext?]
           >(
             deps.nodeResolver,
             'shortestPath_field',
@@ -568,12 +543,13 @@ export class GraphQLSchemaBuilder {
             'shortestPath',
             parent,
             castArgs<Parameters<typeof deps.nodeFieldResolvers.shortestPath>[1]>(args),
+            context,
           ),
-        neighborsByRelationType: (parent: GraphQLParent, args: Record<string, unknown>) =>
+        neighborsByRelationType: (parent: GraphQLParent, args: Record<string, unknown>, context: GraphQLContext) =>
           callFieldResolverWithFallback<
             Parameters<typeof deps.nodeFieldResolvers.neighborsByRelationType>[0],
             ReturnType<typeof deps.nodeFieldResolvers.neighborsByRelationType>,
-            [Parameters<typeof deps.nodeFieldResolvers.neighborsByRelationType>[1]]
+            [Parameters<typeof deps.nodeFieldResolvers.neighborsByRelationType>[1], GraphQLContext?]
           >(
             deps.nodeResolver,
             'neighborsByRelationType_field',
@@ -581,16 +557,23 @@ export class GraphQLSchemaBuilder {
             'neighborsByRelationType',
             parent,
             castArgs<Parameters<typeof deps.nodeFieldResolvers.neighborsByRelationType>[1]>(args),
+            context,
           ),
       },
 
       SearchNodeResult: {
         node: (parent: GraphQLParent) => getRecordValue(parent)?.node ?? parent,
-        table: (parent: GraphQLParent) =>
-          callFieldResolverWithFallback<
-            Parameters<typeof deps.nodeFieldResolvers.table>[0],
-            ReturnType<typeof deps.nodeFieldResolvers.table>
-          >(deps.nodeResolver, 'table_field', deps.nodeFieldResolvers, 'table', getRecordValue(parent)?.node ?? parent),
+        table: (parent: GraphQLParent, _args: Record<string, never>, context: GraphQLContext) => {
+          const targetParent = getRecordValue(parent)?.node ?? parent
+          return (
+            callFieldResolver<
+              Parameters<typeof deps.nodeFieldResolvers.table>[0],
+              ReturnType<typeof deps.nodeFieldResolvers.table>,
+              [GraphQLContext?]
+            >(deps.nodeResolver, 'table_field', targetParent, context) ??
+            deps.nodeFieldResolvers.table(castParent(targetParent), _args, context)
+          )
+        },
       },
 
       NodeAttribute: {

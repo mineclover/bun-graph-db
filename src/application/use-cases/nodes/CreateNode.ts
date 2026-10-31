@@ -7,6 +7,7 @@ import {
   unsafeProjectedAttributeValueErrors,
 } from '@/application/use-cases/nodes/ProjectionValidationUtils.js'
 import {
+  extractProjectedAttributeLookup,
   validateProjectedNodeInput,
   type JsonSchema,
   type ProjectionValidationError,
@@ -73,16 +74,26 @@ export class CreateNodeUseCase {
 
     try {
       const { attributes, projection } = await this.validateProjectedAttributes(input)
-      let attributesByIdentifier = new Map<string, Attribute>()
+      let attributeIdByIdentifier = new Map<string, AttributeId>()
 
       if (attributes) {
-        const availableAttributes = await this.loadAllTableAttributes(input.tableId as TableId)
-        attributesByIdentifier = new Map(
-          availableAttributes.map((attribute) => [attribute.getIdentifier(), attribute]),
-        )
+        const projectedLookup = projection ? extractProjectedAttributeLookup(projection) : null
+        if (projectedLookup) {
+          for (const [identifier, id] of projectedLookup.attributeIdByIdentifier) {
+            attributeIdByIdentifier.set(identifier, id as AttributeId)
+          }
+        } else {
+          const availableAttributes = await this.loadAllTableAttributes(input.tableId as TableId)
+          attributeIdByIdentifier = new Map(
+            availableAttributes.map((attribute) => [
+              attribute.getIdentifier(),
+              attribute.getId() as AttributeId,
+            ]),
+          )
+        }
 
         for (const [attributeIdentifier, value] of Object.entries(attributes)) {
-          if (!attributesByIdentifier.has(attributeIdentifier)) {
+          if (!attributeIdByIdentifier.has(attributeIdentifier)) {
             throw this.createProjectionValidationException(
               [{
                 path: `#/attributes/${attributeIdentifier}`,
@@ -109,9 +120,9 @@ export class CreateNodeUseCase {
 
       if (attributes) {
         for (const [attributeIdentifier, value] of Object.entries(attributes)) {
-          const attribute = attributesByIdentifier.get(attributeIdentifier)
+          const attributeId = attributeIdByIdentifier.get(attributeIdentifier)
 
-          if (!attribute) {
+          if (!attributeId) {
             throw this.createProjectionValidationException(
               [{
                 path: `#/attributes/${attributeIdentifier}`,
@@ -128,7 +139,7 @@ export class CreateNodeUseCase {
           }
 
           attributeMutations.push({
-            attributeId: attribute.getId() as AttributeId,
+            attributeId,
             value: typeof value === 'string' ? value : JSON.stringify(value),
           })
           attributeValues[attributeIdentifier] = value

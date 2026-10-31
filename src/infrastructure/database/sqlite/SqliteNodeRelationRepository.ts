@@ -528,9 +528,11 @@ export class SqliteNodeRelationRepository
   async findAdjacentByNodeIds(
     nodeIds: readonly NodeId[],
     direction: GraphTraversalDirection,
+    relationTypeIds?: readonly RelationTypeId[],
   ): Promise<NodeRelationAdjacency> {
     const adjacency = new Map<NodeId, NodeRelation[]>(nodeIds.map((nodeId) => [nodeId, []]))
     if (nodeIds.length === 0) return adjacency
+    if (relationTypeIds !== undefined && relationTypeIds.length === 0) return adjacency
 
     const placeholders = nodeIds.map(() => '?').join(',')
     const directionPredicate = direction === 'OUTGOING'
@@ -538,17 +540,25 @@ export class SqliteNodeRelationRepository
       : direction === 'INCOMING'
         ? `target_node_id IN (${placeholders})`
         : `(source_node_id IN (${placeholders}) OR target_node_id IN (${placeholders}))`
+    const typeFilterPredicate =
+      relationTypeIds && relationTypeIds.length > 0
+        ? ` AND relation_type_id IN (${relationTypeIds.map(() => '?').join(',')})`
+        : ''
     const query = `
       SELECT id, table_id, source_node_id, source_external_id,
              target_node_id, target_external_id, relation_type_id,
              properties, strength, created_at, updated_at
       FROM node_relations
-      WHERE ${directionPredicate}
+      WHERE ${directionPredicate}${typeFilterPredicate}
       ORDER BY created_at DESC, id DESC
     `
 
     try {
-      const params = direction === 'BOTH' ? [...nodeIds, ...nodeIds] : [...nodeIds]
+      const baseParams = direction === 'BOTH' ? [...nodeIds, ...nodeIds] : [...nodeIds]
+      const params =
+        relationTypeIds && relationTypeIds.length > 0
+          ? [...baseParams, ...relationTypeIds]
+          : baseParams
       const rows = this.db.query<NodeRelationRow, string[]>(query).all(...params)
       const nodeIdSet = new Set(nodeIds)
       for (const row of rows) {

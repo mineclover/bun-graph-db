@@ -2,7 +2,7 @@
 docType: reference
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-10-27"
+lastVerified: "2026-10-31"
 owner: "Bun Graph DB maintainers"
 sources:
   - src/domain/services/graph/BreadthFirstSearch.ts
@@ -61,18 +61,21 @@ Kuzu의 [Graph 읽기 인터페이스](https://github.com/kuzudb/kuzu/blob/89f02
 | 경로 응답 | 시작에서 목표까지 순서대로 node를 반환한다. 같은 시작/목표는 0-hop이며, 경로가 없으면 빈 배열이다. |
 | 0-hop 부가 동작 | 최단 경로의 시작/목표 일치 확인은 깊이 중단보다 먼저 한다. 음수 `maxDepth`도 같은 ID이면 기존처럼 0-hop 후보를 복원한다. |
 | 노드 적재 | 한 번의 `findByIds`에 최대 500개. 반환 순서와 무관하게 탐색/경로 순서로 조립한다. |
-| 인접 적재 | 최대 64개 frontier node씩 조회한다. `BOTH`는 node당 두 읽기이므로 한 batch에 최대 128개의 동시 호출이다. SQL 한 번으로 묶는 진짜 다중 node 인접 조회는 아직 아니다. |
+| 인접 적재 | 최대 64개 frontier node씩 조회한다. SQLite bulk 경로(`findAdjacentByNodeIds`)는 한 번의 SQL `IN` 조회와 선택적 `relation_type_id IN (...)` pushdown을 사용한다. |
+| 탐색 상한 | `GraphTraversalService`는 기본 `maxTraversalDepth = 32`, `maxVisitedNodes = 50_000` 상한으로 무제한 그래프 확장을 차단한다. |
 | 존재하지 않는 node | 연결 탐색은 node를 적재하지 못하면 그 지점을 확장하지 않는다. 최단 경로는 기존처럼 관계를 따라 찾고 마지막 node 적재에서 없는 항목을 제외한다. |
 | 일관성·범위 | 새 snapshot transaction이나 table 격리 정책을 도입하지 않는다. 저장소/요청 접근 제어의 기존 경계를 따른다. |
 
 마지막 두 행은 후속 설계 대상이다. 탐색 중 삭제가 일어날 때의 snapshot 의미와 경로 중간
 node의 누락 처리, 여러 table에 걸친 탐색 범위는 별도 결정 없이 이 모듈이 보장하지 않는다.
 `depth=0`은 기존의 `|| 1` 처리에서 `?? 1`로 바꿔 명시적인 0을 존중하도록 수정했다.
-여기서 `BOTH`는 edge를 양방향으로 읽는다는 뜻이다. 시작과 목표 양쪽에서 동시에 탐색하는
-bidirectional BFS 최적화를 구현한 것은 아니다.
+`shortestPath`는 양쪽 frontier 중 더 작은 쪽을 먼저 확장하는 `BidirectionalBreadthFirstSearch`를 사용해
+분기 계수 `b`, 깊이 `d` 그래프에서 탐색 공간을 `O(b^d)`에서 `O(b^(d/2))`로 줄이며, N-hop 거리 맵이 필요한
+하이브리드 검색(`connectedNodeDistances`)은 단방향 레벨 순서 `BreadthFirstSearch`를 사용한다.
 
-`findAdjacentByNodeIds` bulk 포트는 SQLite 관계 저장소에 적용되어 있다. bulk 메서드가 없는
-저장소는 기존 per-node fallback을 사용한다. bulk 전환은 SQL round trip을 줄이지만 snapshot
+`findAdjacentByNodeIds` bulk 포트는 SQLite 관계 저장소에 적용되어 있으며, 복합 인덱스
+`idx_node_relations_src_type_dst`와 `idx_node_relations_dst_type_src` 위에서 `relation_type_id IN (...)`
+조건을 SQL 단계로 pushdown한다. bulk 메서드가 없는 저장소는 기존 per-node fallback을 사용한다. bulk 전환은 SQL round trip을 줄이지만 snapshot
 transaction이나 새로운 table scope 정책을 만들지 않으며, 기존 SQLite 일관성 범위를 따른다.
 GraphQL 로그에는 node batch 수, 요청/적재 node 수, adjacency batch 수, bulk/per-node 호출 수,
 적재 관계 수, 최대 frontier, elapsed time을 남긴다. 이 값은 응답 계약이 아니며 최적화 비교용

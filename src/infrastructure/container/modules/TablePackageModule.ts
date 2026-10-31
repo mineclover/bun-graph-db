@@ -7,18 +7,18 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
-import { TablePackageService } from '@/domain/services/TablePackageService.js'
 import type { DIContainer } from '../DIContainer.js'
 import { CommonTokens, RepositoryTokens, TablePackageTokens } from '../tokens/index.js'
 
 /**
- * Table Package module - registers table export/import services
+ * Table Package module - registers table export/import services lazily on demand
  */
 export function registerTablePackageModule(container: DIContainer): void {
   // Table Package Service
   container.registerSingleton(
     TablePackageTokens.TABLE_PACKAGE_SERVICE,
     async (c) => {
+      const { TablePackageService } = await import('@/domain/services/TablePackageService.js')
       const tableRepo = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
       const attributeRepo = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
       const attributeTypeRepo = (await c.resolve(

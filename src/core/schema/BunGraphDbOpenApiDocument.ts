@@ -17,6 +17,9 @@ export type OpenApiSchema = {
 	oneOf?: Array<OpenApiSchema | OpenApiReference>;
 	anyOf?: Array<OpenApiSchema | OpenApiReference>;
 	minItems?: number;
+	minLength?: number;
+	minimum?: number;
+	maximum?: number;
 };
 
 export type OpenApiParameter = {
@@ -58,6 +61,8 @@ export type OpenApiOperation = {
 export type OpenApiPathItem = {
 	get?: OpenApiOperation;
 	post?: OpenApiOperation;
+	put?: OpenApiOperation;
+	delete?: OpenApiOperation;
 };
 
 export type BunGraphDbOpenApiDocument = {
@@ -131,6 +136,155 @@ export function buildBunGraphDbOpenApiDocument(): BunGraphDbOpenApiDocument {
 						),
 						"503": jsonResponse(
 							"Projection service is unavailable.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+					},
+				},
+			},
+			"/api/tables/{tableId}/schema/audit": {
+				get: {
+					operationId: "getTableSchemaAudit",
+					summary: "Audit stored node attributes against the current table schema",
+					description:
+						"Scans stored EAV node attributes for one runtime table and reports missing required fields, unknown attributes, or type violations without mutating data.",
+					tags: ["Schema conformance"],
+					parameters: [
+						ref("#/components/parameters/TableId"),
+						ref("#/components/parameters/SchemaAuditMaxViolations"),
+					],
+					responses: {
+						"200": jsonResponse(
+							"REST success envelope containing the table schema conformance report.",
+							"#/components/schemas/TableSchemaAuditRestResponse",
+						),
+						"400": jsonResponse(
+							"Invalid table id or audit query parameter.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+						"404": jsonResponse(
+							"Table was not found.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+						"503": jsonResponse(
+							"Node attribute schema gate is unavailable.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+					},
+				},
+			},
+			"/api/nodes/{nodeId}/embedding": {
+				get: {
+					operationId: "getNodeEmbedding",
+					summary: "Fetch a persistent node embedding vector",
+					description:
+						"Returns the persistent Float32 embedding vector and metadata stored for the target node.",
+					tags: ["Embeddings"],
+					parameters: [ref("#/components/parameters/NodeId")],
+					responses: {
+						"200": jsonResponse(
+							"REST success envelope containing the node embedding record.",
+							"#/components/schemas/NodeEmbeddingRestResponse",
+						),
+						"404": jsonResponse(
+							"Node or embedding was not found.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+						"503": jsonResponse(
+							"Node embedding repository is unavailable.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+					},
+				},
+				put: {
+					operationId: "setNodeEmbedding",
+					summary: "Upsert a persistent node embedding vector",
+					description:
+						"Stores or updates an IEEE-754 Float32 embedding vector and precomputed L2 norm for the target node.",
+					tags: ["Embeddings"],
+					parameters: [ref("#/components/parameters/NodeId")],
+					requestBody: {
+						required: true,
+						description: "Embedding vector payload for the target node.",
+						content: {
+							[JSON_MEDIA_TYPE]: {
+								schema: ref("#/components/schemas/SetNodeEmbeddingRequest"),
+							},
+						},
+					},
+					responses: {
+						"200": jsonResponse(
+							"REST success envelope containing the upserted node embedding record.",
+							"#/components/schemas/NodeEmbeddingRestResponse",
+						),
+						"400": jsonResponse(
+							"Invalid vector payload or table mismatch.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+						"404": jsonResponse(
+							"Node was not found.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+						"503": jsonResponse(
+							"Node embedding repository is unavailable.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+					},
+				},
+				delete: {
+					operationId: "removeNodeEmbedding",
+					summary: "Delete a persistent node embedding vector",
+					description:
+						"Removes the stored Float32 embedding vector for the target node if present.",
+					tags: ["Embeddings"],
+					parameters: [ref("#/components/parameters/NodeId")],
+					responses: {
+						"200": jsonResponse(
+							"REST success envelope reporting whether an embedding was removed.",
+							"#/components/schemas/RemoveNodeEmbeddingRestResponse",
+						),
+						"404": jsonResponse(
+							"Node was not found.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+						"503": jsonResponse(
+							"Node embedding repository is unavailable.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+					},
+				},
+			},
+			"/api/nodes/hybrid-search": {
+				post: {
+					operationId: "hybridSearchNodes",
+					summary:
+						"Execute hybrid graph, typed attribute, FTS5 BM25, and vector cosine search",
+					description:
+						"Combines optional N-hop graph neighborhood filtering, typed EAV attribute constraints, FTS5 BM25 lexical ranking, and persistent Float32 cosine similarity via Reciprocal Rank Fusion (RRF).",
+					tags: ["Hybrid search"],
+					requestBody: {
+						required: true,
+						description: "Hybrid search query parameters scoped to one table.",
+						content: {
+							[JSON_MEDIA_TYPE]: {
+								schema: ref("#/components/schemas/HybridSearchRequest"),
+							},
+						},
+					},
+					responses: {
+						"200": jsonResponse(
+							"REST success envelope containing fused hybrid search hits and candidate metrics.",
+							"#/components/schemas/HybridSearchRestResponse",
+						),
+						"400": jsonResponse(
+							"Invalid hybrid search parameters.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+						"404": jsonResponse(
+							"Table or anchor node was not found.",
+							"#/components/schemas/ApiErrorResponse",
+						),
+						"503": jsonResponse(
+							"Hybrid search service is unavailable.",
 							"#/components/schemas/ApiErrorResponse",
 						),
 					},
@@ -228,6 +382,20 @@ function createCommonParameters(): Record<string, OpenApiParameter> {
 			required: false,
 			description: "Previously observed quoted projection version hash. A match returns HTTP 304.",
 			schema: { type: "string" },
+		},
+		NodeId: {
+			name: "nodeId",
+			in: "path",
+			required: true,
+			description: "Target graph node identifier.",
+			schema: { type: "string", minLength: 1 },
+		},
+		SchemaAuditMaxViolations: {
+			name: "maxViolations",
+			in: "query",
+			required: false,
+			description: "Optional cap on the number of schema conformance violations returned.",
+			schema: { type: "integer", minimum: 1 },
 		},
 	};
 }
@@ -658,6 +826,254 @@ function createReusableSchemas(): Record<string, OpenApiSchema> {
 				success: { type: "boolean", const: false },
 				error: { type: "string" },
 				message: { type: "string" },
+			},
+			additionalProperties: true,
+		},
+		TableSchemaConformanceViolation: {
+			type: "object",
+			required: ["nodeId", "path", "code", "message"],
+			properties: {
+				nodeId: { type: "string" },
+				attributeIdentifier: { type: "string" },
+				path: { type: "string" },
+				code: { type: "string" },
+				message: { type: "string" },
+				expected: ref("#/components/schemas/JsonValue"),
+				received: ref("#/components/schemas/JsonValue"),
+			},
+			additionalProperties: false,
+		},
+		TableSchemaConformanceReport: {
+			type: "object",
+			required: [
+				"tableId",
+				"tableIdentifier",
+				"versionHash",
+				"valid",
+				"totalNodes",
+				"conformantNodes",
+				"nonConformantNodes",
+				"violationCount",
+				"violations",
+			],
+			properties: {
+				tableId: { type: "string" },
+				tableIdentifier: { type: "string" },
+				versionHash: { type: "string" },
+				valid: { type: "boolean" },
+				totalNodes: { type: "integer", minimum: 0 },
+				conformantNodes: { type: "integer", minimum: 0 },
+				nonConformantNodes: { type: "integer", minimum: 0 },
+				violationCount: { type: "integer", minimum: 0 },
+				violations: {
+					type: "array",
+					items: ref("#/components/schemas/TableSchemaConformanceViolation"),
+				},
+			},
+			additionalProperties: false,
+		},
+		TableSchemaAuditRestResponse: {
+			type: "object",
+			required: ["success", "data"],
+			properties: {
+				success: { type: "boolean", const: true },
+				data: ref("#/components/schemas/TableSchemaConformanceReport"),
+			},
+			additionalProperties: true,
+		},
+		NodeEmbeddingRecord: {
+			type: "object",
+			required: [
+				"nodeId",
+				"tableId",
+				"dimension",
+				"model",
+				"vector",
+				"norm",
+				"createdAt",
+				"updatedAt",
+			],
+			properties: {
+				nodeId: { type: "string" },
+				tableId: { type: "string" },
+				dimension: { type: "integer", minimum: 1 },
+				model: { type: "string" },
+				vector: {
+					type: "array",
+					minItems: 1,
+					items: { type: "number" },
+				},
+				norm: { type: "number" },
+				createdAt: { type: "string", format: "date-time" },
+				updatedAt: { type: "string", format: "date-time" },
+			},
+			additionalProperties: false,
+		},
+		SetNodeEmbeddingRequest: {
+			type: "object",
+			required: ["vector"],
+			properties: {
+				tableId: { type: "string" },
+				model: { type: "string" },
+				vector: {
+					type: "array",
+					minItems: 1,
+					items: { type: "number" },
+				},
+			},
+			additionalProperties: false,
+		},
+		NodeEmbeddingRestResponse: {
+			type: "object",
+			required: ["success", "data"],
+			properties: {
+				success: { type: "boolean", const: true },
+				data: ref("#/components/schemas/NodeEmbeddingRecord"),
+			},
+			additionalProperties: true,
+		},
+		RemoveNodeEmbeddingData: {
+			type: "object",
+			required: ["nodeId", "deleted"],
+			properties: {
+				nodeId: { type: "string" },
+				deleted: { type: "boolean" },
+			},
+			additionalProperties: false,
+		},
+		RemoveNodeEmbeddingRestResponse: {
+			type: "object",
+			required: ["success", "data"],
+			properties: {
+				success: { type: "boolean", const: true },
+				data: ref("#/components/schemas/RemoveNodeEmbeddingData"),
+			},
+			additionalProperties: true,
+		},
+		HybridSearchGraphFilter: {
+			type: "object",
+			required: ["anchorNodeIds"],
+			properties: {
+				anchorNodeIds: {
+					type: "array",
+					minItems: 1,
+					items: { type: "string", minLength: 1 },
+				},
+				maxDepth: { type: "integer", minimum: 0 },
+				direction: {
+					type: "string",
+					enum: ["INCOMING", "OUTGOING", "BOTH"],
+				},
+				relationTypes: {
+					type: "array",
+					items: { type: "string" },
+				},
+				includeAnchors: { type: "boolean" },
+			},
+			additionalProperties: false,
+		},
+		HybridSearchWeights: {
+			type: "object",
+			properties: {
+				fts: { type: "number", minimum: 0 },
+				vector: { type: "number", minimum: 0 },
+				graph: { type: "number", minimum: 0 },
+			},
+			additionalProperties: false,
+		},
+		HybridSearchRequest: {
+			type: "object",
+			required: ["tableId"],
+			properties: {
+				tableId: { type: "string", minLength: 1 },
+				textQuery: { type: "string" },
+				vector: {
+					type: "array",
+					minItems: 1,
+					items: { type: "number" },
+				},
+				model: { type: "string" },
+				minVectorScore: { type: "number", minimum: -1, maximum: 1 },
+				filterQuery: { type: "string" },
+				graph: ref("#/components/schemas/HybridSearchGraphFilter"),
+				weights: ref("#/components/schemas/HybridSearchWeights"),
+				rrfK: { type: "number", minimum: 1 },
+				limit: { type: "integer", minimum: 1, maximum: 200 },
+				offset: { type: "integer", minimum: 0 },
+			},
+			additionalProperties: false,
+		},
+		HybridSearchHit: {
+			type: "object",
+			required: [
+				"node",
+				"combinedScore",
+				"ftsScore",
+				"ftsRank",
+				"vectorScore",
+				"vectorRank",
+				"hopDistance",
+			],
+			properties: {
+				node: ref("#/components/schemas/JsonObject"),
+				combinedScore: { type: "number" },
+				ftsScore: { type: ["number", "null"] },
+				ftsRank: { type: ["integer", "null"] },
+				vectorScore: { type: ["number", "null"] },
+				vectorRank: { type: ["integer", "null"] },
+				hopDistance: { type: ["integer", "null"] },
+			},
+			additionalProperties: false,
+		},
+		HybridSearchMetrics: {
+			type: "object",
+			required: [
+				"eligibleCandidates",
+				"graphCandidates",
+				"lexicalCandidates",
+				"vectorCandidates",
+				"scannedVectors",
+				"elapsedMs",
+			],
+			properties: {
+				eligibleCandidates: { type: "integer", minimum: 0 },
+				graphCandidates: { type: ["integer", "null"] },
+				lexicalCandidates: { type: "integer", minimum: 0 },
+				vectorCandidates: { type: "integer", minimum: 0 },
+				scannedVectors: { type: "integer", minimum: 0 },
+				elapsedMs: { type: "number", minimum: 0 },
+			},
+			additionalProperties: false,
+		},
+		HybridSearchResult: {
+			type: "object",
+			required: [
+				"results",
+				"total",
+				"hasMore",
+				"hasNextPage",
+				"hasPreviousPage",
+				"metrics",
+			],
+			properties: {
+				results: {
+					type: "array",
+					items: ref("#/components/schemas/HybridSearchHit"),
+				},
+				total: { type: "integer", minimum: 0 },
+				hasMore: { type: "boolean" },
+				hasNextPage: { type: "boolean" },
+				hasPreviousPage: { type: "boolean" },
+				metrics: ref("#/components/schemas/HybridSearchMetrics"),
+			},
+			additionalProperties: false,
+		},
+		HybridSearchRestResponse: {
+			type: "object",
+			required: ["success", "data"],
+			properties: {
+				success: { type: "boolean", const: true },
+				data: ref("#/components/schemas/HybridSearchResult"),
 			},
 			additionalProperties: true,
 		},

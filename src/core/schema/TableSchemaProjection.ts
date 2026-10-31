@@ -431,6 +431,138 @@ export function validateProjectedNodeUpdateInput(
   return errors.length === 0 ? { valid: true, errors: [] } : { valid: false, errors }
 }
 
+export interface TableSchemaConformanceViolation {
+  nodeId: string
+  attributeIdentifier?: string
+  path: string
+  code: string
+  message: string
+  expected?: unknown
+  received?: unknown
+}
+
+export interface TableSchemaConformanceReport {
+  tableId: string
+  tableIdentifier: string
+  versionHash: string
+  valid: boolean
+  totalNodes: number
+  conformantNodes: number
+  nonConformantNodes: number
+  violationCount: number
+  violations: TableSchemaConformanceViolation[]
+}
+
+export function coerceValueForProjectedSchema(
+  value: unknown,
+  schema: JsonSchema | undefined,
+): unknown {
+  if (typeof value !== 'string' || !schema) {
+    return value
+  }
+
+  const type = firstType(schema.type)
+  if (!type || type === 'string') {
+    return value
+  }
+
+  if (type === 'number' || type === 'integer') {
+    const trimmed = value.trim()
+    if (trimmed.length === 0) return value
+    const parsed = Number(trimmed)
+    return Number.isNaN(parsed) ? value : parsed
+  }
+
+  if (type === 'boolean') {
+    const normalized = value.trim().toLowerCase()
+    if (normalized === 'true' || normalized === '1') return true
+    if (normalized === 'false' || normalized === '0') return false
+    return value
+  }
+
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
+
+export function coerceAttributesForProjection(
+  attributes: Record<string, unknown>,
+  projection: TableSchemaProjection,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(attributes).map(([identifier, value]) => [
+      identifier,
+      coerceValueForProjectedSchema(value, projection.attributeValueSchemas[identifier]),
+    ]),
+  )
+}
+
+export function auditProjectedNodeAttributes(
+  nodes: ReadonlyArray<{
+    nodeId: string
+    content?: string
+    attributes: Record<string, unknown>
+  }>,
+  projection: TableSchemaProjection,
+  options: { maxViolations?: number } = {},
+): TableSchemaConformanceReport {
+  const maxViolations = options.maxViolations ?? 500
+  const violations: TableSchemaConformanceViolation[] = []
+  let conformantNodes = 0
+  let nonConformantNodes = 0
+  let violationCount = 0
+
+  for (const node of nodes) {
+    const coercedAttributes = coerceAttributesForProjection(node.attributes, projection)
+    const result = validateProjectedNodeInput(
+      {
+        tableId: projection.tableId,
+        content: node.content ?? '__audit__',
+        attributes: coercedAttributes,
+      },
+      projection,
+    )
+
+    if (result.valid) {
+      conformantNodes++
+      continue
+    }
+
+    nonConformantNodes++
+    violationCount += result.errors.length
+    for (const error of result.errors) {
+      if (violations.length >= maxViolations) break
+      const prefix = '#/attributes/'
+      const attributeIdentifier = error.path.startsWith(prefix)
+        ? error.path.slice(prefix.length).split('/')[0]?.replace(/~1/g, '/').replace(/~0/g, '~')
+        : undefined
+      violations.push({
+        nodeId: node.nodeId,
+        attributeIdentifier,
+        path: error.path,
+        code: error.code,
+        message: error.message,
+        expected: error.expected,
+        received: error.received,
+      })
+    }
+  }
+
+  return {
+    tableId: projection.tableId,
+    tableIdentifier: projection.tableIdentifier,
+    versionHash: projection.versionHash,
+    valid: nonConformantNodes === 0 && projection.diagnostics.every((d) => d.severity !== 'error'),
+    totalNodes: nodes.length,
+    conformantNodes,
+    nonConformantNodes,
+    violationCount,
+    violations,
+  }
+}
+
 function attributeTypeToSchema(
   attributeType: TableProjectionAttributeType,
   source: ProjectionSource,
@@ -475,12 +607,23 @@ function validateValue(
   const type = firstType(schema.type)
 
   if (type && !matchesJsonType(value, type)) {
+    const isNumericOverflow =
+      (type === 'number' || type === 'integer') &&
+      typeof value === 'number' &&
+      !Number.isFinite(value)
+    const received = isNumericOverflow
+      ? 'overflow'
+      : Array.isArray(value)
+        ? 'array'
+        : typeof value
     errors.push({
       path,
       code: 'type',
-      message: `Expected ${type}`,
+      message: isNumericOverflow
+        ? `Invalid ${type} value: number is too large (overflow)`
+        : `Invalid ${type} value (type mismatch: expected ${type})`,
       expected: type,
-      received: Array.isArray(value) ? 'array' : typeof value,
+      received,
       source,
     })
     return errors
@@ -637,6 +780,15 @@ function validateFormat(value: string, format: string): string | undefined {
       return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
         ? undefined
         : 'String must be a valid UUID'
+    case 'date': {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return 'String must be a valid ISO date (YYYY-MM-DD)'
+      }
+      const parsed = new Date(`${value}T00:00:00.000Z`)
+      return Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value
+        ? 'String must be a valid ISO date (YYYY-MM-DD)'
+        : undefined
+    }
     case 'date-time':
       return Number.isNaN(Date.parse(value)) ? 'String must be a valid date-time' : undefined
     default:
@@ -745,6 +897,44 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function escapePointer(segment: string): string {
   return segment.replace(/~/g, '~0').replace(/\//g, '~1')
+}
+
+export interface ProjectedAttributeLookup {
+  attributeIdByIdentifier: ReadonlyMap<string, string>
+  identifierByAttributeId: ReadonlyMap<string, string>
+  requiredIdentifiers: ReadonlySet<string>
+}
+
+export function extractProjectedAttributeLookup(
+  projection: TableSchemaProjection,
+): ProjectedAttributeLookup | null {
+  const nodeAttributesName = projection.names?.nodeAttributes
+  if (
+    !nodeAttributesName ||
+    !projection.sources ||
+    Object.keys(projection.sources).length === 0
+  ) {
+    return null
+  }
+
+  const basePointer = `${refToDef(nodeAttributesName)}/properties`
+  const attributeIdByIdentifier = new Map<string, string>()
+  const identifierByAttributeId = new Map<string, string>()
+
+  for (const identifier of Object.keys(projection.attributeValueSchemas ?? {})) {
+    const source = projection.sources[`${basePointer}/${escapePointer(identifier)}`]
+    if (source?.entity !== 'attribute' || !source.id) {
+      return null
+    }
+    attributeIdByIdentifier.set(identifier, String(source.id))
+    identifierByAttributeId.set(String(source.id), identifier)
+  }
+
+  return {
+    attributeIdByIdentifier,
+    identifierByAttributeId,
+    requiredIdentifiers: new Set(projection.requiredAttributes ?? []),
+  }
 }
 
 function hashString(value: string): string {

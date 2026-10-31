@@ -46,7 +46,7 @@ interface DependencyResult {
 interface DependencyEdgeRow {
   source_node_id: string
   target_node_id: string
-  relation_identifier: string
+  relation_type_id: string
 }
 
 interface RelatedNodeSearchResult {
@@ -235,61 +235,170 @@ export class SqliteGraphRepository implements IGraphRepository {
     relationTypes?: string[],
   ): Promise<DependencyResult[]> {
     try {
+      const relationTypeRows = this.db
+        .query<{ id: string; identifier: string }, []>(
+          'SELECT CAST(id AS TEXT) AS id, identifier FROM relation_types',
+        )
+        .all()
+      const relationIdentifierById = new Map<string, string>()
+      const allowedRelationTypeIds: string[] = []
+      const requestedIdentifiers =
+        relationTypes && relationTypes.length > 0 ? new Set(relationTypes) : null
+
+      for (const row of relationTypeRows) {
+        relationIdentifierById.set(row.id, row.identifier)
+        if (!requestedIdentifiers || requestedIdentifiers.has(row.identifier)) {
+          allowedRelationTypeIds.push(row.id)
+        }
+      }
+
+      if (requestedIdentifiers && allowedRelationTypeIds.length === 0) {
+        return []
+      }
+
+      const relationFilter =
+        requestedIdentifiers !== null
+          ? `AND nr.relation_type_id IN (${allowedRelationTypeIds.map(() => '?').join(',')})`
+          : ''
+
       const visited = new Set([String(nodeId)])
       let frontier = new Map<string, string[]>([[String(nodeId), []]])
       const results: DependencyResult[] = []
+      const chunkSize = 400
 
       for (let level = 1; level <= MAX_DEPENDENCY_DEPTH && frontier.size > 0; level += 1) {
-        const frontierIds = [...frontier.keys()]
-        const placeholders = frontierIds.map(() => '?').join(',')
-        const edgeCondition = direction === RelationDirection.OUTGOING
-          ? `nr.source_node_id IN (${placeholders})`
-          : direction === RelationDirection.INCOMING
-            ? `nr.target_node_id IN (${placeholders})`
-            : `(nr.source_node_id IN (${placeholders}) OR nr.target_node_id IN (${placeholders}))`
-        const relationFilter = relationTypes && relationTypes.length > 0
-          ? `AND rt.identifier IN (${relationTypes.map(() => '?').join(',')})`
-          : ''
-        const edgeParams: SqliteParams = [tableId, tableId, ...frontierIds]
-        if (direction === RelationDirection.BOTH) edgeParams.push(...frontierIds)
-        edgeParams.push(...(relationTypes ?? []))
+        const allFrontierIds = [...frontier.keys()]
+        const resolvedEdges: Array<{
+          source_node_id: string
+          target_node_id: string
+          relation_identifier: string
+        }> = []
 
-        const edges = this.db.query<DependencyEdgeRow, SqliteParams>(`
-          SELECT CAST(nr.source_node_id AS TEXT) AS source_node_id,
-                 CAST(nr.target_node_id AS TEXT) AS target_node_id,
-                 rt.identifier AS relation_identifier
-          FROM node_relations nr
-          JOIN relation_types rt ON rt.id = nr.relation_type_id
-          JOIN nodes source_node ON source_node.id = nr.source_node_id
-          JOIN nodes target_node ON target_node.id = nr.target_node_id
-          WHERE source_node.table_id = ?
-            AND target_node.table_id = ?
-            AND ${edgeCondition}
-            ${relationFilter}
-          ORDER BY nr.source_node_id ASC, nr.target_node_id ASC, rt.identifier ASC
-        `).all(...edgeParams)
+        for (let offset = 0; offset < allFrontierIds.length; offset += chunkSize) {
+          const frontierIds = allFrontierIds.slice(offset, offset + chunkSize)
+          const placeholders = frontierIds.map(() => '?').join(',')
+
+          if (direction === RelationDirection.BOTH) {
+            const outParams: SqliteParams = [
+              tableId,
+              tableId,
+              ...frontierIds,
+              ...(requestedIdentifiers !== null ? allowedRelationTypeIds : []),
+            ]
+            const inParams: SqliteParams = [
+              tableId,
+              tableId,
+              ...frontierIds,
+              ...(requestedIdentifiers !== null ? allowedRelationTypeIds : []),
+            ]
+            const rawEdges = this.db
+              .query<DependencyEdgeRow, SqliteParams>(`
+                SELECT CAST(nr.source_node_id AS TEXT) AS source_node_id,
+                       CAST(nr.target_node_id AS TEXT) AS target_node_id,
+                       CAST(nr.relation_type_id AS TEXT) AS relation_type_id
+                FROM node_relations nr
+                CROSS JOIN nodes source_node ON source_node.id = nr.source_node_id
+                CROSS JOIN nodes target_node ON target_node.id = nr.target_node_id
+                WHERE source_node.table_id = ?
+                  AND target_node.table_id = ?
+                  AND nr.source_node_id IN (${placeholders})
+                  ${relationFilter}
+                UNION
+                SELECT CAST(nr.source_node_id AS TEXT) AS source_node_id,
+                       CAST(nr.target_node_id AS TEXT) AS target_node_id,
+                       CAST(nr.relation_type_id AS TEXT) AS relation_type_id
+                FROM node_relations nr
+                CROSS JOIN nodes source_node ON source_node.id = nr.source_node_id
+                CROSS JOIN nodes target_node ON target_node.id = nr.target_node_id
+                WHERE source_node.table_id = ?
+                  AND target_node.table_id = ?
+                  AND nr.target_node_id IN (${placeholders})
+                  ${relationFilter}
+              `)
+              .all(...outParams, ...inParams)
+
+            for (const edge of rawEdges) {
+              const identifier = relationIdentifierById.get(edge.relation_type_id)
+              if (identifier !== undefined) {
+                resolvedEdges.push({
+                  source_node_id: edge.source_node_id,
+                  target_node_id: edge.target_node_id,
+                  relation_identifier: identifier,
+                })
+              }
+            }
+          } else {
+            const edgeCondition =
+              direction === RelationDirection.OUTGOING
+                ? `nr.source_node_id IN (${placeholders})`
+                : `nr.target_node_id IN (${placeholders})`
+            const edgeParams: SqliteParams = [
+              tableId,
+              tableId,
+              ...frontierIds,
+              ...(requestedIdentifiers !== null ? allowedRelationTypeIds : []),
+            ]
+
+            const rawEdges = this.db
+              .query<DependencyEdgeRow, SqliteParams>(`
+                SELECT CAST(nr.source_node_id AS TEXT) AS source_node_id,
+                       CAST(nr.target_node_id AS TEXT) AS target_node_id,
+                       CAST(nr.relation_type_id AS TEXT) AS relation_type_id
+                FROM node_relations nr
+                CROSS JOIN nodes source_node ON source_node.id = nr.source_node_id
+                CROSS JOIN nodes target_node ON target_node.id = nr.target_node_id
+                WHERE source_node.table_id = ?
+                  AND target_node.table_id = ?
+                  AND ${edgeCondition}
+                  ${relationFilter}
+              `)
+              .all(...edgeParams)
+
+            for (const edge of rawEdges) {
+              const identifier = relationIdentifierById.get(edge.relation_type_id)
+              if (identifier !== undefined) {
+                resolvedEdges.push({
+                  source_node_id: edge.source_node_id,
+                  target_node_id: edge.target_node_id,
+                  relation_identifier: identifier,
+                })
+              }
+            }
+          }
+        }
+
+        resolvedEdges.sort(
+          (left, right) =>
+            Number(left.source_node_id) - Number(right.source_node_id) ||
+            left.source_node_id.localeCompare(right.source_node_id) ||
+            Number(left.target_node_id) - Number(right.target_node_id) ||
+            left.target_node_id.localeCompare(right.target_node_id) ||
+            left.relation_identifier.localeCompare(right.relation_identifier),
+        )
 
         const nextFrontier = new Map<string, string[]>()
-        for (const edge of edges) {
-          const currentNodeIds = direction === RelationDirection.OUTGOING
-            ? [edge.source_node_id]
-            : direction === RelationDirection.INCOMING
-              ? [edge.target_node_id]
-              : [edge.source_node_id, edge.target_node_id]
+        for (const edge of resolvedEdges) {
+          const currentNodeIds =
+            direction === RelationDirection.OUTGOING
+              ? [edge.source_node_id]
+              : direction === RelationDirection.INCOMING
+                ? [edge.target_node_id]
+                : [edge.source_node_id, edge.target_node_id]
 
           for (const currentNodeId of currentNodeIds) {
             const currentPath = frontier.get(currentNodeId)
             if (!currentPath) continue
-            const nextNodeId = currentNodeId === edge.source_node_id
-              ? edge.target_node_id
-              : edge.source_node_id
+            const nextNodeId =
+              currentNodeId === edge.source_node_id ? edge.target_node_id : edge.source_node_id
             if (visited.has(nextNodeId)) continue
             visited.add(nextNodeId)
             nextFrontier.set(nextNodeId, [...currentPath, edge.relation_identifier])
           }
         }
 
-        const orderedNext = [...nextFrontier.entries()].sort(([left], [right]) => left.localeCompare(right))
+        const orderedNext = [...nextFrontier.entries()].sort(([left], [right]) =>
+          left.localeCompare(right),
+        )
         for (const [nextNodeId, relationPath] of orderedNext) {
           results.push({ nodeId: nextNodeId, level, relationPath })
           if (results.length >= MAX_DEPENDENCY_RESULTS) return results

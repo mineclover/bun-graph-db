@@ -23,10 +23,15 @@ export function createApiRoutes(
   router.get('/tables/search', (req, res) => graphDbController.searchTables(req, res))
   router.get('/tables/:tableId/docs', (req, res) => graphController.getTableDocs(req, res))
   router.get('/tables/:tableId/openapi-projection', (req, res) => graphController.getTableOpenApiProjection(req, res))
+  router.get('/tables/:tableId/schema/audit', (req, res) => graphController.getTableSchemaAudit(req, res))
   router.post('/tables/:tableId/export', (req, res) => graphController.exportTableWithNodes(req, res))
 
   // Node Operations
   router.post('/nodes', (req, res) => graphDbController.createNode(req, res))
+  router.get('/nodes/:nodeId/embedding', (req, res) => graphController.getNodeEmbedding(req, res))
+  router.put('/nodes/:nodeId/embedding', (req, res) => graphController.setNodeEmbedding(req, res))
+  router.delete('/nodes/:nodeId/embedding', (req, res) => graphController.removeNodeEmbedding(req, res))
+  router.post('/nodes/hybrid-search', (req, res) => graphController.hybridSearchNodes(req, res))
   router.put('/nodes/:nodeId', (req, res) => graphDbController.updateNode(req, res))
   router.patch('/nodes/:nodeId', (req, res) => graphDbController.updateNode(req, res))
   router.get('/nodes/search', (req, res) => graphDbController.searchNodes(req, res))
@@ -128,6 +133,10 @@ export const API_ENDPOINT_MAPPING = {
   getConnectedNodes: 'GET /api/nodes/:nodeId/connected',
   findShortestPath: 'POST /api/nodes/shortest-path',
   getNodeRelations: 'GET /api/nodes/:nodeId/relations',
+  'set-node-embedding': 'PUT /api/nodes/:nodeId/embedding',
+  'get-node-embedding': 'GET /api/nodes/:nodeId/embedding',
+  'remove-node-embedding': 'DELETE /api/nodes/:nodeId/embedding',
+  'hybrid-search-nodes': 'POST /api/nodes/hybrid-search',
 
   // MCP Tool endpoints
   'bulk-import-templates': 'POST /api/mcp-tools/bulk-import-templates',

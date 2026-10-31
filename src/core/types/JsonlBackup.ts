@@ -59,16 +59,32 @@ export interface JsonlRelationTypeEntry {
   category?: string
 }
 
+/** Persistent node embedding entry (one line in embeddings.jsonl) */
+export interface JsonlEmbeddingEntry {
+  nodeId: string
+  tableIdentifier: string
+  nodeContent: string | null
+  model: string
+  dimension: number
+  vector: number[]
+  createdAt: string
+  updatedAt: string
+}
+
 /** Export options */
 export interface JsonlExportOptions {
   /** Output directory path (default: ./backups/jsonl) */
   outputDir?: string
-  /** Tables to export (default: all) */
+  /** Tables to export by ID (default: all) */
   tableIds?: string[]
+  /** Tables to export by identifier (default: all) */
+  tableIdentifiers?: string[]
   /** Include relations (default: true) */
   includeRelations?: boolean
   /** Include schema file (default: true) */
   includeSchema?: boolean
+  /** Include persistent node embeddings in embeddings.jsonl (default: false) */
+  includeEmbeddings?: boolean
   /** Pretty print JSON (default: false, for git diff use false) */
   prettyPrint?: boolean
 }
@@ -81,6 +97,8 @@ export interface JsonlImportOptions {
   tableIdentifiers?: string[]
   /** Conflict resolution strategy */
   conflictResolution: 'skip' | 'overwrite' | 'merge'
+  /** Restore embeddings.jsonl when present (default: true when manifest.hasEmbeddings) */
+  includeEmbeddings?: boolean
   /** Validate schema before import */
   validateSchema?: boolean
   /** Dry run - validate without importing */
@@ -96,6 +114,7 @@ export interface JsonlExportResult {
     tablesExported: number
     nodesExported: number
     relationsExported: number
+    embeddingsExported?: number
     totalBytes: number
   }
   errors: string[]
@@ -105,7 +124,7 @@ export interface JsonlExportResult {
 /** Single exported file info */
 export interface JsonlExportedFile {
   path: string
-  type: 'schema' | 'table' | 'relations' | 'relation-types'
+  type: 'schema' | 'table' | 'relations' | 'relation-types' | 'embeddings'
   tableIdentifier?: string
   lineCount: number
   sizeBytes: number
@@ -121,6 +140,7 @@ export interface JsonlImportResult {
     nodesSkipped: number
     nodesUpdated: number
     relationsImported: number
+    embeddingsImported?: number
   }
   errors: string[]
   warnings: string[]
@@ -138,4 +158,5 @@ export interface JsonlBackupManifest {
   }[]
   hasRelations: boolean
   hasSchema: boolean
+  hasEmbeddings?: boolean
 }

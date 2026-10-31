@@ -9,6 +9,7 @@ extend type Mutation {
 
   batchCreateAttributes(attributes: [CreateAttributeInput!]!): BatchCreateAttributesPayload!
   batchSetNodeAttributes(attributeUpdates: [NodeAttributeUpdateInput!]!): BatchSetNodeAttributesPayload!
+  batchSetNodeEmbeddings(inputs: [SetNodeEmbeddingInput!]!): BatchSetNodeEmbeddingsPayload!
 
   batchCreateRelations(relations: [CreateRelationInput!]!): BatchCreateRelationsPayload!
 
@@ -160,6 +161,14 @@ type BatchSetNodeAttributesPayload {
   results: [BatchSetNodeAttributeResult!]!
   totalSet: Int!
   totalFailed: Int!
+}
+
+type BatchSetNodeEmbeddingsPayload implements OperationResult {
+  success: Boolean!
+  embeddings: [NodeEmbedding!]!
+  totalSet: Int!
+  totalFailed: Int!
+  errors: [Error!]!
 }
 
 type BatchRelationSummary {

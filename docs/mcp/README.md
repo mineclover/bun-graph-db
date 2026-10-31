@@ -2,7 +2,7 @@
 docType: reference
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-08-11"
+lastVerified: "2026-10-31"
 ---
 
 # Bun Graph DB MCP 참조
@@ -35,7 +35,7 @@ export BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN='at-least-32-characters-of-random-secr
 
 `reader`는 읽기 도구만 발견·실행할 수 있다. `writer`는 허용된 테이블 범위에서 쓰기 작업을 수행할 수 있고, `admin`은 전역 작업을 수행할 수 있다. 범위를 벗어난 테이블·노드 요청은 존재 여부를 노출하지 않는 응답으로 거부된다.
 
-`BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN`은 인증된 서비스에서 필수다. MCP가 내부 GraphQL·REST 브리지를 호출할 때만 일반 Bearer 자격 증명으로 전달하며, 외부 클라이언트용 토큰과 분리해 보관해야 한다.
+`BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN`은 인증된 서비스에서 필수다. MCP가 프로세스 내 `FetchLike` 브리지(또는 외부 URL 브리지)로 GraphQL·REST 핸들러를 호출할 때 일반 Bearer 자격 증명으로 전달하며, 외부 클라이언트용 토큰과 분리해 보관해야 한다. 노드 임베딩(`set-node-embedding`, `get-node-embedding`, `remove-node-embedding`)과 4-신호 하이브리드 검색(`hybrid-search-nodes`, 테이블 MCP의 `hybrid-search-table-{tableId}-nodes`) 역시 테이블 범위 도구로 분류되어 대상 테이블·노드·`graph.anchorNodeIds` 소유권을 모두 검증한다.
 
 ## 최신 클라이언트 요청 예시
 

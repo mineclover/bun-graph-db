@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { BreadthFirstSearch, type GraphNeighbor } from '@/domain/services/graph/BreadthFirstSearch.js'
+import {
+  BidirectionalBreadthFirstSearch,
+  BreadthFirstSearch,
+  type GraphNeighbor,
+} from '@/domain/services/graph/BreadthFirstSearch.js'
 
 describe('BreadthFirstSearch', () => {
   test('restores ordered nodes and edges through first-discovered parents', () => {
@@ -82,25 +86,74 @@ describe('BreadthFirstSearch', () => {
       }
 
       const graph = adjacency(neighbors)
+      const reverseNeighbors: Record<string, string[]> = { a: [], b: [], c: [] }
+      for (const [from, targets] of Object.entries(neighbors)) {
+        for (const to of targets) {
+          reverseNeighbors[to]?.push(from)
+        }
+      }
+      const reverseGraph = new Map(
+        Object.entries(reverseNeighbors).map(([to, sources]) => [
+          to,
+          sources.map((from) => ({ nodeId: from, edge: `${from}:${to}` })),
+        ]),
+      )
+
       for (const source of ids) {
         const search = new BreadthFirstSearch<string>(source)
         while (search.frontier.length > 0) search.advance(graph)
         for (const target of ids) {
+          const expectedDistance = distances[ids.indexOf(source)]?.[ids.indexOf(target)] ?? Infinity
           const path = search.pathTo(target)
-          expect(path?.distance ?? Infinity).toBe(distances[ids.indexOf(source)]?.[ids.indexOf(target)] ?? Infinity)
-          if (path === null) continue
-          expect(new Set(path.nodeIds).size).toBe(path.nodeIds.length)
-          expect(path.nodeIds[0]).toBe(source)
-          expect(path.nodeIds.at(-1)).toBe(target)
-          for (let index = 0; index < path.edges.length; index += 1) {
-            const from = path.nodeIds[index] ?? ''
-            const to = path.nodeIds[index + 1] ?? ''
-            expect(neighbors[from]).toContain(to)
-            expect(path.edges[index]).toBe(`${from}:${to}`)
+          expect(path?.distance ?? Infinity).toBe(expectedDistance)
+
+          const biSearch = new BidirectionalBreadthFirstSearch<string>(source, target)
+          while (!biSearch.hasMeeting) {
+            const side = biSearch.nextSide()
+            if (side === null) break
+            if (side === 'forward') biSearch.advanceForward(graph)
+            else biSearch.advanceBackward(reverseGraph)
+          }
+          const biPath = biSearch.shortestPath()
+          expect(biPath?.distance ?? Infinity).toBe(expectedDistance)
+
+          for (const candidatePath of [path, biPath]) {
+            if (candidatePath === null) continue
+            expect(new Set(candidatePath.nodeIds).size).toBe(candidatePath.nodeIds.length)
+            expect(candidatePath.nodeIds[0]).toBe(source)
+            expect(candidatePath.nodeIds.at(-1)).toBe(target)
+            for (let index = 0; index < candidatePath.edges.length; index += 1) {
+              const from = candidatePath.nodeIds[index] ?? ''
+              const to = candidatePath.nodeIds[index + 1] ?? ''
+              expect(neighbors[from]).toContain(to)
+              expect(candidatePath.edges[index]).toBe(`${from}:${to}`)
+            }
           }
         }
       }
     }
+  })
+
+  test('bidirectional BFS terminates early when target is isolated in a high-fanout graph', () => {
+    const fanout = Array.from({ length: 200 }, (_, index) => `branch-${index}`)
+    const graph = adjacency({
+      root: fanout,
+      ...Object.fromEntries(fanout.map((id) => [id, ['hub']])),
+    })
+    const reverseGraph = new Map<string, GraphNeighbor<string>[]>([['isolated', []]])
+
+    const biSearch = new BidirectionalBreadthFirstSearch<string>('root', 'isolated')
+    let steps = 0
+    while (!biSearch.hasMeeting) {
+      const side = biSearch.nextSide()
+      if (side === null) break
+      steps += 1
+      if (side === 'forward') biSearch.advanceForward(graph)
+      else biSearch.advanceBackward(reverseGraph)
+    }
+
+    expect(biSearch.shortestPath()).toBeNull()
+    expect(steps).toBe(2)
   })
 })
 

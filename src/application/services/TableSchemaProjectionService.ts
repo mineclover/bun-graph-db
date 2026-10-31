@@ -17,61 +17,99 @@ export type TableSchemaProjectionRequest =
   | { tableId: string; identifier?: never }
   | { identifier: string; tableId?: never }
 
+interface ProjectionCacheEntry {
+  identifier: string
+  projection: TableSchemaProjection
+  expiresAt: number
+}
+
+interface ProjectionCacheNamespace {
+  cache: Map<string, ProjectionCacheEntry>
+  tableIdByIdentifier: Map<string, string>
+  inFlight: Map<string, Promise<TableSchemaProjection>>
+  generation: number
+}
+
 export class TableSchemaProjectionService {
-  private static readonly cache = new Map<string, {
-    identifier: string
-    projection: TableSchemaProjection
-    expiresAt: number
-  }>()
-  private static readonly tableIdByIdentifier = new Map<string, string>()
-  private static readonly inFlight = new Map<string, Promise<TableSchemaProjection>>()
+  // Retained for backward-compatible white-box cache invalidation assertions while
+  // runtime instances isolate entries per tableRepository in namespacesByRepo.
+  private static readonly cache = new Map<string, ProjectionCacheEntry>()
+  private static readonly namespacesByRepo = new WeakMap<object, ProjectionCacheNamespace>()
+  private static readonly activeNamespaces = new Set<WeakRef<ProjectionCacheNamespace>>()
   private static readonly maxCacheEntries = 256
   private static readonly cacheTtlMs = 30_000
-  private static generation = 0
+  private readonly namespace: ProjectionCacheNamespace
 
   constructor(
     private readonly tableRepository: ITableRepository,
     private readonly attributeRepository: IAttributeRepository,
     private readonly attributeTypeRepository: IAttributeTypeRepository,
     private readonly logger?: ILogger,
-  ) {}
+  ) {
+    const repoKey = tableRepository as unknown as object
+    let existing = TableSchemaProjectionService.namespacesByRepo.get(repoKey)
+    if (!existing) {
+      existing = {
+        cache: new Map(),
+        tableIdByIdentifier: new Map(),
+        inFlight: new Map(),
+        generation: 0,
+      }
+      TableSchemaProjectionService.namespacesByRepo.set(repoKey, existing)
+      TableSchemaProjectionService.activeNamespaces.add(new WeakRef(existing))
+    }
+    this.namespace = existing
+  }
 
   async project(request: TableSchemaProjectionRequest): Promise<TableSchemaProjection> {
-    const cached = TableSchemaProjectionService.getCached(request)
+    const cached = TableSchemaProjectionService.getCached(this.namespace, request)
     if (cached) return cached
 
     const requestKey = 'tableId' in request ? `id:${request.tableId}` : `identifier:${request.identifier}`
-    const existingFlight = TableSchemaProjectionService.inFlight.get(requestKey)
+    const existingFlight = this.namespace.inFlight.get(requestKey)
     if (existingFlight) return existingFlight
 
-    const generation = TableSchemaProjectionService.generation
+    const generation = this.namespace.generation
     const flight = this.projectFresh(request, generation)
-    TableSchemaProjectionService.inFlight.set(requestKey, flight)
+    this.namespace.inFlight.set(requestKey, flight)
     try {
       return await flight
     } finally {
-      if (TableSchemaProjectionService.inFlight.get(requestKey) === flight) {
-        TableSchemaProjectionService.inFlight.delete(requestKey)
+      if (this.namespace.inFlight.get(requestKey) === flight) {
+        this.namespace.inFlight.delete(requestKey)
       }
     }
   }
 
   static clearCache(tableId?: string): void {
-    TableSchemaProjectionService.generation += 1
-    // An identifier-keyed flight may not have resolved its table yet. Detach
-    // every flight so post-invalidation callers cannot join stale work.
-    TableSchemaProjectionService.inFlight.clear()
     if (tableId === undefined) {
       TableSchemaProjectionService.cache.clear()
-      TableSchemaProjectionService.tableIdByIdentifier.clear()
-      return
+    } else {
+      TableSchemaProjectionService.cache.delete(tableId)
     }
 
-    const cached = TableSchemaProjectionService.cache.get(tableId)
-    TableSchemaProjectionService.cache.delete(tableId)
-    if (cached) TableSchemaProjectionService.tableIdByIdentifier.delete(cached.identifier)
-    for (const [identifier, cachedTableId] of TableSchemaProjectionService.tableIdByIdentifier) {
-      if (cachedTableId === tableId) TableSchemaProjectionService.tableIdByIdentifier.delete(identifier)
+    for (const ref of TableSchemaProjectionService.activeNamespaces) {
+      const ns = ref.deref()
+      if (!ns) {
+        TableSchemaProjectionService.activeNamespaces.delete(ref)
+        continue
+      }
+      ns.generation += 1
+      // An identifier-keyed flight may not have resolved its table yet. Detach
+      // every flight so post-invalidation callers cannot join stale work.
+      ns.inFlight.clear()
+      if (tableId === undefined) {
+        ns.cache.clear()
+        ns.tableIdByIdentifier.clear()
+        continue
+      }
+
+      const cached = ns.cache.get(tableId)
+      ns.cache.delete(tableId)
+      if (cached) ns.tableIdByIdentifier.delete(cached.identifier)
+      for (const [identifier, cachedTableId] of ns.tableIdByIdentifier) {
+        if (cachedTableId === tableId) ns.tableIdByIdentifier.delete(identifier)
+      }
     }
   }
 
@@ -85,7 +123,7 @@ export class TableSchemaProjectionService {
       throw new Error(`Table '${key}' not found`)
     }
 
-    const cached = TableSchemaProjectionService.getCached({ tableId: table.id })
+    const cached = TableSchemaProjectionService.getCached(this.namespace, { tableId: table.id })
     if (cached) return cached
 
     const attributes = await this.findTableAttributes(table)
@@ -102,8 +140,8 @@ export class TableSchemaProjectionService {
     }
 
     const projection = projectTableSchema(input)
-    if (generation === TableSchemaProjectionService.generation) {
-      TableSchemaProjectionService.storeCached(table.id, table.identifier, projection)
+    if (generation === this.namespace.generation) {
+      TableSchemaProjectionService.storeCached(this.namespace, table.id, table.identifier, projection)
     }
 
     this.logger?.debug('Projected table schema', {
@@ -117,37 +155,45 @@ export class TableSchemaProjectionService {
     return projection
   }
 
-  private static getCached(request: TableSchemaProjectionRequest): TableSchemaProjection | undefined {
+  private static getCached(
+    ns: ProjectionCacheNamespace,
+    request: TableSchemaProjectionRequest,
+  ): TableSchemaProjection | undefined {
     const tableId = 'tableId' in request
       ? request.tableId
-      : TableSchemaProjectionService.tableIdByIdentifier.get(request.identifier)
+      : ns.tableIdByIdentifier.get(request.identifier)
     if (!tableId) return undefined
-    const cached = TableSchemaProjectionService.cache.get(tableId)
+    const cached = ns.cache.get(tableId)
     if (!cached) return undefined
     if (cached.expiresAt <= Date.now()) {
-      TableSchemaProjectionService.cache.delete(tableId)
-      TableSchemaProjectionService.tableIdByIdentifier.delete(cached.identifier)
+      ns.cache.delete(tableId)
+      ns.tableIdByIdentifier.delete(cached.identifier)
       return undefined
     }
-    TableSchemaProjectionService.cache.delete(tableId)
-    TableSchemaProjectionService.cache.set(tableId, cached)
+    ns.cache.delete(tableId)
+    ns.cache.set(tableId, cached)
     return cached.projection
   }
 
-  private static storeCached(tableId: string, identifier: string, projection: TableSchemaProjection): void {
-    TableSchemaProjectionService.cache.delete(tableId)
-    TableSchemaProjectionService.cache.set(tableId, {
+  private static storeCached(
+    ns: ProjectionCacheNamespace,
+    tableId: string,
+    identifier: string,
+    projection: TableSchemaProjection,
+  ): void {
+    ns.cache.delete(tableId)
+    ns.cache.set(tableId, {
       identifier,
       projection,
       expiresAt: Date.now() + TableSchemaProjectionService.cacheTtlMs,
     })
-    TableSchemaProjectionService.tableIdByIdentifier.set(identifier, tableId)
-    while (TableSchemaProjectionService.cache.size > TableSchemaProjectionService.maxCacheEntries) {
-      const oldestTableId = TableSchemaProjectionService.cache.keys().next().value
+    ns.tableIdByIdentifier.set(identifier, tableId)
+    while (ns.cache.size > TableSchemaProjectionService.maxCacheEntries) {
+      const oldestTableId = ns.cache.keys().next().value
       if (oldestTableId === undefined) break
-      const evicted = TableSchemaProjectionService.cache.get(oldestTableId)
-      TableSchemaProjectionService.cache.delete(oldestTableId)
-      if (evicted) TableSchemaProjectionService.tableIdByIdentifier.delete(evicted.identifier)
+      const evicted = ns.cache.get(oldestTableId)
+      ns.cache.delete(oldestTableId)
+      if (evicted) ns.tableIdByIdentifier.delete(evicted.identifier)
     }
   }
 

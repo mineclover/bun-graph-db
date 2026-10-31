@@ -10,7 +10,7 @@
 [![Quality Gates](https://img.shields.io/badge/Build%20%2B%20Typecheck%20%2B%20Lint-Passing-brightgreen)](./docs/development/SYSTEM_EVALUATION_2026-03-30.md)
 [![Test Status](https://img.shields.io/badge/bun%20run%20test-Passing-brightgreen)](./docs/development/SYSTEM_EVALUATION_2026-03-30.md)
 [![Documentation](https://img.shields.io/badge/Docs-Complete-blue)](./docs/README.md)
-[![Last Updated](https://img.shields.io/badge/Updated-2026--03--30-blue)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-2026--10--31-blue)](#)
 
 ## ⚡ 빠른 시작
 
@@ -34,21 +34,14 @@ curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
 
 ## 📌 검증 스냅샷
 
-2026-03-30 기준으로 다음이 실제로 다시 검증되었습니다.
+2026-10-31 기준으로 다음 품질·성능·계약 게이트가 모두 통과합니다.
 
-- `bun run typecheck` 통과
-- `bun run lint --max-diagnostics=20` 통과
-- `bun run build` 통과
-- 라이브 스모크
-  - `GET /api/health`
-  - GraphQL `healthCheck`
-  - MCP `initialize`
-  - `createTable`
-  - `tableByIdentifier`
-  - `createNode`
-  - `searchNodes` with `nodes { tableId }`
+- `bun run check:static` (`check:docs` + `ci:versions` + `check:biome` + `typecheck` + `typecheck:contract` + `typecheck:benchmark` + `check:codegen` + `build`) 통과
+- `bun run test:lanes:audit` 및 `bun run test` (4개 레인 전체 125개 테스트 스위트) 통과
+- `bun run projection:check` (`oa-sdk` OpenAPI 3.1 스키마 투영 계약) 통과
+- `bun run benchmark:hotpaths:ci` 및 `bun run benchmark:vector-storage` 통과
 
-현재 `bun run test`까지 포함한 기본 품질 게이트가 통과합니다. 자세한 검증 내역은 [최신 시스템 평가 문서](docs/development/SYSTEM_EVALUATION_2026-03-30.md)를 참고하세요.
+운영 배포·권한·백업·마이그레이션 기준은 [운영 및 관리 가이드](docs/guides/OPERATIONS_GUIDE.md)를, 초기 검증 이력은 [시스템 평가 문서](docs/development/SYSTEM_EVALUATION_2026-03-30.md)를 참고하세요.
 
 ---
 
@@ -143,8 +136,9 @@ tests/
 - **[템플릿 가이드](docs/templates/template-system-guide.md)** - 재사용 쿼리 만들기
 - **[AI 통합 설정](docs/guides/MCP_SETUP_GUIDE.md)** - Claude 연동
 
-### 개발자용
-- **[아키텍처 개요](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 시스템 설계
+### 개발자 및 운영자용
+- **[운영 및 관리 가이드](docs/guides/OPERATIONS_GUIDE.md)** - 기동, 역할·테이블 권한, 마이그레이션, 하이브리드 검색, JSONL 재해 복구, 품질 게이트
+- **[아키텍처 개요](docs/architecture/overview.md)** - 모듈형 모놀리스 계층과 운영 경계
 - **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)** - 기여 & 설정
 - **[최신 시스템 평가](docs/development/SYSTEM_EVALUATION_2026-03-30.md)** - 실제 검증 결과와 known issues
 - **[스키마 Projection 실험](docs/development/SCHEMA_PROJECTION_EXPERIMENT.md)** - 동적 테이블 스키마를 `$defs`/`$ref` projection으로 만들고 MCP/runtime validation에 연결

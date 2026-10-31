@@ -17,5 +17,6 @@ export const RepositoryTokens = {
 
   // Search repositories
   NODE_SEARCH_REPOSITORY: Symbol.for('NodeSearchRepository'),
+  NODE_EMBEDDING_REPOSITORY: Symbol.for('NodeEmbeddingRepository'),
   GRAPH_REPOSITORY: Symbol.for('GraphRepository'),
 } as const

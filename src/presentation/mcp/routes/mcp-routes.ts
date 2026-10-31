@@ -10,6 +10,7 @@
 import type { ILogger } from '../../../application/ports/ILogger'
 import type { McpToolAudience } from '../../../application/services/McpToolRegistry'
 import type { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
+import type { FetchLike } from '../../../models/GraphQLOperation.js'
 import type {
   TableMcpJsonRpcRequest,
   TableMcpServer,
@@ -24,7 +25,9 @@ export interface McpRouteConfig {
   restApiBaseUrl: string
   logger?: ILogger
   projectionService?: Pick<TableSchemaProjectionService, 'project'>
+  internalBridgeToken?: string
   cache?: TableMcpServerCacheOptions
+  fetchImpl?: FetchLike
 }
 
 interface JsonRpcRequest {
@@ -46,8 +49,9 @@ export class McpRoutes {
       config.restApiBaseUrl,
       config.logger,
       config.projectionService,
-      undefined,
+      config.internalBridgeToken,
       config.cache,
+      config.fetchImpl,
     )
     this.logger = config.logger
   }

@@ -164,6 +164,13 @@ export const createRootResolvers = (deps: GraphQLDependencies) => ({
 				castArgs<Record<string, unknown>>(args),
 				context,
 			),
+		nodeEmbedding: (_: GraphQLParent, args: Record<string, unknown>) =>
+			deps.nodeQueries.nodeEmbedding(_, castArgs<{ nodeId: string }>(args)),
+		hybridSearchNodes: (_: GraphQLParent, args: Record<string, unknown>) =>
+			deps.nodeQueries.hybridSearchNodes(
+				_,
+				castArgs<Parameters<typeof deps.nodeQueries.hybridSearchNodes>[1]>(args),
+			),
 
 		// Relation queries
 		relationType: (_: GraphQLParent, args: Record<string, unknown>) =>
@@ -816,6 +823,20 @@ export const createRootResolvers = (deps: GraphQLDependencies) => ({
 				_,
 				args,
 			),
+		setNodeEmbedding: (_: GraphQLParent, args: Record<string, unknown>) =>
+			callRootResolver<Parameters<NodeMutations["setNodeEmbedding"]>[1]>(
+				deps.nodeMutations,
+				"setNodeEmbedding",
+				_,
+				args,
+			),
+		removeNodeEmbedding: (_: GraphQLParent, args: Record<string, unknown>) =>
+			callRootResolver<Parameters<NodeMutations["removeNodeEmbedding"]>[1]>(
+				deps.nodeMutations,
+				"removeNodeEmbedding",
+				_,
+				args,
+			),
 		updateNodeAttributeValue: (
 			_: GraphQLParent,
 			args: Record<string, unknown>,
@@ -884,6 +905,13 @@ export const createRootResolvers = (deps: GraphQLDependencies) => ({
 			callRootResolver<Parameters<NodeMutations["batchSetNodeAttributes"]>[1]>(
 				deps.nodeMutations,
 				"batchSetNodeAttributes",
+				_,
+				args,
+			),
+		batchSetNodeEmbeddings: (_: GraphQLParent, args: Record<string, unknown>) =>
+			callRootResolver<Parameters<NodeMutations["batchSetNodeEmbeddings"]>[1]>(
+				deps.nodeMutations,
+				"batchSetNodeEmbeddings",
 				_,
 				args,
 			),

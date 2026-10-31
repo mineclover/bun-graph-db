@@ -12,15 +12,15 @@ scope:
     - "외부 ID 공급자와 다중 테넌트 설계"
 decisionStatus: accepted
 owner: "Bun Graph DB maintainers"
-lastVerified: "2026-08-11"
-reviewDue: "2026-11-11"
+lastVerified: "2026-10-31"
+reviewDue: "2027-01-31"
 ---
 
 # Bun Graph DB 아키텍처 개요
 
 Bun Graph DB는 Bun 프로세스 하나와 SQLite 데이터베이스 하나를 중심으로 동작하는 모듈형 모놀리스다. 테이블·노드·관계·템플릿을 같은 도메인 모델로 관리하고, GraphQL, MCP, 제한된 HTTP API가 같은 유스케이스와 저장소를 공유한다. 이 구조는 배포와 백업을 단순하게 유지하면서 AI 클라이언트에 MCP 도구와 GraphQL 쿼리를 함께 제공하기 위한 선택이다.
 
-이 문서는 현재 구조와 그 운영 경계를 설명한다. API의 개별 인수와 응답은 [API 문서](../api/)를, MCP 요청 형식은 [MCP 문서](../mcp/README.md)를, 운영 준비도 요구사항과 완료 조건은 [명세 008](../../specs/008-production-readiness/spec.md)을 기준으로 한다.
+이 문서는 현재 구조와 그 운영 경계를 설명한다. API의 개별 인수와 응답은 [API 문서](../api/)를, MCP 요청 형식은 [MCP 문서](../mcp/README.md)를, 실무 기동·권한·마이그레이션·백업 절차는 [운영 및 관리 가이드](../guides/OPERATIONS_GUIDE.md)를, 운영 준비도 요구사항과 완료 조건은 [명세 008](../../specs/008-production-readiness/spec.md)을 기준으로 한다.
 
 ## 서비스 경계
 
@@ -83,9 +83,9 @@ REST 경로는 기능상 GraphQL과 같은 유스케이스를 호출하지만, �
 
 `AccessControl`은 production에서 기본적으로 인증을 요구한다. `BUN_GRAPH_DB_ACCESS_TOKENS`는 토큰별 주체 ID, 역할(`reader`, `writer`, `admin`), 허용 테이블 목록을 지정하고, `BUN_GRAPH_DB_API_TOKEN`은 기존 배포용 전역 admin 호환 토큰이다. 명시적으로 `BUN_GRAPH_DB_AUTH_REQUIRED=false`인 개발 환경만 익명 접근을 허용한다.
 
-MCP, 테이블 MCP, GraphQL, 스키마, REST 경로는 요청 크기·Origin·빈도·GraphQL 필드 복잡도를 확인한 뒤 역할과 테이블 범위를 판정한다. 스키마 산출물과 전역 관리 경로는 admin 범위가 필요하다. GraphQL과 REST는 변수·본문·경로의 `tableId` 계열 인수와 node ID를 분석하고, node ID는 저장소에서 소속 테이블을 다시 찾아 범위를 확인한다. 알 수 없거나 불완전한 MCP 호출은 admin으로, 명시적으로 분류되지 않은 외부 경로도 전역 admin으로 취급한다. 범위를 벗어나거나 소속 테이블을 확인할 수 없는 리소스 요청은 존재 여부를 드러내지 않는 응답으로 거부한다. 접근 로그에는 주체, 엔드포인트, 작업, 테이블만 기록하며 토큰과 원문 인수는 기록하지 않는다.
+MCP, 테이블 MCP, GraphQL, 스키마, REST 경로는 요청 크기·Origin·빈도·GraphQL 필드 복잡도를 확인한 뒤 역할과 테이블 범위를 판정한다. 스키마 산출물, 파일 시스템 백업·복원, 전역 DDL·관리 경로는 admin 범위가 필요하다. GraphQL은 루트 필드마다 실제 사용된 인수와 변수를 독립적으로 AST 분석해 미사용 변수나 다중 루트 필드 끼워넣기를 통한 범위 우회를 차단하며, REST와 GraphQL 모두 `tableId`·`tableIdentifier`·`nodeId`(소속 테이블 역추적)를 토큰의 테이블 ID/식별자와 양방향 대조한다. 알 수 없거나 불완전한 MCP 호출은 admin으로, 명시적으로 분류되지 않은 외부 경로도 전역 admin으로 취급한다. 범위를 벗어나거나 소속 테이블을 확인할 수 없는 리소스 요청은 존재 여부를 드러내지 않는 응답으로 거부한다. 접근 로그에는 주체, 엔드포인트, 작업, 테이블만 기록하며 토큰과 원문 인수는 기록하지 않는다.
 
-MCP의 내부 GraphQL·REST 브리지는 주소나 `X-*` 헤더를 신뢰하지 않는다. 인증이 켜진 배포에서는 최소 32자 `BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN`을 요구하고, 내부 loopback 요청에만 Bearer 자격 증명으로 전달한다. 이 토큰도 일반 토큰 검증 경로를 통과하므로 운영자는 외부 토큰과 분리해 보관·교체해야 한다.
+MCP의 내부 GraphQL·REST 브리지는 주소나 `X-*` 헤더를 신뢰하지 않는다. 단일 프로세스 안에서는 TCP loopback 소켓 왕복 대신 프로세스 내 `FetchLike`(`inProcessFetch`) 핸들러를 직접 호출하지만, 인증이 켜진 배포에서는 동일하게 최소 32자 `BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN`을 Bearer 자격 증명으로 전달해 일반 `AccessControl` 검증 경로를 그대로 통과한다. 또한 테이블 MCP의 GraphQL 실행 경로는 정규식 대신 GraphQL AST 분석(`extractReferencedGraphqlScope`)으로 mutation 여부와 참조 테이블·노드 범위를 강제한다.
 
 이 보안 모델은 애플리케이션 계정·SSO·멀티테넌트 저장소를 제공하지 않는다. 현재 명세의 경계는 HTTP 요청을 신뢰할 수 있는 역할·테이블 범위로 연결하는 데 있으며, 정교한 조직·사용자 관리가 필요하면 별도 인증 계층을 앞단에 두어야 한다.
 
@@ -99,13 +99,13 @@ MCP는 GraphQL을 대체하는 두 번째 데이터 모델이 아니다. 루트 
 
 ## 데이터, 검색, 백업
 
-SQLite는 테이블, 노드, 속성, 관계, 템플릿과 운영 상태를 보관한다. 시작 시 `schema_migrations` 원장과 순방향 마이그레이션을 적용한다. 현재 순서는 기본 스키마, 노드 메타데이터, FTS5, 동기화 설정·이벤트, 동기화 작업이다. 각 마이그레이션의 DDL과 원장 기록은 하나의 SQLite 트랜잭션으로 커밋한다.
+SQLite는 테이블, 노드, 속성, 관계, 임베딩, 템플릿과 운영 상태를 보관한다. 시작 시 `schema_migrations` 원장과 순방향 마이그레이션(현재 버전 `1..13`)을 적용한다. 주요 단계는 기본 스키마, 노드 메타데이터, 노드·속성 FTS5(`node_search_fts`, `node_attribute_search_fts`), 표 동기화 설정·이벤트·작업, EAV 수치 투영 컬럼(`value_num` 및 부분 B-Tree 인덱스), 관계 탐색 복합 인덱스, 영속 `Float32Array` 노드 임베딩(`node_embeddings`, `node_embedding_revisions`)이다. 각 마이그레이션의 DDL과 원장 기록은 하나의 SQLite 트랜잭션으로 커밋한다.
 
 데이터베이스에 이 바이너리가 알 수 없는 더 새 버전이 있거나, 적용된 버전과 이름이 현재 정의와 다르거나, DDL이 실패하면 연결을 닫고 기동을 실패시킨다. 따라서 서버는 부분 적용된 스키마를 정상 상태로 취급하지 않는다. 마이그레이션은 forward-only이므로, 운영자는 배포 전 백업과 복원 검증을 수행하고 롤백은 이전 바이너리 재기동이 아니라 복구 절차로 계획해야 한다.
 
-노드 텍스트 검색은 `node_search_fts` FTS5 가상 테이블을 사용한다. FTS 마이그레이션은 기존 노드를 인덱싱하고, 이후 노드 삽입·갱신·삭제 트리거가 제목, 설명, 내용, 메타데이터의 검색 인덱스를 갱신한다. 검색은 테이블 범위, 기존 속성 필터, 페이지네이션을 유지한다. 명시적 정렬이 없으면 FTS 관련도와 노드 ID로 결과를 안정화하고 `relevanceScore`를 반환한다. FTS를 사용할 수 없는 환경에서는 기존 LIKE 검색으로 동작하지만 관련도 품질은 동일하지 않다.
+동적 테이블 속성 변경은 `NodeAttributeSchemaGate` 단일 게이트를 통과해 GraphQL, REST, JSONL 가져오기 모두 동일한 타입·범위·포맷·필수 속성 제약을 강제하며, `/api/tables/:tableId/schema/audit`로 비파괴 정합성 감사를 수행할 수 있다. 노드·속성 텍스트 검색은 `node_search_fts`와 `node_attribute_search_fts` FTS5 BM25 매칭을 사용하고, 수치·날짜 범위 조건은 `node_attributes.value_num` 부분 B-Tree 인덱스로 SQL 단계에서 pushdown한다. 하이브리드 검색(`HybridSearchNodesUseCase`)은 선택적 N-hop 그래프 이웃 탐색, 타입 속성 필터, FTS5 BM25, 영속 `Float32Array` 정확 코사인 유사도를 Reciprocal Rank Fusion(RRF)으로 결합해 GraphQL·REST·MCP에 동일하게 노출한다.
 
-자동 영속화 서비스는 시작 시 복원 후보를 확인하고 정상 종료 시 JSONL 백업을 시도한다. 이 기능은 재해 복구 보조 수단이며, SQLite 파일·백업 디렉터리가 지속 볼륨에 있지 않으면 데이터 보존을 보장하지 않는다. 운영 배포에서는 파일 시스템 백업, 복구 검증, 보존 기간을 서비스 외부 정책으로 함께 운영해야 한다.
+자동 영속화 서비스는 시작 시 복원 후보를 확인하고 정상 종료 시 JSONL 백업을 시도한다. 수동·자동 JSONL 백업(`JsonlBackupService`)은 테이블 스키마·속성, 노드, 관계 타입·관계, 그리고 선택적 영속 임베딩(`includeEmbeddings: true` 시 `embeddings.jsonl`)을 원자적 파일 교체로 내보내고, 빈 데이터베이스나 ID가 변경된 대상 환경에서도 노드 ID 리매핑을 통해 정합성을 유지하며 복원한다. 단, SQLite 파일·백업 디렉터리가 지속 볼륨에 있지 않으면 데이터 보존을 보장하지 않으므로 운영 배포에서는 [운영 및 관리 가이드](../guides/OPERATIONS_GUIDE.md)의 백업·복구 검증 정책을 함께 운영해야 한다.
 
 ## 표 형식 동기화
 
@@ -131,6 +131,6 @@ DI 컨테이너는 singleton을 생성의 역순으로 정리하며 `Symbol.asyn
 
 ## 현재 한계와 재검토 조건
 
-이 구조는 한 서비스와 한 운영 팀이 관리하는 그래프 저장소에 적합하다. 데이터가 여러 독립 조직에 분할되거나, 별도의 처리량 확장·고가용성·글로벌 작업 큐가 필요해지면 단일 SQLite와 프로세스 내 동기화 모델을 재검토해야 한다. 벡터·임베딩 검색, SSO, 다중 테넌트 데이터 분리는 명세 008의 범위 밖이며, 필요할 때 권한 모델과 검색 평가 기준을 먼저 확장한 뒤 추가해야 한다.
+이 구조는 한 서비스와 한 운영 팀이 관리하는 그래프 저장소에 적합하다. 데이터가 여러 독립 조직에 분할되거나, 별도의 처리량 확장·고가용성·글로벌 작업 큐가 필요해지면 단일 SQLite와 프로세스 내 동기화 모델을 재검토해야 한다. 영속 `Float32Array` 정확 코사인 기반 하이브리드 검색은 내장되어 있으나, 대규모 근사 최근접 이웃(HNSW ANN) 인덱스, 외부 SSO/OAuth IdP, 다중 테넌트 데이터 분리는 현재 범위 밖이며 필요할 때 권한 모델과 검색 평가 기준을 먼저 확장한 뒤 추가해야 한다.
 
 문서에 설명된 보안·MCP·검색·동기화의 기준선은 [명세 008](../../specs/008-production-readiness/spec.md)이다. 구현 변경이 이 경계를 넓히면 계약 테스트, 운영 문서, 이 개요를 같은 변경에서 함께 갱신한다.

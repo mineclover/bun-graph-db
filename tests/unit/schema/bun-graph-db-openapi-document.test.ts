@@ -19,6 +19,9 @@ describe("bun-graph-db static OpenAPI document builder", () => {
 		expect(document.paths).toHaveProperty(
 			"/api/tables/{tableId}/openapi-projection",
 		);
+		expect(document.paths).toHaveProperty("/api/tables/{tableId}/schema/audit");
+		expect(document.paths).toHaveProperty("/api/nodes/{nodeId}/embedding");
+		expect(document.paths).toHaveProperty("/api/nodes/hybrid-search");
 		expect(document.paths).toHaveProperty("/mcp");
 		expect(document.paths).toHaveProperty("/sub/{tableId}/mcp");
 		expect(document.components.schemas).toHaveProperty("JsonRpcRequest");
@@ -347,5 +350,39 @@ describe("bun-graph-db static OpenAPI document builder", () => {
 			type: "object",
 			additionalProperties: true,
 		});
+	});
+
+	it("documents schema conformance audit, node embedding CRUD, and hybrid search endpoints", () => {
+		const document = buildBunGraphDbOpenApiDocument();
+
+		const auditOp = document.paths["/api/tables/{tableId}/schema/audit"]?.get;
+		expect(auditOp?.operationId).toBe("getTableSchemaAudit");
+		expect(auditOp?.parameters).toEqual([
+			{ $ref: "#/components/parameters/TableId" },
+			{ $ref: "#/components/parameters/SchemaAuditMaxViolations" },
+		]);
+
+		const embeddingPath = document.paths["/api/nodes/{nodeId}/embedding"];
+		expect(embeddingPath?.get?.operationId).toBe("getNodeEmbedding");
+		expect(embeddingPath?.put?.operationId).toBe("setNodeEmbedding");
+		expect(embeddingPath?.delete?.operationId).toBe("removeNodeEmbedding");
+		expect(
+			embeddingPath?.put?.requestBody?.content["application/json"].schema,
+		).toEqual({
+			$ref: "#/components/schemas/SetNodeEmbeddingRequest",
+		});
+
+		const hybridOp = document.paths["/api/nodes/hybrid-search"]?.post;
+		expect(hybridOp?.operationId).toBe("hybridSearchNodes");
+		expect(
+			hybridOp?.requestBody?.content["application/json"].schema,
+		).toEqual({
+			$ref: "#/components/schemas/HybridSearchRequest",
+		});
+		expect(document.components.schemas).toHaveProperty("NodeEmbeddingRecord");
+		expect(document.components.schemas).toHaveProperty("HybridSearchResult");
+		expect(document.components.schemas).toHaveProperty(
+			"TableSchemaConformanceReport",
+		);
 	});
 });

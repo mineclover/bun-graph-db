@@ -314,4 +314,185 @@ describe('AccessControl', () => {
     )
     expect(tooComplex).toMatchObject({ allowed: false, status: 400, code: 'query_too_complex' })
   })
+
+  test('blocks unused GraphQL variable spoofing, multi-root-field scope piggybacking, and non-admin DDL/backup fields', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        scopedReader: { id: 'reader-alpha', role: 'reader', tableIds: ['alpha'] },
+        scopedWriter: { id: 'writer-alpha', role: 'writer', tableIds: ['alpha'] },
+        globalWriter: { id: 'writer-global', role: 'writer', tableIds: ['*'] },
+        adminToken: { id: 'admin-1', role: 'admin', tableIds: ['*'] },
+      }),
+    })
+
+    // 1. Unused top-level variables must not grant table scope to global queries/mutations
+    const unusedVarQuery = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer scopedReader' },
+        body: JSON.stringify({
+          query: 'query { tables { nodes { id } } }',
+          variables: { tableId: 'alpha' },
+        }),
+      }),
+    )
+    expect(unusedVarQuery).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+    const unusedVarDeleteTable = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer scopedWriter' },
+        body: JSON.stringify({
+          query: 'mutation { deleteTable(id: "99") { success } }',
+          variables: { tableId: 'alpha' },
+        }),
+      }),
+    )
+    expect(unusedVarDeleteTable).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+    // 2. Multi-root-field scope piggybacking must be denied when any root field is unscoped
+    const piggybackQuery = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer scopedReader' },
+        body: JSON.stringify({
+          query: 'query { searchNodes(filter: { tableId: "alpha" }) { totalCount } tables { nodes { id } } }',
+        }),
+      }),
+    )
+    expect(piggybackQuery).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+    const piggybackMutation = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer scopedWriter' },
+        body: JSON.stringify({
+          query:
+            'mutation { createNode(input: { tableId: "alpha", content: "ok" }) { node { id } } createTable(input: { identifier: "sneaky" }) { table { id } } }',
+        }),
+      }),
+    )
+    expect(piggybackMutation).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+    // 3. Filesystem backup/restore and global DDL root fields require admin even when tableIds are passed
+    for (const token of ['scopedWriter', 'globalWriter']) {
+      const exportDecision = await authorizeExternalRequest(
+        control,
+        new Request('http://localhost/graphql', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            query: 'mutation { exportJsonl(options: { outputDir: "/tmp/out", tableIds: ["alpha"] }) { success } }',
+          }),
+        }),
+      )
+      expect(exportDecision).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+      const inspectDecision = await authorizeExternalRequest(
+        control,
+        new Request('http://localhost/graphql', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            query: 'query { inspectJsonlBackup(inputDir: "/tmp/out") { valid } }',
+          }),
+        }),
+      )
+      expect(inspectDecision).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+    }
+
+    const adminExport = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer adminToken' },
+        body: JSON.stringify({
+          query: 'mutation { exportJsonl(options: { outputDir: "/tmp/out" }) { success } }',
+        }),
+      }),
+    )
+    expect(adminExport.allowed).toBe(true)
+  })
+
+  test('allows table-scoped callers to inspect their own table root fields and reconciles numeric IDs with identifiers', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        ordersReader: { id: 'orders-reader', role: 'reader', tableIds: ['orders'] },
+      }),
+    })
+    const resolver = {
+      resolveNodeTableId: async (nodeId: string) => (nodeId === '42' ? '1' : nodeId === '99' ? '2' : undefined),
+      resolveTableIdentity: async (ref: string) => {
+        if (ref === '1' || ref === 'orders') return { id: '1', identifier: 'orders' }
+        if (ref === '2' || ref === 'payments') return { id: '2', identifier: 'payments' }
+        return undefined
+      },
+    }
+
+    const ownByIdentifier = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ordersReader' },
+        body: JSON.stringify({ query: 'query { tableByIdentifier(identifier: "orders") { id } }' }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(ownByIdentifier.allowed).toBe(true)
+
+    const ownByNumericId = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ordersReader' },
+        body: JSON.stringify({ query: 'query { table(id: "1") { id } }' }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(ownByNumericId.allowed).toBe(true)
+
+    const ownNodeById = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ordersReader' },
+        body: JSON.stringify({ query: 'query { node(id: "42") { id } }' }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(ownNodeById.allowed).toBe(true)
+
+    const otherTable = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ordersReader' },
+        body: JSON.stringify({ query: 'query { table(id: "2") { id } }' }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(otherTable).toEqual({ allowed: false, status: 404, code: 'not_found' })
+
+    const otherNode = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer ordersReader' },
+        body: JSON.stringify({ query: 'query { node(id: "99") { id } }' }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(otherNode).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
 })

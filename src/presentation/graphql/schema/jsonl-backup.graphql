@@ -22,6 +22,11 @@ input JsonlExportInput {
   tableIds: [String!]
 
   """
+  Specific table identifiers to export (default: all tables)
+  """
+  tableIdentifiers: [String!]
+
+  """
   Include relations in export (default: true)
   """
   includeRelations: Boolean
@@ -30,6 +35,11 @@ input JsonlExportInput {
   Include schema file (default: true)
   """
   includeSchema: Boolean
+
+  """
+  Include persistent node embeddings in embeddings.jsonl (default: false)
+  """
+  includeEmbeddings: Boolean
 
   """
   Pretty print JSON (default: false for git diff compatibility)
@@ -55,6 +65,11 @@ input JsonlImportInput {
   How to handle conflicts with existing data
   """
   conflictResolution: JsonlConflictResolution!
+
+  """
+  Restore embeddings.jsonl when present (default: true when manifest.hasEmbeddings)
+  """
+  includeEmbeddings: Boolean
 
   """
   Validate schema before import (default: true)
@@ -99,6 +114,7 @@ enum JsonlFileType {
   TABLE
   RELATIONS
   RELATION_TYPES
+  EMBEDDINGS
 }
 
 # ============================================================================
@@ -153,6 +169,11 @@ type JsonlExportStats {
   Number of relations exported
   """
   relationsExported: Int!
+
+  """
+  Number of node embeddings exported
+  """
+  embeddingsExported: Int!
 
   """
   Total bytes written
@@ -223,6 +244,11 @@ type JsonlImportStats {
   Number of relations imported
   """
   relationsImported: Int!
+
+  """
+  Number of node embeddings imported
+  """
+  embeddingsImported: Int!
 }
 
 """
@@ -288,6 +314,11 @@ type JsonlBackupInfo {
   Whether schema is included
   """
   hasSchema: Boolean!
+
+  """
+  Whether persistent node embeddings are included
+  """
+  hasEmbeddings: Boolean!
 }
 
 """

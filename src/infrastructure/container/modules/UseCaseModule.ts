@@ -11,6 +11,7 @@ import { TableNodesExportUseCase } from '@/application/use-cases/export/TableNod
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
 import { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
 import { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
+import { HybridSearchNodesUseCase } from '@/application/use-cases/nodes/HybridSearchNodes.js'
 import { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import { UpdateNodeUseCase } from '@/application/use-cases/nodes/UpdateNode.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
@@ -287,6 +288,59 @@ export function registerUseCaseModule(container: DIContainer): void {
     [
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.NODE_SEARCH_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.TABLE_REPOSITORY,
+    ],
+  )
+
+  container.registerSingleton(
+    UseCaseTokens.HYBRID_SEARCH_NODES_USE_CASE,
+    async (c) => {
+      const nodeRepository = await resolveAs<ConstructorParameters<typeof HybridSearchNodesUseCase>[0]>(
+        c,
+        RepositoryTokens.NODE_REPOSITORY,
+      )
+      const nodeSearchRepository = await resolveAs<ConstructorParameters<typeof HybridSearchNodesUseCase>[1]>(
+        c,
+        RepositoryTokens.NODE_SEARCH_REPOSITORY,
+      )
+      const nodeEmbeddingRepository = await resolveAs<ConstructorParameters<typeof HybridSearchNodesUseCase>[2]>(
+        c,
+        RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+      )
+      const nodeRelationRepository = await resolveAs<ConstructorParameters<typeof HybridSearchNodesUseCase>[3]>(
+        c,
+        RepositoryTokens.NODE_RELATION_REPOSITORY,
+      )
+      const relationTypeRepository = await resolveAs<ConstructorParameters<typeof HybridSearchNodesUseCase>[4]>(
+        c,
+        RepositoryTokens.RELATION_TYPE_REPOSITORY,
+      )
+      const attributeRepository = await resolveAs<ConstructorParameters<typeof HybridSearchNodesUseCase>[5]>(
+        c,
+        RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      )
+      const tableRepository = await resolveAs<ConstructorParameters<typeof HybridSearchNodesUseCase>[6]>(
+        c,
+        RepositoryTokens.TABLE_REPOSITORY,
+      )
+      return new HybridSearchNodesUseCase(
+        nodeRepository,
+        nodeSearchRepository,
+        nodeEmbeddingRepository,
+        nodeRelationRepository,
+        relationTypeRepository,
+        attributeRepository,
+        tableRepository,
+        simpleLogger,
+      )
+    },
+    [
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.NODE_SEARCH_REPOSITORY,
+      RepositoryTokens.NODE_EMBEDDING_REPOSITORY,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.TABLE_REPOSITORY,
     ],

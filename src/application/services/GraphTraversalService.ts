@@ -6,12 +6,24 @@ import type {
   NodeRelationAdjacency,
 } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
-import { BreadthFirstSearch, type GraphNeighbor } from '@/domain/services/graph/BreadthFirstSearch.js'
+import {
+  BidirectionalBreadthFirstSearch,
+  BreadthFirstSearch,
+  type GraphNeighbor,
+} from '@/domain/services/graph/BreadthFirstSearch.js'
 
 const GRAPH_NODE_BATCH_SIZE = 500
 const GRAPH_ADJACENCY_BATCH_SIZE = 64
 
+export const DEFAULT_MAX_TRAVERSAL_DEPTH = 32
+export const DEFAULT_MAX_VISITED_NODES = 50_000
+
 export type TraversalDirection = 'OUTGOING' | 'INCOMING' | 'BOTH'
+
+export interface TraversalSafetyBounds {
+  maxTraversalDepth?: number
+  maxVisitedNodes?: number
+}
 
 export interface ShortestPathResult {
   nodes: Node[]
@@ -33,13 +45,20 @@ export interface GraphTraversalMetrics {
 
 /** Repository loading policy for graph traversal; independent of GraphQL/HTTP. */
 export class GraphTraversalService {
+  private readonly maxTraversalDepth: number
+  private readonly maxVisitedNodes: number
+
   constructor(
     private readonly nodeRepository: Pick<INodeRepository, 'findByIds'>,
     private readonly relationRepository: Pick<
       INodeRelationRepository,
       'findBySourceNodeId' | 'findByTargetNodeId' | 'findAdjacentByNodeIds'
     >,
-  ) {}
+    safetyBounds: TraversalSafetyBounds = {},
+  ) {
+    this.maxTraversalDepth = safetyBounds.maxTraversalDepth ?? DEFAULT_MAX_TRAVERSAL_DEPTH
+    this.maxVisitedNodes = safetyBounds.maxVisitedNodes ?? DEFAULT_MAX_VISITED_NODES
+  }
 
   /** Includes the source at depth zero; the transport decides whether to show it. */
   async connectedNodes(
@@ -74,6 +93,7 @@ export class GraphTraversalService {
       return { nodes: [], metrics }
     }
 
+    const boundedDepth = Math.min(maxDepth, this.maxTraversalDepth)
     const search = new BreadthFirstSearch<NodeRelation>(sourceId)
     const relationTypes = relationTypeIds === undefined ? undefined : new Set(relationTypeIds)
     const result: Node[] = []
@@ -87,7 +107,14 @@ export class GraphTraversalService {
         const node = nodesById.get(id)
         if (node !== undefined) result.push(node)
       }
-      if (search.depth >= maxDepth || existingFrontier.length === 0) break
+      if (
+        search.depth >= boundedDepth ||
+        existingFrontier.length === 0 ||
+        search.visitedCount >= this.maxVisitedNodes
+      ) {
+        break
+      }
+      if (relationTypes !== undefined && relationTypes.size === 0) break
 
       search.advance(await this.loadAdjacency(existingFrontier, direction, relationTypes, metrics))
     }
@@ -96,29 +123,124 @@ export class GraphTraversalService {
     return { nodes: result, metrics }
   }
 
-  /** One minimum-hop path, in both directions; relation strength is not a cost. */
-  async findShortestPath(sourceId: string, targetId: string, maxDepth: number): Promise<ShortestPathResult | null> {
-    const search = new BreadthFirstSearch<NodeRelation>(sourceId)
+  /**
+   * Computes minimum hop distances from one or more anchor nodes up to
+   * `maxDepth` (0 for anchor nodes, 1..maxDepth for reachable neighbors).
+   * Used by N-hop graph + FTS + vector hybrid search.
+   */
+  async connectedNodeDistances(
+    anchorNodeIds: readonly string[],
+    maxDepth: number,
+    direction: TraversalDirection = 'BOTH',
+    relationTypeIds?: readonly string[],
+  ): Promise<Map<string, number>> {
+    const distances = new Map<string, number>()
+    if (maxDepth < 0 || anchorNodeIds.length === 0) return distances
 
-    while (search.frontier.length > 0) {
-      const path = search.pathTo(targetId)
-      if (path !== null) {
-        const nodes = await this.loadNodes(path.nodeIds)
-        const nodesById = new Map(nodes.map((node) => [node.getId(), node]))
-        return {
-          nodes: path.nodeIds.flatMap((id) => {
-            const node = nodesById.get(id)
-            return node === undefined ? [] : [node]
-          }),
-          relations: path.edges,
-          distance: path.distance,
-        }
-      }
-      if (search.depth >= maxDepth) break
-      search.advance(await this.loadAdjacency(search.frontier, 'BOTH'))
+    const uniqueAnchors = [...new Set(anchorNodeIds.filter(Boolean))]
+    const existingAnchors = await this.loadNodes(uniqueAnchors)
+    let frontier = existingAnchors.map((node) => node.getId())
+    for (const id of frontier) {
+      distances.set(id, 0)
     }
 
-    return null
+    const boundedDepth = Math.min(maxDepth, this.maxTraversalDepth)
+    const relationTypes = relationTypeIds === undefined ? undefined : new Set(relationTypeIds)
+    if (boundedDepth === 0 || (relationTypes !== undefined && relationTypes.size === 0)) {
+      return distances
+    }
+
+    for (let depth = 1; depth <= boundedDepth && frontier.length > 0; depth++) {
+      if (distances.size >= this.maxVisitedNodes) break
+      const adjacency = await this.loadAdjacency(frontier, direction, relationTypes)
+      const candidateNextIds: string[] = []
+      for (const fromId of frontier) {
+        for (const neighbor of adjacency.get(fromId) ?? []) {
+          if (!distances.has(neighbor.nodeId)) {
+            distances.set(neighbor.nodeId, depth)
+            candidateNextIds.push(neighbor.nodeId)
+            if (distances.size >= this.maxVisitedNodes) break
+          }
+        }
+        if (distances.size >= this.maxVisitedNodes) break
+      }
+
+      if (candidateNextIds.length === 0) break
+      const loadedNeighbors = await this.loadNodes(candidateNextIds)
+      const validIds = new Set(loadedNeighbors.map((node) => node.getId()))
+      for (const candidateId of candidateNextIds) {
+        if (!validIds.has(candidateId)) {
+          distances.delete(candidateId)
+        }
+      }
+      frontier = candidateNextIds.filter((id) => validIds.has(id))
+    }
+
+    return distances
+  }
+
+  /**
+   * One minimum-hop path via Bidirectional BFS; relation strength is not a cost.
+   * Zero-hop source===target check runs before depth termination so negative
+   * maxDepth on an identical source/target still materializes the 0-hop candidate.
+   */
+  async findShortestPath(
+    sourceId: string,
+    targetId: string,
+    maxDepth: number,
+    direction: TraversalDirection = 'BOTH',
+    relationTypeIds?: readonly string[],
+  ): Promise<ShortestPathResult | null> {
+    if (sourceId === targetId) {
+      const nodes = await this.loadNodes([sourceId])
+      const nodesById = new Map(nodes.map((node) => [node.getId(), node]))
+      const found = nodesById.get(sourceId)
+      return {
+        nodes: found ? [found] : [],
+        relations: [],
+        distance: 0,
+      }
+    }
+
+    if (maxDepth <= 0) return null
+    const relationTypes = relationTypeIds === undefined ? undefined : new Set(relationTypeIds)
+    if (relationTypes !== undefined && relationTypes.size === 0) return null
+
+    const boundedDepth = Math.min(maxDepth, this.maxTraversalDepth)
+    const backwardDirection = reverseTraversalDirection(direction)
+    const search = new BidirectionalBreadthFirstSearch<NodeRelation>(sourceId, targetId)
+
+    while (!search.hasMeeting && search.totalDepth < boundedDepth) {
+      if (search.visitedCount >= this.maxVisitedNodes) break
+      const side = search.nextSide()
+      if (side === null) break
+
+      if (side === 'forward') {
+        const adjacency = await this.loadAdjacency(search.forwardFrontier, direction, relationTypes)
+        search.advanceForward(adjacency)
+      } else {
+        const reverseAdjacency = await this.loadAdjacency(
+          search.backwardFrontier,
+          backwardDirection,
+          relationTypes,
+        )
+        search.advanceBackward(reverseAdjacency)
+      }
+    }
+
+    const path = search.shortestPath()
+    if (path === null || path.distance > boundedDepth) return null
+
+    const nodes = await this.loadNodes(path.nodeIds)
+    const nodesById = new Map(nodes.map((node) => [node.getId(), node]))
+    return {
+      nodes: path.nodeIds.flatMap((id) => {
+        const node = nodesById.get(id)
+        return node === undefined ? [] : [node]
+      }),
+      relations: path.edges,
+      distance: path.distance,
+    }
   }
 
   private async loadNodes(nodeIds: readonly string[], metrics?: GraphTraversalMetrics): Promise<Node[]> {
@@ -144,6 +266,10 @@ export class GraphTraversalService {
   ): Promise<Map<string, GraphNeighbor<NodeRelation>[]>> {
     const uniqueNodeIds = [...new Set(nodeIds)]
     const adjacency = new Map(uniqueNodeIds.map((id) => [id, [] as GraphNeighbor<NodeRelation>[]]))
+    if (relationTypes !== undefined && relationTypes.size === 0) {
+      return adjacency
+    }
+    const relationTypeList = relationTypes ? [...relationTypes] : undefined
 
     for (let index = 0; index < uniqueNodeIds.length; index += GRAPH_ADJACENCY_BATCH_SIZE) {
       const batch = uniqueNodeIds.slice(index, index + GRAPH_ADJACENCY_BATCH_SIZE)
@@ -152,8 +278,18 @@ export class GraphTraversalService {
       const bulkLoader = this.relationRepository.findAdjacentByNodeIds
       if (bulkLoader !== undefined) {
         if (metrics !== undefined) metrics.bulkAdjacencyBatchCount += 1
-        const loaded = await bulkLoader.call(this.relationRepository, batch, direction as RepositoryGraphTraversalDirection)
-        if (metrics !== undefined) metrics.relationsLoaded += [...loaded.values()].reduce((count, relations) => count + relations.length, 0)
+        const loaded = await bulkLoader.call(
+          this.relationRepository,
+          batch,
+          direction as RepositoryGraphTraversalDirection,
+          relationTypeList,
+        )
+        if (metrics !== undefined) {
+          metrics.relationsLoaded += [...loaded.values()].reduce(
+            (count, relations) => count + relations.length,
+            0,
+          )
+        }
         this.appendAdjacency(adjacency, batch, loaded, relationTypes)
         continue
       }
@@ -161,10 +297,18 @@ export class GraphTraversalService {
       const queries: Array<Promise<{ nodeId: string; relations: NodeRelation[] }>> = []
       for (const nodeId of batch) {
         if (direction === 'OUTGOING' || direction === 'BOTH') {
-          queries.push(this.relationRepository.findBySourceNodeId(nodeId).then((relations) => ({ nodeId, relations })))
+          queries.push(
+            this.relationRepository
+              .findBySourceNodeId(nodeId)
+              .then((relations) => ({ nodeId, relations })),
+          )
         }
         if (direction === 'INCOMING' || direction === 'BOTH') {
-          queries.push(this.relationRepository.findByTargetNodeId(nodeId).then((relations) => ({ nodeId, relations })))
+          queries.push(
+            this.relationRepository
+              .findByTargetNodeId(nodeId)
+              .then((relations) => ({ nodeId, relations })),
+          )
         }
       }
       if (metrics !== undefined) metrics.perNodeAdjacencyCalls += queries.length
@@ -196,4 +340,10 @@ export class GraphTraversalService {
       }
     }
   }
+}
+
+function reverseTraversalDirection(direction: TraversalDirection): TraversalDirection {
+  if (direction === 'OUTGOING') return 'INCOMING'
+  if (direction === 'INCOMING') return 'OUTGOING'
+  return 'BOTH'
 }

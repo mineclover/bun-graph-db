@@ -156,7 +156,7 @@ export class SystemQueries {
     return this.tabularSyncConfigStore.getActiveConfigRecord()
   }
 
-  tabularSyncStatus(args?: {
+  async tabularSyncStatus(args?: {
     limit?: number | null
     tableIdentifier?: string | null
     status?: string | null
@@ -164,7 +164,8 @@ export class SystemQueries {
     windowPreset?: string | null
     createdAfter?: string | null
     createdBefore?: string | null
-  }): TabularSyncStatusSnapshot {
+  }): Promise<TabularSyncStatusSnapshot> {
+    await this.tabularSyncHook?.settleDueJobs()
     return (
       this.tabularSyncHook?.getStatus({
         limit: args?.limit ?? undefined,
@@ -195,7 +196,7 @@ export class SystemQueries {
     )
   }
 
-  tabularSyncSummary(args?: {
+  async tabularSyncSummary(args?: {
     limit?: number | null
     tableIdentifier?: string | null
     status?: string | null
@@ -204,6 +205,6 @@ export class SystemQueries {
     createdAfter?: string | null
     createdBefore?: string | null
   }) {
-    return this.tabularSyncStatus(args).persistedSummary
+    return (await this.tabularSyncStatus(args)).persistedSummary
   }
 }

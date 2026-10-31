@@ -10,7 +10,7 @@
 	"scripts": {
 		"start": "bun index.ts",
 		"dev": "bun --watch index.ts --",
-		"build": "bun build index.ts --outdir ./dist --target bun",
+		"build": "bun build index.ts --outdir ./dist --target bun --external xlsx",
 		"test": "bun run scripts/test-lanes.ts",
 		"test:direct": "bun test",
 		"test:lanes:audit": "bun run scripts/test-lanes.ts --audit",
@@ -36,7 +36,7 @@
 		"typecheck:benchmark": "tsc --project scripts/tsconfig.benchmark.json --noEmit",
 		"ci:versions": "bun run scripts/ci-versions.ts",
 		"lint": "biome lint .",
-		"check:biome": "biome lint index.ts src tests/unit/schema && biome lint --error-on-warnings scripts/ci-versions.ts scripts/check-docs.ts tests/unit/check-docs.test.ts tests/unit/breadth-first-search.test.ts tests/unit/strongly-connected-components.test.ts tests/unit/page-rank.test.ts tests/unit/exact-vector-index.test.ts tests/unit/node-field-resolvers-graph-traversal.test.ts scripts/check-codegen.ts scripts/test-lanes.ts scripts/export-oa-sdk-projection-artifacts.ts scripts/benchmark-hotpaths.ts scripts/benchmark-vector-storage.ts scripts/fixtures/oa-sdk-projection-fixture.ts tests/unit/benchmark-hotpaths.test.ts tests/unit/test-lanes-script.test.ts tests/contract/oa-sdk-projection-artifacts.test.ts package.json tsconfig.contract.json scripts/tsconfig.benchmark.json",
+		"check:biome": "biome lint index.ts src tests/unit/schema && biome lint --error-on-warnings scripts/ci-versions.ts scripts/check-docs.ts tests/unit/check-docs.test.ts tests/unit/access-control.test.ts tests/unit/breadth-first-search.test.ts tests/unit/strongly-connected-components.test.ts tests/unit/page-rank.test.ts tests/unit/exact-vector-index.test.ts tests/unit/node-field-resolvers-graph-traversal.test.ts tests/unit/engine-optimizations-p0-p2.test.ts scripts/check-codegen.ts scripts/test-lanes.ts scripts/export-oa-sdk-projection-artifacts.ts scripts/benchmark-hotpaths.ts scripts/benchmark-vector-storage.ts scripts/fixtures/oa-sdk-projection-fixture.ts tests/unit/benchmark-hotpaths.test.ts tests/unit/test-lanes-script.test.ts tests/contract/oa-sdk-projection-artifacts.test.ts package.json tsconfig.contract.json scripts/tsconfig.benchmark.json",
 		"format": "biome format --write .",
 		"format:check": "biome format .",
 		"check": "bun run check:static",
