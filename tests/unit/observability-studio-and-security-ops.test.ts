@@ -150,6 +150,15 @@ describe("Security Operations, Metrics Registry & Web Studio Inspector", () => {
 			expect(studioRes.headers.get("Content-Type")).toContain("text/html");
 			const html = await studioRes.text();
 			expect(html).toContain("Bun Graph DB Studio");
+			expect(html).toContain("/studio.css");
+
+			const studioCssRes = await node.fetch(
+				new Request("http://localhost/studio.css"),
+			);
+			expect(studioCssRes.status).toBe(200);
+			expect(studioCssRes.headers.get("Content-Type")).toContain("text/css");
+			const studioCss = await studioCssRes.text();
+			expect(studioCss).toContain("--panel");
 
 			// Reader cannot access /metrics or /api/audit-log
 			const readerMetrics = await node.fetch(

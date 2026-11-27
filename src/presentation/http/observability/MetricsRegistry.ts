@@ -36,7 +36,8 @@ const DURATION_BUCKETS = [5, 10, 25, 50, 100, 250, 500, 1000, 5000] as const;
 export function classifyHttpSurface(pathname: string): HttpSurfaceKind {
 	if (pathname === "/health" || pathname === "/api/health") return "health";
 	if (pathname === "/metrics") return "metrics";
-	if (pathname === "/studio" || pathname === "/") return "studio";
+	if (pathname === "/studio" || pathname === "/studio.css" || pathname === "/")
+		return "studio";
 	if (pathname === "/mcp" || /^\/sub\/[^/]+\/mcp\/?$/.test(pathname))
 		return "mcp";
 	if (pathname === "/graphql") return "graphql";

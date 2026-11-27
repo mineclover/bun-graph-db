@@ -1,6 +1,9 @@
 import type { AccessControl } from "@/application/security/AccessControl.js";
 import { BUN_GRAPH_DB_API_VERSION } from "@/core/contracts/RestRouteContract.js";
-import { renderStudioHtml } from "@/presentation/studio/StudioHtml.js";
+import {
+	renderStudioCss,
+	renderStudioHtml,
+} from "@/presentation/studio/StudioHtml.js";
 import {
 	classifyHttpSurface,
 	type MetricsRegistry,
@@ -32,6 +35,15 @@ export function handleOpsOrStudioRoute(
 				},
 			},
 		);
+	}
+
+	if (url.pathname === "/studio.css") {
+		return new Response(renderStudioCss(), {
+			headers: {
+				"Content-Type": "text/css; charset=utf-8",
+				"Cache-Control": "no-cache",
+			},
+		});
 	}
 
 	if (url.pathname === "/metrics") {

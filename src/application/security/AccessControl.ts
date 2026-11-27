@@ -651,7 +651,8 @@ export async function authorizeExternalRequest(
 	if (
 		request.method === "OPTIONS" ||
 		pathname === "/" ||
-		(request.method === "GET" && pathname === "/studio") ||
+		(request.method === "GET" &&
+			(pathname === "/studio" || pathname === "/studio.css")) ||
 		pathname === "/health" ||
 		pathname === "/api/health"
 	) {

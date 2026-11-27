@@ -240,6 +240,7 @@ if (argv.includes("--serve")) {
 	const port = Number(readFlag(argv, "--port") ?? "8413");
 	const repoRoot = resolve(import.meta.dirname, "../..");
 	const demoHtmlPath = resolve(import.meta.dirname, "index.html");
+	const demoCssPath = resolve(import.meta.dirname, "styles.css");
 	const distCoreDir = resolve(repoRoot, "dist/core");
 
 	const server = createServer(async (req, res) => {
@@ -249,6 +250,12 @@ if (argv.includes("--serve")) {
 				const html = await readFile(demoHtmlPath, "utf8");
 				res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
 				res.end(html);
+				return;
+			}
+			if (urlPath === "/styles.css") {
+				const css = await readFile(demoCssPath, "utf8");
+				res.writeHead(200, { "Content-Type": "text/css; charset=utf-8" });
+				res.end(css);
 				return;
 			}
 			if (urlPath.startsWith("/dist/core/")) {
