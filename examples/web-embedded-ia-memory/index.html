@@ -2,11 +2,173 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Web Embedded IA &amp; AI Memory Starter</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Role 3: Offline-First Browser Knowledge &amp; AI Memory (Zero-Dep Core)</title>
+  <style>
+    :root {
+      color-scheme: dark light;
+      --bg: #0c111e;
+      --panel: #151c30;
+      --border: #273352;
+      --text: #e8eeff;
+      --muted: #93a3c7;
+      --accent: #5b8cff;
+      --ok: #30d158;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container { max-width: 980px; margin: 0 auto; display: grid; gap: 16px; }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    h1 { margin: 0 0 6px; font-size: 20px; }
+    h2 { margin: 0 0 10px; font-size: 15px; color: var(--muted); }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+    input, select, textarea, button {
+      font: inherit;
+      color: inherit;
+      background: #0b101d;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+    }
+    textarea { width: 100%; min-height: 70px; }
+    button {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary { background: #26314f; }
+    pre {
+      margin: 0;
+      padding: 12px;
+      background: #080c16;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      max-height: 360px;
+    }
+    .status { font-size: 13px; color: var(--ok); font-weight: 600; }
+  </style>
 </head>
 <body>
-  <h1>Bun Graph DB — Web Embedded IA &amp; AI Memory</h1>
-  <pre id="output">Run via Vite or import app.ts in your frontend bundle.</pre>
-  <script type="module" src="./app.ts"></script>
+  <div class="container">
+    <div class="card">
+      <h1>Bun Graph DB — Offline-First Browser Knowledge &amp; AI Memory</h1>
+      <div class="status" id="status">Loading zero-dep ./dist/core/index.js + sql.js WASM...</div>
+    </div>
+
+    <div class="card">
+      <h2>1. Store Structured AI Memory (Zero Embedding Required)</h2>
+      <div class="row">
+        <select id="mem-kind">
+          <option value="semantic">semantic</option>
+          <option value="episodic">episodic</option>
+          <option value="procedural">procedural</option>
+          <option value="working">working</option>
+        </select>
+        <input id="mem-topic" value="browser-demo/notes" placeholder="topicPath (slash-separated)" style="min-width: 240px;" />
+        <button type="button" id="btn-remember">Remember</button>
+      </div>
+      <textarea id="mem-content">Offline web clients persist SQLite snapshots to IndexedDB after knowledge updates.</textarea>
+    </div>
+
+    <div class="card">
+      <h2>2. Query, Outline &amp; IndexedDB Snapshot Lifecycle</h2>
+      <div class="row">
+        <input id="recall-query" value="IndexedDB" placeholder="Recall query..." style="flex: 1; min-width: 220px;" />
+        <button type="button" id="btn-recall">5-Signal Recall</button>
+        <button type="button" class="secondary" id="btn-outline">IA Outline (ia_topics)</button>
+        <button type="button" class="secondary" id="btn-audit">Audit IA</button>
+        <button type="button" class="secondary" id="btn-save">Save Snapshot</button>
+        <button type="button" class="secondary" id="btn-load">Restore Snapshot</button>
+      </div>
+      <pre id="output">Initializing...</pre>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sql.js@1.12.0/dist/sql-wasm.js"></script>
+  <script type="module">
+    import { createHeadlessGraphDb, IndexedDbSnapshotStorage } from "/dist/core/index.js";
+
+    const statusEl = document.getElementById("status");
+    const outputEl = document.getElementById("output");
+    const show = (label, data) => {
+      outputEl.textContent = `${label}\n${JSON.stringify(data, null, 2)}`;
+    };
+
+    const snapshots = new IndexedDbSnapshotStorage({ databaseName: "bgdb-browser-demo" });
+    const SQL = await window.initSqlJs({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.12.0/dist/${file}`,
+    });
+
+    let db = await createHeadlessGraphDb({
+      database: new SQL.Database(),
+      databaseLabel: "browser:knowledge",
+      snapshotStorage: snapshots,
+    });
+    await db.applyPresetBlueprint("knowledge");
+
+    statusEl.textContent = "Ready — ./dist/core/index.js + sql.js WASM + IndexedDB initialized";
+    show("Preset Applied (knowledge)", await db.ia.getOutline({ tableIdentifier: "ia_topics" }));
+
+    document.getElementById("btn-remember").addEventListener("click", async () => {
+      const content = document.getElementById("mem-content").value.trim();
+      const kind = document.getElementById("mem-kind").value;
+      const topicPath = document.getElementById("mem-topic").value.split("/").map((s) => s.trim()).filter(Boolean);
+      const res = await db.aiMemory.remember({ content, kind, topicPath, importance: 0.9 });
+      show("Stored Memory", res);
+    });
+
+    document.getElementById("btn-recall").addEventListener("click", async () => {
+      const query = document.getElementById("recall-query").value.trim();
+      const res = await db.aiMemory.recall({ query });
+      show(`Recall Results ("${query}")`, res);
+    });
+
+    document.getElementById("btn-outline").addEventListener("click", async () => {
+      show("IA Outline (ia_topics)", await db.ia.getOutline({ tableIdentifier: "ia_topics" }));
+    });
+
+    document.getElementById("btn-audit").addEventListener("click", async () => {
+      show("IA Architecture Audit", await db.ia.auditArchitecture());
+    });
+
+    document.getElementById("btn-save").addEventListener("click", async () => {
+      const meta = await db.saveSnapshot("latest");
+      const keys = await snapshots.listSnapshots();
+      show("Saved IndexedDB Snapshot", { saved: meta, availableSnapshots: keys });
+    });
+
+    document.getElementById("btn-load").addEventListener("click", async () => {
+      const snap = await snapshots.getSnapshot("latest");
+      if (!snap) {
+        show("Restore Snapshot", { error: "No saved snapshot named 'latest' yet." });
+        return;
+      }
+      await db.dispose();
+      db = await createHeadlessGraphDb({
+        database: new SQL.Database(snap.data),
+        databaseLabel: "browser:knowledge-restored",
+        snapshotStorage: snapshots,
+        runMigrations: false,
+      });
+      show("Restored Snapshot from IndexedDB", await db.aiMemory.getStats());
+    });
+  </script>
 </body>
 </html>

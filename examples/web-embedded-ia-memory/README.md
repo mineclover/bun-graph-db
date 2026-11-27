@@ -1,9 +1,19 @@
-# Starter 1: Web/Browser Embedded Knowledge & AI Memory (Zero-Dep Core)
+# Role 3: Browser Offline-First Embedded Knowledge & AI Memory (Zero-Dep Core)
 
-This example runs **Bun Graph DB Headless Core (`bun-graph-db/core`)** directly inside a browser or web worker using `sql.js` (WASM SQLite) + `IndexedDbSnapshotStorage` without any GraphQL server, Node built-ins, or external embedding API required.
+Runs **Bun Graph DB Headless Core (`bun-graph-db/core`, `0` Node built-ins / `0` npm deps)** directly in the browser or headless Node WASM contract using `sql.js` + `IndexedDbSnapshotStorage`.
 
-## Run in a Vite / React / Vanilla App
+## Run Headless Contract Verification
 
-1. Install `bun-graph-db` and `sql.js` (or `@sqlite.org/sqlite-wasm`).
-2. Import [`app.ts`](./app.ts) into your frontend bundle.
-3. Open [`index.html`](./index.html) inside your Vite dev server (`pnpm vite`).
+```bash
+pnpm run demo:web
+```
+
+## Run Interactive Browser Demo (`http://127.0.0.1:8413/`)
+
+Ensure `pnpm run build` has generated `dist/core/index.js`, then start the zero-build-step demo server:
+
+```bash
+node --import tsx examples/web-embedded-ia-memory/demo.ts --serve --port 8413
+```
+
+Open `http://127.0.0.1:8413/` to apply the `knowledge` preset, store AI memories, run 5-signal recall, audit IA health, and persist/restore SQLite snapshots in browser IndexedDB.

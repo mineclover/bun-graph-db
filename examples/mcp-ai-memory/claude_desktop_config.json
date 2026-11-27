@@ -1,16 +1,16 @@
 {
-  "mcpServers": {
-    "graph-memory": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "graph-memory",
-        "mcp",
-        "--database-path",
-        "./data/agent-memory.sqlite",
-        "--preset",
-        "knowledge"
-      ]
-    }
-  }
+	"mcpServers": {
+		"graph-memory": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"graph-memory",
+				"mcp",
+				"--database-path",
+				"./data/agent-memory.sqlite",
+				"--preset",
+				"knowledge"
+			]
+		}
+	}
 }
