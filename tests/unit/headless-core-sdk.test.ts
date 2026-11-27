@@ -337,4 +337,54 @@ describe("Headless Core SDK & IndexedDB Snapshot Storage", () => {
 			await headlessWasm.dispose();
 		}
 	});
+
+	test("migrates and supports AI Memory LIKE recall cleanly when FTS5 is unavailable (standard sql.js WASM)", async () => {
+		const rawSqlJs = createSqlJsBackedAdapter();
+		const noFtsSqlJs: SqlJsDatabaseLike = {
+			exec(sql: string) {
+				if (/\bUSING\s+fts5\b/i.test(sql)) {
+					throw new Error("no such module: fts5");
+				}
+				return rawSqlJs.exec(sql);
+			},
+			getRowsModified: () => rawSqlJs.getRowsModified(),
+			export: () => rawSqlJs.export?.() ?? new Uint8Array(),
+			prepare(sql: string, initialParams?: readonly SqliteBindPrimitive[]) {
+				if (/sqlite_compileoption_used\s*\(\s*'ENABLE_FTS5'\s*\)/i.test(sql)) {
+					let read = false;
+					return {
+						bind: () => true,
+						step() {
+							if (read) return false;
+							read = true;
+							return true;
+						},
+						getAsObject: () => ({ enabled: 0 }),
+						free: () => true,
+					};
+				}
+				return rawSqlJs.prepare(sql, initialParams);
+			},
+		};
+
+		const headlessNoFts = await createHeadlessGraphDb({
+			database: noFtsSqlJs,
+			databaseLabel: "web:sqljs-no-fts5",
+		});
+		try {
+			await headlessNoFts.applyPresetBlueprint("knowledge");
+			await headlessNoFts.aiMemory.remember({
+				content: "Standard sql.js WASM operates cleanly without FTS5.",
+				kind: "semantic",
+				topicPath: ["web", "wasm"],
+			});
+			const recalled = await headlessNoFts.aiMemory.recall({
+				query: "without FTS5",
+			});
+			expect(recalled.hits.length).toBeGreaterThanOrEqual(1);
+			expect(recalled.hits[0]?.memory.content).toContain("without FTS5");
+		} finally {
+			await headlessNoFts.dispose();
+		}
+	});
 });

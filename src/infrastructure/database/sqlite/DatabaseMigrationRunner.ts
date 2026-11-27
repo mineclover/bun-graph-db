@@ -1,23 +1,36 @@
-import type { ISqliteDatabase } from './SqlitePort.js'
+import type { ISqliteDatabase } from "./SqlitePort.js";
 
 export interface DatabaseMigration {
-  version: number
-  name: string
-  up: (database: ISqliteDatabase) => void
+	version: number;
+	name: string;
+	up: (database: ISqliteDatabase) => void;
 }
 
 interface AppliedMigration {
-  version: number
-  name: string
+	version: number;
+	name: string;
 }
 
 interface TableColumn {
-  name: string
-  notnull: number
-  dflt_value: string | null
+	name: string;
+	notnull: number;
+	dflt_value: string | null;
 }
 
-const MIGRATION_LEDGER_TABLE = 'schema_migrations'
+const MIGRATION_LEDGER_TABLE = "schema_migrations";
+
+function supportsFts5(database: ISqliteDatabase): boolean {
+	try {
+		const row = database
+			.query<{ enabled: number }, []>(
+				"SELECT sqlite_compileoption_used('ENABLE_FTS5') AS enabled",
+			)
+			.get();
+		return Number(row?.enabled ?? 0) === 1;
+	} catch {
+		return false;
+	}
+}
 
 /**
  * Applies ordered SQLite migrations and records each committed version in the
@@ -25,73 +38,91 @@ const MIGRATION_LEDGER_TABLE = 'schema_migrations'
  * newer service version, or whose history no longer matches this binary, is
  * rejected rather than being started with an unknown schema.
  */
-export function applyDatabaseMigrations(database: ISqliteDatabase, migrations: readonly DatabaseMigration[]): void {
-  assertMigrationDefinitions(migrations)
+export function applyDatabaseMigrations(
+	database: ISqliteDatabase,
+	migrations: readonly DatabaseMigration[],
+): void {
+	assertMigrationDefinitions(migrations);
 
-  database.exec(`
+	database.exec(`
     CREATE TABLE IF NOT EXISTS ${MIGRATION_LEDGER_TABLE} (
       version INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
       applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
-  `)
+  `);
 
-  const appliedMigrations = database
-    .query<AppliedMigration, []>(`SELECT version, name FROM ${MIGRATION_LEDGER_TABLE} ORDER BY version ASC`)
-    .all()
-  const migrationsByVersion = new Map(migrations.map((migration) => [migration.version, migration]))
+	const appliedMigrations = database
+		.query<AppliedMigration, []>(
+			`SELECT version, name FROM ${MIGRATION_LEDGER_TABLE} ORDER BY version ASC`,
+		)
+		.all();
+	const migrationsByVersion = new Map(
+		migrations.map((migration) => [migration.version, migration]),
+	);
 
-  for (const appliedMigration of appliedMigrations) {
-    const definedMigration = migrationsByVersion.get(appliedMigration.version)
-    if (!definedMigration) {
-      throw new Error(
-        `Database contains migration ${appliedMigration.version} (${appliedMigration.name}) unknown to this service version`,
-      )
-    }
-    if (definedMigration.name !== appliedMigration.name) {
-      throw new Error(
-        `Database migration ${appliedMigration.version} name mismatch: expected '${definedMigration.name}', found '${appliedMigration.name}'`,
-      )
-    }
-  }
+	for (const appliedMigration of appliedMigrations) {
+		const definedMigration = migrationsByVersion.get(appliedMigration.version);
+		if (!definedMigration) {
+			throw new Error(
+				`Database contains migration ${appliedMigration.version} (${appliedMigration.name}) unknown to this service version`,
+			);
+		}
+		if (definedMigration.name !== appliedMigration.name) {
+			throw new Error(
+				`Database migration ${appliedMigration.version} name mismatch: expected '${definedMigration.name}', found '${appliedMigration.name}'`,
+			);
+		}
+	}
 
-  const appliedVersions = new Set(appliedMigrations.map((migration) => migration.version))
-  for (const migration of migrations) {
-    if (appliedVersions.has(migration.version)) {
-      continue
-    }
+	const appliedVersions = new Set(
+		appliedMigrations.map((migration) => migration.version),
+	);
+	for (const migration of migrations) {
+		if (appliedVersions.has(migration.version)) {
+			continue;
+		}
 
-    database.transaction(() => {
-      migration.up(database)
-      database
-        .query(`INSERT INTO ${MIGRATION_LEDGER_TABLE} (version, name) VALUES (?, ?)`)
-        .run(migration.version, migration.name)
-    })()
-  }
+		database.transaction(() => {
+			migration.up(database);
+			database
+				.query(
+					`INSERT INTO ${MIGRATION_LEDGER_TABLE} (version, name) VALUES (?, ?)`,
+				)
+				.run(migration.version, migration.name);
+		})();
+	}
 }
 
-export function createDatabaseMigrations(initialSchema: string): readonly DatabaseMigration[] {
-  return [
-    {
-      version: 1,
-      name: 'initial-schema',
-      up: (database) => database.exec(initialSchema),
-    },
-    {
-      version: 2,
-      name: 'nodes-metadata',
-      up: (database) => {
-        const nodeColumns = database.query<{ name: string }, []>('PRAGMA table_info(nodes)').all()
-        if (!nodeColumns.some((column) => column.name === 'metadata')) {
-          database.exec('ALTER TABLE nodes ADD COLUMN metadata TEXT')
-        }
-      },
-    },
-    {
-      version: 3,
-      name: 'node-search-fts',
-      up: (database) => {
-        database.exec(`
+export function createDatabaseMigrations(
+	initialSchema: string,
+): readonly DatabaseMigration[] {
+	return [
+		{
+			version: 1,
+			name: "initial-schema",
+			up: (database) => database.exec(initialSchema),
+		},
+		{
+			version: 2,
+			name: "nodes-metadata",
+			up: (database) => {
+				const nodeColumns = database
+					.query<{ name: string }, []>("PRAGMA table_info(nodes)")
+					.all();
+				if (!nodeColumns.some((column) => column.name === "metadata")) {
+					database.exec("ALTER TABLE nodes ADD COLUMN metadata TEXT");
+				}
+			},
+		},
+		{
+			version: 3,
+			name: "node-search-fts",
+			up: (database) => {
+				if (!supportsFts5(database)) {
+					return;
+				}
+				database.exec(`
           CREATE VIRTUAL TABLE IF NOT EXISTS node_search_fts USING fts5(
             node_id UNINDEXED,
             table_id UNINDEXED,
@@ -121,14 +152,14 @@ export function createDatabaseMigrations(initialSchema: string): readonly Databa
           SELECT n.rowid, n.id, n.table_id, trim(coalesce(n.title, '') || ' ' || coalesce(n.description, '') || ' ' || coalesce(n.content, '') || ' ' || coalesce(n.metadata, ''))
           FROM nodes n
           WHERE NOT EXISTS (SELECT 1 FROM node_search_fts fts WHERE fts.rowid = n.rowid);
-        `)
-      },
-    },
-    {
-      version: 4,
-      name: 'tabular-sync-configs-and-events',
-      up: (database) => {
-        database.exec(`
+        `);
+			},
+		},
+		{
+			version: 4,
+			name: "tabular-sync-configs-and-events",
+			up: (database) => {
+				database.exec(`
           CREATE TABLE IF NOT EXISTS tabular_sync_configs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             config_key TEXT NOT NULL UNIQUE,
@@ -146,14 +177,14 @@ export function createDatabaseMigrations(initialSchema: string): readonly Databa
             error_message TEXT,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
           );
-        `)
-      },
-    },
-    {
-      version: 5,
-      name: 'tabular-sync-jobs',
-      up: (database) => {
-        database.exec(`
+        `);
+			},
+		},
+		{
+			version: 5,
+			name: "tabular-sync-jobs",
+			up: (database) => {
+				database.exec(`
           CREATE TABLE IF NOT EXISTS tabular_sync_jobs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             table_identifier TEXT NOT NULL,
@@ -173,67 +204,71 @@ export function createDatabaseMigrations(initialSchema: string): readonly Databa
 
           CREATE INDEX IF NOT EXISTS idx_tabular_sync_jobs_due
           ON tabular_sync_jobs(status, next_attempt_at);
-        `)
-      },
-    },
-    {
-      version: 6,
-      name: 'node-search-page-indexes',
-      up: (database) => {
-        database.exec(`
+        `);
+			},
+		},
+		{
+			version: 6,
+			name: "node-search-page-indexes",
+			up: (database) => {
+				database.exec(`
           CREATE INDEX IF NOT EXISTS idx_node_attributes_attr_value_node
           ON node_attributes(attribute_id, value, node_id);
 
           CREATE INDEX IF NOT EXISTS idx_nodes_table_created_id
           ON nodes(table_id, created_at DESC, id);
-        `)
-      },
-    },
-    {
-      version: 7,
-      name: 'template-execution-timestamps-and-running-average',
-      up: (database) => {
-        normalizeTemplateExecutionTimestampContract(database)
-        installTemplateExecutionTriggers(database)
-      },
-    },
-    {
-      version: 8,
-      name: 'remove-redundant-unique-indexes',
-      up: (database) => {
-        // SQLite already maintains auto-indexes for the corresponding UNIQUE
-        // constraints, so these copies only amplify writes and consume space.
-        database.exec(`
+        `);
+			},
+		},
+		{
+			version: 7,
+			name: "template-execution-timestamps-and-running-average",
+			up: (database) => {
+				normalizeTemplateExecutionTimestampContract(database);
+				installTemplateExecutionTriggers(database);
+			},
+		},
+		{
+			version: 8,
+			name: "remove-redundant-unique-indexes",
+			up: (database) => {
+				// SQLite already maintains auto-indexes for the corresponding UNIQUE
+				// constraints, so these copies only amplify writes and consume space.
+				database.exec(`
           DROP INDEX IF EXISTS idx_nodes_table_content;
           DROP INDEX IF EXISTS idx_attribute_types_identifier;
           DROP INDEX IF EXISTS idx_attributes_table_identifier;
           DROP INDEX IF EXISTS idx_templates_identifier;
-        `)
-      },
-    },
-    {
-      version: 9,
-      name: 'skip-redundant-timestamp-writes',
-      up: (database) => {
-        for (const table of [
-          'tables',
-          'nodes',
-          'attribute_types',
-          'attributes',
-          'node_attributes',
-          'docs',
-          'templates',
-          'node_relations',
-          'relation_types',
-          'template_executions',
-        ]) {
-          const exists = database
-            .query<{ name: string }, [string]>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?")
-            .get(table)
-          if (!exists) continue
-          const columns = database.query<{ name: string }, []>(`PRAGMA table_info(${table})`).all()
-          if (!columns.some((column) => column.name === 'updated_at')) continue
-          database.exec(`
+        `);
+			},
+		},
+		{
+			version: 9,
+			name: "skip-redundant-timestamp-writes",
+			up: (database) => {
+				for (const table of [
+					"tables",
+					"nodes",
+					"attribute_types",
+					"attributes",
+					"node_attributes",
+					"docs",
+					"templates",
+					"node_relations",
+					"relation_types",
+					"template_executions",
+				]) {
+					const exists = database
+						.query<{ name: string }, [string]>(
+							"SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+						)
+						.get(table);
+					if (!exists) continue;
+					const columns = database
+						.query<{ name: string }, []>(`PRAGMA table_info(${table})`)
+						.all();
+					if (!columns.some((column) => column.name === "updated_at")) continue;
+					database.exec(`
             DROP TRIGGER IF EXISTS update_${table}_updated_at;
             CREATE TRIGGER update_${table}_updated_at
             AFTER UPDATE ON ${table}
@@ -242,66 +277,76 @@ export function createDatabaseMigrations(initialSchema: string): readonly Databa
             BEGIN
               UPDATE ${table} SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
             END;
-          `)
-        }
-      },
-    },
-    {
-      version: 10,
-      name: 'normalize-template-execution-timestamp-contract',
-      up: (database) => {
-        // Repairs databases which may have run an earlier development build of
-        // migration 7 where updated_at was nullable and had no default.
-        normalizeTemplateExecutionTimestampContract(database)
-        installTemplateExecutionTriggers(database)
-      },
-    },
-    {
-      version: 11,
-      name: 'node-attributes-typed-value-num',
-      up: (database) => {
-        installTypedNodeAttributeProjection(database)
-      },
-    },
-    {
-      version: 12,
-      name: 'fts-attributes-and-relation-traversal-indexes',
-      up: (database) => {
-        installAttributeFullTextAndRelationTraversalIndexes(database)
-      },
-    },
-    {
-      version: 13,
-      name: 'persistent-node-embeddings',
-      up: (database) => {
-        installPersistentNodeEmbeddings(database)
-      },
-    },
-    {
-      version: 14,
-      name: 'optimize-eav-indexes-and-write-triggers',
-      up: (database) => {
-        optimizeEavIndexesAndWriteTriggers(database)
-      },
-    },
-  ]
+          `);
+				}
+			},
+		},
+		{
+			version: 10,
+			name: "normalize-template-execution-timestamp-contract",
+			up: (database) => {
+				// Repairs databases which may have run an earlier development build of
+				// migration 7 where updated_at was nullable and had no default.
+				normalizeTemplateExecutionTimestampContract(database);
+				installTemplateExecutionTriggers(database);
+			},
+		},
+		{
+			version: 11,
+			name: "node-attributes-typed-value-num",
+			up: (database) => {
+				installTypedNodeAttributeProjection(database);
+			},
+		},
+		{
+			version: 12,
+			name: "fts-attributes-and-relation-traversal-indexes",
+			up: (database) => {
+				installAttributeFullTextAndRelationTraversalIndexes(database);
+			},
+		},
+		{
+			version: 13,
+			name: "persistent-node-embeddings",
+			up: (database) => {
+				installPersistentNodeEmbeddings(database);
+			},
+		},
+		{
+			version: 14,
+			name: "optimize-eav-indexes-and-write-triggers",
+			up: (database) => {
+				optimizeEavIndexesAndWriteTriggers(database);
+			},
+		},
+	];
 }
 
-function normalizeTemplateExecutionTimestampContract(database: ISqliteDatabase): void {
-  const tableExists = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'template_executions'")
-    .get()
-  if (!tableExists) return
+function normalizeTemplateExecutionTimestampContract(
+	database: ISqliteDatabase,
+): void {
+	const tableExists = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'template_executions'",
+		)
+		.get();
+	if (!tableExists) return;
 
-  const columns = database.query<TableColumn, []>('PRAGMA table_info(template_executions)').all()
-  const updatedAt = columns.find((column) => column.name === 'updated_at')
-  const normalizedDefault = updatedAt?.dflt_value?.replace(/[()'"\s]/g, '').toLowerCase()
-  if (updatedAt?.notnull === 1 && normalizedDefault === 'current_timestamp') return
+	const columns = database
+		.query<TableColumn, []>("PRAGMA table_info(template_executions)")
+		.all();
+	const updatedAt = columns.find((column) => column.name === "updated_at");
+	const normalizedDefault = updatedAt?.dflt_value
+		?.replace(/[()'"\s]/g, "")
+		.toLowerCase();
+	if (updatedAt?.notnull === 1 && normalizedDefault === "current_timestamp")
+		return;
 
-  const available = new Set(columns.map((column) => column.name))
-  const selectOr = (column: string, fallback: string): string => available.has(column) ? column : fallback
+	const available = new Set(columns.map((column) => column.name));
+	const selectOr = (column: string, fallback: string): string =>
+		available.has(column) ? column : fallback;
 
-  database.exec(`
+	database.exec(`
     DROP TRIGGER IF EXISTS update_template_executions_updated_at;
     DROP TRIGGER IF EXISTS update_template_usage;
     ALTER TABLE template_executions RENAME TO template_executions_legacy_timestamp;
@@ -329,20 +374,20 @@ function normalizeTemplateExecutionTimestampContract(database: ISqliteDatabase):
       template_id,
       executed_at,
       execution_time_ms,
-      ${selectOr('variables_used', 'NULL')},
-      ${selectOr('result_count', '0')},
-      ${selectOr('success', 'TRUE')},
-      ${selectOr('error_message', 'NULL')},
-      ${selectOr('user_context', 'NULL')},
-      ${updatedAt ? 'coalesce(updated_at, executed_at, CURRENT_TIMESTAMP)' : 'coalesce(executed_at, CURRENT_TIMESTAMP)'}
+      ${selectOr("variables_used", "NULL")},
+      ${selectOr("result_count", "0")},
+      ${selectOr("success", "TRUE")},
+      ${selectOr("error_message", "NULL")},
+      ${selectOr("user_context", "NULL")},
+      ${updatedAt ? "coalesce(updated_at, executed_at, CURRENT_TIMESTAMP)" : "coalesce(executed_at, CURRENT_TIMESTAMP)"}
     FROM template_executions_legacy_timestamp;
 
     DROP TABLE template_executions_legacy_timestamp;
-  `)
+  `);
 }
 
 function installTemplateExecutionTriggers(database: ISqliteDatabase): void {
-  database.exec(`
+	database.exec(`
     DROP TRIGGER IF EXISTS update_template_executions_updated_at;
     CREATE TRIGGER update_template_executions_updated_at
     AFTER UPDATE ON template_executions
@@ -365,11 +410,14 @@ function installTemplateExecutionTriggers(database: ISqliteDatabase): void {
           ((avg_execution_time_ms * usage_count) + NEW.execution_time_ms) / (usage_count + 1)
       WHERE id = NEW.template_id;
     END;
-  `)
+  `);
 }
 
-function typedNumericValueSql(valueExpr: string, attributeIdExpr: string): string {
-  return `(
+function typedNumericValueSql(
+	valueExpr: string,
+	attributeIdExpr: string,
+): string {
+	return `(
     SELECT CASE
       WHEN at.json_type IN ('number', 'integer')
         AND trim(${valueExpr}) != ''
@@ -394,41 +442,51 @@ function typedNumericValueSql(valueExpr: string, attributeIdExpr: string): strin
     FROM attributes a
     JOIN attribute_types at ON at.id = a.attribute_type_id
     WHERE a.id = ${attributeIdExpr}
-  )`
+  )`;
 }
 
 function installTypedNodeAttributeProjection(database: ISqliteDatabase): void {
-  const hasNodeAttributes = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'")
-    .get()
-  if (!hasNodeAttributes) return
+	const hasNodeAttributes = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'",
+		)
+		.get();
+	if (!hasNodeAttributes) return;
 
-  const nodeAttrColumns = database.query<TableColumn, []>('PRAGMA table_info(node_attributes)').all()
-  if (!nodeAttrColumns.some((column) => column.name === 'value_num')) {
-    database.exec('ALTER TABLE node_attributes ADD COLUMN value_num REAL')
-  }
+	const nodeAttrColumns = database
+		.query<TableColumn, []>("PRAGMA table_info(node_attributes)")
+		.all();
+	if (!nodeAttrColumns.some((column) => column.name === "value_num")) {
+		database.exec("ALTER TABLE node_attributes ADD COLUMN value_num REAL");
+	}
 
-  database.exec(`
+	database.exec(`
     CREATE INDEX IF NOT EXISTS idx_node_attributes_attr_num_node
     ON node_attributes(attribute_id, value_num, node_id)
     WHERE value_num IS NOT NULL;
-  `)
+  `);
 
-  const hasAttributeTypes = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attribute_types'")
-    .get()
-  const attrColumns = database.query<TableColumn, []>('PRAGMA table_info(attributes)').all()
-  const hasAttributeTypeId = attrColumns.some((column) => column.name === 'attribute_type_id')
-  if (!hasAttributeTypes || !hasAttributeTypeId) return
+	const hasAttributeTypes = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attribute_types'",
+		)
+		.get();
+	const attrColumns = database
+		.query<TableColumn, []>("PRAGMA table_info(attributes)")
+		.all();
+	const hasAttributeTypeId = attrColumns.some(
+		(column) => column.name === "attribute_type_id",
+	);
+	if (!hasAttributeTypes || !hasAttributeTypeId) return;
 
-  database.exec(`
+	database.exec(`
     DROP TRIGGER IF EXISTS trg_node_attributes_sync_value_num_insert;
     CREATE TRIGGER trg_node_attributes_sync_value_num_insert
     AFTER INSERT ON node_attributes
     FOR EACH ROW
     BEGIN
       UPDATE node_attributes
-      SET value_num = ${typedNumericValueSql('NEW.value', 'NEW.attribute_id')}
+      SET value_num = ${typedNumericValueSql("NEW.value", "NEW.attribute_id")}
       WHERE id = NEW.id;
     END;
 
@@ -438,7 +496,7 @@ function installTypedNodeAttributeProjection(database: ISqliteDatabase): void {
     FOR EACH ROW
     BEGIN
       UPDATE node_attributes
-      SET value_num = ${typedNumericValueSql('NEW.value', 'NEW.attribute_id')}
+      SET value_num = ${typedNumericValueSql("NEW.value", "NEW.attribute_id")}
       WHERE id = NEW.id;
     END;
 
@@ -448,25 +506,31 @@ function installTypedNodeAttributeProjection(database: ISqliteDatabase): void {
     FOR EACH ROW
     BEGIN
       UPDATE node_attributes
-      SET value_num = ${typedNumericValueSql('node_attributes.value', 'node_attributes.attribute_id')}
+      SET value_num = ${typedNumericValueSql("node_attributes.value", "node_attributes.attribute_id")}
       WHERE attribute_id IN (SELECT id FROM attributes WHERE attribute_type_id = NEW.id);
     END;
 
     UPDATE node_attributes
-    SET value_num = ${typedNumericValueSql('node_attributes.value', 'node_attributes.attribute_id')};
-  `)
+    SET value_num = ${typedNumericValueSql("node_attributes.value", "node_attributes.attribute_id")};
+  `);
 }
 
-function installAttributeFullTextAndRelationTraversalIndexes(database: ISqliteDatabase): void {
-  const hasNodes = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'nodes'")
-    .get()
-  const hasNodeAttributes = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'")
-    .get()
+function installAttributeFullTextAndRelationTraversalIndexes(
+	database: ISqliteDatabase,
+): void {
+	const hasNodes = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'nodes'",
+		)
+		.get();
+	const hasNodeAttributes = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'",
+		)
+		.get();
 
-  if (hasNodes && hasNodeAttributes) {
-    database.exec(`
+	if (hasNodes && hasNodeAttributes && supportsFts5(database)) {
+		database.exec(`
       CREATE VIRTUAL TABLE IF NOT EXISTS node_attribute_search_fts USING fts5(
         node_id UNINDEXED,
         table_id UNINDEXED,
@@ -521,14 +585,16 @@ function installAttributeFullTextAndRelationTraversalIndexes(database: ISqliteDa
       WHERE NOT EXISTS (
         SELECT 1 FROM node_attribute_search_fts fts WHERE fts.rowid = na.rowid
       );
-    `)
-  }
+    `);
+	}
 
-  const hasNodeRelations = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_relations'")
-    .get()
-  if (hasNodeRelations) {
-    database.exec(`
+	const hasNodeRelations = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_relations'",
+		)
+		.get();
+	if (hasNodeRelations) {
+		database.exec(`
       CREATE INDEX IF NOT EXISTS idx_node_relations_src_type_dst
       ON node_relations(source_node_id, relation_type_id, target_node_id)
       WHERE source_node_id IS NOT NULL;
@@ -536,12 +602,12 @@ function installAttributeFullTextAndRelationTraversalIndexes(database: ISqliteDa
       CREATE INDEX IF NOT EXISTS idx_node_relations_dst_type_src
       ON node_relations(target_node_id, relation_type_id, source_node_id)
       WHERE target_node_id IS NOT NULL;
-    `)
-  }
+    `);
+	}
 }
 
 function installPersistentNodeEmbeddings(database: ISqliteDatabase): void {
-  database.exec(`
+	database.exec(`
     CREATE TABLE IF NOT EXISTS node_embeddings (
       node_id INTEGER PRIMARY KEY,
       table_id INTEGER NOT NULL,
@@ -592,13 +658,15 @@ function installPersistentNodeEmbeddings(database: ISqliteDatabase): void {
       VALUES (old.table_id, 1)
       ON CONFLICT(table_id) DO UPDATE SET revision = revision + 1;
     END;
-  `)
+  `);
 
-  const hasNodes = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'nodes'")
-    .get()
-  if (hasNodes) {
-    database.exec(`
+	const hasNodes = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'nodes'",
+		)
+		.get();
+	if (hasNodes) {
+		database.exec(`
       DROP TRIGGER IF EXISTS nodes_embeddings_table_update;
       CREATE TRIGGER nodes_embeddings_table_update
       AFTER UPDATE OF table_id ON nodes
@@ -615,48 +683,64 @@ function installPersistentNodeEmbeddings(database: ISqliteDatabase): void {
       BEGIN
         DELETE FROM node_embeddings WHERE node_id = old.id;
       END;
-    `)
-  }
+    `);
+	}
 
-  const hasTables = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'tables'")
-    .get()
-  if (hasTables) {
-    database.exec(`
+	const hasTables = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'tables'",
+		)
+		.get();
+	if (hasTables) {
+		database.exec(`
       DROP TRIGGER IF EXISTS tables_embeddings_table_delete;
       CREATE TRIGGER tables_embeddings_table_delete
       AFTER DELETE ON tables
       BEGIN
         DELETE FROM node_embeddings WHERE table_id = old.id;
       END;
-    `)
-  }
+    `);
+	}
 }
 
 function optimizeEavIndexesAndWriteTriggers(database: ISqliteDatabase): void {
-  database.exec(`
+	database.exec(`
     DROP INDEX IF EXISTS idx_node_attributes_node;
     DROP INDEX IF EXISTS idx_node_attributes_attr;
-  `)
+  `);
 
-  const hasNodeAttributes = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'")
-    .get()
-  const hasAttributeTypes = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attribute_types'")
-    .get()
-  const hasAttributes = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attributes'")
-    .get()
+	const hasNodeAttributes = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'",
+		)
+		.get();
+	const hasAttributeTypes = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attribute_types'",
+		)
+		.get();
+	const hasAttributes = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attributes'",
+		)
+		.get();
 
-  if (hasNodeAttributes && hasAttributeTypes && hasAttributes) {
-    const attrColumns = database.query<TableColumn, []>('PRAGMA table_info(attributes)').all()
-    const nodeAttrColumns = database.query<TableColumn, []>('PRAGMA table_info(node_attributes)').all()
-    const hasAttributeTypeId = attrColumns.some((column) => column.name === 'attribute_type_id')
-    const hasValueNum = nodeAttrColumns.some((column) => column.name === 'value_num')
+	if (hasNodeAttributes && hasAttributeTypes && hasAttributes) {
+		const attrColumns = database
+			.query<TableColumn, []>("PRAGMA table_info(attributes)")
+			.all();
+		const nodeAttrColumns = database
+			.query<TableColumn, []>("PRAGMA table_info(node_attributes)")
+			.all();
+		const hasAttributeTypeId = attrColumns.some(
+			(column) => column.name === "attribute_type_id",
+		);
+		const hasValueNum = nodeAttrColumns.some(
+			(column) => column.name === "value_num",
+		);
 
-    if (hasAttributeTypeId && hasValueNum) {
-      const numericPredicate = `(
+		if (hasAttributeTypeId && hasValueNum) {
+			const numericPredicate = `(
         SELECT 1
         FROM attributes a
         JOIN attribute_types at ON at.id = a.attribute_type_id
@@ -665,9 +749,9 @@ function optimizeEavIndexesAndWriteTriggers(database: ISqliteDatabase): void {
             at.json_type IN ('number', 'integer', 'boolean', 'datetime')
             OR (at.json_type = 'string' AND at.format IN ('date', 'date-time', 'datetime'))
           )
-      )`
+      )`;
 
-      database.exec(`
+			database.exec(`
         DROP TRIGGER IF EXISTS trg_node_attributes_sync_value_num_insert;
         CREATE TRIGGER trg_node_attributes_sync_value_num_insert
         AFTER INSERT ON node_attributes
@@ -675,7 +759,7 @@ function optimizeEavIndexesAndWriteTriggers(database: ISqliteDatabase): void {
         WHEN EXISTS ${numericPredicate}
         BEGIN
           UPDATE node_attributes
-          SET value_num = ${typedNumericValueSql('NEW.value', 'NEW.attribute_id')}
+          SET value_num = ${typedNumericValueSql("NEW.value", "NEW.attribute_id")}
           WHERE id = NEW.id;
         END;
 
@@ -686,22 +770,26 @@ function optimizeEavIndexesAndWriteTriggers(database: ISqliteDatabase): void {
         WHEN OLD.value_num IS NOT NULL OR EXISTS ${numericPredicate}
         BEGIN
           UPDATE node_attributes
-          SET value_num = ${typedNumericValueSql('NEW.value', 'NEW.attribute_id')}
+          SET value_num = ${typedNumericValueSql("NEW.value", "NEW.attribute_id")}
           WHERE id = NEW.id;
         END;
-      `)
-    }
-  }
+      `);
+		}
+	}
 
-  const hasEmbeddings = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_embeddings'")
-    .get()
-  const hasEmbeddingRevisions = database
-    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_embedding_revisions'")
-    .get()
+	const hasEmbeddings = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_embeddings'",
+		)
+		.get();
+	const hasEmbeddingRevisions = database
+		.query<{ name: string }, []>(
+			"SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_embedding_revisions'",
+		)
+		.get();
 
-  if (hasEmbeddings && hasEmbeddingRevisions) {
-    database.exec(`
+	if (hasEmbeddings && hasEmbeddingRevisions) {
+		database.exec(`
       DROP TRIGGER IF EXISTS node_embeddings_rev_update;
       CREATE TRIGGER node_embeddings_rev_update
       AFTER UPDATE ON node_embeddings
@@ -721,22 +809,29 @@ function optimizeEavIndexesAndWriteTriggers(database: ISqliteDatabase): void {
         VALUES (old.table_id, 1)
         ON CONFLICT(table_id) DO UPDATE SET revision = revision + 1;
       END;
-    `)
-  }
+    `);
+	}
 }
 
-function assertMigrationDefinitions(migrations: readonly DatabaseMigration[]): void {
-  let previousVersion = 0
-  const names = new Set<string>()
+function assertMigrationDefinitions(
+	migrations: readonly DatabaseMigration[],
+): void {
+	let previousVersion = 0;
+	const names = new Set<string>();
 
-  for (const migration of migrations) {
-    if (!Number.isSafeInteger(migration.version) || migration.version <= previousVersion) {
-      throw new Error('Database migrations must use unique, strictly increasing positive integer versions')
-    }
-    if (!migration.name || names.has(migration.name)) {
-      throw new Error('Database migrations must use unique, non-empty names')
-    }
-    previousVersion = migration.version
-    names.add(migration.name)
-  }
+	for (const migration of migrations) {
+		if (
+			!Number.isSafeInteger(migration.version) ||
+			migration.version <= previousVersion
+		) {
+			throw new Error(
+				"Database migrations must use unique, strictly increasing positive integer versions",
+			);
+		}
+		if (!migration.name || names.has(migration.name)) {
+			throw new Error("Database migrations must use unique, non-empty names");
+		}
+		previousVersion = migration.version;
+		names.add(migration.name);
+	}
 }

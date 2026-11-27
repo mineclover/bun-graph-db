@@ -77,15 +77,17 @@ function createMemoryBackedIdbFactory(): IDBFactory {
 						onerror: null,
 						onabort: null,
 						objectStore: () => ({
-							put: (value: unknown, key: string) =>
+							put: (value: unknown, key?: string) =>
 								makeRequest(() => {
-									records.set(key, value);
+									const resolvedKey =
+										key ?? (value as { key?: string })?.key ?? "";
+									records.set(resolvedKey, value);
 									queueMicrotask(() =>
 										(tx.oncomplete as ((e: Event) => void) | null)?.(
 											{} as Event,
 										),
 									);
-									return key;
+									return resolvedKey;
 								}),
 							get: (key: string) =>
 								makeRequest(() => {

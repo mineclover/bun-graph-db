@@ -183,6 +183,21 @@ function main(): void {
 			`dist/core/index.js must have 0 external npm imports: ${coreGraph.externalImports.join(", ")}`,
 		);
 	}
+	const coreBundlePath = resolve(PROJECT_ROOT, "dist/core/index.js");
+	if (existsSync(coreBundlePath)) {
+		const coreCode = readFileSync(coreBundlePath, "utf8");
+		const unguardedProcessLines: number[] = [];
+		for (const [idx, line] of coreCode.split(/\r?\n/).entries()) {
+			if (/\bprocess\.env\b/.test(line) && !line.includes("typeof process")) {
+				unguardedProcessLines.push(idx + 1);
+			}
+		}
+		if (unguardedProcessLines.length > 0) {
+			failures.push(
+				`dist/core/index.js has unguarded process.env references at line(s): ${unguardedProcessLines.join(", ")}`,
+			);
+		}
+	}
 
 	const embeddedGraph = walkBundleGraph("dist/embedded/index.js");
 	if (embeddedGraph.filesWalked === 0) {

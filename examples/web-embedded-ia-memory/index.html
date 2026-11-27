@@ -110,51 +110,79 @@
     const show = (label, data) => {
       outputEl.textContent = `${label}\n${JSON.stringify(data, null, 2)}`;
     };
+    const showError = (action, err) => {
+      const message = err instanceof Error ? err.message : String(err);
+      statusEl.style.color = "#ff453a";
+      statusEl.textContent = `Error (${action}): ${message}`;
+      show(`Error during ${action}`, { error: message });
+    };
 
-    const snapshots = new IndexedDbSnapshotStorage({ databaseName: "bgdb-browser-demo" });
-    const SQL = await window.initSqlJs({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.12.0/dist/${file}`,
-    });
+    const runAction = (action, fn) => async () => {
+      try {
+        await fn();
+      } catch (err) {
+        showError(action, err);
+      }
+    };
 
-    let db = await createHeadlessGraphDb({
-      database: new SQL.Database(),
-      databaseLabel: "browser:knowledge",
-      snapshotStorage: snapshots,
-    });
-    await db.applyPresetBlueprint("knowledge");
+    let snapshots;
+    let SQL;
+    let db;
 
-    statusEl.textContent = "Ready — ./dist/core/index.js + sql.js WASM + IndexedDB initialized";
-    show("Preset Applied (knowledge)", await db.ia.getOutline({ tableIdentifier: "ia_topics" }));
+    try {
+      snapshots = new IndexedDbSnapshotStorage({ databaseName: "bgdb-browser-demo" });
+      SQL = await window.initSqlJs({
+        locateFile: (file) => `https://cdn.jsdelivr.net/npm/sql.js@1.12.0/dist/${file}`,
+      });
 
-    document.getElementById("btn-remember").addEventListener("click", async () => {
+      db = await createHeadlessGraphDb({
+        database: new SQL.Database(),
+        databaseLabel: "browser:knowledge",
+        snapshotStorage: snapshots,
+      });
+      await db.applyPresetBlueprint("knowledge");
+
+      statusEl.textContent = "Ready — ./dist/core/index.js + sql.js WASM + IndexedDB initialized";
+      show("Preset Applied (knowledge)", await db.ia.getOutline({ tableIdentifier: "ia_topics" }));
+    } catch (err) {
+      showError("initialization", err);
+    }
+
+    document.getElementById("btn-remember").addEventListener("click", runAction("remember", async () => {
       const content = document.getElementById("mem-content").value.trim();
       const kind = document.getElementById("mem-kind").value;
       const topicPath = document.getElementById("mem-topic").value.split("/").map((s) => s.trim()).filter(Boolean);
       const res = await db.aiMemory.remember({ content, kind, topicPath, importance: 0.9 });
-      show("Stored Memory", res);
-    });
+      statusEl.style.color = "";
+      statusEl.textContent = `Ready — Stored memory ${res.memory.id}`;
+      show(`Stored Memory (${res.memory.id})`, res);
+    }));
 
-    document.getElementById("btn-recall").addEventListener("click", async () => {
+    document.getElementById("btn-recall").addEventListener("click", runAction("recall", async () => {
       const query = document.getElementById("recall-query").value.trim();
       const res = await db.aiMemory.recall({ query });
-      show(`Recall Results ("${query}")`, res);
-    });
+      statusEl.style.color = "";
+      statusEl.textContent = `Ready — Recalled ${res.hits.length} hit(s) for "${query}"`;
+      show(`Recall Results ("${query}", hits: ${res.hits.length})`, res);
+    }));
 
-    document.getElementById("btn-outline").addEventListener("click", async () => {
+    document.getElementById("btn-outline").addEventListener("click", runAction("outline", async () => {
       show("IA Outline (ia_topics)", await db.ia.getOutline({ tableIdentifier: "ia_topics" }));
-    });
+    }));
 
-    document.getElementById("btn-audit").addEventListener("click", async () => {
+    document.getElementById("btn-audit").addEventListener("click", runAction("audit", async () => {
       show("IA Architecture Audit", await db.ia.auditArchitecture());
-    });
+    }));
 
-    document.getElementById("btn-save").addEventListener("click", async () => {
+    document.getElementById("btn-save").addEventListener("click", runAction("save-snapshot", async () => {
       const meta = await db.saveSnapshot("latest");
       const keys = await snapshots.listSnapshots();
-      show("Saved IndexedDB Snapshot", { saved: meta, availableSnapshots: keys });
-    });
+      statusEl.style.color = "";
+      statusEl.textContent = `Ready — Saved snapshot "${meta.key}" (${meta.bytes} bytes)`;
+      show(`Saved IndexedDB Snapshot (${keys.length} available)`, { saved: meta, availableSnapshots: keys });
+    }));
 
-    document.getElementById("btn-load").addEventListener("click", async () => {
+    document.getElementById("btn-load").addEventListener("click", runAction("restore-snapshot", async () => {
       const snap = await snapshots.getSnapshot("latest");
       if (!snap) {
         show("Restore Snapshot", { error: "No saved snapshot named 'latest' yet." });
@@ -167,8 +195,11 @@
         snapshotStorage: snapshots,
         runMigrations: false,
       });
-      show("Restored Snapshot from IndexedDB", await db.aiMemory.getStats());
-    });
+      const stats = await db.aiMemory.getStats();
+      statusEl.style.color = "";
+      statusEl.textContent = `Ready — Restored snapshot (${stats.total} memories)`;
+      show(`Restored Snapshot from IndexedDB (${stats.total} memories)`, stats);
+    }));
   </script>
 </body>
 </html>

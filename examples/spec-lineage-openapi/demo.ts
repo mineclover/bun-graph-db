@@ -83,7 +83,7 @@ try {
 	const graphResult = await node.executeGraphQL(
 		`
 		query SpecImpactAndGraphMetrics($nodeId: ID!, $tableId: ID!) {
-			getDependencyChain(input: { nodeId: $nodeId, direction: OUTGOING, maxDepth: 5 }) {
+			getDependencyChain(input: { nodeId: $nodeId, direction: BOTH, maxDepth: 5 }) {
 				nodes {
 					id
 					title
@@ -120,9 +120,9 @@ try {
 	}
 	const openApiJson = (await openApiRes.json()) as {
 		openapi?: string;
+		info?: { title?: string };
 		paths?: Record<string, unknown>;
 	};
-	const openApiEtag = openApiRes.headers.get("etag");
 
 	// Table-scoped MCP (/sub/:tableId/mcp) initialization + tools/list
 	const scopedMcpUrl = `http://localhost/sub/${encodeURIComponent(specComponentsTableId)}/mcp`;
@@ -194,8 +194,8 @@ try {
 		sccCount: graphData.stronglyConnectedComponents?.totalComponents ?? 0,
 		topPageRankNode: graphData.pageRank?.entries?.[0]?.node?.title ?? null,
 		openApiVersion: openApiJson.openapi ?? null,
+		openApiTitle: openApiJson.info?.title ?? null,
 		openApiPathsCount: Object.keys(openApiJson.paths ?? {}).length,
-		openApiEtag,
 		scopedMcpEndpoint: `/sub/${specComponentsTableId}/mcp`,
 		scopedMcpToolsCount: scopedTools.length,
 		hasOpenApiProjectionTool: scopedTools.some((name) =>
