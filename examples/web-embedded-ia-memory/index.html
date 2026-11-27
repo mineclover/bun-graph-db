@@ -3,131 +3,1043 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Role 3: Offline-First Browser Knowledge &amp; AI Memory (Zero-Dep Core)</title>
+  <meta name="color-scheme" content="light dark" />
+  <title>Bun Graph DB — Offline-First Table &amp; AI Memory Workspace</title>
   <style>
     :root {
-      color-scheme: dark light;
-      --bg: #0c111e;
-      --panel: #151c30;
-      --border: #273352;
-      --text: #e8eeff;
-      --muted: #93a3c7;
-      --accent: #5b8cff;
-      --ok: #30d158;
+      --bg-light: #f4f7fb;
+      --bg-dark: #0b1020;
+      --panel-light: #ffffff;
+      --panel-dark: #131a2e;
+      --panel-alt-light: #eef2f8;
+      --panel-alt-dark: #0f1628;
+      --border-light: #d2dbe9;
+      --border-dark: #26314f;
+      --text-light: #101828;
+      --text-dark: #e6ecff;
+      --muted-light: #475467;
+      --muted-dark: #93a3c7;
+      --brand-light: #2563eb;
+      --brand-dark: #5b8cff;
+      --brand-text-light: #ffffff;
+      --brand-text-dark: #ffffff;
+      --ok-light: #15803d;
+      --ok-dark: #30d158;
+      --err-light: #b91c1c;
+      --err-dark: #ff453a;
+      --track-light: #e2e8f0;
+      --track-dark: #161f35;
+      --thumb-light: #94a3b8;
+      --thumb-dark: #4b5c86;
+
+      --bg: var(--bg-light);
+      --panel: var(--panel-light);
+      --panel-alt: var(--panel-alt-light);
+      --border: var(--border-light);
+      --text: var(--text-light);
+      --muted: var(--muted-light);
+      --brand: var(--brand-light);
+      --brand-text: var(--brand-text-light);
+      --ok: var(--ok-light);
+      --err: var(--err-light);
+      --scrollbar-track: var(--track-light);
+      --scrollbar-thumb: var(--thumb-light);
+
+      @media (prefers-color-scheme: dark) {
+        --bg: var(--bg-dark);
+        --panel: var(--panel-dark);
+        --panel-alt: var(--panel-alt-dark);
+        --border: var(--border-dark);
+        --text: var(--text-dark);
+        --muted: var(--muted-dark);
+        --brand: var(--brand-dark);
+        --brand-text: var(--brand-text-dark);
+        --ok: var(--ok-dark);
+        --err: var(--err-dark);
+        --scrollbar-track: var(--track-dark);
+        --scrollbar-thumb: var(--thumb-dark);
+      }
+
+      @supports (color: light-dark(white, black)) {
+        --bg: light-dark(var(--bg-light), var(--bg-dark));
+        --panel: light-dark(var(--panel-light), var(--panel-dark));
+        --panel-alt: light-dark(var(--panel-alt-light), var(--panel-alt-dark));
+        --border: light-dark(var(--border-light), var(--border-dark));
+        --text: light-dark(var(--text-light), var(--text-dark));
+        --muted: light-dark(var(--muted-light), var(--muted-dark));
+        --brand: light-dark(var(--brand-light), var(--brand-dark));
+        --brand-text: light-dark(var(--brand-text-light), var(--brand-text-dark));
+        --ok: light-dark(var(--ok-light), var(--ok-dark));
+        --err: light-dark(var(--err-light), var(--err-dark));
+        --scrollbar-track: light-dark(var(--track-light), var(--track-dark));
+        --scrollbar-thumb: light-dark(var(--thumb-light), var(--thumb-dark));
+      }
+
+      color-scheme: light dark;
+      accent-color: var(--brand);
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding: 24px;
       line-height: 1.5;
     }
-    .container { max-width: 980px; margin: 0 auto; display: grid; gap: 16px; }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 9px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: var(--panel-alt);
+      color: var(--muted);
+    }
+    .pill.ok { border-color: var(--ok); color: var(--ok); }
+    .pill.err { border-color: var(--err); color: var(--err); }
+
+    .toolbar, .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input, select, textarea, button {
+      font: inherit;
+      color: inherit;
+      background: var(--panel-alt);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      min-height: 32px;
+    }
+
+    button {
+      background: var(--brand);
+      color: var(--brand-text);
+      border: 1px solid transparent;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    button.danger {
+      background: transparent;
+      color: var(--err);
+      border: 1px solid var(--border);
+      padding: 3px 8px;
+      min-height: 26px;
+      font-size: 12px;
+    }
+
+    .workspace {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 16px 20px 40px;
+      display: grid;
+      grid-template-columns: 270px minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 880px) {
+      .workspace {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    aside, .main-col {
+      display: grid;
+      gap: 14px;
+    }
+
     .card {
       background: var(--panel);
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 16px;
+      padding: 14px;
     }
-    h1 { margin: 0 0 6px; font-size: 20px; }
-    h2 { margin: 0 0 10px; font-size: 15px; color: var(--muted); }
-    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
-    input, select, textarea, button {
-      font: inherit;
-      color: inherit;
-      background: #0b101d;
+
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+      gap: 10px;
+    }
+    .kpi {
+      background: var(--panel);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 7px 10px;
+      border-radius: 8px;
+      padding: 10px 12px;
     }
-    textarea { width: 100%; min-height: 70px; }
-    button {
-      background: var(--accent);
-      border: none;
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    button.secondary { background: #26314f; }
-    pre {
+    .kpi .label { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+    .kpi .value { font-size: 20px; font-weight: 700; margin-top: 2px; }
+
+    .table-nav {
+      list-style: none;
       margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 6px;
+    }
+    .table-nav button {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      font-weight: 500;
+      text-align: left;
+    }
+    .table-nav button[aria-current="true"] {
+      border-color: var(--brand);
+      box-shadow: inset 3px 0 0 var(--brand);
+      font-weight: 700;
+    }
+
+    .outline-tree {
+      margin: 0;
+      padding-inline-start: 16px;
+      font-size: 13px;
+    }
+    .outline-tree li { margin: 4px 0; }
+    .outline-meta { color: var(--muted); font-size: 11px; margin-inline-start: 6px; }
+
+    .facets {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .facet-chip {
+      font-size: 12px;
+      padding: 3px 8px;
+      min-height: 26px;
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .facet-chip[aria-pressed="true"] {
+      background: var(--brand);
+      color: var(--brand-text);
+      border-color: transparent;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 8px;
+      align-items: end;
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 12px;
+    }
+    .field label { color: var(--muted); font-weight: 600; }
+    .field.full { grid-column: 1 / -1; }
+    textarea { width: 100%; min-height: 62px; resize: vertical; }
+
+    /* Responsive & Sortable Data Table */
+    .table-wrapper {
+      overflow: auto;
+      max-inline-size: 100%;
+      max-block-size: min(520px, 68vh);
+      container-type: inline-size;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+
+    table {
+      width: 100%;
+      min-inline-size: 620px;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+
+    caption {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      background: var(--panel-alt);
+      border-bottom: 1px solid var(--border);
+    }
+
+    thead {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 2;
+      background: var(--panel-alt);
+    }
+
+    th, td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+
+    thead th {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+      border-bottom: 2px solid var(--border);
+    }
+
+    tbody th {
+      position: sticky;
+      inset-inline-start: 0;
+      z-index: 1;
+      background: var(--panel);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .table-wrapper thead th:has(> button) {
+      padding: 0;
+    }
+
+    .table-wrapper thead th > button {
+      width: 100%;
+      min-height: 34px;
+      padding: 7px 10px;
+      background: transparent;
+      color: inherit;
+      border: none;
+      border-radius: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    .table-wrapper thead th > button:hover {
+      background: var(--panel);
+    }
+
+    .sort-icon::after {
+      content: "↕";
+      opacity: 0.45;
+      font-size: 11px;
+    }
+    th[aria-sort="ascending"] .sort-icon::after {
+      content: "▲";
+      opacity: 1;
+      color: var(--brand);
+    }
+    th[aria-sort="descending"] .sort-icon::after {
+      content: "▼";
+      opacity: 1;
+      color: var(--brand);
+    }
+
+    :is(button, input, select, textarea, .table-wrapper, thead th > button):focus-visible {
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+    }
+
+    tbody tr {
+      view-transition-name: match-element;
+    }
+
+    tbody tr:hover td,
+    tbody tr:hover th {
+      background: var(--panel-alt);
+    }
+
+    td.content-cell {
+      min-width: 220px;
+      max-width: 420px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      ::view-transition-group(*),
+      ::view-transition-old(*),
+      ::view-transition-new(*) {
+        animation: none;
+      }
+    }
+
+    @container (width < 600px) {
+      table {
+        min-inline-size: 0;
+      }
+      table, thead, tbody, tr, th, td {
+        display: block;
+      }
+      thead {
+        display: none;
+      }
+      tr {
+        margin-block-end: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      tbody th {
+        position: sticky;
+        inset-block-start: 0;
+        z-index: 2;
+        background: var(--panel-alt);
+        border-bottom: 1px solid var(--border);
+      }
+      td::before {
+        font-weight: 700;
+        color: var(--muted);
+        margin-inline-end: 6px;
+      }
+      td:nth-child(2)::before { content: var(--label-2, "Col 2") ": "; }
+      td:nth-child(3)::before { content: var(--label-3, "Col 3") ": "; }
+      td:nth-child(4)::before { content: var(--label-4, "Col 4") ": "; }
+      td:nth-child(5)::before { content: var(--label-5, "Col 5") ": "; }
+      td:nth-child(6)::before { content: var(--label-6, "Col 6") ": "; }
+      td:nth-child(7)::before { content: var(--label-7, "Col 7") ": "; }
+      td:nth-child(8)::before { content: var(--label-8, "Col 8") ": "; }
+    }
+
+    details {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+    }
+    summary {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    pre {
+      margin: 10px 0 0;
       padding: 12px;
-      background: #080c16;
+      background: var(--panel-alt);
       border: 1px solid var(--border);
       border-radius: 6px;
       overflow-x: auto;
       font-size: 12px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      max-height: 360px;
+      max-height: 280px;
     }
-    .status { font-size: 13px; color: var(--ok); font-weight: 600; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <h1>Bun Graph DB — Offline-First Browser Knowledge &amp; AI Memory</h1>
-      <div class="status" id="status">Loading zero-dep ./dist/core/index.js + sql.js WASM...</div>
+  <header>
+    <h1>
+      Bun Graph DB — Browser Table Workspace
+      <span class="pill ok" id="status">Loading ./dist/core/index.js + sql.js WASM...</span>
+    </h1>
+    <div class="toolbar">
+      <label class="visually-hidden" for="preset-select">IA Preset</label>
+      <select id="preset-select">
+        <option value="knowledge">knowledge</option>
+        <option value="product-spec">product-spec</option>
+        <option value="decision-log">decision-log</option>
+      </select>
+      <button type="button" class="secondary" id="btn-preset">Apply Preset</button>
+      <button type="button" id="btn-save">Save Snapshot</button>
+      <button type="button" class="secondary" id="btn-load">Restore Snapshot</button>
     </div>
+  </header>
 
-    <div class="card">
-      <h2>1. Store Structured AI Memory (Zero Embedding Required)</h2>
-      <div class="row">
-        <select id="mem-kind">
-          <option value="semantic">semantic</option>
-          <option value="episodic">episodic</option>
-          <option value="procedural">procedural</option>
-          <option value="working">working</option>
-        </select>
-        <input id="mem-topic" value="browser-demo/notes" placeholder="topicPath (slash-separated)" style="min-width: 240px;" />
-        <button type="button" id="btn-remember">Remember</button>
+  <div class="workspace">
+    <aside>
+      <div class="card">
+        <h2>Tables <button type="button" class="secondary" id="btn-refresh" style="min-height: 24px; padding: 2px 8px; font-size: 11px;">Refresh</button></h2>
+        <ul class="table-nav" id="table-list"></ul>
       </div>
-      <textarea id="mem-content">Offline web clients persist SQLite snapshots to IndexedDB after knowledge updates.</textarea>
-    </div>
 
-    <div class="card">
-      <h2>2. Query, Outline &amp; IndexedDB Snapshot Lifecycle</h2>
-      <div class="row">
-        <input id="recall-query" value="IndexedDB" placeholder="Recall query..." style="flex: 1; min-width: 220px;" />
-        <button type="button" id="btn-recall">5-Signal Recall</button>
-        <button type="button" class="secondary" id="btn-outline">IA Outline (ia_topics)</button>
-        <button type="button" class="secondary" id="btn-audit">Audit IA</button>
-        <button type="button" class="secondary" id="btn-save">Save Snapshot</button>
-        <button type="button" class="secondary" id="btn-load">Restore Snapshot</button>
+      <div class="card">
+        <h2>IA Hierarchy Outline</h2>
+        <div id="outline-container">Loading hierarchy...</div>
       </div>
-      <pre id="output">Initializing...</pre>
-    </div>
+    </aside>
+
+    <main class="main-col">
+      <div class="kpi-grid">
+        <div class="kpi"><div class="label">Tables</div><div class="value" id="kpi-tables">-</div></div>
+        <div class="kpi"><div class="label">Visible Rows</div><div class="value" id="kpi-rows">-</div></div>
+        <div class="kpi"><div class="label">AI Memories</div><div class="value" id="kpi-memories">-</div></div>
+        <div class="kpi"><div class="label">IA Audit</div><div class="value" id="kpi-audit">-</div></div>
+      </div>
+
+      <section class="card">
+        <h2 id="active-table-heading">Active Table</h2>
+        <form id="search-form" class="row" style="margin-bottom: 10px;">
+          <label class="visually-hidden" for="recall-query">Search or Recall Query</label>
+          <input id="recall-query" value="" placeholder="Search / 5-signal recall query..." style="flex: 1; min-width: 220px;" />
+          <button type="submit" id="btn-recall">Search / Recall</button>
+          <button type="button" class="secondary" id="btn-reset-search">Reset</button>
+        </form>
+
+        <div class="facets" id="facet-bar"></div>
+
+        <div id="sort-status" role="status" class="visually-hidden"></div>
+        <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Scrollable table region requires keyboard focusability -->
+        <section tabindex="0" aria-labelledby="data-table-caption" class="table-wrapper" style="padding: 0; border-radius: 8px;">
+          <table id="data-table">
+            <caption id="data-table-caption">Structured records in WASM SQLite</caption>
+            <thead><tr><th scope="col">ID</th><th scope="col">Content</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </section>
+      </section>
+
+      <section class="card">
+        <h2 id="form-heading">Add New Record (IME-Safe Enter to Submit)</h2>
+        <form id="record-form" class="form-grid">
+          <div id="dynamic-fields" style="display: contents;"></div>
+          <div class="field full">
+            <label for="mem-content">Content</label>
+            <textarea id="mem-content" required>웹 임베디드 브라우저에서 표 형태로 작성하고 IndexedDB 스냅샷으로 저장하는 기록입니다.</textarea>
+          </div>
+          <div class="row" style="grid-column: 1 / -1;">
+            <button type="submit" id="btn-remember">Add Record to Table</button>
+          </div>
+        </form>
+      </section>
+
+      <details>
+        <summary>Developer Raw SDK Response &amp; Audit Details</summary>
+        <pre id="output">Initializing...</pre>
+      </details>
+    </main>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/sql.js@1.12.0/dist/sql-wasm.js"></script>
   <script type="module">
-    import { createHeadlessGraphDb, IndexedDbSnapshotStorage } from "/dist/core/index.js";
+    import { createHeadlessGraphDb, extractColumnConfig, IndexedDbSnapshotStorage } from "/dist/core/index.js";
 
     const statusEl = document.getElementById("status");
     const outputEl = document.getElementById("output");
-    const show = (label, data) => {
-      outputEl.textContent = `${label}\n${JSON.stringify(data, null, 2)}`;
-    };
-    const showError = (action, err) => {
-      const message = err instanceof Error ? err.message : String(err);
-      statusEl.style.color = "#ff453a";
-      statusEl.textContent = `Error (${action}): ${message}`;
-      show(`Error during ${action}`, { error: message });
-    };
+    const tableListEl = document.getElementById("table-list");
+    const outlineEl = document.getElementById("outline-container");
+    const facetBarEl = document.getElementById("facet-bar");
+    const dataTableEl = document.getElementById("data-table");
+    const captionEl = document.getElementById("data-table-caption");
+    const theadRowEl = dataTableEl.tHead.rows[0];
+    const tbodyEl = dataTableEl.tBodies[0];
+    const sortStatusEl = document.getElementById("sort-status");
+    const dynamicFieldsEl = document.getElementById("dynamic-fields");
+    const recordFormEl = document.getElementById("record-form");
+    const contentTextareaEl = document.getElementById("mem-content");
+    const searchInputEl = document.getElementById("recall-query");
 
-    const runAction = (action, fn) => async () => {
-      try {
-        await fn();
-      } catch (err) {
-        showError(action, err);
-      }
-    };
+    const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 
     let snapshots;
     let SQL;
     let db;
+    let activeTable = "ai_memories";
+    let activeFacetFilter = "";
+    let cachedInspection = { totalTables: 0, tables: [] };
+    let cachedColumns = [];
+
+    function setStatus(text, kind = "ok") {
+      statusEl.className = `pill ${kind}`;
+      statusEl.textContent = text;
+    }
+
+    function showDebug(label, data) {
+      outputEl.textContent = `${label}\n${JSON.stringify(data, null, 2)}`;
+    }
+
+    function showError(action, err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setStatus(`Error (${action}): ${message}`, "err");
+      showDebug(`Error during ${action}`, { error: message });
+    }
+
+    function renderOutlineTree(roots) {
+      if (!roots || roots.length === 0) {
+        outlineEl.textContent = "No hierarchical tree in active preset.";
+        return;
+      }
+      const ul = document.createElement("ul");
+      ul.className = "outline-tree";
+      const appendNodes = (parentUl, nodes) => {
+        for (const node of nodes) {
+          const li = document.createElement("li");
+          const title = node.title || node.content || node.id;
+          li.textContent = title;
+          const meta = document.createElement("span");
+          meta.className = "outline-meta";
+          meta.textContent = `(${node.childCount ?? 0})`;
+          li.appendChild(meta);
+          if (Array.isArray(node.children) && node.children.length > 0) {
+            const childUl = document.createElement("ul");
+            childUl.className = "outline-tree";
+            appendNodes(childUl, node.children);
+            li.appendChild(childUl);
+          }
+          parentUl.appendChild(li);
+        }
+      };
+      appendNodes(ul, roots);
+      outlineEl.replaceChildren(ul);
+    }
+
+    function configureResponsiveLabels(columns) {
+      columns.forEach((col, idx) => {
+        if (idx > 0) {
+          dataTableEl.style.setProperty(`--label-${idx + 1}`, JSON.stringify(col.label));
+        }
+      });
+    }
+
+    function buildTableHeaders(columns) {
+      const cells = [];
+      for (const col of columns) {
+        const th = document.createElement("th");
+        th.scope = "col";
+        if (col.sortable) {
+          th.dataset.type = col.type === "number" ? "number" : "text";
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.setAttribute("commandfor", "data-table");
+          btn.setAttribute("command", "--sort");
+          const labelSpan = document.createElement("span");
+          labelSpan.textContent = col.label;
+          const iconSpan = document.createElement("span");
+          iconSpan.className = "sort-icon";
+          iconSpan.setAttribute("aria-hidden", "true");
+          btn.append(labelSpan, iconSpan);
+          if (!("commandForElement" in HTMLButtonElement.prototype)) {
+            btn.addEventListener("click", () => sortByButton(btn));
+          }
+          th.appendChild(btn);
+        } else {
+          th.textContent = col.label;
+        }
+        cells.push(th);
+      }
+      theadRowEl.replaceChildren(...cells);
+      configureResponsiveLabels(columns);
+    }
+
+    function sortByButton(button) {
+      const th = button.closest("th");
+      if (!th) return;
+      const direction = th.getAttribute("aria-sort") === "ascending" ? "descending" : "ascending";
+      for (const header of dataTableEl.tHead.rows[0].cells) {
+        header.removeAttribute("aria-sort");
+      }
+      th.setAttribute("aria-sort", direction);
+
+      const index = th.cellIndex;
+      const type = th.dataset.type || "text";
+      const factor = direction === "ascending" ? 1 : -1;
+      const rawValue = (row) => row.cells[index].dataset.value ?? row.cells[index].textContent.trim();
+
+      const orderedRows = [...tbodyEl.rows].sort((a, b) => {
+        const va = rawValue(a);
+        const vb = rawValue(b);
+        if (type === "number") {
+          const na = Number(va);
+          const nb = Number(vb);
+          if (!Number.isNaN(na) && !Number.isNaN(nb)) return factor * (na - nb);
+        }
+        return factor * collator.compare(va, vb);
+      });
+
+      const applyReorder = () => {
+        for (const row of orderedRows) {
+          if (typeof tbodyEl.moveBefore === "function") {
+            tbodyEl.moveBefore(row, null);
+          } else {
+            tbodyEl.appendChild(row);
+          }
+        }
+      };
+
+      if (typeof dataTableEl.startViewTransition === "function") {
+        dataTableEl.startViewTransition(applyReorder);
+      } else {
+        applyReorder();
+      }
+      sortStatusEl.textContent = `Sorted by ${button.textContent.trim()}, ${direction}, ${orderedRows.length} rows`;
+    }
+
+    dataTableEl.addEventListener("command", (event) => {
+      if (event.command === "--sort" && event.source) {
+        sortByButton(event.source);
+      }
+    });
+
+    function createRowCell(value, options = {}) {
+      const td = document.createElement("td");
+      if (options.className) td.className = options.className;
+      if (options.rawValue !== undefined && options.rawValue !== null) {
+        td.dataset.value = String(options.rawValue);
+      }
+      if (options.pill) {
+        const span = document.createElement("span");
+        span.className = "pill";
+        span.textContent = String(value ?? "");
+        td.appendChild(span);
+      } else {
+        td.textContent = value === undefined || value === null || value === "" ? "-" : String(value);
+      }
+      return td;
+    }
+
+    function createDeleteCell(nodeId, onDeleted) {
+      const td = document.createElement("td");
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "danger";
+      btn.textContent = "Delete";
+      btn.addEventListener("click", async () => {
+        try {
+          await db.deleteNode(nodeId);
+          setStatus(`Ready — Deleted node #${nodeId}`);
+          await onDeleted();
+        } catch (err) {
+          showError("delete", err);
+        }
+      });
+      td.appendChild(btn);
+      return td;
+    }
+
+    async function renderAddForm() {
+      dynamicFieldsEl.replaceChildren();
+      const heading = document.getElementById("form-heading");
+      if (activeTable === "ai_memories") {
+        heading.textContent = "Record AI Memory (IME-Safe Enter to Submit)";
+        dynamicFieldsEl.innerHTML = `
+          <div class="field">
+            <label for="mem-kind">Kind</label>
+            <select id="mem-kind" name="kind">
+              <option value="semantic">semantic</option>
+              <option value="episodic">episodic</option>
+              <option value="procedural">procedural</option>
+              <option value="working">working</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="mem-topic">Topic Path</label>
+            <input id="mem-topic" name="topicPath" value="workspace/notes" placeholder="e.g. architecture/storage" />
+          </div>
+          <div class="field">
+            <label for="mem-importance">Importance (0.1–1.0)</label>
+            <input id="mem-importance" name="importance" type="number" min="0.1" max="1" step="0.05" value="0.9" />
+          </div>
+        `;
+        return;
+      }
+
+      heading.textContent = `Insert Row into ${activeTable} (IME-Safe Enter to Submit)`;
+      const titleField = document.createElement("div");
+      titleField.className = "field";
+      const titleLabel = document.createElement("label");
+      titleLabel.htmlFor = "node-title";
+      titleLabel.textContent = "Title";
+      const titleInput = document.createElement("input");
+      titleInput.id = "node-title";
+      titleInput.name = "__title";
+      titleInput.placeholder = "Row title";
+      titleField.append(titleLabel, titleInput);
+      dynamicFieldsEl.appendChild(titleField);
+
+      for (const col of cachedColumns) {
+        const field = document.createElement("div");
+        field.className = "field";
+        const label = document.createElement("label");
+        const inputId = `col-${col.identifier}`;
+        label.htmlFor = inputId;
+        label.textContent = col.isRequired ? `${col.name} *` : col.name;
+
+        let control;
+        if (col.enumValues && col.enumValues.length > 0) {
+          control = document.createElement("select");
+          for (const val of col.enumValues) {
+            const opt = document.createElement("option");
+            opt.value = val;
+            opt.textContent = val;
+            control.appendChild(opt);
+          }
+          if (col.defaultValue !== undefined) control.value = String(col.defaultValue);
+        } else {
+          control = document.createElement("input");
+          control.type = col.isNumeric ? "number" : "text";
+          if (col.defaultValue !== undefined) control.value = String(col.defaultValue);
+          control.placeholder = col.identifier;
+        }
+        control.id = inputId;
+        control.dataset.attrKey = col.identifier;
+        control.dataset.numeric = col.isNumeric ? "1" : "0";
+        if (col.isRequired) control.required = true;
+
+        field.append(label, control);
+        dynamicFieldsEl.appendChild(field);
+      }
+    }
+
+    async function loadTableColumns(tableId) {
+      const attrPage = await db.repositories.attributes.findByTableId(tableId, { limit: 100 });
+      const attrTypesPage = await db.repositories.attributeTypes.findAll({ limit: 100 });
+      const typeMap = new Map(attrTypesPage.nodes.map((t) => [String(t.getId()), t.getIdentifier()]));
+      return attrPage.nodes.map((attr) => {
+        const config = extractColumnConfig(attr.getParsedMetadata?.() ?? null);
+        const typeId = String(attr.getAttributeTypeId());
+        const dataType = typeMap.get(typeId) ?? "string";
+        return {
+          identifier: attr.getIdentifier(),
+          name: attr.getName(),
+          isRequired: attr.getIsRequired(),
+          enumValues: config?.enumValues,
+          defaultValue: config?.defaultValue,
+          isNumeric: dataType === "number" || dataType === "integer",
+        };
+      });
+    }
+
+    async function refreshSidebarAndKpis() {
+      const memStats = await db.aiMemory.getStats();
+      const inspection = await db.ia.inspectArchitecture();
+      const audit = await db.ia.auditArchitecture();
+      cachedInspection = inspection;
+
+      document.getElementById("kpi-tables").textContent = String(inspection.totalTables);
+      document.getElementById("kpi-memories").textContent = String(memStats.total);
+      document.getElementById("kpi-audit").textContent = audit.healthy ? "Healthy" : `${audit.errorCount} Issues`;
+
+      const buttons = [];
+      const sortedTables = [...inspection.tables].sort((a, b) => {
+        if (a.identifier === "ai_memories") return -1;
+        if (b.identifier === "ai_memories") return 1;
+        return a.identifier.localeCompare(b.identifier);
+      });
+
+      if (!sortedTables.some((t) => t.identifier === activeTable)) {
+        activeTable = sortedTables[0]?.identifier ?? "ai_memories";
+      }
+
+      for (const tbl of sortedTables) {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.setAttribute("aria-current", tbl.identifier === activeTable ? "true" : "false");
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = tbl.identifier;
+        const countPill = document.createElement("span");
+        countPill.className = "pill";
+        countPill.textContent = String(tbl.nodeCount);
+        btn.append(nameSpan, countPill);
+        btn.addEventListener("click", async () => {
+          activeTable = tbl.identifier;
+          activeFacetFilter = "";
+          searchInputEl.value = "";
+          await refreshWorkspace();
+        });
+        li.appendChild(btn);
+        buttons.push(li);
+      }
+      tableListEl.replaceChildren(...buttons);
+
+      const outlineTable = sortedTables.find((t) =>
+        t.identifier === "ia_topics" || t.identifier === "spec_domains" || t.identifier === "adr_areas",
+      );
+      if (outlineTable) {
+        const outline = await db.ia.getOutline({ tableIdentifier: outlineTable.identifier });
+        renderOutlineTree(outline.roots);
+      } else {
+        outlineEl.textContent = "No hierarchy root table in active preset.";
+      }
+    }
+
+    async function refreshActiveTable() {
+      const tblSummary = cachedInspection.tables.find((t) => t.identifier === activeTable);
+      cachedColumns = tblSummary && activeTable !== "ai_memories" ? await loadTableColumns(tblSummary.id) : [];
+
+      document.getElementById("active-table-heading").textContent = `Table: ${activeTable}`;
+      captionEl.textContent = `${activeTable} — live records in browser WASM SQLite`;
+
+      const query = searchInputEl.value.trim();
+
+      if (activeTable === "ai_memories") {
+        facetBarEl.replaceChildren();
+        const recalled = await db.aiMemory.recall({ query: query || undefined, limit: 100 });
+        const columns = [
+          { label: "ID", sortable: true, type: "number" },
+          { label: "Kind", sortable: true, type: "text" },
+          { label: "Content", sortable: true, type: "text" },
+          { label: "Topic Path", sortable: true, type: "text" },
+          { label: "Importance", sortable: true, type: "number" },
+          { label: "Score", sortable: true, type: "number" },
+          { label: "Recorded", sortable: true, type: "text" },
+          { label: "Action", sortable: false },
+        ];
+        buildTableHeaders(columns);
+
+        const rows = recalled.hits.map((hit) => {
+          const m = hit.memory;
+          const tr = document.createElement("tr");
+          const th = document.createElement("th");
+          th.scope = "row";
+          th.dataset.value = m.id;
+          th.textContent = `#${m.id}`;
+          tr.append(
+            th,
+            createRowCell(m.kind, { pill: true }),
+            createRowCell(m.content, { className: "content-cell" }),
+            createRowCell(Array.isArray(m.topicPath) ? m.topicPath.join(" / ") : ""),
+            createRowCell(Number(m.importance ?? 0).toFixed(2), { rawValue: m.importance ?? 0 }),
+            createRowCell(Number(hit.score ?? 0).toFixed(3), { rawValue: hit.score ?? 0 }),
+            createRowCell(m.recordedAt ? m.recordedAt.slice(0, 19).replace("T", " ") : "-", { rawValue: m.recordedAt ?? "" }),
+            createDeleteCell(m.id, refreshWorkspace),
+          );
+          return tr;
+        });
+
+        tbodyEl.replaceChildren(...rows);
+        document.getElementById("kpi-rows").textContent = String(rows.length);
+        showDebug(`Active Table: ${activeTable} (${rows.length} rows)`, recalled);
+      } else {
+        const structured = await db.ia.queryStructured({
+          tableIdentifier: activeTable,
+          textQuery: query || undefined,
+          filterQuery: activeFacetFilter || undefined,
+          facets: "auto",
+          limit: 100,
+        });
+
+        // Render clickable facet filter chips
+        const chips = [];
+        for (const [attrKey, buckets] of Object.entries(structured.facets ?? {})) {
+          for (const bucket of buckets.slice(0, 6)) {
+            const expr = `${attrKey} = ${bucket.value}`;
+            const chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "facet-chip";
+            chip.setAttribute("aria-pressed", activeFacetFilter === expr ? "true" : "false");
+            chip.textContent = `${attrKey}: ${bucket.value} (${bucket.count})`;
+            chip.addEventListener("click", async () => {
+              activeFacetFilter = activeFacetFilter === expr ? "" : expr;
+              await refreshActiveTable();
+            });
+            chips.push(chip);
+          }
+        }
+        facetBarEl.replaceChildren(...chips);
+
+        const attrCols = cachedColumns.map((col) => ({
+          key: col.identifier,
+          label: col.name,
+          sortable: true,
+          type: col.isNumeric ? "number" : "text",
+        }));
+
+        const columns = [
+          { label: "ID", sortable: true, type: "number" },
+          { label: "Title", sortable: true, type: "text" },
+          { label: "Content", sortable: true, type: "text" },
+          ...attrCols,
+          { label: "Action", sortable: false },
+        ];
+        buildTableHeaders(columns);
+
+        const rows = structured.hits.map((hit) => {
+          const n = hit.node;
+          const attrs = n.attributes ?? {};
+          const tr = document.createElement("tr");
+          const th = document.createElement("th");
+          th.scope = "row";
+          th.dataset.value = n.id;
+          th.textContent = `#${n.id}`;
+          tr.append(
+            th,
+            createRowCell(n.title ?? n.id),
+            createRowCell(n.content, { className: "content-cell" }),
+          );
+          for (const col of attrCols) {
+            const val = attrs[col.key];
+            tr.appendChild(createRowCell(val, { rawValue: val }));
+          }
+          tr.appendChild(createDeleteCell(n.id, refreshWorkspace));
+          return tr;
+        });
+
+        tbodyEl.replaceChildren(...rows);
+        document.getElementById("kpi-rows").textContent = String(rows.length);
+        showDebug(`Active Table: ${activeTable} (${rows.length} rows)`, structured);
+      }
+
+      await renderAddForm();
+    }
+
+    async function refreshWorkspace() {
+      await refreshSidebarAndKpis();
+      await refreshActiveTable();
+    }
 
     try {
       snapshots = new IndexedDbSnapshotStorage({ databaseName: "bgdb-browser-demo" });
@@ -141,65 +1053,147 @@
         snapshotStorage: snapshots,
       });
       await db.applyPresetBlueprint("knowledge");
+      await db.aiMemory.remember({
+        content: "Offline web clients persist SQLite snapshots to IndexedDB after knowledge updates.",
+        kind: "semantic",
+        topicPath: ["web-embedded", "indexeddb"],
+        importance: 0.9,
+      });
 
-      statusEl.textContent = "Ready — ./dist/core/index.js + sql.js WASM + IndexedDB initialized";
-      show("Preset Applied (knowledge)", await db.ia.getOutline({ tableIdentifier: "ia_topics" }));
+      await refreshWorkspace();
+      setStatus("Ready — ./dist/core/index.js + sql.js WASM + IndexedDB initialized");
     } catch (err) {
       showError("initialization", err);
     }
 
-    document.getElementById("btn-remember").addEventListener("click", runAction("remember", async () => {
-      const content = document.getElementById("mem-content").value.trim();
-      const kind = document.getElementById("mem-kind").value;
-      const topicPath = document.getElementById("mem-topic").value.split("/").map((s) => s.trim()).filter(Boolean);
-      const res = await db.aiMemory.remember({ content, kind, topicPath, importance: 0.9 });
-      statusEl.style.color = "";
-      statusEl.textContent = `Ready — Stored memory ${res.memory.id}`;
-      show(`Stored Memory (${res.memory.id})`, res);
-    }));
-
-    document.getElementById("btn-recall").addEventListener("click", runAction("recall", async () => {
-      const query = document.getElementById("recall-query").value.trim();
-      const res = await db.aiMemory.recall({ query });
-      statusEl.style.color = "";
-      statusEl.textContent = `Ready — Recalled ${res.hits.length} hit(s) for "${query}"`;
-      show(`Recall Results ("${query}", hits: ${res.hits.length})`, res);
-    }));
-
-    document.getElementById("btn-outline").addEventListener("click", runAction("outline", async () => {
-      show("IA Outline (ia_topics)", await db.ia.getOutline({ tableIdentifier: "ia_topics" }));
-    }));
-
-    document.getElementById("btn-audit").addEventListener("click", runAction("audit", async () => {
-      show("IA Architecture Audit", await db.ia.auditArchitecture());
-    }));
-
-    document.getElementById("btn-save").addEventListener("click", runAction("save-snapshot", async () => {
-      const meta = await db.saveSnapshot("latest");
-      const keys = await snapshots.listSnapshots();
-      statusEl.style.color = "";
-      statusEl.textContent = `Ready — Saved snapshot "${meta.key}" (${meta.bytes} bytes)`;
-      show(`Saved IndexedDB Snapshot (${keys.length} available)`, { saved: meta, availableSnapshots: keys });
-    }));
-
-    document.getElementById("btn-load").addEventListener("click", runAction("restore-snapshot", async () => {
-      const snap = await snapshots.getSnapshot("latest");
-      if (!snap) {
-        show("Restore Snapshot", { error: "No saved snapshot named 'latest' yet." });
-        return;
+    document.getElementById("search-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        await refreshActiveTable();
+        setStatus(`Ready — Queried ${activeTable} ("${searchInputEl.value.trim()}")`);
+      } catch (err) {
+        showError("search", err);
       }
-      await db.dispose();
-      db = await createHeadlessGraphDb({
-        database: new SQL.Database(snap.data),
-        databaseLabel: "browser:knowledge-restored",
-        snapshotStorage: snapshots,
-        runMigrations: false,
-      });
-      const stats = await db.aiMemory.getStats();
-      statusEl.style.color = "";
-      statusEl.textContent = `Ready — Restored snapshot (${stats.total} memories)`;
-      show(`Restored Snapshot from IndexedDB (${stats.total} memories)`, stats);
-    }));
+    });
+
+    document.getElementById("btn-reset-search").addEventListener("click", async () => {
+      searchInputEl.value = "";
+      activeFacetFilter = "";
+      try {
+        await refreshActiveTable();
+        setStatus(`Ready — Showing all rows in ${activeTable}`);
+      } catch (err) {
+        showError("reset", err);
+      }
+    });
+
+    // IME-safe Enter-to-submit on record content textarea (Shift+Enter inserts newline)
+    contentTextareaEl.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        if (event.isComposing || event.keyCode === 229) {
+          return;
+        }
+        recordFormEl.requestSubmit();
+      }
+    });
+
+    recordFormEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      try {
+        const content = contentTextareaEl.value.trim();
+        if (!content) return;
+
+        if (activeTable === "ai_memories") {
+          const kind = document.getElementById("mem-kind").value;
+          const topicPath = document.getElementById("mem-topic").value.split("/").map((s) => s.trim()).filter(Boolean);
+          const importance = Number(document.getElementById("mem-importance").value || "0.9");
+          const res = await db.aiMemory.remember({ content, kind, topicPath, importance });
+          await refreshWorkspace();
+          setStatus(`Ready — Stored memory #${res.memory.id}`);
+          showDebug(`Stored Memory (#${res.memory.id})`, res);
+        } else {
+          const tblSummary = cachedInspection.tables.find((t) => t.identifier === activeTable);
+          if (!tblSummary) throw new Error(`Unknown table: ${activeTable}`);
+          const title = document.getElementById("node-title")?.value.trim() || undefined;
+          const attributes = {};
+          for (const el of dynamicFieldsEl.querySelectorAll("[data-attr-key]")) {
+            const key = el.dataset.attrKey;
+            const raw = el.value.trim();
+            if (raw !== "") {
+              attributes[key] = el.dataset.numeric === "1" ? Number(raw) : raw;
+            }
+          }
+          const created = await db.createNode({
+            tableId: tblSummary.id,
+            title,
+            content,
+            attributes,
+          });
+          await refreshWorkspace();
+          setStatus(`Ready — Inserted row #${created.node.id} into ${activeTable}`);
+          showDebug(`Created Node (#${created.node.id})`, created);
+        }
+      } catch (err) {
+        showError("remember", err);
+      }
+    });
+
+    document.getElementById("btn-preset").addEventListener("click", async () => {
+      try {
+        const preset = document.getElementById("preset-select").value;
+        await db.applyPresetBlueprint(preset);
+        activeFacetFilter = "";
+        await refreshWorkspace();
+        setStatus(`Ready — Applied '${preset}' blueprint`);
+      } catch (err) {
+        showError("apply-preset", err);
+      }
+    });
+
+    document.getElementById("btn-refresh").addEventListener("click", async () => {
+      try {
+        await refreshWorkspace();
+        setStatus("Ready — Workspace refreshed");
+      } catch (err) {
+        showError("refresh", err);
+      }
+    });
+
+    document.getElementById("btn-save").addEventListener("click", async () => {
+      try {
+        const meta = await db.saveSnapshot("latest");
+        const keys = await snapshots.listSnapshots();
+        setStatus(`Ready — Saved snapshot "${meta.key}" (${meta.bytes} bytes)`);
+        showDebug(`Saved IndexedDB Snapshot (${keys.length} available)`, { saved: meta, availableSnapshots: keys });
+      } catch (err) {
+        showError("save-snapshot", err);
+      }
+    });
+
+    document.getElementById("btn-load").addEventListener("click", async () => {
+      try {
+        const snap = await snapshots.getSnapshot("latest");
+        if (!snap) {
+          showDebug("Restore Snapshot", { error: "No saved snapshot named 'latest' yet." });
+          setStatus("No saved snapshot named 'latest' yet.", "err");
+          return;
+        }
+        await db.dispose();
+        db = await createHeadlessGraphDb({
+          database: new SQL.Database(snap.data),
+          databaseLabel: "browser:knowledge-restored",
+          snapshotStorage: snapshots,
+          runMigrations: false,
+        });
+        await refreshWorkspace();
+        const stats = await db.aiMemory.getStats();
+        setStatus(`Ready — Restored snapshot (${stats.total} memories)`);
+        showDebug(`Restored Snapshot from IndexedDB (${stats.total} memories)`, stats);
+      } catch (err) {
+        showError("restore-snapshot", err);
+      }
+    });
   </script>
 </body>
 </html>
