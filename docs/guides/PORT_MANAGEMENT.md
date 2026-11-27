@@ -81,7 +81,7 @@ import { PortManager } from '@/core/config/PortConfiguration';
 const config = PortManager.generatePortConfig(4000, 'development');
 
 // Get WebSocket URL from HTTP URL
-const wsUrl = PortManager.getWebSocketUrl('http://localhost:4000');
+const wsUrl = PortManager.getWebSocketUrl('http://localhost:4141');
 
 // Detect environment from port
 const env = PortManager.getEnvironmentFromPort(4000); // 'development'
@@ -100,16 +100,16 @@ const env = PortManager.getEnvironmentFromPort(4000); // 'development'
 ### Development Setup
 ```bash
 # Default development port
-bun run dev  # Uses port 4000
+pnpm run dev  # Uses configured default port (4141)
 
 # Custom development port
-bun index.ts --port 4050
+pnpm start -- --port 4050
 ```
 
 ### Test Environment
 ```bash
 # Test with specific port
-NODE_ENV=test bun index.ts --port 5100
+NODE_ENV=test pnpm start -- --port 5100
 ```
 
 ### Production Deployment

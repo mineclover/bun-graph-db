@@ -54,11 +54,13 @@ input CreateAttributeInput {
   description: String
   attributeTypeId: ID!
   tableId: ID!
+  isRequired: Boolean
 }
 
 input UpdateAttributeInput {
   name: String
   description: String
+  isRequired: Boolean
 }
 
 # Filter for attribute types

@@ -1,487 +1,86 @@
-# 🚀 관계형 데이터 저장소
+# bun-graph-db 프로젝트 가이드
 
-**프로덕션 준비 완료 그래프 기반 데이터 시스템**으로 AI 통합 기능을 포함합니다.
+**Node.js 26 LTS (`node:sqlite`)** 및 **Cloudflare Durable Objects SQLite** 포터블 실행을 지원하는 **그래프 기반 관계형 데이터 저장소**로, GraphQL·REST·MCP(`2026-07-28` + `2025-11-25` LTS) 통합 인터페이스를 제공합니다.
 
-> 💡 **용어 설명**: [GLOSSARY.md](GLOSSARY.md)에서 모든 용어를 자세히 확인하세요.
-
-[![System Health](https://img.shields.io/badge/System%20Health-✅%20Verified-brightgreen)](#system-status)
-[![Test Coverage](https://img.shields.io/badge/Test%20Coverage-100%25-brightgreen)](#testing)
-[![AI Integration](https://img.shields.io/badge/AI%20Integration-✅%20Complete-brightgreen)](#ai-architecture)
+> 💡 **용어 설명**: [GLOSSARY.md](GLOSSARY.md)에서 주요 도메인 용어를 확인할 수 있습니다.
 
 ## ⚡ 빠른 시작
 
-### 설치 & 설정
 ```bash
 # 의존성 설치
-bun install
+pnpm install
 
-# 저장소 스키마 초기화
-bun run scripts/init-database.ts
+# 데이터베이스 스키마 초기화
+node --import tsx scripts/init-database.ts
 
-# 서버 시작
-bun run dev
+# 개발 서버 시작 (기본 포트: 4141)
+pnpm run dev
 ```
 
-**서버 엔드포인트:**
-- 쿼리 인터페이스: `http://localhost:4141/graphql`
-- 쿼리 탐색기: `http://localhost:4141/graphql` (브라우저)
-- AI 전역 서버: `http://localhost:4141/mcp`
-- 테이블별 AI 서버: `http://localhost:4141/sub/:tableId/mcp`
-
-### 첫 단계
-1. **설정 확인**: 헬스 엔드포인트로 서버 작동 확인
-2. **스키마 탐색**: 브라우저에서 쿼리 탐색기 열기
-3. **첫 테이블 만들기**: 쿼리 인터페이스 변경 작업으로 데이터 모델링
-4. **템플릿 시도**: 매개변수화된 쿼리 실행
-5. **AI 통합 설정**: Claude AI 연동 (선택사항)
+**주요 엔드포인트 (기본 포트 `4141`)**:
+- **GraphQL API / 탐색기**: `http://localhost:4141/graphql`
+- **REST API**: `http://localhost:4141/api/*` (OpenAPI 3.2: `/api/openapi`)
+- **전역 MCP 서버 (`2026-07-28` + `2025-11-25` LTS)**: `http://localhost:4141/mcp`
+- **테이블 격리 MCP 서버**: `http://localhost:4141/sub/:tableId/mcp`
+- **헬스체크**: `http://localhost:4141/health`
 
 ---
 
-## 🎯 핵심 개념
+## 🏗️ 아키텍처 & 실행 모델
 
-### 시스템 아키텍처
+프로젝트는 **Clean + Hexagonal Architecture** 기반의 4개 핵심 계층으로 구성되며, SQLite 포트 추상화(`ISqliteDatabase`)를 통해 Node 26과 Cloudflare DO 환경에서 동일한 코어가 동작합니다.
 
-시스템은 **계층화된 헥사고날 아키텍처**를 따르며 관심사를 명확히 분리합니다:
-
-#### **1. AI 통합 계층** (AI 인터페이스)
-- **목적**: AI 어시스턴트(Claude 등)가 저장소와 상호작용
-- **이중 인터페이스**: 전역 작업 + 테이블별 작업
-- **통신 방식**: HTTP 기반 요청/응답
-- **동적 도구**: 템플릿이 자동으로 AI 도구로 변환
-
-#### **2. 쿼리 인터페이스 계층** (주 인터페이스)
-- **목적**: 모든 저장소 작업을 위한 타입 안전하고 유연한 인터페이스
-- **스키마 우선 설계**: 강력한 타이핑과 내부 검사
-- **실시간 기능**: 라이브 업데이트를 위한 구독
-- **쿼리 언어**: 선언적 데이터 가져오기
-
-#### **3. 핵심 비즈니스 로직**
-- **유스케이스**: 도메인 작업 오케스트레이션
-- **도메인 서비스**: 복잡한 비즈니스 로직
-- **템플릿 엔진**: 매개변수화된 쿼리 실행
-- **검증**: 입력 검증 및 비즈니스 규칙
-
-#### **4. 도메인 계층** (비즈니스 엔티티)
-- **엔티티**: 노드, 테이블, 관계, 속성, 템플릿
-- **리포지토리 인터페이스**: 데이터 접근 계약
-- **값 객체**: 불변 도메인 개념
-- **도메인 이벤트**: 비즈니스 중요 발생
-
-#### **5. 인프라 계층** (기술적 구현)
-- **파일 기반 저장소**: 파일 기반 영속성
-- **의존성 주입**: 서비스 구성
-- **리포지토리 구현**: 데이터 접근 로직
-- **외부 통합**: AI 시스템, 모니터링
+1. **Presentation Layer (`src/presentation/`)**:
+   - `http/`: `BunApiRouter` (`ApiEndpointMapping.ts` 정렬), `GraphApiController`, `GraphDbApiController`, `AttributeApiController`, `TabularSyncRoutes`
+   - `graphql/`: `createGraphQLServer`, Pothos/Schema-first 통합 스키마 (`src/presentation/graphql/schema/`)
+   - `mcp/` & `src/mcp/`: 루트 `/mcp` 및 테이블 스코프 `/sub/:tableId/mcp` Streamable HTTP 서버 (`2026-07-28` / `2025-11-25` LTS, `ToolAnnotations`, `outputSchema`, `structuredContent`)
+   - `cloudflare/`: `CloudflareSingleNodeWorker` (단일 노드 DO SQLite 워커 어댑터 Phase 1)
+2. **Application Layer (`src/application/`)**:
+   - 유스케이스 (`tables`, `nodes`, `attributes`, `relations`, `templates`, `docs`, `export`, `backup`)
+   - `NodeAttributeSchemaGate` (JSON Schema 2020-12 기반 `TableSchemaProjectionService` 검증·정규화)
+   - `AccessControl` (Bearer 토큰 기반 역할 검증 `403` 및 테이블 스코프 은닉 `404` 격리)
+3. **Domain Layer (`src/domain/`)**:
+   - 엔티티, 리포지토리 포트, `GraphTraversalService` (양방향 BFS, `shortestPath`, Weighted Dijkstra `findOptimalPath`, `getDependencyChain`), `HierarchyService` (Tree/DAG/LCA/`moveHierarchyNode`), `GraphAnalyticsService` (Tarjan SCC, Power-Iteration PageRank)
+4. **Infrastructure Layer (`src/infrastructure/`)**:
+   - `PortableBootstrap.ts`, `SqliteAdapter.ts` (`node:sqlite`), `DoSqliteAdapter.ts` (`Cloudflare DO`), `ExactVectorIndex` (`node_embeddings` Float32), `SqliteNodeSearchRepository` (FTS5 + `value_num` 푸시다운 + 4-신호 `hybridSearchNodes`), `SchemaGenerator`, `JsonlBackupService`
 
 ---
 
-## 📊 핵심 기능
+## 📊 핵심 기능 요약
 
-### 그래프 저장소 엔진
-**개념**: 연결된 데이터를 효율적으로 저장하고 탐색
-
-- **노드 기반 저장**: 유연한 속성을 가진 엔티티
-- **타입이 지정된 관계**: 의미가 있는 연결
-- **탐색 알고리즘**: 경로, 이웃, 하위 그래프 찾기
-- **품질 지표**: 신뢰도 점수와 관계 강도
-- **스키마 진화**: 동적 속성 관리
-
-### 템플릿 시스템
-**개념**: 버전 관리가 있는 재사용 가능한 매개변수화된 작업
-
-- **쿼리 추상화**: 이름이 지정되고 버전이 관리되는 작업
-- **매개변수 바인딩**: 동적 값 대체
-- **사용 분석**: 실행 패턴 추적
-- **AI 통합**: 템플릿이 AI 접근 가능한 도구가 됨
-- **버전 관리**: 시간 경과에 따른 변경 추적
-
-### 일괄 작업
-**개념**: 트랜잭션 안전성을 갖춘 효율적인 대량 데이터 작업
-
-- **대량 처리**: 수천 개의 레코드 처리
-- **스키마 검증**: 데이터 일관성 보장
-- **진행 모니터링**: 작업 완료 추적
-- **트랜잭션 안전성**: 롤백이 가능한 원자적 작업
-- **오류 처리**: 상세한 보고와 함께 우아한 실패
-
-### JSON Export & Format Mapping
-**개념**: 다양한 형식으로 데이터 내보내기 및 커스텀 변환
-
-**Export 형식:**
-- **Flat JSON**: 간단한 배열 구조, 외부 통합용
-- **HFI Protocol**: 그래프 시각화 호환 형식
-
-**Format Mapping 시스템:**
-- **NodeLevelMapping**: 노드 단위 간소화 매핑 문법 (권장)
-- **접두사 규칙**: `@` (attributes), `@@` (시스템 필드)
-- **Transform 함수**: uppercase, date, json 등 데이터 변환
-- **가이드 자동 생성**: `generateMappingGuide()` 메서드
-
-```typescript
-// NodeLevelMapping 예시
-const mapping = {
-  outputKey: 'users',
-  nodeMapping: {
-    id: 'id',           // $.nodes[*].id
-    name: 'title',      // $.nodes[*].title
-    email: '@email',    // $.nodes[*].attributes.email
-  }
-}
-```
-
-📚 **상세 문서**: [Format Mapping Guide](docs/api/FORMAT_MAPPING_GUIDE.md)
-
-### 백업 & 복원 시스템
-**개념**: 데이터 안전성을 위한 이중 백업 전략
-
-**SQLite Backup (빠른 스냅샷):**
-- **backupDatabase**: 전체 데이터베이스 파일 백업
-- **restoreDatabase**: 백업에서 복원 (서버 재시작 필요)
-- **listBackups**: 백업 목록 조회
-- **applyRetentionPolicy**: 오래된 백업 자동 정리
-
-```graphql
-# 백업 생성
-mutation { backupDatabase(input: { compress: false, validate: true }) {
-  success backupPath sizeBytes checksum
-}}
-
-# 복원
-mutation { restoreDatabase(input: {
-  backupPath: "backups/database/db_xxx.sqlite",
-  safetyBackup: true
-}) { success restoredPath }}
-```
-
-**JSONL Backup (Git 친화적):**
-- **exportJsonl**: 폴더 기반 텍스트 백업 (git diff 가능)
-- **importJsonl**: 선택적 복원 (skip/overwrite/merge)
-- **inspectJsonlBackup**: 백업 검사
-
-```
-backups/jsonl/
-├── manifest.json       # 백업 메타데이터
-├── schema.jsonl        # 테이블/속성 정의
-├── relations.jsonl     # 관계 데이터
-├── relation-types.jsonl
-└── tables/
-    ├── users.jsonl     # 테이블별 노드 데이터
-    └── projects.jsonl
-```
-
-```graphql
-# JSONL 내보내기
-mutation { exportJsonl(input: { includeSchema: true, includeRelations: true }) {
-  success outputDir stats { tablesExported nodesExported }
-}}
-
-# JSONL 가져오기 (dry run)
-mutation { importJsonl(input: {
-  inputDir: "./backups/jsonl",
-  dryRun: true,
-  conflictResolution: SKIP
-}) { success stats { nodesImported nodesSkipped } }}
-```
-
-### AI 통합 구조
-**개념**: AI 어시스턴트와 저장소 작업 간의 브리지
-
-**AI 통합이란?**
-- AI 도구 통합을 위한 표준
-- AI 어시스턴트가 저장소 기능을 발견하고 사용할 수 있게 함
-- 요청/응답 통신을 위한 프로토콜
-
-**아키텍처 계층:**
-```
-┌─────────────────────────────────────────┐
-│   AI 어시스턴트 (Claude)                 │
-│   - 사용 가능한 도구 발견                 │
-│   - 저장소 작업 실행                     │
-└─────────────────┬───────────────────────┘
-                  │ 통신 프로토콜
-┌─────────────────▼───────────────────────┐
-│   AI 통합 계층 (변환)                    │
-│   - 27개 전역 도구                       │
-│   - 테이블별 도구 격리                   │
-│   - 매개변수 변환                        │
-└─────────────────┬───────────────────────┘
-                  │ 내부 인터페이스
-┌─────────────────▼───────────────────────┐
-│   쿼리 인터페이스                        │
-│   - 실제 작업 실행                       │
-│   - 구조화된 결과 반환                   │
-└─────────────────────────────────────────┘
-```
-
-**2단계 AI 통합 시스템:**
-
-1. **전역 AI 서버** (`/mcp`)
-   - 템플릿 관리 작업
-   - 테이블 간 쿼리
-   - 시스템 관리
-   - 스키마 탐색
-
-2. **테이블별 AI 통합** (`/sub/:tableId/mcp`)
-   - 테이블별 격리된 도구 세트
-   - 테이블별 쿼리
-   - 템플릿-도구 변환
-   - 범위가 지정된 작업
+- **그래프 탐색 & 계층 구조**: 양방향 레벨-오더 BFS, 다익스트라 가중 최적 경로, Tarjan SCC, PageRank 중심성, `parentOf` 기반 Tree/DAG 검증 및 `getLowestCommonAncestor`·`moveHierarchyNode` ([USE_CASES_AND_CAPABILITIES.md](docs/guides/USE_CASES_AND_CAPABILITIES.md))
+- **영속 임베딩 & `google/embeddinggemma-2` 하이브리드 검색**: 공식 태스크 프리픽스 + MRL(`768/512/256/128`) 재정규화 + Transformers.js(WebGPU)/HTTP 백엔드 + `EmbedNodesUseCase`, FTS5 + `value_num` 푸시다운 + `ExactVectorIndex` + N-홉 근접도 RRF 결합 (`hybridSearchNodes`)
+- **웹 임베디드 런타임 & 정보구조화(IA) & AI Agent Memory**: `createEmbeddedWebGraphDb` (`sql.js`/`sqlite-wasm`), `InformationArchitectureService` 블루프린트·패싯 서브트리 쿼리, `AiMemoryService` 5-신호 회상·통합·컨텍스트 윈도우 + `memory-*` MCP 도구 ([EMBEDDED_WEB_AND_AI_MEMORY.md](docs/guides/EMBEDDED_WEB_AND_AI_MEMORY.md))
+- **스키마 게이트 & OpenAPI 3.2 투영**: 테이블별 JSON Schema 2020-12 검증 게이트(`NodeAttributeSchemaGate`), `oa-sdk` OpenAPI 3.2 계약 투영(`projection:check`)
+- **이중 백업 & 복원**: SQLite 바이너리 스냅샷 + Git 친화적 JSONL 백업(`exportJsonl`/`importJsonl`, 임베딩 포함)
+- **골든 테스트 데이터셋**: 3개 테이블·2개 템플릿으로 10대 핵심 기능군을 Node 26 / Cloudflare DO SQLite / JSONL 라운드트립에서 검증 (`pnpm run test:golden`, [GOLDEN_DATASET.md](docs/development/GOLDEN_DATASET.md))
 
 ---
 
-## 🏗️ 데이터 모델
-
-### 테이블
-**개념**: 엔티티 타입을 정의하는 스키마
-
-- 속성 구조 정의
-- 스키마 진화 지원
-- 데이터 검증 활성화
-- 조직 경계 제공
-
-### 노드
-**개념**: 개별 엔티티/레코드
-
-- 특정 테이블에 속함
-- 유연한 속성 보유
-- 상호 연결 가능
-- 전체 텍스트 검색 지원
-
-### 관계
-**개념**: 노드 간의 타입이 지정된 연결
-
-- 방향성 관계 (소스 → 타겟)
-- 의미론적 타이핑 (알고있음, 포함, 의존)
-- 메타데이터 지원
-- 탐색 최적화
-
-### 속성
-**개념**: 노드의 속성
-
-- 강타입 (문자열, 숫자, 참/거짓, 날짜, JSON 등)
-- 선택적 또는 필수
-- 기본값
-- 검증 규칙
-
-### 템플릿
-**개념**: 재사용 가능한 쿼리 패턴
-
-- 이름이 지정된 작업
-- 변수 매개변수
-- 버전 추적
-- 사용 통계
-- 자동 AI 도구 생성
-
----
-
-## 🔧 개발
-
-### 프로젝트 구조
-```
-src/
-├── application/          # 유스케이스 & 오케스트레이션
-├── domain/              # 비즈니스 엔티티 & 인터페이스
-├── infrastructure/      # 기술적 구현
-├── presentation/        # 인터페이스 계층
-└── shared/             # 교차 관심사
-
-tests/
-├── unit/               # 격리된 컴포넌트 테스트
-├── integration/        # 다중 컴포넌트 테스트
-└── fixtures/           # 테스트 데이터 & 헬퍼
-```
-
-### 테스팅 철학
-- **310+ 유스케이스 테스트**: 비즈니스 로직 검증
-- **통합 테스트**: 인터페이스 엔드포인트 검증
-- **격리**: 외부 의존성 모킹
-- **커버리지**: 중요 경로 100%
-
-### 개발 명령어
-```bash
-bun run dev              # 개발 서버 시작
-bun test                 # 모든 테스트 실행
-bun run typecheck        # 타입 검증
-bun run check           # 포맷 + 린트 + 수정
-```
-
----
-
-## 🎯 일반 워크플로우
-
-### 데이터 모델 만들기
-1. **테이블 정의**: 식별자로 스키마 생성
-2. **속성 추가**: 속성과 타입 정의
-3. **템플릿 만들기**: 매개변수화된 삽입 쿼리 구축
-4. **템플릿 실행**: 변수로 데이터 채우기
-
-### 그래프 데이터 쿼리하기
-1. **노드 검색**: 속성으로 엔티티 찾기
-2. **관계 탐색**: 연결 따라가기
-3. **경로 찾기**: 노드 간 경로 발견
-4. **데이터 집계**: 패턴 분석
-
-### AI 통합 워크플로우
-1. **AI 통합 구성**: Claude에 서버 추가
-2. **도구 탐색**: AI가 기능 탐색
-3. **작업 실행**: AI가 도구 사용
-4. **결과 받기**: 구조화된 데이터 반환
-
----
-
-## 🔌 Claude Code MCP 설정
-
-### Claude Code CLI 명령어
+## 🔧 자주 사용하는 명령어
 
 ```bash
-# 전역 MCP 서버 추가 (템플릿 관리, 시스템 작업)
-claude mcp add --transport http graph-root http://localhost:4141/mcp
-
-# 테이블별 MCP 서버 추가
-claude mcp add --transport http users-table http://localhost:4141/sub/users/mcp
-claude mcp add --transport http projects-table http://localhost:4141/sub/projects/mcp
-
-# MCP 서버 목록 확인
-claude mcp list
-
-# MCP 서버 제거
-claude mcp remove graph-root
-
-# MCP 서버 상세 정보
-claude mcp get graph-root
+pnpm run dev                   # 개발 서버 실행 (포트 4141)
+pnpm run check:static          # check:embedded + check:docs + ci:versions + check:biome + typecheck + check:codegen + build
+pnpm run test:golden           # 핵심 기능 골든 데이터셋 3-런타임 검증
+pnpm run test                  # Vitest 5 전체 4개 레인 테스트 (134개 테스트 파일)
+pnpm run test:lanes:audit      # 테스트 레인 분류 정합성 감사
+pnpm run projection:check      # oa-sdk OpenAPI 3.2 투영 계약 검증
+pnpm run benchmark:hotpaths:ci # 핫패스 성능 회귀 게이트
+pnpm run codegen               # GraphQL 타입 및 schema.json 재생성
 ```
 
-### 전역 서버 (`/mcp`)
-- 템플릿 생성 및 관리
-- 테이블 간 검색
-- 전역 쿼리 실행
-- 시스템 관리
+---
 
-### 테이블별 서버 (`/sub/:tableId/mcp`)
-- 테이블 범위 쿼리
-- 노드 CRUD 작업
-- 관계 관리
-- 템플릿 실행
+## 📚 문서 & 레퍼런스
 
-### 테이블 격리의 이점
-- **보안**: 작업이 하나의 테이블로 제한됨
-- **조직화**: 명확한 도구 분리
-- **성능**: 집중된 기능 세트
-- **유연성**: 테이블별 맞춤 설정
+- **시작 & 개요**: [README.md](README.md), [GETTING_STARTED.md](GETTING_STARTED.md), [docs/README.md](docs/README.md)
+- **활용 & 아키텍처**: [USE_CASES_AND_CAPABILITIES.md](docs/guides/USE_CASES_AND_CAPABILITIES.md), [EMBEDDED_WEB_AND_AI_MEMORY.md](docs/guides/EMBEDDED_WEB_AND_AI_MEMORY.md), [ARCHITECTURE_OVERVIEW.md](docs/architecture/ARCHITECTURE_OVERVIEW.md), [cloudflare-single-node.md](docs/architecture/cloudflare-single-node.md)
+- **MCP 연동**: [docs/mcp/README.md](docs/mcp/README.md), [docs/guides/MCP_SETUP_GUIDE.md](docs/guides/MCP_SETUP_GUIDE.md)
+- **개발 & 검증**: [DEVELOPMENT_ENVIRONMENT_GUIDE.md](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md), [TESTING.md](docs/development/TESTING.md), [GOLDEN_DATASET.md](docs/development/GOLDEN_DATASET.md), [DOCUMENTATION_POLICY.md](docs/development/DOCUMENTATION_POLICY.md)
+- **스크립트 가이드**: [docs/tooling/scripts.md](docs/tooling/scripts.md)
 
 ---
 
-## 📚 문서 구조
-
-### 사용자용
-- **[빠른 시작 가이드](GETTING_STARTED.md)**: 빠르게 시작하기
-- **[용어집](GLOSSARY.md)**: 모든 용어 상세 설명
-- **[인터페이스 레퍼런스](docs/api/doc-api-reference.md)**: 전체 스키마
-- **[템플릿 가이드](docs/templates/template-system-guide.md)**: 재사용 쿼리 만들기
-- **[AI 통합 설정](docs/guides/MCP_SETUP_GUIDE.md)**: AI 어시스턴트 통합
-
-### 개발자용
-- **[아키텍처 개요](docs/architecture/ARCHITECTURE_OVERVIEW.md)**: 시스템 설계
-- **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)**: 기여 & 설정
-- **[테스팅 전략](docs/development/TESTING.md)**: 품질 보증
-- **[리포지토리 패턴](docs/architecture/ARCHITECTURE_OVERVIEW.md)**: 데이터 접근
-
-### AI 통합용
-- **[AI 통합 아키텍처](docs/mcp/MCP_SYSTEM_ARCHITECTURE.md)**: 프로토콜 구현
-- **[도구 생성](docs/architecture/MCP_TEMPLATE_ARCHITECTURE.md)**: 템플릿-도구 변환
-- **[스키마 탐색](docs/guides/MCP_EXAMPLES.md)**: 동적 기능 노출
-- **[사용 예제](docs/samples/template-execution-patterns.md)**: 일반 패턴
-
----
-
-## 📊 시스템 상태
-
-### 현재 지표
-```
-✅ 핵심 기능: 완전 작동
-├── 쿼리 인터페이스: 모든 엔드포인트 작동
-├── 템플릿 시스템: 생성 & 실행 검증됨
-├── 일괄 작업: 대량 처리 기능
-├── 그래프 탐색: 모든 알고리즘 작동
-├── AI 통합: 프로토콜 준수
-└── 타입 안전성: 0개 오류
-
-✅ 테스트 커버리지: 310/310 통과 (100%)
-✅ 저장소 스키마: 11개 테이블 작동
-✅ 서버 응답: <1ms 헬스 체크
-```
-
-### 알려진 제한사항
-- 파일 기반 저장소 (단일 작성자)
-- 수평 확장 없음 (단일 프로세스)
-- 파일 기반 백업만
-- 인프로세스 트랜잭션 관리
-
----
-
-## 🚀 다음 단계
-
-### 새 사용자를 위해
-1. 빠른 시작 섹션 검토
-2. 쿼리 탐색기 탐색
-3. 예제 쿼리 시도 (인터페이스 레퍼런스 참조)
-4. 첫 테이블 만들기
-
-### 개발자를 위해
-1. 아키텍처 개요 읽기
-2. 테스트 스위트 실행
-3. 코드 구조 검토
-4. 기여 가이드라인 확인
-
-### AI 통합을 위해
-1. AI 통합 서버 설정
-2. 도구 탐색 테스트
-3. 샘플 작업 실행
-4. 통합 패턴 검토
-
----
-
-## 🔧 문제 해결
-
-### 일반적인 문제
-
-**서버가 시작되지 않음**
-- 포트 4141 사용 가능 여부 확인
-- 저장소 초기화 확인
-- 서버 로그 검토
-
-**쿼리 인터페이스 오류**
-- 쿼리 탐색기에서 스키마 확인
-- 쿼리 문법 검증
-- 스키마에서 필드 사용 가능 여부 확인
-
-**저장소 문제**
-- `bun run scripts/init-database.ts`로 초기화
-- `./data/` 디렉토리 권한 확인
-- 손상된 경우 삭제 후 재초기화
-
-### 도움 받기
-- 상세한 오류는 서버 로그 확인
-- `http://localhost:4141/graphql`에서 쿼리 탐색기 사용
-- `docs/` 디렉토리의 문서 검토
-
----
-
-## 📖 핵심 개념
-
-- **헥사고날 아키텍처**: 포트 & 어댑터 패턴
-- **도메인 주도 설계**: 비즈니스 로직 조직화
-- **리포지토리 패턴**: 데이터 접근 추상화
-- **의존성 주입**: 서비스 구성
-- **템플릿 엔진**: 쿼리 매개변수화
-- **AI 통합 프로토콜**: AI 도구 통합 표준
-
----
-
-## 📄 라이선스
-
-MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일 참조
-
----
-
-**마지막 업데이트**: 2025-11-25
+**라이선스**: [MIT License](LICENSE)  
+**마지막 업데이트**: 2026-11-27

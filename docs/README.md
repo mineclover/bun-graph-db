@@ -2,7 +2,7 @@
 docType: navigation
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-10-31"
+lastVerified: "2026-11-27"
 ---
 
 # Bun Graph DB 문서
@@ -12,14 +12,18 @@ lastVerified: "2026-10-31"
 ## 운영과 개발
 
 - [운영 및 관리 가이드](./guides/OPERATIONS_GUIDE.md)
+- [실전 활용 정의 및 기능 성숙도 매트릭스](./guides/USE_CASES_AND_CAPABILITIES.md)
+- [Web Embedded · EmbeddingGemma-2 · IA · AI Memory 가이드](./guides/EMBEDDED_WEB_AND_AI_MEMORY.md)
 - [운영 준비도 명세](../specs/008-production-readiness/spec.md)
 - [아키텍처 개요](./architecture/overview.md)
+- [Cloudflare 단일 노드 아키텍처 검토](./architecture/cloudflare-single-node.md)
 - [GraphQL 필드 탐색 계약과 계층 경계](./architecture/graph-traversal.md)
 - [구현과 연결되는 문서 관리](./development/DOCUMENTATION_POLICY.md)
 - [벡터 검색과 대규모 저장소 비교 기준선](./architecture/vector-and-storage-comparison.md)
 - [MCP 참조](./mcp/README.md)
 - [의존성 업데이트 정책](./development/DEPENDENCY_UPDATE_WAVES.md)
 - [테스트 가이드](./development/TESTING.md)
+- [골든 테스트 데이터셋](./development/GOLDEN_DATASET.md)
 - [개발 환경](./development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)
 
 ## API와 데이터 작업

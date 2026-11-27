@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { describe, expect, test, vi } from 'vitest'
 import type { McpToolAudience } from '../../src/application/services/McpToolRegistry'
 import { McpHttpServer } from '../../src/mcp/http-server/McpHttpServer'
 import { MODERN_MCP_PROTOCOL_VERSION } from '../../src/mcp/http-server/modern-protocol'
@@ -40,12 +40,12 @@ describe('MCP hot-path caches', () => {
       graphqlEndpoint: 'http://route-hotpath.test/graphql',
       restApiBaseUrl: 'http://route-hotpath.test/api',
     })
-    const handleParsedRequest = mock(
+    const handleParsedRequest = vi.fn(
       async (request: TableMcpJsonRpcRequest) =>
         new Response(JSON.stringify({ jsonrpc: '2.0', id: request.id, result: {} })),
     )
-    const handleRequest = mock(async () => new Response(null))
-    const getServerForTable = mock(async () => ({
+    const handleRequest = vi.fn(async () => new Response(null))
+    const getServerForTable = vi.fn(async () => ({
       handleParsedRequest,
       handleRequest,
     }))
@@ -62,7 +62,7 @@ describe('MCP hot-path caches', () => {
         method: 'tools/list',
       }),
     })
-    const readBody = mock(request.text.bind(request))
+    const readBody = vi.fn(request.text.bind(request))
     Object.defineProperty(request, 'text', { value: readBody })
 
     const response = await routes.handleTableMcpRequest(request)
@@ -87,7 +87,7 @@ describe('MCP hot-path caches', () => {
       }
       toolsListCache: Map<string, unknown>
     }
-    const listTools = mock(state.toolRegistry.listTools.bind(state.toolRegistry))
+    const listTools = vi.fn(state.toolRegistry.listTools.bind(state.toolRegistry))
     state.toolRegistry.listTools = listTools
 
     const first = await server.handleRequest(modernToolsListRequest(1))
@@ -112,7 +112,7 @@ describe('MCP hot-path caches', () => {
       ajv: { compile: (schema: object) => unknown }
       validatorCache: WeakMap<object, unknown>
     }
-    const compile = mock(state.ajv.compile.bind(state.ajv))
+    const compile = vi.fn(state.ajv.compile.bind(state.ajv))
     state.ajv.compile = compile
 
     const call = (id: number) =>

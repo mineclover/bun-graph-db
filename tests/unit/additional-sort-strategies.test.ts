@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { AggregateSortStrategy } from '../../src/application/services/sorting/AggregateSortStrategy.js'
 import { RelationshipSortStrategy } from '../../src/application/services/sorting/RelationshipSortStrategy.js'
 import { RelevanceSortStrategy } from '../../src/application/services/sorting/RelevanceSortStrategy.js'

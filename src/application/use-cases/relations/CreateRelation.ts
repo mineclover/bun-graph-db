@@ -116,17 +116,38 @@ export class CreateRelationUseCase {
         input.relationTypeId as RelationTypeId,
         input.properties,
         input.strength,
+        input.confidence,
       )
 
       // Save to repository
       await this.nodeRelationRepository.save(nodeRelation)
 
-      // Retrieve the saved relation with generated ID
-      const savedRelation = await this.nodeRelationRepository.findByExternalIds(
-        sourceExternalId,
-        targetExternalId,
-        input.tableId as TableId,
-      )
+      // Retrieve the saved relation with generated ID.
+      // Internal relations share ('internal', 'internal') external IDs, so look up by source/target/type first.
+      let savedRelation =
+        sourceExternalId === 'internal' &&
+        targetExternalId === 'internal' &&
+        sourceNodeId &&
+        targetNodeId
+          ? (
+              await this.nodeRelationRepository.findBySourceNodeIdAndRelationType(
+                sourceNodeId,
+                input.relationTypeId as RelationTypeId,
+              )
+            ).find(
+              (relation) =>
+                relation.getTargetNodeId() === targetNodeId &&
+                String(relation.getTableId()) === String(input.tableId),
+            ) ?? null
+          : null
+
+      if (!savedRelation) {
+        savedRelation = await this.nodeRelationRepository.findByExternalIds(
+          sourceExternalId,
+          targetExternalId,
+          input.tableId as TableId,
+        )
+      }
 
       if (!savedRelation) {
         throw new Error('Failed to retrieve saved node relation')
@@ -150,6 +171,7 @@ export class CreateRelationUseCase {
           relationTypeId: savedRelation.getRelationTypeId(),
           properties: savedRelation.getProperties() as Record<string, SafeJsonValue> | null,
           strength: savedRelation.getStrength(),
+          confidence: savedRelation.getConfidence(),
           createdAt: savedRelation.getCreatedAt().toISOString(),
           updatedAt: savedRelation.getUpdatedAt().toISOString(),
         },
@@ -181,10 +203,17 @@ export class CreateRelationUseCase {
       throw new ValidationException('Either target node ID or target external ID is required')
     }
 
-    // Strength validation
+    // Strength validation (aligned with SQLite CHECK (strength >= 0 AND strength <= 4))
     if (input.strength !== undefined) {
-      if (!Number.isInteger(input.strength) || input.strength < 0 || input.strength > 100) {
-        throw new ValidationException('Strength must be an integer between 0 and 100')
+      if (!Number.isInteger(input.strength) || input.strength < 0 || input.strength > 4) {
+        throw new ValidationException('Strength must be an integer between 0 and 4')
+      }
+    }
+
+    // Confidence validation (aligned with SQLite CHECK (confidence >= 0 AND confidence <= 4))
+    if (input.confidence !== undefined) {
+      if (!Number.isInteger(input.confidence) || input.confidence < 0 || input.confidence > 4) {
+        throw new ValidationException('Confidence must be an integer between 0 and 4')
       }
     }
   }

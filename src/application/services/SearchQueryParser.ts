@@ -5,6 +5,7 @@ import { LogicalOperator, SearchOperator, SearchQueryBuilder } from '@/domain/va
 import { ValidationException } from '@/shared/exceptions/DomainException.js'
 
 export interface AttributeTypeInfo {
+  id?: string
   identifier: string
   dataType: string
 }

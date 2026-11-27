@@ -2,7 +2,7 @@
 ## Real-World Scenarios with Claude AI
 
 **Version**: 1.0.0
-**Last Updated**: 2025-11-23
+**Last Updated**: 2026-11-27
 
 ---
 
@@ -558,5 +558,5 @@ Claude: [MCP로 그래프 분석]
 ---
 
 **문서 버전**: 1.0.0
-**최종 업데이트**: 2025-11-23
+**최종 업데이트**: 2026-11-27
 **관련 문서**: [MCP Setup Guide](./MCP_SETUP_GUIDE.md)

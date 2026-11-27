@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import type { GraphQLDependencies } from "@/presentation/graphql/GraphQLSchemaBuilder.js";
 import { createRootResolvers } from "@/presentation/graphql/resolvers/root-resolvers.js";
 

@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { Database } from 'bun:sqlite'
+import { afterEach, describe, expect, test } from 'vitest'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { Node } from '../../src/domain/entities/Node'
 import { SqliteNodeMutationRepository } from '../../src/infrastructure/database/sqlite/SqliteNodeMutationRepository'
 

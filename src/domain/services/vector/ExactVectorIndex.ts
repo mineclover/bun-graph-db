@@ -51,7 +51,7 @@ export class BoundedTopKCollector<TMeta = undefined> {
     const worstScore = this.scores[0] as number
     if (score < worstScore) return
     const worstId = this.ids[0] as string
-    if (score === worstScore && id.localeCompare(worstId) >= 0) return
+    if (score === worstScore && compareIds(id, worstId) >= 0) return
 
     this.scores[0] = score
     this.ids[0] = id
@@ -68,7 +68,7 @@ export class BoundedTopKCollector<TMeta = undefined> {
         meta: this.metas[i] as TMeta,
       }
     }
-    out.sort((left, right) => right.score - left.score || left.id.localeCompare(right.id))
+    out.sort((left, right) => right.score - left.score || compareIds(left.id, right.id))
     return out
   }
 
@@ -76,7 +76,7 @@ export class BoundedTopKCollector<TMeta = undefined> {
     const leftScore = this.scores[leftIndex] as number
     const rightScore = this.scores[rightIndex] as number
     if (leftScore !== rightScore) return leftScore < rightScore
-    return (this.ids[leftIndex] as string).localeCompare(this.ids[rightIndex] as string) > 0
+    return compareIds(this.ids[leftIndex] as string, this.ids[rightIndex] as string) > 0
   }
 
   private swap(i: number, j: number): void {
@@ -238,10 +238,18 @@ export class ExactVectorIndex {
     let sumSq = 0
     for (let i = 0; i < this.dimension; i += 1) {
       const v = vector[i] as number
-      this.slab[offset + i] = v
       sumSq += v * v
     }
-    this.invNorms[slot] = sumSq > 0 ? 1 / Math.sqrt(sumSq) : 0
+    if (sumSq > 0) {
+      const invNorm = 1 / Math.sqrt(sumSq)
+      for (let i = 0; i < this.dimension; i += 1) {
+        this.slab[offset + i] = (vector[i] as number) * invNorm
+      }
+      this.invNorms[slot] = 1
+    } else {
+      this.slab.fill(0, offset, offset + this.dimension)
+      this.invNorms[slot] = 0
+    }
   }
 
   delete(id: string): boolean {
@@ -292,6 +300,11 @@ export class ExactVectorIndex {
       querySumSq += v * v
     }
     const queryInvNorm = querySumSq > 0 ? 1 / Math.sqrt(querySumSq) : 0
+    if (queryInvNorm > 0) {
+      for (let i = 0; i < dim; i += 1) {
+        queryVec[i] = (queryVec[i] as number) * queryInvNorm
+      }
+    }
     const collector = new BoundedTopKCollector<undefined>(Math.min(limit, Math.max(1, this.count)))
 
     if (queryInvNorm === 0) {
@@ -302,14 +315,14 @@ export class ExactVectorIndex {
       }
     } else {
       const slab = this.slab
-      const invNorms = this.invNorms
+      const hasNorm = this.invNorms
       const ids = this.ids
       for (let slot = 0; slot < this.count; slot += 1) {
-        const targetInvNorm = invNorms[slot] as number
-        const score =
-          targetInvNorm === 0
+        const rawScore =
+          (hasNorm[slot] as number) === 0
             ? 0
-            : dotProductFloat64Slab(queryVec, slab, slot * dim, dim) * queryInvNorm * targetInvNorm
+            : dotProductFloat64Slab(queryVec, slab, slot * dim, dim)
+        const score = Math.min(1, Math.max(-1, rawScore))
         if (score >= minScore) {
           collector.offer(ids[slot] as string, score, undefined)
         }
@@ -356,6 +369,24 @@ export function cosineSimilarity(left: readonly number[], right: readonly number
   }
   if (leftNorm === 0 || rightNorm === 0) return 0
   return dot / Math.sqrt(leftNorm * rightNorm)
+}
+
+function isLowerAsciiAlnum(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    const code = value.charCodeAt(i)
+    const isDigit = code >= 48 && code <= 57
+    const isLower = code >= 97 && code <= 122
+    if (!isDigit && !isLower) return false
+  }
+  return true
+}
+
+function compareIds(left: string, right: string): number {
+  if (left === right) return 0
+  if (isLowerAsciiAlnum(left) && isLowerAsciiAlnum(right)) {
+    return left < right ? -1 : 1
+  }
+  return left.localeCompare(right)
 }
 
 function validateVector(vector: readonly number[], dimension: number): void {

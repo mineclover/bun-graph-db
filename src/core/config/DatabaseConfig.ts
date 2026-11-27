@@ -3,7 +3,7 @@
  */
 
 export interface DatabaseConfig {
-  provider: 'bun-sqlite' | 'cloudflare-d1' | 'mock'
+  provider: 'node-sqlite' | 'cloudflare-do-sqlite' | 'bun-sqlite' | 'mock'
   connectionString?: string
   options: {
     enableWAL?: boolean
@@ -16,8 +16,8 @@ export interface DatabaseConfig {
 
 export const createDatabaseConfig = (env: Record<string, string | undefined>): DatabaseConfig => {
   return {
-    provider: (env.DB_PROVIDER as DatabaseConfig['provider']) || 'bun-sqlite',
-    connectionString: env.DATABASE_URL || 'data/bun-graph-db.sqlite',
+    provider: (env.DB_PROVIDER as DatabaseConfig['provider']) || 'node-sqlite',
+    connectionString: env.DATABASE_PATH || env.DATABASE_URL || 'data/bun-graph-db.sqlite',
     options: {
       enableWAL: env.DB_ENABLE_WAL === 'true',
       queryTimeout: parseInt(env.DB_QUERY_TIMEOUT || '30000', 10),

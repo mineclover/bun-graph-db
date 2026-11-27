@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   type INodeSearchRepository,
@@ -22,25 +22,25 @@ describe('SearchNodesUseCase', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repositories
     mockNodeRepository = {
-      save: mock(async (node) => node),
-      findById: mock(async () => null),
-      findByTableIdAndContent: mock(async () => null),
-      findByTableId: mock(async () => ({ data: [], metadata: {} })),
-      update: mock(async (node) => node),
-      delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
+      save: vi.fn(async (node) => node),
+      findById: vi.fn(async () => null),
+      findByTableIdAndContent: vi.fn(async () => null),
+      findByTableId: vi.fn(async () => ({ data: [], metadata: {} })),
+      update: vi.fn(async (node) => node),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => ({ data: [], metadata: {} })),
     } as unknown as INodeRepository
 
     mockNodeSearchRepository = {
-      searchNodes: mock(async () => ({
+      searchNodes: vi.fn(async () => ({
         data: [],
         total: 0,
         hasMore: false,
@@ -50,27 +50,27 @@ describe('SearchNodesUseCase', () => {
     } as unknown as INodeSearchRepository
 
     mockAttributeRepository = {
-      save: mock(async () => {}),
-      findById: mock(async () => null),
-      findByTableIdAndIdentifier: mock(async () => null),
-      findByTableId: mock(async () => ({ data: [], metadata: {} })),
-      update: mock(async (attr) => attr),
-      delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      exists: mock(async () => false),
-      getAttributeTypeForAttribute: mock(async () => null),
+      save: vi.fn(async () => {}),
+      findById: vi.fn(async () => null),
+      findByTableIdAndIdentifier: vi.fn(async () => null),
+      findByTableId: vi.fn(async () => ({ data: [], metadata: {} })),
+      update: vi.fn(async (attr) => attr),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => ({ data: [], metadata: {} })),
+      exists: vi.fn(async () => false),
+      getAttributeTypeForAttribute: vi.fn(async () => null),
     } as unknown as IAttributeRepository
 
     mockTableRepository = {
-      save: mock(async (table) => table),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      update: mock(async (table) => table),
-      delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      exists: mock(async () => false),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
+      save: vi.fn(async (table) => table),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      update: vi.fn(async (table) => table),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => ({ data: [], metadata: {} })),
+      exists: vi.fn(async () => false),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
     } as unknown as ITableRepository
 
     useCase = new SearchNodesUseCase(
@@ -129,7 +129,7 @@ describe('SearchNodesUseCase', () => {
         tableId: 'non-existent-table',
       }
 
-      mockTableRepository.findById = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
       await expect(useCase.execute(input)).rejects.toThrow("Table with id 'non-existent-table' not found")
@@ -146,9 +146,9 @@ describe('SearchNodesUseCase', () => {
       const node1 = createTestNode('node-1', 'table-1', 'Test Node 1')
       const node2 = createTestNode('node-2', 'table-1', 'Test Node 2')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
-      mockNodeSearchRepository.searchNodes = mock(async () => ({
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockAttributeRepository.findByTableId = vi.fn(async () => ({ data: [], metadata: {} }))
+      mockNodeSearchRepository.searchNodes = vi.fn(async () => ({
         data: [
           { node: node1, attributes: {} },
           { node: node2, attributes: {} },
@@ -180,9 +180,9 @@ describe('SearchNodesUseCase', () => {
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const node = createTestNode('node-1', 'table-1', 'Test Node')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
-      mockNodeSearchRepository.searchNodes = mock(async () => ({
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockAttributeRepository.findByTableId = vi.fn(async () => ({ data: [], metadata: {} }))
+      mockNodeSearchRepository.searchNodes = vi.fn(async () => ({
         data: [{ node, attributes: {} }],
         total: 1,
         hasMore: false,
@@ -208,13 +208,13 @@ describe('SearchNodesUseCase', () => {
       const attribute = createTestAttribute('attr-1', 'table-1', 'age', 'Age', 'attr-type-1')
       const attributeType = createTestAttributeType('attr-type-1', 'number', 'number')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockAttributeRepository.findByTableId = mock(async () => ({
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockAttributeRepository.findByTableId = vi.fn(async () => ({
         data: [attribute],
         metadata: {},
       }))
-      mockAttributeRepository.getAttributeTypeForAttribute = mock(async () => attributeType)
-      mockNodeSearchRepository.searchNodes = mock(async () => ({
+      mockAttributeRepository.getAttributeTypeForAttribute = vi.fn(async () => attributeType)
+      mockNodeSearchRepository.searchNodes = vi.fn(async () => ({
         data: [],
         total: 0,
         hasMore: false,
@@ -239,9 +239,9 @@ describe('SearchNodesUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
-      mockNodeSearchRepository.searchNodes = mock(async (_tableId, searchQuery) => {
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockAttributeRepository.findByTableId = vi.fn(async () => ({ data: [], metadata: {} }))
+      mockNodeSearchRepository.searchNodes = vi.fn(async (_tableId, searchQuery) => {
         // Verify pagination parameters are passed correctly
         expect(searchQuery.limit).toBe(50)
         expect(searchQuery.offset).toBe(100)
@@ -273,9 +273,9 @@ describe('SearchNodesUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
-      mockNodeSearchRepository.searchNodes = mock(async (_tableId, searchQuery) => {
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockAttributeRepository.findByTableId = vi.fn(async () => ({ data: [], metadata: {} }))
+      mockNodeSearchRepository.searchNodes = vi.fn(async (_tableId, searchQuery) => {
         // Verify sort parameters are passed correctly
         expect(searchQuery.sortBy).toEqual([
           { field: 'created_at', direction: 'desc' },
@@ -305,9 +305,9 @@ describe('SearchNodesUseCase', () => {
       const table = createTestTable('table-1', 'test-table', 'Test Table')
       const searchError = new Error('Database connection failed')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockAttributeRepository.findByTableId = mock(async () => ({ data: [], metadata: {} }))
-      mockNodeSearchRepository.searchNodes = mock(async () => {
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockAttributeRepository.findByTableId = vi.fn(async () => ({ data: [], metadata: {} }))
+      mockNodeSearchRepository.searchNodes = vi.fn(async () => {
         throw searchError
       })
 

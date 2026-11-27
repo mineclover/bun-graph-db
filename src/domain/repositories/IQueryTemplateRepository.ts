@@ -29,6 +29,31 @@ export interface SearchCriteria {
   offset?: number
 }
 
+export interface TemplateExecutionRecord {
+  id: string
+  templateId: string
+  executedAt: string
+  executionTimeMs: number
+  variablesUsed: Record<string, unknown> | null
+  resultCount: number
+  success: boolean
+  errorMessage: string | null
+  userContext: string | null
+}
+
+export interface FindTemplateExecutionsOptions {
+  templateId?: string
+  templateIds?: string[]
+  start?: string
+  end?: string
+  successOnly?: boolean
+  minExecutionTime?: number
+  maxExecutionTime?: number
+  userContext?: string
+  limit?: number
+  offset?: number
+}
+
 export interface IQueryTemplateRepository {
   findById(id: string): Promise<QueryTemplate | null>
   findByIdentifier(identifier: string): Promise<QueryTemplate | null>
@@ -47,6 +72,10 @@ export interface IQueryTemplateRepository {
   deleteById(id: string): Promise<boolean>
   incrementUsage(id: string): Promise<void>
   updateExecutionStats(id: string, executionTimeMs: number): Promise<void>
+  recordExecution?(input: Omit<TemplateExecutionRecord, 'id' | 'executedAt'> & { executedAt?: string }): Promise<void>
+  findExecutions?(
+    options?: FindTemplateExecutionsOptions,
+  ): Promise<{ items: TemplateExecutionRecord[]; totalCount: number }>
   findPopular(limit?: number): Promise<QueryTemplate[]>
   updateStatus(id: string, isActive: boolean): Promise<QueryTemplate>
 }

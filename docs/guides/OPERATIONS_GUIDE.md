@@ -2,7 +2,7 @@
 docType: how-to
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-10-31"
+lastVerified: "2026-11-27"
 owner: "Bun Graph DB maintainers"
 sources:
   - index.ts
@@ -20,11 +20,12 @@ tests:
   - tests/unit/jsonl-backup-pagination.test.ts
   - tests/unit/sqlite-node-embedding-and-hybrid-search.test.ts
   - tests/unit/engine-optimizations-p0-p2.test.ts
+  - tests/unit/observability-studio-and-security-ops.test.ts
 ---
 
 # Bun Graph DB 운영 및 관리 가이드
 
-이 문서는 단일 Bun 프로세스와 SQLite 데이터베이스로 동작하는 Bun Graph DB의 배포 구성, 접근 제어, 스키마 마이그레이션·정합성 감사, 하이브리드 검색·임베딩 관리, JSONL 백업·재해 복구, 표 형식 동기화 큐 제어, 정기 품질 점검 절차를 정리한다.
+이 문서는 단일 Node.js 26 프로세스(`node:sqlite`)와 SQLite 데이터베이스로 동작하는 Bun Graph DB의 배포 구성, 접근 제어, 스키마 마이그레이션·정합성 감사, 하이브리드 검색·임베딩 관리, JSONL 백업·재해 복구, 표 형식 동기화 큐 제어, 정기 품질 점검 절차를 정리한다.
 
 시스템 계층과 설계 배경은 [아키텍처 개요](../architecture/overview.md)를, 운영 준비도 요구사항은 [운영 준비도 명세](../../specs/008-production-readiness/spec.md)를 함께 참조한다.
 
@@ -36,52 +37,54 @@ tests:
 
 ```bash
 # 개발 실행 (파일 변경 감지)
-bun run dev
+pnpm run dev
 
-# 프로덕션 번들 빌드 (선택적 Excel 어댑터 xlsx는 외부 모듈로 분리)
-bun run build
+# 프로덕션 ESM 번들 빌드 (선택적 Excel 어댑터 xlsx는 외부 모듈로 분리)
+pnpm run build
 
-# 프로덕션 기동 예시
+# 프로덕션 기동 예시 (NODE_ENV=production 포트 범위: 8000-8999)
 NODE_ENV=production \
-PORT=4141 \
+PORT=8080 \
 DATABASE_PATH=/var/lib/bun-graph-db/graph.sqlite \
 BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN="<32자-이상-고엔트로피-토큰>" \
 BUN_GRAPH_DB_ACCESS_TOKENS='{"<admin-token>":{"id":"ops-admin","role":"admin","tableIds":["*"]}}' \
-bun index.ts
+node dist/index.js
 ```
 
-- **단일 Writer 원칙**: SQLite 파일 잠금과 트랜잭션 일관성을 위해 하나의 SQLite 파일에는 단일 Bun Graph DB 인스턴스만 쓰기를 수행하도록 배포한다.
-- **선택적 Excel 의존성**: `bun run build`는 `--external xlsx` 플래그로 SheetJS(`xlsx`)를 코어 번들(`dist/index.js`)에서 분리한다. 로컬 `.xlsx` 표 동기화 대상을 활성화한 배포에서만 런타임 `node_modules/xlsx`가 로드된다.
+- **단일 Writer 원칙**: SQLite 파일 잠금과 트랜잭션 일관성을 위해 하나의 SQLite 파일에는 단일 서버 인스턴스만 쓰기를 수행하도록 배포한다.
+- **선택적 Excel 의존성**: `pnpm run build`(`tsup.config.ts`)는 `xlsx`와 `node:sqlite`를 번들에서 분리(`external`)하고 `removeNodeProtocol: false`를 유지한다. 로컬 `.xlsx` 표 동기화 대상을 활성화한 배포에서만 런타임 `node_modules/xlsx`가 로드된다.
 - **정상 종료(`SIGINT` / `SIGTERM`) 순서**:
   1. `AutoPersistenceService.shutdown()` 자동 백업 확인 및 수행
-  2. Bun HTTP 리스너 신규 연결 수락 중단(`server.stop()`)
+  2. Node HTTP 리스너(`NodeHttpServer`) 신규 연결 수락 중단(`server.stop()`)
   3. 루트 MCP(`McpHttpServer.close()`) 및 테이블 MCP(`tableMcpMiddleware.close()`) 종료
-  4. DI 컨테이너 역순 해제(`disposeContainer()`)를 통한 SQLite 연결 정리
+  4. DI 컨테이너 역순 해제(`disposeContainer()`)를 통한 SQLite 연결 정리(`PRAGMA optimize` 포함)
 
 ### 핵심 환경 변수 요약
 
 | 환경 변수 | 기본값 | 설명 |
 | --- | --- | --- |
 | `NODE_ENV` | `development` | `production`일 때 인증과 속도 제한이 기본 활성화됨 |
-| `PORT` | `4141` | HTTP / GraphQL / MCP 수신 포트 (`--port` CLI 인수로 재정의 가능) |
+| `PORT` | `4000` / `4141` (`dev` 4000–4999, `prod` 8000–8999) | HTTP / GraphQL / MCP 수신 포트 (`--port` CLI 인수로 재정의 가능; 범위 외 포트는 환경 기본값으로 폴백) |
 | `DATABASE_PATH` | `./data/bun-graph-db.sqlite` | SQLite 데이터 파일 경로 (`--database-path` CLI 인수로 재정의 가능) |
 | `BUN_GRAPH_DB_AUTH_REQUIRED` | `NODE_ENV === 'production'` | 외부 요청 인증 강제 여부 (`true` / `false`) |
 | `BUN_GRAPH_DB_ACCESS_TOKENS` | 미설정 | 토큰별 `{ id, role, tableIds }` JSON 맵 |
 | `BUN_GRAPH_DB_API_TOKEN` | 미설정 | 레거시 호환 전역 `admin` 단일 토큰 |
 | `BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN` | 미설정 | 인증 활성화 시 필수(32자 이상). 프로세스 내 MCP -> GraphQL/REST 브리지 전용 Bearer 토큰 |
-| `BUN_GRAPH_DB_ALLOWED_ORIGINS` | 미설정 (`CORS_ORIGIN` 대체) | 허용 브라우저 `Origin` 쉼표 구분 목록 |
+| `BUN_GRAPH_DB_ALLOWED_ORIGINS` | 미설정 (`CORS_ORIGIN` 대체) | 허용 브라우저 `Origin` 쉼표 구분 목록 (`AccessControl` 및 MCP `/mcp`·`/sub/:tableId/mcp` Origin 검증 공용) |
 | `BUN_GRAPH_DB_RATE_LIMIT_ENABLED` | `NODE_ENV === 'production'` | 주체(`principal`) 또는 클라이언트 IP 기준 요청 속도 제한 활성화 |
 | `BUN_GRAPH_DB_RATE_LIMIT_MAX` | `1000` | 윈도우당 최대 허용 요청 수 |
 | `BUN_GRAPH_DB_RATE_LIMIT_WINDOW_MS` | `900000` (15분) | 속도 제한 시간 윈도우(ms) |
 | `BUN_GRAPH_DB_MAX_REQUEST_BYTES` | `1048576` (1 MiB) | 요청 본문 최대 바이트 (`413 request_too_large` 반환) |
 | `BUN_GRAPH_DB_GRAPHQL_MAX_COMPLEXITY` | `250` | GraphQL AST 필드 수 상한 (`400 query_too_complex` 반환) |
 | `JSONL_AUTO_SAVE_ON_WRITE` | `false` | 쓰기 직후 전체 JSONL 자동 내보내기 여부 (SQLite 자체 내구성이 있으므로 기본 비활성) |
+| `DB_TEMP_STORE` | `MEMORY` | SQLite `PRAGMA temp_store` 설정 (`MEMORY` / `FILE` / `DEFAULT`) |
+| `DB_MMAP_SIZE_BYTES` | `67108864` (64 MiB) | 디스크 SQLite 파일용 `PRAGMA mmap_size` 바이트 크기 |
 
 ---
 
 ## 2. 인증, 역할 및 테이블 범위 접근 제어
 
-`AccessControl`은 외부 엔드포인트(`/graphql`, `/mcp`, `/sub/:tableId/mcp`, `/api/*`, `/schema*`)에 대해 **기본 닫힘(closed-by-default)** 정책을 적용한다. 익명 접근은 `OPTIONS`, `/`, `/api/health`에만 허용된다.
+`AccessControl`은 외부 엔드포인트(`/graphql`, `/mcp`, `/sub/:tableId/mcp`, `/api/*`, `/schema*`)에 대해 **기본 닫힘(closed-by-default)** 정책을 적용한다. 익명 접근은 `OPTIONS`, `/`, `/health`, `/api/health`에만 허용된다.
 
 ### 역할(`AccessRole`)과 테이블 범위(`tableIds`)
 
@@ -105,8 +108,8 @@ bun index.ts
 }
 ```
 
-- **`reader`**: 허용된 테이블 범위 내 조회(`Query`, `GET /api/*`, `POST /api/nodes/hybrid-search`, 읽기 전용 MCP `tools/call` 및 `tools/list`).
-- **`writer`**: 허용된 테이블 범위 내 노드·속성·임베딩·관계 생성/수정/삭제.
+- **`reader`**: 허용된 테이블 범위 내 조회(`Query`, `GET /api/*`, `POST /api/nodes/hybrid-search`, `POST /api/nodes/shortest-path`, 읽기 전용 MCP `tools/call` 및 `tools/list`).
+- **`writer`**: 허용된 테이블 범위 내 노드·속성·임베딩·관계 생성/수정/삭제 (`strength` 및 `confidence`는 SQLite 제약에 맞춘 `0..4` 정수 범위 검증).
 - **`admin`**: 테이블·속성 타입·관계 타입·템플릿 DDL, 스키마 산출물(`/schema*`), JSONL 백업·복원(`exportJsonl`, `importJsonl`, `inspectJsonlBackup`), 표 동기화 관리(`/api/tabular-sync*`).
 - **테이블 ID·식별자 자동 정합**: 토큰의 `tableIds`에 사람이 읽기 쉬운 테이블 `identifier`(`"orders"`)를 지정하든 숫자 `id`(`"1"`)를 지정하든, 런타임이 `tableId`, `tableIdentifier`, `nodeId`(소속 테이블 역추적) 요청과 양방향으로 대조한다. 허용되지 않은 타 테이블 리소스는 존재 여부를 노출하지 않도록 `404 Not Found`로 거부한다.
 - **GraphQL 루트 필드별 AST 격리**:
@@ -118,16 +121,17 @@ bun index.ts
 
 ---
 
-## 3. 스키마 마이그레이션(`v1..v13`) 및 동적 스키마 감사
+## 3. 스키마 마이그레이션(`v1..v14`) 및 동적 스키마 감사
 
 ### 순방향 마이그레이션 운영 원칙
 
-서버 기동 시 `DatabaseMigrationRunner`가 `schema_migrations` 원장을 확인하고 미적용 마이그레이션(`v1..v13`)을 각 버전별 단일 트랜잭션으로 적용한다.
+서버 기동 시 `DatabaseMigrationRunner`가 `schema_migrations` 원장을 확인하고 미적용 마이그레이션(`v1..v14`)을 각 버전별 단일 트랜잭션으로 적용한다.
 
 - 주요 최신 마이그레이션:
   - `v11` (`node-attributes-numeric-projection`): `node_attributes.value_num` 수치·날짜 투영 컬럼 및 부분 B-Tree 인덱스
   - `v12` (`node-relations-traversal-indexes`): 방향별 그래프 탐색 및 `relation_type_id` pushdown 복합 인덱스
   - `v13` (`persistent-node-embeddings`): `node_embeddings` Float32 BLOB 저장소 및 `node_embedding_revisions` 캐시 무효화 카운터 트리거
+  - `v14` (`optimize-eav-indexes-and-write-triggers`): `node_attributes` 커버링 복합 인덱스 및 `node_embeddings` 테이블 변경 시에만 갱신되는 조건부 개정 트리거
 - **Fail-Closed 보호**: 데이터베이스에 현재 바이너리가 알 수 없는 상위 버전이 기록되어 있거나 기존 버전 이름이 불일치하면 즉시 연결을 닫고 기동을 중단한다. 업그레이드 전에는 반드시 SQLite 파일 또는 JSONL 백업을 먼저 확보한다.
 
 ### 동적 테이블 스키마 정합성 감사
@@ -163,9 +167,9 @@ curl -H "Authorization: Bearer <token>" \
 
 `hybridSearchNodes` (GraphQL) 및 `POST /api/nodes/hybrid-search` (REST)는 다음 4가지 신호를 Reciprocal Rank Fusion(RRF)으로 결합한다:
 
-1. **그래프 탐색 제약 (`graph`)**: `anchorNodeIds`, `maxDepth`, `direction`, `relationTypeIds` 기준 N-hop 연결 후보 및 홉 거리 점수
-2. **타입 속성 필터 (`filters`)**: `NodeAttributeSchemaGate` 타입과 `value_num` 부분 인덱스를 활용하는 수치·문자열 필터
-3. **전문 검색 (`query`)**: `node_search_fts` + `node_attribute_search_fts` FTS5 BM25 순위
+1. **그래프 탐색 제약 (`graph`)**: `anchorNodeIds`, `maxDepth`, `direction`, `relationTypes`, `includeAnchors` 기준 N-hop 연결 후보 및 홉 거리 점수
+2. **타입 속성 필터 (`filterQuery`)**: `NodeAttributeSchemaGate` 타입과 `value_num` 부분 인덱스를 활용하는 수치·문자열 필터
+3. **전문 검색 (`textQuery`)**: `node_search_fts` + `node_attribute_search_fts` FTS5 BM25 순위
 4. **의미 벡터 검색 (`vector`)**: 영속 `Float32Array` 정확 코사인 유사도 (`BoundedTopKCollector` `O(N log K)`)
 
 ---
@@ -179,8 +183,8 @@ JSONL 백업·복원은 Git 추적, 스키마 이관, 버전 업그레이드 전
 ```graphql
 mutation ExportFullBackup {
   exportJsonl(
-    options: {
-      outputDir: "/var/backups/bun-graph-db/2026-10-31"
+    input: {
+      outputDir: "/var/backups/bun-graph-db/2026-11-27"
       includeSchema: true
       includeRelations: true
       includeEmbeddings: true
@@ -212,8 +216,8 @@ mutation ExportFullBackup {
 ```graphql
 mutation RestoreFullBackup {
   importJsonl(
-    options: {
-      inputDir: "/var/backups/bun-graph-db/2026-10-31"
+    input: {
+      inputDir: "/var/backups/bun-graph-db/2026-11-27"
       conflictResolution: OVERWRITE
       validateSchema: true
     }
@@ -259,7 +263,12 @@ mutation RestoreFullBackup {
 
 ### 런타임 헬스체크
 
-- **HTTP Liveness**: `GET /api/health` (익명 허용)
+- **HTTP Liveness**: `GET /health` 및 `GET /api/health` (익명 허용)
+- **Web Studio UI**: `GET /studio` (및 정적 `./public/index.html` 미존재 시 `GET /` 폴백)에서 헬스·테이블/칼럼·IA 개요/감사·AI 메모리·`/metrics`·`/api/audit-log`를 브라우저로 점검
+- **Prometheus & JSON 관측성([MetricsRegistry.ts](../../src/presentation/http/observability/MetricsRegistry.ts))**: `GET /metrics`(OpenMetrics/Prometheus 텍스트, `?format=json` JSON 스냅샷, 전역 `admin` 권한 필요)
+- **동적 토큰 회전·만료 & 보안 감사 로그([SecurityAuditLog.ts](../../src/application/security/SecurityAuditLog.ts))**: `AccessControl.registerToken` / `revokeToken` / `listPrincipals` / `expiresAt` 만료 검사 및 `GET /api/audit-log`(전역 `admin` 권한 필요)
+- **컨테이너 & 엣지 배포**: [Dockerfile](../../Dockerfile) (`node:26-slim`, `/data` 볼륨, `/health` 헬스체크) 및 [deploy/cloudflare/wrangler.jsonc](../../deploy/cloudflare/wrangler.jsonc) 제공
+- **배포 아티팩트 계약 검증**: `pnpm run release:check` (`dist/core/index.js` 외부/Node 의존성 0, 전체 `exports`/`bin`/`.d.ts` 검증)
 - **GraphQL 상태 점검**:
   ```graphql
   query {
@@ -277,19 +286,19 @@ mutation RestoreFullBackup {
 변경 배포 또는 릴리스 커밋 전에는 다음 명령이 모두 통과해야 한다:
 
 ```bash
-# 1. 정적 품질 게이트 (문서 검증 + 런타임 버전 + Biome + TypeScript + GraphQL codegen + 번들 빌드)
-bun run check:static
+# 1. 정적 품질 게이트 (임베디드 에셋 + 문서 검증 + 런타임 버전 + Biome + TypeScript + GraphQL codegen + 번들 빌드)
+pnpm run check:static
 
 # 2. 테스트 레인 분류 감사 및 전체 테스트 스위트(parallel-safe, serial-only, e2e, stress)
-bun run test:lanes:audit
-bun run test
+pnpm run test:lanes:audit
+pnpm run test
 
 # 3. oa-sdk OpenAPI 투영 아티팩트 결정성 검증
-bun run projection:check
+pnpm run projection:check
 
 # 4. 핵심 핫패스(검색·그래프 탐색·JSONL 백업·원자 쓰기·투영 캐시) 및 벡터 저장소 기준선 검증
-bun run benchmark:hotpaths:ci
-bun run benchmark:vector-storage
+pnpm run benchmark:hotpaths:ci
+pnpm run benchmark:vector-storage
 ```
 
 벤치마크와 레인 구성의 세부 규칙은 [테스트 가이드](../development/TESTING.md)와 [벡터·하이브리드 검색 기준선](../architecture/vector-and-storage-comparison.md)을 따른다.

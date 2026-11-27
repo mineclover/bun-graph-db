@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UpdateNodeInput } from '@/application/dtos/NodeDto.js'
 import type { TableSchemaProjectionProvider } from '@/application/use-cases/nodes/CreateNode.js'
 import { UpdateNodeUseCase } from '@/application/use-cases/nodes/UpdateNode.js'
@@ -28,21 +28,21 @@ type AttributeRepositoryMock = MockedMethods<IAttributeRepository>
 
 function createNodeRepositoryMock(): NodeRepositoryMock {
   return {
-    save: mock(async (_node: Node) => {}),
-    findById: mock(async (_id: string) => createTestNode('node-1', 'table-1', 'Existing content')),
-    findByTableIdAndContent: mock(async (_tableId: string, _content: string) => null),
-    findByTableId: mock(async (_tableId: string) => createPaginatedResult<Node>()),
-    findAll: mock(async (_options: unknown) => createPaginatedResult<Node>()),
-    delete: mock(async (_id: string) => {}),
-    deleteByTableId: mock(async (_tableId: string) => {}),
-    exists: mock(async (_tableId: string, _content: string) => false),
-    count: mock(async () => 0),
-    countByTableId: mock(async (_tableId: string) => 0),
-    saveMany: mock(async (_nodes: Node[]) => {}),
-    findByIds: mock(async (_ids: string[]) => []),
-    searchByContent: mock(async (_tableId: string, _searchTerm: string, _options?: unknown) => createPaginatedResult<Node>()),
-    executeRawQuery: mock(async (_query: string, _params?: unknown[]) => []),
-    update: mock(
+    save: vi.fn(async (_node: Node) => {}),
+    findById: vi.fn(async (_id: string) => createTestNode('node-1', 'table-1', 'Existing content')),
+    findByTableIdAndContent: vi.fn(async (_tableId: string, _content: string) => null),
+    findByTableId: vi.fn(async (_tableId: string) => createPaginatedResult<Node>()),
+    findAll: vi.fn(async (_options: unknown) => createPaginatedResult<Node>()),
+    delete: vi.fn(async (_id: string) => {}),
+    deleteByTableId: vi.fn(async (_tableId: string) => {}),
+    exists: vi.fn(async (_tableId: string, _content: string) => false),
+    count: vi.fn(async () => 0),
+    countByTableId: vi.fn(async (_tableId: string) => 0),
+    saveMany: vi.fn(async (_nodes: Node[]) => {}),
+    findByIds: vi.fn(async (_ids: string[]) => []),
+    searchByContent: vi.fn(async (_tableId: string, _searchTerm: string, _options?: unknown) => createPaginatedResult<Node>()),
+    executeRawQuery: vi.fn(async (_query: string, _params?: unknown[]) => []),
+    update: vi.fn(
       async (
         _id: string,
         updates: { content?: string; title?: string | null; description?: string | null; metadata?: SafeJsonValue },
@@ -53,20 +53,20 @@ function createNodeRepositoryMock(): NodeRepositoryMock {
 
 function createNodeAttributeRepositoryMock(): NodeAttributeRepositoryMock {
   return {
-    save: mock(async (_nodeAttribute: NodeAttribute) => {}),
-    findById: mock(async (_id: string) => null),
-    findByNodeIdAndAttributeId: mock(async (_nodeId: string, _attributeId: string) => null),
-    findByNodeId: mock(async (_nodeId: string) => []),
-    findByAttributeId: mock(async (_attributeId: string) => createPaginatedResult<NodeAttribute>()),
-    update: mock(async (_nodeAttribute: NodeAttribute) => {}),
-    delete: mock(async (_id: string) => {}),
-    deleteByNodeId: mock(async (_nodeId: string) => {}),
-    deleteByAttributeId: mock(async (_attributeId: string) => {}),
-    exists: mock(async (_nodeId: string, _attributeId: string) => false),
-    countByNodeId: mock(async (_nodeId: string) => 0),
-    saveMany: mock(async (_nodeAttributes: NodeAttribute[]) => {}),
-    updateMany: mock(async (_nodeAttributes: NodeAttribute[]) => {}),
-    setNodeAttribute: mock(async (nodeId: string, attributeId: string, value: SafeJsonValue) =>
+    save: vi.fn(async (_nodeAttribute: NodeAttribute) => {}),
+    findById: vi.fn(async (_id: string) => null),
+    findByNodeIdAndAttributeId: vi.fn(async (_nodeId: string, _attributeId: string) => null),
+    findByNodeId: vi.fn(async (_nodeId: string) => []),
+    findByAttributeId: vi.fn(async (_attributeId: string) => createPaginatedResult<NodeAttribute>()),
+    update: vi.fn(async (_nodeAttribute: NodeAttribute) => {}),
+    delete: vi.fn(async (_id: string) => {}),
+    deleteByNodeId: vi.fn(async (_nodeId: string) => {}),
+    deleteByAttributeId: vi.fn(async (_attributeId: string) => {}),
+    exists: vi.fn(async (_nodeId: string, _attributeId: string) => false),
+    countByNodeId: vi.fn(async (_nodeId: string) => 0),
+    saveMany: vi.fn(async (_nodeAttributes: NodeAttribute[]) => {}),
+    updateMany: vi.fn(async (_nodeAttributes: NodeAttribute[]) => {}),
+    setNodeAttribute: vi.fn(async (nodeId: string, attributeId: string, value: SafeJsonValue) =>
       NodeAttribute.create(nodeId, attributeId, String(value)),
     ),
   } satisfies NodeAttributeRepositoryMock
@@ -74,44 +74,44 @@ function createNodeAttributeRepositoryMock(): NodeAttributeRepositoryMock {
 
 function createTableRepositoryMock(): TableRepositoryMock {
   return {
-    save: mock(async (table: Table) => table),
-    findById: mock(async (_id: string) => createTestTable('table-1', 'test-table', 'Test Table')),
-    findByIdentifier: mock(async (_identifier: string) => null),
-    findAll: mock(async (_options: unknown) => createPaginatedResult<Table>()),
-    delete: mock(async (_id: string) => {}),
-    count: mock(async () => 0),
-    exists: mock(async (_identifier: string) => false),
-    saveMany: mock(async (_tables: Table[]) => {}),
-    findByIds: mock(async (_ids: string[]) => []),
-    deleteMany: mock(async (_ids: string[]) => {}),
-    update: mock(async (table: Table) => table),
+    save: vi.fn(async (table: Table) => table),
+    findById: vi.fn(async (_id: string) => createTestTable('table-1', 'test-table', 'Test Table')),
+    findByIdentifier: vi.fn(async (_identifier: string) => null),
+    findAll: vi.fn(async (_options: unknown) => createPaginatedResult<Table>()),
+    delete: vi.fn(async (_id: string) => {}),
+    count: vi.fn(async () => 0),
+    exists: vi.fn(async (_identifier: string) => false),
+    saveMany: vi.fn(async (_tables: Table[]) => {}),
+    findByIds: vi.fn(async (_ids: string[]) => []),
+    deleteMany: vi.fn(async (_ids: string[]) => {}),
+    update: vi.fn(async (table: Table) => table),
   } satisfies TableRepositoryMock
 }
 
 function createAttributeRepositoryMock(): AttributeRepositoryMock {
   return {
-    save: mock(async (attribute: Attribute) => attribute),
-    findById: mock(async (_id: string) => null),
-    findAll: mock(async (_options: unknown) => createPaginatedResult<Attribute>()),
-    delete: mock(async (_id: string) => {}),
-    count: mock(async () => 0),
-    findByIdentifier: mock(async (_identifier: string) => null),
-    exists: mock(async (_identifier: string) => false),
-    saveMany: mock(async (_attributes: Attribute[]) => {}),
-    findByIds: mock(async (_ids: string[]) => []),
-    deleteMany: mock(async (_ids: string[]) => {}),
-    update: mock(async (attribute: Attribute) => attribute),
-    findByParentId: mock(async (_parentId: string) => createPaginatedResult<Attribute>()),
-    countByParentId: mock(async (_parentId: string) => 0),
-    deleteByParentId: mock(async (_parentId: string) => {}),
-    findByTableIdAndIdentifier: mock(async (_tableId: string, _identifier: string) => null),
-    findByAttributeTypeId: mock(async (_attributeTypeId: string) => createPaginatedResult<Attribute>()),
-    findRequiredByTableId: mock(async (_tableId: string) => []),
-    getAttributeTypeForAttribute: mock(async (_attributeId: string) => null),
-    existsByTableIdAndIdentifier: mock(async (_tableId: string, _identifier: string) => false),
-    findByTableId: mock(async (_tableId: string) => createPaginatedResult(createProjectionAttributes())),
-    countByTableId: mock(async (_tableId: string) => 0),
-    deleteByTableId: mock(async (_tableId: string) => {}),
+    save: vi.fn(async (attribute: Attribute) => attribute),
+    findById: vi.fn(async (_id: string) => null),
+    findAll: vi.fn(async (_options: unknown) => createPaginatedResult<Attribute>()),
+    delete: vi.fn(async (_id: string) => {}),
+    count: vi.fn(async () => 0),
+    findByIdentifier: vi.fn(async (_identifier: string) => null),
+    exists: vi.fn(async (_identifier: string) => false),
+    saveMany: vi.fn(async (_attributes: Attribute[]) => {}),
+    findByIds: vi.fn(async (_ids: string[]) => []),
+    deleteMany: vi.fn(async (_ids: string[]) => {}),
+    update: vi.fn(async (attribute: Attribute) => attribute),
+    findByParentId: vi.fn(async (_parentId: string) => createPaginatedResult<Attribute>()),
+    countByParentId: vi.fn(async (_parentId: string) => 0),
+    deleteByParentId: vi.fn(async (_parentId: string) => {}),
+    findByTableIdAndIdentifier: vi.fn(async (_tableId: string, _identifier: string) => null),
+    findByAttributeTypeId: vi.fn(async (_attributeTypeId: string) => createPaginatedResult<Attribute>()),
+    findRequiredByTableId: vi.fn(async (_tableId: string) => []),
+    getAttributeTypeForAttribute: vi.fn(async (_attributeId: string) => null),
+    existsByTableIdAndIdentifier: vi.fn(async (_tableId: string, _identifier: string) => false),
+    findByTableId: vi.fn(async (_tableId: string) => createPaginatedResult(createProjectionAttributes())),
+    countByTableId: vi.fn(async (_tableId: string) => 0),
+    deleteByTableId: vi.fn(async (_tableId: string) => {}),
   } satisfies AttributeRepositoryMock
 }
 
@@ -162,7 +162,7 @@ function createTaskProjectionProvider(): TableSchemaProjectionProvider {
   })
 
   return {
-    project: mock(async () => projection),
+    project: vi.fn(async () => projection),
   }
 }
 
@@ -186,7 +186,7 @@ function createBrokenProjectionProvider(): TableSchemaProjectionProvider {
   })
 
   return {
-    project: mock(async () => projection),
+    project: vi.fn(async () => projection),
   }
 }
 

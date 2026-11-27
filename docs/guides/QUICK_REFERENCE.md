@@ -8,19 +8,19 @@
 
 ```bash
 # Start server
-bun run dev
+pnpm run dev
 
 # Start on custom port
-bun run dev --port 3000
+pnpm run dev --port 4200
 
 # Type check
-bun run typecheck
+pnpm run typecheck
 
-# Format code
-bun run check
+# Static quality gates
+pnpm run check:static
 
 # Stop server
-Ctrl + C  # or: pkill -f "bun.*dev"
+Ctrl + C  # or: pkill -f "tsx watch"
 ```
 
 ---
@@ -208,18 +208,18 @@ query { getSupportedExportFormats { formats } }
 ```bash
 lsof -i :4141
 kill -9 <PID>
-# or: bun run dev --port 3000
+# or: pnpm run dev --port 4200
 ```
 
 ### Database issues
 ```bash
 rm ./data/bun-graph-db.sqlite
-bun run dev  # Recreates database
+pnpm run dev  # Recreates database
 ```
 
 ### Memory issues
 ```bash
-NODE_OPTIONS="--max-old-space-size=4096" bun run dev
+NODE_OPTIONS="--max-old-space-size=4096" pnpm run dev
 ```
 
 ---
@@ -306,4 +306,4 @@ claude mcp add --transport http my-table http://localhost:4141/sub/1/mcp
 ---
 
 **Version**: 1.0.0
-**Updated**: 2025-11-23
+**Updated**: 2026-11-27

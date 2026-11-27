@@ -1,18 +1,18 @@
 # 📊 Bun Graph Database - GraphQL API Reference
 
 **버전**: 1.0.0  
-**엔드포인트**: `http://localhost:4000/graphql`  
-**GraphQL Playground**: `http://localhost:4000/playground`  
+**엔드포인트**: `http://localhost:4141/graphql`  
+**GraphQL Playground**: `http://localhost:4141/graphql`  
 
 ## 🚀 빠른 시작
 
 ### 개발 서버 시작
 ```bash
-# 기본 개발 서버 (포트 4000)
-bun run dev
+# 기본 개발 서버 (포트 4141)
+pnpm run dev
 
 # 특정 포트로 실행
-GRAPHQL_PORT=4001 bun run dev
+pnpm run dev --port 4200
 ```
 
 ### 첫 번째 쿼리 실행

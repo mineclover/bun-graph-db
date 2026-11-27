@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
@@ -25,31 +25,31 @@ describe('DeleteDocUseCase', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repository
     mockDocRepository = {
-      save: mock(async () => {}),
-      findById: mock(async () => null),
-      findByTableAndCategory: mock(async () => []),
-      findActiveByTableAndCategory: mock(async () => null),
-      findVersionsByTableAndCategory: mock(async () => []),
-      searchDocs: mock(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
-      getLatestVersion: mock(async () => 1),
-      exists: mock(async () => false),
-      delete: mock(async () => {}),
-      deactivateOthersInCategory: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
-      count: mock(async () => 0),
-      countByCategory: mock(async () => 0),
-      searchByContent: mock(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      findByTableIds: mock(async () => []),
+      save: vi.fn(async () => {}),
+      findById: vi.fn(async () => null),
+      findByTableAndCategory: vi.fn(async () => []),
+      findActiveByTableAndCategory: vi.fn(async () => null),
+      findVersionsByTableAndCategory: vi.fn(async () => []),
+      searchDocs: vi.fn(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
+      getLatestVersion: vi.fn(async () => 1),
+      exists: vi.fn(async () => false),
+      delete: vi.fn(async () => {}),
+      deactivateOthersInCategory: vi.fn(async () => {}),
+      findAll: vi.fn(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
+      count: vi.fn(async () => 0),
+      countByCategory: vi.fn(async () => 0),
+      searchByContent: vi.fn(async () => ({ data: [], nodes: [], totalCount: 0, hasNextPage: false, hasPreviousPage: false })),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      findByTableIds: vi.fn(async () => []),
     }
 
     useCase = new DeleteDocUseCase(mockDocRepository, mockLogger)
@@ -69,7 +69,7 @@ describe('DeleteDocUseCase', () => {
 
   describe('Resource Validation', () => {
     it('should throw NotFoundException when doc does not exist', async () => {
-      mockDocRepository.findById = mock(async () => null)
+      mockDocRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.execute('nonexistent-doc')).rejects.toThrow(NotFoundException)
       await expect(useCase.execute('nonexistent-doc')).rejects.toThrow("Doc with id 'nonexistent-doc' not found")
@@ -81,9 +81,9 @@ describe('DeleteDocUseCase', () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Content')
 
       // Mock canBeDeleted to return false
-      existingDoc.canBeDeleted = mock(() => false)
+      existingDoc.canBeDeleted = vi.fn(() => false)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       await expect(useCase.execute('doc-1')).rejects.toThrow(ValidationException)
       await expect(useCase.execute('doc-1')).rejects.toThrow('Doc cannot be deleted')
@@ -92,7 +92,7 @@ describe('DeleteDocUseCase', () => {
     it('should allow deletion when doc can be deleted', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-1')
 
@@ -105,7 +105,7 @@ describe('DeleteDocUseCase', () => {
     it('should delete doc with USAGE category', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Usage doc')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-1')
 
@@ -124,7 +124,7 @@ describe('DeleteDocUseCase', () => {
     it('should delete doc with GUIDE category', async () => {
       const existingDoc = createTestDoc('doc-2', 'table-2', DocCategory.GUIDE, 'Guide doc')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-2')
 
@@ -135,7 +135,7 @@ describe('DeleteDocUseCase', () => {
     it('should delete doc with EXAMPLE category', async () => {
       const existingDoc = createTestDoc('doc-3', 'table-3', DocCategory.EXAMPLE, 'Example doc')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-3')
 
@@ -146,7 +146,7 @@ describe('DeleteDocUseCase', () => {
     it('should delete doc with SPEC category', async () => {
       const existingDoc = createTestDoc('doc-4', 'table-4', DocCategory.SPEC, 'Spec doc')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-4')
 
@@ -157,7 +157,7 @@ describe('DeleteDocUseCase', () => {
     it('should delete doc with GENERAL category', async () => {
       const existingDoc = createTestDoc('doc-5', 'table-5', DocCategory.GENERAL, 'General doc')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-5')
 
@@ -168,7 +168,7 @@ describe('DeleteDocUseCase', () => {
     it('should delete inactive doc', async () => {
       const existingDoc = createTestDoc('doc-6', 'table-1', DocCategory.USAGE, 'Inactive doc', 1, false)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-6')
 
@@ -179,7 +179,7 @@ describe('DeleteDocUseCase', () => {
     it('should delete doc with specific version', async () => {
       const existingDoc = createTestDoc('doc-7', 'table-1', DocCategory.USAGE, 'Version 3 doc', 3, true)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-7')
 
@@ -192,11 +192,11 @@ describe('DeleteDocUseCase', () => {
     it('should log errors and rethrow when delete fails', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const deleteError = new Error('Database connection failed')
 
-      mockDocRepository.delete = mock(async () => {
+      mockDocRepository.delete = vi.fn(async () => {
         throw deleteError
       })
 
@@ -207,11 +207,11 @@ describe('DeleteDocUseCase', () => {
     it('should handle repository errors gracefully', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const repositoryError = new Error('Repository operation failed')
 
-      mockDocRepository.delete = mock(async () => {
+      mockDocRepository.delete = vi.fn(async () => {
         throw repositoryError
       })
 
@@ -223,7 +223,7 @@ describe('DeleteDocUseCase', () => {
     it('should log deletion start and success', async () => {
       const existingDoc = createTestDoc('doc-123', 'table-1', DocCategory.USAGE, 'Test content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       await useCase.execute('doc-123')
 
@@ -246,11 +246,11 @@ describe('DeleteDocUseCase', () => {
     it('should log errors with context', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const error = new Error('Test error')
 
-      mockDocRepository.delete = mock(async () => {
+      mockDocRepository.delete = vi.fn(async () => {
         throw error
       })
 
@@ -274,7 +274,7 @@ describe('DeleteDocUseCase', () => {
       const longContent = 'A'.repeat(100000)
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, longContent)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-1')
 
@@ -286,7 +286,7 @@ describe('DeleteDocUseCase', () => {
       const specialContent = 'Content with <>&"\'`\n\t special chars'
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.EXAMPLE, specialContent)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const result = await useCase.execute('doc-1')
 
@@ -300,17 +300,17 @@ describe('DeleteDocUseCase', () => {
       const doc3 = createTestDoc('doc-3', 'table-1', DocCategory.EXAMPLE, 'Content 3')
 
       // First deletion
-      mockDocRepository.findById = mock(async () => doc1)
+      mockDocRepository.findById = vi.fn(async () => doc1)
       const result1 = await useCase.execute('doc-1')
       expect(result1.success).toBe(true)
 
       // Second deletion
-      mockDocRepository.findById = mock(async () => doc2)
+      mockDocRepository.findById = vi.fn(async () => doc2)
       const result2 = await useCase.execute('doc-2')
       expect(result2.success).toBe(true)
 
       // Third deletion
-      mockDocRepository.findById = mock(async () => doc3)
+      mockDocRepository.findById = vi.fn(async () => doc3)
       const result3 = await useCase.execute('doc-3')
       expect(result3.success).toBe(true)
 

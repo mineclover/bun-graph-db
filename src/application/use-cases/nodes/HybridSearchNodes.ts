@@ -7,6 +7,7 @@ import {
 import { type AttributeTypeInfo, SearchQueryParser } from '@/application/services/SearchQueryParser.js'
 import { loadTableAttributeTypeInfo } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
+import type { IEmbeddingProvider } from '@/domain/ports/IEmbeddingProvider.js'
 import type { Node } from '@/domain/entities/Node.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
 import type { INodeEmbeddingRepository } from '@/domain/repositories/INodeEmbeddingRepository.js'
@@ -123,6 +124,7 @@ export class HybridSearchNodesUseCase {
     private readonly tableRepository: ITableRepository,
     private readonly logger: ILogger,
     graphTraversal?: GraphTraversalService,
+    private readonly embeddingProvider?: IEmbeddingProvider,
   ) {
     this.graphTraversal =
       graphTraversal ?? new GraphTraversalService(nodeRepository, nodeRelationRepository)
@@ -177,7 +179,19 @@ export class HybridSearchNodesUseCase {
 
     // Step 2: Table-scoped & typed attribute filter candidate set
     const hasTextQuery = Boolean(input.textQuery?.trim())
-    const hasVectorQuery = Boolean(input.vector && input.vector.length > 0)
+    let queryVector: readonly number[] | undefined =
+      input.vector && input.vector.length > 0 ? input.vector : undefined
+    let queryModel = input.model
+
+    if (!queryVector && hasTextQuery && this.embeddingProvider) {
+      const embedded = await this.embeddingProvider.embed({
+        text: input.textQuery,
+        task: 'retrieval_query',
+      })
+      queryVector = embedded.vector
+      queryModel = queryModel ?? embedded.model
+    }
+    const hasVectorQuery = Boolean(queryVector && queryVector.length > 0)
     const hasAttributeFilter =
       Boolean(input.filterQuery?.trim()) || Boolean(input.conditions && input.conditions.length > 0)
 
@@ -248,10 +262,10 @@ export class HybridSearchNodesUseCase {
       hasVectorQuery
         ? this.nodeEmbeddingRepository.searchSimilar({
             tableId,
-            queryVector: input.vector ?? [],
+            queryVector: queryVector ?? [],
             limit: poolLimit,
             minScore: input.minVectorScore ?? -1,
-            model: input.model,
+            model: queryModel,
             restrictToNodeIds: eligibleSet,
           })
         : Promise.resolve(null),
@@ -433,13 +447,50 @@ export class HybridSearchNodesUseCase {
     if (!relationTypes) return undefined
     if (relationTypes.length === 0) return []
 
+    const uniqueTokens = [
+      ...new Set(relationTypes.map((token) => token.trim()).filter((token) => token.length > 0)),
+    ]
+    if (uniqueTokens.length === 0) return []
+
+    if (uniqueTokens.length > 1 && typeof this.relationTypeRepository.findAll === 'function') {
+      const allTypesPage = await this.relationTypeRepository.findAll({ limit: 1000, offset: 0 })
+      const allTypes = allTypesPage.data ?? allTypesPage.nodes ?? allTypesPage.items ?? []
+      const byIdentifier = new Map<string, string>()
+      const knownIds = new Set<string>()
+      for (const relationType of allTypes) {
+        const id = relationType.getId()
+        byIdentifier.set(relationType.getIdentifier(), id)
+        knownIds.add(id)
+      }
+      const resolvedIds: string[] = []
+      const unresolved: string[] = []
+      for (const token of uniqueTokens) {
+        const mapped = byIdentifier.get(token)
+        if (mapped) {
+          resolvedIds.push(mapped)
+        } else if (knownIds.has(token)) {
+          resolvedIds.push(token)
+        } else {
+          unresolved.push(token)
+        }
+      }
+      if (unresolved.length === 0) {
+        return resolvedIds
+      }
+      const fallback = await Promise.all(
+        unresolved.map(async (token) => {
+          const byId = await this.relationTypeRepository.findById(token)
+          return byId ? byId.getId() : null
+        }),
+      )
+      return [...resolvedIds, ...fallback.filter((id): id is string => id !== null)]
+    }
+
     const resolved = await Promise.all(
-      relationTypes.map(async (token) => {
-        const trimmed = token.trim()
-        if (!trimmed) return null
-        const byIdentifier = await this.relationTypeRepository.findByIdentifier(trimmed)
+      uniqueTokens.map(async (token) => {
+        const byIdentifier = await this.relationTypeRepository.findByIdentifier(token)
         if (byIdentifier) return byIdentifier.getId()
-        const byId = await this.relationTypeRepository.findById(trimmed)
+        const byId = await this.relationTypeRepository.findById(token)
         return byId ? byId.getId() : null
       }),
     )

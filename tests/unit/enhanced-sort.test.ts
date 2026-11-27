@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import type { AttributeTypeInfo } from '@/application/services/SearchQueryParser.js'
 import { DateTimeSortStrategy } from '@/application/services/sorting/DateTimeSortStrategy.js'
 import { NumericSortStrategy } from '@/application/services/sorting/NumericSortStrategy.js'
@@ -55,7 +55,7 @@ describe('Enhanced Sort Functionality', () => {
 
       expect(result.sqlClause).toContain('ORDER BY')
       expect(result.sortFields).toEqual(['age', 'name'])
-      expect(result.parameters).toBeArray()
+      expect(Array.isArray(result.parameters)).toBe(true)
     })
 
     test('should validate sort options correctly', () => {

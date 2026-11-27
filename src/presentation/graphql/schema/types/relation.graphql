@@ -20,6 +20,7 @@ type NodeRelation implements Node {
   relationshipType: String!
   properties: JSON
   strength: Float
+  confidence: Int
 
   # Relationships
   table: Table!
@@ -60,6 +61,7 @@ input UpdateRelationInput {
   relationTypeId: ID
   properties: JSON
   strength: Float
+  confidence: Int
 }
 
 # Filters for relations

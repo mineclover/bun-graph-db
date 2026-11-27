@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { mkdtemp, rm } from 'node:fs/promises'
+import { afterEach, describe, expect, test } from 'vitest'
+import { existsSync } from 'node:fs'
+import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import * as XLSX from 'xlsx'
@@ -31,7 +32,7 @@ describe('ExcelFileGateway', () => {
     if (!usersSelection || !projectsSelection) throw new Error('Expected Excel sync selections')
 
     await gateway.verifyWritable(usersSelection)
-    expect(await Bun.file(workbookPath).exists()).toBe(false)
+    expect(existsSync(workbookPath)).toBe(false)
 
     await gateway.writeSheet(createPlan(usersSelection, 'users', [{ __node_id: 'user-1', name: 'Ada' }]))
     await gateway.writeSheet(createPlan(projectsSelection, 'projects', [{ __node_id: 'project-1', name: 'Graph DB' }]))
@@ -39,10 +40,10 @@ describe('ExcelFileGateway', () => {
     expect(await gateway.readRows(usersSelection)).toEqual([{ __node_id: 'user-1', name: 'Ada' }])
     expect(await gateway.readRows(projectsSelection)).toEqual([{ __node_id: 'project-1', name: 'Graph DB' }])
 
-    const workbookBuffer = await Bun.file(workbookPath).arrayBuffer()
+    const workbookBuffer = await readFile(workbookPath)
     expect(workbookBuffer.byteLength).toBeGreaterThan(0)
 
-    const workbook = XLSX.read(workbookBuffer, { type: 'array' })
+    const workbook = XLSX.read(workbookBuffer, { type: 'buffer' })
     const metadata = XLSX.utils.sheet_to_json<{ tableIdentifier: string }>(workbook.Sheets._tables, {
       defval: '',
     })

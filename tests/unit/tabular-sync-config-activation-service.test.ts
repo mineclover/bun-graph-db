@@ -1,5 +1,5 @@
-import { Database } from "bun:sqlite";
-import { describe, expect, test } from "bun:test";
+import { Database } from "../../src/infrastructure/database/sqlite/SqliteAdapter.js";
+import { describe, expect, test } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

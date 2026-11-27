@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { DIContainer } from '../../src/infrastructure/container/DIContainer'
 
 describe('DIContainer lifecycle', () => {

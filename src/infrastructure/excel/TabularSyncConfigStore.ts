@@ -1,4 +1,4 @@
-import type { Database } from 'bun:sqlite'
+import type { ISqliteDatabase } from '@/infrastructure/database/sqlite/SqlitePort.js'
 import { extname } from 'node:path'
 import type { TabularSyncConfig } from './TabularSyncConfig.js'
 import type { GoogleSheetsTargetConfig, TabularSyncTargetConfig } from './TabularSyncConfig.js'
@@ -21,7 +21,7 @@ export interface TabularSyncConfigRecord {
 }
 
 export class TabularSyncConfigStore {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: ISqliteDatabase) {}
 
   getActiveConfig(): TabularSyncConfig | null {
     return this.getActiveConfigRecord()?.config || null

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { GraphTraversalService } from '@/application/services/GraphTraversalService.js'
 import type { NodeParent } from '@/core/types/GraphQLTypes.js'

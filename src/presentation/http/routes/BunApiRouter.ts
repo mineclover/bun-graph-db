@@ -1,9 +1,16 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import {
+  BUN_GRAPH_DB_API_VERSION,
+  extractRestExactNodeId,
+  extractRestExactRelationId,
+  extractRestExactTableId,
+} from '@/core/contracts/RestRouteContract.js'
 import type { AttributeApiController } from '../controllers/AttributeApiController.js'
 import type { GraphApiController } from '../controllers/GraphApiController.js'
 import type { GraphDbApiController } from '../controllers/GraphDbApiController.js'
 import type { McpToolController } from '../controllers/McpToolController.js'
-import { createBunControllerContext, type HttpControllerHandler } from '../adapters/BunControllerAdapter.js'
+import type { HttpControllerHandler } from '../adapters/BunControllerAdapter.js'
+import { executeHttpController, type HttpExecutionHooks } from '../aspects/HttpExecutionPipeline.js'
 import { toErrorMeta } from '../utils/errorHelpers.js'
 
 export interface BunApiRouterDependencies {
@@ -12,12 +19,13 @@ export interface BunApiRouterDependencies {
   attributeController: AttributeApiController
   graphController: GraphApiController
   mcpToolController: McpToolController
+  hooks?: HttpExecutionHooks
 }
 
 export type BunApiRouter = (request: Request) => Promise<Response>
 
 /**
- * Web-standard REST router for Bun. Authentication is intentionally composed
+ * Web-standard REST router for Node 26 and portable Web Fetch runtimes. Authentication is intentionally composed
  * outside this router by the external request handler, before any route is
  * dispatched. Keeping this router free of fallback handlers makes that order
  * explicit and prevents a REST route from gaining an unauthenticated entry.
@@ -28,6 +36,7 @@ export function createBunApiRouter({
   attributeController,
   graphController,
   mcpToolController,
+  hooks,
 }: BunApiRouterDependencies): BunApiRouter {
   return async (request: Request): Promise<Response> => {
     const url = new URL(request.url)
@@ -39,11 +48,8 @@ export function createBunApiRouter({
       method === 'GET' ? pathname.match(/^\/api\/tables\/([^/]+)\/schema\/audit$/) : null
     const nodeEmbeddingMatch = pathname.match(/^\/api\/nodes\/([^/]+)\/embedding$/)
 
-    const run = async (handler: HttpControllerHandler, params: Record<string, string> = {}): Promise<Response> => {
-      const context = await createBunControllerContext(request, params)
-      await handler(context.request, context.response)
-      return context.toResponse()
-    }
+    const run = (handler: HttpControllerHandler, params: Record<string, string> = {}): Promise<Response> =>
+      executeHttpController(request, handler, params, logger, hooks)
 
     try {
       if (method === 'GET' && pathname === '/api/health') {
@@ -55,7 +61,7 @@ export function createBunApiRouter({
               status: 'OK',
               timestamp: new Date().toISOString(),
               database: 'Connected',
-              version: '1.0.0',
+              version: BUN_GRAPH_DB_API_VERSION,
             },
           }),
           { headers: { 'Content-Type': 'application/json' } },
@@ -77,6 +83,13 @@ export function createBunApiRouter({
       if (method === 'GET' && pathname === '/api/tables') {
         return await run(graphController.getTables.bind(graphController))
       }
+      const tableDocsMatch =
+        method === 'GET' ? pathname.match(/^\/api\/tables\/([^/]+)\/docs$/) : null
+      if (tableDocsMatch) {
+        return await run(graphController.getTableDocs.bind(graphController), {
+          tableId: decodeURIComponent(tableDocsMatch[1] || ''),
+        })
+      }
       if (method === 'GET' && pathname === '/api/tables/docs') {
         return await run(graphController.getTableDocs.bind(graphController))
       }
@@ -90,6 +103,36 @@ export function createBunApiRouter({
           tableId: decodeURIComponent(tableSchemaAuditMatch[1] || ''),
         })
       }
+      const tableColumnsMatch =
+        method === 'GET' ? pathname.match(/^\/api\/tables\/([^/]+)\/columns$/) : null
+      if (tableColumnsMatch) {
+        return await run(attributeController.getTableColumns.bind(attributeController), {
+          tableId: decodeURIComponent(tableColumnsMatch[1] || ''),
+        })
+      }
+      const tableColumnConfigMatch =
+        method === 'PUT' ? pathname.match(/^\/api\/tables\/([^/]+)\/columns\/([^/]+)$/) : null
+      if (tableColumnConfigMatch) {
+        return await run(attributeController.configureTableColumn.bind(attributeController), {
+          tableId: decodeURIComponent(tableColumnConfigMatch[1] || ''),
+          attributeIdentifier: decodeURIComponent(tableColumnConfigMatch[2] || ''),
+        })
+      }
+      const tableExportMatch = method === 'POST' ? pathname.match(/^\/api\/tables\/([^/]+)\/export$/) : null
+      if (tableExportMatch) {
+        return await run(graphController.exportTableWithNodes.bind(graphController), {
+          tableId: decodeURIComponent(tableExportMatch[1] || ''),
+        })
+      }
+      if (method === 'GET' || method === 'DELETE') {
+        const tableId = extractRestExactTableId(pathname)
+        if (tableId) {
+          if (method === 'GET') {
+            return await run(graphDbController.getTable.bind(graphDbController), { tableId })
+          }
+          return await run(graphDbController.deleteTable.bind(graphDbController), { tableId })
+        }
+      }
       if (nodeEmbeddingMatch) {
         const nodeId = decodeURIComponent(nodeEmbeddingMatch[1] || '')
         if (method === 'GET') {
@@ -102,20 +145,67 @@ export function createBunApiRouter({
           return await run(graphController.removeNodeEmbedding.bind(graphController), { nodeId })
         }
       }
+      const nodeConnectedMatch =
+        method === 'GET' ? pathname.match(/^\/api\/nodes\/([^/]+)\/connected$/) : null
+      if (nodeConnectedMatch) {
+        return await run(graphController.getConnectedNodes.bind(graphController), {
+          nodeId: decodeURIComponent(nodeConnectedMatch[1] || ''),
+        })
+      }
+      const nodeRelationsMatch =
+        method === 'GET' ? pathname.match(/^\/api\/nodes\/([^/]+)\/relations$/) : null
+      if (nodeRelationsMatch) {
+        return await run(graphController.getNodeRelations.bind(graphController), {
+          nodeId: decodeURIComponent(nodeRelationsMatch[1] || ''),
+        })
+      }
+      if (method === 'POST' && pathname === '/api/nodes/shortest-path') {
+        return await run(graphController.findShortestPath.bind(graphController))
+      }
       if (method === 'POST' && pathname === '/api/nodes/hybrid-search') {
         return await run(graphController.hybridSearchNodes.bind(graphController))
-      }
-      if ((method === 'PUT' || method === 'PATCH') && pathname.startsWith('/api/nodes/')) {
-        return await run(graphDbController.updateNode.bind(graphDbController), { nodeId: pathname.split('/')[3] || '' })
-      }
-      if (method === 'POST' && pathname === '/api/nodes') {
-        return await run(graphDbController.createNode.bind(graphDbController))
       }
       if (method === 'GET' && pathname === '/api/nodes/search') {
         return await run(graphDbController.searchNodes.bind(graphDbController))
       }
+      const nodeAttributesMatch = method === 'GET' ? pathname.match(/^\/api\/nodes\/([^/]+)\/attributes$/) : null
+      if (nodeAttributesMatch) {
+        return await run(attributeController.getNodeAttributes.bind(attributeController), {
+          nodeId: decodeURIComponent(nodeAttributesMatch[1] || ''),
+        })
+      }
+      if (method === 'GET' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+        const nodeId = extractRestExactNodeId(pathname)
+        if (nodeId) {
+          if (method === 'GET') {
+            return await run(graphDbController.getNode.bind(graphDbController), { nodeId })
+          }
+          if (method === 'DELETE') {
+            return await run(graphDbController.deleteNode.bind(graphDbController), { nodeId })
+          }
+          return await run(graphDbController.updateNode.bind(graphDbController), { nodeId })
+        }
+      }
+      if (method === 'POST' && pathname === '/api/nodes') {
+        return await run(graphDbController.createNode.bind(graphDbController))
+      }
       if (method === 'POST' && pathname === '/api/relations') {
         return await run(graphDbController.createRelation.bind(graphDbController))
+      }
+      if (method === 'GET' && pathname === '/api/relations/search') {
+        return await run(graphController.searchRelations.bind(graphController))
+      }
+      if (method === 'DELETE') {
+        const relationId = extractRestExactRelationId(pathname)
+        if (relationId) {
+          return await run(graphDbController.deleteRelation.bind(graphDbController), { relationId })
+        }
+      }
+      if (method === 'GET' && pathname === '/api/relation-types') {
+        return await run(graphDbController.listRelationTypes.bind(graphDbController))
+      }
+      if (method === 'POST' && pathname === '/api/relation-types') {
+        return await run(graphDbController.createRelationType.bind(graphDbController))
       }
       if (method === 'POST' && pathname === '/api/templates') {
         return await run(graphDbController.createTemplate.bind(graphDbController))
@@ -126,8 +216,34 @@ export function createBunApiRouter({
       if (method === 'POST' && pathname === '/api/templates/execute') {
         return await run(graphDbController.executeTemplateWithGraphQL.bind(graphDbController))
       }
+      const templateExportMatch =
+        method === 'GET' ? pathname.match(/^\/api\/templates\/([^/]+)\/export$/) : null
+      if (templateExportMatch) {
+        return await run(graphDbController.exportTemplate.bind(graphDbController), {
+          templateIdentifier: decodeURIComponent(templateExportMatch[1] || ''),
+        })
+      }
+      if (method === 'POST' && pathname === '/api/templates/import') {
+        return await run(graphDbController.importTemplate.bind(graphDbController))
+      }
       if (method === 'POST' && pathname === '/api/attributes') {
         return await run(attributeController.createAttribute.bind(attributeController))
+      }
+      const tableAttributesMatch =
+        method === 'GET' ? pathname.match(/^\/api\/attributes\/tables\/([^/]+)$/) : null
+      if (tableAttributesMatch) {
+        return await run(attributeController.getTableAttributes.bind(attributeController), {
+          tableId: decodeURIComponent(tableAttributesMatch[1] || ''),
+        })
+      }
+      const attributeItemMatch =
+        method === 'PUT' || method === 'DELETE' ? pathname.match(/^\/api\/attributes\/([^/]+)$/) : null
+      if (attributeItemMatch) {
+        const attributeId = decodeURIComponent(attributeItemMatch[1] || '')
+        if (method === 'PUT') {
+          return await run(attributeController.updateAttribute.bind(attributeController), { attributeId })
+        }
+        return await run(attributeController.deleteAttribute.bind(attributeController), { attributeId })
       }
       if (method === 'POST' && pathname === '/api/node-attributes') {
         return await run(attributeController.setNodeAttribute.bind(attributeController))
@@ -137,16 +253,6 @@ export function createBunApiRouter({
       }
       if (method === 'DELETE' && pathname === '/api/node-attributes') {
         return await run(attributeController.removeNodeAttribute.bind(attributeController))
-      }
-      if (method === 'GET' && pathname.startsWith('/api/nodes/') && pathname.endsWith('/attributes')) {
-        return await run(attributeController.getNodeAttributes.bind(attributeController), {
-          nodeId: pathname.split('/')[3] || '',
-        })
-      }
-      if (method === 'POST' && pathname.startsWith('/api/tables/') && pathname.endsWith('/export')) {
-        return await run(graphController.exportTableWithNodes.bind(graphController), {
-          tableId: pathname.split('/')[3] || '',
-        })
       }
       if (method === 'GET' && pathname === '/api/mcp-tools') {
         return await run(mcpToolController.listMcpTools.bind(mcpToolController))

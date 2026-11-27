@@ -2,8 +2,6 @@
  * JSONL Backup GraphQL Queries
  */
 
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { JsonlBackupManifest } from '@/core/types/JsonlBackup.js'
 import type { JsonlBackupService } from '@/domain/services/JsonlBackupService.js'
@@ -21,6 +19,8 @@ export class JsonlBackupQueries {
     try {
       this.logger.info('Inspecting JSONL backup', { inputDir: args.inputDir })
 
+      const { existsSync, readFileSync } = await import('node:fs')
+      const { join } = await import('node:path')
       const manifestPath = join(args.inputDir, 'manifest.json')
 
       if (!existsSync(manifestPath)) {

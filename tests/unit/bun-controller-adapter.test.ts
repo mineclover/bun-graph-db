@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { createBunControllerContext } from '../../src/presentation/http/adapters/BunControllerAdapter'
 
 describe('BunControllerAdapter', () => {

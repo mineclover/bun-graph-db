@@ -1,6 +1,6 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
-import { Database } from 'bun:sqlite'
+import { Database } from '../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { ExactVectorIndex } from '@/domain/services/vector/ExactVectorIndex.js'
 

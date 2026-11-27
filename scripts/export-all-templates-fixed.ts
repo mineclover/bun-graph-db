@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env -S node --import tsx
 
 /**
  * Fixed Templates Export Script
@@ -45,7 +45,7 @@ interface ExportResult {
   error?: string
 }
 
-const SERVER_URL = process.env.GRAPHQL_URL || 'http://localhost:4000/graphql'
+const SERVER_URL = process.env.GRAPHQL_URL || 'http://localhost:4141/graphql'
 const OUTPUT_DIR = join(process.cwd(), 'exported-templates')
 
 async function main() {
@@ -349,10 +349,10 @@ ${(() => {
 
 \`\`\`bash
 # 개별 Fixed 템플릿 import
-bun run scripts/template-import.ts exported-templates/template-name.json
+node --import tsx scripts/template-import.ts exported-templates/template-name.json
 
 # 전체 Fixed 템플릿 import
-bun run scripts/import-all-exported.ts
+node --import tsx scripts/import-all-exported.ts
 \`\`\`
 
 ## Fixed 카테고리란?

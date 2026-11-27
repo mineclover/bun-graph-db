@@ -16,10 +16,6 @@ export interface NodeRelationDto extends BaseEntityDto {
   confidence: number
 }
 
-interface NodeRelationWithConfidence extends NodeRelation {
-  getConfidence?: () => number
-}
-
 export function nodeRelationFromEntity(nodeRelation: NodeRelation): NodeRelationDto {
   return {
     id: nodeRelation.getId(),
@@ -31,7 +27,7 @@ export function nodeRelationFromEntity(nodeRelation: NodeRelation): NodeRelation
     relationTypeId: nodeRelation.getRelationTypeId(),
     properties: nodeRelation.getProperties() as Record<string, SafeJsonValue> | null,
     strength: nodeRelation.getStrength(),
-    confidence: (nodeRelation as NodeRelationWithConfidence).getConfidence?.() ?? 1,
+    confidence: nodeRelation.getConfidence(),
     createdAt: nodeRelation.getCreatedAt().toISOString(),
     updatedAt: nodeRelation.getUpdatedAt().toISOString(),
   }

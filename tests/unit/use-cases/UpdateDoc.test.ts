@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { type UpdateDocInput, UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
@@ -25,31 +25,31 @@ describe('UpdateDocUseCase', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repository
     const repositoryMock = {
-      save: mock(async () => {}),
-      findById: mock(async () => null),
-      findByTableAndCategory: mock(async () => []),
-      findActiveByTableAndCategory: mock(async () => null),
-      findVersionsByTableAndCategory: mock(async () => []),
-      searchDocs: mock(async () => ({ data: [], total: 0, hasMore: false })),
-      getLatestVersion: mock(async () => 1),
-      exists: mock(async () => false),
-      delete: mock(async () => {}),
-      deactivateOthersInCategory: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], total: 0, hasMore: false })),
-      count: mock(async () => 0),
-      countByCategory: mock(async () => 0),
-      searchByContent: mock(async () => ({ data: [], total: 0, hasMore: false })),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      findByTableIds: mock(async () => []),
+      save: vi.fn(async () => {}),
+      findById: vi.fn(async () => null),
+      findByTableAndCategory: vi.fn(async () => []),
+      findActiveByTableAndCategory: vi.fn(async () => null),
+      findVersionsByTableAndCategory: vi.fn(async () => []),
+      searchDocs: vi.fn(async () => ({ data: [], total: 0, hasMore: false })),
+      getLatestVersion: vi.fn(async () => 1),
+      exists: vi.fn(async () => false),
+      delete: vi.fn(async () => {}),
+      deactivateOthersInCategory: vi.fn(async () => {}),
+      findAll: vi.fn(async () => ({ data: [], total: 0, hasMore: false })),
+      count: vi.fn(async () => 0),
+      countByCategory: vi.fn(async () => 0),
+      searchByContent: vi.fn(async () => ({ data: [], total: 0, hasMore: false })),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      findByTableIds: vi.fn(async () => []),
     } satisfies IDocRepository
 
     mockDocRepository = repositoryMock
@@ -83,7 +83,7 @@ describe('UpdateDocUseCase', () => {
         content: 'Updated content',
       }
 
-      mockDocRepository.findById = mock(async () => null)
+      mockDocRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.execute('nonexistent-doc', input)).rejects.toThrow(NotFoundException)
       await expect(useCase.execute('nonexistent-doc', input)).rejects.toThrow(
@@ -96,7 +96,7 @@ describe('UpdateDocUseCase', () => {
     it('should update doc content successfully', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Original content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: 'Updated content',
@@ -113,7 +113,7 @@ describe('UpdateDocUseCase', () => {
     it('should handle empty content update', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Original content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: '',
@@ -126,7 +126,7 @@ describe('UpdateDocUseCase', () => {
     it('should handle whitespace-only content update', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Original content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: '   ',
@@ -141,7 +141,7 @@ describe('UpdateDocUseCase', () => {
     it('should activate doc successfully', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Content', 1, false)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         isActive: true,
@@ -158,7 +158,7 @@ describe('UpdateDocUseCase', () => {
     it('should deactivate doc successfully', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Content', 1, true)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         isActive: false,
@@ -175,7 +175,7 @@ describe('UpdateDocUseCase', () => {
     it('should not call deactivateOthersInCategory when deactivating', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, 'Content', 1, true)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         isActive: false,
@@ -191,7 +191,7 @@ describe('UpdateDocUseCase', () => {
     it('should update both content and activation status', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.SPEC, 'Original content', 1, false)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: 'New content',
@@ -210,7 +210,7 @@ describe('UpdateDocUseCase', () => {
     it('should update content and deactivate', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.EXAMPLE, 'Original content', 1, true)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: 'Updated content',
@@ -230,7 +230,7 @@ describe('UpdateDocUseCase', () => {
     it('should handle update with no changes', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.GENERAL, 'Content', 1, true)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {}
 
@@ -243,7 +243,7 @@ describe('UpdateDocUseCase', () => {
     it('should handle undefined content', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Original content', 1, true)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: undefined,
@@ -260,7 +260,7 @@ describe('UpdateDocUseCase', () => {
     it('should handle undefined isActive', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Original content', 1, true)
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: 'New content',
@@ -280,7 +280,7 @@ describe('UpdateDocUseCase', () => {
     it('should log errors and rethrow when save fails', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: 'Updated content',
@@ -288,7 +288,7 @@ describe('UpdateDocUseCase', () => {
 
       const saveError = new Error('Database connection failed')
 
-      mockDocRepository.save = mock(async () => {
+      mockDocRepository.save = vi.fn(async () => {
         throw saveError
       })
 
@@ -301,7 +301,7 @@ describe('UpdateDocUseCase', () => {
     it('should log update start and success', async () => {
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Original content')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: 'Updated content',
@@ -332,7 +332,7 @@ describe('UpdateDocUseCase', () => {
       const longContent = 'A'.repeat(10000)
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, 'Original')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: longContent,
@@ -348,7 +348,7 @@ describe('UpdateDocUseCase', () => {
       const specialContent = 'Content with special chars: <>&"\'`\n\t'
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.EXAMPLE, 'Original')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: specialContent,
@@ -364,7 +364,7 @@ describe('UpdateDocUseCase', () => {
       const markdownContent = `# Title\n\n## Subtitle\n\n- Item 1\n- Item 2\n\n\`\`\`javascript\nconst x = 1;\n\`\`\``
       const existingDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, 'Original')
 
-      mockDocRepository.findById = mock(async () => existingDoc)
+      mockDocRepository.findById = vi.fn(async () => existingDoc)
 
       const input: UpdateDocInput = {
         content: markdownContent,
@@ -389,7 +389,7 @@ describe('UpdateDocUseCase', () => {
       for (const category of categories) {
         const existingDoc = createTestDoc(`doc-${category}`, 'table-1', category, 'Original content')
 
-        mockDocRepository.findById = mock(async () => existingDoc)
+        mockDocRepository.findById = vi.fn(async () => existingDoc)
 
         const input: UpdateDocInput = {
           content: `Updated ${category} content`,

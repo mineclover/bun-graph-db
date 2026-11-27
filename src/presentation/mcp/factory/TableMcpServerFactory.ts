@@ -947,6 +947,17 @@ export async function refreshMcpCacheForTableSchema(
 export function removeMcpCacheForTableSchema(
   tableReferences: string | string[],
 ): TableMcpCacheRemovalResult {
+  const normalizedReferences = Array.from(
+    new Set(
+      (Array.isArray(tableReferences) ? tableReferences : [tableReferences])
+        .map((reference) => reference?.trim())
+        .filter(Boolean),
+    ),
+  )
+  for (const tableId of normalizedReferences) {
+    TableSchemaProjectionService.clearCache(tableId)
+  }
+
   const factory = TableMcpServerFactory.getInstance()
   if (!factory) {
     debugMcpCache('[MCP Cache] No factory instance available, skipping table schema cache removal')

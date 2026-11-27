@@ -1,4 +1,5 @@
-import type { Database, SQLQueryBindings } from 'bun:sqlite'
+import type { SQLQueryBindings } from './SqliteAdapter.js'
+import type { ISqliteDatabase } from './SqlitePort.js'
 import type { NodeId } from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
 import { NodeAttribute } from '@/domain/entities/NodeAttribute.js'
@@ -34,7 +35,7 @@ interface NodeAttributeRow {
 const NODE_COLUMNS = 'id, table_id, content, title, description, metadata, created_at, updated_at'
 
 export class SqliteNodeMutationRepository implements INodeMutationRepository {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: ISqliteDatabase) {}
 
   async create(node: Node, attributes: readonly NodeAttributeMutation[]): Promise<Node> {
     try {
@@ -82,7 +83,10 @@ export class SqliteNodeMutationRepository implements INodeMutationRepository {
         VALUES (?, ?, ?, ?, ?, ?, ?)
         RETURNING ${NODE_COLUMNS}
       `)
-      const upsertAttrStmt = this.db.prepare(`
+      const upsertAttrStmt = this.db.query<
+        unknown,
+        [string, string, string, string, string]
+      >(`
         INSERT INTO node_attributes (node_id, attribute_id, value, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(node_id, attribute_id) DO UPDATE SET
@@ -229,7 +233,10 @@ export class SqliteNodeMutationRepository implements INodeMutationRepository {
   private upsertAttributes(nodeId: string, attributes: readonly NodeAttributeMutation[]): void {
     if (attributes.length === 0) return
 
-    const statement = this.db.prepare(`
+    const statement = this.db.query<
+      unknown,
+      [string, string, string, string, string]
+    >(`
       INSERT INTO node_attributes (node_id, attribute_id, value, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(node_id, attribute_id) DO UPDATE SET

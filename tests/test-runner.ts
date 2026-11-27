@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 /**
  * Enhanced Test Runner with Isolation Support
@@ -7,7 +7,7 @@
  * parallel execution, and comprehensive reporting.
  */
 
-import { spawn } from 'bun'
+import { spawn } from 'node:child_process'
 import { cleanupAll } from './fixtures/test-isolation-helpers'
 
 interface TestSuite {
@@ -112,18 +112,30 @@ class TestRunner {
     const startTime = Date.now()
 
     try {
-      const proc = spawn(['bun', 'test', suite.path], {
-        stdout: 'pipe',
-        stderr: 'pipe',
+      const { output, error, exitCode } = await new Promise<{
+        output: string
+        error: string
+        exitCode: number | null
+      }>((resolveRun, rejectRun) => {
+        const proc = spawn('pnpm', ['exec', 'vitest', 'run', suite.path], {
+          stdio: ['ignore', 'pipe', 'pipe'],
+        })
+        let stdout = ''
+        let stderr = ''
+        proc.stdout?.setEncoding('utf8')
+        proc.stderr?.setEncoding('utf8')
+        proc.stdout?.on('data', (chunk: string) => {
+          stdout += chunk
+        })
+        proc.stderr?.on('data', (chunk: string) => {
+          stderr += chunk
+        })
+        proc.once('error', rejectRun)
+        proc.once('close', (code) => resolveRun({ output: stdout, error: stderr, exitCode: code }))
       })
-
-      const output = await new Response(proc.stdout).text()
-      const error = await new Response(proc.stderr).text()
-
-      await proc.exited
       const duration = Date.now() - startTime
 
-      const success = proc.exitCode === 0
+      const success = exitCode === 0
 
       const result: TestResult = {
         suite,

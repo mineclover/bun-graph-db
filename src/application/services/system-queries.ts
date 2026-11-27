@@ -1,4 +1,4 @@
-import type { Database } from 'bun:sqlite'
+import type { ISqliteDatabase } from '@/infrastructure/database/sqlite/SqlitePort.js'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
 
@@ -104,11 +104,11 @@ export interface HealthCheckResult {
 }
 
 export class SystemQueries {
-  private db: Database | DatabaseLike | null
+  private db: ISqliteDatabase | DatabaseLike | null
   private logger: Logger | null = null
   private startTime = process.hrtime()
 
-  constructor(db: Database | DatabaseLike | null) {
+  constructor(db: ISqliteDatabase | DatabaseLike | null) {
     this.db = db
   }
 

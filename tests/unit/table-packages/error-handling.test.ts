@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { beforeEach, describe, expect, test } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { BatchImportTablePackagesUseCase } from '@/application/use-cases/table-packages/BatchImportTablePackagesUseCase.js'
 import type { ImportSession, TablePackageFormat } from '@/core/types/TablePackage.js'

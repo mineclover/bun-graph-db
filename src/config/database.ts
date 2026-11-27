@@ -1,3 +1,4 @@
+import { mkdirSync } from 'node:fs'
 import type { DatabaseConfig } from '@/core/types/CommonTypes.js'
 
 // Global variable to store CLI-provided database path
@@ -21,8 +22,7 @@ export const getDatabasePath = (): string => {
   const dir = path.substring(0, path.lastIndexOf('/'))
   if (dir) {
     try {
-      const fs = require('node:fs')
-      fs.mkdirSync(dir, { recursive: true })
+      mkdirSync(dir, { recursive: true })
       console.log(`Database directory ensured: ${dir}`)
     } catch (error) {
       console.warn(`Could not create directory ${dir}:`, error)

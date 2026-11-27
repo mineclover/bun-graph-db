@@ -2,7 +2,7 @@
 docType: explanation
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-08-11"
+lastVerified: "2026-11-27"
 ---
 
 # Tabular Sync 운영 상태와 후속 결정
@@ -43,7 +43,7 @@ lastVerified: "2026-08-11"
 다음 테스트는 설정 보존, Excel 준비 상태, 지원되지 않는 gateway 거부, 전달 작업 복구·재시도를 검증한다.
 
 ```bash
-bun test tests/unit/tabular-sync-config-activation-service.test.ts \
+pnpm exec vitest run tests/unit/tabular-sync-config-activation-service.test.ts \
   tests/unit/tabular-sync-event-store.test.ts \
   tests/unit/best-effort-tabular-sync-hook.test.ts \
   tests/integration/tabular-sync-config-management.test.ts

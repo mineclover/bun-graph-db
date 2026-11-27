@@ -1,0 +1,13 @@
+packages:
+  - "."
+
+autoInstallPeers: true
+strictPeerDependencies: false
+engineStrict: true
+
+allowBuilds:
+  esbuild: false
+  fsevents: false
+minimumReleaseAgeExclude:
+  - "@graphql-codegen/typescript-operations@7.0.3"
+  - "@graphql-codegen/visitor-plugin-common@8.0.3"

@@ -7,7 +7,7 @@ import { startServerForSuite, stopServerForSuite } from '../../fixtures/test-ser
  * Tight latency regression detection belongs to scripts/benchmark-hotpaths.ts.
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 const INTEGRATION_RESPONSE_TIME_BUDGET_MS = 500
 

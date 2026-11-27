@@ -1,9 +1,9 @@
 import { DocDto } from '@/application/dtos/DocDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
-import type { DocId } from '@/core/types/CommonTypes.js'
+import type { DocId, PaginatedResult, TableId } from '@/core/types/CommonTypes.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
-import type { DocCategory } from '@/domain/entities/Doc.js'
-import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
+import type { Doc, DocCategory } from '@/domain/entities/Doc.js'
+import type { DocSearchOptions, IDocRepository } from '@/domain/repositories/IDocRepository.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 interface GetDocArgs {
@@ -15,14 +15,30 @@ interface GetActiveDocArgs {
   category: DocCategory
 }
 
+interface DocsFilterInput {
+  tableId?: string
+  category?: DocCategory
+  isActive?: boolean
+  version?: number
+  createdAfter?: string | Date
+  createdBefore?: string | Date
+}
+
+interface DocSortInput {
+  field?: string
+  direction?: 'ASC' | 'DESC'
+}
+
 interface GetDocsArgs {
   tableId?: string
   category?: DocCategory
   isActive?: boolean
+  filter?: DocsFilterInput
   pagination?: {
     limit?: number
     offset?: number
   }
+  sort?: DocSortInput[]
 }
 
 interface GetDocVersionsArgs {
@@ -35,13 +51,45 @@ interface GetDocVersionsArgs {
 }
 
 interface SearchDocsArgs {
-  query: string
+  query?: string
   tableId?: string
   category?: DocCategory
   isActive?: boolean
+  filter?: DocsFilterInput
   pagination?: {
     limit?: number
     offset?: number
+  }
+  sort?: DocSortInput[]
+}
+
+function toOptionalDate(value?: string | Date): Date | undefined {
+  if (value === undefined) return undefined
+  return value instanceof Date ? value : new Date(value)
+}
+
+function buildDocSearchOptions(args: GetDocsArgs | SearchDocsArgs): DocSearchOptions {
+  const filter = args.filter
+  return {
+    tableId: (args.tableId ?? filter?.tableId) as TableId | undefined,
+    category: args.category ?? filter?.category,
+    isActive: args.isActive ?? filter?.isActive,
+    version: filter?.version,
+    createdAfter: toOptionalDate(filter?.createdAfter),
+    createdBefore: toOptionalDate(filter?.createdBefore),
+    limit: args.pagination?.limit ?? 10,
+    offset: args.pagination?.offset ?? 0,
+    sortBy: args.sort?.[0]?.field,
+    sortDirection: args.sort?.[0]?.direction,
+  }
+}
+
+function toDocsConnection(result: Doc[] | PaginatedResult<Doc>) {
+  return {
+    docs: DocDto.fromEntities(Array.isArray(result) ? result : result.nodes || []),
+    totalCount: Array.isArray(result) ? result.length : result.totalCount || 0,
+    hasNextPage: Array.isArray(result) ? false : result.hasNextPage || false,
+    hasPreviousPage: Array.isArray(result) ? false : result.hasPreviousPage || false,
   }
 }
 
@@ -98,27 +146,15 @@ export class DocQueries extends BaseResolver {
   async getDocs(_: GraphQLParent, args: GetDocsArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        const options = {
-          tableId: args.tableId,
-          category: args.category,
-          isActive: args.isActive,
-          limit: args.pagination?.limit || 10,
-          offset: args.pagination?.offset || 0,
-        }
+        const options = buildDocSearchOptions(args)
         const result = await this.docRepository.findAll(options)
-
-        return {
-          docs: DocDto.fromEntities(Array.isArray(result) ? result : result.nodes || []),
-          totalCount: Array.isArray(result) ? result.length : result.totalCount || 0,
-          hasNextPage: Array.isArray(result) ? false : result.hasNextPage || false,
-          hasPreviousPage: Array.isArray(result) ? false : result.hasPreviousPage || false,
-        }
+        return toDocsConnection(result)
       },
       'findDocs',
       {
-        tableId: args.tableId,
-        category: args.category,
-        isActive: args.isActive,
+        tableId: args.tableId ?? args.filter?.tableId,
+        category: args.category ?? args.filter?.category,
+        isActive: args.isActive ?? args.filter?.isActive,
         pagination: args.pagination,
       },
     )
@@ -157,6 +193,22 @@ export class DocQueries extends BaseResolver {
   }
 
   async searchDocs(_: GraphQLParent, args: SearchDocsArgs, _context?: GraphQLContext) {
+    if (args.filter !== undefined) {
+      return this.handleQuery(
+        async () => {
+          const options = buildDocSearchOptions(args)
+          const result = await this.docRepository.searchDocs(options)
+          return toDocsConnection(result)
+        },
+        'searchDocs',
+        {
+          filter: args.filter,
+          pagination: args.pagination,
+          sort: args.sort,
+        },
+      )
+    }
+
     this.validateArgs(
       args as unknown as Record<string, unknown>,
       [
@@ -170,7 +222,7 @@ export class DocQueries extends BaseResolver {
       async () => {
         const result = await this.docRepository.searchByContent(
           {
-            query: args.query,
+            query: args.query ?? '',
             tableId: args.tableId,
             category: args.category,
             isActive: args.isActive,
@@ -178,12 +230,7 @@ export class DocQueries extends BaseResolver {
           args.pagination || { limit: 10, offset: 0 },
         )
 
-        return {
-          docs: DocDto.fromEntities(Array.isArray(result) ? result : result.nodes || []),
-          totalCount: Array.isArray(result) ? result.length : result.totalCount || 0,
-          hasNextPage: Array.isArray(result) ? false : result.hasNextPage || false,
-          hasPreviousPage: Array.isArray(result) ? false : result.hasPreviousPage || false,
-        }
+        return toDocsConnection(result)
       },
       'searchDocs',
       {

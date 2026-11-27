@@ -2,6 +2,7 @@ import type { HttpControllerRequest as Request, HttpControllerResponse as Respon
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { BulkTemplateImportTool } from '@/application/services/BulkTemplateImportTool.js'
 import { RestApiClient } from '@/application/services/RestApiClient.js'
+import { DEFAULT_PORTS } from '@/core/config/PortConfiguration.js'
 import type { FetchLike } from '@/models/GraphQLOperation.js'
 import { getErrorMessage, toErrorMeta } from '../utils/errorHelpers.js'
 
@@ -158,7 +159,7 @@ export class McpToolController {
     internalBridgeToken?: string,
   ) {
     // Initialize the REST client pointing to our GraphQL server
-    const serverPort = port || 4000
+    const serverPort = port || DEFAULT_PORTS.development
     const token = internalBridgeToken?.trim()
     this.fetchImpl = fetchImpl
     this.authorizationHeader = token ? `Bearer ${token}` : undefined

@@ -1,10 +1,10 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { describe, expect, test, vi } from 'vitest'
 import { TabularTableSyncBridge } from '@/application/services/TabularTableSyncBridge.js'
 
 describe('TabularTableSyncBridge', () => {
   test('buildSyncInput should map repositories to tabular payload', async () => {
     const tableRepository = {
-      findByIdentifier: mock(async () => ({
+      findByIdentifier: vi.fn(async () => ({
         id: 'table-1',
         identifier: 'users',
         description: 'Users table',
@@ -12,7 +12,7 @@ describe('TabularTableSyncBridge', () => {
     }
 
     const attributeRepository = {
-      findByTableId: mock(async () => ({
+      findByTableId: vi.fn(async () => ({
         data: [
           {
             getId: () => 'attr-1',
@@ -25,7 +25,7 @@ describe('TabularTableSyncBridge', () => {
       })),
     }
     const attributeTypeRepository = {
-      findByIds: mock(async () => [
+      findByIds: vi.fn(async () => [
         {
           getId: () => 'type-email',
           getIdentifier: () => 'email',
@@ -35,7 +35,7 @@ describe('TabularTableSyncBridge', () => {
     }
 
     const nodeRepository = {
-      findByTableId: mock(async () => ({
+      findByTableId: vi.fn(async () => ({
         data: [
           {
             getId: () => 'node-1',
@@ -50,7 +50,7 @@ describe('TabularTableSyncBridge', () => {
     }
 
     const nodeAttributeRepository = {
-      findByNodeIds: mock(async () => [
+      findByNodeIds: vi.fn(async () => [
         {
           getNodeId: () => 'node-1',
           getAttributeId: () => 'attr-1',
@@ -60,8 +60,8 @@ describe('TabularTableSyncBridge', () => {
     }
 
     const syncService = {
-      preview: mock(async (input) => input),
-      sync: mock(async (input) => ({
+      preview: vi.fn(async (input) => input),
+      sync: vi.fn(async (input) => ({
         synced: true,
         input,
       })),
@@ -113,7 +113,7 @@ describe('TabularTableSyncBridge', () => {
 
   test('reads every repository page and batches attribute types and node attributes without N+1 queries', async () => {
     const tableRepository = {
-      findByIdentifier: mock(async () => ({
+      findByIdentifier: vi.fn(async () => ({
         id: 'table-1',
         identifier: 'users',
         description: null,
@@ -135,14 +135,14 @@ describe('TabularTableSyncBridge', () => {
     }
     const attributeOffsets: number[] = []
     const attributeRepository = {
-      findByTableId: mock(async (_tableId: string, options: { offset: number }) => {
+      findByTableId: vi.fn(async (_tableId: string, options: { offset: number }) => {
         attributeOffsets.push(options.offset)
         return options.offset === 0
           ? { data: [firstAttribute], total: 2, hasMore: true }
           : { items: [secondAttribute], totalCount: 2, hasNextPage: false }
       }),
     }
-    const findAttributeTypesByIds = mock(async () => [
+    const findAttributeTypesByIds = vi.fn(async () => [
       {
         getId: () => 'type-role',
         getIdentifier: () => 'role',
@@ -164,7 +164,7 @@ describe('TabularTableSyncBridge', () => {
     }))
     const nodeOffsets: number[] = []
     const nodeRepository = {
-      findByTableId: mock(async (_tableId: string, options: { offset: number }) => {
+      findByTableId: vi.fn(async (_tableId: string, options: { offset: number }) => {
         nodeOffsets.push(options.offset)
         return options.offset === 0
           ? { data: nodes.slice(0, 300), total: 501, hasMore: true }
@@ -173,7 +173,7 @@ describe('TabularTableSyncBridge', () => {
     }
     const attributeBatches: string[][] = []
     const nodeAttributeRepository = {
-      findByNodeIds: mock(async (nodeIds: string[]) => {
+      findByNodeIds: vi.fn(async (nodeIds: string[]) => {
         attributeBatches.push(nodeIds)
         return nodeIds.map((nodeId) => ({
           getNodeId: () => nodeId,
@@ -183,10 +183,10 @@ describe('TabularTableSyncBridge', () => {
       }),
     }
     const logger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
     const bridge = new TabularTableSyncBridge(
       tableRepository as never,
@@ -231,14 +231,14 @@ describe('TabularTableSyncBridge', () => {
     }
     const bridge = new TabularTableSyncBridge(
       {
-        findByIdentifier: mock(async () => ({
+        findByIdentifier: vi.fn(async () => ({
           id: 'table-1',
           identifier: 'users',
           description: null,
         })),
       } as never,
       {
-        findByTableId: mock(async () => ({
+        findByTableId: vi.fn(async () => ({
           data: [repeatedAttribute],
           total: 2,
           hasMore: true,
@@ -256,10 +256,10 @@ describe('TabularTableSyncBridge', () => {
   })
 
   test('builds a dirty-node patch without reading the full node snapshot', async () => {
-    const findByTableId = mock(async () => {
+    const findByTableId = vi.fn(async () => {
       throw new Error('full node scan should not run')
     })
-    const findByIds = mock(async () => [
+    const findByIds = vi.fn(async () => [
       {
         getId: () => 'node-1',
         getTableId: () => 'table-1',
@@ -270,21 +270,21 @@ describe('TabularTableSyncBridge', () => {
         getUpdatedAt: () => new Date('2026-01-03T00:00:00.000Z'),
       },
     ])
-    const syncIncremental = mock(async (input) => ({
+    const syncIncremental = vi.fn(async (input) => ({
       synced: true,
       input,
     }))
-    const sync = mock(async () => ({ synced: true }))
+    const sync = vi.fn(async () => ({ synced: true }))
     const bridge = new TabularTableSyncBridge(
       {
-        findByIdentifier: mock(async () => ({
+        findByIdentifier: vi.fn(async () => ({
           id: 'table-1',
           identifier: 'users',
           description: null,
         })),
       } as never,
       {
-        findByTableId: mock(async () => ({
+        findByTableId: vi.fn(async () => ({
           data: [
             {
               getId: () => 'attr-1',
@@ -298,10 +298,10 @@ describe('TabularTableSyncBridge', () => {
           hasMore: false,
         })),
       } as never,
-      { findByIds: mock(async () => []) } as never,
+      { findByIds: vi.fn(async () => []) } as never,
       { findByIds, findByTableId } as never,
       {
-        findByNodeIds: mock(async () => [
+        findByNodeIds: vi.fn(async () => [
           {
             getNodeId: () => 'node-1',
             getAttributeId: () => 'attr-1',
@@ -343,7 +343,7 @@ describe('TabularTableSyncBridge', () => {
 
   test('clearByIdentifier should sync empty rows and attributes', async () => {
     const syncService = {
-      sync: mock(async (input) => input),
+      sync: vi.fn(async (input) => input),
     }
 
     const bridge = new TabularTableSyncBridge(

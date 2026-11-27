@@ -1,7 +1,7 @@
 # Bun Graph Database 사용자 가이드
 
 **버전**: 1.0.0
-**최종 업데이트**: 2025-11-23
+**최종 업데이트**: 2026-11-27
 **테스트 커버리지**: 100% (60/60 기능 작동)
 
 ---
@@ -64,8 +64,8 @@ cd bun-graph-db
 ### 2. 의존성 설치
 
 ```bash
-# Bun을 이용한 패키지 설치
-bun install
+# pnpm을 이용한 패키지 설치
+pnpm install
 
 # 설치 확인 (node_modules 디렉토리 생성됨)
 ls -la node_modules
@@ -90,7 +90,7 @@ ls -la node_modules
 
 ```bash
 # 개발 서버 시작
-bun run dev
+pnpm run dev
 
 # 출력 예시:
 # 🚀 Bun Graph DB Server ready at http://localhost:4141/graphql
@@ -102,10 +102,10 @@ bun run dev
 
 ```bash
 # 사용자 지정 포트로 실행
-bun run dev --port 3000
+pnpm run dev --port 4200
 
 # 확인
-# Server ready at http://localhost:3000/graphql
+# Server ready at http://localhost:4200/graphql
 ```
 
 ### 서버 상태 확인
@@ -524,7 +524,7 @@ lsof -i :4141
 kill -9 <PID>
 
 # 또는 다른 포트 사용
-bun run dev --port 3000
+pnpm run dev --port 4200
 ```
 
 #### 2. 데이터베이스 연결 오류
@@ -545,7 +545,7 @@ chmod 644 ./data/bun-graph-db.sqlite
 
 # 데이터베이스 재생성 (주의: 데이터 삭제됨)
 rm ./data/bun-graph-db.sqlite
-bun run dev  # 자동으로 새로 생성됨
+pnpm run dev  # 자동으로 새로 생성됨
 ```
 
 #### 3. GraphQL 쿼리 오류
@@ -575,8 +575,8 @@ JavaScript heap out of memory
 
 **해결 방법**:
 ```bash
-# Bun 메모리 제한 증가
-NODE_OPTIONS="--max-old-space-size=4096" bun run dev
+# Node.js 힙 메모리 제한 증가
+NODE_OPTIONS="--max-old-space-size=4096" pnpm run dev
 ```
 
 ### 로그 확인
@@ -588,7 +588,7 @@ NODE_OPTIONS="--max-old-space-size=4096" bun run dev
 **디버깅 모드**:
 ```bash
 # 상세 로그 활성화
-DEBUG=* bun run dev
+DEBUG=* pnpm run dev
 ```
 
 ### 성능 문제
@@ -633,9 +633,9 @@ query {
 
 ### 학습 자료
 
-1. **API 문서**: [docs/api/doc-api-reference.md](../../api/doc-api-reference.md)
-2. **템플릿 가이드**: [docs/templates/template-system-guide.md](../../templates/template-system-guide.md)
-3. **테스트 커버리지 보고서**: [claudedocs/test-coverage-report.md](../../claudedocs/test-coverage-report.md)
+1. **API 문서**: [docs/api/doc-api-reference.md](../api/doc-api-reference.md)
+2. **템플릿 가이드**: [docs/templates/template-system-guide.md](../templates/template-system-guide.md)
+3. **테스팅 및 골든 데이터셋**: [TESTING.md](../development/TESTING.md) · [GOLDEN_DATASET.md](../development/GOLDEN_DATASET.md)
 
 ### 추가 기능 탐색
 
@@ -702,7 +702,7 @@ mutation BatchCreate {
 
 - **CLAUDE.md**: 프로젝트 개요 및 주요 기능
 - **docs/**: 상세 문서
-- **claudedocs/**: 개발 관련 문서
+- **docs/development/**: 테스트 전략 (`TESTING.md`) 및 골든 테스트 데이터셋 (`GOLDEN_DATASET.md`)
 
 ### 버전 정보
 
@@ -778,7 +778,7 @@ query FindTemplates {
 ---
 
 **문서 버전**: 1.0.0
-**최종 업데이트**: 2025-11-23
+**최종 업데이트**: 2026-11-27
 **작성자**: Bun Graph DB Team
 
 **피드백**: 이 가이드에 대한 의견이나 개선 사항이 있으시면 GitHub Issues에 남겨주세요.

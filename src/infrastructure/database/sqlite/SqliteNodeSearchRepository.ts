@@ -1,4 +1,4 @@
-import type { Database } from "bun:sqlite";
+import { chunkValues, getMaxBindParams, type ISqliteDatabase } from "./SqlitePort.js";
 import type { AttributeTypeInfo } from "@/application/services/SearchQueryParser.js";
 import type { INodeSearchRepository } from "@/application/use-cases/nodes/SearchNodes.js";
 import type { PaginatedResult, TableId } from "@/core/types/CommonTypes.js";
@@ -57,7 +57,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 	private attributeFullTextIndexAvailable: boolean | undefined;
 	private typedNumericColumnAvailable: boolean | undefined;
 
-	constructor(private readonly db: Database) {}
+	constructor(private readonly db: ISqliteDatabase) {}
 
 	async searchNodes(
 		tableId: TableId,
@@ -140,7 +140,8 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
 			let restrictionSql = "";
 			const queryParams = [...params];
-			if (restrictToNodeIds && restrictToNodeIds.size <= 900) {
+			const inlineLimit = getMaxBindParams(this.db, queryParams.length);
+			if (restrictToNodeIds && restrictToNodeIds.size <= inlineLimit) {
 				const ids = [...restrictToNodeIds];
 				const placeholders = ids.map(() => "?").join(",");
 				restrictionSql = ` WHERE node_id IN (${placeholders})`;
@@ -153,7 +154,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 				)
 				.all(...queryParams);
 
-			if (restrictToNodeIds && restrictToNodeIds.size > 900) {
+			if (restrictToNodeIds && restrictToNodeIds.size > inlineLimit) {
 				return rows
 					.map((row) => row.node_id)
 					.filter((id) => restrictToNodeIds.has(id));
@@ -189,7 +190,7 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 		if (candidateIds.size === 0) return [];
 		const allIds = [...candidateIds];
 		const matched: string[] = [];
-		const chunkSize = 500;
+		const chunkSize = getMaxBindParams(this.db, 1);
 		for (let offset = 0; offset < allIds.length; offset += chunkSize) {
 			const chunk = allIds.slice(offset, offset + chunkSize);
 			const placeholders = chunk.map(() => "?").join(",");
@@ -254,7 +255,8 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 			}));
 		}
 
-		if (restrictToNodeIds.size <= 900) {
+		const inlineLimit = getMaxBindParams(this.db, candidate.params.length + 2);
+		if (restrictToNodeIds.size <= inlineLimit) {
 			const ids = [...restrictToNodeIds];
 			const placeholders = ids.map(() => "?").join(",");
 			const rows = this.db
@@ -312,10 +314,13 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 	 */
 	hydrateNodesByIds(orderedNodeIds: readonly string[]): NodeSearchResult[] {
 		if (orderedNodeIds.length === 0) return [];
-		const placeholders = orderedNodeIds.map(() => "?").join(",");
-		const rows = this.db
-			.query<NodePageRow, SqliteParams>(
-				`SELECT CAST(n.id AS TEXT) AS node_id,
+		const chunks = chunkValues(orderedNodeIds, getMaxBindParams(this.db));
+		const rows: NodePageRow[] = [];
+		for (const chunk of chunks) {
+			const placeholders = chunk.map(() => "?").join(",");
+			const chunkRows = this.db
+				.query<NodePageRow, SqliteParams>(
+					`SELECT CAST(n.id AS TEXT) AS node_id,
                 CAST(n.table_id AS TEXT) AS node_table_id,
                 n.content AS node_content,
                 n.title AS node_title,
@@ -326,8 +331,10 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
                 NULL AS relevance_score
          FROM nodes n
          WHERE n.id IN (${placeholders})`,
-			)
-			.all(...orderedNodeIds);
+				)
+				.all(...chunk);
+			rows.push(...chunkRows);
+		}
 
 		const hydrated = this.hydratePageRows(rows);
 		const byId = new Map(hydrated.map((entry) => [entry.node.getId(), entry]));
@@ -361,10 +368,12 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 
 		if (pageRows.length > 0) {
 			const nodeIds = pageRows.map((row) => row.node_id);
-			const placeholders = nodeIds.map(() => "?").join(",");
-			const attributeRows = this.db
-				.query<NodeAttributeRow, SqliteParams>(
-					`SELECT CAST(nav.node_id AS TEXT) AS node_id,
+			const attributeRows: NodeAttributeRow[] = [];
+			for (const chunk of chunkValues(nodeIds, getMaxBindParams(this.db))) {
+				const placeholders = chunk.map(() => "?").join(",");
+				const chunkRows = this.db
+					.query<NodeAttributeRow, SqliteParams>(
+						`SELECT CAST(nav.node_id AS TEXT) AS node_id,
                   a.identifier AS attribute_identifier,
                   nav.value AS attribute_value,
                   at.json_type AS attribute_data_type
@@ -373,8 +382,10 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
            LEFT JOIN attribute_types at ON at.id = a.attribute_type_id
            WHERE nav.node_id IN (${placeholders})
            ORDER BY nav.node_id, a.identifier`,
-				)
-				.all(...nodeIds);
+					)
+					.all(...chunk);
+				attributeRows.push(...chunkRows);
+			}
 
 			for (const row of attributeRows) {
 				const nodeResult = nodeMap.get(row.node_id);
@@ -410,6 +421,8 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 		params: SqliteParams;
 		firstTextCandidate: string | undefined;
 		preferredTextCandidate: string | undefined;
+		firstTextQuery: string | undefined;
+		preferredTextQuery: string | undefined;
 	} {
 		const withClauses: string[] = [];
 		const params: SqliteParams = [];
@@ -418,6 +431,8 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 		let conditionIndex = 0;
 		let firstTextCandidate: string | undefined;
 		let preferredTextCandidate: string | undefined;
+		let firstTextQuery: string | undefined;
+		let preferredTextQuery: string | undefined;
 
 		// Evaluate each filter once. Set operations keep independent EAV rows
 		// composable without re-running a correlated lookup for every node.
@@ -436,8 +451,13 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 			withClauses.push(`${candidateName} AS MATERIALIZED (${candidate.query})`);
 			params.push(...candidate.params);
 			if (filter.field === "_text_search") {
+				const rawText = String(filter.value);
 				firstTextCandidate ??= candidateName;
-				if (preferredForRanking) preferredTextCandidate = candidateName;
+				firstTextQuery ??= rawText;
+				if (preferredForRanking) {
+					preferredTextCandidate = candidateName;
+					preferredTextQuery = rawText;
+				}
 			}
 			return candidateName;
 		};
@@ -501,6 +521,8 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 			params,
 			firstTextCandidate,
 			preferredTextCandidate,
+			firstTextQuery,
+			preferredTextQuery,
 		};
 	}
 
@@ -511,18 +533,89 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 		isCountQuery: boolean,
 		fullTextIndexAvailable: boolean,
 	): { query: string; params: SqliteParams } {
+		const typedNumericAvailable = this.hasTypedNumericColumn();
+		const sortJoins: string[] = [];
+		const sortParams: SqliteParams = [];
+		const clauses: string[] = [];
+		let needsNodeForSort = false;
+
+		if (!isCountQuery) {
+			for (const [sortIndex, sort] of (searchQuery.sortBy ?? []).entries()) {
+				const direction = sort.direction === "asc" ? "ASC" : "DESC";
+				if (["created_at", "updated_at"].includes(sort.field)) {
+					needsNodeForSort = true;
+					clauses.push(`sort_n.${sort.field} ${direction}`);
+					continue;
+				}
+				if (["title", "content"].includes(sort.field)) {
+					needsNodeForSort = true;
+					clauses.push(`sort_n.${sort.field} COLLATE NOCASE ${direction}`);
+					continue;
+				}
+
+				const attribute = availableAttributes.find(
+					(candidate) => candidate.identifier === sort.field,
+				);
+				if (!attribute) continue;
+
+				const sortAttributeName = `sort_attribute_${sortIndex}`;
+				const sortValueName = `sort_value_${sortIndex}`;
+				if (attribute.id !== undefined) {
+					sortJoins.push(
+						`LEFT JOIN node_attributes ${sortValueName}
+           ON ${sortValueName}.node_id = eligible.node_id AND ${sortValueName}.attribute_id = ?`,
+					);
+					sortParams.push(attribute.id);
+				} else {
+					// Both joins resolve through schema uniqueness, allowing SQLite to use
+					// (table_id, identifier) and (node_id, attribute_id) indexes directly.
+					sortJoins.push(
+						`LEFT JOIN attributes ${sortAttributeName}
+           ON ${sortAttributeName}.table_id = ? AND ${sortAttributeName}.identifier = ?`,
+					);
+					sortJoins.push(
+						`LEFT JOIN node_attributes ${sortValueName}
+           ON ${sortValueName}.node_id = eligible.node_id AND ${sortValueName}.attribute_id = ${sortAttributeName}.id`,
+					);
+					sortParams.push(tableId, sort.field);
+				}
+				const sortValue = this.castSortValue(
+					sortValueName,
+					attribute.dataType,
+					typedNumericAvailable,
+				);
+				clauses.push(
+					`${sortValue} IS NULL ${sort.direction === "asc" ? "ASC" : "DESC"}`,
+				);
+				clauses.push(`${sortValue} ${direction}`);
+			}
+		}
+
+		const hasTextSearchFilter =
+			Boolean(searchQuery.textSearch) ||
+			(searchQuery.conditions ?? []).some((condition) =>
+				condition.filters.some((filter) => filter.field === "_text_search"),
+			);
+		const sortUsesRelevance =
+			!isCountQuery &&
+			clauses.length === 0 &&
+			fullTextIndexAvailable &&
+			hasTextSearchFilter;
+
 		const {
 			withClauses,
 			withClause,
 			params,
 			firstTextCandidate,
 			preferredTextCandidate,
+			firstTextQuery,
+			preferredTextQuery,
 		} = this.buildEligibleWithClause(
 			tableId,
 			searchQuery,
 			availableAttributes,
 			fullTextIndexAvailable,
-			!isCountQuery,
+			sortUsesRelevance,
 		);
 
 		if (isCountQuery) {
@@ -532,58 +625,12 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 			};
 		}
 
-		const typedNumericAvailable = this.hasTypedNumericColumn();
-		const sortJoins: string[] = [];
-		const sortParams: SqliteParams = [];
-		const clauses: string[] = [];
-		let needsNodeForSort = false;
-
-		for (const [sortIndex, sort] of (searchQuery.sortBy ?? []).entries()) {
-			const direction = sort.direction === "asc" ? "ASC" : "DESC";
-			if (["created_at", "updated_at"].includes(sort.field)) {
-				needsNodeForSort = true;
-				clauses.push(`sort_n.${sort.field} ${direction}`);
-				continue;
-			}
-			if (["title", "content"].includes(sort.field)) {
-				needsNodeForSort = true;
-				clauses.push(`sort_n.${sort.field} COLLATE NOCASE ${direction}`);
-				continue;
-			}
-
-			const attribute = availableAttributes.find(
-				(candidate) => candidate.identifier === sort.field,
-			);
-			if (!attribute) continue;
-
-			const sortAttributeName = `sort_attribute_${sortIndex}`;
-			const sortValueName = `sort_value_${sortIndex}`;
-			// Both joins resolve through schema uniqueness, allowing SQLite to use
-			// (table_id, identifier) and (node_id, attribute_id) indexes directly.
-			sortJoins.push(
-				`LEFT JOIN attributes ${sortAttributeName}
-           ON ${sortAttributeName}.table_id = ? AND ${sortAttributeName}.identifier = ?`,
-			);
-			sortJoins.push(
-				`LEFT JOIN node_attributes ${sortValueName}
-           ON ${sortValueName}.node_id = eligible.node_id AND ${sortValueName}.attribute_id = ${sortAttributeName}.id`,
-			);
-			sortParams.push(tableId, sort.field);
-			const sortValue = this.castSortValue(
-				sortValueName,
-				attribute.dataType,
-				typedNumericAvailable,
-			);
-			clauses.push(
-				`${sortValue} IS NULL ${sort.direction === "asc" ? "ASC" : "DESC"}`,
-			);
-			clauses.push(`${sortValue} ${direction}`);
-		}
-
 		const rankingCandidate = fullTextIndexAvailable
 			? (preferredTextCandidate ?? firstTextCandidate)
 			: undefined;
-		const sortUsesRelevance = clauses.length === 0 && Boolean(rankingCandidate);
+		const rankingTextQuery = fullTextIndexAvailable
+			? (preferredTextQuery ?? firstTextQuery)
+			: undefined;
 
 		if (clauses.length === 0 && !rankingCandidate) {
 			needsNodeForSort = true;
@@ -594,15 +641,6 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 				? `${rankingCandidate === preferredTextCandidate ? "JOIN" : "LEFT JOIN"} ${rankingCandidate} ranked ON ranked.node_id = eligible.node_id`
 				: "";
 		const innerRelevanceExpr = sortUsesRelevance ? "ranked.relevance_score" : "NULL";
-		const outerRankingJoin =
-			!sortUsesRelevance && rankingCandidate
-				? `LEFT JOIN ${rankingCandidate} ranked ON ranked.node_id = paged.node_id`
-				: "";
-		const outerRelevanceExpr = sortUsesRelevance
-			? "paged.relevance_score"
-			: rankingCandidate
-				? "ranked.relevance_score"
-				: "NULL";
 		const sortNodeJoin = needsNodeForSort
 			? "JOIN nodes sort_n ON sort_n.id = eligible.node_id"
 			: "";
@@ -619,13 +657,13 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 		const offset = searchQuery.offset || 0;
 		params.push(...sortParams, limit, offset);
 
-		// Late row hydration: sort and paginate narrow tuples first (carrying total_count
-		// via a single window pass), then fetch wide node columns and deferred FTS scores
-		// only for the surviving page rows.
+		// Late row hydration: sort and paginate narrow tuples first (fetching exact
+		// eligible cardinality cleanly without buffering all rows in a window pass),
+		// then fetch wide node columns and deferred FTS scores only for the page rows.
 		withClauses.push(`paged_nodes AS MATERIALIZED (
         SELECT eligible.node_id AS node_id,
                ${innerRelevanceExpr} AS relevance_score,
-               COUNT(*) OVER () AS total_count
+               (SELECT COUNT(*) FROM eligible_node_ids) AS total_count
         FROM eligible_node_ids eligible
         ${innerRankingJoin}
         ${sortNodeJoin}
@@ -633,6 +671,20 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
         ${orderBy}
         LIMIT ? OFFSET ?
       )`);
+
+		let outerRankingJoin = "";
+		let outerRelevanceExpr = sortUsesRelevance ? "paged.relevance_score" : "NULL";
+		if (!sortUsesRelevance && rankingCandidate && rankingTextQuery !== undefined) {
+			const deferredRelevance = this.buildPagedTextRelevanceQuery(
+				rankingTextQuery,
+				tableId,
+			);
+			withClauses.push(`paged_relevance AS MATERIALIZED (${deferredRelevance.query})`);
+			params.push(...deferredRelevance.params);
+			outerRankingJoin = "LEFT JOIN paged_relevance ranked ON ranked.node_id = paged.node_id";
+			outerRelevanceExpr = "ranked.relevance_score";
+		}
+
 		const pageWithClause = `WITH ${withClauses.join(",\n")}`;
 
 		return {
@@ -647,6 +699,50 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
         CROSS JOIN nodes n ON n.id = paged.node_id
         ${outerRankingJoin}`,
 			params,
+		};
+	}
+
+	private buildPagedTextRelevanceQuery(
+		text: string,
+		tableId: TableId,
+	): CandidateQuery {
+		const ftsQuery = this.toFtsQuery(text);
+		if (this.hasAttributeFullTextIndex()) {
+			return {
+				query: `
+          SELECT text_match.node_id, MIN(text_match.relevance_score) AS relevance_score
+          FROM (
+            SELECT node_id, bm25(node_search_fts) AS relevance_score
+            FROM node_search_fts
+            WHERE CAST(table_id AS TEXT) = CAST(? AS TEXT)
+              AND node_search_fts MATCH ?
+              AND node_id IN (SELECT node_id FROM paged_nodes)
+            UNION ALL
+            SELECT node_id, bm25(node_attribute_search_fts) AS relevance_score
+            FROM node_attribute_search_fts
+            WHERE CAST(table_id AS TEXT) = CAST(? AS TEXT)
+              AND node_attribute_search_fts MATCH ?
+              AND node_id IN (SELECT node_id FROM paged_nodes)
+          ) text_match
+          GROUP BY text_match.node_id
+        `,
+				params: [tableId, ftsQuery, tableId, ftsQuery],
+			};
+		}
+
+		return {
+			query: `
+        SELECT text_match.node_id, MIN(text_match.relevance_score) AS relevance_score
+        FROM (
+          SELECT node_id, bm25(node_search_fts) AS relevance_score
+          FROM node_search_fts
+          WHERE CAST(table_id AS TEXT) = CAST(? AS TEXT)
+            AND node_search_fts MATCH ?
+            AND node_id IN (SELECT node_id FROM paged_nodes)
+        ) text_match
+        GROUP BY text_match.node_id
+      `,
+			params: [tableId, ftsQuery],
 		};
 	}
 
@@ -674,7 +770,8 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 		}
 
 		const typedNumericAvailable = this.hasTypedNumericColumn();
-		const params: SqliteParams = [tableId, filter.field];
+		const params: SqliteParams =
+			attributeInfo.id !== undefined ? [] : [tableId, filter.field];
 		let valueClause: string;
 		switch (filter.operator as SearchOperator) {
 			case "equals":
@@ -758,19 +855,29 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 				break;
 			}
 			case "in": {
-				const values = Array.isArray(filter.value)
-					? filter.value
-					: [filter.value];
-				params.push(...values.map((value) => this.toSqliteParam(value)));
-				valueClause = `filter_nav.value IN (${values.map(() => "?").join(",")})`;
+				const values = (
+					Array.isArray(filter.value) ? filter.value : [filter.value]
+				).map((value) => this.toSqliteParam(value));
+				if (values.length <= getMaxBindParams(this.db, 32)) {
+					params.push(...values);
+					valueClause = `filter_nav.value IN (${values.map(() => "?").join(",")})`;
+				} else {
+					params.push(JSON.stringify(values));
+					valueClause = "filter_nav.value IN (SELECT value FROM json_each(?))";
+				}
 				break;
 			}
 			case "not_in": {
-				const values = Array.isArray(filter.value)
-					? filter.value
-					: [filter.value];
-				params.push(...values.map((value) => this.toSqliteParam(value)));
-				valueClause = `filter_nav.value NOT IN (${values.map(() => "?").join(",")})`;
+				const values = (
+					Array.isArray(filter.value) ? filter.value : [filter.value]
+				).map((value) => this.toSqliteParam(value));
+				if (values.length <= getMaxBindParams(this.db, 32)) {
+					params.push(...values);
+					valueClause = `filter_nav.value NOT IN (${values.map(() => "?").join(",")})`;
+				} else {
+					params.push(JSON.stringify(values));
+					valueClause = "filter_nav.value NOT IN (SELECT value FROM json_each(?))";
+				}
 				break;
 			}
 			case "is_null":
@@ -781,6 +888,18 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 				break;
 			default:
 				throw new DatabaseException(`Unsupported operator: ${filter.operator}`);
+		}
+
+		if (attributeInfo.id !== undefined) {
+			return {
+				query: `
+        SELECT filter_nav.node_id
+        FROM node_attributes filter_nav
+        WHERE filter_nav.attribute_id = ?
+          AND ${valueClause}
+      `,
+				params: [attributeInfo.id, ...params],
+			};
 		}
 
 		return {
@@ -893,7 +1012,9 @@ export class SqliteNodeSearchRepository implements INodeSearchRepository {
 					? `${tableAlias}.value_num`
 					: `CAST(${tableAlias}.value AS REAL)`;
 			case "integer":
-				return `CAST(${tableAlias}.value AS INTEGER)`;
+				return typedNumericAvailable
+					? `${tableAlias}.value_num`
+					: `CAST(${tableAlias}.value AS INTEGER)`;
 			case "datetime":
 			case "date":
 			case "date-time":

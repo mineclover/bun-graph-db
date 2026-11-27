@@ -618,6 +618,67 @@ export class NodeMutations extends BaseResolver {
     }
   }
 
+  async bulkSetNodeAttributes(
+    _: GraphQLParent,
+    args: { nodeId: string; attributes: Array<{ attributeId: string; value: string }> },
+    _context?: GraphQLContext,
+  ) {
+    this.validateArgs(
+      args as unknown as Record<string, unknown>,
+      [
+        BaseResolver.validationRules.required('nodeId', 'Node ID'),
+        BaseResolver.validationRules.nonEmpty('nodeId', 'Node ID'),
+      ],
+      'bulkSetNodeAttributes',
+    )
+
+    if (!Array.isArray(args.attributes) || args.attributes.length === 0) {
+      return {
+        success: false,
+        nodeAttribute: null,
+        errors: [{ message: 'At least one attribute is required', code: 'VALIDATION_ERROR' }],
+      }
+    }
+
+    try {
+      this.logger.info('Executing mutation: bulkSetNodeAttributes', {
+        nodeId: args.nodeId,
+        count: args.attributes.length,
+      })
+
+      const { node, normalized } = await this.effectiveSchemaGate.validateAndNormalizePatch(
+        args.nodeId,
+        args.attributes.map((item) => ({
+          attributeIdOrIdentifier: item.attributeId,
+          value: item.value,
+        })),
+      )
+
+      const savedAttributes = await this.setAttributesSequentially(args.nodeId, normalized)
+      const lastSaved = savedAttributes.at(-1) ?? null
+
+      this.tabularSyncHook?.notifyByTableId(node.getTableId(), args.nodeId)
+
+      const { nodeAttributeFromEntity } = await import('@/application/dtos/NodeDto.js')
+      return {
+        success: true,
+        nodeAttribute: lastSaved ? nodeAttributeFromEntity(lastSaved) : null,
+        errors: [],
+      }
+    } catch (error) {
+      this.logger.error('Mutation failed: bulkSetNodeAttributes', {
+        nodeId: args.nodeId,
+        ...toErrorMeta(error),
+      })
+
+      return {
+        success: false,
+        nodeAttribute: null,
+        errors: this.formatMutationErrors(error),
+      }
+    }
+  }
+
   async removeNodeAttribute(
     _: GraphQLParent,
     args: { nodeId: string; attributeId: string },

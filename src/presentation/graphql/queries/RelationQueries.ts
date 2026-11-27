@@ -1,4 +1,11 @@
+import { fromEntity as nodeFromEntity } from '@/application/dtos/NodeDto.js'
+import { nodeRelationFromEntities, nodeRelationFromEntity } from '@/application/dtos/RelationDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import {
+  GraphTraversalService,
+  resolveRelationTypeRefs,
+  type TraversalDirection,
+} from '@/application/services/GraphTraversalService.js'
 import type { IGraphRepository, SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type {
   GraphQLContext,
@@ -8,15 +15,17 @@ import type {
   RelationTypeArgs,
   SearchRelatedNodesArgs,
 } from '@/core/types/GraphQLTypes.js'
+import type { Node } from '@/domain/entities/Node.js'
+import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
-import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
-import { RelationDepth, RelationDirection } from '@/domain/value-objects/RelationQuery.js'
+import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 
 export class RelationQueries extends BaseResolver {
   protected logger: ILogger
+  private readonly graphTraversal: GraphTraversalService
 
   constructor(
     private readonly nodeRelationRepository: INodeRelationRepository,
@@ -28,6 +37,7 @@ export class RelationQueries extends BaseResolver {
   ) {
     super()
     this.logger = logger
+    this.graphTraversal = new GraphTraversalService(nodeRepository, nodeRelationRepository)
   }
 
   async relationType(_: GraphQLParent, args: RelationTypeArgs, _context?: GraphQLContext) {
@@ -46,6 +56,29 @@ export class RelationQueries extends BaseResolver {
       },
       'findRelationTypeById',
       { id: args.id },
+    )
+  }
+
+  async relationTypeByIdentifier(
+    _: GraphQLParent,
+    args: { identifier: string },
+    _context?: GraphQLContext,
+  ) {
+    this.validateArgs(
+      args as unknown as Record<string, unknown>,
+      [
+        BaseResolver.validationRules.required('identifier', 'Relation Type Identifier'),
+        BaseResolver.validationRules.nonEmpty('identifier', 'Relation Type Identifier'),
+      ],
+      'relationTypeByIdentifier',
+    )
+
+    return this.handleQuery(
+      async () => {
+        return await this.relationTypeRepository.findByIdentifier(args.identifier)
+      },
+      'relationTypeByIdentifier',
+      { identifier: args.identifier },
     )
   }
 
@@ -97,28 +130,13 @@ export class RelationQueries extends BaseResolver {
   async searchRelatedNodes(_: GraphQLParent, args: SearchRelatedNodesArgs, _context?: GraphQLContext) {
     return this.handleQuery(
       async () => {
-        // Temporary fallback when SearchRelatedNodesUseCase is not available
-        // Full search functionality disabled pending resolution of circular dependency
-        if (!this.searchRelatedNodesUseCase) {
-          this.logger.warn('SearchRelatedNodesUseCase not available, using basic relation listing')
-          const result = await this.nodeRelationRepository.findAll(args.pagination || { limit: 10, offset: 0 })
-
-          return {
-            nodes: [],
-            relations: result.nodes,
-            totalCount: result.totalCount,
-            hasNextPage: result.hasNextPage,
-            hasPreviousPage: result.hasPreviousPage,
-          }
-        }
-
-        // Transform GraphQL args to use case input format
-        // Note: Type mismatch between GraphQL args and use case - using any to bypass
         const filter = args.filter as
           | {
               sourceNodeId?: string
+              relationTypeIds?: string[]
               relationTypeId?: string
-              direction?: 'incoming' | 'outgoing' | 'both'
+              direction?: string
+              maxDepth?: number
             }
           | undefined
 
@@ -131,36 +149,98 @@ export class RelationQueries extends BaseResolver {
             nodes: [],
             relations: [],
             totalCount: 0,
+            totalConnections: 0,
             hasNextPage: false,
             hasPreviousPage: false,
           }
         }
 
+        const directionStr = (filter?.direction || 'OUTGOING').toUpperCase()
+        const maxDepth = filter?.maxDepth ?? 1
+        if (maxDepth <= 0) {
+          return {
+            nodes: [],
+            relations: [],
+            totalCount: 0,
+            totalConnections: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
+        }
+
+        const requestedTypeRefs = filter?.relationTypeIds?.length
+          ? filter.relationTypeIds
+          : filter?.relationTypeId
+            ? [filter.relationTypeId]
+            : undefined
+        const resolvedTypes = await resolveRelationTypeRefs(this.relationTypeRepository, requestedTypeRefs)
+        if (resolvedTypes && resolvedTypes.ids.length === 0) {
+          return {
+            nodes: [],
+            relations: [],
+            totalCount: 0,
+            totalConnections: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
+        }
+
+        if (!this.searchRelatedNodesUseCase) {
+          const traversalDirection = normalizeTraversalDirection(directionStr)
+          const traversal = await this.graphTraversal.connectedNodesWithDetails(
+            sourceNodeId,
+            maxDepth,
+            traversalDirection,
+            resolvedTypes?.ids,
+          )
+          const offset = Math.max(0, args.pagination?.offset ?? 0)
+          const limit = Math.max(1, args.pagination?.limit ?? 10)
+          const paged = traversal.nodes.slice(offset, offset + limit)
+          return {
+            nodes: paged.map(({ node, distance }) => ({ ...nodeFromEntity(node), distance })),
+            relations: nodeRelationFromEntities(traversal.relations),
+            totalCount: traversal.nodes.length,
+            totalConnections: traversal.nodes.length,
+            hasNextPage: offset + limit < traversal.nodes.length,
+            hasPreviousPage: offset > 0,
+          }
+        }
+
+        const mappedDirection =
+          directionStr === 'INCOMING'
+            ? RelationDirection.INCOMING
+            : directionStr === 'BOTH'
+              ? RelationDirection.BOTH
+              : RelationDirection.OUTGOING
+
         const result = await this.searchRelatedNodesUseCase.execute({
           tableId,
-          sourceNodeIds: [sourceNodeId], // Convert singular to array
-          relationFilters: filter?.relationTypeId
-            ? [
-                {
-                  relationTypes: [filter.relationTypeId],
-                  direction:
-                    filter.direction === 'incoming'
-                      ? RelationDirection.INCOMING
-                      : filter.direction === 'outgoing'
-                        ? RelationDirection.OUTGOING
-                        : RelationDirection.BOTH,
-                  depth: RelationDepth.DIRECT,
-                },
-              ]
-            : undefined,
+          sourceNodeIds: [sourceNodeId],
+          relationFilters: [
+            {
+              relationTypes: resolvedTypes?.identifiers,
+              direction: mappedDirection,
+              depth: maxDepth,
+            },
+          ],
           limit: args.pagination?.limit,
           offset: args.pagination?.offset,
         })
 
+        // Hydrate NodeRelation DTOs matching the traversed edges for GraphQL NodeRelation type fields
+        const nodeIdScope = [sourceNodeId, ...result.nodes.map((node) => node.id)]
+        const traversalDirection = normalizeTraversalDirection(directionStr)
+        const hydratedRelations = await this.loadHydratedRelations(
+          nodeIdScope,
+          traversalDirection,
+          resolvedTypes?.ids,
+        )
+
         return {
           nodes: result.nodes,
-          relations: result.relations,
+          relations: hydratedRelations,
           totalCount: result.totalCount,
+          totalConnections: result.totalCount,
           hasNextPage: result.hasNextPage,
           hasPreviousPage: result.hasPreviousPage,
         }
@@ -199,83 +279,48 @@ export class RelationQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
-        const maxDepth = Math.max(1, normalized.depth || 1)
-        const visited = new Set<string>([normalized.nodeId])
-        const discoveredNodeIds = new Set<string>()
-        const distanceByNodeId = new Map<string, number>()
-        const relationMap = new Map<string, NodeRelation>()
-        const queue: Array<{ nodeId: string; depth: number }> = [{ nodeId: normalized.nodeId, depth: 0 }]
-
-        while (queue.length > 0) {
-          const current = queue.shift()
-          if (!current) {
-            continue
-          }
-          if (current.depth >= maxDepth) {
-            continue
-          }
-
-          const relations: NodeRelation[] = []
-
-          if (normalized.direction === 'OUTGOING' || normalized.direction === 'BOTH') {
-            relations.push(...(await this.nodeRelationRepository.findBySourceNodeId(current.nodeId)))
-          }
-          if (normalized.direction === 'INCOMING' || normalized.direction === 'BOTH') {
-            relations.push(...(await this.nodeRelationRepository.findByTargetNodeId(current.nodeId)))
-          }
-
-          for (const relation of relations) {
-            if (
-              normalized.relationTypeIds.length > 0 &&
-              !normalized.relationTypeIds.includes(relation.getRelationTypeId())
-            ) {
-              continue
-            }
-
-            const relationId =
-              relation.getId?.() || `${relation.getSourceNodeId()}-${relation.getTargetNodeId()}-${relation.getRelationTypeId()}`
-            relationMap.set(relationId, relation)
-
-            const neighborId =
-              relation.getSourceNodeId() === current.nodeId ? relation.getTargetNodeId() : relation.getSourceNodeId()
-
-            if (!neighborId || neighborId === normalized.nodeId) {
-              continue
-            }
-
-            discoveredNodeIds.add(neighborId)
-            const nextDepth = current.depth + 1
-            const existingDistance = distanceByNodeId.get(neighborId)
-            if (existingDistance === undefined || nextDepth < existingDistance) {
-              distanceByNodeId.set(neighborId, nextDepth)
-            }
-
-            if (!visited.has(neighborId)) {
-              visited.add(neighborId)
-              queue.push({ nodeId: neighborId, depth: nextDepth })
-            }
+        if (normalized.depth <= 0) {
+          return {
+            nodes: [],
+            relations: [],
+            totalCount: 0,
+            totalConnections: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
           }
         }
 
-        const rawNodes = (
-          await Promise.all(Array.from(discoveredNodeIds).map((nodeId) => this.nodeRepository.findById(nodeId)))
-        ).filter((node): node is NonNullable<typeof node> => node !== null)
+        const resolvedTypes = await resolveRelationTypeRefs(
+          this.relationTypeRepository,
+          normalized.relationTypeIds,
+        )
+        if (resolvedTypes && resolvedTypes.ids.length === 0) {
+          return {
+            nodes: [],
+            relations: [],
+            totalCount: 0,
+            totalConnections: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
+        }
 
-        const nodes = rawNodes.map((node) => ({
-          id: node.getId(),
-          tableId: node.getTableId(),
-          content: node.getContent(),
-          title: node.getTitle(),
-          description: node.getDescription(),
-          metadata: node.getParsedMetadata(),
-          createdAt: node.getCreatedAt().toISOString(),
-          updatedAt: node.getUpdatedAt().toISOString(),
-          distance: distanceByNodeId.get(node.getId()) ?? 1,
+        const traversalDirection = normalizeTraversalDirection(normalized.direction)
+        const { nodes: traversedNodes, relations } = await this.graphTraversal.connectedNodesWithDetails(
+          normalized.nodeId,
+          normalized.depth,
+          traversalDirection,
+          resolvedTypes?.ids,
+        )
+
+        const nodes = traversedNodes.map(({ node, distance }) => ({
+          ...nodeFromEntity(node),
+          distance,
         }))
 
         return {
           nodes,
-          relations: Array.from(relationMap.values()),
+          relations: nodeRelationFromEntities(relations),
           totalCount: nodes.length,
           totalConnections: nodes.length,
           hasNextPage: false,
@@ -305,21 +350,97 @@ export class RelationQueries extends BaseResolver {
 
     return this.handleQuery(
       async () => {
+        const maxDepth = args.input.maxDepth ?? 5
+        if (maxDepth <= 0) {
+          return {
+            nodes: [],
+            relations: [],
+            totalCount: 0,
+            totalConnections: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
+        }
+
         const sourceNode = await this.nodeRepository.findById(args.input.nodeId)
         if (!sourceNode || !this.graphRepository) {
-          return { nodes: [], totalCount: 0, totalConnections: 0, hasNextPage: false, hasPreviousPage: false }
+          return {
+            nodes: [],
+            relations: [],
+            totalCount: 0,
+            totalConnections: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
         }
-        const direction = args.input.direction === 'INCOMING' ? RelationDirection.INCOMING : RelationDirection.OUTGOING
+
+        const resolvedTypes = await resolveRelationTypeRefs(
+          this.relationTypeRepository,
+          args.input.relationTypeIds,
+        )
+        if (resolvedTypes && resolvedTypes.identifiers.length === 0) {
+          return {
+            nodes: [],
+            relations: [],
+            totalCount: 0,
+            totalConnections: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
+        }
+
+        const directionUpper = (args.input.direction || 'OUTGOING').toUpperCase()
+        const direction =
+          directionUpper === 'INCOMING'
+            ? RelationDirection.INCOMING
+            : directionUpper === 'BOTH'
+              ? RelationDirection.BOTH
+              : RelationDirection.OUTGOING
+
         const dependencies = await this.graphRepository.getDependencyChain(
           sourceNode.getTableId(),
           args.input.nodeId,
           direction,
-          args.input.relationTypeIds,
+          resolvedTypes?.identifiers,
+          maxDepth,
         )
-        const dependencyNodes = dependencies.map((dependency) => ({ id: dependency.nodeId }))
+
+        if (dependencies.length === 0) {
+          return {
+            nodes: [],
+            relations: [],
+            totalCount: 0,
+            totalConnections: 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          }
+        }
+
+        const nodesById = await this.loadNodesByIdMap(dependencies.map((d) => d.nodeId))
+        const dependencyNodes = dependencies.flatMap((dependency) => {
+          const node = nodesById.get(dependency.nodeId)
+          return node ? [{ ...nodeFromEntity(node), distance: dependency.level }] : []
+        })
+
+        const scopeIds = [args.input.nodeId, ...dependencies.map((d) => d.nodeId)]
+        const scopeSet = new Set(scopeIds)
+        const hydratedRelations = (
+          await this.loadHydratedRelations(
+            scopeIds,
+            normalizeTraversalDirection(directionUpper),
+            resolvedTypes?.ids,
+          )
+        ).filter(
+          (relation) =>
+            relation.sourceNodeId !== null &&
+            relation.targetNodeId !== null &&
+            scopeSet.has(relation.sourceNodeId) &&
+            scopeSet.has(relation.targetNodeId),
+        )
 
         return {
           nodes: dependencyNodes,
+          relations: hydratedRelations,
           totalCount: dependencyNodes.length,
           totalConnections: dependencyNodes.length,
           hasNextPage: false,
@@ -363,41 +484,145 @@ export class RelationQueries extends BaseResolver {
         const sourceNode = await this.nodeRepository.findById(sourceNodeId)
         if (!sourceNode || !this.graphRepository) return []
 
+        const resolvedTypes = await resolveRelationTypeRefs(
+          this.relationTypeRepository,
+          args.input.relationTypeIds,
+        )
+        if (resolvedTypes && resolvedTypes.identifiers.length === 0) {
+          return []
+        }
+
         const storedPaths = await this.graphRepository.findPathsBetweenNodes(
           sourceNode.getTableId(),
           [sourceNodeId],
           [targetNodeId],
           maxDepth,
-          args.input.relationTypeIds,
+          resolvedTypes?.identifiers,
         )
-        const paths = await Promise.all(storedPaths.map(async (storedPath) => ({
-          nodes: storedPath.path.map((id) => ({ id })),
-          relations: await this.hydratePathRelations(storedPath.path, args.input.relationTypeIds),
-          length: storedPath.length,
-          totalWeight: storedPath.length,
-        })))
+        if (storedPaths.length === 0) return []
+
+        const allNodeIds = new Set<string>()
+        const prefixNodeIds = new Set<string>()
+        for (const storedPath of storedPaths) {
+          for (let index = 0; index < storedPath.path.length; index += 1) {
+            const id = storedPath.path[index]
+            if (id === undefined) continue
+            allNodeIds.add(id)
+            if (index < storedPath.path.length - 1) prefixNodeIds.add(id)
+          }
+        }
+
+        const [nodesById, adjacency] = await Promise.all([
+          this.loadNodesByIdMap([...allNodeIds]),
+          prefixNodeIds.size > 0
+            ? this.loadOutgoingAdjacency([...prefixNodeIds], resolvedTypes?.ids)
+            : Promise.resolve(new Map<string, NodeRelation[]>()),
+        ])
+
+        const paths = storedPaths.map((storedPath) => {
+          const nodes = storedPath.path.flatMap((id) => {
+            const node = nodesById.get(id)
+            return node ? [nodeFromEntity(node)] : []
+          })
+          const relations: NodeRelation[] = []
+          let weightSum = 0
+          for (let index = 0; index < storedPath.path.length - 1; index += 1) {
+            const fromId = storedPath.path[index]
+            const toId = storedPath.path[index + 1]
+            if (fromId === undefined || toId === undefined) continue
+            const match = (adjacency.get(fromId) ?? []).find(
+              (candidate) => candidate.getTargetNodeId() === toId,
+            )
+            if (match !== undefined) {
+              relations.push(match)
+              weightSum += match.getStrength()
+            }
+          }
+          return {
+            nodes,
+            relations: relations.map((relation) => nodeRelationFromEntity(relation)),
+            length: storedPath.length,
+            totalWeight: relations.length > 0 ? weightSum : storedPath.length,
+          }
+        })
 
         return paths.sort((left, right) => left.length - right.length)
-
       },
       'findPathsBetweenNodes',
       { input: args.input },
     )
   }
 
-  private async hydratePathRelations(path: readonly string[], relationTypeIds?: readonly string[]): Promise<Array<{ id: string }>> {
-    const relationIds: Array<{ id: string }> = []
-    for (let index = 0; index < path.length - 1; index += 1) {
-      const sourceNodeId = path[index]
-      const targetNodeId = path[index + 1]
-      if (sourceNodeId === undefined || targetNodeId === undefined) continue
-      const relations = await this.nodeRelationRepository.findBySourceNodeId(sourceNodeId)
-      const relation = relations.find((candidate) =>
-        candidate.getTargetNodeId() === targetNodeId &&
-        (relationTypeIds === undefined || relationTypeIds.length === 0 || relationTypeIds.includes(candidate.getRelationTypeId())),
-      )
-      if (relation !== undefined) relationIds.push({ id: relation.getId() })
+  private async loadNodesByIdMap(nodeIds: readonly string[]): Promise<Map<string, Node>> {
+    const unique = [...new Set(nodeIds)]
+    if (unique.length === 0) return new Map()
+    const chunks: string[][] = []
+    for (let index = 0; index < unique.length; index += 500) {
+      chunks.push(unique.slice(index, index + 500))
     }
-    return relationIds
+    const loaded = (await Promise.all(chunks.map((chunk) => this.nodeRepository.findByIds(chunk)))).flat()
+    return new Map(loaded.map((node) => [node.getId(), node]))
   }
+
+  private async loadOutgoingAdjacency(
+    nodeIds: readonly string[],
+    relationTypeIds?: readonly string[],
+  ): Promise<Map<string, NodeRelation[]>> {
+    if (typeof this.nodeRelationRepository.findAdjacentByNodeIds === 'function') {
+      const merged = new Map<string, NodeRelation[]>()
+      for (let index = 0; index < nodeIds.length; index += 64) {
+        const batch = nodeIds.slice(index, index + 64)
+        const loaded = await this.nodeRelationRepository.findAdjacentByNodeIds(batch, 'OUTGOING', relationTypeIds)
+        for (const [key, value] of loaded) {
+          merged.set(key, value)
+        }
+      }
+      return merged
+    }
+
+    const fallback = new Map<string, NodeRelation[]>()
+    await Promise.all(
+      nodeIds.map(async (nodeId) => {
+        const rels = await this.nodeRelationRepository.findBySourceNodeId(nodeId)
+        fallback.set(
+          nodeId,
+          relationTypeIds && relationTypeIds.length > 0
+            ? rels.filter((r) => relationTypeIds.includes(r.getRelationTypeId()))
+            : rels,
+        )
+      }),
+    )
+    return fallback
+  }
+
+  private async loadHydratedRelations(
+    nodeIds: readonly string[],
+    direction: TraversalDirection,
+    relationTypeIds?: readonly string[],
+  ) {
+    const unique = [...new Set(nodeIds)]
+    if (unique.length === 0) return []
+    const relationMap = new Map<string, NodeRelation>()
+
+    if (typeof this.nodeRelationRepository.findAdjacentByNodeIds === 'function') {
+      for (let index = 0; index < unique.length; index += 64) {
+        const batch = unique.slice(index, index + 64)
+        const loaded = await this.nodeRelationRepository.findAdjacentByNodeIds(batch, direction, relationTypeIds)
+        for (const relations of loaded.values()) {
+          for (const relation of relations) {
+            relationMap.set(relation.getId(), relation)
+          }
+        }
+      }
+    }
+
+    return nodeRelationFromEntities(Array.from(relationMap.values()))
+  }
+}
+
+function normalizeTraversalDirection(direction: string): TraversalDirection {
+  const upper = direction.toUpperCase()
+  if (upper === 'INCOMING') return 'INCOMING'
+  if (upper === 'OUTGOING') return 'OUTGOING'
+  return 'BOTH'
 }

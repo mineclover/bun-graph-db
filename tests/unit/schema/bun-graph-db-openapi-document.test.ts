@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it } from "vitest";
 import { validateOpenApiProjection } from "@oa-sdk/openapi-projection-contract";
 import { buildBunGraphDbOpenApiDocument } from "@/core/schema/BunGraphDbOpenApiDocument.js";
 

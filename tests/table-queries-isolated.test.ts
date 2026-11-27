@@ -3,7 +3,7 @@
  * Tests table GraphQL queries with isolated server setup
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import {
   createRequestHelper,
   requireGraphQLData,

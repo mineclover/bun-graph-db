@@ -1,10 +1,13 @@
-import type { Database, SQLQueryBindings } from 'bun:sqlite'
+import type { SQLQueryBindings } from './SqliteAdapter.js'
+import { getMaxBindParams, type ISqliteDatabase } from './SqlitePort.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type {
+  FindTemplateExecutionsOptions,
   IQueryTemplateRepository,
   QueryTemplateUpdateData,
   SearchCriteria,
+  TemplateExecutionRecord,
 } from '@/domain/repositories/IQueryTemplateRepository.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { DatabaseException, DomainException } from '@/shared/exceptions/DomainException.js'
@@ -39,7 +42,7 @@ export class SqliteQueryTemplateRepository
   implements IQueryTemplateRepository
 {
   constructor(
-    db: Database,
+    db: ISqliteDatabase,
     private readonly logger: ILogger,
   ) {
     super(db)
@@ -552,7 +555,7 @@ export class SqliteQueryTemplateRepository
           row.last_used_at,
           row.avg_execution_time_ms,
           row.version || '1.0',
-          row.is_active === 1,
+          Boolean(row.is_active),
           row.tags,
           row.created_at,
           row.updated_at,
@@ -598,7 +601,7 @@ export class SqliteQueryTemplateRepository
           row.last_used_at,
           row.avg_execution_time_ms,
           row.version || '1.0',
-          row.is_active === 1,
+          Boolean(row.is_active),
           row.tags,
           row.created_at,
           row.updated_at,
@@ -673,6 +676,176 @@ export class SqliteQueryTemplateRepository
       this.logger.error('Failed to update template status', { id, isActive, ...toErrorMeta(error) })
       throw new DomainException('Failed to update template status', { code: 'DATABASE_ERROR' })
     }
+  }
+
+  async recordExecution(
+    input: Omit<TemplateExecutionRecord, 'id' | 'executedAt'> & { executedAt?: string },
+  ): Promise<void> {
+    if (!this.hasTemplateExecutionsTable()) {
+      await this.updateExecutionStats(input.templateId, input.executionTimeMs)
+      return
+    }
+
+    try {
+      const executedAt = input.executedAt ?? new Date().toISOString()
+      const variablesJson = input.variablesUsed ? JSON.stringify(input.variablesUsed) : null
+      this.db.run(
+        `INSERT INTO template_executions (
+          template_id, executed_at, execution_time_ms, variables_used,
+          result_count, success, error_message, user_context
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          input.templateId,
+          executedAt,
+          Math.max(0, Math.round(input.executionTimeMs)),
+          variablesJson,
+          Math.max(0, Math.trunc(input.resultCount)),
+          input.success ? 1 : 0,
+          input.errorMessage,
+          input.userContext,
+        ],
+      )
+    } catch (error) {
+      this.logger.warn('Failed to record template execution log', {
+        templateId: input.templateId,
+        ...toErrorMeta(error),
+      })
+    }
+  }
+
+  async findExecutions(
+    options: FindTemplateExecutionsOptions = {},
+  ): Promise<{ items: TemplateExecutionRecord[]; totalCount: number }> {
+    if (!this.hasTemplateExecutionsTable()) {
+      return { items: [], totalCount: 0 }
+    }
+
+    const whereClauses: string[] = ['1=1']
+    const params: SQLQueryBindings[] = []
+
+    if (options.templateId) {
+      whereClauses.push('template_id = ?')
+      params.push(options.templateId)
+    }
+
+    const templateIds = options.templateIds?.filter(Boolean)
+    const inlineLimit = getMaxBindParams(this.db, 12)
+    const inlineTemplateFilter = Boolean(
+      templateIds && templateIds.length > 0 && templateIds.length <= inlineLimit,
+    )
+    if (inlineTemplateFilter && templateIds) {
+      whereClauses.push(`template_id IN (${templateIds.map(() => '?').join(',')})`)
+      params.push(...templateIds)
+    }
+
+    if (options.start) {
+      whereClauses.push('executed_at >= ?')
+      params.push(options.start)
+    }
+    if (options.end) {
+      whereClauses.push('executed_at <= ?')
+      params.push(options.end)
+    }
+    if (options.successOnly === true) {
+      whereClauses.push('success = 1')
+    } else if (options.successOnly === false) {
+      whereClauses.push('success = 0')
+    }
+    if (options.minExecutionTime !== undefined) {
+      whereClauses.push('execution_time_ms >= ?')
+      params.push(options.minExecutionTime)
+    }
+    if (options.maxExecutionTime !== undefined) {
+      whereClauses.push('execution_time_ms <= ?')
+      params.push(options.maxExecutionTime)
+    }
+    if (options.userContext) {
+      whereClauses.push('user_context = ?')
+      params.push(options.userContext)
+    }
+
+    const whereSql = whereClauses.join(' AND ')
+
+    interface ExecutionRow {
+      id: number
+      template_id: number
+      executed_at: string
+      execution_time_ms: number
+      variables_used: string | null
+      result_count: number | null
+      success: number | boolean
+      error_message: string | null
+      user_context: string | null
+    }
+
+    const mapExecutionRow = (row: ExecutionRow): TemplateExecutionRecord => {
+      let variablesUsed: Record<string, unknown> | null = null
+      if (row.variables_used) {
+        try {
+          const parsed = JSON.parse(row.variables_used)
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            variablesUsed = parsed as Record<string, unknown>
+          }
+        } catch {
+          variablesUsed = null
+        }
+      }
+      return {
+        id: String(row.id),
+        templateId: String(row.template_id),
+        executedAt: row.executed_at,
+        executionTimeMs: Number(row.execution_time_ms ?? 0),
+        variablesUsed,
+        resultCount: Number(row.result_count ?? 0),
+        success: Boolean(row.success),
+        errorMessage: row.error_message,
+        userContext: row.user_context,
+      }
+    }
+
+    // If templateIds exceeded bind budget, fetch matching rows then post-filter cleanly.
+    if (templateIds && templateIds.length > 0 && !inlineTemplateFilter) {
+      const allowed = new Set(templateIds.map(String))
+      const allRows = this.db
+        .query<ExecutionRow, SqliteParams>(
+          `SELECT * FROM template_executions WHERE ${whereSql} ORDER BY executed_at DESC, id DESC LIMIT 10000`,
+        )
+        .all(...params)
+      const filtered = allRows.map(mapExecutionRow).filter((item) => allowed.has(item.templateId))
+      const offset = Math.max(0, options.offset ?? 0)
+      const limit = Math.max(1, options.limit ?? 100)
+      return {
+        items: filtered.slice(offset, offset + limit),
+        totalCount: filtered.length,
+      }
+    }
+
+    const countRow = this.db
+      .query<{ count: number }, SqliteParams>(`SELECT COUNT(*) AS count FROM template_executions WHERE ${whereSql}`)
+      .get(...params)
+    const totalCount = Number(countRow?.count ?? 0)
+
+    const limit = Math.max(1, options.limit ?? 100)
+    const offset = Math.max(0, options.offset ?? 0)
+    const rows = this.db
+      .query<ExecutionRow, SqliteParams>(
+        `SELECT * FROM template_executions WHERE ${whereSql} ORDER BY executed_at DESC, id DESC LIMIT ? OFFSET ?`,
+      )
+      .all(...params, limit, offset)
+
+    return {
+      items: rows.map(mapExecutionRow),
+      totalCount,
+    }
+  }
+
+  private hasTemplateExecutionsTable(): boolean {
+    const row = this.db
+      .query<{ name: string }, []>(
+        "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'template_executions'",
+      )
+      .get()
+    return Boolean(row?.name)
   }
 
   private mapOrderByField(field: string): string {

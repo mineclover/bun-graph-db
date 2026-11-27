@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { GoogleToolsHttpSheetsAdapter } from '@/infrastructure/excel/adapters/GoogleToolsHttpSheetsAdapter.js'
 
 describe('GoogleToolsHttpSheetsAdapter', () => {
@@ -7,7 +7,7 @@ describe('GoogleToolsHttpSheetsAdapter', () => {
   beforeEach(() => {
     let batchPayload: unknown = null
 
-    globalThis.fetch = mock(async (input: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = String(input)
 
       if (url.endsWith('/sheets/spreadsheet-1')) {
@@ -128,7 +128,7 @@ describe('GoogleToolsHttpSheetsAdapter', () => {
   test('retries 429 and 503 responses using capped Retry-After delays', async () => {
     const delays: number[] = []
     let batchAttempts = 0
-    const fetchImpl = mock(
+    const fetchImpl = vi.fn(
       async (input: string | URL | Request, init?: RequestInit) => {
         const url = String(input)
         expect(init?.signal).toBeInstanceOf(AbortSignal)
@@ -208,7 +208,7 @@ describe('GoogleToolsHttpSheetsAdapter', () => {
 
   test('aborts an HTTP attempt when its request timeout elapses', async () => {
     let observedSignal: AbortSignal | null = null
-    const fetchImpl = mock(
+    const fetchImpl = vi.fn(
       async (_input: string | URL | Request, init?: RequestInit) =>
         await new Promise<Response>((_resolve, reject) => {
           const signal = init?.signal
@@ -240,7 +240,7 @@ describe('GoogleToolsHttpSheetsAdapter', () => {
 
   test('reports the non-atomic clear-write boundary for durable compensation', async () => {
     const writeMethods: string[] = []
-    const fetchImpl = mock(
+    const fetchImpl = vi.fn(
       async (input: string | URL | Request, init?: RequestInit) => {
         const url = String(input)
         if (url.endsWith('/sheets/spreadsheet-1')) {

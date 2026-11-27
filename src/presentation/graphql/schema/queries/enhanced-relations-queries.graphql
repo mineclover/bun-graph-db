@@ -31,6 +31,22 @@ extend type Query {
     relationTypes: [String!]
     tableIds: [ID!]
   ): [HighConfidenceRelation!]!
+
+  # Strongly Connected Components decomposition (Tarjan/Kosaraju iterative)
+  stronglyConnectedComponents(
+    tableId: ID!
+    relationTypes: [String!]
+  ): StronglyConnectedComponentsResult!
+
+  # Deterministic Power-Iteration PageRank centrality ranking
+  pageRank(
+    tableId: ID!
+    relationTypes: [String!]
+    dampingFactor: Float = 0.85
+    maxIterations: Int = 100
+    tolerance: Float = 0.000000001
+    limit: Int = 50
+  ): PageRankQueryResult!
 }
 
 # Relation analytics types
@@ -362,4 +378,33 @@ enum ValidationStatus {
   UNCERTAIN
   QUESTIONABLE
   INVALID
+}
+
+type StronglyConnectedComponentGroup {
+  id: Int!
+  size: Int!
+  nodeIds: [ID!]!
+  nodes: [TableNode!]!
+}
+
+type StronglyConnectedComponentsResult {
+  tableId: ID!
+  totalComponents: Int!
+  largestComponentSize: Int!
+  components: [StronglyConnectedComponentGroup!]!
+}
+
+type PageRankEntry {
+  rank: Int!
+  score: Float!
+  node: TableNode!
+}
+
+type PageRankQueryResult {
+  tableId: ID!
+  dampingFactor: Float!
+  iterations: Int!
+  converged: Boolean!
+  finalDelta: Float!
+  entries: [PageRankEntry!]!
 }

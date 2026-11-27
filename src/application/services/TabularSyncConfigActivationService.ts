@@ -3,7 +3,6 @@ import type {
 	TabularSyncConfigRecord,
 	TabularSyncConfigStore,
 } from "@/infrastructure/excel/TabularSyncConfigStore.js";
-import { TabularSyncConnectionInspector } from "@/infrastructure/excel/TabularSyncConnectionInspector.js";
 
 export interface TabularSyncActivationReadiness {
 	assertReadyForActivation(config: TabularSyncConfig): Promise<void>;
@@ -19,8 +18,16 @@ export interface TabularSyncActivationReadiness {
 export class TabularSyncConfigActivationService {
 	constructor(
 		private readonly store: TabularSyncConfigStore,
-		private readonly readiness: TabularSyncActivationReadiness = new TabularSyncConnectionInspector(),
+		private readonly readiness?: TabularSyncActivationReadiness,
 	) {}
+
+	private async getReadiness(): Promise<TabularSyncActivationReadiness> {
+		if (this.readiness) return this.readiness;
+		const { TabularSyncConnectionInspector } = await import(
+			"@/infrastructure/excel/TabularSyncConnectionInspector.js"
+		);
+		return new TabularSyncConnectionInspector();
+	}
 
 	async saveConfig(
 		configKey: string,
@@ -28,7 +35,7 @@ export class TabularSyncConfigActivationService {
 		options: { active?: boolean } = {},
 	): Promise<TabularSyncConfigRecord | null> {
 		if (options.active === true) {
-			await this.readiness.assertReadyForActivation(config);
+			await (await this.getReadiness()).assertReadyForActivation(config);
 		}
 
 		this.store.saveConfig(configKey, config, options);
@@ -43,7 +50,7 @@ export class TabularSyncConfigActivationService {
 			throw new Error(`Tabular sync config '${configKey}' not found.`);
 		}
 
-		await this.readiness.assertReadyForActivation(config);
+		await (await this.getReadiness()).assertReadyForActivation(config);
 		this.store.activateConfig(configKey);
 		return this.store.getActiveConfigRecord();
 	}

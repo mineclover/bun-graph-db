@@ -64,8 +64,8 @@ cd bun-graph-db
 ### 2. Install Dependencies
 
 ```bash
-# Install packages using Bun
-bun install
+# Install packages using pnpm
+pnpm install
 
 # Verify installation (node_modules directory created)
 ls -la node_modules
@@ -77,7 +77,7 @@ ls -la node_modules
 
 ```bash
 # Initialize the schema explicitly
-bun run scripts/init-database.ts
+node --import tsx scripts/init-database.ts
 ```
 
 **Database Location**: `./data/bun-graph-db.sqlite`
@@ -90,7 +90,7 @@ bun run scripts/init-database.ts
 
 ```bash
 # Start development server
-bun run dev
+pnpm run dev
 
 # Expected output:
 # 🚀 Bun Graph DB Server ready at http://localhost:4141/graphql
@@ -102,10 +102,10 @@ bun run dev
 
 ```bash
 # Run on custom port
-bun run dev --port 3000
+pnpm run dev --port 4200
 
 # Verify
-# Server ready at http://localhost:3000/graphql
+# Server ready at http://localhost:4200/graphql
 ```
 
 ### Health Check
@@ -601,7 +601,7 @@ lsof -i :4141
 kill -9 <PID>
 
 # Or use a different port
-bun run dev --port 3000
+pnpm run dev --port 4200
 ```
 
 #### 2. Database Connection Error
@@ -622,7 +622,7 @@ chmod 644 ./data/bun-graph-db.sqlite
 
 # Recreate database (WARNING: Deletes all data)
 rm ./data/bun-graph-db.sqlite
-bun run dev  # Auto-creates new database
+pnpm run dev  # Auto-creates new database
 ```
 
 #### 3. GraphQL Query Errors
@@ -654,7 +654,7 @@ JavaScript heap out of memory
 **Solution**:
 ```bash
 # Increase memory limit
-NODE_OPTIONS="--max-old-space-size=4096" bun run dev
+NODE_OPTIONS="--max-old-space-size=4096" pnpm run dev
 ```
 
 ### Debugging
@@ -667,7 +667,7 @@ NODE_OPTIONS="--max-old-space-size=4096" bun run dev
 **Enable Debug Mode**:
 ```bash
 # Verbose logging
-DEBUG=* bun run dev
+DEBUG=* pnpm run dev
 ```
 
 ### Performance Optimization
@@ -712,9 +712,9 @@ query {
 
 ### Learning Resources
 
-1. **API Documentation**: [docs/api/doc-api-reference.md](../../api/doc-api-reference.md)
-2. **Template Guide**: [docs/templates/template-system-guide.md](../../templates/template-system-guide.md)
-3. **Test Coverage Report**: [claudedocs/test-coverage-report.md](../../claudedocs/test-coverage-report.md)
+1. **API Documentation**: [docs/api/doc-api-reference.md](../api/doc-api-reference.md)
+2. **Template Guide**: [docs/templates/template-system-guide.md](../templates/template-system-guide.md)
+3. **Testing & Golden Dataset**: [TESTING.md](../development/TESTING.md) · [GOLDEN_DATASET.md](../development/GOLDEN_DATASET.md)
 4. **Architecture Overview**: [아키텍처 개요](../architecture/overview.md)
 
 ### Advanced Features
@@ -801,7 +801,7 @@ NODE_ENV=production
 
 - **CLAUDE.md**: Project overview and key features
 - **docs/**: Detailed documentation
-- **claudedocs/**: Development-related docs
+- **docs/development/**: Testing (`TESTING.md`), Golden Dataset (`GOLDEN_DATASET.md`), and developer guides
 
 ### Version Information
 
@@ -962,7 +962,7 @@ console.log(data);
 ---
 
 **Document Version**: 1.0.0
-**Last Updated**: 2025-11-23
+**Last Updated**: 2026-11-27
 **Authors**: Bun Graph DB Team
 
 **Feedback**: Please submit feedback or suggestions via GitHub Issues.

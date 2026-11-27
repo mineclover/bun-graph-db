@@ -1,14 +1,19 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
+import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { promisify } from "node:util";
 
-const EXPECTED_BUN_VERSION = "1.3.9";
+const execFileAsync = promisify(execFile);
+
+const EXPECTED_NODE_MAJOR = 26;
+const EXPECTED_PNPM_VERSION = "12.21.0";
 const EXPECTED_TYPESCRIPT_VERSION = "7.0.2";
-const EXPECTED_BIOME_VERSION = "2.5.7";
+const EXPECTED_BIOME_VERSION = "2.6.9";
 const CONTRACT_PACKAGE = "@oa-sdk/openapi-projection-contract";
 const CONTRACT_SPECIFIER = "file:../../packages/openapi-projection-contract";
-const PROJECT_ROOT = resolve(import.meta.dir, "..");
+const PROJECT_ROOT = resolve(import.meta.dirname, "..");
 
 interface PackageManifest {
 	name?: string;
@@ -36,36 +41,37 @@ async function readJson(path: string): Promise<PackageManifest> {
 }
 
 async function readCommandVersion(
-	command: string[],
+	command: string,
+	args: string[],
 ): Promise<string | undefined> {
-	const child = Bun.spawn(command, {
-		cwd: PROJECT_ROOT,
-		stdout: "pipe",
-		stderr: "pipe",
-	});
-	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(child.stdout).text(),
-		new Response(child.stderr).text(),
-		child.exited,
-	]);
-
-	if (exitCode !== 0) {
-		failures.push(
-			`${command.join(" ")} exited with ${exitCode}: ${stderr.trim()}`,
-		);
+	try {
+		const { stdout } = await execFileAsync(command, args, {
+			cwd: PROJECT_ROOT,
+		});
+		return stdout.trim();
+	} catch (error) {
+		const reason = error instanceof Error ? error.message : String(error);
+		failures.push(`${command} ${args.join(" ")} failed: ${reason}`);
 		return undefined;
 	}
-
-	return stdout.trim();
 }
 
 const manifest = await readJson(resolve(PROJECT_ROOT, "package.json"));
 expectEqual(
 	"packageManager",
 	manifest.packageManager,
-	`bun@${EXPECTED_BUN_VERSION}`,
+	`pnpm@${EXPECTED_PNPM_VERSION}`,
 );
-expectEqual("engines.bun", manifest.engines?.bun, EXPECTED_BUN_VERSION);
+expectEqual(
+	"engines.node",
+	manifest.engines?.node,
+	`>=${EXPECTED_NODE_MAJOR}.0.0`,
+);
+expectEqual(
+	"engines.pnpm",
+	manifest.engines?.pnpm,
+	`>=${EXPECTED_PNPM_VERSION} <13`,
+);
 expectEqual(
 	"devDependencies.typescript",
 	manifest.devDependencies?.typescript,
@@ -82,27 +88,39 @@ expectEqual(
 	CONTRACT_SPECIFIER,
 );
 
-expectEqual("Bun runtime", Bun.version, EXPECTED_BUN_VERSION);
-expectEqual(
-	".bun-version",
-	(await readFile(resolve(PROJECT_ROOT, ".bun-version"), "utf8")).trim(),
-	EXPECTED_BUN_VERSION,
+const nodeMajor = Number.parseInt(
+	process.versions.node.split(".")[0] ?? "0",
+	10,
 );
+if (Number.isNaN(nodeMajor) || nodeMajor < EXPECTED_NODE_MAJOR) {
+	failures.push(
+		`Node runtime: expected >=${EXPECTED_NODE_MAJOR}.0.0, received v${process.versions.node}`,
+	);
+}
 
-const lockfile = await readFile(resolve(PROJECT_ROOT, "bun.lock"), "utf8");
-if (!lockfile.includes(`"@biomejs/biome": "${EXPECTED_BIOME_VERSION}"`)) {
+const lockfile = await readFile(
+	resolve(PROJECT_ROOT, "pnpm-lock.yaml"),
+	"utf8",
+);
+if (
+	!lockfile.includes("'@biomejs/biome':") &&
+	!lockfile.includes("@biomejs/biome:")
+) {
+	failures.push("pnpm-lock.yaml does not record @biomejs/biome");
+}
+if (!lockfile.includes(`version: ${EXPECTED_BIOME_VERSION}`)) {
 	failures.push(
-		`bun.lock does not pin @biomejs/biome to ${EXPECTED_BIOME_VERSION}`,
+		`pnpm-lock.yaml does not pin @biomejs/biome to ${EXPECTED_BIOME_VERSION}`,
 	);
 }
-if (!lockfile.includes(`"typescript": "${EXPECTED_TYPESCRIPT_VERSION}"`)) {
+if (!lockfile.includes(`version: ${EXPECTED_TYPESCRIPT_VERSION}`)) {
 	failures.push(
-		`bun.lock does not pin typescript to ${EXPECTED_TYPESCRIPT_VERSION}`,
+		`pnpm-lock.yaml does not pin typescript to ${EXPECTED_TYPESCRIPT_VERSION}`,
 	);
 }
-if (!lockfile.includes(`"${CONTRACT_PACKAGE}": "${CONTRACT_SPECIFIER}"`)) {
+if (!lockfile.includes(`specifier: ${CONTRACT_SPECIFIER}`)) {
 	failures.push(
-		`bun.lock does not preserve ${CONTRACT_PACKAGE} as ${CONTRACT_SPECIFIER}`,
+		`pnpm-lock.yaml does not preserve ${CONTRACT_PACKAGE} as ${CONTRACT_SPECIFIER}`,
 	);
 }
 
@@ -126,10 +144,14 @@ try {
 	);
 }
 
-const [typescriptOutput, biomeOutput] = await Promise.all([
-	readCommandVersion(["bun", "run", "tsc", "--version"]),
-	readCommandVersion(["bun", "run", "biome", "--version"]),
+const [pnpmOutput, typescriptOutput, biomeOutput] = await Promise.all([
+	readCommandVersion("pnpm", ["--version"]),
+	readCommandVersion("pnpm", ["exec", "tsc", "--version"]),
+	readCommandVersion("pnpm", ["exec", "biome", "--version"]),
 ]);
+if (pnpmOutput !== undefined) {
+	expectEqual("installed pnpm", pnpmOutput, EXPECTED_PNPM_VERSION);
+}
 if (typescriptOutput !== undefined) {
 	expectEqual(
 		"installed TypeScript",
@@ -154,6 +176,6 @@ if (failures.length > 0) {
 }
 
 console.log(
-	`Toolchain versions verified: Bun ${EXPECTED_BUN_VERSION}, TypeScript ${EXPECTED_TYPESCRIPT_VERSION}, Biome ${EXPECTED_BIOME_VERSION}.`,
+	`Toolchain versions verified: Node v${process.versions.node}, pnpm ${EXPECTED_PNPM_VERSION}, TypeScript ${EXPECTED_TYPESCRIPT_VERSION}, Biome ${EXPECTED_BIOME_VERSION}.`,
 );
 console.log(`Local contract prerequisite verified at ${contractManifestPath}.`);

@@ -1,7 +1,7 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
-import { Database, type SQLQueryBindings } from "bun:sqlite";
 import { existsSync, mkdirSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import type { ILogger } from "../src/application/ports/ILogger.js";
@@ -15,6 +15,11 @@ import {
 	SearchOperator,
 	type SearchQuery,
 } from "../src/domain/value-objects/SearchFilter.js";
+import {
+	Database,
+	getSqliteVersion,
+	type SQLQueryBindings,
+} from "../src/infrastructure/database/sqlite/SqliteAdapter.js";
 import { SqliteAttributeRepository } from "../src/infrastructure/database/sqlite/SqliteAttributeRepository.js";
 import { SqliteAttributeTypeRepository } from "../src/infrastructure/database/sqlite/SqliteAttributeTypeRepository.js";
 import { SqliteGraphRepository } from "../src/infrastructure/database/sqlite/SqliteGraphRepository.js";
@@ -177,7 +182,7 @@ export interface BenchmarkReport {
 		executionModel: string;
 		concurrencyClaim: "none";
 		rowAccounting: string;
-		runtime: { bun: string; platform: string; arch: string };
+		runtime: { node: string; sqlite: string; platform: string; arch: string };
 		pragmas: { journalMode: "wal"; synchronous: "normal"; foreignKeys: true };
 	};
 	configuration: BenchmarkConfiguration;
@@ -346,12 +351,13 @@ export async function runHotPathBenchmarks(
 				databaseSchemaVersion: BENCHMARK_DATABASE_SCHEMA,
 				fixtureSeed: BENCHMARK_SEED,
 				executionModel:
-					"Single process and one synchronous bun:sqlite connection; operations are sampled serially.",
+					"Single process and one synchronous node:sqlite connection; operations are sampled serially.",
 				concurrencyClaim: "none",
 				rowAccounting:
 					"Logical API result/write rows only; SQLite rows scanned are not inferred.",
 				runtime: {
-					bun: Bun.version,
+					node: process.version,
+					sqlite: getSqliteVersion(fixture.database),
 					platform: process.platform,
 					arch: process.arch,
 				},
@@ -614,7 +620,7 @@ async function benchmarkJsonlExport(
 					file.tableIdentifier === "jsonl_export_nodes",
 			);
 			assertInvariant(tableFile !== undefined, "JSONL table file presence");
-			const content = await Bun.file(tableFile.path).text();
+			const content = await readFile(tableFile.path, "utf8");
 			const lines = content.length === 0 ? [] : content.split("\n");
 			const parsedIds = lines.map((line) =>
 				String((JSON.parse(line) as { _id: unknown })._id),
@@ -660,9 +666,9 @@ async function benchmarkJsonlExport(
 	const before = resourceSnapshot(fixture);
 	const samples: number[] = [];
 	for (let index = 0; index < configuration.samples; index++) {
-		const started = Bun.nanoseconds();
+		const started = process.hrtime.bigint();
 		const exported = await exportOnce();
-		samples.push(Number(Bun.nanoseconds() - started) / 1_000_000);
+		samples.push(Number(process.hrtime.bigint() - started) / 1_000_000);
 		await validateAndRemove(exported.outputDir, exported.result);
 	}
 	const after = resourceSnapshot(fixture);
@@ -748,9 +754,9 @@ async function benchmarkAtomicCreate(
 	const before = resourceSnapshot(fixture);
 	const samples: number[] = [];
 	for (let index = 0; index < configuration.samples; index++) {
-		const started = Bun.nanoseconds();
+		const started = process.hrtime.bigint();
 		const nodeId = await createNode();
-		samples.push(Number(Bun.nanoseconds() - started) / 1_000_000);
+		samples.push(Number(process.hrtime.bigint() - started) / 1_000_000);
 		validateNode(nodeId);
 	}
 	const after = resourceSnapshot(fixture);
@@ -914,9 +920,9 @@ async function measureOperation(
 	const before = resourceSnapshot(fixture);
 	const samples: number[] = [];
 	for (let index = 0; index < configuration.samples; index++) {
-		const started = Bun.nanoseconds();
+		const started = process.hrtime.bigint();
 		await operation();
-		samples.push(Number(Bun.nanoseconds() - started) / 1_000_000);
+		samples.push(Number(process.hrtime.bigint() - started) / 1_000_000);
 	}
 	const after = resourceSnapshot(fixture);
 
@@ -1400,7 +1406,7 @@ function readOption(args: readonly string[], name: string): string | undefined {
 }
 
 async function readBaseline(path: string): Promise<BenchmarkReport> {
-	const parsed = (await Bun.file(path).json()) as BenchmarkReport;
+	const parsed = JSON.parse(await readFile(path, "utf8")) as BenchmarkReport;
 	if (parsed.schemaVersion !== BENCHMARK_REPORT_SCHEMA) {
 		throw new Error(
 			`Unsupported baseline schema '${String(parsed.schemaVersion)}'`,
@@ -1429,7 +1435,7 @@ async function main(args = process.argv.slice(2)): Promise<void> {
 	const serialized = `${JSON.stringify(report, null, 2)}\n`;
 	if (options.outputPath) {
 		mkdirSync(dirname(options.outputPath), { recursive: true });
-		await Bun.write(options.outputPath, serialized);
+		await writeFile(options.outputPath, serialized, "utf8");
 	}
 	process.stdout.write(serialized);
 	if (
@@ -1443,7 +1449,7 @@ async function main(args = process.argv.slice(2)): Promise<void> {
 
 function usage(): string {
 	return [
-		"Usage: bun run scripts/benchmark-hotpaths.ts [options]",
+		"Usage: pnpm run benchmark:hotpaths -- [options]",
 		"",
 		"Options:",
 		"  --profile full|ci    full=5 warmups/30 samples; ci is a faster local profile",

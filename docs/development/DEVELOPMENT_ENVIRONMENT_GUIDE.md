@@ -4,10 +4,9 @@ Complete guide for setting up your development environment for the Bun Graph Dat
 
 ## Prerequisites
 
-- **Bun**: >= 1.0.0 (JavaScript runtime)
-- **Node.js**: >= 18.0.0 (for compatibility)
+- **Node.js**: >= 26.0.0 (`node:sqlite` built-in SQLite runtime)
+- **pnpm**: 12.21.0 (`packageManager` in `package.json`)
 - **Git**: For version control
-- **SQLite3**: Built into Bun
 
 ## Quick Setup
 
@@ -19,23 +18,23 @@ git clone <repository-url>
 cd bun-graph-db
 
 # Install dependencies
-bun install
+pnpm install
 
 # Verify installation
-bun run typecheck
+pnpm run typecheck
 ```
 
 ### 2. Start Development Server
 
 ```bash
 # Start with hot reload
-bun run dev
+pnpm run dev
 
 # Start on custom port
-bun run dev --port 3000
+pnpm run dev --port 4141
 
 # View all server options
-bun run dev --help
+pnpm run dev --help
 ```
 
 The server will start on:
@@ -60,45 +59,44 @@ curl -X POST http://localhost:4141/graphql \
 ### Running Tests
 
 ```bash
-# Run all tests
-bun test
+# Run all isolated Vitest 5 test lanes
+pnpm run test
 
-# Run Bun's raw test runner directly
-bun run test:direct
+# Run raw Vitest directly
+pnpm run test:direct
 
 # Run specific test suites
-bun test tests/unit/
-bun test tests/integration/
-bun test tests/e2e/
+pnpm exec vitest run tests/unit/
+pnpm exec vitest run tests/integration/
+pnpm exec vitest run tests/e2e/
 
 # Run with coverage
-bun test --coverage
+pnpm run test:coverage
 
 # Run specific test file
-bun test tests/unit/use-cases/CreateTable.test.ts
+pnpm exec vitest run tests/unit/breadth-first-search.test.ts
 ```
 
 **Current Test Status**:
-- ✅ TypeScript: 0 type errors
-- ✅ Lint: passes with `bun run lint --max-diagnostics=20`
-- ✅ Build: `bun run build` passes
-- ✅ Full lane run: `bun run test` passes
+- ✅ Static gate (`pnpm run check:static`): `check:embedded`, `check:docs`, `ci:versions`, `check:biome`, `typecheck`, `typecheck:contract`, `typecheck:benchmark`, `check:codegen`, `build`
+- ✅ Golden dataset gate (`pnpm run test:golden`): cross-runtime verification across Node 26 SQLite, Cloudflare DO SQLite, and JSONL round-trip ([GOLDEN_DATASET.md](./GOLDEN_DATASET.md))
+- ✅ Full lane audit & run: `pnpm run test:lanes:audit` & `pnpm run test` pass (140 test files)
 - 📄 운영 완료 조건: [운영 준비도 명세](../../specs/008-production-readiness/spec.md)
 
 ### Code Quality
 
 ```bash
 # Type checking
-bun run typecheck
+pnpm run typecheck
 
-# Format and lint
-bun run check
+# Full static verification gate
+pnpm run check:static
 
-# Just format
-bun run format
+# Format
+pnpm run format
 
-# Just lint
-bun run lint
+# Lint
+pnpm run lint
 ```
 
 ### Database Operations
@@ -108,7 +106,7 @@ The database file is automatically created at `./data/bun-graph-db.sqlite`.
 ```bash
 # Reset database (development)
 rm -f ./data/bun-graph-db.sqlite
-bun run dev
+pnpm run dev
 
 # The database will be recreated on server start
 ```
@@ -160,7 +158,7 @@ bun-graph-db/
 
 ```bash
 # Generate TypeScript types from schema
-bun run codegen
+pnpm run codegen
 
 # View schema in GraphQL Playground
 # Open http://localhost:4141/graphql in browser
@@ -169,11 +167,11 @@ bun run codegen
 ### Debugging
 
 ```bash
-# Enable debug logging (modify index.ts or use environment variables)
-DEBUG=* bun run dev
+# Enable debug logging
+DEBUG=* pnpm run dev
 
-# Use Bun's built-in debugger
-bun --inspect index.ts
+# Use Node.js inspector
+node --inspect --import tsx index.ts
 
 # Check server logs
 # All logs are output to stdout/stderr
@@ -206,19 +204,19 @@ lsof -i :4141
 # Kill process
 kill -9 <PID>
 
-# Or use a different port
-bun run dev --port 3000
+# Or use a different port (dev range: 4000-4999)
+pnpm run dev --port 4200
 ```
 
 ### TypeScript Errors
 
 ```bash
 # Clean and reinstall
-rm -rf node_modules bun.lockb
-bun install
+rm -rf node_modules
+pnpm install
 
 # Run typecheck
-bun run typecheck
+pnpm run typecheck
 ```
 
 ### Database Issues
@@ -228,14 +226,14 @@ bun run typecheck
 rm -f ./data/bun-graph-db.sqlite
 
 # Server will recreate on next start
-bun run dev
+pnpm run dev
 ```
 
 ### Test Failures
 
 ```bash
 # Run specific test file to see detailed errors
-bun test tests/unit/use-cases/CreateTable.test.ts
+pnpm exec vitest run tests/unit/breadth-first-search.test.ts
 
 # Check if issue is test-specific or code-specific
 # If tests fail but server works, issue is likely in test mocks
@@ -287,7 +285,7 @@ git push -u origin feature/my-feature
 
 ## Performance Tips
 
-1. **Use `bun run dev`** for hot reload during development
+1. **Use `pnpm run dev`** for hot reload during development
 2. **Run tests in parallel** when possible
 3. **Use type checking** before commits to catch errors early
 4. **Keep database small** during development for faster operations
@@ -296,7 +294,7 @@ git push -u origin feature/my-feature
 
 - **Documentation**: Check `docs/` directory
 - **API Reference**: `docs/api/doc-api-reference.md`
-- **Quick Start**: `docs/guides/GETTING_STARTED.md`
+- **Quick Start**: `GETTING_STARTED.md`
 - **Issues**: Check GitHub issues or create a new one
 
 ## Next Steps
@@ -305,23 +303,19 @@ git push -u origin feature/my-feature
 2. ✅ Run tests to verify setup
 3. ✅ Start development server
 4. ✅ Open GraphQL Playground
-5. 📖 Read the [Getting Started Guide](../guides/GETTING_STARTED.md)
+5. 📖 Read the [Getting Started Guide](../../GETTING_STARTED.md)
 6. 🚀 Start building!
 
 ## Verified System Status
 
 As of last verification:
-- ✅ Dependencies: 623 packages installed
-- ✅ TypeScript: 0 type errors
-- ✅ Lint: passes
-- ✅ Build: passes
-- ✅ Server: Running normally on port 4141
-- ✅ GraphQL API: core CRUD and search paths verified
-- ✅ MCP API: initialize + table-scoped route verified
-- ✅ Database: SQLite working correctly
-- ✅ `bun run test`: passing
+- ✅ Runtime: Node.js `v26.13.1` + `pnpm 12.21.0` + `node:sqlite` (`SQLite 3.54.1`)
+- ✅ Static gate (`pnpm run check:static`): 0 errors (TypeScript 7, Biome, GraphQL codegen, canonical docs, build)
+- ✅ Server: Running normally on ports `4000`–`4999` (dev) / `8000`–`8999` (prod)
+- ✅ GraphQL / MCP API: core CRUD, FTS5, 4-signal hybrid search, JSONL backup/restore, AccessControl, MCP `2026-07-28` / `2025-11-25` LTS verified
+- ✅ `pnpm run test`: passing across all 4 Vitest 5 lanes (140 test files, including `pnpm run test:golden`)
 
 ---
 
-**Last Updated**: 2026-03-30
-**Verified By**: Codex AI Assistant
+**Last Updated**: 2026-11-27
+**Verified By**: Node 26 Verification Harness

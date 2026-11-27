@@ -1,7 +1,6 @@
-import { join } from 'node:path'
-import { loadFilesSync } from '@graphql-tools/load-files'
 import { mergeTypeDefs } from '@graphql-tools/merge'
 import { makeExecutableSchema } from '@graphql-tools/schema'
+import { EMBEDDED_GRAPHQL_SDL_DOCUMENTS } from '../../generated/embedded-assets.js'
 import type { GraphQLResolveInfo, GraphQLSchema } from 'graphql'
 import { DateTimeResolver, JSONResolver } from 'graphql-scalars'
 import type { ILogger } from '@/application/ports/ILogger.js'
@@ -36,6 +35,8 @@ import type { BackupMutations } from './mutations/BackupMutations.js'
 import type {
   AttributeQueries,
   DocQueries,
+  EnhancedAttributeQueries,
+  EnhancedRelationQueries,
   JsonExportQueries,
   NodeQueries,
   RelationQueries,
@@ -106,13 +107,14 @@ export interface GraphQLDependencies {
   nodeQueries: NodeQueries
   attributeQueries: AttributeQueries
   relationQueries: RelationQueries
+  enhancedRelationQueries?: EnhancedRelationQueries | null
   templateQueries: TemplateQueries
   docQueries: DocQueries
   systemQueries?: SystemQueries
   jsonExportQueries?: JsonExportQueriesBundle | null
   jsonlBackupQueries?: JsonlBackupQueries | null
   backupQueries?: BackupQueriesBundle | null
-  // enhancedAttributeQueries?: any
+  enhancedAttributeQueries?: EnhancedAttributeQueries | null
 
   // Mutation resolvers
   tableMutations: TableMutations
@@ -166,6 +168,10 @@ export class GraphQLSchemaBuilder {
 
     const relationQueries = (await this.container.resolve(GraphQLTokens.RELATION_QUERIES)) as RelationQueries
 
+    const enhancedRelationQueries = (await this.container
+      .resolve(GraphQLTokens.ENHANCED_RELATION_QUERIES)
+      .catch(() => null)) as EnhancedRelationQueries | null
+
     const templateQueries = (await this.container.resolve(GraphQLTokens.TEMPLATE_QUERIES)) as TemplateQueries
 
     const docQueries = (await this.container.resolve(GraphQLTokens.DOC_QUERIES)) as DocQueries
@@ -183,6 +189,10 @@ export class GraphQLSchemaBuilder {
     const backupQueries = (await this.container.resolve(GraphQLTokens.BACKUP_QUERIES).catch(() => null)) as
       | BackupQueriesBundle
       | null
+
+    const enhancedAttributeQueries = (await this.container
+      .resolve(GraphQLTokens.ENHANCED_ATTRIBUTE_QUERIES)
+      .catch(() => null)) as EnhancedAttributeQueries | null
 
     // Mutation resolvers
     const tableMutations = (await this.container.resolve(GraphQLTokens.TABLE_MUTATIONS)) as TableMutations
@@ -215,12 +225,14 @@ export class GraphQLSchemaBuilder {
       nodeQueries,
       attributeQueries,
       relationQueries,
+      enhancedRelationQueries,
       templateQueries,
       docQueries,
       systemQueries,
       jsonExportQueries,
       jsonlBackupQueries,
       backupQueries,
+      enhancedAttributeQueries,
       tableMutations,
       nodeMutations,
       attributeMutations,
@@ -277,13 +289,9 @@ export class GraphQLSchemaBuilder {
   }
 
   protected buildSchema(deps: GraphQLDependencies): GraphQLSchema {
-    // Load GraphQL schema files from the new structure
-    const typesArray = loadFilesSync(join(process.cwd(), 'src/presentation/graphql/schema'), {
-      extensions: ['graphql'],
-      recursive: true,
-    })
-
-    const typeDefs = mergeTypeDefs(typesArray)
+    const typeDefs = mergeTypeDefs(
+      EMBEDDED_GRAPHQL_SDL_DOCUMENTS.map((document) => document.sdl),
+    )
 
     const resolvers = {
       // Custom scalars

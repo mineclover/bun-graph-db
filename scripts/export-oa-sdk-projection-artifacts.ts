@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -143,7 +143,7 @@ export function sha256(content: string): string {
 async function main(args = process.argv.slice(2)): Promise<void> {
 	if (args.includes("--help") || args.includes("-h")) {
 		console.log(
-			"Usage: bun run scripts/export-oa-sdk-projection-artifacts.ts --out <directory>",
+			"Usage: pnpm run projection:export -- --out <directory>",
 		);
 		return;
 	}

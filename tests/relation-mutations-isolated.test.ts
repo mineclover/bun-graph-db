@@ -3,7 +3,7 @@
  * Tests GraphQL relation mutations with isolated server setup
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'relation-mutations-isolated'

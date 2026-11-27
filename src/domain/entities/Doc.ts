@@ -62,7 +62,7 @@ export class Doc implements TimestampedEntity {
     category: string,
     version: number,
     content: string,
-    isActive: boolean,
+    isActive: boolean | number,
     createdAt: Date,
     updatedAt: Date,
   ): Doc {
@@ -72,7 +72,7 @@ export class Doc implements TimestampedEntity {
       category as DocCategory,
       version,
       content,
-      isActive,
+      Boolean(isActive),
       createdAt,
       updatedAt,
     )

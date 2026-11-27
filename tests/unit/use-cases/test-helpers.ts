@@ -2,7 +2,7 @@
  * Test helpers for creating properly structured domain entities
  */
 
-import { mock, type Mock } from 'bun:test'
+import { type Mock, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { AttributeId, AttributeTypeId, NodeId, RelationTypeId, TableId } from '@/core/types/CommonTypes.js'
 import type { PaginatedResult } from '@/core/types/CommonTypes.js'
@@ -20,10 +20,10 @@ export type MockedMethods<T extends object> = {
 
 export function createMockLogger(): MockedMethods<ILogger> {
   return {
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    debug: mock(() => {}),
+    info: vi.fn(() => {}),
+    warn: vi.fn(() => {}),
+    error: vi.fn(() => {}),
+    debug: vi.fn(() => {}),
   } satisfies MockedMethods<ILogger>
 }
 
@@ -130,7 +130,7 @@ export function createTestNodeRelation(
   targetExternalId: string = 'internal',
   relationTypeId: string = 'rel-type-1',
   properties: Record<string, SafeJsonValue> | null = null,
-  strength: number = 50,
+  strength: number = 2,
 ): NodeRelation {
   return NodeRelation.fromDatabase(
     id,

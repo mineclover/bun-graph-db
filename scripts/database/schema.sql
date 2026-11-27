@@ -280,7 +280,7 @@ INSERT OR IGNORE INTO attribute_types (identifier, json_type, format, descriptio
   ('boolean', 'boolean', NULL, 'Boolean true/false', NULL, NULL, 'false', '[true, false]'),
   ('integer', 'integer', NULL, 'Integer number', '{"minimum": 0}', NULL, '0', '[1, 42, 100]'),
   ('number', 'number', NULL, 'Decimal number', NULL, NULL, '0.0', '[1.5, 3.14, 100.0]'),
-  ('date', 'string', 'date', 'Date in YYYY-MM-DD format', '{"pattern": "^\\\\d{4}-\\\\d{2}-\\\\d{2}$"}', NULL, '"2024-01-01"', '["2024-01-01", "2023-12-31"]'),
+  ('date', 'string', 'date', 'Date in YYYY-MM-DD format', '{"pattern": "^\\d{4}-\\d{2}-\\d{2}$"}', NULL, '"2024-01-01"', '["2024-01-01", "2023-12-31"]'),
   ('datetime', 'string', 'date-time', 'ISO 8601 datetime', NULL, NULL, '"2024-01-01T00:00:00Z"', '["2024-01-01T12:00:00Z", "2023-12-31T23:59:59Z"]'),
   ('email', 'string', 'email', 'Email address', NULL, NULL, '"user@example.com"', '["user@domain.com", "test@example.org"]'),
   ('uri', 'string', 'uri', 'URI/URL', NULL, NULL, '"https://example.com"', '["https://example.com", "http://localhost:3000"]'),
@@ -462,8 +462,6 @@ CREATE INDEX IF NOT EXISTS idx_templates_tags ON templates(tags);
 CREATE INDEX IF NOT EXISTS idx_templates_query_lookup ON templates(query_name, operation_type);
 CREATE INDEX IF NOT EXISTS idx_templates_active_performance ON templates(is_active, avg_execution_time_ms) WHERE is_active = 1;
 CREATE INDEX IF NOT EXISTS idx_templates_hot_queries ON templates(usage_count DESC, last_used_at DESC) WHERE is_active = 1;
-CREATE INDEX IF NOT EXISTS idx_node_attributes_node ON node_attributes(node_id);
-CREATE INDEX IF NOT EXISTS idx_node_attributes_attr ON node_attributes(attribute_id);
 CREATE INDEX IF NOT EXISTS idx_node_attributes_attr_value_node ON node_attributes(attribute_id, value, node_id);
 CREATE INDEX IF NOT EXISTS idx_nodes_table_created_id ON nodes(table_id, created_at DESC, id);
 CREATE INDEX IF NOT EXISTS idx_node_relations_source ON node_relations(source_node_id);

@@ -1,6 +1,9 @@
+import { nodeRelationFromEntity } from '@/application/dtos/RelationDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { GraphHierarchyService } from '@/application/services/GraphHierarchyService.js'
 import type { CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { CreateRelationTypeUseCase } from '@/application/use-cases/relations/CreateRelationType.js'
+import type { RelationTypeId } from '@/core/types/CommonTypes.js'
 import type {
   CreateRelationArgs,
   CreateRelationTypeArgs,
@@ -16,11 +19,12 @@ import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
 import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import { BaseResolver } from '@/presentation/graphql/base/BaseResolver.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
-import { ConflictException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
+import { ConflictException, DomainException, NotFoundException, ValidationException } from '@/shared/exceptions/DomainException.js'
 import { sanitizeJsonValue, type SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export class RelationMutations extends BaseResolver {
   protected logger: ILogger
+  private readonly hierarchyService: GraphHierarchyService
 
   constructor(
     private readonly createRelationUseCase: CreateRelationUseCase,
@@ -32,6 +36,11 @@ export class RelationMutations extends BaseResolver {
   ) {
     super()
     this.logger = logger
+    this.hierarchyService = new GraphHierarchyService(
+      this.nodeRepository,
+      this.nodeRelationRepository,
+      this.relationTypeRepository,
+    )
   }
 
   async createRelationType(_: GraphQLParent, args: CreateRelationTypeArgs, _context?: GraphQLContext) {
@@ -144,6 +153,7 @@ export class RelationMutations extends BaseResolver {
           ? (sanitizeJsonValue(args.input.properties) as Record<string, SafeJsonValue>)
           : undefined,
         strength: args.input.strength,
+        confidence: args.input.confidence ?? undefined,
       })
 
       return {
@@ -300,6 +310,124 @@ export class RelationMutations extends BaseResolver {
       return {
         success: false,
         relationType: null,
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code: 'INTERNAL_ERROR',
+          },
+        ],
+      }
+    }
+  }
+
+  async updateRelation(
+    _: GraphQLParent,
+    args: {
+      id: string
+      input: {
+        relationTypeId?: string | null
+        properties?: unknown
+        strength?: number | null
+        confidence?: number | null
+      }
+    },
+    _context?: GraphQLContext,
+  ) {
+    try {
+      this.validateArgs(
+        args as unknown as Record<string, unknown>,
+        [
+          BaseResolver.validationRules.required('id', 'Relation ID'),
+          BaseResolver.validationRules.nonEmpty('id', 'Relation ID'),
+          BaseResolver.validationRules.required('input', 'Update relation input'),
+        ],
+        'updateRelation',
+      )
+
+      const existing = await this.nodeRelationRepository.findById(args.id)
+      if (!existing) {
+        throw new NotFoundException(`Relation with ID ${args.id} not found`)
+      }
+
+      let updated = existing
+      if (args.input.relationTypeId !== undefined && args.input.relationTypeId !== null) {
+        const ref = args.input.relationTypeId.trim()
+        if (!ref) {
+          throw new ValidationException('Relation type ID cannot be empty')
+        }
+        const resolvedRt =
+          (await this.relationTypeRepository.findById(ref)) ??
+          (await this.relationTypeRepository.findByIdentifier(ref))
+        const resolvedId = resolvedRt?.getId()
+        if (!resolvedId) {
+          throw new NotFoundException(`Relation type '${ref}' not found`)
+        }
+        updated = updated.updateRelationType(resolvedId as RelationTypeId)
+      }
+
+      if (args.input.properties !== undefined) {
+        updated = updated.updateProperties(
+          args.input.properties === null
+            ? null
+            : (sanitizeJsonValue(args.input.properties) as Record<string, SafeJsonValue>),
+        )
+      }
+
+      if (args.input.strength !== undefined && args.input.strength !== null) {
+        if (!Number.isInteger(args.input.strength) || args.input.strength < 0 || args.input.strength > 4) {
+          throw new ValidationException('Strength must be an integer between 0 and 4')
+        }
+        updated = updated.updateStrength(args.input.strength)
+      }
+
+      if (args.input.confidence !== undefined && args.input.confidence !== null) {
+        if (!Number.isInteger(args.input.confidence) || args.input.confidence < 0 || args.input.confidence > 4) {
+          throw new ValidationException('Confidence must be an integer between 0 and 4')
+        }
+        updated = updated.updateConfidence(args.input.confidence)
+      }
+
+      await this.nodeRelationRepository.update(updated)
+
+      return {
+        success: true,
+        relation: nodeRelationFromEntity(updated),
+        errors: [],
+      }
+    } catch (error) {
+      this.logger.error('Mutation failed: updateRelation', {
+        id: args.id,
+        input: args.input,
+        ...toErrorMeta(error),
+      })
+
+      if (error instanceof NotFoundException) {
+        return {
+          success: false,
+          relation: null,
+          errors: [{ message: error.message, code: 'NOT_FOUND' }],
+        }
+      }
+
+      if (error instanceof ValidationException || error instanceof DomainException) {
+        return {
+          success: false,
+          relation: null,
+          errors: [{ message: error.message, code: 'VALIDATION_ERROR' }],
+        }
+      }
+
+      if (error instanceof ConflictException) {
+        return {
+          success: false,
+          relation: null,
+          errors: [{ message: error.message, code: 'CONFLICT' }],
+        }
+      }
+
+      return {
+        success: false,
+        relation: null,
         errors: [
           {
             message: error instanceof Error ? error.message : 'Unknown error',
@@ -473,5 +601,64 @@ export class RelationMutations extends BaseResolver {
       'deleteRelation',
       { id: args.id },
     )
+  }
+
+  async moveHierarchyNode(
+    _: GraphQLParent,
+    args: {
+      input: {
+        nodeId: string
+        newParentId?: string | null
+        relationTypeId?: string | null
+      }
+    },
+    _context?: GraphQLContext,
+  ) {
+    try {
+      this.validateArgs(
+        args as unknown as Record<string, unknown>,
+        [
+          BaseResolver.validationRules.required('input', 'Move hierarchy node input'),
+          BaseResolver.validationRules.required('input.nodeId', 'Node ID'),
+          BaseResolver.validationRules.nonEmpty('input.nodeId', 'Node ID'),
+        ],
+        'moveHierarchyNode',
+      )
+
+      return await this.hierarchyService.moveHierarchyNode(
+        args.input.nodeId,
+        args.input.newParentId ?? null,
+        args.input.relationTypeId ?? 'parentOf',
+      )
+    } catch (error) {
+      this.logger.error('Mutation failed: moveHierarchyNode', {
+        input: args.input,
+        ...toErrorMeta(error),
+      })
+
+      const code =
+        error instanceof NotFoundException
+          ? 'NOT_FOUND'
+          : error instanceof ValidationException || error instanceof DomainException
+            ? 'VALIDATION_ERROR'
+            : error instanceof ConflictException
+              ? 'CONFLICT'
+              : 'INTERNAL_ERROR'
+
+      return {
+        success: false,
+        node: null,
+        previousParentIds: [],
+        newParentId: args.input?.newParentId ?? null,
+        relation: null,
+        ancestors: [],
+        errors: [
+          {
+            message: error instanceof Error ? error.message : 'Unknown error',
+            code,
+          },
+        ],
+      }
+    }
   }
 }

@@ -1,9 +1,9 @@
-import type { Database } from 'bun:sqlite'
+import type { ISqliteDatabase } from './SqlitePort.js'
 
 export interface DatabaseMigration {
   version: number
   name: string
-  up: (database: Database) => void
+  up: (database: ISqliteDatabase) => void
 }
 
 interface AppliedMigration {
@@ -25,7 +25,7 @@ const MIGRATION_LEDGER_TABLE = 'schema_migrations'
  * newer service version, or whose history no longer matches this binary, is
  * rejected rather than being started with an unknown schema.
  */
-export function applyDatabaseMigrations(database: Database, migrations: readonly DatabaseMigration[]): void {
+export function applyDatabaseMigrations(database: ISqliteDatabase, migrations: readonly DatabaseMigration[]): void {
   assertMigrationDefinitions(migrations)
 
   database.exec(`
@@ -64,8 +64,8 @@ export function applyDatabaseMigrations(database: Database, migrations: readonly
     database.transaction(() => {
       migration.up(database)
       database
-        .query(`INSERT INTO ${MIGRATION_LEDGER_TABLE} (version, name) VALUES ($version, $name)`)
-        .run({ $version: migration.version, $name: migration.name })
+        .query(`INSERT INTO ${MIGRATION_LEDGER_TABLE} (version, name) VALUES (?, ?)`)
+        .run(migration.version, migration.name)
     })()
   }
 }
@@ -277,10 +277,17 @@ export function createDatabaseMigrations(initialSchema: string): readonly Databa
         installPersistentNodeEmbeddings(database)
       },
     },
+    {
+      version: 14,
+      name: 'optimize-eav-indexes-and-write-triggers',
+      up: (database) => {
+        optimizeEavIndexesAndWriteTriggers(database)
+      },
+    },
   ]
 }
 
-function normalizeTemplateExecutionTimestampContract(database: Database): void {
+function normalizeTemplateExecutionTimestampContract(database: ISqliteDatabase): void {
   const tableExists = database
     .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'template_executions'")
     .get()
@@ -334,7 +341,7 @@ function normalizeTemplateExecutionTimestampContract(database: Database): void {
   `)
 }
 
-function installTemplateExecutionTriggers(database: Database): void {
+function installTemplateExecutionTriggers(database: ISqliteDatabase): void {
   database.exec(`
     DROP TRIGGER IF EXISTS update_template_executions_updated_at;
     CREATE TRIGGER update_template_executions_updated_at
@@ -390,7 +397,7 @@ function typedNumericValueSql(valueExpr: string, attributeIdExpr: string): strin
   )`
 }
 
-function installTypedNodeAttributeProjection(database: Database): void {
+function installTypedNodeAttributeProjection(database: ISqliteDatabase): void {
   const hasNodeAttributes = database
     .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'")
     .get()
@@ -450,7 +457,7 @@ function installTypedNodeAttributeProjection(database: Database): void {
   `)
 }
 
-function installAttributeFullTextAndRelationTraversalIndexes(database: Database): void {
+function installAttributeFullTextAndRelationTraversalIndexes(database: ISqliteDatabase): void {
   const hasNodes = database
     .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'nodes'")
     .get()
@@ -533,7 +540,7 @@ function installAttributeFullTextAndRelationTraversalIndexes(database: Database)
   }
 }
 
-function installPersistentNodeEmbeddings(database: Database): void {
+function installPersistentNodeEmbeddings(database: ISqliteDatabase): void {
   database.exec(`
     CREATE TABLE IF NOT EXISTS node_embeddings (
       node_id INTEGER PRIMARY KEY,
@@ -621,6 +628,98 @@ function installPersistentNodeEmbeddings(database: Database): void {
       AFTER DELETE ON tables
       BEGIN
         DELETE FROM node_embeddings WHERE table_id = old.id;
+      END;
+    `)
+  }
+}
+
+function optimizeEavIndexesAndWriteTriggers(database: ISqliteDatabase): void {
+  database.exec(`
+    DROP INDEX IF EXISTS idx_node_attributes_node;
+    DROP INDEX IF EXISTS idx_node_attributes_attr;
+  `)
+
+  const hasNodeAttributes = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attributes'")
+    .get()
+  const hasAttributeTypes = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attribute_types'")
+    .get()
+  const hasAttributes = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'attributes'")
+    .get()
+
+  if (hasNodeAttributes && hasAttributeTypes && hasAttributes) {
+    const attrColumns = database.query<TableColumn, []>('PRAGMA table_info(attributes)').all()
+    const nodeAttrColumns = database.query<TableColumn, []>('PRAGMA table_info(node_attributes)').all()
+    const hasAttributeTypeId = attrColumns.some((column) => column.name === 'attribute_type_id')
+    const hasValueNum = nodeAttrColumns.some((column) => column.name === 'value_num')
+
+    if (hasAttributeTypeId && hasValueNum) {
+      const numericPredicate = `(
+        SELECT 1
+        FROM attributes a
+        JOIN attribute_types at ON at.id = a.attribute_type_id
+        WHERE a.id = NEW.attribute_id
+          AND (
+            at.json_type IN ('number', 'integer', 'boolean', 'datetime')
+            OR (at.json_type = 'string' AND at.format IN ('date', 'date-time', 'datetime'))
+          )
+      )`
+
+      database.exec(`
+        DROP TRIGGER IF EXISTS trg_node_attributes_sync_value_num_insert;
+        CREATE TRIGGER trg_node_attributes_sync_value_num_insert
+        AFTER INSERT ON node_attributes
+        FOR EACH ROW
+        WHEN EXISTS ${numericPredicate}
+        BEGIN
+          UPDATE node_attributes
+          SET value_num = ${typedNumericValueSql('NEW.value', 'NEW.attribute_id')}
+          WHERE id = NEW.id;
+        END;
+
+        DROP TRIGGER IF EXISTS trg_node_attributes_sync_value_num_update;
+        CREATE TRIGGER trg_node_attributes_sync_value_num_update
+        AFTER UPDATE OF value, attribute_id ON node_attributes
+        FOR EACH ROW
+        WHEN OLD.value_num IS NOT NULL OR EXISTS ${numericPredicate}
+        BEGIN
+          UPDATE node_attributes
+          SET value_num = ${typedNumericValueSql('NEW.value', 'NEW.attribute_id')}
+          WHERE id = NEW.id;
+        END;
+      `)
+    }
+  }
+
+  const hasEmbeddings = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_embeddings'")
+    .get()
+  const hasEmbeddingRevisions = database
+    .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_embedding_revisions'")
+    .get()
+
+  if (hasEmbeddings && hasEmbeddingRevisions) {
+    database.exec(`
+      DROP TRIGGER IF EXISTS node_embeddings_rev_update;
+      CREATE TRIGGER node_embeddings_rev_update
+      AFTER UPDATE ON node_embeddings
+      BEGIN
+        INSERT INTO node_embedding_revisions(table_id, revision)
+        VALUES (new.table_id, 1)
+        ON CONFLICT(table_id) DO UPDATE SET revision = revision + 1;
+      END;
+
+      DROP TRIGGER IF EXISTS node_embeddings_rev_update_old_table;
+      CREATE TRIGGER node_embeddings_rev_update_old_table
+      AFTER UPDATE OF table_id ON node_embeddings
+      FOR EACH ROW
+      WHEN old.table_id != new.table_id
+      BEGIN
+        INSERT INTO node_embedding_revisions(table_id, revision)
+        VALUES (old.table_id, 1)
+        ON CONFLICT(table_id) DO UPDATE SET revision = revision + 1;
       END;
     `)
   }

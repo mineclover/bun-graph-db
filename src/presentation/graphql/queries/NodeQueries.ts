@@ -1,4 +1,9 @@
 import type { ILogger } from '@/application/ports/ILogger.js'
+import {
+  type CustomSortFunction,
+  globalCustomSortRegistry,
+} from '@/application/services/sorting/CustomSortFunctionRegistry.js'
+import { registerAllBuiltInCustomSortFunctions } from '@/application/services/sorting/CustomSortStrategy.js'
 import type {
   HybridSearchNodesInput,
   HybridSearchNodesUseCase,
@@ -410,6 +415,9 @@ export class NodeQueries extends BaseResolver {
           }
 
           nodes = (broadResult.nodes || []).filter((node) => this.matchesLegacySearchQuery(node, legacySearchQuery))
+          if (legacySearchQuery.sortBy && legacySearchQuery.sortBy.length > 0) {
+            nodes = sortLegacyNodes(nodes, legacySearchQuery.sortBy)
+          }
 
           const offset = legacySearchQuery.offset || 0
           const limit = legacySearchQuery.limit || 10
@@ -531,5 +539,215 @@ export class NodeQueries extends BaseResolver {
       'hybridSearchNodes',
       { tableId: args.input?.tableId },
     )
+  }
+
+  async customSortFunctions(
+    _: GraphQLParent,
+    args: { dataType?: string; search?: string; tags?: string[] },
+    _context?: GraphQLContext,
+  ) {
+    return this.handleQuery(
+      async () => {
+        ensureBuiltInCustomSortFunctions()
+        const requestedDataType = args.dataType?.trim().toLowerCase()
+        const searchLower = args.search?.trim().toLowerCase()
+        const tagSet =
+          args.tags && args.tags.length > 0
+            ? new Set(args.tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))
+            : null
+
+        return globalCustomSortRegistry
+          .getAll()
+          .filter((fn) => {
+            if (requestedDataType) {
+              const supported = fn.supportedDataTypes.map((dt) => dt.toLowerCase())
+              if (!supported.includes('*') && !supported.includes(requestedDataType)) {
+                return false
+              }
+            }
+            if (searchLower) {
+              const haystack = `${fn.id} ${fn.name} ${fn.description} ${fn.tags.join(' ')}`.toLowerCase()
+              if (!haystack.includes(searchLower)) {
+                return false
+              }
+            }
+            if (tagSet && tagSet.size > 0) {
+              const fnTags = fn.tags.map((t) => t.toLowerCase())
+              if (![...tagSet].some((tag) => fnTags.includes(tag))) {
+                return false
+              }
+            }
+            return true
+          })
+          .sort((a, b) => b.priority - a.priority || a.id.localeCompare(b.id))
+          .map((fn) => toGraphQLCustomSortFunction(fn))
+      },
+      'customSortFunctions',
+      args as Record<string, unknown>,
+    )
+  }
+
+  async customSortFunction(
+    _: GraphQLParent,
+    args: { functionId: string },
+    _context?: GraphQLContext,
+  ) {
+    this.validateArgs(
+      args as unknown as Record<string, unknown>,
+      [
+        BaseResolver.validationRules.required('functionId', 'Function ID'),
+        BaseResolver.validationRules.nonEmpty('functionId', 'Function ID'),
+      ],
+      'customSortFunction',
+    )
+
+    return this.handleQuery(
+      async () => {
+        ensureBuiltInCustomSortFunctions()
+        const fn = globalCustomSortRegistry.get(args.functionId)
+        return fn ? toGraphQLCustomSortFunction(fn) : null
+      },
+      'customSortFunction',
+      args as Record<string, unknown>,
+    )
+  }
+}
+
+function sortLegacyNodes(
+  nodes: NodeDto[],
+  sortBy: Array<{ field: string; direction: string }>,
+): NodeDto[] {
+  const toFieldValue = (node: NodeDto, field: string): unknown => {
+    switch (field) {
+      case 'title':
+        return node.title
+      case 'content':
+        return node.content
+      case 'description':
+        return node.description
+      case 'createdAt':
+      case 'created_at':
+        return node.createdAt
+      case 'updatedAt':
+      case 'updated_at':
+        return node.updatedAt
+      default:
+        return (node.attributes as Record<string, unknown> | undefined)?.[field]
+    }
+  }
+
+  const compareValues = (a: unknown, b: unknown, desc: boolean): number => {
+    const aMissing = a === undefined || a === null || a === ''
+    const bMissing = b === undefined || b === null || b === ''
+    if (aMissing && bMissing) return 0
+    if (aMissing) return 1
+    if (bMissing) return -1
+
+    const aNum = typeof a === 'number' ? a : Number(a)
+    const bNum = typeof b === 'number' ? b : Number(b)
+    let cmp: number
+    if (Number.isFinite(aNum) && Number.isFinite(bNum) && String(a).trim() !== '' && String(b).trim() !== '') {
+      cmp = aNum - bNum
+    } else {
+      cmp = String(a).localeCompare(String(b), undefined, { sensitivity: 'base' })
+    }
+    return desc ? -cmp : cmp
+  }
+
+  return [...nodes].sort((left, right) => {
+    for (const sort of sortBy) {
+      const desc = String(sort.direction || 'DESC').toUpperCase() === 'DESC'
+      const cmp = compareValues(toFieldValue(left, sort.field), toFieldValue(right, sort.field), desc)
+      if (cmp !== 0) return cmp
+    }
+    return 0
+  })
+}
+
+const VALID_SORT_DATA_TYPES = new Set([
+  'STRING',
+  'TEXT',
+  'NUMBER',
+  'INTEGER',
+  'FLOAT',
+  'BOOLEAN',
+  'DATE',
+  'DATETIME',
+  'TIMESTAMP',
+  'JSON',
+  'UUID',
+  'EMAIL',
+  'URL',
+  'PHONE',
+  'IP_ADDRESS',
+])
+
+const WILDCARD_SORT_DATA_TYPES = [
+  'STRING',
+  'TEXT',
+  'NUMBER',
+  'INTEGER',
+  'FLOAT',
+  'BOOLEAN',
+  'DATE',
+  'DATETIME',
+  'JSON',
+]
+
+function ensureBuiltInCustomSortFunctions(): void {
+  if (globalCustomSortRegistry.getAll().length === 0) {
+    registerAllBuiltInCustomSortFunctions(globalCustomSortRegistry)
+  }
+}
+
+function toGraphQLCustomSortFunction(fn: CustomSortFunction) {
+  const now = new Date()
+  const mappedTypes = new Set<string>()
+  for (const dt of fn.supportedDataTypes) {
+    const upper = dt.toUpperCase()
+    if (dt === '*') {
+      for (const fallback of WILDCARD_SORT_DATA_TYPES) mappedTypes.add(fallback)
+    } else if (VALID_SORT_DATA_TYPES.has(upper)) {
+      mappedTypes.add(upper)
+    }
+  }
+  if (mappedTypes.size === 0) mappedTypes.add('STRING')
+
+  return {
+    id: fn.id,
+    name: fn.name,
+    description: fn.description,
+    supportedDataTypes: [...mappedTypes],
+    priority: fn.priority,
+    version: fn.version,
+    author: fn.author ?? null,
+    tags: fn.tags,
+    parameters: Object.values(fn.parameters ?? {}).map((param) => ({
+      name: param.name,
+      type: param.type.toUpperCase(),
+      required: param.required,
+      description: param.description,
+      defaultValue: param.defaultValue === undefined ? null : JSON.stringify(param.defaultValue),
+      validation: param.validation
+        ? {
+            min: param.validation.min ?? null,
+            max: param.validation.max ?? null,
+            pattern: param.validation.pattern ?? null,
+            allowedValues: param.validation.allowedValues
+              ? param.validation.allowedValues.map(String)
+              : null,
+          }
+        : null,
+    })),
+    examples: (fn.examples ?? []).map((ex) => ({
+      title: ex.title,
+      description: ex.description,
+      field: ex.field,
+      direction: ex.direction.toUpperCase(),
+      parameters: ex.parameters ? JSON.stringify(ex.parameters) : null,
+      expectedSql: ex.expectedSql,
+    })),
+    createdAt: now,
+    updatedAt: now,
   }
 }

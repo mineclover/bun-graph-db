@@ -1,6 +1,10 @@
-import { createHash } from 'node:crypto'
 import type { HttpControllerRequest as Request, HttpControllerResponse as Response } from '../adapters/BunControllerAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import {
+  GraphTraversalService,
+  resolveRelationTypeRefs,
+  type TraversalDirection,
+} from '@/application/services/GraphTraversalService.js'
 import type { NodeAttributeSchemaGate } from '@/application/services/NodeAttributeSchemaGate.js'
 import type { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
 import type {
@@ -10,6 +14,8 @@ import type {
 import type { SearchNodesUseCase } from '@/application/use-cases/nodes/SearchNodes.js'
 import type { SearchRelatedNodesUseCase } from '@/application/use-cases/relations/SearchRelatedNodes.js'
 import type { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
+import { DEFAULT_PORTS } from '@/core/config/PortConfiguration.js'
+import { sha256Base64Url } from '@/shared/utils/portableHash.js'
 import {
   toTableSchemaOpenApiOperationContractProjectionResult,
   toTableSchemaOpenApiProjectionResult,
@@ -18,10 +24,18 @@ import type { NodeId, PaginatedResult, TableId } from '@/core/types/CommonTypes.
 import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 import type { INodeEmbeddingRepository } from '@/domain/repositories/INodeEmbeddingRepository.js'
 import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
+import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTypeRepository.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import { RelationDirection } from '@/domain/value-objects/RelationQuery.js'
 import type { FetchLike } from '@/models/GraphQLOperation.js'
-import { ResponseHelper } from '../utils/responseHelpers.js'
+import {
+  sendError,
+  sendHandleError,
+  sendNotFound,
+  sendSuccess,
+  sendValidationError,
+} from '../utils/responseHelpers.js'
 
 interface GraphQLResponse<T = unknown> {
   data?: T
@@ -77,7 +91,7 @@ class GraphQLClient {
 
 export class GraphApiController {
   private graphqlClient: GraphQLClient
-  private responseHelper: ResponseHelper
+  private readonly graphTraversal?: GraphTraversalService
 
   constructor(
     private readonly logger: ILogger,
@@ -93,11 +107,15 @@ export class GraphApiController {
     private readonly schemaGate?: NodeAttributeSchemaGate,
     private readonly nodeEmbeddingRepository?: INodeEmbeddingRepository,
     private readonly hybridSearchNodesUseCase?: HybridSearchNodesUseCase,
+    private readonly nodeRepository?: INodeRepository,
+    private readonly relationTypeRepository?: IRelationTypeRepository,
   ) {
     // Use the same port as the server instance
-    const serverPort = port || 4000
+    const serverPort = port || DEFAULT_PORTS.development
     this.graphqlClient = new GraphQLClient(`http://localhost:${serverPort}/graphql`, fetchImpl, internalBridgeToken)
-    this.responseHelper = new ResponseHelper(logger)
+    if (nodeRepository) {
+      this.graphTraversal = new GraphTraversalService(nodeRepository, nodeRelationRepository)
+    }
   }
 
   async getTables(req: Request, res: Response): Promise<void> {
@@ -132,15 +150,16 @@ export class GraphApiController {
         hasPreviousPage: parseInt(offset as string, 10) > 0,
       }
 
-      this.responseHelper.success(res, result)
+      sendSuccess(res, result)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Get tables')
+      sendHandleError(res, this.logger, error, 'Get tables')
     }
   }
 
   async getTableDocs(req: Request, res: Response): Promise<void> {
     try {
-      const { tableId, identifier } = req.query
+      const tableId = (req.params?.tableId as string | undefined) || (req.query.tableId as string | undefined)
+      const { identifier } = req.query
       const {
         includeSampleNodes = true,
         includeUsageStats = false,
@@ -149,7 +168,7 @@ export class GraphApiController {
       } = req.query
 
       if (!tableId && !identifier) {
-        this.responseHelper.validationError(res, 'Either tableId or identifier is required')
+        sendValidationError(res, 'Either tableId or identifier is required')
         return
       }
 
@@ -165,13 +184,13 @@ export class GraphApiController {
       })
 
       if (!result.tableDocs) {
-        this.responseHelper.notFound(res, 'Table')
+        sendNotFound(res, 'Table')
         return
       }
 
-      this.responseHelper.success(res, result.tableDocs)
+      sendSuccess(res, result.tableDocs)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Get table docs')
+      sendHandleError(res, this.logger, error, 'Get table docs')
     }
   }
 
@@ -181,15 +200,15 @@ export class GraphApiController {
       const profile = normalizeProjectionProfile(req.query.profile)
 
       if (!tableId) {
-        this.responseHelper.validationError(res, 'tableId is required')
+        sendValidationError(res, 'tableId is required')
         return
       }
       if (!profile) {
-        this.responseHelper.validationError(res, 'profile must be component-bundle or operation-contract')
+        sendValidationError(res, 'profile must be component-bundle or operation-contract')
         return
       }
       if (!this.tableSchemaProjectionService) {
-        this.responseHelper.error(res, 503, 'Table schema projection service is not configured', 'Get table OpenAPI projection')
+        sendError(res, this.logger, 503, 'Table schema projection service is not configured', 'Get table OpenAPI projection')
         return
       }
 
@@ -207,9 +226,9 @@ export class GraphApiController {
         return
       }
 
-      this.responseHelper.success(res, result)
+      sendSuccess(res, result)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Get table OpenAPI projection')
+      sendHandleError(res, this.logger, error, 'Get table OpenAPI projection')
     }
   }
 
@@ -217,11 +236,11 @@ export class GraphApiController {
     try {
       const { tableId } = req.params
       if (!tableId) {
-        this.responseHelper.validationError(res, 'tableId is required')
+        sendValidationError(res, 'tableId is required')
         return
       }
       if (!this.schemaGate) {
-        this.responseHelper.error(res, 503, 'Node attribute schema gate is not configured', 'Get table schema audit')
+        sendError(res, this.logger, 503, 'Node attribute schema gate is not configured', 'Get table schema audit')
         return
       }
 
@@ -230,9 +249,9 @@ export class GraphApiController {
         { tableId },
         { maxViolations: Number.isFinite(maxViolationsParam) ? maxViolationsParam : undefined },
       )
-      this.responseHelper.success(res, report)
+      sendSuccess(res, report)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Get table schema audit')
+      sendHandleError(res, this.logger, error, 'Get table schema audit')
     }
   }
 
@@ -242,7 +261,7 @@ export class GraphApiController {
       const { flatFormat = true, outputPath = '' } = req.body
 
       if (!tableId) {
-        this.responseHelper.validationError(res, 'tableId is required')
+        sendValidationError(res, 'tableId is required')
         return
       }
 
@@ -299,8 +318,9 @@ export class GraphApiController {
 
       if (graphqlResult.errors) {
         this.logger.error('GraphQL export error:', { errors: graphqlResult.errors })
-        this.responseHelper.error(
+        sendError(
           res,
+          this.logger,
           500,
           `GraphQL error: ${graphqlResult.errors.map((e) => e.message).join(', ')}`,
           'Export table with nodes',
@@ -310,7 +330,7 @@ export class GraphApiController {
 
       const exportData = graphqlResult.data?.exportTable
       if (!exportData) {
-        this.responseHelper.notFound(res, 'Export data')
+        sendNotFound(res, 'Export data')
         return
       }
 
@@ -329,7 +349,7 @@ export class GraphApiController {
 
           this.logger.info(`Table ${tableId} exported to ${outputPath}`)
 
-          this.responseHelper.success(res, {
+          sendSuccess(res, {
             tableId,
             flatFormat,
             outputPath,
@@ -338,14 +358,14 @@ export class GraphApiController {
             statistics: exportData.statistics,
           })
         } catch (fileError) {
-          this.responseHelper.handleError(res, fileError, 'File write')
+          sendHandleError(res, this.logger, fileError, 'File write')
         }
       } else {
         // JSON 응답으로 반환
-        this.responseHelper.success(res, exportData)
+        sendSuccess(res, exportData)
       }
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Export table with nodes')
+      sendHandleError(res, this.logger, error, 'Export table with nodes')
     }
   }
 
@@ -354,7 +374,7 @@ export class GraphApiController {
       const { tableId, sourceNodeId, targetNodeId, relationTypeId, limit = 20 } = req.query
 
       if (!tableId) {
-        this.responseHelper.validationError(res, 'tableId is required')
+        sendValidationError(res, 'tableId is required')
         return
       }
 
@@ -414,9 +434,9 @@ export class GraphApiController {
         hasMore: relationsResult.hasMore || false,
       }
 
-      this.responseHelper.success(res, result)
+      sendSuccess(res, result)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Search relations')
+      sendHandleError(res, this.logger, error, 'Search relations')
     }
   }
 
@@ -426,46 +446,114 @@ export class GraphApiController {
       const { depth = 1, direction = 'BOTH', relationTypes = [], tableId } = req.query
 
       if (!nodeId) {
-        this.responseHelper.validationError(res, 'nodeId is required')
+        sendValidationError(res, 'nodeId is required')
+        return
+      }
+
+      const rawTypes = Array.isArray(relationTypes)
+        ? relationTypes.map(String)
+        : typeof relationTypes === 'string' && relationTypes.trim()
+          ? relationTypes.split(',').map((entry) => entry.trim()).filter(Boolean)
+          : []
+      const parsedDepth = Number.isFinite(Number(depth)) ? Number.parseInt(String(depth), 10) : 1
+      const directionUpper = String(direction || 'BOTH').toUpperCase()
+      const traversalDirection: TraversalDirection =
+        directionUpper === 'INCOMING' ? 'INCOMING' : directionUpper === 'OUTGOING' ? 'OUTGOING' : 'BOTH'
+
+      if (this.graphTraversal && this.nodeRepository) {
+        const sourceNode = await this.nodeRepository.findById(nodeId as NodeId)
+        if (!sourceNode) {
+          sendError(res, this.logger, 404, `Node with id '${nodeId}' not found`, 'Get connected nodes')
+          return
+        }
+        const resolvedTableId = (tableId as string | undefined) ?? sourceNode.getTableId()
+        const resolvedTypes =
+          this.relationTypeRepository && rawTypes.length > 0
+            ? await resolveRelationTypeRefs(this.relationTypeRepository, rawTypes)
+            : undefined
+
+        if (resolvedTypes && resolvedTypes.ids.length === 0) {
+          sendSuccess(res, {
+            nodeId,
+            tableId: resolvedTableId,
+            depth: parsedDepth,
+            direction: traversalDirection,
+            relationTypes: rawTypes,
+            connectedNodes: [],
+            relations: [],
+            totalCount: 0,
+          })
+          return
+        }
+
+        const traversal = await this.graphTraversal.connectedNodesWithDetails(
+          nodeId,
+          parsedDepth,
+          traversalDirection,
+          resolvedTypes?.ids,
+        )
+        const result = {
+          nodeId,
+          tableId: resolvedTableId,
+          depth: parsedDepth,
+          direction: traversalDirection,
+          relationTypes: rawTypes,
+          connectedNodes: traversal.nodes.map(({ node, distance }) => ({
+            id: node.getId(),
+            tableId: node.getTableId(),
+            title: node.getTitle(),
+            content: node.getContent(),
+            description: node.getDescription(),
+            distance,
+            createdAt: node.getCreatedAt(),
+            updatedAt: node.getUpdatedAt(),
+          })),
+          relations: traversal.relations.map((relation) => ({
+            id: relation.getId(),
+            sourceNodeId: relation.getSourceNodeId(),
+            targetNodeId: relation.getTargetNodeId(),
+            relationTypeId: relation.getRelationTypeId(),
+            properties: relation.getProperties(),
+            strength: relation.getStrength(),
+            confidence: relation.getConfidence(),
+          })),
+          totalCount: traversal.nodes.length,
+        }
+        sendSuccess(res, result)
         return
       }
 
       if (!tableId) {
-        this.responseHelper.validationError(res, 'tableId is required')
+        sendValidationError(res, 'tableId is required')
         return
       }
 
-      const relationTypesArray = Array.isArray(relationTypes) ? relationTypes : relationTypes ? [relationTypes] : []
-
-      // Use SearchRelatedNodesUseCase to find connected nodes
+      // Fallback when unit tests construct GraphApiController without repositories
       const searchInput = {
         tableId: tableId as string,
         sourceNodeIds: [nodeId as string],
-        relationFilters:
-          relationTypesArray.length > 0
-            ? [
-                {
-                  relationTypes: relationTypesArray as string[],
-                  direction:
-                    direction === 'INCOMING'
-                      ? RelationDirection.INCOMING
-                      : direction === 'OUTGOING'
-                        ? RelationDirection.OUTGOING
-                        : RelationDirection.BOTH,
-                  depth: parseInt(depth as string, 10),
-                },
-              ]
-            : undefined,
-        limit: 100, // Default limit for connected nodes
+        relationFilters: [
+          {
+            ...(rawTypes.length > 0 ? { relationTypes: rawTypes } : {}),
+            direction:
+              traversalDirection === 'INCOMING'
+                ? RelationDirection.INCOMING
+                : traversalDirection === 'OUTGOING'
+                  ? RelationDirection.OUTGOING
+                  : RelationDirection.BOTH,
+            depth: parsedDepth,
+          },
+        ],
+        limit: 100,
       }
 
       const searchResult = await this.searchRelatedNodesUseCase.execute(searchInput)
 
       const result = {
         nodeId,
-        depth: parseInt(depth as string, 10),
-        direction,
-        relationTypes: relationTypesArray,
+        depth: parsedDepth,
+        direction: traversalDirection,
+        relationTypes: rawTypes,
         connectedNodes: searchResult.nodes.map((node) => ({
           id: node.id,
           title: node.title,
@@ -478,9 +566,9 @@ export class GraphApiController {
         totalCount: searchResult.totalCount,
       }
 
-      this.responseHelper.success(res, result)
+      sendSuccess(res, result)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Get connected nodes')
+      sendHandleError(res, this.logger, error, 'Get connected nodes')
     }
   }
 
@@ -494,48 +582,108 @@ export class GraphApiController {
 
   async findShortestPath(req: Request, res: Response): Promise<void> {
     try {
-      const { fromNodeId, toNodeId, maxDepth = 6, tableId } = req.body
+      const body = (req.body ?? {}) as {
+        fromNodeId?: string
+        toNodeId?: string
+        startNodeIds?: string[]
+        endNodeIds?: string[]
+        maxDepth?: number | string
+        direction?: string
+        relationTypes?: string[]
+        tableId?: string
+      }
+      const fromNodeId = body.fromNodeId || body.startNodeIds?.[0]
+      const toNodeId = body.toNodeId || body.endNodeIds?.[0]
+      const maxDepth = body.maxDepth !== undefined ? Number.parseInt(String(body.maxDepth), 10) : 6
+      const directionUpper = String(body.direction || 'BOTH').toUpperCase()
+      const traversalDirection: TraversalDirection =
+        directionUpper === 'OUTGOING' ? 'OUTGOING' : directionUpper === 'INCOMING' ? 'INCOMING' : 'BOTH'
 
       if (!fromNodeId || !toNodeId) {
-        this.responseHelper.validationError(res, 'fromNodeId and toNodeId are required')
+        sendValidationError(res, 'fromNodeId and toNodeId are required')
         return
       }
 
-      if (!tableId) {
-        this.responseHelper.validationError(res, 'tableId is required')
+      if (this.graphTraversal && this.nodeRepository) {
+        const relationTypeRefs = Array.isArray(body.relationTypes) ? body.relationTypes.map(String) : undefined
+        const resolvedTypes =
+          this.relationTypeRepository && relationTypeRefs && relationTypeRefs.length > 0
+            ? await resolveRelationTypeRefs(this.relationTypeRepository, relationTypeRefs)
+            : undefined
+
+        const shortest =
+          resolvedTypes && resolvedTypes.ids.length === 0
+            ? null
+            : await this.graphTraversal.findShortestPath(
+                fromNodeId,
+                toNodeId,
+                maxDepth,
+                traversalDirection,
+                resolvedTypes?.ids,
+              )
+
+        sendSuccess(res, {
+          fromNodeId,
+          toNodeId,
+          maxDepth,
+          direction: traversalDirection,
+          path: shortest ? shortest.nodes.map((node) => node.getId()) : [],
+          nodes: shortest
+            ? shortest.nodes.map((node) => ({
+                id: node.getId(),
+                tableId: node.getTableId(),
+                content: node.getContent(),
+                title: node.getTitle(),
+              }))
+            : [],
+          relations: shortest
+            ? shortest.relations.map((relation) => ({
+                id: relation.getId(),
+                sourceNodeId: relation.getSourceNodeId(),
+                targetNodeId: relation.getTargetNodeId(),
+                relationTypeId: relation.getRelationTypeId(),
+                strength: relation.getStrength(),
+                confidence: relation.getConfidence(),
+              }))
+            : [],
+          distance: shortest ? shortest.distance : -1,
+          found: shortest !== null,
+        })
         return
       }
 
-      // Use SearchRelatedNodesUseCase with path queries to find shortest path
+      if (!body.tableId) {
+        sendValidationError(res, 'tableId is required')
+        return
+      }
+
       const searchInput = {
-        tableId: tableId as string,
+        tableId: body.tableId,
         pathQueries: [
           {
-            startNodeIds: [fromNodeId as string],
-            endNodeIds: [toNodeId as string],
-            maxDepth: parseInt(maxDepth as string, 10),
+            startNodeIds: [fromNodeId],
+            endNodeIds: [toNodeId],
+            maxDepth,
           },
         ],
-        limit: 1, // We only need one path result
+        limit: 1,
       }
 
       const searchResult = await this.searchRelatedNodesUseCase.execute(searchInput)
-
-      // Extract the path from the search result
       const path = searchResult.paths && searchResult.paths.length > 0 ? searchResult.paths[0] : null
 
       const result = {
         fromNodeId,
         toNodeId,
-        maxDepth: parseInt(maxDepth as string, 10),
+        maxDepth,
         path: path ? path.path : [],
         distance: path ? path.length : -1,
         found: path !== null,
       }
 
-      this.responseHelper.success(res, result)
+      sendSuccess(res, result)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Find shortest path')
+      sendHandleError(res, this.logger, error, 'Find shortest path')
     }
   }
 
@@ -545,7 +693,7 @@ export class GraphApiController {
       const { direction = 'BOTH', relationTypes = [] } = req.query
 
       if (!nodeId) {
-        this.responseHelper.validationError(res, 'nodeId is required')
+        sendValidationError(res, 'nodeId is required')
         return
       }
 
@@ -602,9 +750,9 @@ export class GraphApiController {
       result.totalIncoming = incomingRelations.length
       result.totalOutgoing = outgoingRelations.length
 
-      this.responseHelper.success(res, result)
+      sendSuccess(res, result)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Get node relations')
+      sendHandleError(res, this.logger, error, 'Get node relations')
     }
   }
 
@@ -612,12 +760,13 @@ export class GraphApiController {
     try {
       const { nodeId } = req.params
       if (!nodeId) {
-        this.responseHelper.validationError(res, 'nodeId is required')
+        sendValidationError(res, 'nodeId is required')
         return
       }
       if (!this.nodeEmbeddingRepository) {
-        this.responseHelper.error(
+        sendError(
           res,
+          this.logger,
           503,
           'Node embedding repository is not configured',
           'Set node embedding',
@@ -636,9 +785,9 @@ export class GraphApiController {
         vector: Array.isArray(body.vector) ? body.vector : [],
         model: body.model,
       })
-      this.responseHelper.success(res, embedding)
+      sendSuccess(res, embedding)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Set node embedding')
+      sendHandleError(res, this.logger, error, 'Set node embedding')
     }
   }
 
@@ -646,12 +795,13 @@ export class GraphApiController {
     try {
       const { nodeId } = req.params
       if (!nodeId) {
-        this.responseHelper.validationError(res, 'nodeId is required')
+        sendValidationError(res, 'nodeId is required')
         return
       }
       if (!this.nodeEmbeddingRepository) {
-        this.responseHelper.error(
+        sendError(
           res,
+          this.logger,
           503,
           'Node embedding repository is not configured',
           'Get node embedding',
@@ -661,12 +811,12 @@ export class GraphApiController {
 
       const embedding = await this.nodeEmbeddingRepository.findByNodeId(nodeId)
       if (!embedding) {
-        this.responseHelper.notFound(res, 'Node embedding')
+        sendNotFound(res, 'Node embedding')
         return
       }
-      this.responseHelper.success(res, embedding)
+      sendSuccess(res, embedding)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Get node embedding')
+      sendHandleError(res, this.logger, error, 'Get node embedding')
     }
   }
 
@@ -674,12 +824,13 @@ export class GraphApiController {
     try {
       const { nodeId } = req.params
       if (!nodeId) {
-        this.responseHelper.validationError(res, 'nodeId is required')
+        sendValidationError(res, 'nodeId is required')
         return
       }
       if (!this.nodeEmbeddingRepository) {
-        this.responseHelper.error(
+        sendError(
           res,
+          this.logger,
           503,
           'Node embedding repository is not configured',
           'Remove node embedding',
@@ -688,17 +839,18 @@ export class GraphApiController {
       }
 
       const deleted = await this.nodeEmbeddingRepository.deleteByNodeId(nodeId)
-      this.responseHelper.success(res, { nodeId, deleted })
+      sendSuccess(res, { nodeId, deleted })
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Remove node embedding')
+      sendHandleError(res, this.logger, error, 'Remove node embedding')
     }
   }
 
   async hybridSearchNodes(req: Request, res: Response): Promise<void> {
     try {
       if (!this.hybridSearchNodesUseCase) {
-        this.responseHelper.error(
+        sendError(
           res,
+          this.logger,
           503,
           'Hybrid search service is not configured',
           'Hybrid search nodes',
@@ -708,15 +860,15 @@ export class GraphApiController {
 
       const input = (req.body ?? {}) as HybridSearchNodesInput
       const result = await this.hybridSearchNodesUseCase.execute(input)
-      this.responseHelper.success(res, result)
+      sendSuccess(res, result)
     } catch (error) {
-      this.responseHelper.handleError(res, error, 'Hybrid search nodes')
+      sendHandleError(res, this.logger, error, 'Hybrid search nodes')
     }
   }
 }
 
 function createRepresentationEtag(value: unknown): string {
-  const digest = createHash('sha256').update(JSON.stringify(value)).digest('base64url')
+  const digest = sha256Base64Url(JSON.stringify(value))
   return `"sha256-${digest}"`
 }
 

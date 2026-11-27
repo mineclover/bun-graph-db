@@ -14,6 +14,7 @@
 // } from '../models/McpToolDefinition.ts'
 
 import { debugMcp } from '@/shared/utils/debugLog.js'
+import { deriveDefaultToolAnnotations, type McpToolAnnotations } from '../../mcp/http-server/modern-protocol.js'
 
 export interface McpToolInputSchema {
   type?: unknown
@@ -38,10 +39,12 @@ export interface ResolvedMcpToolAccess extends McpToolAccessContract {
 
 export interface McpToolDefinition {
   name: string
+  title?: string
   description: string
   inputSchema: McpToolInputSchema
+  outputSchema?: Record<string, unknown>
   _meta?: Record<string, unknown>
-  annotations?: Record<string, unknown>
+  annotations?: McpToolAnnotations
   operationType?: 'query' | 'mutation'
   graphqlOperation?: {
     operationType?: string
@@ -54,8 +57,12 @@ export interface McpToolDefinition {
 export interface ToolDiscoveryResult {
   tools: Array<{
     name: string
+    title?: string
     description: string
     inputSchema: McpToolInputSchema
+    outputSchema?: Record<string, unknown>
+    _meta?: Record<string, unknown>
+    annotations?: McpToolAnnotations
   }>
 }
 
@@ -139,11 +146,13 @@ export class McpToolRegistry {
       .filter((tool) => this.isVisibleTo(tool, audience))
       .sort((left, right) => left.name.localeCompare(right.name))
       .map((tool) => ({
-      name: tool.name,
-      description: tool.description,
-      inputSchema: tool.inputSchema,
-      ...(tool._meta ? { _meta: tool._meta } : {}),
-      ...(tool.annotations ? { annotations: tool.annotations } : {}),
+        name: tool.name,
+        ...(tool.title ? { title: tool.title } : {}),
+        description: tool.description,
+        inputSchema: tool.inputSchema,
+        ...(tool.outputSchema ? { outputSchema: tool.outputSchema } : {}),
+        ...(tool._meta ? { _meta: tool._meta } : {}),
+        ...(tool.annotations ? { annotations: tool.annotations } : {}),
       }))
 
     return { tools }
@@ -296,6 +305,16 @@ export class McpToolRegistry {
         additionalProperties: false,
         properties: {},
       },
+      outputSchema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        properties: {
+          success: { type: 'boolean' },
+          data: { type: ['object', 'null'] },
+          errors: { type: 'array' },
+        },
+        required: ['success', 'errors'],
+      },
       graphqlOperation: {
         operationType: 'custom',
       },
@@ -379,6 +398,23 @@ export class McpToolRegistry {
             description: 'Projection profile to return. Root MCP tool contracts currently export component-bundle.',
           },
         },
+      },
+      outputSchema: {
+        $schema: 'https://json-schema.org/draft/2020-12/schema',
+        type: 'object',
+        properties: {
+          projection: { type: ['object', 'null'] },
+          validation: {
+            type: 'object',
+            properties: {
+              valid: { type: 'boolean' },
+              diagnostics: { type: 'array' },
+            },
+            required: ['valid', 'diagnostics'],
+          },
+          error: { type: 'object' },
+        },
+        required: ['projection', 'validation'],
       },
       graphqlOperation: {
         operationType: 'custom',
@@ -1629,6 +1665,11 @@ export class McpToolRegistry {
             description: 'Include schema file',
             default: true,
           },
+          includeEmbeddings: {
+            type: 'boolean',
+            description: 'Include persistent node embeddings in embeddings.jsonl',
+            default: false,
+          },
         },
       },
       graphqlOperation: {
@@ -1649,6 +1690,7 @@ export class McpToolRegistry {
                 tablesExported
                 nodesExported
                 relationsExported
+                embeddingsExported
                 totalBytes
               }
               errors
@@ -1690,6 +1732,16 @@ export class McpToolRegistry {
             description: 'Validate without importing',
             default: false,
           },
+          includeEmbeddings: {
+            type: 'boolean',
+            description: 'Restore embeddings.jsonl when present',
+            default: true,
+          },
+          validateSchema: {
+            type: 'boolean',
+            description: 'Validate schema before import',
+            default: true,
+          },
         },
       },
       graphqlOperation: {
@@ -1705,6 +1757,7 @@ export class McpToolRegistry {
                 nodesSkipped
                 nodesUpdated
                 relationsImported
+                embeddingsImported
               }
               errors
               warnings
@@ -2018,6 +2071,514 @@ export class McpToolRegistry {
 
     this.register(hybridSearchNodesTool)
 
+    this.register({
+      name: 'memory-remember',
+      description:
+        'Store an episodic, semantic, procedural, or working AI agent memory with hierarchical topic path, temporal half-life, importance salience, superseding links, and automatic embedding.',
+      operationType: 'mutation',
+      access: {
+        action: 'write',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['content'],
+        properties: {
+          content: { type: 'string', minLength: 1, description: 'Memory content' },
+          summary: { type: 'string', description: 'Optional concise title/summary' },
+          kind: {
+            type: 'string',
+            enum: ['working', 'episodic', 'semantic', 'procedural'],
+            default: 'episodic',
+          },
+          namespace: { type: 'string', default: 'default' },
+          sessionId: { type: 'string', default: 'default' },
+          topicPath: {
+            type: 'array',
+            items: { type: 'string', minLength: 1 },
+            description: 'Hierarchical topic taxonomy segments',
+          },
+          importance: { type: 'number', minimum: 0, maximum: 1, default: 0.6 },
+          confidence: { type: 'number', minimum: 0, maximum: 1, default: 0.9 },
+          halfLifeDays: { type: 'number', minimum: 0.01 },
+          tags: { type: 'array', items: { type: 'string' } },
+          sourceRef: { type: 'string' },
+          recordedAt: { type: 'string' },
+          expiresAt: { type: 'string' },
+          supersedesIds: { type: 'array', items: { type: 'string' } },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'memory-recall',
+      description:
+        'Recall AI agent memories by fusing FTS5 lexical match, EmbeddingGemma-2 cosine similarity, topic graph proximity, exponential half-life decay, and salience reinforcement.',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          query: { type: 'string', description: 'Natural-language recall query' },
+          vector: { type: 'array', items: { type: 'number' } },
+          namespace: { type: 'string' },
+          sessionId: { type: 'string' },
+          kinds: {
+            type: 'array',
+            items: { type: 'string', enum: ['working', 'episodic', 'semantic', 'procedural'] },
+          },
+          topicPath: { type: 'array', items: { type: 'string' } },
+          tags: { type: 'array', items: { type: 'string' } },
+          tagMatchMode: { type: 'string', enum: ['any', 'all'], default: 'all' },
+          anchorMemoryIds: { type: 'array', items: { type: 'string' } },
+          includeSuperseded: { type: 'boolean', default: false },
+          includeExpired: { type: 'boolean', default: false },
+          minImportance: { type: 'number', minimum: 0, maximum: 1 },
+          reinforce: { type: 'boolean', default: true },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'memory-consolidate',
+      description:
+        'Distill multiple episodic/working memories into a durable semantic or procedural memory with derivedFrom and supersedes provenance links.',
+      operationType: 'mutation',
+      access: {
+        action: 'write',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['sourceMemoryIds', 'content'],
+        properties: {
+          sourceMemoryIds: {
+            type: 'array',
+            minItems: 1,
+            items: { type: 'string', minLength: 1 },
+          },
+          content: { type: 'string', minLength: 1 },
+          summary: { type: 'string' },
+          kind: { type: 'string', enum: ['semantic', 'procedural'], default: 'semantic' },
+          namespace: { type: 'string' },
+          topicPath: { type: 'array', items: { type: 'string' } },
+          importance: { type: 'number', minimum: 0, maximum: 1, default: 0.9 },
+          confidence: { type: 'number', minimum: 0, maximum: 1, default: 0.95 },
+          markSourcesAsSuperseded: { type: 'boolean', default: true },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'memory-context-window',
+      description:
+        'Assemble a token-budgeted LLM prompt context block from the highest-scoring active memories for a query or topic.',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          query: { type: 'string' },
+          namespace: { type: 'string' },
+          topicPath: { type: 'array', items: { type: 'string' } },
+          kinds: {
+            type: 'array',
+            items: { type: 'string', enum: ['working', 'episodic', 'semantic', 'procedural'] },
+          },
+          maxTokens: { type: 'integer', minimum: 64, default: 1200 },
+          charsPerToken: { type: 'integer', minimum: 1, default: 4 },
+          limit: { type: 'integer', minimum: 1, maximum: 100, default: 30 },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'ia-apply-blueprint',
+      description:
+        'Apply or upsert a declarative Information Architecture (IA) blueprint or built-in preset (knowledge, product-spec, decision-log) with TREE/DAG validation and SchemaGate conformance audit.',
+      operationType: 'mutation',
+      access: {
+        action: 'write',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          preset: {
+            type: 'string',
+            enum: ['knowledge', 'product-spec', 'decision-log'],
+            description: 'Built-in IA blueprint preset name',
+          },
+          blueprint: {
+            type: 'object',
+            additionalProperties: true,
+            description: 'Custom InformationArchitectureBlueprint definition',
+          },
+          updateExistingNodes: { type: 'boolean', default: false },
+          updateExistingColumns: { type: 'boolean', default: false },
+          embedNodes: { type: 'boolean', default: true },
+          embeddingMode: {
+            type: 'string',
+            enum: ['auto', 'columns-only', 'all', 'none'],
+            default: 'auto',
+          },
+          validateHierarchies: { type: 'boolean', default: true },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'ia-query-structured',
+      description:
+        'Execute a zero-embedding-capable structured IA query with FTS5 text search, typed EAV attribute filters, intra-table subtree scoping, cross-table taxonomy relation scoping, facets, breadcrumbs, and 1-hop related nodes.',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableIdentifier'],
+        properties: {
+          tableIdentifier: { type: 'string', minLength: 1 },
+          underNodeId: { type: 'string' },
+          underNodeKey: { type: 'string' },
+          hierarchyRelationType: { type: 'string', default: 'parentOf' },
+          includeRoot: { type: 'boolean', default: true },
+          scopedByRelation: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['linkRelationType'],
+            properties: {
+              rootNodeId: { type: 'string' },
+              rootNodeKey: { type: 'string' },
+              hierarchyRelationType: { type: 'string' },
+              maxHierarchyDepth: { type: 'integer', minimum: 0 },
+              includeRoot: { type: 'boolean' },
+              linkRelationType: { type: 'string', minLength: 1 },
+              linkDirection: { type: 'string', enum: ['OUTGOING', 'INCOMING', 'BOTH'] },
+            },
+          },
+          filterQuery: { type: 'string' },
+          textQuery: { type: 'string' },
+          facets: { type: 'array', items: { type: 'string' } },
+          autoFacets: { type: 'boolean', default: false },
+          includeBreadcrumbs: { type: 'boolean', default: false },
+          includeTopicBreadcrumbs: { type: 'boolean', default: false },
+          includeRelated: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              relationTypes: { type: 'array', items: { type: 'string' } },
+              direction: { type: 'string', enum: ['OUTGOING', 'INCOMING', 'BOTH'] },
+              maxDepth: { type: 'integer', minimum: 1 },
+            },
+          },
+          limit: { type: 'integer', minimum: 1, maximum: 200, default: 20 },
+          offset: { type: 'integer', minimum: 0, default: 0 },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'ia-get-outline',
+      description:
+        'Render a deterministic nested hierarchy tree and Markdown table of contents for a table with optional linked relation counts.',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableIdentifier'],
+        properties: {
+          tableIdentifier: { type: 'string', minLength: 1 },
+          relationType: { type: 'string', default: 'parentOf' },
+          rootNodeId: { type: 'string' },
+          rootNodeKey: { type: 'string' },
+          maxDepth: { type: 'integer', minimum: 0, default: 16 },
+          countLinkedRelationTypes: { type: 'array', items: { type: 'string' } },
+          includeAttributes: { type: 'boolean', default: true },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'ia-query-path',
+      description:
+        'Traverse ordered typed relation hops with intermediate table and EAV attribute filters and full provenance steps without requiring vector embeddings.',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['hops'],
+        properties: {
+          startNodeIds: { type: 'array', items: { type: 'string' } },
+          startNodeKeys: { type: 'array', items: { type: 'string' } },
+          startTableIdentifier: { type: 'string' },
+          startFilterQuery: { type: 'string' },
+          hops: {
+            type: 'array',
+            minItems: 1,
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['relationTypes'],
+              properties: {
+                relationTypes: { type: 'array', minItems: 1, items: { type: 'string' } },
+                direction: { type: 'string', enum: ['OUTGOING', 'INCOMING', 'BOTH'] },
+                minDepth: { type: 'integer', minimum: 0 },
+                maxDepth: { type: 'integer', minimum: 0 },
+                targetTableIdentifier: { type: 'string' },
+                filterQuery: { type: 'string' },
+              },
+            },
+          },
+          limit: { type: 'integer', minimum: 1, maximum: 200, default: 50 },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'ia-assemble-context',
+      description:
+        'Assemble a character-budgeted structured Markdown context pack combining taxonomy outline, structured query hits, facets, breadcrumbs, and 1-hop neighbors without embeddings.',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableIdentifier'],
+        properties: {
+          tableIdentifier: { type: 'string', minLength: 1 },
+          textQuery: { type: 'string' },
+          filterQuery: { type: 'string' },
+          underNodeKey: { type: 'string' },
+          scopedByRelation: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['linkRelationType'],
+            properties: {
+              rootNodeId: { type: 'string' },
+              rootNodeKey: { type: 'string' },
+              hierarchyRelationType: { type: 'string' },
+              maxHierarchyDepth: { type: 'integer', minimum: 0 },
+              includeRoot: { type: 'boolean' },
+              linkRelationType: { type: 'string', minLength: 1 },
+              linkDirection: { type: 'string', enum: ['OUTGOING', 'INCOMING', 'BOTH'] },
+            },
+          },
+          outlineTableIdentifier: { type: 'string' },
+          outlineRootKey: { type: 'string' },
+          outlineRelationType: { type: 'string' },
+          expandRelationTypes: { type: 'array', items: { type: 'string' } },
+          autoFacets: { type: 'boolean', default: false },
+          maxChars: { type: 'integer', minimum: 256, default: 8000 },
+          limit: { type: 'integer', minimum: 1, maximum: 200, default: 15 },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'ia-audit',
+      description:
+        'Audit Information Architecture health across tables: TREE/DAG hierarchy validity, SchemaGate conformance, isolated hierarchy nodes, and expected cross-table link rules.',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        properties: {
+          tableIdentifiers: { type: 'array', items: { type: 'string' } },
+          hierarchyRules: { type: 'object', additionalProperties: true },
+          expectedLinks: {
+            type: 'array',
+            items: {
+              type: 'object',
+              additionalProperties: false,
+              required: ['tableIdentifier', 'relationType', 'direction'],
+              properties: {
+                tableIdentifier: { type: 'string', minLength: 1 },
+                relationType: { type: 'string', minLength: 1 },
+                direction: { type: 'string', enum: ['INCOMING', 'OUTGOING'] },
+              },
+            },
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'ia-get-columns',
+      description:
+        'Inspect resolved column configuration profile for a table (semantic roles, facetable/searchable/sortable columns, enum constraints, defaults, and opt-in embedding columns).',
+      operationType: 'query',
+      access: {
+        action: 'read',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableIdentifier'],
+        properties: {
+          tableIdentifier: { type: 'string', minLength: 1 },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
+    this.register({
+      name: 'ia-configure-column',
+      description:
+        'Configure per-column IA options (role, facetable, searchable, filterable, sortable, enumValues, defaultValue, displayOrder, hidden, and opt-in embedding option) on an existing table attribute.',
+      operationType: 'mutation',
+      access: {
+        action: 'write',
+        scope: 'global',
+      },
+      inputSchema: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['tableIdentifier', 'attributeIdentifier', 'options'],
+        properties: {
+          tableIdentifier: { type: 'string', minLength: 1 },
+          attributeIdentifier: { type: 'string', minLength: 1 },
+          options: {
+            type: 'object',
+            additionalProperties: false,
+            properties: {
+              role: {
+                type: 'string',
+                enum: [
+                  'title',
+                  'slug',
+                  'summary',
+                  'category',
+                  'tag',
+                  'status',
+                  'priority',
+                  'owner',
+                  'date',
+                  'metric',
+                  'reference',
+                  'body',
+                  'embedding',
+                  'custom',
+                ],
+              },
+              searchable: { type: 'boolean' },
+              facetable: { type: 'boolean' },
+              filterable: { type: 'boolean' },
+              sortable: { type: 'boolean' },
+              enumValues: { type: 'array', items: { type: 'string', minLength: 1 } },
+              defaultValue: { type: ['string', 'number', 'boolean', 'null'] },
+              displayOrder: { type: 'integer' },
+              hidden: { type: 'boolean' },
+              embedding: {
+                type: 'object',
+                additionalProperties: false,
+                required: ['enabled'],
+                properties: {
+                  enabled: { type: 'boolean' },
+                  sourceColumns: { type: 'array', items: { type: 'string', minLength: 1 } },
+                  includeTitle: { type: 'boolean' },
+                  includeContent: { type: 'boolean' },
+                  task: {
+                    type: 'string',
+                    enum: [
+                      'retrieval_query',
+                      'retrieval_document',
+                      'question_answering',
+                      'fact_verification',
+                      'classification',
+                      'clustering',
+                      'semantic_similarity',
+                      'code_retrieval',
+                    ],
+                  },
+                  model: { type: 'string' },
+                  dimension: { type: 'integer', enum: [128, 256, 512, 768] },
+                },
+              },
+            },
+          },
+        },
+      },
+      graphqlOperation: {
+        operationType: 'custom',
+        query: '',
+      },
+    })
+
     debugMcp('root tool registry initialized', () => ({ tools: this.getToolCount() }))
   }
 
@@ -2026,10 +2587,12 @@ export class McpToolRegistry {
     const tableIdArgument = tool.access?.tableIdArgument || this.requiredTableIdArgument(tool.inputSchema)
     const scope = tool.access?.scope || (tableIdArgument ? 'table' : 'global')
     const contractVersion = tool.contractVersion || ROOT_MCP_TOOL_CONTRACT_VERSION
+    const annotations = deriveDefaultToolAnnotations(tool.name, action, tool.annotations)
 
     return {
       ...tool,
       contractVersion,
+      annotations,
       access: { action, scope, ...(tableIdArgument ? { tableIdArgument } : {}) },
       _meta: {
         ...tool._meta,

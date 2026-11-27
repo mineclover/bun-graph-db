@@ -285,7 +285,7 @@ export class SchemaRoutes {
 
     let typescript = `// Generated GraphQL TypeScript Definitions\n`
     typescript += `// Generated at: ${new Date().toISOString()}\n`
-    typescript += `// Use 'bun run codegen' for complete type generation\n\n`
+    typescript += `// Use 'pnpm run codegen' for complete type generation\n\n`
 
     // Add basic scalar types
     typescript += `export type Scalars = {\n`
@@ -312,15 +312,15 @@ export class SchemaRoutes {
 
     // Add a note about complete generation
     typescript += `// For complete type definitions including objects, inputs, and operations,\n`
-    typescript += `// run: bun run codegen\n`
-    typescript += `// or visit: http://localhost:4000/schema.json\n`
+    typescript += `// run: pnpm run codegen\n`
+    typescript += `// or visit: http://localhost:4141/schema.json\n`
 
     return typescript
   }
 }
 
 /**
- * Schema route handler for Bun.serve
+ * Schema route handler for Web Fetch HTTP servers
  */
 export async function createSchemaHandler(container: DIContainer) {
   const routes = new SchemaRoutes(container)

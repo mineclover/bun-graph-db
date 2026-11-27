@@ -443,10 +443,11 @@ export class TemplateMutations extends BaseResolver {
     return this.handleMutation(
       async () => {
         // 1. 템플릿 준비 및 변수 처리
+        const supportsExecutionLog = typeof this.queryTemplateRepository.recordExecution === 'function'
         const templateResult = await this.executeQueryTemplateUseCase.execute({
           templateIdentifier: args.templateIdentifier,
           variables: args.variables,
-          trackUsage: args.trackUsage,
+          trackUsage: supportsExecutionLog ? false : args.trackUsage,
         })
 
         // 2. GraphQL 스키마 확인
@@ -516,6 +517,19 @@ export class TemplateMutations extends BaseResolver {
             errors: executionResult.errors.map((err) => err.message),
           })
 
+          if (args.trackUsage !== false && this.queryTemplateRepository.recordExecution) {
+            await this.queryTemplateRepository.recordExecution({
+              templateId: templateResult.metadata.templateId,
+              executionTimeMs: executionTime,
+              variablesUsed: templateResult.processedVariables,
+              resultCount: 0,
+              success: false,
+              errorMessage: executionResult.errors.map((err) => err.message).join('; '),
+              userContext:
+                (context as { principal?: { id?: string } } | undefined)?.principal?.id ?? null,
+            })
+          }
+
           return {
             success: false,
             data: executionResult.data,
@@ -534,6 +548,19 @@ export class TemplateMutations extends BaseResolver {
               executionTime,
             },
           }
+        }
+
+        if (args.trackUsage !== false && this.queryTemplateRepository.recordExecution) {
+          await this.queryTemplateRepository.recordExecution({
+            templateId: templateResult.metadata.templateId,
+            executionTimeMs: executionTime,
+            variablesUsed: templateResult.processedVariables,
+            resultCount: inferTemplateResultCount(executionResult.data),
+            success: true,
+            errorMessage: null,
+            userContext:
+              (context as { principal?: { id?: string } } | undefined)?.principal?.id ?? null,
+          })
         }
 
         this.logger.info('Template executed successfully with GraphQL', {
@@ -823,4 +850,19 @@ export class TemplateMutations extends BaseResolver {
   setSchema(schema: GraphQLSchema) {
     this.schema = schema
   }
+}
+
+function inferTemplateResultCount(data: ExecutionResult['data']): number {
+  if (!data || typeof data !== 'object') return 0
+  for (const val of Object.values(data)) {
+    if (Array.isArray(val)) return val.length
+    if (val && typeof val === 'object') {
+      const rec = val as Record<string, unknown>
+      if (Array.isArray(rec.nodes)) return rec.nodes.length
+      if (Array.isArray(rec.entries)) return rec.entries.length
+      if (Array.isArray(rec.results)) return rec.results.length
+      if (typeof rec.totalCount === 'number') return rec.totalCount
+    }
+  }
+  return 1
 }

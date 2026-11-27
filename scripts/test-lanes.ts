@@ -1,8 +1,8 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
+import { spawn } from "node:child_process";
 import { readdirSync, statSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
-import { spawn } from "bun";
 
 export const TEST_LANES = [
 	"parallel-safe",
@@ -166,24 +166,35 @@ async function runCommand(
 	root: string,
 ): Promise<RunResult> {
 	const started = performance.now();
-	const proc = spawn(args, {
-		cwd: root,
-		stdout: "pipe",
-		stderr: "pipe",
+	const [command, ...commandArgs] = args;
+	if (!command) {
+		throw new Error("Command cannot be empty");
+	}
+	return await new Promise<RunResult>((resolveRun, rejectRun) => {
+		const proc = spawn(command, commandArgs, {
+			cwd: root,
+			stdio: ["ignore", "pipe", "pipe"],
+		});
+		let stdout = "";
+		let stderr = "";
+		proc.stdout?.setEncoding("utf8");
+		proc.stderr?.setEncoding("utf8");
+		proc.stdout?.on("data", (chunk: string) => {
+			stdout += chunk;
+		});
+		proc.stderr?.on("data", (chunk: string) => {
+			stderr += chunk;
+		});
+		proc.once("error", rejectRun);
+		proc.once("close", (exitCode) => {
+			resolveRun({
+				path: label,
+				success: exitCode === 0,
+				durationMs: Math.round(performance.now() - started),
+				output: `${stdout}${stderr}`.trim(),
+			});
+		});
 	});
-
-	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(proc.stdout).text(),
-		new Response(proc.stderr).text(),
-		proc.exited,
-	]);
-
-	return {
-		path: label,
-		success: exitCode === 0,
-		durationMs: Math.round(performance.now() - started),
-		output: `${stdout}${stderr}`.trim(),
-	};
 }
 
 async function runLane(
@@ -194,7 +205,9 @@ async function runLane(
 	if (files.length === 0) return [];
 
 	if (lane === "parallel-safe") {
-		return [await runCommand(["bun", "test", ...files], lane, root)];
+		return [
+			await runCommand(["pnpm", "exec", "vitest", "run", ...files], lane, root),
+		];
 	}
 
 	const results: RunResult[] = [];
@@ -205,7 +218,13 @@ async function runLane(
 
 	for (const path of ordered) {
 		console.log(` - ${path}`);
-		results.push(await runCommand(["bun", "test", path], path, root));
+		results.push(
+			await runCommand(
+				["pnpm", "exec", "vitest", "run", "--fileParallelism=false", path],
+				path,
+				root,
+			),
+		);
 	}
 	return results;
 }

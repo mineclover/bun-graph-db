@@ -4,6 +4,7 @@ import type { INodeAttributeRepository } from '@/domain/repositories/INodeAttrib
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
+import { chunkValues, getMaxBindParams } from './SqlitePort.js'
 
 interface NodeAttributeRow {
   id: number
@@ -88,17 +89,25 @@ export class SqliteNodeAttributeRepository
 
   async findByNodeIds(nodeIds: NodeId[]): Promise<NodeAttribute[]> {
     if (nodeIds.length === 0) return []
-    const placeholders = nodeIds.map(() => '?').join(',')
-    const query = `
-      SELECT id, node_id, attribute_id, value, created_at, updated_at
-      FROM node_attributes
-      WHERE node_id IN (${placeholders})
-      ORDER BY node_id, attribute_id
-    `
 
     try {
-      const rows = this.db.query<NodeAttributeRow, string[]>(query).all(...nodeIds)
-      return rows.map((row) => this.mapRowToEntity(row))
+      const chunks = chunkValues(nodeIds, getMaxBindParams(this.db))
+      const collectedRows: NodeAttributeRow[] = []
+      for (const chunk of chunks) {
+        const placeholders = chunk.map(() => '?').join(',')
+        const query = `
+          SELECT id, node_id, attribute_id, value, created_at, updated_at
+          FROM node_attributes
+          WHERE node_id IN (${placeholders})
+          ORDER BY node_id, attribute_id
+        `
+        const rows = this.db.query<NodeAttributeRow, string[]>(query).all(...chunk)
+        collectedRows.push(...rows)
+      }
+      if (chunks.length > 1) {
+        collectedRows.sort((a, b) => a.node_id - b.node_id || a.attribute_id - b.attribute_id)
+      }
+      return collectedRows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
       throw new DatabaseException(`Failed to find node attributes by node ids: ${error}`)
     }
@@ -204,7 +213,7 @@ export class SqliteNodeAttributeRepository
     `
 
     try {
-      const stmt = this.db.prepare(query)
+      const stmt = this.db.query(query)
 
       this.db.transaction(() => {
         for (const nodeAttribute of nodeAttributes) {
@@ -227,7 +236,7 @@ export class SqliteNodeAttributeRepository
     `
 
     try {
-      const stmt = this.db.prepare(query)
+      const stmt = this.db.query(query)
 
       this.db.transaction(() => {
         for (const nodeAttribute of nodeAttributes) {
@@ -253,36 +262,26 @@ export class SqliteNodeAttributeRepository
 
   async setNodeAttribute(nodeId: NodeId, attributeId: AttributeId, value: unknown): Promise<NodeAttribute> {
     try {
-      const existing = await this.findByNodeIdAndAttributeId(nodeId, attributeId)
       const serializedValue = typeof value === 'string' ? value : JSON.stringify(value)
+      const timestamp = new Date().toISOString()
+      const row = this.db
+        .query<NodeAttributeRow, [string, string, string, string, string]>(`
+          INSERT INTO node_attributes (node_id, attribute_id, value, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(node_id, attribute_id) DO UPDATE SET
+            value = excluded.value,
+            updated_at = excluded.updated_at
+          RETURNING id, node_id, attribute_id, value, created_at, updated_at
+        `)
+        .get(nodeId, attributeId, serializedValue, timestamp, timestamp)
 
-      if (existing) {
-        const existingId = existing.getId()
-        if (!existingId) {
-          throw new DatabaseException('Existing node attribute has no ID')
-        }
-        const updated = NodeAttribute.fromDatabase(
-          existingId,
-          existing.getNodeId(),
-          existing.getAttributeId(),
-          serializedValue,
-          existing.getCreatedAt(),
-          new Date(),
-        )
-        await this.update(updated)
-        return updated
-      } else {
-        const newNodeAttribute = NodeAttribute.create(nodeId, attributeId, serializedValue)
-        await this.save(newNodeAttribute)
-
-        // After saving, fetch the saved entity with the database-assigned ID
-        const savedNodeAttribute = await this.findByNodeIdAndAttributeId(nodeId, attributeId)
-        if (!savedNodeAttribute) {
-          throw new DatabaseException('Failed to retrieve saved node attribute')
-        }
-        return savedNodeAttribute
+      if (!row) {
+        throw new DatabaseException('Failed to retrieve saved node attribute')
       }
+
+      return this.mapRowToEntity(row)
     } catch (error) {
+      if (error instanceof DatabaseException) throw error
       throw new DatabaseException(`Failed to set node attribute: ${error}`)
     }
   }

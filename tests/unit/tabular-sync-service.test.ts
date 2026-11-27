@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { describe, expect, test, vi } from 'vitest'
 import { ExcelSchemaProjector } from '@/infrastructure/excel/ExcelSchemaProjector.js'
 import {
   type ResolvedSyncTargetSelection,
@@ -28,10 +28,10 @@ function createService() {
   })
   const writes: TabularWritePlan[] = []
   const gateway = {
-    supports: mock(() => true),
-    supportsIncrementalWrite: mock(async () => true),
-    readRows: mock(async () => []),
-    writeSheet: mock(async (plan: TabularWritePlan) => {
+    supports: vi.fn(() => true),
+    supportsIncrementalWrite: vi.fn(async () => true),
+    readRows: vi.fn(async () => []),
+    writeSheet: vi.fn(async (plan: TabularWritePlan) => {
       writes.push(plan)
     }),
   }
@@ -209,12 +209,12 @@ describe('TabularSyncService incremental snapshots', () => {
     const reads: string[] = []
     const gateway = {
       supports: () => true,
-      readRows: mock(async (selected: ResolvedSyncTargetSelection) => {
+      readRows: vi.fn(async (selected: ResolvedSyncTargetSelection) => {
         reads.push(selected.route.tableIdentifier)
         if (reads.length === 1) await firstGate
         return []
       }),
-      writeSheet: mock(async () => undefined),
+      writeSheet: vi.fn(async () => undefined),
     }
     const service = new TabularSyncService(
       registry,

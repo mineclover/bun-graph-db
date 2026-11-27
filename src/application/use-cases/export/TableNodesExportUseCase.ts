@@ -1,5 +1,3 @@
-import * as fs from 'node:fs'
-import * as path from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableId } from '@/core/types/CommonTypes.js'
 import type { IAttributeRepository } from '@/domain/repositories/IAttributeRepository.js'
@@ -498,7 +496,8 @@ export class TableNodesExportUseCase {
   }
 
   private calculateFileSize(data: string | Buffer): string {
-    const sizeInBytes = typeof data === 'string' ? Buffer.byteLength(data, 'utf8') : data.length
+    const sizeInBytes =
+      typeof data === 'string' ? new TextEncoder().encode(data).byteLength : data.byteLength
 
     if (sizeInBytes < 1024) {
       return `${sizeInBytes} B`
@@ -528,6 +527,8 @@ export class TableNodesExportUseCase {
     options: TableNodesExportOptions,
     tableIdentifier: string,
   ): Promise<string> {
+    const fs = await import('node:fs')
+    const path = await import('node:path')
     // Create output directory if it doesn't exist
     const outputDir = options.outputDirectory || './exports'
     if (!fs.existsSync(outputDir)) {
@@ -540,7 +541,7 @@ export class TableNodesExportUseCase {
     const fullPath = path.join(outputDir, filename)
 
     // Write file based on data type
-    if (Buffer.isBuffer(data)) {
+    if (data instanceof Uint8Array) {
       fs.writeFileSync(fullPath, data)
     } else {
       fs.writeFileSync(fullPath, data, 'utf8')

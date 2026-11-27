@@ -3,7 +3,7 @@
  * 서버 독립적 통합 테스트 - 자동 서버 관리
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import {
   createIntegrationConfig,
   McpHelper,

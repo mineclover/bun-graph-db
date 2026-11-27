@@ -2,7 +2,7 @@
 docType: explanation
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-10-27"
+lastVerified: "2026-11-27"
 owner: "Bun Graph DB maintainers"
 sources:
   - scripts/check-docs.ts
@@ -20,9 +20,9 @@ tests:
 
 | 문서 종류 | 정본과 갱신 방식 | 검증 |
 |---|---|---|
-| GraphQL 필드/입력/설명 | `src/presentation/graphql/schema/`의 SDL을 먼저 수정하고 `bun run codegen`으로 생성한다. | `bun run check:codegen` |
-| MCP 도구 계약 | `McpToolRegistry`와 projection 구현을 먼저 수정한다. 설명·권한·입력 스키마를 별도로 재작성하지 않는다. | `bun run projection:check`, 관련 MCP 계약 테스트 |
-| 알고리즘 의미/계층 | canonical reference 또는 explanation에 범위, 구현 경로, 테스트, 남은 제한을 기록한다. | `bun run check:docs`, 기능 테스트, 타입 검사 |
+| GraphQL 필드/입력/설명 | `src/presentation/graphql/schema/`의 SDL을 먼저 수정하고 `pnpm run codegen`으로 생성한다. | `pnpm run check:codegen` |
+| MCP 도구 계약 | `McpToolRegistry`와 projection 구현을 먼저 수정한다. 설명·권한·입력 스키마를 별도로 재작성하지 않는다. | `pnpm run projection:check`, 관련 MCP 계약 테스트 |
+| 알고리즘 의미/계층 | canonical reference 또는 explanation에 범위, 구현 경로, 테스트, 남은 제한을 기록한다. | `pnpm run check:docs`, 기능 테스트, 타입 검사 |
 | 설계 제안/로드맵 | 제안임을 본문에서 표시하고 수용 여부와 완료 조건을 기록한다. | 구현됨 상태로 바꾸기 전에 구현·테스트 근거 연결 |
 | 실행 보고/과거 평가 | 실행일, 명령, 코드 기준, 결과와 실행하지 않은 범위를 남긴다. | 과거 통과 결과를 현재 전체 검증으로 확대하지 않는다. |
 
@@ -54,7 +54,7 @@ Bun Graph DB는 기존 GraphQL codegen/projection 검사에 정본 문서 검사
 1. 계약의 정본에서 변경한다. 설명만 달라졌다면 해당 설명을, API 설명이 달라졌다면 SDL/registry를 수정한다.
 2. 알고리즘/서비스/전송 경계 중 변경된 곳을 설명하고, proposal과 구현된 범위를 구별한다.
 3. 알려진 정답과 경계 조건을 검증한 뒤 문서의 범위와 `lastVerified`를 갱신한다.
-4. `bun run check:static`을 실행한다. 이 명령에 canonical 문서 검사와 기존 codegen 검사가 포함된다.
+4. `pnpm run check:static`을 실행한다. 이 명령에 canonical 문서 검사와 기존 codegen 검사가 포함된다.
 5. 변경된 동작의 테스트를 실행하고 결과를 기록한다. 캐시 검사·정적 검토·실제 실행을 구별한다.
 
 첫 적용 사례는 [GraphQL 필드 탐색 계약](../architecture/graph-traversal.md)이다.

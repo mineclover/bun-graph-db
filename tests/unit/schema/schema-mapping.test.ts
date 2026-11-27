@@ -7,7 +7,7 @@
  * Parallel: Can run with Phase 1 tasks
  */
 
-import { describe, expect, it } from '@jest/globals'
+import { describe, expect, it } from 'vitest'
 
 // Import will be added when SchemaMapper is implemented
 // import { SchemaMapper } from '../../../src/presentation/mcp/schema/SchemaMapper'

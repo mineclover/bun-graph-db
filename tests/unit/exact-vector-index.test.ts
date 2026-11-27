@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { ExactVectorIndex, cosineSimilarity } from '@/domain/services/vector/ExactVectorIndex.js'
 
 describe('ExactVectorIndex', () => {

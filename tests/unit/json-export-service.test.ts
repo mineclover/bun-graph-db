@@ -4,7 +4,7 @@
  * Tests for JSON export functionality in Flat and HFI Protocol formats
  */
 
-import { beforeEach, describe, expect, mock, test } from 'bun:test'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type { Attribute } from '@/domain/entities/Attribute.js'
 import type { Node } from '@/domain/entities/Node.js'
@@ -61,75 +61,75 @@ const mockNodeRelation = {
 
 // Mock repositories
 const createMockTableRepository = (): ITableRepository => ({
-  findById: mock(async () => mockTable),
-  findByIdentifier: mock(async () => mockTable),
-  findAll: mock(async () => ({ nodes: [mockTable], total: 1, hasNextPage: false })),
-  create: mock(async () => mockTable),
-  update: mock(async () => mockTable),
-  delete: mock(async () => undefined),
-  search: mock(async () => ({ nodes: [mockTable], total: 1, hasNextPage: false })),
-  exists: mock(async () => true),
-  count: mock(async () => 1),
+  findById: vi.fn(async () => mockTable),
+  findByIdentifier: vi.fn(async () => mockTable),
+  findAll: vi.fn(async () => ({ nodes: [mockTable], total: 1, hasNextPage: false })),
+  create: vi.fn(async () => mockTable),
+  update: vi.fn(async () => mockTable),
+  delete: vi.fn(async () => undefined),
+  search: vi.fn(async () => ({ nodes: [mockTable], total: 1, hasNextPage: false })),
+  exists: vi.fn(async () => true),
+  count: vi.fn(async () => 1),
 })
 
 const createMockNodeRepository = (): INodeRepository => ({
-  findById: mock(async () => mockNode),
-  findByTableId: mock(async () => ({ nodes: [mockNode], total: 1, hasNextPage: false })),
-  findByContent: mock(async () => [mockNode]),
-  create: mock(async () => mockNode),
-  update: mock(async () => mockNode),
-  delete: mock(async () => undefined),
-  search: mock(async () => ({ nodes: [mockNode], total: 1, hasNextPage: false })),
-  count: mock(async () => 1),
-  countByTableId: mock(async () => 1),
-  exists: mock(async () => true),
+  findById: vi.fn(async () => mockNode),
+  findByTableId: vi.fn(async () => ({ nodes: [mockNode], total: 1, hasNextPage: false })),
+  findByContent: vi.fn(async () => [mockNode]),
+  create: vi.fn(async () => mockNode),
+  update: vi.fn(async () => mockNode),
+  delete: vi.fn(async () => undefined),
+  search: vi.fn(async () => ({ nodes: [mockNode], total: 1, hasNextPage: false })),
+  count: vi.fn(async () => 1),
+  countByTableId: vi.fn(async () => 1),
+  exists: vi.fn(async () => true),
 })
 
 const createMockAttributeRepository = (): IAttributeRepository => ({
-  findById: mock(async () => mockAttribute),
-  findByIdentifier: mock(async () => mockAttribute),
-  findByTableId: mock(async () => ({ nodes: [mockAttribute], total: 1, hasNextPage: false })),
-  create: mock(async () => mockAttribute),
-  update: mock(async () => mockAttribute),
-  delete: mock(async () => undefined),
-  exists: mock(async () => true),
-  count: mock(async () => 1),
+  findById: vi.fn(async () => mockAttribute),
+  findByIdentifier: vi.fn(async () => mockAttribute),
+  findByTableId: vi.fn(async () => ({ nodes: [mockAttribute], total: 1, hasNextPage: false })),
+  create: vi.fn(async () => mockAttribute),
+  update: vi.fn(async () => mockAttribute),
+  delete: vi.fn(async () => undefined),
+  exists: vi.fn(async () => true),
+  count: vi.fn(async () => 1),
 })
 
 const createMockNodeAttributeRepository = (): INodeAttributeRepository => ({
-  findByNodeId: mock(async () => [mockNodeAttribute]),
-  findByAttributeId: mock(async () => [mockNodeAttribute]),
-  findByNodeAndAttribute: mock(async () => mockNodeAttribute),
-  create: mock(async () => mockNodeAttribute),
-  update: mock(async () => mockNodeAttribute),
-  delete: mock(async () => undefined),
-  deleteByNodeId: mock(async () => undefined),
-  exists: mock(async () => true),
+  findByNodeId: vi.fn(async () => [mockNodeAttribute]),
+  findByAttributeId: vi.fn(async () => [mockNodeAttribute]),
+  findByNodeAndAttribute: vi.fn(async () => mockNodeAttribute),
+  create: vi.fn(async () => mockNodeAttribute),
+  update: vi.fn(async () => mockNodeAttribute),
+  delete: vi.fn(async () => undefined),
+  deleteByNodeId: vi.fn(async () => undefined),
+  exists: vi.fn(async () => true),
 })
 
 const createMockNodeRelationRepository = (): INodeRelationRepository => ({
-  findById: mock(async () => mockNodeRelation),
-  findByTableId: mock(async () => ({ nodes: [mockNodeRelation], total: 1, hasNextPage: false })),
-  findBySourceNodeId: mock(async () => [mockNodeRelation]),
-  findByTargetNodeId: mock(async () => []),
-  findByRelationTypeId: mock(async () => [mockNodeRelation]),
-  create: mock(async () => mockNodeRelation),
-  update: mock(async () => mockNodeRelation),
-  delete: mock(async () => undefined),
-  deleteByNodeId: mock(async () => undefined),
-  exists: mock(async () => true),
-  count: mock(async () => 1),
+  findById: vi.fn(async () => mockNodeRelation),
+  findByTableId: vi.fn(async () => ({ nodes: [mockNodeRelation], total: 1, hasNextPage: false })),
+  findBySourceNodeId: vi.fn(async () => [mockNodeRelation]),
+  findByTargetNodeId: vi.fn(async () => []),
+  findByRelationTypeId: vi.fn(async () => [mockNodeRelation]),
+  create: vi.fn(async () => mockNodeRelation),
+  update: vi.fn(async () => mockNodeRelation),
+  delete: vi.fn(async () => undefined),
+  deleteByNodeId: vi.fn(async () => undefined),
+  exists: vi.fn(async () => true),
+  count: vi.fn(async () => 1),
 })
 
 const createMockRelationTypeRepository = (): IRelationTypeRepository => ({
-  findById: mock(async () => mockRelationType),
-  findByIdentifier: mock(async () => mockRelationType),
-  findAll: mock(async () => ({ nodes: [mockRelationType], total: 1, hasNextPage: false })),
-  create: mock(async () => mockRelationType),
-  update: mock(async () => mockRelationType),
-  delete: mock(async () => undefined),
-  exists: mock(async () => true),
-  count: mock(async () => 1),
+  findById: vi.fn(async () => mockRelationType),
+  findByIdentifier: vi.fn(async () => mockRelationType),
+  findAll: vi.fn(async () => ({ nodes: [mockRelationType], total: 1, hasNextPage: false })),
+  create: vi.fn(async () => mockRelationType),
+  update: vi.fn(async () => mockRelationType),
+  delete: vi.fn(async () => undefined),
+  exists: vi.fn(async () => true),
+  count: vi.fn(async () => 1),
 })
 
 describe('JsonExportService', () => {
@@ -282,7 +282,7 @@ describe('JsonExportService', () => {
 
   describe('error handling', () => {
     test('should return error when table not found', async () => {
-      mockTableRepo.findById = mock(async () => null)
+      mockTableRepo.findById = vi.fn(async () => null)
 
       const result = await service.exportTable('non-existent' as TableId, { format: 'flat' })
 
@@ -291,7 +291,7 @@ describe('JsonExportService', () => {
     })
 
     test('should handle repository errors gracefully', async () => {
-      mockTableRepo.findById = mock(async () => {
+      mockTableRepo.findById = vi.fn(async () => {
         throw new Error('Database error')
       })
 
@@ -326,7 +326,7 @@ describe('JsonExportService', () => {
 
   describe('edge cases - empty table export', () => {
     test('should export empty table in flat format', async () => {
-      mockNodeRepo.findByTableId = mock(async () => ({ nodes: [], total: 0, hasNextPage: false }))
+      mockNodeRepo.findByTableId = vi.fn(async () => ({ nodes: [], total: 0, hasNextPage: false }))
 
       const result = await service.exportTable('table-1' as TableId, { format: 'flat' })
 
@@ -337,8 +337,8 @@ describe('JsonExportService', () => {
     })
 
     test('should export empty table in HFI format', async () => {
-      mockNodeRepo.findByTableId = mock(async () => ({ nodes: [], total: 0, hasNextPage: false }))
-      mockRelationRepo.findByTableId = mock(async () => ({
+      mockNodeRepo.findByTableId = vi.fn(async () => ({ nodes: [], total: 0, hasNextPage: false }))
+      mockRelationRepo.findByTableId = vi.fn(async () => ({
         nodes: [],
         total: 0,
         hasNextPage: false,
@@ -363,12 +363,12 @@ describe('JsonExportService', () => {
         getDescription: () => 'Effect description',
       } as unknown as Node
 
-      mockNodeRepo.findByTableId = mock(async () => ({
+      mockNodeRepo.findByTableId = vi.fn(async () => ({
         nodes: [mockNode, nodeWithoutRelations],
         total: 2,
         hasNextPage: false,
       }))
-      mockNodeAttrRepo.findByNodeId = mock(async (nodeId: NodeId) => {
+      mockNodeAttrRepo.findByNodeId = vi.fn(async (nodeId: NodeId) => {
         if (nodeId === 'node-1') return [mockNodeAttribute]
         return []
       })
@@ -402,7 +402,7 @@ describe('JsonExportService', () => {
         }),
       } as unknown as NodeRelation
 
-      mockRelationRepo.findByTableId = mock(async () => ({
+      mockRelationRepo.findByTableId = vi.fn(async () => ({
         nodes: [stateConnectionRelation],
         total: 1,
         hasNextPage: false,
@@ -451,12 +451,12 @@ describe('JsonExportService', () => {
         getProperties: () => null,
       } as unknown as NodeRelation
 
-      mockRelationRepo.findByTableId = mock(async () => ({
+      mockRelationRepo.findByTableId = vi.fn(async () => ({
         nodes: [mockNodeRelation, relation2],
         total: 2,
         hasNextPage: false,
       }))
-      mockRelationTypeRepo.findAll = mock(async () => ({
+      mockRelationTypeRepo.findAll = vi.fn(async () => ({
         nodes: [mockRelationType, relationType2],
         total: 2,
         hasNextPage: false,
@@ -486,7 +486,7 @@ describe('JsonExportService', () => {
         getProperties: () => null,
       } as unknown as NodeRelation
 
-      mockRelationRepo.findByTableId = mock(async () => ({
+      mockRelationRepo.findByTableId = vi.fn(async () => ({
         nodes: [mockNodeRelation, relation2],
         total: 2,
         hasNextPage: false,
@@ -561,13 +561,13 @@ describe('JsonExportService', () => {
         },
       ] as unknown as Attribute[]
 
-      mockAttrRepo.findByTableId = mock(async () => ({
+      mockAttrRepo.findByTableId = vi.fn(async () => ({
         nodes: attributes,
         total: 5,
         hasNextPage: false,
       }))
-      mockNodeAttrRepo.findByNodeId = mock(async () => [stringAttr, numberAttr, booleanAttr, arrayAttr, objectAttr])
-      mockRelationRepo.findByTableId = mock(async () => ({
+      mockNodeAttrRepo.findByNodeId = vi.fn(async () => [stringAttr, numberAttr, booleanAttr, arrayAttr, objectAttr])
+      mockRelationRepo.findByTableId = vi.fn(async () => ({
         nodes: [],
         total: 0,
         hasNextPage: false,
@@ -596,7 +596,7 @@ describe('JsonExportService', () => {
 
   describe('edge cases - tags and options', () => {
     test('should include tags in HFI export when provided', async () => {
-      mockRelationRepo.findByTableId = mock(async () => ({
+      mockRelationRepo.findByTableId = vi.fn(async () => ({
         nodes: [],
         total: 0,
         hasNextPage: false,
@@ -628,7 +628,7 @@ describe('JsonExportService', () => {
   describe('edge cases - backward compatibility with data property', () => {
     test('should handle repositories returning data instead of nodes', async () => {
       // Simulate old-style repository response
-      mockNodeRepo.findByTableId = mock(
+      mockNodeRepo.findByTableId = vi.fn(
         async () =>
           ({
             data: [mockNode],
@@ -636,7 +636,7 @@ describe('JsonExportService', () => {
             hasNextPage: false,
           }) as any,
       )
-      mockAttrRepo.findByTableId = mock(
+      mockAttrRepo.findByTableId = vi.fn(
         async () =>
           ({
             data: [mockAttribute],

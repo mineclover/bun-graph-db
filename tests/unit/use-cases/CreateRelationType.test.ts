@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   type CreateRelationTypeInput,
@@ -27,25 +27,25 @@ describe('CreateRelationTypeUseCase', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repository
     mockRelationTypeRepository = {
-      save: mock(async (relationType: RelationType) => relationType),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      update: mock(async () => {}),
-      delete: mock(async () => {}),
-      findAll: mock(async () => emptyPage<RelationType>()),
-      count: mock(async () => 0),
-      exists: mock(async () => false),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      deleteMany: mock(async () => {}),
+      save: vi.fn(async (relationType: RelationType) => relationType),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      update: vi.fn(async () => {}),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => emptyPage<RelationType>()),
+      count: vi.fn(async () => 0),
+      exists: vi.fn(async () => false),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      deleteMany: vi.fn(async () => {}),
     } as unknown as IRelationTypeRepository
 
     useCase = new CreateRelationTypeUseCase(mockRelationTypeRepository, mockLogger)
@@ -79,7 +79,7 @@ describe('CreateRelationTypeUseCase', () => {
 
       const existingRelationType = createTestRelationType('rel-type-1', 'existing_relation', 'Existing Relation')
 
-      mockRelationTypeRepository.findByIdentifier = mock().mockResolvedValueOnce(existingRelationType)
+      mockRelationTypeRepository.findByIdentifier = vi.fn().mockResolvedValueOnce(existingRelationType)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
@@ -95,7 +95,7 @@ describe('CreateRelationTypeUseCase', () => {
 
       const createdRelationType = createTestRelationType('rel-type-1', 'new_relation', 'New Relation')
 
-      mockRelationTypeRepository.findByIdentifier = mock()
+      mockRelationTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null) // First call for duplicate check
         .mockResolvedValueOnce(createdRelationType) // Second call after save
 
@@ -126,7 +126,7 @@ describe('CreateRelationTypeUseCase', () => {
         'A relation with description',
       )
 
-      mockRelationTypeRepository.findByIdentifier = mock()
+      mockRelationTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdRelationType)
 
@@ -147,7 +147,7 @@ describe('CreateRelationTypeUseCase', () => {
 
       const createdRelationType = createTestRelationType('rel-type-1', 'categorized_relation', 'Categorized Relation')
 
-      mockRelationTypeRepository.findByIdentifier = mock()
+      mockRelationTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdRelationType)
 
@@ -172,7 +172,7 @@ describe('CreateRelationTypeUseCase', () => {
         'A complete relation type',
       )
 
-      mockRelationTypeRepository.findByIdentifier = mock()
+      mockRelationTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdRelationType)
 
@@ -199,8 +199,8 @@ describe('CreateRelationTypeUseCase', () => {
 
       const saveError = new Error('Database connection failed')
 
-      mockRelationTypeRepository.findByIdentifier = mock(async () => null)
-      mockRelationTypeRepository.save = mock(async () => {
+      mockRelationTypeRepository.findByIdentifier = vi.fn(async () => null)
+      mockRelationTypeRepository.save = vi.fn(async () => {
         throw saveError
       })
 
@@ -219,7 +219,7 @@ describe('CreateRelationTypeUseCase', () => {
         identifier: 'unretrievable_relation',
       }
 
-      mockRelationTypeRepository.findByIdentifier = mock()
+      mockRelationTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null) // First call for duplicate check
         .mockResolvedValueOnce(null) // Second call after save fails to retrieve
 

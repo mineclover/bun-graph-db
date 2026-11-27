@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { TableSchemaProjectionService } from '../../../src/application/services/TableSchemaProjectionService'
 import type { IAttributeRepository } from '../../../src/domain/repositories/IAttributeRepository'
 import type { IAttributeTypeRepository } from '../../../src/domain/repositories/IAttributeTypeRepository'
@@ -45,14 +45,14 @@ describe('TableSchemaProjectionService', () => {
     ]
 
     const tableRepository = {
-      findById: mock(async () => table),
-      findByIdentifier: mock(async () => null),
+      findById: vi.fn(async () => table),
+      findByIdentifier: vi.fn(async () => null),
     } as unknown as ITableRepository
     const attributeRepository = {
-      findByTableId: mock(async () => createPaginatedResult(attributes)),
+      findByTableId: vi.fn(async () => createPaginatedResult(attributes)),
     } as unknown as IAttributeRepository
     const attributeTypeRepository = {
-      findByIds: mock(async () => [statusType, priorityType]),
+      findByIds: vi.fn(async () => [statusType, priorityType]),
     } as unknown as IAttributeTypeRepository
     const service = new TableSchemaProjectionService(
       tableRepository,
@@ -98,14 +98,14 @@ describe('TableSchemaProjectionService', () => {
   it('projects by table identifier when tableId is not provided', async () => {
     const table = createTestTable('table_tasks', 'project_tasks', 'Project task table')
     const tableRepository = {
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => table),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => table),
     } as unknown as ITableRepository
     const attributeRepository = {
-      findByTableId: mock(async () => createPaginatedResult([])),
+      findByTableId: vi.fn(async () => createPaginatedResult([])),
     } as unknown as IAttributeRepository
     const attributeTypeRepository = {
-      findByIds: mock(async () => []),
+      findByIds: vi.fn(async () => []),
     } as unknown as IAttributeTypeRepository
     const service = new TableSchemaProjectionService(tableRepository, attributeRepository, attributeTypeRepository)
 
@@ -144,17 +144,17 @@ describe('TableSchemaProjectionService', () => {
       new Date('2026-04-15T00:00:00.000Z'),
     ))
     const tableRepository = {
-      findById: mock(async () => table),
-      findByIdentifier: mock(async () => null),
+      findById: vi.fn(async () => table),
+      findByIdentifier: vi.fn(async () => null),
     } as unknown as ITableRepository
     const attributeRepository = {
-      findByTableId: mock(async (_tableId: string, options: { limit: number; offset: number }) => {
+      findByTableId: vi.fn(async (_tableId: string, options: { limit: number; offset: number }) => {
         const page = attributes.slice(options.offset, options.offset + options.limit)
         return { ...createPaginatedResult(page), total: attributes.length, totalCount: attributes.length }
       }),
     } as unknown as IAttributeRepository
     const attributeTypeRepository = {
-      findByIds: mock(async () => [attributeType]),
+      findByIds: vi.fn(async () => [attributeType]),
     } as unknown as IAttributeTypeRepository
     const service = new TableSchemaProjectionService(tableRepository, attributeRepository, attributeTypeRepository)
 
@@ -173,17 +173,17 @@ describe('TableSchemaProjectionService', () => {
     let releaseTable: (() => void) | undefined
     const tableBarrier = new Promise<void>((resolve) => { releaseTable = resolve })
     const tableRepository = {
-      findById: mock(async () => {
+      findById: vi.fn(async () => {
         await tableBarrier
         return table
       }),
-      findByIdentifier: mock(async () => null),
+      findByIdentifier: vi.fn(async () => null),
     } as unknown as ITableRepository
     const attributeRepository = {
-      findByTableId: mock(async () => createPaginatedResult([])),
+      findByTableId: vi.fn(async () => createPaginatedResult([])),
     } as unknown as IAttributeRepository
     const attributeTypeRepository = {
-      findByIds: mock(async () => []),
+      findByIds: vi.fn(async () => []),
     } as unknown as IAttributeTypeRepository
     const service = new TableSchemaProjectionService(tableRepository, attributeRepository, attributeTypeRepository)
 

@@ -4,7 +4,7 @@
  * ENFORCES file-based SQLite for enhanced test isolation and migration compatibility
  */
 
-import type { Database } from 'bun:sqlite'
+import type { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { TestDatabase } from './system-queries/test-database-setup'
 
 // Local type definitions (previously from migration-tools)

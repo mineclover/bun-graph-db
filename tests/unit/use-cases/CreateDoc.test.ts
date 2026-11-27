@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type CreateDocInput, CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
 import { Doc, DocCategory } from '@/domain/entities/Doc.js'
 import type { IDocRepository } from '@/domain/repositories/IDocRepository.js'
@@ -23,41 +23,41 @@ type TableRepositoryMock = MockedMethods<ITableRepository>
 
 function createDocRepositoryMock(): DocRepositoryMock {
   return {
-    save: mock(async (_doc: Doc) => {}),
-    findById: mock(async (_id: string) => null),
-    findAll: mock(async (_options: unknown) => createPaginatedResult<Doc>()),
-    delete: mock(async (_id: string) => {}),
-    findByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => []),
-    findActiveByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => null),
-    findVersionsByTableAndCategory: mock(async (_tableId: string, _category: DocCategory) => []),
-    searchDocs: mock(async (_options: unknown) => createPaginatedResult<Doc>()),
-    getLatestVersion: mock(async (_tableId: string, _category: DocCategory) => 1),
-    deactivateOthersInCategory: mock(async (_tableId: string, _category: DocCategory, _exceptId?: string) => {}),
-    exists: mock(async (_tableId: string, _category: DocCategory, _version: number) => false),
-    count: mock(async (_tableId?: string) => 0),
-    countByCategory: mock(async (_category: DocCategory) => 0),
-    searchByContent: mock(
+    save: vi.fn(async (_doc: Doc) => {}),
+    findById: vi.fn(async (_id: string) => null),
+    findAll: vi.fn(async (_options: unknown) => createPaginatedResult<Doc>()),
+    delete: vi.fn(async (_id: string) => {}),
+    findByTableAndCategory: vi.fn(async (_tableId: string, _category: DocCategory) => []),
+    findActiveByTableAndCategory: vi.fn(async (_tableId: string, _category: DocCategory) => null),
+    findVersionsByTableAndCategory: vi.fn(async (_tableId: string, _category: DocCategory) => []),
+    searchDocs: vi.fn(async (_options: unknown) => createPaginatedResult<Doc>()),
+    getLatestVersion: vi.fn(async (_tableId: string, _category: DocCategory) => 1),
+    deactivateOthersInCategory: vi.fn(async (_tableId: string, _category: DocCategory, _exceptId?: string) => {}),
+    exists: vi.fn(async (_tableId: string, _category: DocCategory, _version: number) => false),
+    count: vi.fn(async (_tableId?: string) => 0),
+    countByCategory: vi.fn(async (_category: DocCategory) => 0),
+    searchByContent: vi.fn(
       async (_options: unknown, _pagination?: { limit?: number; offset?: number }) => createPaginatedResult<Doc>(),
     ),
-    saveMany: mock(async (_docs: Doc[]) => {}),
-    findByIds: mock(async (_ids: string[]) => []),
-    findByTableIds: mock(async (_tableIds: string[]) => []),
+    saveMany: vi.fn(async (_docs: Doc[]) => {}),
+    findByIds: vi.fn(async (_ids: string[]) => []),
+    findByTableIds: vi.fn(async (_tableIds: string[]) => []),
   } satisfies DocRepositoryMock
 }
 
 function createTableRepositoryMock(): TableRepositoryMock {
   return {
-    save: mock(async (table: ReturnType<typeof createTestTable>) => table),
-    findById: mock(async (_id: string) => createTestTable('table-1', 'test-table')),
-    findByIdentifier: mock(async (_identifier: string) => null),
-    findAll: mock(async (_options: unknown) => createPaginatedResult<ReturnType<typeof createTestTable>>()),
-    delete: mock(async (_id: string) => {}),
-    count: mock(async () => 0),
-    exists: mock(async (_identifier: string) => false),
-    saveMany: mock(async (_tables: ReturnType<typeof createTestTable>[]) => {}),
-    findByIds: mock(async (_ids: string[]) => []),
-    deleteMany: mock(async (_ids: string[]) => {}),
-    update: mock(async (table: ReturnType<typeof createTestTable>) => table),
+    save: vi.fn(async (table: ReturnType<typeof createTestTable>) => table),
+    findById: vi.fn(async (_id: string) => createTestTable('table-1', 'test-table')),
+    findByIdentifier: vi.fn(async (_identifier: string) => null),
+    findAll: vi.fn(async (_options: unknown) => createPaginatedResult<ReturnType<typeof createTestTable>>()),
+    delete: vi.fn(async (_id: string) => {}),
+    count: vi.fn(async () => 0),
+    exists: vi.fn(async (_identifier: string) => false),
+    saveMany: vi.fn(async (_tables: ReturnType<typeof createTestTable>[]) => {}),
+    findByIds: vi.fn(async (_ids: string[]) => []),
+    deleteMany: vi.fn(async (_ids: string[]) => {}),
+    update: vi.fn(async (table: ReturnType<typeof createTestTable>) => table),
   } satisfies TableRepositoryMock
 }
 
@@ -129,7 +129,7 @@ describe('CreateDocUseCase', () => {
         content: 'Test content',
       }
 
-      mockTableRepository.findById = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
       await expect(useCase.execute(input)).rejects.toThrow("Table with id 'nonexistent-table' not found")
@@ -146,7 +146,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Usage documentation', 1)
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -165,7 +165,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, 'Guide documentation', 2)
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -182,7 +182,7 @@ describe('CreateDocUseCase', () => {
         version: 1,
       }
 
-      mockDocRepository.exists = mock(async () => true)
+      mockDocRepository.exists = vi.fn(async () => true)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
@@ -202,7 +202,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.SPEC, 'Specification documentation', 1)
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       await useCase.execute(input)
 
@@ -221,7 +221,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'How to use this table')
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -240,7 +240,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, 'Step-by-step guide')
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -257,7 +257,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.EXAMPLE, 'Code examples')
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -274,7 +274,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.SPEC, 'Technical specification')
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -291,7 +291,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.GENERAL, 'General information')
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -308,7 +308,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.USAGE, 'Mapped category content')
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -327,7 +327,7 @@ describe('CreateDocUseCase', () => {
 
       const saveError = new Error('Database connection failed')
 
-      mockDocRepository.save = mock(async () => {
+      mockDocRepository.save = vi.fn(async () => {
         throw saveError
       })
 
@@ -342,7 +342,7 @@ describe('CreateDocUseCase', () => {
         content: 'Test content',
       }
 
-      mockDocRepository.findByTableAndCategory = mock(async () => []) // Empty array - no docs found
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => []) // Empty array - no docs found
 
       await expect(useCase.execute(input)).rejects.toThrow('Failed to retrieve saved doc')
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to create doc', expect.any(Object))
@@ -359,7 +359,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-123', 'table-1', DocCategory.USAGE, 'Logged content')
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       await useCase.execute(input)
 
@@ -393,7 +393,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, longContent)
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -411,7 +411,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.EXAMPLE, specialContent)
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 
@@ -429,7 +429,7 @@ describe('CreateDocUseCase', () => {
 
       const createdDoc = createTestDoc('doc-1', 'table-1', DocCategory.GUIDE, markdownContent)
 
-      mockDocRepository.findByTableAndCategory = mock(async () => [createdDoc])
+      mockDocRepository.findByTableAndCategory = vi.fn(async () => [createdDoc])
 
       const result = await useCase.execute(input)
 

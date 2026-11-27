@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { stronglyConnectedComponents } from '@/domain/services/graph/StronglyConnectedComponents.js'
 
 describe('stronglyConnectedComponents', () => {

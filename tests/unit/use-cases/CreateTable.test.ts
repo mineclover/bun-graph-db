@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CreateTableInput } from '@/application/dtos/TableDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
@@ -30,84 +30,84 @@ describe('CreateTableUseCase', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repositories
     mockTableRepository = {
-      save: mock(async (table: Table) => {
+      save: vi.fn(async (table: Table) => {
         // Return a properly constructed table using fromDatabase
         return Table.fromDatabase('table-1', table.identifier, table.description || null, new Date(), new Date())
       }),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      update: mock(async (table: Table) => table),
-      delete: mock(async () => {}),
-      findAll: mock(async () => emptyPage<Table>()),
-      count: mock(async () => 0),
-      exists: mock(async () => false),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      deleteMany: mock(async () => {}),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      update: vi.fn(async (table: Table) => table),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => emptyPage<Table>()),
+      count: vi.fn(async () => 0),
+      exists: vi.fn(async () => false),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      deleteMany: vi.fn(async () => {}),
     }
 
     mockQueryTemplateRepository = {
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      search: mock(async () => ({
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      search: vi.fn(async () => ({
         items: [],
         total: 0,
         hasNextPage: false,
         hasPreviousPage: false,
       })),
-      searchByQueryName: mock(async () => []),
-      searchByOperationType: mock(async () => []),
-      findByApplicableTable: mock(async () => []),
-      findTemplatesWithTableDependencies: mock(async () => []),
-      create: mock(async (template: QueryTemplate) => template),
-      update: mock(async () => {
+      searchByQueryName: vi.fn(async () => []),
+      searchByOperationType: vi.fn(async () => []),
+      findByApplicableTable: vi.fn(async () => []),
+      findTemplatesWithTableDependencies: vi.fn(async () => []),
+      create: vi.fn(async (template: QueryTemplate) => template),
+      update: vi.fn(async () => {
         throw new Error('Not implemented in test')
       }),
-      deleteById: mock(async () => true),
-      incrementUsage: mock(async () => {}),
-      updateExecutionStats: mock(async () => {}),
-      findPopular: mock(async () => []),
-      updateStatus: mock(async () => {
+      deleteById: vi.fn(async () => true),
+      incrementUsage: vi.fn(async () => {}),
+      updateExecutionStats: vi.fn(async () => {}),
+      findPopular: vi.fn(async () => []),
+      updateStatus: vi.fn(async () => {
         throw new Error('Not implemented in test')
       }),
     }
 
     mockAttributeRepository = {
       // IFullRepository methods
-      save: mock(async (attr: Attribute) => attr),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => emptyPage<Attribute>()),
-      delete: mock(async () => {}),
-      count: mock(async () => 0),
-      exists: mock(async () => false),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      update: mock(async () => {
+      save: vi.fn(async (attr: Attribute) => attr),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      findAll: vi.fn(async () => emptyPage<Attribute>()),
+      delete: vi.fn(async () => {}),
+      count: vi.fn(async () => 0),
+      exists: vi.fn(async () => false),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      update: vi.fn(async () => {
         throw new Error('Not implemented in test')
       }),
-      deleteMany: mock(async () => {}),
+      deleteMany: vi.fn(async () => {}),
       // ITableScopedRepository methods
-      findByParentId: mock(async () => emptyPage<Attribute>()),
-      countByParentId: mock(async () => 0),
-      deleteByParentId: mock(async () => {}),
+      findByParentId: vi.fn(async () => emptyPage<Attribute>()),
+      countByParentId: vi.fn(async () => 0),
+      deleteByParentId: vi.fn(async () => {}),
       // Attribute-specific methods
-      findByTableId: mock(async () => emptyPage<Attribute>()),
-      countByTableId: mock(async () => 0),
-      deleteByTableId: mock(async () => {}),
-      findByTableIdAndIdentifier: mock(async () => null),
-      findByAttributeTypeId: mock(async () => emptyPage<Attribute>()),
-      findRequiredByTableId: mock(async () => []),
-      getAttributeTypeForAttribute: mock(async () => null),
-      existsByTableIdAndIdentifier: mock(async () => false),
+      findByTableId: vi.fn(async () => emptyPage<Attribute>()),
+      countByTableId: vi.fn(async () => 0),
+      deleteByTableId: vi.fn(async () => {}),
+      findByTableIdAndIdentifier: vi.fn(async () => null),
+      findByAttributeTypeId: vi.fn(async () => emptyPage<Attribute>()),
+      findRequiredByTableId: vi.fn(async () => []),
+      getAttributeTypeForAttribute: vi.fn(async () => null),
+      existsByTableIdAndIdentifier: vi.fn(async () => false),
     }
 
     useCase = new CreateTableUseCase(
@@ -169,7 +169,7 @@ describe('CreateTableUseCase', () => {
 
       const existingTable = Table.fromDatabase('table-1', 'existing-table', 'Existing Table', new Date(), new Date())
 
-      mockTableRepository.findByIdentifier = mock(async () => existingTable)
+      mockTableRepository.findByIdentifier = vi.fn(async () => existingTable)
 
       await expect(useCase.execute(input)).rejects.toThrow(ConflictException)
       await expect(useCase.execute(input)).rejects.toThrow("Table with identifier 'existing-table' already exists")
@@ -182,7 +182,7 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       const result = await useCase.execute(input)
 
@@ -198,7 +198,7 @@ describe('CreateTableUseCase', () => {
         description: 'Test Table Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       const result = await useCase.execute(input)
 
@@ -216,7 +216,7 @@ describe('CreateTableUseCase', () => {
         identifier: 'test-table',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       const result = await useCase.execute(input)
 
@@ -231,7 +231,7 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       await useCase.execute(input)
 
@@ -252,7 +252,7 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       const result = await useCase.execute(input)
 
@@ -269,8 +269,8 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
-      mockQueryTemplateRepository.create = mock(async () => {
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
+      mockQueryTemplateRepository.create = vi.fn(async () => {
         throw new Error('Template generation failed')
       })
 
@@ -293,8 +293,8 @@ describe('CreateTableUseCase', () => {
 
       const saveError = new Error('Database connection failed')
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
-      mockTableRepository.save = mock(async () => {
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
+      mockTableRepository.save = vi.fn(async () => {
         throw saveError
       })
 
@@ -311,8 +311,8 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
-      mockTableRepository.save = mock(async () => {
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
+      mockTableRepository.save = vi.fn(async () => {
         throw 'String error'
       })
 
@@ -331,7 +331,7 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       await useCase.execute(input)
 
@@ -345,7 +345,7 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       await useCase.execute(input)
 
@@ -366,7 +366,7 @@ describe('CreateTableUseCase', () => {
         description: 'Test Description',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       // Table entity validation should reject dots in identifier
       await expect(useCase.execute(input)).rejects.toThrow()
@@ -379,7 +379,7 @@ describe('CreateTableUseCase', () => {
         description: longDescription,
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       const result = await useCase.execute(input)
 
@@ -393,7 +393,7 @@ describe('CreateTableUseCase', () => {
         description: '',
       }
 
-      mockTableRepository.findByIdentifier = mock(async () => null)
+      mockTableRepository.findByIdentifier = vi.fn(async () => null)
 
       const result = await useCase.execute(input)
 

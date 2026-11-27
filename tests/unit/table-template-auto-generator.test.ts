@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { describe, expect, test, vi } from 'vitest'
 import { TableTemplateAutoGenerator } from '@/application/services/TableTemplateAutoGenerator.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
@@ -19,10 +19,10 @@ function emptyPage<T>(data: T[] = []) {
 
 function createLogger() {
   return {
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    debug: mock(() => {}),
+    info: vi.fn(() => {}),
+    warn: vi.fn(() => {}),
+    error: vi.fn(() => {}),
+    debug: vi.fn(() => {}),
   }
 }
 
@@ -56,18 +56,18 @@ describe('TableTemplateAutoGenerator', () => {
     )
     const generator = new TableTemplateAutoGenerator(
       {
-        search: mock(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
-        create: mock(async (template) => template),
-        update: mock(async (_id, _updates) => {
+        search: vi.fn(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
+        create: vi.fn(async (template) => template),
+        update: vi.fn(async (_id, _updates) => {
           throw new Error('update should not be called')
         }),
       } as unknown as IQueryTemplateRepository,
       {
-        findByTableId: mock(async () => emptyPage([attribute])),
+        findByTableId: vi.fn(async () => emptyPage([attribute])),
       } as unknown as IAttributeRepository,
       createLogger(),
       {
-        findByIds: mock(async () => [attributeType]),
+        findByIds: vi.fn(async () => [attributeType]),
       } as unknown as IAttributeTypeRepository,
     )
 
@@ -81,7 +81,7 @@ describe('TableTemplateAutoGenerator', () => {
   })
 
   test('marks generated table templates stale through template metadata', async () => {
-    const update = mock(async (_id: string, updates: { tags?: string[] }) => ({
+    const update = vi.fn(async (_id: string, updates: { tags?: string[] }) => ({
       getTags: () => updates.tags ?? [],
     }) as unknown as QueryTemplate)
     const staleTemplate = {
@@ -90,7 +90,7 @@ describe('TableTemplateAutoGenerator', () => {
     } as unknown as QueryTemplate
     const generator = new TableTemplateAutoGenerator(
       {
-        search: mock(async () => ({
+        search: vi.fn(async () => ({
           items: [staleTemplate],
           total: 1,
           hasNextPage: false,

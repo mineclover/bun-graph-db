@@ -15,7 +15,7 @@
  * - Security headers and CORS
  */
 
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
 import { DatabaseCleaner } from '../fixtures/database-cleaner'

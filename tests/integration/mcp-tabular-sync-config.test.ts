@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { getExpectedRootMcpToolCount, getExpectedRootMcpToolNames } from '../fixtures/mcp-tool-registry'
 import { createIntegrationConfig, McpHelper, withAutoServer } from '../fixtures/unified-test-environment'
 

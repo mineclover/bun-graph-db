@@ -2,6 +2,8 @@ import type { AttributeId, AttributeTypeId, TableId } from '@/core/types/CommonT
 import { DomainException } from '@/shared/exceptions/DomainException.js'
 
 export class Attribute {
+  private readonly isRequired: boolean
+
   constructor(
     private readonly id: AttributeId,
     private readonly tableId: TableId,
@@ -9,11 +11,12 @@ export class Attribute {
     private readonly name: string | null,
     private readonly attributeTypeId: AttributeTypeId,
     private readonly description: string | null,
-    private readonly isRequired: boolean,
+    isRequired: boolean,
     private readonly metadata: string | null,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
   ) {
+    this.isRequired = Boolean(isRequired)
     this.validateIdentifier(identifier)
     this.validateMetadata()
   }
@@ -34,7 +37,7 @@ export class Attribute {
       name || null,
       attributeTypeId,
       description || null,
-      isRequired,
+      Boolean(isRequired),
       metadata || null,
       new Date(),
       new Date(),
@@ -48,7 +51,7 @@ export class Attribute {
     name: string | null,
     attributeTypeId: string,
     description: string | null,
-    isRequired: boolean,
+    isRequired: boolean | number,
     metadata: string | null,
     createdAt: Date,
     updatedAt: Date,
@@ -60,7 +63,7 @@ export class Attribute {
       name,
       attributeTypeId as AttributeTypeId,
       description,
-      isRequired,
+      Boolean(isRequired),
       metadata,
       createdAt,
       updatedAt,

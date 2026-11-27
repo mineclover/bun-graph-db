@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
@@ -76,7 +76,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 if (import.meta.main) {
-  const audit = auditCanonicalDocuments(resolve(import.meta.dir, '..'))
+  const audit = auditCanonicalDocuments(resolve(import.meta.dirname, '..'))
   for (const issue of audit.issues) console.error(issue)
   console.log(`Canonical docs: ${audit.checked} checked; ${audit.issues.length} issues`)
   if (audit.issues.length > 0) process.exitCode = 1

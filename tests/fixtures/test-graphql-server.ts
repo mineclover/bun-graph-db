@@ -3,9 +3,9 @@
  * Starts isolated GraphQL server with test database for each test suite
  */
 
-import type { GraphQLExecutionResult, GraphQLVariables } from '../../src/core/types/GraphQLTypes.js'
-import { spawn } from 'bun'
+import { spawn } from 'node:child_process'
 import { createServer } from 'node:net'
+import type { GraphQLExecutionResult, GraphQLVariables } from '../../src/core/types/GraphQLTypes.js'
 import { createTestEnvironment, type TestEnvironment } from './test-database-factory'
 
 export interface TestGraphQLServer {
@@ -46,32 +46,42 @@ export async function startServerForSuite(suiteName: string): Promise<TestGraphQ
   const url = `http://localhost:${port}/graphql`
 
   // Start server with custom database path
-  const serverProcess = spawn(['bun', 'run', 'index.ts'], {
+  const serverProcess = spawn(process.execPath, ['--import', 'tsx', 'index.ts'], {
     env: {
       ...process.env,
       GRAPHQL_PORT: port.toString(),
       DATABASE_PATH: database.databasePath,
       NODE_ENV: 'test',
     },
-    stdout: 'pipe',
-    stderr: 'pipe',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  })
+
+  let stdout = ''
+  let stderr = ''
+  serverProcess.stdout?.setEncoding('utf8')
+  serverProcess.stderr?.setEncoding('utf8')
+  serverProcess.stdout?.on('data', (chunk: string) => {
+    stdout += chunk
+  })
+  serverProcess.stderr?.on('data', (chunk: string) => {
+    stderr += chunk
+  })
+
+  const exitedPromise = new Promise<void>((resolveExit) => {
+    serverProcess.once('close', () => resolveExit())
   })
 
   // Wait for server to be ready
   try {
     await waitForServer(url, 60000) // 60 second timeout for long serial test lanes
   } catch (error) {
-    // Capture server output for debugging
-    const stdout = await new Response(serverProcess.stdout).text()
-    const stderr = await new Response(serverProcess.stderr).text()
-
     console.error('❌ Server failed to start:')
     console.error('STDOUT:', stdout)
     console.error('STDERR:', stderr)
 
     // Kill server process
     serverProcess.kill()
-    await serverProcess.exited
+    await exitedPromise
 
     throw error
   }
@@ -83,7 +93,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestGraphQ
     cleanup: async () => {
       // Kill server process
       serverProcess.kill()
-      await serverProcess.exited
+      await exitedPromise
 
       // Cleanup database
       await database.cleanup()

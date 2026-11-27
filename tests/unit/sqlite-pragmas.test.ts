@@ -1,5 +1,5 @@
-import { afterEach, describe, expect, test } from 'bun:test'
-import { Database } from 'bun:sqlite'
+import { afterEach, describe, expect, test } from 'vitest'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -23,17 +23,23 @@ describe('SQLite runtime pragmas', () => {
       busyTimeoutMs: 30_000,
       synchronous: 'NORMAL',
       cacheSizeKiB: 32 * 1024,
+      tempStore: 'MEMORY',
+      mmapSizeBytes: 64 * 1024 * 1024,
     })
     expect(readSqliteRuntimeOptions({
       DB_ENABLE_WAL: 'false',
       DATABASE_TIMEOUT: '-1',
       DB_SYNCHRONOUS: 'full',
       DB_CACHE_SIZE_KIB: '4096',
+      DB_TEMP_STORE: 'file',
+      DB_MMAP_SIZE_BYTES: '16777216',
     })).toEqual({
       enableWal: false,
       busyTimeoutMs: 30_000,
       synchronous: 'FULL',
       cacheSizeKiB: 4096,
+      tempStore: 'FILE',
+      mmapSizeBytes: 16_777_216,
     })
   })
 
@@ -49,6 +55,8 @@ describe('SQLite runtime pragmas', () => {
       busyTimeoutMs: 4321,
       synchronous: 'NORMAL',
       cacheSizeKiB: 2048,
+      tempStore: 'MEMORY',
+      mmapSizeBytes: 16_777_216,
     })
 
     expect(database.query<{ journal_mode: string }, []>('PRAGMA journal_mode').get()?.journal_mode).toBe('wal')
@@ -56,6 +64,8 @@ describe('SQLite runtime pragmas', () => {
     expect(database.query<{ synchronous: number }, []>('PRAGMA synchronous').get()?.synchronous).toBe(1)
     expect(database.query<{ cache_size: number }, []>('PRAGMA cache_size').get()?.cache_size).toBe(-2048)
     expect(database.query<{ foreign_keys: number }, []>('PRAGMA foreign_keys').get()?.foreign_keys).toBe(1)
+    expect(database.query<{ temp_store: number }, []>('PRAGMA temp_store').get()?.temp_store).toBe(2)
+    expect(database.query<{ mmap_size: number }, []>('PRAGMA mmap_size').get()?.mmap_size).toBe(16_777_216)
   })
 
   test('actively leaves persistent WAL mode when it is disabled', () => {

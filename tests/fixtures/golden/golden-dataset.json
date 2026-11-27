@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "bun-graph-db.golden-dataset.v1",
+  "description": "Deterministic canonical multi-table golden dataset covering GraphQL CRUD, typed EAV SchemaGate, FTS5, numeric pushdown, persistent Float32 embeddings, 4-signal hybrid search, BFS/Dijkstra/SCC/PageRank, Tree & DAG hierarchy, Docs, Templates, REST parity, MCP 2026-07-28 / 2025-11-25 LTS, and AccessControl.",
+  "tables": [
+    {
+      "key": "org_hierarchy",
+      "identifier": "golden_org_hierarchy",
+      "description": "Strict 8-node organizational tree for hierarchy and LCA verification",
+      "attributes": [
+        { "key": "tier", "identifier": "tier", "name": "Org Tier", "typeIdentifier": "integer", "isRequired": true },
+        { "key": "headcount", "identifier": "headcount", "name": "Headcount", "typeIdentifier": "integer", "isRequired": false },
+        { "key": "active", "identifier": "active", "name": "Active", "typeIdentifier": "boolean", "isRequired": false },
+        { "key": "founded", "identifier": "founded", "name": "Founded Date", "typeIdentifier": "date", "isRequired": false },
+        { "key": "budget_m", "identifier": "budget_m", "name": "Budget M", "typeIdentifier": "number", "isRequired": false }
+      ],
+      "nodes": [
+        { "key": "ceo", "title": "CEO Office", "content": "Chief Executive Officer", "attributes": { "tier": "1", "headcount": "4", "active": "true", "founded": "2020-01-15", "budget_m": "12.5" } },
+        { "key": "eng", "title": "Engineering", "content": "Engineering Division", "attributes": { "tier": "2", "headcount": "28", "active": "true", "founded": "2020-03-01", "budget_m": "8.2" } },
+        { "key": "product", "title": "Product", "content": "Product Management", "attributes": { "tier": "2", "headcount": "10", "active": "true", "founded": "2020-04-01", "budget_m": "3.1" } },
+        { "key": "platform", "title": "Platform", "content": "Platform Infrastructure", "attributes": { "tier": "3", "headcount": "14", "active": "true", "founded": "2021-02-10", "budget_m": "4.5" } },
+        { "key": "ai", "title": "AI Search", "content": "AI Search Team", "attributes": { "tier": "3", "headcount": "9", "active": "true", "founded": "2022-06-01", "budget_m": "3.7" } },
+        { "key": "storage", "title": "Storage Core", "content": "SQLite Storage Core", "attributes": { "tier": "4", "headcount": "6", "active": "true", "founded": "2023-01-20", "budget_m": "2.2" } },
+        { "key": "runtime", "title": "Worker Runtime", "content": "Node 26 Worker Runtime", "attributes": { "tier": "4", "headcount": "5", "active": "true", "founded": "2024-05-12", "budget_m": "1.9" } },
+        { "key": "design", "title": "Design Studio", "content": "UX Design Studio", "attributes": { "tier": "3", "headcount": "6", "active": "false", "founded": "2021-09-01", "budget_m": "1.4" } }
+      ],
+      "relations": [
+        { "source": "ceo", "target": "eng", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "ceo", "target": "product", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "eng", "target": "platform", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "eng", "target": "ai", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "platform", "target": "storage", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "platform", "target": "runtime", "relationType": "parentOf", "strength": 3, "confidence": 4 },
+        { "source": "product", "target": "design", "relationType": "parentOf", "strength": 4, "confidence": 3 }
+      ],
+      "docs": []
+    },
+    {
+      "key": "knowledge_docs",
+      "identifier": "golden_knowledge_docs",
+      "description": "Knowledge graph with FTS5 text, numeric attributes, 8D embeddings, weighted diamond path, 3-node SCC cycle, and island node",
+      "attributes": [
+        { "key": "priority", "identifier": "priority", "name": "Priority Score", "typeIdentifier": "integer", "isRequired": true },
+        { "key": "rating", "identifier": "rating", "name": "Quality Rating", "typeIdentifier": "number", "isRequired": false },
+        { "key": "category", "identifier": "category", "name": "Category", "typeIdentifier": "string", "isRequired": true },
+        { "key": "published", "identifier": "published", "name": "Published", "typeIdentifier": "boolean", "isRequired": false },
+        { "key": "updated_on", "identifier": "updated_on", "name": "Updated Date", "typeIdentifier": "date", "isRequired": false }
+      ],
+      "nodes": [
+        {
+          "key": "doc_bfs",
+          "title": "Bidirectional BFS Guide",
+          "content": "Level-order breadth first bidirectional graph traversal engine",
+          "attributes": { "priority": "95", "rating": "4.9", "category": "graph", "published": "true", "updated_on": "2026-11-20" },
+          "embedding": [1, 0, 0, 0, 0, 0, 0, 0],
+          "model": "golden-8d"
+        },
+        {
+          "key": "doc_dijkstra",
+          "title": "Weighted Dijkstra Pathfinding",
+          "content": "Strength and confidence weighted shortest path dijkstra optimizer",
+          "attributes": { "priority": "88", "rating": "4.7", "category": "graph", "published": "true", "updated_on": "2026-11-21" },
+          "embedding": [0.8, 0.6, 0, 0, 0, 0, 0, 0],
+          "model": "golden-8d"
+        },
+        {
+          "key": "doc_edge_do",
+          "title": "Cloudflare DO SQLite Adapter",
+          "content": "Durable Object SQLite adapter with bind parameter chunking",
+          "attributes": { "priority": "80", "rating": "4.6", "category": "edge", "published": "true", "updated_on": "2026-11-22" },
+          "embedding": [0, 0, 1, 0, 0, 0, 0, 0],
+          "model": "golden-8d"
+        },
+        {
+          "key": "doc_mcp_spec",
+          "title": "MCP 2026-07-28 Spec",
+          "content": "Stateless MCP 2026-07-28 and 2025-11-25 LTS tool protocol",
+          "attributes": { "priority": "92", "rating": "4.8", "category": "mcp", "published": "true", "updated_on": "2026-11-27" },
+          "embedding": [0, 0, 0, 1, 0, 0, 0, 0],
+          "model": "golden-8d"
+        },
+        {
+          "key": "doc_scc_a",
+          "title": "Cycle Node Alpha",
+          "content": "Strongly connected component feedback loop alpha",
+          "attributes": { "priority": "40", "rating": "3.5", "category": "graph", "published": "true", "updated_on": "2026-11-10" },
+          "embedding": [0, 0, 0, 0, 1, 0, 0, 0],
+          "model": "golden-8d"
+        },
+        {
+          "key": "doc_scc_b",
+          "title": "Cycle Node Beta",
+          "content": "Strongly connected component feedback loop beta",
+          "attributes": { "priority": "35", "rating": "3.4", "category": "graph", "published": "true", "updated_on": "2026-11-11" },
+          "embedding": [0, 0, 0, 0, 0, 1, 0, 0],
+          "model": "golden-8d"
+        },
+        {
+          "key": "doc_scc_c",
+          "title": "Cycle Node Gamma",
+          "content": "Strongly connected component feedback loop gamma",
+          "attributes": { "priority": "30", "rating": "3.3", "category": "graph", "published": "false", "updated_on": "2026-11-12" },
+          "embedding": [0, 0, 0, 0, 0, 0, 1, 0],
+          "model": "golden-8d"
+        },
+        {
+          "key": "doc_island",
+          "title": "Isolated Reference Note",
+          "content": "Standalone orphan reference document without edges",
+          "attributes": { "priority": "10", "rating": "2.0", "category": "edge", "published": "false", "updated_on": "2026-11-01" },
+          "embedding": [0, 0, 0, 0, 0, 0, 0, 1],
+          "model": "golden-8d"
+        }
+      ],
+      "relations": [
+        { "source": "doc_bfs", "target": "doc_dijkstra", "relationType": "dependsOn", "strength": 4, "confidence": 4 },
+        { "source": "doc_bfs", "target": "doc_edge_do", "relationType": "dependsOn", "strength": 1, "confidence": 1 },
+        { "source": "doc_edge_do", "target": "doc_dijkstra", "relationType": "dependsOn", "strength": 1, "confidence": 1 },
+        { "source": "doc_dijkstra", "target": "doc_mcp_spec", "relationType": "dependsOn", "strength": 4, "confidence": 4 },
+        { "source": "doc_scc_a", "target": "doc_scc_b", "relationType": "references", "strength": 3, "confidence": 3 },
+        { "source": "doc_scc_b", "target": "doc_scc_c", "relationType": "references", "strength": 3, "confidence": 3 },
+        { "source": "doc_scc_c", "target": "doc_scc_a", "relationType": "references", "strength": 3, "confidence": 3 }
+      ],
+      "docs": [
+        { "category": "usage", "content": "Golden Knowledge Usage v1", "version": 1, "activate": true },
+        { "category": "usage", "content": "Golden Knowledge Usage v2", "version": 2, "activate": true },
+        { "category": "spec", "content": "Golden Knowledge Spec v1", "version": 1, "activate": true }
+      ]
+    },
+    {
+      "key": "service_dag",
+      "identifier": "golden_service_dag",
+      "description": "5-node multi-parent service DAG verifying DAG vs TREE hierarchy mode semantics",
+      "attributes": [
+        { "key": "tier", "identifier": "tier", "name": "Service Tier", "typeIdentifier": "integer", "isRequired": true }
+      ],
+      "nodes": [
+        { "key": "gateway", "title": "API Gateway", "content": "Edge API Gateway", "attributes": { "tier": "1" } },
+        { "key": "auth", "title": "Auth Service", "content": "Token Auth Service", "attributes": { "tier": "2" } },
+        { "key": "search", "title": "Search Service", "content": "Hybrid Search Service", "attributes": { "tier": "2" } },
+        { "key": "db_core", "title": "Core Database", "content": "Primary SQLite Core Database", "attributes": { "tier": "3" } },
+        { "key": "cache", "title": "Edge Cache", "content": "Projection Edge Cache", "attributes": { "tier": "3" } }
+      ],
+      "relations": [
+        { "source": "gateway", "target": "auth", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "gateway", "target": "search", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "auth", "target": "db_core", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "search", "target": "db_core", "relationType": "parentOf", "strength": 4, "confidence": 4 },
+        { "source": "search", "target": "cache", "relationType": "parentOf", "strength": 3, "confidence": 4 }
+      ],
+      "docs": []
+    }
+  ],
+  "templates": [
+    {
+      "identifier": "golden-search-docs",
+      "name": "Golden Search Docs",
+      "description": "Search golden knowledge docs by keyword",
+      "tags": ["golden", "search"],
+      "query": "query GoldenSearchDocs($tableId: ID!, $search: String!) { searchNodes(filter: { tableId: $tableId, search: $search }) { totalCount nodes { id title content } } }"
+    },
+    {
+      "identifier": "golden-org-subtree",
+      "name": "Golden Org Subtree",
+      "description": "Fetch golden hierarchy subtree from rootNodeId",
+      "tags": ["golden", "hierarchy"],
+      "query": "query GoldenOrgSubtree($rootNodeId: ID!) { getSubtree(rootNodeId: $rootNodeId) { totalNodes leafCount entries { depth node { id content } } } }"
+    }
+  ]
+}

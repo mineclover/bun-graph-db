@@ -4,6 +4,7 @@
  * Handles database backup and restore operations
  */
 
+import { statSync } from 'node:fs'
 import type { GraphQLResolveInfo } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { BackupRetentionPolicy, SQLiteBackupOptions, SQLiteRestoreOptions } from '@/core/types/DatabaseBackup.js'
@@ -92,10 +93,9 @@ export class BackupMutations {
       // Calculate space freed
       let spaceFreed = 0
       try {
-        const fs = require('node:fs')
         for (const deletedPath of result.deletedBackups) {
           try {
-            const stats = fs.statSync(deletedPath)
+            const stats = statSync(deletedPath)
             spaceFreed += stats.size
           } catch (_error) {
             // File already deleted or inaccessible

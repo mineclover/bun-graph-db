@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { AccessControl, authorizeExternalRequest } from '../../src/application/security/AccessControl'
 
 function request(headers: HeadersInit = {}): Request {
@@ -494,5 +494,267 @@ describe('AccessControl', () => {
       resolver,
     )
     expect(otherNode).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
+
+  test('extracts hierarchy node arguments (rootNodeId, nodeIdA/B, newParentId) and gates moveHierarchyNode', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        readerAlpha: { id: 'reader-a', role: 'reader', tableIds: ['1'] },
+        writerAlpha: { id: 'writer-a', role: 'writer', tableIds: ['1'] },
+      }),
+    })
+    const resolver = {
+      resolveNodeTableId: async (nodeId: string) =>
+        nodeId === '10' || nodeId === '11' ? '1' : nodeId === '20' ? '2' : undefined,
+      resolveTableIdentity: async (ref: string) =>
+        ref === '1' ? { id: '1', identifier: 'alpha' } : ref === '2' ? { id: '2', identifier: 'beta' } : undefined,
+    }
+
+    const lcaSameTable = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer readerAlpha' },
+        body: JSON.stringify({
+          query: 'query { getLowestCommonAncestor(nodeIdA: "10", nodeIdB: "11") { found } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(lcaSameTable.allowed).toBe(true)
+
+    const lcaCrossTable = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer readerAlpha' },
+        body: JSON.stringify({
+          query: 'query { getLowestCommonAncestor(nodeIdA: "10", nodeIdB: "20") { found } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(lcaCrossTable).toEqual({ allowed: false, status: 404, code: 'not_found' })
+
+    const ownMove = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writerAlpha' },
+        body: JSON.stringify({
+          query: 'mutation { moveHierarchyNode(input: { nodeId: "11", newParentId: "10" }) { success } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(ownMove.allowed).toBe(true)
+
+    const crossParentMove = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writerAlpha' },
+        body: JSON.stringify({
+          query: 'mutation { moveHierarchyNode(input: { nodeId: "11", newParentId: "20" }) { success } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(crossParentMove).toEqual({ allowed: false, status: 404, code: 'not_found' })
+  })
+
+  test('allows anonymous /health and /api/health liveness while allowing GET /mcp for authenticated readers', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        reader: { id: 'ro', role: 'reader', tableIds: ['*'] },
+      }),
+    })
+
+    const rootHealth = await authorizeExternalRequest(control, new Request('http://localhost/health'))
+    const apiHealth = await authorizeExternalRequest(control, new Request('http://localhost/api/health'))
+    expect(rootHealth).toEqual({ allowed: true })
+    expect(apiHealth).toEqual({ allowed: true })
+
+    const unauthMcpGet = await authorizeExternalRequest(control, new Request('http://localhost/mcp'))
+    expect(unauthMcpGet).toEqual({ allowed: false, status: 401, code: 'authentication_required' })
+
+    const authMcpGet = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/mcp', { headers: { Authorization: 'Bearer reader' } }),
+    )
+    expect(authMcpGet).toEqual({
+      allowed: true,
+      principal: { id: 'ro', role: 'reader', tableIds: ['*'] },
+    })
+  })
+
+  test('fails closed on DELETE /api/relations/:id when resolveRelationTableId is omitted', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        writer: { id: 'writer-alpha', role: 'writer', tableIds: ['alpha'] },
+        admin: { id: 'admin-1', role: 'admin', tableIds: ['*'] },
+      }),
+    })
+
+    const writerDenied = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/api/relations/rel-1', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer writer' },
+      }),
+    )
+    expect(writerDenied).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+    const adminAllowed = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/api/relations/rel-1', {
+        method: 'DELETE',
+        headers: { Authorization: 'Bearer admin' },
+      }),
+    )
+    expect(adminAllowed.allowed).toBe(true)
+  })
+
+  test('enforces tableDocumentation, GraphQL relation scoping, and admin-only sync/system queries', async () => {
+    const control = AccessControl.fromEnvironment({
+      NODE_ENV: 'production',
+      BUN_GRAPH_DB_ACCESS_TOKENS: JSON.stringify({
+        readerAlpha: { id: 'reader-alpha', role: 'reader', tableIds: ['alpha'] },
+        writerAlpha: { id: 'writer-alpha', role: 'writer', tableIds: ['alpha'] },
+        admin: { id: 'admin-1', role: 'admin', tableIds: ['*'] },
+      }),
+    })
+
+    const resolver = {
+      async resolveTableIdentity(tableRef: string) {
+        if (tableRef === 'alpha' || tableRef === 't-alpha') {
+          return { id: 't-alpha', identifier: 'alpha' }
+        }
+        if (tableRef === 'beta' || tableRef === 't-beta') {
+          return { id: 't-beta', identifier: 'beta' }
+        }
+        return null
+      },
+      async resolveRelationTableId(relationId: string) {
+        if (relationId === 'rel-alpha') return 'alpha'
+        if (relationId === 'rel-beta') return 'beta'
+        return null
+      },
+    }
+
+    const ownDoc = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer readerAlpha' },
+        body: JSON.stringify({
+          query: 'query { tableDocumentation(identifier: "t-alpha") { table { id } } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(ownDoc.allowed).toBe(true)
+
+    const crossDoc = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer readerAlpha' },
+        body: JSON.stringify({
+          query: 'query { tableDocumentation(tableId: "t-beta") { table { id } } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(crossDoc).toEqual({ allowed: false, status: 404, code: 'not_found' })
+
+    const ownRelationRead = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer readerAlpha' },
+        body: JSON.stringify({
+          query: 'query { nodeRelation(id: "rel-alpha") { id } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(ownRelationRead.allowed).toBe(true)
+
+    const crossRelationDelete = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writerAlpha' },
+        body: JSON.stringify({
+          query: 'mutation { deleteRelation(id: "rel-beta") { success } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(crossRelationDelete).toEqual({ allowed: false, status: 404, code: 'not_found' })
+
+    const failClosedDeleteWithoutResolver = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writerAlpha' },
+        body: JSON.stringify({
+          query: 'mutation { deleteRelation(id: "rel-alpha") { success } }',
+        }),
+      }),
+    )
+    expect(failClosedDeleteWithoutResolver).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+    const writerTabularStatus = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writerAlpha' },
+        body: JSON.stringify({
+          query: 'query { tabularSyncStatus(tableIdentifier: "alpha") { enabled } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(writerTabularStatus).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+    const writerSystemStats = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer writerAlpha' },
+        body: JSON.stringify({
+          query: 'query { systemStats { memory { used } } }',
+        }),
+      }),
+    )
+    expect(writerSystemStats).toEqual({ allowed: false, status: 403, code: 'forbidden' })
+
+    const adminTabularStatus = await authorizeExternalRequest(
+      control,
+      new Request('http://localhost/graphql', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer admin' },
+        body: JSON.stringify({
+          query: 'query { tabularSyncStatus(tableIdentifier: "alpha") { enabled } }',
+        }),
+      }),
+      undefined,
+      resolver,
+    )
+    expect(adminTabularStatus.allowed).toBe(true)
   })
 })

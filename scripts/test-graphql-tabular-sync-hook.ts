@@ -1,7 +1,8 @@
-import { Database } from 'bun:sqlite'
 import { mkdtempSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { Database } from '../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { createContainer, resetContainer } from '@/infrastructure/container/ContainerBootstrap.js'
 import { CommonTokens, GraphQLTokens, RepositoryTokens } from '@/infrastructure/container/tokens/index.js'
 import { setDatabasePath } from '@/config/database.js'
@@ -58,7 +59,7 @@ async function main() {
 
   const configDir = mkdtempSync(join(tmpdir(), 'bun-graph-db-hook-config-'))
   const configPath = join(configDir, 'tabular-sync.json')
-  await Bun.write(configPath, JSON.stringify(config, null, 2))
+  await writeFile(configPath, JSON.stringify(config, null, 2), 'utf8')
 
   const dbPath = initializeTempDatabase()
   process.env.TABULAR_SYNC_CONFIG_FILE = configPath

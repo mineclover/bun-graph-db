@@ -1,4 +1,5 @@
 // HTTP API Response Types for type safety
+import type { ColumnConfig } from '@/domain/value-objects/ColumnConfig.js'
 
 export interface ApiResponse<T = unknown> {
   success: boolean
@@ -22,8 +23,11 @@ export interface SystemStatsData {
   }
   process: {
     pid: number
-    cpu: NodeJS.CpuUsage
-    platform: NodeJS.Platform
+    cpu: {
+      user: number
+      system: number
+    }
+    platform: string
   }
 }
 
@@ -125,6 +129,10 @@ export interface AttributeData {
   identifier?: string
   name?: string
   attributeTypeId?: string
+  description?: string | null
+  isRequired?: boolean
+  metadata?: unknown
+  columnConfig?: ColumnConfig | null
 }
 
 export interface NodeAttributeData {

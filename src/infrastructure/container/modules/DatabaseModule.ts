@@ -1,8 +1,7 @@
-import { Database } from 'bun:sqlite'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { getDatabasePath } from '@/config/database.js'
+import { EMBEDDED_INITIAL_SCHEMA_SQL } from '@/generated/embedded-assets.js'
 import { applyDatabaseMigrations, createDatabaseMigrations } from '@/infrastructure/database/sqlite/DatabaseMigrationRunner.js'
+import { Database } from '@/infrastructure/database/sqlite/SqliteAdapter.js'
 import { configureSqliteDatabase } from '@/infrastructure/database/sqlite/SqlitePragmas.js'
 import type { DIContainer } from '../DIContainer.js'
 import { DatabaseTokens } from '../tokens/index.js'
@@ -30,9 +29,7 @@ export function registerDatabaseModule(container: DIContainer): void {
 
       try {
         configureSqliteDatabase(database, config.url)
-        const schemaPath = join(process.cwd(), 'scripts', 'database', 'schema.sql')
-        const initialSchema = readFileSync(schemaPath, 'utf-8')
-        applyDatabaseMigrations(database, createDatabaseMigrations(initialSchema))
+        applyDatabaseMigrations(database, createDatabaseMigrations(EMBEDDED_INITIAL_SCHEMA_SQL))
       } catch (error) {
         database.close()
         throw new Error(`Database startup migration failed for '${config.url}'`, { cause: error })

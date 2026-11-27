@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { beforeEach, describe, expect, test } from 'vitest'
 import { EnhancedDependencyAnalyzer } from '@/domain/services/EnhancedDependencyAnalyzer.js'
 import { EnhancedTemplateGenerator } from '@/domain/services/EnhancedTemplateGenerator.js'
 import { SchemaIntrospectionService } from '@/domain/services/SchemaIntrospectionService.js'

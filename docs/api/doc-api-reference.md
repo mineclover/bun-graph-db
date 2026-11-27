@@ -665,7 +665,7 @@ function DocumentationViewer({ tableId, category }) {
 ```javascript
 const { GraphQLClient } = require('graphql-request')
 
-const client = new GraphQLClient('http://localhost:4000/graphql')
+const client = new GraphQLClient('http://localhost:4141/graphql')
 
 async function createDocumentation(tableId, category, content) {
   const mutation = `

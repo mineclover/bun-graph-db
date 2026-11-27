@@ -12,12 +12,15 @@ import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
 export interface AttributeUpdateData {
   identifier?: string
+  name?: string | null
   description?: string | null
   isRequired?: boolean
   defaultValue?: SafeJsonValue
+  metadata?: string | null
 }
 
 export interface TableAttributeTypeSummary {
+  id?: string
   identifier: string
   typeIdentifier: string
   jsonType: string

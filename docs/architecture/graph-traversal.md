@@ -2,30 +2,43 @@
 docType: reference
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-10-31"
+lastVerified: "2026-11-27"
 owner: "Bun Graph DB maintainers"
 sources:
   - src/domain/services/graph/BreadthFirstSearch.ts
+  - src/domain/services/graph/WeightedShortestPath.ts
+  - src/domain/services/graph/StronglyConnectedComponents.ts
+  - src/domain/services/graph/PageRank.ts
   - src/application/services/GraphTraversalService.ts
+  - src/application/services/GraphAnalyticsService.ts
   - src/presentation/graphql/field-resolvers/NodeFieldResolvers.ts
   - src/presentation/graphql/resolvers/NodeResolver.ts
+  - src/presentation/graphql/queries/RelationQueries.ts
+  - src/presentation/graphql/queries/EnhancedRelationQueries.ts
   - src/presentation/graphql/schema/types/node.graphql
+  - src/presentation/graphql/schema/queries/enhanced-relations-queries.graphql
   - src/infrastructure/database/sqlite/SqliteNodeRelationRepository.ts
-  - src/domain/services/graph/StronglyConnectedComponents.ts
+  - src/infrastructure/database/sqlite/SqliteGraphRepository.ts
 tests:
   - tests/unit/breadth-first-search.test.ts
+  - tests/unit/weighted-shortest-path.test.ts
   - tests/unit/node-field-resolvers-graph-traversal.test.ts
   - tests/unit/sqlite-graph-repository-traversal.test.ts
   - tests/unit/strongly-connected-components.test.ts
+  - tests/unit/page-rank.test.ts
+  - tests/unit/graph-traversal-p0-p2.test.ts
+  - tests/unit/use-case-scenarios-and-hierarchy.test.ts
+  - tests/unit/analytics-and-custom-sort-queries.test.ts
+  - tests/unit/cloudflare-do-sqlite-portability.test.ts
+  - tests/unit/node26-runtime-and-optimizations.test.ts
 ---
 
 # GraphQL 필드 탐색 계약과 계층 경계
 
-이 문서는 GraphQL `NodeFieldResolvers`와 legacy `NodeResolver`가 공유하는
-`connectedNodes`와 `shortestPath` 경계를 설명한다.
-REST 경로, SQL recursive CTE, `RelationQueries`는 별도 구현이며 같은 의미와 제한을 공유한다고
-가정하지 않는다. API 형태의 정본은
-[GraphQL SDL](../../src/presentation/graphql/schema/types/node.graphql)이다.
+이 문서는 `NodeFieldResolvers`·`NodeResolver`·`RelationQueries`·`EnhancedRelationQueries`와 REST 그래프 엔드포인트(`/api/nodes/:nodeId/connected`, `/api/nodes/shortest-path`)가 사용하는 탐색·가중 최단 경로·분석 계약을 설명한다.
+API 형태의 정본은
+[Node SDL](../../src/presentation/graphql/schema/types/node.graphql)과
+[Enhanced Relations SDL](../../src/presentation/graphql/schema/queries/enhanced-relations-queries.graphql)이다.
 
 ## 책임 분리
 
@@ -73,9 +86,7 @@ node의 누락 처리, 여러 table에 걸친 탐색 범위는 별도 결정 없
 분기 계수 `b`, 깊이 `d` 그래프에서 탐색 공간을 `O(b^d)`에서 `O(b^(d/2))`로 줄이며, N-hop 거리 맵이 필요한
 하이브리드 검색(`connectedNodeDistances`)은 단방향 레벨 순서 `BreadthFirstSearch`를 사용한다.
 
-`findAdjacentByNodeIds` bulk 포트는 SQLite 관계 저장소에 적용되어 있으며, 복합 인덱스
-`idx_node_relations_src_type_dst`와 `idx_node_relations_dst_type_src` 위에서 `relation_type_id IN (...)`
-조건을 SQL 단계로 pushdown한다. bulk 메서드가 없는 저장소는 기존 per-node fallback을 사용한다. bulk 전환은 SQL round trip을 줄이지만 snapshot
+`findAdjacentByNodeIds` bulk 포트는 SQLite 관계 저장소에 적용되어 있으며, `BOTH` 방향 조회 시 `OR` 대신 `UNION` 인덱스 스캔으로 복합 인덱스 `idx_node_relations_src_type_dst`와 `idx_node_relations_dst_type_src` 위에서 `relation_type_id IN (...)` 조건을 SQL 단계로 pushdown한다. 하이브리드 검색의 그래프 신호 경로는 엣지 전체를 materialize하지 않는 경량 `findAdjacentEdgeTargetsByNodeIds`와 노드 존재 확인용 `findExistingIds`를 사용한다. bulk 메서드가 없는 저장소는 기존 per-node fallback을 사용한다. bulk 전환은 SQL round trip을 줄이지만 snapshot
 transaction이나 새로운 table scope 정책을 만들지 않으며, 기존 SQLite 일관성 범위를 따른다.
 GraphQL 로그에는 node batch 수, 요청/적재 node 수, adjacency batch 수, bulk/per-node 호출 수,
 적재 관계 수, 최대 frontier, elapsed time을 남긴다. 이 값은 응답 계약이 아니며 최적화 비교용
@@ -97,10 +108,30 @@ self-loop·parallel edge·cycle·동률·누락된 인접 목록은 별도 fixtu
 방향·타입 필터·명시적 depth 0·경계 최단 경로·1,001개 frontier의 batch·적재 순서를 검증한다.
 
 ```bash
-bun test tests/unit/breadth-first-search.test.ts \
+pnpm exec vitest run \
+  tests/unit/breadth-first-search.test.ts \
+  tests/unit/weighted-shortest-path.test.ts \
   tests/unit/node-field-resolvers-graph-traversal.test.ts \
   tests/unit/sqlite-graph-repository-traversal.test.ts \
-  tests/unit/strongly-connected-components.test.ts
+  tests/unit/strongly-connected-components.test.ts \
+  tests/unit/page-rank.test.ts \
+  tests/unit/graph-traversal-p0-p2.test.ts \
+  tests/unit/node26-runtime-and-optimizations.test.ts
 ```
+
+## 통합 루트 Query·REST·가중 경로·그래프 분석 계약 (P0–P2)
+
+- **루트 `Query` 탐색 통합 (P0)**:
+  - `Query.getConnectedNodes`는 `GraphTraversalService.connectedNodesWithDetails`와 bulk `resolveRelationTypeRefs`를 사용해 `depth <= 0`에서 빈 결과를 반환하고 N+1 조회 없이 `TableNode`와 `NodeRelation`을 완전 하이드레이션한다.
+  - `Query.getDependencyChain`과 `Query.findPathsBetweenNodes`는 `relationTypeIds` 인수에 숫자 ID와 문자열 `identifier`를 모두 허용하고 `findByIds`·bulk 인접 조회로 완전한 `TableNode`·`NodeRelation` DTO를 반환한다. `getDependencyChain`은 `OUTGOING`·`INCOMING`·`BOTH`와 명시적 `maxDepth`(최대 32)를 모두 지원한다. `findPathsBetweenNodes`는 directed `OUTGOING` 단순 경로 탐색을 수행한다.
+- **`SearchRelatedNodes`, REST 그래프 엔드포인트, 관계 품질 범위 일치 (P1)**:
+  - `SearchRelatedNodesUseCase`와 `SqliteGraphRepository.searchRelatedNodes`는 `sourceNodeIds` 지정 시 chunked BFS로 도달 가능한 노드 집합만 스코프에 포함한다.
+  - `BunApiRouter`는 `GET /api/nodes/:nodeId/connected`와 `POST /api/nodes/shortest-path`를 노출하며 `AccessControl`은 두 경로 모두 `reader` 권한과 노드 소속 테이블 스코프를 검사한다.
+  - `NodeRelation`과 `CreateRelationUseCase`는 SQLite `CHECK` 제약과 동일하게 `strength`·`confidence`를 `0..4` 정수로 검증·영속화한다.
+- **Dijkstra/Yen 가중 최단 경로 및 전체 그래프 분석 노출 (P2)**:
+  - `WeightedShortestPath`(`dijkstraShortestPath`, `kShortestWeightedPaths`)와 `GraphAnalyticsService` / `EnhancedRelationQueries`가 `relationAnalytics`, `findOptimalPath`, `getNodeConnectivity`, `analyzeRelationshipStrength`, `resolveExternalReferences`, `discoverRelationPatterns`, `getHighConfidenceRelations`, `stronglyConnectedComponents`, `pageRank` 9개 GraphQL 쿼리를 실제 데이터와 도메인 알고리즘 기반으로 제공한다.
+- **1급 계층 구조(Hierarchy Tree / DAG) 및 전체 SDL 완성**:
+  - [GraphHierarchyService](../../src/application/services/GraphHierarchyService.ts)와 [Hierarchy SDL](../../src/presentation/graphql/schema/queries/hierarchy-queries.graphql)이 `parentOf`(또는 임의의 계층 관계 타입) 기반 `getAncestors`, `getDescendants`, `getSubtree`, `getHierarchyRoots`, `getHierarchyLeaves`, `getLowestCommonAncestor`, `validateHierarchy`(`TREE`/`DAG`), 사이클 방지 `moveHierarchyNode`를 제공한다.
+  - 루트 리졸버에 `Query.relationTypeByIdentifier`, `Mutation.updateRelation`, `Mutation.bulkSetNodeAttributes`와 함께 속성 분석·커스텀 정렬·템플릿 성능 분석 12개 쿼리가 모두 연결되어 [실전 시나리오 통합 테스트](../../tests/unit/use-case-scenarios-and-hierarchy.test.ts), [분석·커스텀 정렬 테스트](../../tests/unit/analytics-and-custom-sort-queries.test.ts), [DO SQLite `<= 90`-바인드 포팅 테스트](../../tests/unit/cloudflare-do-sqlite-portability.test.ts)로 검증된다.
 
 문서·SDL·테스트의 변경 순서는 [문서 관리 정책](../development/DOCUMENTATION_POLICY.md)을 따른다.

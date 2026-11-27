@@ -5,7 +5,7 @@
  * for all SQL operations in the system
  */
 
-import { beforeAll, describe, expect, it } from 'bun:test'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadFilesSync } from '@graphql-tools/load-files'

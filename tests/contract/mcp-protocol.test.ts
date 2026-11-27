@@ -6,7 +6,7 @@
  * Expected: All tests FAIL initially (no implementation)
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { startServerForSuite, stopServerForSuite } from '../fixtures/test-server-manager'
 
 // MCP Protocol JSON-RPC 2.0 types

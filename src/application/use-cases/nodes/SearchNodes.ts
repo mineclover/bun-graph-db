@@ -157,6 +157,7 @@ export async function loadTableAttributeTypeInfo(
   if (typeof attributeRepository.findAttributeTypeInfoByTableId === 'function') {
     const summaries = await attributeRepository.findAttributeTypeInfoByTableId(tableId)
     return summaries.map((summary) => ({
+      id: summary.id,
       identifier: summary.identifier,
       dataType: resolveSearchDataType({
         getIdentifier: () => summary.typeIdentifier,
@@ -171,6 +172,7 @@ export async function loadTableAttributeTypeInfo(
     (attributes.data || []).map(async (attr) => {
       const attributeType = await attributeRepository.getAttributeTypeForAttribute(attr.getId())
       return {
+        id: attr.getId(),
         identifier: attr.getIdentifier(),
         dataType: resolveSearchDataType(attributeType),
       }

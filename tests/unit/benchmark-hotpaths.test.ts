@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import {
 	BENCHMARK_DATABASE_SCHEMA,
 	BENCHMARK_REPORT_SCHEMA,

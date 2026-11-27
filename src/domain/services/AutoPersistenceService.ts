@@ -9,9 +9,9 @@
 
 import { existsSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
-import { Database } from 'bun:sqlite'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { getDatabasePath } from '@/config/database.js'
+import { Database } from '@/infrastructure/database/sqlite/SqliteAdapter.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import type { JsonlBackupService } from './JsonlBackupService.js'
 
@@ -40,7 +40,7 @@ const DEFAULT_CONFIG: AutoPersistenceConfig = {
 
 export class AutoPersistenceService {
   private config: AutoPersistenceConfig
-  private saveTimeout: Timer | null = null
+  private saveTimeout: ReturnType<typeof setTimeout> | null = null
   private isDirty = false
   private dirtyGeneration = 0
   private persistedGeneration = 0
@@ -316,7 +316,7 @@ export class AutoPersistenceService {
     let db: Database | null = null
 
     try {
-      db = new Database(dbPath)
+      db = new Database(dbPath, { readonly: true })
       const tablesTable = db
         .query<{ name: string }, []>("SELECT name FROM sqlite_master WHERE type='table' AND name='tables'")
         .get()

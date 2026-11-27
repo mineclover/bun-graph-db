@@ -3,7 +3,7 @@
  * Integration tests with isolated GraphQL server for system queries
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'system-queries-integration'

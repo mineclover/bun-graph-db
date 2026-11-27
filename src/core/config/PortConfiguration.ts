@@ -2,7 +2,7 @@
  * Port Configuration Management for Bun Graph DB
  *
  * Port Allocation Rules:
- * - HTTP/GraphQL Server: Base port (default: 4000)
+ * - HTTP/GraphQL Server: Base port (default: 4141)
  * - WebSocket Server: Base port (same as HTTP for GraphQL-Yoga integration)
  * - Development Range: 4000-4999
  * - Testing Range: 5000-5999
@@ -118,7 +118,7 @@ export function getWebSocketUrl(httpUrl: string): string {
 /**
  * Parse port from various input formats
  */
-export function parsePort(input: string | number | undefined, defaultPort: number = 4000): number {
+export function parsePort(input: string | number | undefined, defaultPort: number = DEFAULT_PORTS.development): number {
   if (typeof input === 'number') return input
   if (typeof input === 'string') {
     const parsed = parseInt(input, 10)

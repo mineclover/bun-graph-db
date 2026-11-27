@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { describe, expect, test, vi } from 'vitest'
 import { GetTableDocsUseCase } from '@/application/use-cases/tables/GetTableDocs.js'
 import { Attribute } from '@/domain/entities/Attribute.js'
 import { AttributeType } from '@/domain/entities/AttributeType.js'
@@ -24,10 +24,10 @@ function emptyPage<T>(data: T[] = []) {
 
 function createLogger() {
   return {
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    debug: mock(() => {}),
+    info: vi.fn(() => {}),
+    warn: vi.fn(() => {}),
+    error: vi.fn(() => {}),
+    debug: vi.fn(() => {}),
   }
 }
 
@@ -72,30 +72,30 @@ describe('table docs schema freshness', () => {
 
     const useCase = new GetTableDocsUseCase(
       {
-        findById: mock(async () => table),
-        findByIdentifier: mock(async () => table),
+        findById: vi.fn(async () => table),
+        findByIdentifier: vi.fn(async () => table),
       } as unknown as ITableRepository,
       {
-        findByTableId: mock(async () => emptyPage([attribute])),
+        findByTableId: vi.fn(async () => emptyPage([attribute])),
       } as unknown as IAttributeRepository,
       {
-        findById: mock(async () => attributeType),
-        findByIdentifier: mock(async () => null),
+        findById: vi.fn(async () => attributeType),
+        findByIdentifier: vi.fn(async () => null),
       } as unknown as IAttributeTypeRepository,
       {
-        findByTableId: mock(async () => emptyPage()),
-        countByTableId: mock(async () => 0),
+        findByTableId: vi.fn(async () => emptyPage()),
+        countByTableId: vi.fn(async () => 0),
       } as unknown as INodeRepository,
       {
-        findByNodeId: mock(async () => []),
+        findByNodeId: vi.fn(async () => []),
       } as unknown as INodeAttributeRepository,
       {
-        search: mock(async () => emptyTemplateSearch()),
-        findByApplicableTable: mock(async () => []),
+        search: vi.fn(async () => emptyTemplateSearch()),
+        findByApplicableTable: vi.fn(async () => []),
       } as unknown as IQueryTemplateRepository,
       {} as unknown as IRelationTypeRepository,
       {
-        findByTableIds: mock(async () => []),
+        findByTableIds: vi.fn(async () => []),
       } as unknown as IDocRepository,
       createLogger(),
     )

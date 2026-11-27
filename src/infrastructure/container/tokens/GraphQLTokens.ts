@@ -26,6 +26,7 @@ export const GraphQLTokens = {
   ANALYTICS_QUERIES: Symbol.for('AnalyticsQueries'),
   SYSTEM_QUERIES: Symbol.for('SystemQueries'),
   ENHANCED_ATTRIBUTE_QUERIES: Symbol.for('EnhancedAttributeQueries'),
+  ENHANCED_RELATION_QUERIES: Symbol.for('EnhancedRelationQueries'),
   JSON_EXPORT_QUERIES: Symbol.for('JsonExportQueries'),
   JSONL_BACKUP_QUERIES: Symbol.for('JsonlBackupQueries'),
   BACKUP_QUERIES: Symbol.for('BackupQueries'),

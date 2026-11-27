@@ -6,21 +6,25 @@
 
 **📚 용어가 궁금하신가요?** [**GLOSSARY.md**](GLOSSARY.md) - 모든 용어 설명
 
-[![System Health](https://img.shields.io/badge/System%20Health-Core%20flows%20verified-brightgreen)](./docs/development/SYSTEM_EVALUATION_2026-03-30.md)
-[![Quality Gates](https://img.shields.io/badge/Build%20%2B%20Typecheck%20%2B%20Lint-Passing-brightgreen)](./docs/development/SYSTEM_EVALUATION_2026-03-30.md)
-[![Test Status](https://img.shields.io/badge/bun%20run%20test-Passing-brightgreen)](./docs/development/SYSTEM_EVALUATION_2026-03-30.md)
+[![System Health](https://img.shields.io/badge/System%20Health-Core%20flows%20verified-brightgreen)](./docs/guides/OPERATIONS_GUIDE.md)
+[![Quality Gates](https://img.shields.io/badge/Build%20%2B%20Typecheck%20%2B%20Lint-Passing-brightgreen)](./docs/README.md)
+[![Test Status](https://img.shields.io/badge/pnpm%20run%20test-Passing-brightgreen)](./docs/development/TESTING.md)
 [![Documentation](https://img.shields.io/badge/Docs-Complete-blue)](./docs/README.md)
-[![Last Updated](https://img.shields.io/badge/Updated-2026--10--31-blue)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-2026--11--27-blue)](#)
 
 ## ⚡ 빠른 시작
 
 ```bash
-# 설치 및 초기화
-bun install
-bun run scripts/init-database.ts
+# 1) CLI로 즉시 초기화 (지식/IA 프리셋 적용 + Claude Desktop / Cursor MCP 설정 생성)
+pnpm run cli -- init --database-path ./data/graph-memory.sqlite --preset knowledge
 
-# 서버 시작
-bun run dev
+# 2) Stdio MCP 서버로 실행 (Claude Desktop / Cursor 연동)
+pnpm run cli -- mcp --database-path ./data/graph-memory.sqlite
+
+# 3) HTTP / GraphQL / REST / MCP / Web Studio 통합 서버 실행
+pnpm run dev
+# 또는 빌드 후 바이너리:
+node dist/cli/index.js serve --port 4141
 
 # 동작 확인
 curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
@@ -28,20 +32,33 @@ curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
 ```
 
 **접속 주소:**
-- 메인 인터페이스: `http://localhost:4141/graphql`
-- AI 전역 도구: `http://localhost:4141/mcp`
-- 테이블별 도구: `http://localhost:4141/sub/:tableId/mcp`
+- Web Studio / Inspector UI: `http://localhost:4141/studio`
+- 메인 GraphQL 인터페이스: `http://localhost:4141/graphql`
+- AI 전역 MCP: `http://localhost:4141/mcp` (테이블 격리: `/sub/:tableId/mcp`)
+- 운영 관측 지표(admin): `http://localhost:4141/metrics`, `http://localhost:4141/api/audit-log`
+
+### 📦 패키지 엔트리포인트 (`.js` + `.d.ts`)
+
+- `bun-graph-db/core` — 그래프·IA·5-신호 AI 메모리·Typed EAV 전용 **제로-의존(Zero External Deps, Zero `node:*`)** 헤드리스 SDK (`createHeadlessGraphDb`, `IndexedDbSnapshotStorage`)
+- `bun-graph-db/embedded` — Browser WASM (`sql.js`/`sqlite-wasm`) 및 Cloudflare DO 풀스택 임베디드 (`createEmbeddedWebGraphDb`, `createPortableGraphNode`)
+- `bun-graph-db/mcp-stdio` — Claude/Cursor용 line-delimited JSON-RPC 2.0 Stdio MCP (`startMcpStdioServer`)
+- `bun-graph-db/cli` (`graph-memory` / `bun-graph-db` 바이너리) — `init`, `inspect`, `mcp`, `serve`, `backup`, `restore`
+- `bun-graph-db` — 풀스택 Node.js 26 standalone 서버
 
 ## 📌 검증 스냅샷
 
-2026-10-31 기준으로 다음 품질·성능·계약 게이트가 모두 통과합니다.
+2026-11-27 기준으로 다음 품질·성능·계약 게이트가 Node.js v26.13.1 + pnpm 12.21.0 환경에서 모두 통과합니다.
 
-- `bun run check:static` (`check:docs` + `ci:versions` + `check:biome` + `typecheck` + `typecheck:contract` + `typecheck:benchmark` + `check:codegen` + `build`) 통과
-- `bun run test:lanes:audit` 및 `bun run test` (4개 레인 전체 125개 테스트 스위트) 통과
-- `bun run projection:check` (`oa-sdk` OpenAPI 3.1 스키마 투영 계약) 통과
-- `bun run benchmark:hotpaths:ci` 및 `bun run benchmark:vector-storage` 통과
+- `pnpm run check:static` (`check:embedded` + `check:docs` + `ci:versions` + `check:biome` + `typecheck` + `typecheck:contract` + `typecheck:benchmark` + `check:codegen` + `build` + `.d.ts` 생성) 통과
+- `pnpm run release:check` (`dist/core/index.js` 외부 의존성 0개·`node:*` 0개, `dist/embedded/index.js` `node:*` 0개, 전체 exports/bin/`.d.ts` 계약) 통과
+- `pnpm run test:golden` (핵심 10대 기능군 골든 데이터셋 3-런타임 교차 검증) 통과 ([GOLDEN_DATASET.md](docs/development/GOLDEN_DATASET.md))
+- `pnpm run test:lanes:audit` 및 `pnpm run test` (Vitest 5 기반 4개 레인 전체 140개 테스트 파일) 통과
+- Web Embedded (`bun-graph-db/core` + `IndexedDbSnapshotStorage` + `sql.js`/`sqlite-wasm`), 제로-임베딩 우선 정보구조화(IA 블루프린트 수명주기·교차 분류 쿼리·다중 홉 경로·감사·`ia-*` MCP 8종), 5-신호 AI Agent Memory, 선택적 `google/embeddinggemma-2` 검증 ([EMBEDDED_WEB_AND_AI_MEMORY.md](docs/guides/EMBEDDED_WEB_AND_AI_MEMORY.md))
+- `pnpm run projection:check` (`oa-sdk` OpenAPI 3.2 스키마 투영 계약) 통과
+- `pnpm run benchmark:hotpaths:ci` 및 `pnpm run benchmark:vector-storage` 통과
+- 배포 템플릿: [Dockerfile](Dockerfile), [deploy/cloudflare/wrangler.jsonc](deploy/cloudflare/wrangler.jsonc), [examples/](examples/web-embedded-ia-memory/README.md) 3종 스타터 제공
 
-운영 배포·권한·백업·마이그레이션 기준은 [운영 및 관리 가이드](docs/guides/OPERATIONS_GUIDE.md)를, 초기 검증 이력은 [시스템 평가 문서](docs/development/SYSTEM_EVALUATION_2026-03-30.md)를 참고하세요.
+운영 배포·권한·백업·마이그레이션 기준은 [운영 및 관리 가이드](docs/guides/OPERATIONS_GUIDE.md)를, 초기 평가 이력(역사적 스냅샷)은 [초기 시스템 평가(2026-03-30)](docs/development/SYSTEM_EVALUATION_2026-03-30.md)를 참고하세요.
 
 ---
 
@@ -93,15 +110,15 @@ Claude 같은 AI 어시스턴트가 데이터 기능을 발견하고 사용할 �
 
 ### 명령어
 ```bash
-bun run dev              # 개발 서버 시작
-bun test                 # 기본 테스트 실행
-bun run test:parallel-safe
-bun run test:serial-only
-bun run test:e2e
-bun run test:stress      # 예약/수동 부하 검증
-bun run benchmark:hotpaths:ci # 결정적 hot-path 측정과 correctness invariant
-bun run typecheck        # 타입 검증
-bun run check:static     # 버전 + lint + 타입 + codegen + build
+pnpm run dev                 # 개발 서버 시작 (tsx watch)
+pnpm run test:direct         # 기본 Vitest 테스트 실행
+pnpm run test:parallel-safe
+pnpm run test:serial-only
+pnpm run test:e2e
+pnpm run test:stress         # 예약/수동 부하 검증
+pnpm run benchmark:hotpaths:ci # 결정적 hot-path 측정과 correctness invariant
+pnpm run typecheck           # 타입 검증
+pnpm run check:static        # 버전 + lint + 타입 + codegen + build
 ```
 
 Hot-path 벤치마크는 검색, 그래프 순회, JSONL 다중 페이지 export,
@@ -138,14 +155,18 @@ tests/
 
 ### 개발자 및 운영자용
 - **[운영 및 관리 가이드](docs/guides/OPERATIONS_GUIDE.md)** - 기동, 역할·테이블 권한, 마이그레이션, 하이브리드 검색, JSONL 재해 복구, 품질 게이트
+- **[실전 활용 정의 및 기능 성숙도 매트릭스](docs/guides/USE_CASES_AND_CAPABILITIES.md)** - 6대 활용 시나리오, 계층 구조(Tree/DAG) 가이드, SDL 연결 현황
 - **[아키텍처 개요](docs/architecture/overview.md)** - 모듈형 모놀리스 계층과 운영 경계
+- **[GraphQL 필드 탐색 계약과 계층 경계](docs/architecture/graph-traversal.md)** - BFS·Dijkstra/Yen·계층 쿼리 계약
+- **[Cloudflare 단일 노드 아키텍처 검토](docs/architecture/cloudflare-single-node.md)** - Durable Object SQLite Phase 1 및 `PortableBootstrap`
 - **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)** - 기여 & 설정
-- **[최신 시스템 평가](docs/development/SYSTEM_EVALUATION_2026-03-30.md)** - 실제 검증 결과와 known issues
+- **[초기 시스템 평가 (2026-03-30 스냅샷)](docs/development/SYSTEM_EVALUATION_2026-03-30.md)** - 초기 검증 이력과 known issues 참고용
 - **[스키마 Projection 실험](docs/development/SCHEMA_PROJECTION_EXPERIMENT.md)** - 동적 테이블 스키마를 `$defs`/`$ref` projection으로 만들고 MCP/runtime validation에 연결
 - **[테스팅 전략](docs/development/TESTING.md)** - 품질 보증
 - **[리포지토리 패턴](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 데이터 접근
 
 ### AI 통합용
+- **[MCP 참조](docs/mcp/README.md)** - `2026-07-28` / `2025-11-25` LTS 프로토콜·인증·요청 규약
 - **[AI 통합 구조](docs/mcp/MCP_SYSTEM_ARCHITECTURE.md)** - 프로토콜 구현
 - **[도구 생성](docs/architecture/MCP_TEMPLATE_ARCHITECTURE.md)** - 템플릿-도구 변환
 - **[스키마 탐색](docs/guides/MCP_EXAMPLES.md)** - 동적 기능 노출
@@ -198,12 +219,12 @@ claude mcp add --transport http my-table http://localhost:4141/sub/my-table-id/m
 ✅ 핵심 서버 경로: 검증됨
 ├── REST health: 검증됨
 ├── GraphQL healthCheck: 검증됨
-├── MCP initialize: 검증됨
+├── MCP (`2026-07-28` / `2025-11-25` LTS): 검증됨
 ├── createTable → tableByIdentifier: 검증됨
 ├── createNode → searchNodes: 검증됨
-└── table-scoped MCP route: 검증됨
+└── table-scoped MCP route (`/sub/:tableId/mcp`): 검증됨
 
-✅ 전체 `bun run test`: 통과
+✅ 전체 `pnpm run test`: 통과
 ✅ 기본 품질 게이트: build + typecheck + lint + lane tests 통과
 ```
 
@@ -252,7 +273,7 @@ claude mcp add --transport http my-table http://localhost:4141/sub/my-table-id/m
 - 스키마에서 필드 사용 가능 여부 확인
 
 **저장소 문제**
-- `bun run scripts/init-database.ts`로 초기화
+- `node --import tsx scripts/init-database.ts`로 초기화
 - `./data/` 디렉토리 권한 확인
 - 손상된 경우 삭제 후 재초기화
 
@@ -280,4 +301,4 @@ MIT License - 자세한 내용은 [LICENSE](LICENSE) 파일 참조
 
 ---
 
-**마지막 업데이트**: 2025-11-25
+**마지막 업데이트**: 2026-11-27

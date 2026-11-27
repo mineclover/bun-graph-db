@@ -5,7 +5,7 @@
  * through GraphQL API operations
  */
 
-import Database from 'bun:sqlite'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadFilesSync } from '@graphql-tools/load-files'

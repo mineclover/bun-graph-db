@@ -35,6 +35,7 @@ export interface RelationAggregation {
 }
 
 export interface GraphQuery {
+  sourceNodeIds?: string[]
   nodeFilters?: Record<string, unknown>
   relationFilters?: RelationFilter[]
   pathQueries?: PathQuery[]

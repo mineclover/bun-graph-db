@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CreateAttributeTypeInput } from '@/application/dtos/AttributeTypeDto.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { CreateAttributeTypeUseCase } from '@/application/use-cases/attribute-types/CreateAttributeType.js'
@@ -23,19 +23,19 @@ describe('CreateAttributeTypeUseCase', () => {
     mockLogger = createMockLogger()
 
     mockAttributeTypeRepository = {
-      save: mock(async (_attributeType) => {}),
-      findById: mock(async (_id: string) => null),
-      findByIdentifier: mock(async (_identifier: string) => null),
-      findAll: mock(async (_options) => createPaginatedResult<ReturnType<typeof createTestAttributeType>>()),
-      findByJsonType: mock(async (_jsonType: string, _options) =>
+      save: vi.fn(async (_attributeType) => {}),
+      findById: vi.fn(async (_id: string) => null),
+      findByIdentifier: vi.fn(async (_identifier: string) => null),
+      findAll: vi.fn(async (_options) => createPaginatedResult<ReturnType<typeof createTestAttributeType>>()),
+      findByJsonType: vi.fn(async (_jsonType: string, _options) =>
         createPaginatedResult<ReturnType<typeof createTestAttributeType>>(),
       ),
-      delete: mock(async (_id: string) => {}),
-      exists: mock(async (_identifier: string) => false),
-      count: mock(async () => 0),
-      saveMany: mock(async (_attributeTypes) => {}),
-      findByIds: mock(async (_ids: string[]) => []),
-      update: mock(async (_id: string, _updates) => createTestAttributeType()),
+      delete: vi.fn(async (_id: string) => {}),
+      exists: vi.fn(async (_identifier: string) => false),
+      count: vi.fn(async () => 0),
+      saveMany: vi.fn(async (_attributeTypes) => {}),
+      findByIds: vi.fn(async (_ids: string[]) => []),
+      update: vi.fn(async (_id: string, _updates) => createTestAttributeType()),
     } satisfies AttributeTypeRepositoryMock
 
     useCase = new CreateAttributeTypeUseCase(mockAttributeTypeRepository, mockLogger)
@@ -92,7 +92,7 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const existingAttributeType = createTestAttributeType('attr-type-1', 'existing_type', 'string')
 
-      mockAttributeTypeRepository.findByIdentifier = mock().mockResolvedValueOnce(existingAttributeType)
+      mockAttributeTypeRepository.findByIdentifier = vi.fn().mockResolvedValueOnce(existingAttributeType)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
@@ -109,7 +109,7 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const createdAttributeType = createTestAttributeType('attr-type-1', 'new_type', 'string')
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null) // First call for duplicate check
         .mockResolvedValueOnce(createdAttributeType) // Second call after save
 
@@ -136,7 +136,7 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const createdAttributeType = createTestAttributeType('attr-type-1', 'email_type', 'string', 'Email address type')
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttributeType)
 
@@ -162,7 +162,7 @@ describe('CreateAttributeTypeUseCase', () => {
         'A custom object type for testing',
       )
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttributeType)
 
@@ -187,7 +187,7 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const createdAttributeType = createTestAttributeType('attr-type-1', 'validated_type', 'string')
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttributeType)
 
@@ -211,7 +211,7 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const createdAttributeType = createTestAttributeType('attr-type-1', 'reference_type', 'string')
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttributeType)
 
@@ -231,7 +231,7 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const createdAttributeType = createTestAttributeType('attr-type-1', 'default_type', 'string')
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttributeType)
 
@@ -251,7 +251,7 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const createdAttributeType = createTestAttributeType('attr-type-1', 'example_type', 'string')
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttributeType)
 
@@ -281,7 +281,7 @@ describe('CreateAttributeTypeUseCase', () => {
         'A complete attribute type with all fields',
       )
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttributeType)
 
@@ -304,8 +304,8 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const saveError = new Error('Database connection failed')
 
-      mockAttributeTypeRepository.findByIdentifier = mock(async () => null)
-      mockAttributeTypeRepository.save = mock(async () => {
+      mockAttributeTypeRepository.findByIdentifier = vi.fn(async () => null)
+      mockAttributeTypeRepository.save = vi.fn(async () => {
         throw saveError
       })
 
@@ -325,7 +325,7 @@ describe('CreateAttributeTypeUseCase', () => {
         jsonType: 'string',
       }
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null) // First call for duplicate check
         .mockResolvedValueOnce(null) // Second call after save - retrieval fails
 
@@ -343,7 +343,7 @@ describe('CreateAttributeTypeUseCase', () => {
 
       const createdAttributeType = createTestAttributeType('attr-type-1', 'logged_type', 'string')
 
-      mockAttributeTypeRepository.findByIdentifier = mock()
+      mockAttributeTypeRepository.findByIdentifier = vi.fn()
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(createdAttributeType)
 

@@ -160,7 +160,7 @@ export class TemplateFileRoutes {
 }
 
 /**
- * Template file route handler for Bun.serve
+ * Template file route handler for Web Fetch HTTP servers
  */
 export async function createTemplateFileHandler(container: DIContainer) {
   const routes = new TemplateFileRoutes(container)

@@ -1,6 +1,11 @@
 import type { GraphQLSchema } from 'graphql'
+import { TableSchemaLifecycleAspect } from '@/application/aspects/TableSchemaLifecycleAspect.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import { GraphAnalyticsService } from '@/application/services/GraphAnalyticsService.js'
+import { GraphHierarchyService } from '@/application/services/GraphHierarchyService.js'
+import { NodeAttributeAnalyticsService } from '@/application/services/NodeAttributeAnalyticsService.js'
 import { TableSchemaProjectionService } from '@/application/services/TableSchemaProjectionService.js'
+import { TemplatePerformanceAnalyticsService } from '@/application/services/TemplatePerformanceAnalyticsService.js'
 import type { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import type { SystemMonitoringUseCase } from '@/application/use-cases/monitoring/SystemMonitoringUseCase.js'
 import type { CreateNodeUseCase } from '@/application/use-cases/nodes/CreateNode.js'
@@ -23,7 +28,7 @@ import type { JsonlBackupService } from '@/domain/services/JsonlBackupService.js
 import type { SQLiteBackupService } from '@/domain/services/SQLiteBackupService.js'
 import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
 import type { TabularSyncConfigActivationService } from '@/application/services/TabularSyncConfigActivationService.js'
-import type { Database } from 'bun:sqlite'
+import type { ISqliteDatabase } from '@/infrastructure/database/sqlite/SqlitePort.js'
 import type { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
 import type { TabularSyncEventStore } from '@/infrastructure/excel/TabularSyncEventStore.js'
 import { debugApplication } from '@/shared/utils/debugLog.js'
@@ -50,6 +55,7 @@ import {
   AttributeQueries,
   DocQueries,
   EnhancedAttributeQueries,
+  EnhancedRelationQueries,
   JsonExportQueries,
   NodeQueries,
   RelationQueries,
@@ -67,6 +73,10 @@ function createConsoleLogger(prefix: string = 'INFO'): ILogger {
     error: (message, meta) => console.error(`[${prefix}] ${message}`, meta || ''),
     debug: (message, meta) => debugApplication(`[${prefix}] ${message}`, meta ? () => meta : undefined),
   }
+}
+
+function isNodeRuntime(): boolean {
+  return typeof process !== 'undefined' && Boolean(process.versions?.node)
 }
 
 async function resolveAs<T>(container: DIContainer, token: ServiceToken): Promise<T> {
@@ -126,6 +136,36 @@ export function registerGraphQLModule(container: DIContainer): void {
       RepositoryTokens.NODE_REPOSITORY,
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+    ],
+  )
+
+  container.registerSingleton(
+    CommonTokens.TABLE_SCHEMA_LIFECYCLE_ASPECT,
+    async (c) => {
+      const attributeRepository = await resolveAs<IAttributeRepository>(c, RepositoryTokens.ATTRIBUTE_REPOSITORY)
+      const attributeTypeRepository = await resolveAs<IAttributeTypeRepository>(
+        c,
+        RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      )
+      const queryTemplateRepository = await resolveAs<IQueryTemplateRepository>(
+        c,
+        RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
+      )
+      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK).catch(
+        () => undefined,
+      )
+      return new TableSchemaLifecycleAspect({
+        logger: createConsoleLogger('TableSchemaLifecycle'),
+        attributeRepository,
+        attributeTypeRepository,
+        queryTemplateRepository,
+        tabularSyncHook,
+      })
+    },
+    [
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
     ],
   )
 
@@ -207,11 +247,27 @@ export function registerGraphQLModule(container: DIContainer): void {
         RepositoryTokens.RELATION_TYPE_REPOSITORY,
       )) as IRelationTypeRepository
       const graphRepository = (await c.resolve(RepositoryTokens.GRAPH_REPOSITORY)) as ConstructorParameters<typeof RelationQueries>[3]
-      // Remove SearchRelatedNodesUseCase dependency to break circular reference
+      const searchRelatedNodesUseCase = await resolveAs<ConstructorParameters<typeof RelationQueries>[4]>(
+        c,
+        UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE,
+      )
       const simpleLogger = createConsoleLogger()
-      return new RelationQueries(nodeRelationRepository, relationTypeRepository, nodeRepository, graphRepository, null, simpleLogger)
+      return new RelationQueries(
+        nodeRelationRepository,
+        relationTypeRepository,
+        nodeRepository,
+        graphRepository,
+        searchRelatedNodesUseCase,
+        simpleLogger,
+      )
     },
-    [RepositoryTokens.NODE_RELATION_REPOSITORY, RepositoryTokens.NODE_REPOSITORY, RepositoryTokens.RELATION_TYPE_REPOSITORY, RepositoryTokens.GRAPH_REPOSITORY],
+    [
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
+      RepositoryTokens.GRAPH_REPOSITORY,
+      UseCaseTokens.SEARCH_RELATED_NODES_USE_CASE,
+    ],
   )
 
   container.registerSingleton(
@@ -221,7 +277,8 @@ export function registerGraphQLModule(container: DIContainer): void {
         RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
       )) as IQueryTemplateRepository
       const simpleLogger = createConsoleLogger()
-      return new TemplateQueries(queryTemplateRepository, simpleLogger)
+      const performanceService = new TemplatePerformanceAnalyticsService(queryTemplateRepository)
+      return new TemplateQueries(queryTemplateRepository, simpleLogger, undefined, performanceService)
     },
     [RepositoryTokens.QUERY_TEMPLATE_REPOSITORY],
   )
@@ -243,8 +300,14 @@ export function registerGraphQLModule(container: DIContainer): void {
         c,
         UseCaseTokens.SYSTEM_MONITORING_USE_CASE,
       )
-      const tabularSyncConfigStore = await resolveAs<TabularSyncConfigStore>(c, CommonTokens.TABULAR_SYNC_CONFIG_STORE)
-      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK)
+      const tabularSyncConfigStore = await resolveAs<TabularSyncConfigStore>(
+        c,
+        CommonTokens.TABULAR_SYNC_CONFIG_STORE,
+      ).catch(() => undefined)
+      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(
+        c,
+        CommonTokens.TABULAR_SYNC_HOOK,
+      ).catch(() => undefined)
       const simpleLogger = createConsoleLogger()
       return new SystemQueries(systemMonitoringUseCase, simpleLogger, tabularSyncConfigStore, tabularSyncHook)
     },
@@ -254,13 +317,67 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.ENHANCED_ATTRIBUTE_QUERIES,
     async (c) => {
+      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
+      const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
+      const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
       const attributeTypeRepository = (await c.resolve(
         RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
       )) as IAttributeTypeRepository
+      const nodeAttributeRepository = (await c.resolve(
+        RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+      )) as INodeAttributeRepository
       const simpleLogger = createConsoleLogger()
-      return new EnhancedAttributeQueries(attributeTypeRepository, simpleLogger)
+      const analyticsService = new NodeAttributeAnalyticsService(
+        tableRepository,
+        nodeRepository,
+        attributeRepository,
+        attributeTypeRepository,
+        nodeAttributeRepository,
+      )
+      return new EnhancedAttributeQueries(attributeTypeRepository, simpleLogger, analyticsService)
     },
-    [RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY],
+    [
+      RepositoryTokens.TABLE_REPOSITORY,
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_REPOSITORY,
+      RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY,
+      RepositoryTokens.NODE_ATTRIBUTE_REPOSITORY,
+    ],
+  )
+
+  container.registerSingleton(
+    GraphQLTokens.ENHANCED_RELATION_QUERIES,
+    async (c) => {
+      const nodeRepository = (await c.resolve(RepositoryTokens.NODE_REPOSITORY)) as INodeRepository
+      const nodeRelationRepository = (await c.resolve(
+        RepositoryTokens.NODE_RELATION_REPOSITORY,
+      )) as INodeRelationRepository
+      const relationTypeRepository = (await c.resolve(
+        RepositoryTokens.RELATION_TYPE_REPOSITORY,
+      )) as IRelationTypeRepository
+      const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
+      const simpleLogger = createConsoleLogger()
+      const analyticsService = new GraphAnalyticsService(
+        nodeRepository,
+        nodeRelationRepository,
+        relationTypeRepository,
+        tableRepository,
+        simpleLogger,
+      )
+      const hierarchyService = new GraphHierarchyService(
+        nodeRepository,
+        nodeRelationRepository,
+        relationTypeRepository,
+        tableRepository,
+      )
+      return new EnhancedRelationQueries(analyticsService, simpleLogger, hierarchyService)
+    },
+    [
+      RepositoryTokens.NODE_REPOSITORY,
+      RepositoryTokens.NODE_RELATION_REPOSITORY,
+      RepositoryTokens.RELATION_TYPE_REPOSITORY,
+      RepositoryTokens.TABLE_REPOSITORY,
+    ],
   )
 
   // JsonExportService registration
@@ -316,6 +433,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     CommonTokens.JSONL_BACKUP_SERVICE,
     async (c) => {
+      if (!isNodeRuntime()) {
+        throw new Error('JsonlBackupService requires a Node.js runtime')
+      }
       const { JsonlBackupService } = await import('@/domain/services/JsonlBackupService.js')
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
@@ -385,6 +505,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     CommonTokens.SQLITE_BACKUP_SERVICE,
     async (c) => {
+      if (!isNodeRuntime()) {
+        throw new Error('SQLiteBackupService requires a Node.js runtime')
+      }
       const { SQLiteBackupService } = await import('@/domain/services/SQLiteBackupService.js')
       const { DatabaseTokens } = await import('../tokens/DatabaseTokens.js')
       const db = await resolveAs<IDatabaseConnection>(c, DatabaseTokens.DATABASE_CONNECTION)
@@ -411,6 +534,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     GraphQLTokens.BACKUP_MUTATIONS,
     async (c) => {
+      if (!isNodeRuntime()) {
+        throw new Error('BackupMutations requires a Node.js runtime')
+      }
       const { BackupMutations } = await import('@/presentation/graphql/mutations/BackupMutations.js')
       const backupService = await resolveAs<SQLiteBackupService>(c, CommonTokens.SQLITE_BACKUP_SERVICE)
       const simpleLogger = createConsoleLogger('BackupMutations')
@@ -435,6 +561,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     CommonTokens.AUTO_PERSISTENCE_SERVICE,
     async (c) => {
+      if (!isNodeRuntime()) {
+        throw new Error('AutoPersistenceService requires a Node.js runtime')
+      }
       const { AutoPersistenceService } = await import('@/domain/services/AutoPersistenceService.js')
       const jsonlBackupService = await resolveAs<JsonlBackupService>(c, CommonTokens.JSONL_BACKUP_SERVICE)
       const simpleLogger = createConsoleLogger('AutoPersistence')
@@ -454,8 +583,11 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     CommonTokens.TABULAR_SYNC_CONFIG_STORE,
     async (c) => {
+      if (!isNodeRuntime()) {
+        throw new Error('TabularSyncConfigStore requires a Node.js runtime')
+      }
       const { TabularSyncConfigStore } = await import('@/infrastructure/excel/TabularSyncConfigStore.js')
-      const db = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as Database
+      const db = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as ISqliteDatabase
       return new TabularSyncConfigStore(db)
     },
     [DatabaseTokens.DATABASE_CONNECTION],
@@ -476,6 +608,9 @@ export function registerGraphQLModule(container: DIContainer): void {
   container.registerSingleton(
     CommonTokens.TABULAR_SYNC_HOOK,
     async (c) => {
+      if (!isNodeRuntime()) {
+        throw new Error('BestEffortTabularSyncHook requires a Node.js runtime')
+      }
       const { BestEffortTabularSyncHook } = await import('@/application/services/BestEffortTabularSyncHook.js')
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
@@ -518,7 +653,7 @@ export function registerGraphQLModule(container: DIContainer): void {
     CommonTokens.TABULAR_SYNC_EVENT_STORE,
     async (c) => {
       const { TabularSyncEventStore } = await import('@/infrastructure/excel/TabularSyncEventStore.js')
-      const db = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as Database
+      const db = (await c.resolve(DatabaseTokens.DATABASE_CONNECTION)) as ISqliteDatabase
       return new TabularSyncEventStore(db)
     },
     [DatabaseTokens.DATABASE_CONNECTION],
@@ -536,15 +671,29 @@ export function registerGraphQLModule(container: DIContainer): void {
         UseCaseTokens.DELETE_TABLE_USE_CASE,
       )
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
-      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK)
+      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK).catch(
+        () => undefined,
+      )
+      const schemaLifecycle = await resolveAs<TableSchemaLifecycleAspect>(
+        c,
+        CommonTokens.TABLE_SCHEMA_LIFECYCLE_ASPECT,
+      ).catch(() => undefined)
       const simpleLogger = createConsoleLogger()
-      return new TableMutations(createTableUseCase, deleteTableUseCase, tableRepository, simpleLogger, tabularSyncHook)
+      return new TableMutations(
+        createTableUseCase,
+        deleteTableUseCase,
+        tableRepository,
+        simpleLogger,
+        tabularSyncHook,
+        schemaLifecycle,
+      )
     },
     [
       UseCaseTokens.CREATE_TABLE_USE_CASE,
       UseCaseTokens.DELETE_TABLE_USE_CASE,
       RepositoryTokens.TABLE_REPOSITORY,
       CommonTokens.TABULAR_SYNC_HOOK,
+      CommonTokens.TABLE_SCHEMA_LIFECYCLE_ASPECT,
     ],
   )
 
@@ -567,7 +716,9 @@ export function registerGraphQLModule(container: DIContainer): void {
       const tableRepository = (await c.resolve(RepositoryTokens.TABLE_REPOSITORY)) as ITableRepository
       const attributeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_REPOSITORY)) as IAttributeRepository
       const attributeTypeRepository = (await c.resolve(RepositoryTokens.ATTRIBUTE_TYPE_REPOSITORY)) as IAttributeTypeRepository
-      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK)
+      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK).catch(
+        () => undefined,
+      )
       const schemaGate = await resolveAs<
         import('@/application/services/NodeAttributeSchemaGate.js').NodeAttributeSchemaGate
       >(c, CommonTokens.NODE_ATTRIBUTE_SCHEMA_GATE)
@@ -628,7 +779,13 @@ export function registerGraphQLModule(container: DIContainer): void {
       const queryTemplateRepository = (await c.resolve(
         RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
       )) as IQueryTemplateRepository
-      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK)
+      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK).catch(
+        () => undefined,
+      )
+      const schemaLifecycle = await resolveAs<TableSchemaLifecycleAspect>(
+        c,
+        CommonTokens.TABLE_SCHEMA_LIFECYCLE_ASPECT,
+      ).catch(() => undefined)
       const simpleLogger = createConsoleLogger()
       return new AttributeMutations(
         createAttributeTypeUseCase,
@@ -638,6 +795,7 @@ export function registerGraphQLModule(container: DIContainer): void {
         simpleLogger,
         tabularSyncHook,
         queryTemplateRepository,
+        schemaLifecycle,
       )
     },
     [
@@ -647,6 +805,7 @@ export function registerGraphQLModule(container: DIContainer): void {
       RepositoryTokens.ATTRIBUTE_REPOSITORY,
       RepositoryTokens.QUERY_TEMPLATE_REPOSITORY,
       CommonTokens.TABULAR_SYNC_HOOK,
+      CommonTokens.TABLE_SCHEMA_LIFECYCLE_ASPECT,
     ],
   )
 
@@ -738,13 +897,23 @@ export function registerGraphQLModule(container: DIContainer): void {
     GraphQLTokens.SYSTEM_RESOLVER,
     async (c) => {
       const { SystemResolver } = await import('@/presentation/graphql/resolvers/SystemResolver.js')
-      const tabularSyncConfigStore = await resolveAs<TabularSyncConfigStore>(c, CommonTokens.TABULAR_SYNC_CONFIG_STORE)
+      const tabularSyncConfigStore = await resolveAs<TabularSyncConfigStore>(
+        c,
+        CommonTokens.TABULAR_SYNC_CONFIG_STORE,
+      ).catch(() => undefined)
       const tabularSyncConfigActivationService = await resolveAs<TabularSyncConfigActivationService>(
         c,
         CommonTokens.TABULAR_SYNC_CONFIG_ACTIVATION_SERVICE,
+      ).catch(() => undefined)
+      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK).catch(
+        () => undefined,
       )
-      const tabularSyncHook = await resolveAs<BestEffortTabularSyncHook>(c, CommonTokens.TABULAR_SYNC_HOOK)
-      return new SystemResolver(c, tabularSyncConfigStore, tabularSyncHook, tabularSyncConfigActivationService)
+      return new SystemResolver(
+        c,
+        tabularSyncConfigStore ?? null,
+        tabularSyncHook ?? null,
+        tabularSyncConfigActivationService ?? null,
+      )
     },
     [
       CommonTokens.TABULAR_SYNC_CONFIG_STORE,

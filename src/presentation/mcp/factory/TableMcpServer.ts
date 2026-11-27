@@ -7,6 +7,10 @@
  * Sequential: Implements after comprehensive testing
  */
 
+import {
+	type SchemaValidateResult,
+	validateOpenApiProjection,
+} from "@oa-sdk/openapi-projection-contract";
 import { extractReferencedGraphqlScope } from "../../../application/security/AccessControl.js";
 import type {
 	McpToolAudience,
@@ -15,20 +19,11 @@ import type {
 import { ROOT_MCP_TOOL_CONTRACT_VERSION } from "../../../application/services/McpToolRegistry";
 import type { TableSchemaProjectionService } from "../../../application/services/TableSchemaProjectionService";
 import {
-	validateOpenApiProjection,
-	type SchemaDiagnostic,
-	type SchemaValidateResult,
-} from "@oa-sdk/openapi-projection-contract";
-import {
-	toTableSchemaOpenApiProjectionResult,
-	toTableSchemaOpenApiOperationContractProjectionResult,
-	type TableSchemaOpenApiProjectionResult,
 	type TableSchemaOpenApiOperationContractProjectionResult,
+	type TableSchemaOpenApiProjectionResult,
+	toTableSchemaOpenApiOperationContractProjectionResult,
+	toTableSchemaOpenApiProjectionResult,
 } from "../../../core/schema/TableSchemaOpenApiProjection.js";
-import type {
-	ProjectionDiagnostic,
-	TableSchemaProjection,
-} from "../../../core/schema/TableSchemaProjection";
 import type {
 	FormatMappingTemplate,
 	SimpleMappingDefinition,
@@ -38,19 +33,34 @@ import type { FlatJsonExport } from "../../../core/types/JsonExport.js";
 import { FormatMapperService } from "../../../domain/services/FormatMapperService.js";
 import type { SchemaDiscoveryService } from "../../../infrastructure/ai-metadata/SchemaDiscoveryService";
 import { McpHttpServer } from "../../../mcp/http-server/McpHttpServer";
-import type { FetchLike } from "../../../models/GraphQLOperation.js";
 import {
-	SUPPORTED_MCP_PROTOCOL_VERSIONS,
+	deriveDefaultToolAnnotations,
+	extractTraceMeta,
+	isJsonRpcNotification,
 	isModernMcpRequest,
+	isModernProtocolVersion,
+	isSupportedProtocolVersion,
+	LATEST_LEGACY_MCP_PROTOCOL_VERSION,
+	MODERN_MCP_PROTOCOL_VERSION,
+	normalizeHeaderOws,
+	SUPPORTED_MCP_PROTOCOL_VERSIONS,
+	usesStrictProtocolSemantics,
+	validateJsonRpcBatch,
 	validateModernMcpRequest,
 	withModernResult,
+	withStructuredToolResult,
 } from "../../../mcp/http-server/modern-protocol.js";
+import type { FetchLike } from "../../../models/GraphQLOperation.js";
 import {
 	McpDataValidator,
 	McpSchemaValidator,
 	SchemaMapper,
 } from "../schema/SchemaMapper";
-import type { McpInputSchema } from "../schema/SchemaMapper";
+import {
+	buildOpenApiProjectionTool,
+	buildProjectedNodeTools,
+	buildTableStaticTools,
+} from "./TableMcpToolCatalog.js";
 
 interface Template {
 	identifier: string;
@@ -157,11 +167,14 @@ export class TableMcpServer {
 	 * Initialize table-specific MCP server
 	 */
 	async initialize(): Promise<void> {
-		if (this.closed) throw new Error(`Table MCP server for ${this.tableId} is closed`);
+		if (this.closed)
+			throw new Error(`Table MCP server for ${this.tableId} is closed`);
 		if (this.tableInitialized) return;
 		this.invalidateToolsListCache();
 
-		this.debugHotpath(`Initializing Table MCP Server for table: ${this.tableId}`);
+		this.debugHotpath(
+			`Initializing Table MCP Server for table: ${this.tableId}`,
+		);
 
 		// First initialize the base MCP server
 		await this.mcpServer.initialize();
@@ -183,20 +196,10 @@ export class TableMcpServer {
 	 */
 	private async loadTableTemplates(): Promise<void> {
 		try {
-			// Add aiMetadata tool first
-			this.addAiMetadataTool();
-
-			// Add validation tools
-			this.addValidationTools();
-
-			// Add OpenAPI projection export contract
+			for (const staticTool of buildTableStaticTools(this.tableId)) {
+				this.tableTools.set(staticTool.name, staticTool);
+			}
 			this.addOpenApiProjectionTool();
-
-			// Add schema discovery tools
-			this.addSchemaDiscoveryTools();
-
-			// Add format mapper tools
-			this.addFormatMapperTools();
 
 			// Query templates associated with this table
 			const templates = await this.getTableTemplates(this.tableId);
@@ -230,396 +233,14 @@ export class TableMcpServer {
 		}
 	}
 
-	/**
-	 * Add aiMetadata tool for this table
-	 */
-	private addAiMetadataTool(): void {
-		const aiMetadataTool: McpToolDefinition = {
-			name: `get-table-metadata-${this.tableId}`,
-			description: `[테이블 정보 조회] Get comprehensive metadata for table ${this.tableId}: schema structure (data types, required fields), usage patterns (common queries, templates), and sample data. Perfect for understanding table capabilities and AI-assisted queries.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					includeSampleData: {
-						type: "boolean",
-						description: "Whether to include sample data in the response",
-						default: true,
-					},
-					sampleLimit: {
-						type: "number",
-						description: "Maximum number of sample nodes to include",
-						default: 5,
-					},
-				},
-				required: [],
-			},
-			operationType: "query",
-			graphqlOperation: {
-				operationType: "query",
-				query: `
-          query GetTableMetadata($tableId: ID!, $includeAiMetadata: Boolean!) {
-            table(id: $tableId) {
-              id
-              identifier
-              description
-              aiMetadata @include(if: $includeAiMetadata) {
-                schemaInfo {
-                  dataTypes
-                  requiredFields
-                  searchableFields
-                  relationshipCapabilities
-                }
-                usagePatterns {
-                  commonQueries {
-                    pattern
-                    description
-                    example
-                  }
-                  templateRecommendations {
-                    templateId
-                    useCase
-                  }
-                  queryComplexity
-                }
-                sampleData {
-                  nodes {
-                    id
-                    content
-                    attributes
-                  }
-                  relationships {
-                    from
-                    to
-                    type
-                  }
-                }
-              }
-            }
-          }
-        `,
-			},
-		};
-
-		this.tableTools.set(aiMetadataTool.name, aiMetadataTool);
-	}
-
-	/**
-	 * Add OpenAPI projection export tool contract for this table.
-	 *
-	 * Output contract: when executed, this tool returns a JSON-serializable
-	 * `{ projection, validation }` object. `projection` is the
-	 * OpenApiProjectionResult for the selected profile and current table;
-	 * `validation` is the result of validateOpenApiProjection(projection).
-	 */
 	private addOpenApiProjectionTool(): void {
-		const openApiProjectionTool: McpToolDefinition = {
-			name: `get-openapi-projection-${this.tableId}`,
-			description: `Returns an OpenAPI 3.2 projection artifact for the current table ${this.tableId}. Use profile 'component-bundle' for reusable component schemas or 'operation-contract' for create/update operation contracts.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					profile: {
-						type: "string",
-						enum: ["component-bundle", "operation-contract"],
-						default: "component-bundle",
-						description:
-							"Projection profile to return. Defaults to component-bundle.",
-					},
-				},
-				required: [],
-				additionalProperties: false,
-			},
-			operationType: "query",
-		};
-
+		const openApiProjectionTool = buildOpenApiProjectionTool(this.tableId);
 		this.tableTools.set(openApiProjectionTool.name, openApiProjectionTool);
 	}
 
-	/**
-	 * Add validation tools for this table
-	 */
-	private addValidationTools(): void {
-		// 1. Validate inputSchema tool
-		const validateInputSchemaTool: McpToolDefinition = {
-			name: `validate-input-schema-${this.tableId}`,
-			description: `[inputSchema 검증] Validate JSON Schema for MCP tool inputSchema compatibility. Checks compliance with MCP spec (JSON Schema Draft-07, type: object required). Returns detailed errors and warnings. Use before creating templates with inputSchema.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					schema: {
-						type: "object",
-						description: "JSON Schema to validate for MCP compatibility",
-					},
-				},
-				required: ["schema"],
-			},
-			operationType: "query",
-		};
-
-		// 2. Validate data against schema tool
-		const validateDataTool: McpToolDefinition = {
-			name: `validate-data-${this.tableId}`,
-			description: `[데이터 검증] Validate runtime data against a JSON Schema. Performs type checking with coercion, constraint validation, and format validation. Returns coerced data if valid, or detailed errors with standardized error codes (TYPE_*, CONSTRAINT_*) if invalid.`,
-			inputSchema: {
-				type: "object",
-				properties: {
-					data: {
-						type: "object",
-						description: "Data to validate",
-					},
-					schema: {
-						type: "object",
-						description: "JSON Schema to validate against",
-					},
-				},
-				required: ["data", "schema"],
-			},
-			operationType: "query",
-		};
-
-		this.tableTools.set(validateInputSchemaTool.name, validateInputSchemaTool);
-		this.tableTools.set(validateDataTool.name, validateDataTool);
-
-		this.debugHotpath(`Added 2 validation tools for table ${this.tableId}`);
-	}
-
-	/**
-	 * Add schema discovery tools for this table
-	 */
-	private addSchemaDiscoveryTools(): void {
-		try {
-			// Add schema discovery tools immediately (deferred initialization)
-			// The SchemaDiscoveryService will be initialized lazily when first called
-
-			// 1. Discover search operations tool
-			const discoverSearchOperationsTool: McpToolDefinition = {
-				name: `discover-search-operations-${this.tableId}`,
-				description: `[검색 기능 탐색] Discover all possible ways to search nodes in table ${this.tableId}. Shows available search operations, field options, and query variations. Use this to learn what search capabilities are available.`,
-				inputSchema: {
-					type: "object",
-					properties: {
-						baseOperation: {
-							type: "string",
-							description: "Base operation to discover variations for",
-							default: "searchNodes",
-						},
-					},
-					required: [],
-				},
-				operationType: "query",
-			};
-
-			// 2. Discover filter options tool
-			const discoverFilterOptionsTool: McpToolDefinition = {
-				name: `discover-filter-options-${this.tableId}`,
-				description: `[필터 옵션 조회] List all filter options for searching nodes in table ${this.tableId}. Shows available operators (EQUALS, CONTAINS, GREATER_THAN, etc.), attribute filters, and relationship filters. Essential for building advanced queries.`,
-				inputSchema: {
-					type: "object",
-					properties: {},
-					required: [],
-				},
-				operationType: "query",
-			};
-
-			// 3. Generate search examples tool
-			const generateSearchExamplesTool: McpToolDefinition = {
-				name: `generate-search-examples-${this.tableId}`,
-				description: `[검색 예제 생성] Generate ready-to-use search query examples for table ${this.tableId}. Includes basic text search, attribute filtering, relationship queries, and complex multi-condition searches. Copy-paste ready examples.`,
-				inputSchema: {
-					type: "object",
-					properties: {},
-					required: [],
-				},
-				operationType: "query",
-			};
-
-			// Add all schema discovery tools
-			this.tableTools.set(
-				discoverSearchOperationsTool.name,
-				discoverSearchOperationsTool,
-			);
-			this.tableTools.set(
-				discoverFilterOptionsTool.name,
-				discoverFilterOptionsTool,
-			);
-			this.tableTools.set(
-				generateSearchExamplesTool.name,
-				generateSearchExamplesTool,
-			);
-
-			this.debugHotpath(`Added 3 schema discovery tools for table ${this.tableId}`);
-		} catch (error) {
-			console.error(
-				`Failed to add schema discovery tools for table ${this.tableId}:`,
-				error,
-			);
-		}
-	}
-
-	/**
-	 * Add format mapper tools for this table
-	 * Enables flexible export format mapping based on Flat JSON
-	 */
-	private addFormatMapperTools(): void {
-		try {
-			// 1. Export with custom format mapping
-			const exportWithMappingTool: McpToolDefinition = {
-				name: `export-with-mapping-${this.tableId}`,
-				description: `[커스텀 포맷 Export] Export table ${this.tableId} data with custom format mapping. Transform Flat JSON to any custom structure using address-based field mapping. Supports preset formats (CSV_FLAT, API_RESPONSE, GRAPH_FORMAT) or custom mapping templates.`,
-				inputSchema: {
-					type: "object",
-					properties: {
-						mapping: {
-							type: "object",
-							description:
-								'Mapping template or simple key-value mappings. Key = target path, Value = source path (e.g., {"users[*].id": "$.nodes[*].id", "users[*].name": "$.nodes[*].title"})',
-						},
-						presetFormat: {
-							type: "string",
-							enum: ["CSV_FLAT", "API_RESPONSE", "GRAPH_FORMAT"],
-							description: "Use a preset format instead of custom mapping",
-						},
-						prettyPrint: {
-							type: "boolean",
-							description: "Pretty print JSON output",
-							default: true,
-						},
-						includeNulls: {
-							type: "boolean",
-							description: "Include null values in output",
-							default: false,
-						},
-						strictMode: {
-							type: "boolean",
-							description: "Fail on missing source fields",
-							default: false,
-						},
-					},
-					required: [],
-				},
-				operationType: "query",
-			};
-
-			// 2. Import/Patch from custom format
-			const importWithMappingTool: McpToolDefinition = {
-				name: `import-with-mapping-${this.tableId}`,
-				description: `[커스텀 포맷 Import] Import data into table ${this.tableId} from custom format. Transform custom JSON structure back to Flat JSON using reverse address mapping. Use for batch data import.`,
-				inputSchema: {
-					type: "object",
-					properties: {
-						data: {
-							type: "object",
-							description: "Custom format data to import",
-						},
-						mapping: {
-							type: "object",
-							description:
-								"Mapping template (same format used for export). Will be inverted automatically.",
-						},
-						presetFormat: {
-							type: "string",
-							enum: ["CSV_FLAT", "API_RESPONSE", "GRAPH_FORMAT"],
-							description: "Use a preset format instead of custom mapping",
-						},
-						mergeStrategy: {
-							type: "string",
-							enum: ["replace", "merge", "deep-merge"],
-							description: "How to merge with existing data",
-							default: "replace",
-						},
-					},
-					required: ["data"],
-				},
-				operationType: "mutation",
-			};
-
-			// 3. Generate patches from custom format
-			const generatePatchesTool: McpToolDefinition = {
-				name: `generate-patches-${this.tableId}`,
-				description: `[Patch 생성] Generate update patches from custom format data for table ${this.tableId}. Useful for partial updates - converts custom format data to FlatNodePatch[] that can be applied to existing nodes.`,
-				inputSchema: {
-					type: "object",
-					properties: {
-						data: {
-							type: "object",
-							description: "Custom format data containing updates",
-						},
-						mapping: {
-							type: "object",
-							description:
-								"Mapping template (must include ID mapping for node identification)",
-						},
-						presetFormat: {
-							type: "string",
-							enum: ["CSV_FLAT", "API_RESPONSE", "GRAPH_FORMAT"],
-							description: "Use a preset format instead of custom mapping",
-						},
-					},
-					required: ["data"],
-				},
-				operationType: "query",
-			};
-
-			// 4. Validate mapping template
-			const validateMappingTool: McpToolDefinition = {
-				name: `validate-mapping-${this.tableId}`,
-				description: `[매핑 검증] Validate a format mapping template for table ${this.tableId}. Checks for duplicate targets, invalid paths, unsupported transforms, and warns about potential issues.`,
-				inputSchema: {
-					type: "object",
-					properties: {
-						mapping: {
-							type: "object",
-							description: "Mapping template to validate",
-						},
-						validateAgainstData: {
-							type: "boolean",
-							description:
-								"Also validate source paths against actual table data",
-							default: false,
-						},
-					},
-					required: ["mapping"],
-				},
-				operationType: "query",
-			};
-
-			// 5. List preset mapping formats
-			const listPresetsTool: McpToolDefinition = {
-				name: `list-format-presets-${this.tableId}`,
-				description: `[프리셋 목록] List available preset format mappings. Shows CSV_FLAT, API_RESPONSE, GRAPH_FORMAT with their descriptions and mapping definitions. Useful for understanding available transformations.`,
-				inputSchema: {
-					type: "object",
-					properties: {},
-					required: [],
-				},
-				operationType: "query",
-			};
-
-			// Add all format mapper tools
-			this.tableTools.set(exportWithMappingTool.name, exportWithMappingTool);
-			this.tableTools.set(importWithMappingTool.name, importWithMappingTool);
-			this.tableTools.set(generatePatchesTool.name, generatePatchesTool);
-			this.tableTools.set(validateMappingTool.name, validateMappingTool);
-			this.tableTools.set(listPresetsTool.name, listPresetsTool);
-
-			this.debugHotpath(`Added 5 format mapper tools for table ${this.tableId}`);
-		} catch (error) {
-			console.error(
-				`Failed to add format mapper tools for table ${this.tableId}:`,
-				error,
-			);
-		}
-	}
-
-	/**
-	 * Get GraphQL schema from the MCP server
-	 */
 	private async getGraphQLSchema(): Promise<any> {
 		try {
-			// Use the typed root-server boundary for GraphQL introspection.
-			{
-				// Use introspection query to get schema
-				const introspectionQuery = `
+			const introspectionQuery = `
           query IntrospectionQuery {
             __schema {
               types {
@@ -667,16 +288,15 @@ export class TableMcpServer {
           }
         `;
 
-				const result = await this.mcpServer.executeGraphQLOperation<any>({
-					operationName: "IntrospectionQuery",
-					operationType: "query",
-					query: introspectionQuery,
-					variables: {},
-				});
+			const result = await this.mcpServer.executeGraphQLOperation<any>({
+				operationName: "IntrospectionQuery",
+				operationType: "query",
+				query: introspectionQuery,
+				variables: {},
+			});
 
-				if (result.data?.__schema && !result.errors) {
-					return result.data.__schema;
-				}
+			if (result.data?.__schema && !result.errors) {
+				return result.data.__schema;
 			}
 
 			console.warn("Could not get GraphQL schema via introspection");
@@ -687,11 +307,11 @@ export class TableMcpServer {
 		}
 	}
 
-	/**
-	 * Add table CRUD tools for this table
-	 */
 	private async addTableCrudTools(): Promise<void> {
-		const projectedNodeTools = await this.createProjectedNodeTools();
+		const projectedNodeTools = await buildProjectedNodeTools(
+			this.tableId,
+			this.projectionService,
+		);
 
 		// 1. Get table attributes
 		const getAttributesTool: McpToolDefinition = {
@@ -1193,7 +813,8 @@ export class TableMcpServer {
 					vector: {
 						type: "array",
 						items: { type: "number" },
-						description: "Optional query embedding vector ranked by cosine similarity",
+						description:
+							"Optional query embedding vector ranked by cosine similarity",
 					},
 					model: {
 						type: "string",
@@ -1205,7 +826,8 @@ export class TableMcpServer {
 					},
 					filterQuery: {
 						type: "string",
-						description: "Optional typed attribute filter expression (e.g. score:>80)",
+						description:
+							"Optional typed attribute filter expression (e.g. score:>80)",
 					},
 					graph: {
 						type: "object",
@@ -1329,389 +951,6 @@ export class TableMcpServer {
 		);
 	}
 
-	private async createProjectedNodeTools(): Promise<McpToolDefinition[]> {
-		const { createInputSchema, updateInputSchema, metadata } =
-			await this.getProjectedNodeToolSchemas();
-
-		const createNodeTool: McpToolDefinition = {
-			name: `create-table-${this.tableId}-node`,
-			description: `[노드 생성] Create a node in table ${this.tableId} with projection-derived attribute values.`,
-			inputSchema: createInputSchema,
-			_meta: metadata,
-			operationType: "mutation",
-			graphqlOperation: {
-				operationType: "mutation",
-				query: `
-          mutation CreateTableNodeWithAttributes($input: CreateNodeWithAttributesInput!) {
-            createNodeWithAttributes(input: $input) {
-              success
-              node {
-                id
-                tableId
-                content
-                title
-                description
-                createdAt
-                updatedAt
-              }
-              attributes {
-                id
-                attributeId
-                value
-                attribute {
-                  identifier
-                  name
-                }
-              }
-              errors {
-                message
-                code
-                field
-              }
-            }
-          }
-        `,
-			},
-		};
-
-		const updateNodeTool: McpToolDefinition = {
-			name: `update-table-${this.tableId}-node`,
-			description: `[노드 속성 수정] Update projection-derived attribute values for a node in table ${this.tableId}.`,
-			inputSchema: updateInputSchema,
-			_meta: metadata,
-			operationType: "mutation",
-			graphqlOperation: {
-				operationType: "mutation",
-				query: `
-          mutation UpdateTableNode($id: ID!, $input: UpdateNodeInput!) {
-            updateNode(id: $id, input: $input) {
-              success
-              node {
-                id
-                tableId
-                content
-                title
-                description
-                createdAt
-                updatedAt
-              }
-              errors {
-                message
-                code
-                field
-              }
-            }
-          }
-        `,
-			},
-		};
-
-		return [createNodeTool, updateNodeTool];
-	}
-
-	private async getProjectedNodeToolSchemas(): Promise<{
-		createInputSchema: McpInputSchema;
-		updateInputSchema: McpInputSchema;
-		metadata: Record<string, unknown>;
-	}> {
-		if (!this.projectionService) {
-			const createInputSchema = this.createFallbackNodeInputSchema();
-			return {
-				createInputSchema,
-				updateInputSchema:
-					this.createUpdateNodeInputSchemaFromCreateSchema(createInputSchema),
-				metadata: {
-					tableSchemaProjection: {
-						tableId: this.tableId,
-						available: false,
-						warnings: [
-							"Table schema projection service is not configured for this table MCP server.",
-						],
-					},
-				},
-			};
-		}
-
-		try {
-			const projection = await this.projectionService.project({
-				tableId: this.tableId,
-			});
-			const openApiProjection =
-				toTableSchemaOpenApiOperationContractProjectionResult(projection);
-			const openApiValidation = validateOpenApiProjection(openApiProjection);
-
-			if (!openApiValidation.valid) {
-				return this.createProjectionFallbackSchemas(
-					"OpenAPI projection has error diagnostics",
-					projection,
-					openApiProjection,
-					openApiValidation.diagnostics,
-				);
-			}
-
-			let mappedSchemas: {
-				createInputSchema: McpInputSchema;
-				updateInputSchema: McpInputSchema;
-			};
-			try {
-				mappedSchemas =
-					SchemaMapper.mapOpenApiProjectionToMcpNodeToolSchemas(
-						openApiProjection,
-					);
-			} catch (error) {
-				return this.createCompatibilityProjectionSchemas(
-					`OpenAPI projection mapping failed: ${error instanceof Error ? error.message : String(error)}`,
-					projection,
-					openApiProjection,
-					openApiValidation.diagnostics,
-				);
-			}
-			const { createInputSchema, updateInputSchema } = mappedSchemas;
-
-			if (
-				!SchemaMapper.validateJsonSchema(createInputSchema) ||
-				!SchemaMapper.validateJsonSchema(updateInputSchema)
-			) {
-				return this.createCompatibilityProjectionSchemas(
-					"OpenAPI projection-derived MCP input schema is invalid",
-					projection,
-					openApiProjection,
-					openApiValidation.diagnostics,
-				);
-			}
-
-			return {
-				createInputSchema,
-				updateInputSchema,
-				metadata: this.createProjectionMetadata(
-					projection,
-					openApiProjection,
-					openApiValidation.diagnostics,
-					{ schemaSource: "openapi-projection" },
-				),
-			};
-		} catch (error) {
-			console.warn(
-				`Failed to project table schema for table ${this.tableId}:`,
-				error,
-			);
-			const createInputSchema = this.createFallbackNodeInputSchema();
-			return {
-				createInputSchema,
-				updateInputSchema:
-					this.createUpdateNodeInputSchemaFromCreateSchema(createInputSchema),
-				metadata: {
-					tableSchemaProjection: {
-						tableId: this.tableId,
-						available: false,
-						warnings: [error instanceof Error ? error.message : String(error)],
-					},
-				},
-			};
-		}
-	}
-
-	private createProjectionFallbackSchemas(
-		reason: string,
-		projection: TableSchemaProjection,
-		openApiProjection?: TableSchemaOpenApiOperationContractProjectionResult,
-		diagnostics?: SchemaDiagnostic[],
-	): {
-		createInputSchema: McpInputSchema;
-		updateInputSchema: McpInputSchema;
-		metadata: Record<string, unknown>;
-	} {
-		const createInputSchema = this.createFallbackNodeInputSchema();
-
-		return {
-			createInputSchema,
-			updateInputSchema:
-				this.createUpdateNodeInputSchemaFromCreateSchema(createInputSchema),
-			metadata: {
-				tableSchemaProjection: {
-					...this.createProjectionMetadata(
-						projection,
-						openApiProjection,
-						diagnostics,
-						{
-							schemaSource: openApiProjection
-								? "openapi-projection"
-								: "table-schema-projection",
-							usable: false,
-						},
-					).tableSchemaProjection,
-					usable: false,
-					warnings: [reason],
-				},
-			},
-		};
-	}
-
-	private createCompatibilityProjectionSchemas(
-		reason: string,
-		projection: TableSchemaProjection,
-		openApiProjection?: TableSchemaOpenApiOperationContractProjectionResult,
-		diagnostics?: SchemaDiagnostic[],
-	): {
-		createInputSchema: McpInputSchema;
-		updateInputSchema: McpInputSchema;
-		metadata: Record<string, unknown>;
-	} {
-		const createInputSchema =
-			SchemaMapper.mapTableProjectionToMcpInputSchema(projection);
-
-		if (!SchemaMapper.validateJsonSchema(createInputSchema)) {
-			return this.createProjectionFallbackSchemas(
-				reason,
-				projection,
-				openApiProjection,
-				diagnostics,
-			);
-		}
-
-		return {
-			createInputSchema,
-			updateInputSchema:
-				this.createUpdateNodeInputSchemaFromCreateSchema(createInputSchema),
-			metadata: {
-				tableSchemaProjection: {
-					...this.createProjectionMetadata(
-						projection,
-						openApiProjection,
-						diagnostics,
-						{ schemaSource: "table-schema-projection-compatibility-fallback" },
-					).tableSchemaProjection,
-					warnings: [reason],
-				},
-			},
-		};
-	}
-
-	private createUpdateNodeInputSchemaFromCreateSchema(
-		createInputSchema: McpInputSchema,
-	): McpInputSchema {
-		const createAttributesSchema = createInputSchema.properties.attributes ?? {
-			type: "object",
-			description: `Attribute values for table ${this.tableId}`,
-			properties: {},
-			required: [],
-			additionalProperties: true,
-		};
-		const attributesSchema = {
-			...createAttributesSchema,
-			required: [],
-		};
-
-		return {
-			type: "object",
-			properties: {
-				nodeId: {
-					type: "string",
-					description: `Node ID in table ${this.tableId}`,
-				},
-				attributes: attributesSchema,
-			},
-			required: ["nodeId", "attributes"],
-			additionalProperties: false,
-		};
-	}
-
-	private createFallbackNodeInputSchema(): McpInputSchema {
-		return {
-			type: "object",
-			properties: {
-				content: {
-					type: "string",
-					description: `Node content for table ${this.tableId}`,
-				},
-				attributes: {
-					type: "object",
-					description: `Attribute values for table ${this.tableId}`,
-					properties: {},
-					required: [],
-					additionalProperties: true,
-				},
-			},
-			required: ["content", "attributes"],
-			additionalProperties: false,
-		};
-	}
-
-	private createProjectionMetadata(
-		projection: TableSchemaProjection,
-		openApiProjection?: TableSchemaOpenApiOperationContractProjectionResult,
-		diagnosticsOverride?: SchemaDiagnostic[],
-		options: {
-			schemaSource?: string;
-			usable?: boolean;
-		} = {},
-	): { tableSchemaProjection: Record<string, unknown> } {
-		const diagnostics = (
-			diagnosticsOverride ??
-			openApiProjection?.diagnostics ??
-			projection.diagnostics
-		).map((diagnostic) => this.serializeProjectionDiagnostic(diagnostic));
-		const errors = diagnostics.filter(
-			(diagnostic) => diagnostic.severity === "error",
-		);
-		const warnings = diagnostics.filter(
-			(diagnostic) => diagnostic.severity === "warning",
-		);
-
-		return {
-			tableSchemaProjection: {
-				available: true,
-				usable: options.usable ?? errors.length === 0,
-				tableId: projection.tableId,
-				tableIdentifier: projection.tableIdentifier,
-				versionHash: openApiProjection?.versionHash ?? projection.versionHash,
-				...(openApiProjection ? { profile: openApiProjection.profile } : {}),
-				...(options.schemaSource ? { schemaSource: options.schemaSource } : {}),
-				diagnostics,
-				warnings,
-				errors,
-			},
-		};
-	}
-
-	private serializeProjectionDiagnostic(
-		diagnostic: ProjectionDiagnostic | SchemaDiagnostic,
-	): Record<string, unknown> {
-		return {
-			severity: diagnostic.severity,
-			code: diagnostic.code,
-			message: diagnostic.message,
-			...(diagnostic.source
-				? {
-						source: this.serializeProjectionSource(diagnostic.source),
-					}
-				: {}),
-		};
-	}
-
-	private serializeProjectionSource(
-		source: ProjectionDiagnostic["source"] | SchemaDiagnostic["source"],
-	): Record<string, unknown> | undefined {
-		if (!source) return undefined;
-
-		if (source.kind === "file") {
-			return {
-				kind: source.kind,
-				filePath: source.filePath,
-				pointer: source.pointer,
-				...(source.line !== undefined ? { line: source.line } : {}),
-				...(source.column !== undefined ? { column: source.column } : {}),
-			};
-		}
-
-		return {
-			kind: source.kind,
-			entity: source.entity,
-			id: source.id,
-			pointer: source.pointer,
-		};
-	}
-
 	/**
 	 * Get templates associated with this table
 	 */
@@ -1750,9 +989,8 @@ export class TableMcpServer {
 				operationType: "query" as const,
 			};
 
-			const result = await this.mcpServer.executeGraphQLOperation<any>(
-				operation,
-			);
+			const result =
+				await this.mcpServer.executeGraphQLOperation<any>(operation);
 
 			if (result.errors && result.errors.length > 0) {
 				console.warn(
@@ -1859,18 +1097,27 @@ export class TableMcpServer {
 				(tool) => audience?.role !== "reader" || tool.operationType === "query",
 			)
 			.sort((left, right) => left.name.localeCompare(right.name))
-			.map((tool) => ({
-				name: tool.name,
-				description: tool.description,
-				inputSchema: tool.inputSchema,
-				_meta: {
-					...tool._meta,
-					contractVersion: ROOT_MCP_TOOL_CONTRACT_VERSION,
-					action: tool.operationType === "query" ? "read" : "write",
-					scope: "table",
-				},
-				...(tool.annotations ? { annotations: tool.annotations } : {}),
-			}));
+			.map((tool) => {
+				const action = tool.operationType === "query" ? "read" : "write";
+				return {
+					name: tool.name,
+					...(tool.title ? { title: tool.title } : {}),
+					description: tool.description,
+					inputSchema: tool.inputSchema,
+					...(tool.outputSchema ? { outputSchema: tool.outputSchema } : {}),
+					_meta: {
+						...tool._meta,
+						contractVersion: ROOT_MCP_TOOL_CONTRACT_VERSION,
+						action,
+						scope: "table",
+					},
+					annotations: deriveDefaultToolAnnotations(
+						tool.name,
+						action,
+						tool.annotations,
+					),
+				};
+			});
 		const legacyResult: Record<string, unknown> = { tools };
 		const modernResult = withModernResult(
 			{
@@ -1893,16 +1140,31 @@ export class TableMcpServer {
 		id: string | number | undefined,
 		audience: McpToolAudience | undefined,
 		modern: boolean,
+		traceMeta?: Record<string, unknown>,
+		protocolVersionHeader?: string,
 	): Response {
 		const cached = this.getToolsListCacheEntry(audience);
-		const resultJson = modern
-			? cached.modernResultJson
-			: cached.legacyResultJson;
+		let resultJson = modern ? cached.modernResultJson : cached.legacyResultJson;
+		if (modern && traceMeta) {
+			const resultWithTrace = withModernResult(
+				{
+					...cached.legacyResult,
+					ttlMs: 300000,
+					cacheScope: audience ? "private" : "public",
+				},
+				this.getServerInfo(),
+				traceMeta,
+			);
+			resultJson = JSON.stringify(resultWithTrace);
+		}
 		return new Response(this.serializeJsonRpcResult(id, resultJson), {
 			status: 200,
 			headers: {
 				"Content-Type": "application/json",
 				...(modern ? { "Cache-Control": "no-cache" } : {}),
+				...(protocolVersionHeader
+					? { "MCP-Protocol-Version": protocolVersionHeader }
+					: {}),
 			},
 		});
 	}
@@ -1911,8 +1173,7 @@ export class TableMcpServer {
 		id: string | number | undefined,
 		resultJson: string,
 	): string {
-		const serializedId =
-			id === undefined ? "" : `,"id":${JSON.stringify(id)}`;
+		const serializedId = id === undefined ? "" : `,"id":${JSON.stringify(id)}`;
 		return `{"jsonrpc":"2.0"${serializedId},"result":${resultJson}}`;
 	}
 
@@ -1931,6 +1192,39 @@ export class TableMcpServer {
 		id: string | number | undefined,
 		params: any,
 		audience?: McpToolAudience,
+		toolValidationAsExecutionError = false,
+	): Promise<McpResponse> {
+		const response = await this.executeHandleToolsCall(
+			id,
+			params,
+			audience,
+			toolValidationAsExecutionError,
+		);
+		return this.finalizeToolCallResponse(response);
+	}
+
+	private finalizeToolCallResponse(response: McpResponse): McpResponse {
+		if (
+			response.error ||
+			!response.result ||
+			typeof response.result !== "object" ||
+			Array.isArray(response.result)
+		) {
+			return response;
+		}
+		return {
+			...response,
+			result: withStructuredToolResult(
+				response.result as Record<string, unknown>,
+			),
+		};
+	}
+
+	private async executeHandleToolsCall(
+		id: string | number | undefined,
+		params: any,
+		audience?: McpToolAudience,
+		toolValidationAsExecutionError = false,
 	): Promise<McpResponse> {
 		if (!params?.name) {
 			return this.createErrorResponse(
@@ -1950,7 +1244,9 @@ export class TableMcpServer {
 		this.debugHotpath(
 			`🔍 Available table tools: ${Array.from(this.tableTools.keys()).join(", ")}`,
 		);
-		this.debugHotpath(`🔍 Tool found in table tools: ${this.tableTools.has(name)}`);
+		this.debugHotpath(
+			`🔍 Tool found in table tools: ${this.tableTools.has(name)}`,
+		);
 
 		if (this.tableTools.has(name)) {
 			if (
@@ -1960,7 +1256,13 @@ export class TableMcpServer {
 				return this.createErrorResponse(id, -32601, "Method not found");
 			}
 			this.debugHotpath(`✅ Executing table-specific tool: ${name}`);
-			return await this.executeTableTool(id, name, args || {}, audience);
+			return await this.executeTableTool(
+				id,
+				name,
+				args || {},
+				audience,
+				toolValidationAsExecutionError,
+			);
 		}
 
 		// Do NOT delegate to base MCP server - sub-table MCP should be isolated
@@ -1981,6 +1283,7 @@ export class TableMcpServer {
 		toolName: string,
 		args: any,
 		audience?: McpToolAudience,
+		toolValidationAsExecutionError = false,
 	): Promise<McpResponse> {
 		try {
 			const tool = this.tableTools.get(toolName);
@@ -2000,11 +1303,34 @@ export class TableMcpServer {
 			) {
 				const validation = this.validateToolArguments(args, tool.inputSchema);
 				if (!validation.valid) {
+					const errorMessage = `Schema validation failed: ${validation.errors.join(", ")}`;
+					if (toolValidationAsExecutionError) {
+						return {
+							jsonrpc: "2.0",
+							id,
+							result: {
+								content: [
+									{
+										type: "text",
+										text: JSON.stringify(
+											{
+												success: false,
+												error: errorMessage,
+											},
+											null,
+											2,
+										),
+									},
+								],
+								isError: true,
+							},
+						};
+					}
 					return this.createErrorResponse(
 						id,
 						-32602,
 						"Invalid params",
-						`Schema validation failed: ${validation.errors.join(", ")}`,
+						errorMessage,
 					);
 				}
 			}
@@ -2250,9 +1576,8 @@ export class TableMcpServer {
 				operationType: "mutation" as const,
 			};
 
-			const result = await this.mcpServer.executeGraphQLOperation<any>(
-				operation,
-			);
+			const result =
+				await this.mcpServer.executeGraphQLOperation<any>(operation);
 
 			if (result.errors && result.errors.length > 0) {
 				return {
@@ -2338,9 +1663,8 @@ export class TableMcpServer {
 				operationType: "query" as const,
 			};
 
-			const result = await this.mcpServer.executeGraphQLOperation<any>(
-				operation,
-			);
+			const result =
+				await this.mcpServer.executeGraphQLOperation<any>(operation);
 
 			if (result.errors && result.errors.length > 0) {
 				return {
@@ -2710,9 +2034,8 @@ export class TableMcpServer {
 				operationType: "query" as const,
 			};
 
-			const result = await this.mcpServer.executeGraphQLOperation<any>(
-				operation,
-			);
+			const result =
+				await this.mcpServer.executeGraphQLOperation<any>(operation);
 
 			if (result.errors && result.errors.length > 0) {
 				console.error("Failed to get flat JSON:", result.errors);
@@ -2827,7 +2150,8 @@ export class TableMcpServer {
 	 * Refresh table templates (useful for dynamic updates)
 	 */
 	async refreshTableTemplates(): Promise<void> {
-		if (this.closed) throw new Error(`Table MCP server for ${this.tableId} is closed`);
+		if (this.closed)
+			throw new Error(`Table MCP server for ${this.tableId} is closed`);
 		this.debugHotpath(`Refreshing templates for table ${this.tableId}`);
 		this.invalidateToolsListCache();
 		this.tableTools.clear();
@@ -2864,9 +2188,42 @@ export class TableMcpServer {
 		if (this.closed) return this.createClosedResponse();
 		try {
 			const body = await request.text();
-			const jsonRpcRequest = JSON.parse(body) as TableMcpJsonRpcRequest;
+			const parsed = JSON.parse(body) as unknown;
+			const batchError = validateJsonRpcBatch(parsed);
+			if (batchError) {
+				return new Response(
+					JSON.stringify(
+						this.createErrorResponse(
+							null,
+							batchError.code,
+							batchError.message,
+							batchError.data,
+						),
+					),
+					{
+						status: 400,
+						headers: { "Content-Type": "application/json" },
+					},
+				);
+			}
+			if (!parsed || typeof parsed !== "object") {
+				return new Response(
+					JSON.stringify(
+						this.createErrorResponse(
+							null,
+							-32600,
+							"Invalid Request",
+							"Request body must be a JSON object",
+						),
+					),
+					{
+						status: 400,
+						headers: { "Content-Type": "application/json" },
+					},
+				);
+			}
 			return await this.handleParsedRequest(
-				jsonRpcRequest,
+				parsed as TableMcpJsonRpcRequest,
 				request.headers,
 				audience,
 			);
@@ -2896,6 +2253,33 @@ export class TableMcpServer {
 	): Promise<Response> {
 		if (this.closed) return this.createClosedResponse();
 		try {
+			const headerVersion = normalizeHeaderOws(
+				headers.get("MCP-Protocol-Version"),
+			);
+			if (
+				headerVersion &&
+				!isSupportedProtocolVersion(headerVersion) &&
+				!isModernProtocolVersion(headerVersion)
+			) {
+				return new Response(
+					JSON.stringify(
+						this.createErrorResponse(
+							null,
+							-32022,
+							"Unsupported protocol version",
+							{
+								requested: headerVersion,
+								supported: [...SUPPORTED_MCP_PROTOCOL_VERSIONS],
+							},
+						),
+					),
+					{
+						status: 400,
+						headers: { "Content-Type": "application/json" },
+					},
+				);
+			}
+
 			const { method, id, params } = jsonRpcRequest;
 			if (isModernMcpRequest(jsonRpcRequest, headers)) {
 				const validationError = validateModernMcpRequest(
@@ -2914,14 +2298,47 @@ export class TableMcpServer {
 						),
 						{
 							status: 400,
-							headers: { "Content-Type": "application/json" },
+							headers: {
+								"Content-Type": "application/json",
+								...(validationError.code === -32020
+									? { "MCP-Protocol-Version": MODERN_MCP_PROTOCOL_VERSION }
+									: {}),
+							},
 						},
 					);
 				}
 
+				const traceMeta = extractTraceMeta(jsonRpcRequest);
+				const modernHeaders = {
+					"Content-Type": "application/json",
+					"Cache-Control": "no-cache",
+					"MCP-Protocol-Version": MODERN_MCP_PROTOCOL_VERSION,
+				};
+
+				if (
+					isJsonRpcNotification(jsonRpcRequest) &&
+					(method === "notifications/initialized" ||
+						method === "initialized" ||
+						method === "notifications/cancelled")
+				) {
+					return new Response(null, {
+						status: 202,
+						headers: {
+							"Cache-Control": "no-cache",
+							"MCP-Protocol-Version": MODERN_MCP_PROTOCOL_VERSION,
+						},
+					});
+				}
+
 				if (method === "tools/list") {
 					await this.initialize();
-					return this.createCachedToolsListResponse(id, audience, true);
+					return this.createCachedToolsListResponse(
+						id,
+						audience,
+						true,
+						traceMeta,
+						MODERN_MCP_PROTOCOL_VERSION,
+					);
 				}
 
 				let modernResult: McpResponse;
@@ -2939,8 +2356,20 @@ export class TableMcpServer {
 							},
 						};
 						break;
+					case "ping":
+						modernResult = {
+							jsonrpc: "2.0",
+							id,
+							result: {},
+						};
+						break;
 					case "tools/call":
-						modernResult = await this.handleToolsCall(id, params, audience);
+						modernResult = await this.handleToolsCall(
+							id,
+							params,
+							audience,
+							true,
+						);
 						break;
 					default:
 						modernResult = this.createErrorResponse(
@@ -2951,31 +2380,64 @@ export class TableMcpServer {
 						);
 				}
 
-				if (modernResult.error || !modernResult.result || typeof modernResult.result !== "object") {
+				if (
+					modernResult.error ||
+					!modernResult.result ||
+					typeof modernResult.result !== "object"
+				) {
 					return new Response(JSON.stringify(modernResult), {
 						status: 200,
-						headers: { "Content-Type": "application/json" },
+						headers: modernHeaders,
 					});
 				}
 
 				return new Response(
 					JSON.stringify({
 						...modernResult,
-						result: withModernResult(modernResult.result, this.getServerInfo()),
+						result: withModernResult(
+							modernResult.result,
+							this.getServerInfo(),
+							traceMeta,
+						),
 					}),
 					{
 						status: 200,
-						headers: {
-							"Content-Type": "application/json",
-							"Cache-Control": "no-cache",
-						},
+						headers: modernHeaders,
 					},
 				);
 			}
 
+			const strictLegacy = usesStrictProtocolSemantics(headerVersion);
+			if (
+				isJsonRpcNotification(jsonRpcRequest) &&
+				(method === "notifications/initialized" ||
+					method === "initialized" ||
+					method === "notifications/cancelled")
+			) {
+				if (strictLegacy) {
+					return new Response(null, {
+						status: 202,
+						headers: {
+							"Cache-Control": "no-cache",
+							"MCP-Protocol-Version": LATEST_LEGACY_MCP_PROTOCOL_VERSION,
+						},
+					});
+				}
+				return new Response(JSON.stringify({ jsonrpc: "2.0" }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			}
+
 			if (method === "tools/list") {
 				await this.initialize();
-				return this.createCachedToolsListResponse(id, audience, false);
+				return this.createCachedToolsListResponse(
+					id,
+					audience,
+					false,
+					undefined,
+					strictLegacy ? LATEST_LEGACY_MCP_PROTOCOL_VERSION : undefined,
+				);
 			}
 
 			let result: McpResponse;
@@ -2984,16 +2446,45 @@ export class TableMcpServer {
 				case "initialize":
 					result = await this.mcpServer.handleLegacyInitialize(id, params);
 					break;
+				case "ping":
+					result = {
+						jsonrpc: "2.0",
+						id,
+						result: {},
+					};
+					break;
 				case "tools/call":
-					result = await this.handleToolsCall(id, params, audience);
+					result = await this.handleToolsCall(
+						id,
+						params,
+						audience,
+						strictLegacy,
+					);
 					break;
 				default:
 					result = this.createErrorResponse(id, -32601, "Method not found");
 			}
 
+			const responseHeaders: Record<string, string> = {
+				"Content-Type": "application/json",
+			};
+			if (strictLegacy) {
+				responseHeaders["MCP-Protocol-Version"] =
+					LATEST_LEGACY_MCP_PROTOCOL_VERSION;
+			} else if (
+				method === "initialize" &&
+				result.result &&
+				typeof result.result === "object" &&
+				(result.result as { protocolVersion?: unknown }).protocolVersion ===
+					LATEST_LEGACY_MCP_PROTOCOL_VERSION
+			) {
+				responseHeaders["MCP-Protocol-Version"] =
+					LATEST_LEGACY_MCP_PROTOCOL_VERSION;
+			}
+
 			return new Response(JSON.stringify(result), {
 				status: 200,
-				headers: { "Content-Type": "application/json" },
+				headers: responseHeaders,
 			});
 		} catch (_error) {
 			const errorResponse = this.createErrorResponse(
@@ -3010,10 +2501,20 @@ export class TableMcpServer {
 
 	private createClosedResponse(): Response {
 		return new Response(
-			JSON.stringify(this.createErrorResponse(null, -32000, "Server unavailable", "MCP server is shutting down or closed")),
+			JSON.stringify(
+				this.createErrorResponse(
+					null,
+					-32000,
+					"Server unavailable",
+					"MCP server is shutting down or closed",
+				),
+			),
 			{
 				status: 503,
-				headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+				headers: {
+					"Content-Type": "application/json",
+					"Cache-Control": "no-store",
+				},
 			},
 		);
 	}
@@ -3242,7 +2743,10 @@ export class TableMcpServer {
 					return {
 						success: false,
 						errors: [
-							{ message: "Forbidden: reader role cannot execute write operations" },
+							{
+								message:
+									"Forbidden: reader role cannot execute write operations",
+							},
 						],
 					};
 				}
@@ -3250,7 +2754,10 @@ export class TableMcpServer {
 					return {
 						success: false,
 						errors: [
-							{ message: "Forbidden: writer role cannot execute admin operations" },
+							{
+								message:
+									"Forbidden: writer role cannot execute admin operations",
+							},
 						],
 					};
 				}
@@ -3305,9 +2812,8 @@ export class TableMcpServer {
 				},
 			);
 
-			const result = await this.mcpServer.executeGraphQLOperation<any>(
-				operation,
-			);
+			const result =
+				await this.mcpServer.executeGraphQLOperation<any>(operation);
 
 			if (result.errors && result.errors.length > 0) {
 				console.warn(`GraphQL errors for tool ${tool.name}:`, result.errors);

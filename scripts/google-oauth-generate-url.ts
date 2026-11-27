@@ -1,5 +1,6 @@
-import { pathToFileURL } from 'node:url'
+import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 
 function requireEnv(name: string): string {
   const value = process.env[name]
@@ -35,7 +36,7 @@ async function main() {
     throw new Error('GoogleAuthHelper not found in table-adapter-gsheets.')
   }
 
-  const payload = JSON.parse(await Bun.file(clientFile).text()) as {
+  const payload = JSON.parse(await readFile(clientFile, 'utf8')) as {
     web?: {
       client_id?: string
       client_secret?: string

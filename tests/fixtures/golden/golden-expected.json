@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "bun-graph-db.golden-expected.v1",
+  "counts": {
+    "org_hierarchy": { "nodes": 8, "attributes": 5, "relations": 7 },
+    "knowledge_docs": { "nodes": 8, "attributes": 5, "relations": 7, "docsTotal": 3, "activeDocs": 2 },
+    "service_dag": { "nodes": 5, "attributes": 1, "relations": 5 }
+  },
+  "search": {
+    "ftsDijkstra": ["doc_dijkstra"],
+    "priorityGt85Desc": ["doc_bfs", "doc_mcp_spec", "doc_dijkstra"],
+    "categoryGraphCount": 5
+  },
+  "traversal": {
+    "orgConnectedDepth2FromEng": ["ai", "platform", "runtime", "storage"],
+    "orgShortestPathCeoToStorage": ["ceo", "eng", "platform", "storage"],
+    "docsDependencyChainFromBfsOut": ["doc_dijkstra", "doc_edge_do", "doc_mcp_spec"],
+    "docsOptimalPathBfsToMcpSpec": ["doc_bfs", "doc_dijkstra", "doc_mcp_spec"]
+  },
+  "analytics": {
+    "docsSccTotalComponents": 6,
+    "docsSccLargestSize": 3,
+    "docsSccNonTrivialCount": 1,
+    "docsSccCycleMembers": ["doc_scc_a", "doc_scc_b", "doc_scc_c"],
+    "islandConnections": 0
+  },
+  "hierarchy": {
+    "orgRoots": ["ceo"],
+    "orgLeaves": ["ai", "design", "runtime", "storage"],
+    "storageAncestors": ["ceo", "eng", "platform"],
+    "platformSubtreeNodes": ["platform", "runtime", "storage"],
+    "lcaStorageAndAi": "eng",
+    "lcaStorageAndDesign": "ceo",
+    "orgTreeValidation": {
+      "valid": true,
+      "totalNodes": 8,
+      "totalEdges": 7,
+      "rootCount": 1,
+      "leafCount": 4,
+      "isolatedCount": 0,
+      "maxDepth": 3
+    },
+    "serviceDagMultiParentKey": "db_core"
+  },
+  "hybrid": {
+    "graphVectorTopKey": "doc_bfs",
+    "anchoredSubtreeTopKeys": ["doc_dijkstra", "doc_edge_do"]
+  },
+  "docs": {
+    "activeUsageContent": "Golden Knowledge Usage v2",
+    "activeSpecContent": "Golden Knowledge Spec v1"
+  }
+}

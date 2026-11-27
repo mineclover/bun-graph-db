@@ -5,7 +5,7 @@ import {
   OPENAPI_PROJECTION_VERSION_HASH_EXTENSION,
   validateOpenApiProjection,
 } from '@oa-sdk/openapi-projection-contract'
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import {
   ROOT_MCP_TOOL_CONTRACTS_EXTENSION,
   toRootMcpToolOpenApiProjectionResult,

@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
-import { Database } from 'bun:sqlite'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { SqliteGraphRepository } from '@/infrastructure/database/sqlite/SqliteGraphRepository.js'
 import { SqliteNodeRelationRepository } from '@/infrastructure/database/sqlite/SqliteNodeRelationRepository.js'
 import { RelationDepth, RelationDirection } from '@/domain/value-objects/RelationQuery.js'

@@ -5,7 +5,7 @@ import {
 	OPENAPI_PROJECTION_VERSION_HASH_EXTENSION,
 	validateOpenApiProjection,
 } from "@oa-sdk/openapi-projection-contract";
-import { describe, expect, test } from "bun:test";
+import { describe, expect, test } from "vitest";
 import { projectTableSchema } from "../../src/core/schema/TableSchemaProjection";
 import type { TableSchemaProjection } from "../../src/core/schema/TableSchemaProjection";
 import { TableMcpServer } from "../../src/presentation/mcp/factory/TableMcpServer";

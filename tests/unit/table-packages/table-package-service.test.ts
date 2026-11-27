@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from 'bun:test'
+import { beforeEach, describe, expect, test } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import { Table } from '@/domain/entities/Table.js'

@@ -2,7 +2,7 @@
 docType: explanation
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-10-31"
+lastVerified: "2026-11-27"
 owner: "Bun Graph DB maintainers"
 sources:
   - src/domain/services/vector/ExactVectorIndex.ts
@@ -31,25 +31,34 @@ Bun Graph DB는 단일 SQLite 파일 기반 영속 `Float32Array` 임베딩 저�
    - 고정 dimension에서 `upsert`, `delete`, `clear`, `search(topK, minScore)`를 제공한다.
    - 정확 cosine similarity를 `O(N * D)`로 계산하고 `BoundedTopKCollector`(`O(N log K)`)로 상위 `K`건만 유지하며 score 내림차순·ID 오름차순으로 동률을 정렬한다.
 2. **영속 SQLite `Float32Array` 저장소 (`SqliteNodeEmbeddingRepository`)**:
-   - Migration 13(`persistent-node-embeddings`)이 `node_embeddings`(`vector_blob BLOB`, 사전 계산된 float32 L2 `norm`, `dimension`, `model`, `table_id`)와 `node_embedding_revisions` 카운터 트리거를 생성한다.
-   - 노드·테이블 삭제 트리거가 고아 임베딩을 자동 정리하며, 테이블별 write-through 캐시는 `(dimension, model)` 버킷별 연속(contiguous) `Float32Array` 슬랩과 `node_embedding_revisions` PK 조회(`O(1)`)로 외부 삭제·갱신까지 즉시 감지해 재동기화한다.
+   - Migration 13(`persistent-node-embeddings`)이 `node_embeddings`(`vector_blob BLOB`, 사전 계산된 float32 L2 `norm`, `dimension`, `model`, `table_id`)와 `node_embedding_revisions` 카운터 트리거를 생성하며, Migration 14(`optimize-eav-indexes-and-write-triggers`)가 `node_embeddings_rev_update_old_table` 트리거를 `old.table_id != new.table_id` 조건으로 제한해 일반 임베딩 갱신의 이중 개정 쓰기를 제거한다.
+   - 노드·테이블 삭제 트리거가 고아 임베딩을 자동 정리하며, 테이블별 write-through LRU 캐시(최대 64 테이블 / 128 MiB)는 `(dimension, model)` 버킷별 단위 정규화(unit-normalized) 연속 `Float32Array` 슬랩과 `node_embedding_revisions` PK 조회(`O(1)`)로 외부 삭제·갱신까지 즉시 감지해 재동기화한다.
    - `upsertMany` / GraphQL `batchSetNodeEmbeddings`는 단일 SQLite `IMMEDIATE` 트랜잭션으로 일괄 저장하며, `restrictToNodeIds` 후보 집합이 버킷 전체 슬롯보다 작으면 후보 오프셋만 직접 순회해 스캔 비용을 `O(|C| * D)`로 줄인다.
 3. **4-신호 RRF 하이브리드 검색 (`HybridSearchNodesUseCase`)**:
-   - 선택적 N-hop 그래프 이웃 거리(`GraphTraversalService.connectedNodeDistances`) ∩ 타입 EAV 속성 필터(`node_attributes.value_num` 부분 B-Tree pushdown) ∩ (`node_search_fts` / `node_attribute_search_fts` BM25 + `Float32Array` 코사인 유사도 + hop 근접도)를 Reciprocal Rank Fusion(RRF)으로 결합한다.
+   - 선택적 N-hop 그래프 이웃 거리(`GraphTraversalService.connectedNodeDistances` + 경량 엣지 타깃/존재 확인 포트) ∩ 타입 EAV 속성 필터(`node_attributes.value_num` 부분 B-Tree pushdown) ∩ (`node_search_fts` / `node_attribute_search_fts` BM25 + 단위 정규화 `Float32Array` 코사인 유사도 + hop 근접도)를 Reciprocal Rank Fusion(RRF)으로 결합한다.
    - GraphQL(`hybridSearchNodes`, `nodeEmbedding`, `setNodeEmbedding`, `removeNodeEmbedding`), REST(`/api/nodes/hybrid-search`, `/api/nodes/:nodeId/embedding`), 루트·테이블 MCP 도구에서 동일한 `AccessControl` 테이블 권한 경계를 통과한다.
 
-SQLite 관계 저장소는 `findAdjacentByNodeIds`로 frontier node들을 한 SQL `IN` query(및 선택적 `relation_type_id IN (...)` pushdown)에서 읽는다.
+SQLite 관계 저장소는 `findAdjacentByNodeIds` (`BOTH` 방향 `UNION` 인덱스 스캔)와 경량 `findAdjacentEdgeTargetsByNodeIds`로 frontier node들을 한 SQL query(및 선택적 `relation_type_id IN (...)` pushdown)에서 읽는다.
 bulk 포트가 없는 저장소는 기존 per-node fallback으로 동작한다. benchmark는 같은 64개
 frontier와 4 edges/node를 사용해 두 경로의 결과 row 수를 먼저 일치시킨 뒤 시간을 잰다.
 
 ## 재현 가능한 benchmark
 
 ```bash
-bun run benchmark:vector-storage
+pnpm run benchmark:vector-storage
 ```
 
-2026-10-31 로컬 실행 결과는 다음과 같다. 수치는 Bun 1.3.9, in-memory SQLite,
-dimension 64, 5회 반복의 median/p95이며, machine-specific advisory evidence다.
+2026-10-31 Bun 1.3.9 로컬 실행 기준선과 2026-11-27 Node.js v26.13.1 (`node:sqlite`, SQLite 3.54.1) 로컬 실행 기준선은 다음과 같다. 수치는 machine-specific advisory evidence다.
+
+### 2026-11-27 Node.js v26.13.1 + SQLite 3.54.1 기준선
+
+| fixture size | exact vector median/p95 ms | SQLite bulk median/p95 ms | SQLite per-node median/p95 ms | scanned/rows |
+|---:|---:|---:|---:|---:|
+| 100 | 0.041 / 0.042 | 0.587 / 0.712 | 1.773 / 2.438 | 100 / 256 |
+| 1,000 | 0.120 / 0.284 | 0.720 / 0.783 | 7.264 / 7.569 | 1,000 / 256 |
+| 5,000 | 0.278 / 0.368 | 2.364 / 2.521 | 36.256 / 37.599 | 5,000 / 256 |
+
+### 2026-10-31 Bun 1.3.9 비교 기준선
 
 | fixture size | exact vector median/p95 ms | SQLite bulk median/p95 ms | SQLite per-node median/p95 ms | scanned/rows |
 |---:|---:|---:|---:|---:|

@@ -2,11 +2,22 @@ import type { NodeId, PaginatedResult, PaginationOptions, TableId } from '@/core
 import type { Node } from '@/domain/entities/Node.js'
 import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
+export interface NodeKeysetCursor {
+  createdAt: string
+  id: string
+}
+
+export interface NodeKeysetPage {
+  nodes: Node[]
+  nextCursor: NodeKeysetCursor | null
+}
+
 export interface INodeRepository {
   save(node: Node): Promise<void>
   findById(id: NodeId): Promise<Node | null>
   findByTableIdAndContent(tableId: TableId, content: string): Promise<Node | null>
   findByTableId(tableId: TableId, options?: PaginationOptions): Promise<PaginatedResult<Node>>
+  findByTableIdKeyset?(tableId: TableId, limit: number, cursor?: NodeKeysetCursor): Promise<NodeKeysetPage>
   findAll(options?: PaginationOptions): Promise<PaginatedResult<Node>>
   delete(id: NodeId): Promise<void>
   deleteByTableId(tableId: TableId): Promise<void>
@@ -15,6 +26,7 @@ export interface INodeRepository {
   countByTableId(tableId: TableId): Promise<number>
   saveMany(nodes: Node[]): Promise<void>
   findByIds(ids: NodeId[]): Promise<Node[]>
+  findExistingIds?(ids: readonly NodeId[]): Promise<Set<NodeId>>
   searchByContent(tableId: TableId, searchTerm: string, options?: PaginationOptions): Promise<PaginatedResult<Node>>
   executeRawQuery(query: string, params?: unknown[]): Promise<unknown[]>
   update(

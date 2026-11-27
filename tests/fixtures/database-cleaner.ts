@@ -3,7 +3,7 @@
  * Simple helper to clear database tables between test runs
  */
 
-import type { Database } from 'bun:sqlite'
+import type { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import type { DIContainer } from '../../src/infrastructure/container/DIContainer'
 import { DatabaseTokens } from '../../src/infrastructure/container/tokens/DatabaseTokens'
 

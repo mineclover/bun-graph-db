@@ -1,4 +1,4 @@
-import { API_ENDPOINT_MAPPING } from '../../presentation/http/routes/ApiRoutes.js'
+import { API_ENDPOINT_MAPPING } from '../../presentation/http/routes/ApiEndpointMapping.js'
 import type { FetchLike } from '@/models/GraphQLOperation.js'
 import type { SafeJsonValue } from '@/shared/utils/safeJson.js'
 
@@ -43,7 +43,7 @@ export class RestApiClient {
         },
       }
 
-      if (data && (method === 'POST' || method === 'PUT')) {
+      if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE')) {
         options.body = JSON.stringify(data)
       }
 
@@ -94,6 +94,10 @@ export class RestApiClient {
     return this.makeRequest(method, path, body, queryParams)
   }
 
+  hasEndpointForTool(toolName: string): boolean {
+    return this.getEndpointForTool(toolName) !== null
+  }
+
   private getEndpointForTool(toolName: string): string | null {
     return API_ENDPOINT_MAPPING[toolName as keyof typeof API_ENDPOINT_MAPPING] || null
   }
@@ -109,7 +113,7 @@ export class RestApiClient {
     body?: Record<string, unknown>
   } {
     const [method, pathTemplate] = endpoint.split(' ')
-    const resolvedMethod = method ?? 'GET'
+    const resolvedMethod = (method ?? 'GET').split('/')[0] || 'GET'
 
     if (!pathTemplate) {
       throw new Error(`Invalid endpoint format: ${endpoint}. Expected format: "METHOD /path"`)
@@ -139,6 +143,10 @@ export class RestApiClient {
         delete body[key]
       }
     })
+
+    if (resolvedMethod === 'DELETE' && Object.keys(body).length === 0) {
+      return { method: resolvedMethod, path }
+    }
 
     return { method: resolvedMethod, path, body }
   }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   DeleteQueryTemplate,
@@ -47,29 +47,29 @@ describe('DeleteQueryTemplate', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repository
     const repositoryMock = {
-      create: mock(async (template) => template),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], total: 0, hasMore: false })),
-      update: mock(async () => createTestTemplate()),
-      deleteById: mock(async () => true),
-      search: mock(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
-      searchByQueryName: mock(async () => []),
-      searchByOperationType: mock(async () => []),
-      findByApplicableTable: mock(async () => []),
-      findTemplatesWithTableDependencies: mock(async () => []),
-      incrementUsage: mock(async () => {}),
-      updateExecutionStats: mock(async () => {}),
-      updateStatus: mock(async () => {}),
-      findPopular: mock(async () => []),
+      create: vi.fn(async (template) => template),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      findAll: vi.fn(async () => ({ data: [], total: 0, hasMore: false })),
+      update: vi.fn(async () => createTestTemplate()),
+      deleteById: vi.fn(async () => true),
+      search: vi.fn(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
+      searchByQueryName: vi.fn(async () => []),
+      searchByOperationType: vi.fn(async () => []),
+      findByApplicableTable: vi.fn(async () => []),
+      findTemplatesWithTableDependencies: vi.fn(async () => []),
+      incrementUsage: vi.fn(async () => {}),
+      updateExecutionStats: vi.fn(async () => {}),
+      updateStatus: vi.fn(async () => {}),
+      findPopular: vi.fn(async () => []),
     } satisfies IQueryTemplateRepository
 
     mockQueryTemplateRepository = repositoryMock
@@ -99,7 +99,7 @@ describe('DeleteQueryTemplate', () => {
 
   describe('Resource Validation', () => {
     it('should return error response when template does not exist', async () => {
-      mockQueryTemplateRepository.findById = mock(async () => null)
+      mockQueryTemplateRepository.findById = vi.fn(async () => null)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'nonexistent-template',
@@ -117,7 +117,7 @@ describe('DeleteQueryTemplate', () => {
   describe('Usage Count Validation', () => {
     it('should return error when template has usage count > 0 without force flag', async () => {
       const templateWithUsage = createTestTemplate('template-1', 'used-template', 5, true)
-      mockQueryTemplateRepository.findById = mock(async () => templateWithUsage)
+      mockQueryTemplateRepository.findById = vi.fn(async () => templateWithUsage)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -139,7 +139,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should allow deletion when template has usage count > 0 with force flag', async () => {
       const templateWithUsage = createTestTemplate('template-1', 'used-template', 10, true)
-      mockQueryTemplateRepository.findById = mock(async () => templateWithUsage)
+      mockQueryTemplateRepository.findById = vi.fn(async () => templateWithUsage)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -155,7 +155,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should allow deletion when template has usage count = 0', async () => {
       const unusedTemplate = createTestTemplate('template-1', 'unused-template', 0, true)
-      mockQueryTemplateRepository.findById = mock(async () => unusedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => unusedTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -172,7 +172,7 @@ describe('DeleteQueryTemplate', () => {
   describe('Active Template Handling', () => {
     it('should deactivate active template before deletion', async () => {
       const activeTemplate = createTestTemplate('template-1', 'active-template', 0, true)
-      mockQueryTemplateRepository.findById = mock(async () => activeTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => activeTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -188,7 +188,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should not deactivate inactive template', async () => {
       const inactiveTemplate = createTestTemplate('template-1', 'inactive-template', 0, false)
-      mockQueryTemplateRepository.findById = mock(async () => inactiveTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => inactiveTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -203,7 +203,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should warn when deleting active template without force', async () => {
       const activeTemplate = createTestTemplate('template-1', 'active-template', 0, true)
-      mockQueryTemplateRepository.findById = mock(async () => activeTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => activeTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -224,7 +224,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should allow deletion of active template with force flag', async () => {
       const activeTemplateWithUsage = createTestTemplate('template-1', 'active-used-template', 5, true)
-      mockQueryTemplateRepository.findById = mock(async () => activeTemplateWithUsage)
+      mockQueryTemplateRepository.findById = vi.fn(async () => activeTemplateWithUsage)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -242,7 +242,7 @@ describe('DeleteQueryTemplate', () => {
   describe('Successful Deletions', () => {
     it('should delete unused template successfully', async () => {
       const unusedTemplate = createTestTemplate('template-1', 'unused-template', 0, false)
-      mockQueryTemplateRepository.findById = mock(async () => unusedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => unusedTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -258,7 +258,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should delete used template with force flag', async () => {
       const usedTemplate = createTestTemplate('template-1', 'used-template', 50, false)
-      mockQueryTemplateRepository.findById = mock(async () => usedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => usedTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -274,7 +274,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should delete active template', async () => {
       const activeTemplate = createTestTemplate('template-1', 'active-template', 0, true)
-      mockQueryTemplateRepository.findById = mock(async () => activeTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => activeTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -290,7 +290,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should delete inactive template', async () => {
       const inactiveTemplate = createTestTemplate('template-1', 'inactive-template', 0, false)
-      mockQueryTemplateRepository.findById = mock(async () => inactiveTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => inactiveTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -307,8 +307,8 @@ describe('DeleteQueryTemplate', () => {
   describe('Error Handling', () => {
     it('should return error response when delete operation fails', async () => {
       const template = createTestTemplate('template-1', 'test-template', 0, false)
-      mockQueryTemplateRepository.findById = mock(async () => template)
-      mockQueryTemplateRepository.deleteById = mock(async () => false)
+      mockQueryTemplateRepository.findById = vi.fn(async () => template)
+      mockQueryTemplateRepository.deleteById = vi.fn(async () => false)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -324,8 +324,8 @@ describe('DeleteQueryTemplate', () => {
 
     it('should throw ValidationException when repository throws error', async () => {
       const template = createTestTemplate('template-1', 'test-template', 0, false)
-      mockQueryTemplateRepository.findById = mock(async () => template)
-      mockQueryTemplateRepository.deleteById = mock(async () => {
+      mockQueryTemplateRepository.findById = vi.fn(async () => template)
+      mockQueryTemplateRepository.deleteById = vi.fn(async () => {
         throw new Error('Database connection failed')
       })
 
@@ -340,8 +340,8 @@ describe('DeleteQueryTemplate', () => {
 
     it('should handle updateStatus failure', async () => {
       const activeTemplate = createTestTemplate('template-1', 'active-template', 0, true)
-      mockQueryTemplateRepository.findById = mock(async () => activeTemplate)
-      mockQueryTemplateRepository.updateStatus = mock(async () => {
+      mockQueryTemplateRepository.findById = vi.fn(async () => activeTemplate)
+      mockQueryTemplateRepository.updateStatus = vi.fn(async () => {
         throw new Error('Update status failed')
       })
 
@@ -357,7 +357,7 @@ describe('DeleteQueryTemplate', () => {
   describe('Logging', () => {
     it('should log deletion start and success', async () => {
       const template = createTestTemplate('template-123', 'test-identifier', 5, false)
-      mockQueryTemplateRepository.findById = mock(async () => template)
+      mockQueryTemplateRepository.findById = vi.fn(async () => template)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-123',
@@ -385,7 +385,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should log warning for active template deletion', async () => {
       const activeTemplate = createTestTemplate('template-1', 'active-template', 0, true)
-      mockQueryTemplateRepository.findById = mock(async () => activeTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => activeTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -404,7 +404,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should log warning for template with usage history', async () => {
       const usedTemplate = createTestTemplate('template-1', 'used-template', 10, false)
-      mockQueryTemplateRepository.findById = mock(async () => usedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => usedTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -426,7 +426,7 @@ describe('DeleteQueryTemplate', () => {
   describe('Edge Cases', () => {
     it('should handle template with high usage count', async () => {
       const highUsageTemplate = createTestTemplate('template-1', 'popular-template', 1000, false)
-      mockQueryTemplateRepository.findById = mock(async () => highUsageTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => highUsageTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -445,17 +445,17 @@ describe('DeleteQueryTemplate', () => {
       const template3 = createTestTemplate('template-3', 'template-3', 0, false)
 
       // First deletion
-      mockQueryTemplateRepository.findById = mock(async () => template1)
+      mockQueryTemplateRepository.findById = vi.fn(async () => template1)
       const result1 = await useCase.execute({ id: 'template-1' })
       expect(result1.success).toBe(true)
 
       // Second deletion
-      mockQueryTemplateRepository.findById = mock(async () => template2)
+      mockQueryTemplateRepository.findById = vi.fn(async () => template2)
       const result2 = await useCase.execute({ id: 'template-2' })
       expect(result2.success).toBe(true)
 
       // Third deletion
-      mockQueryTemplateRepository.findById = mock(async () => template3)
+      mockQueryTemplateRepository.findById = vi.fn(async () => template3)
       const result3 = await useCase.execute({ id: 'template-3' })
       expect(result3.success).toBe(true)
 
@@ -464,7 +464,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should handle force flag explicitly set to false', async () => {
       const usedTemplate = createTestTemplate('template-1', 'used-template', 1, false)
-      mockQueryTemplateRepository.findById = mock(async () => usedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => usedTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -479,7 +479,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should handle force flag explicitly set to true', async () => {
       const usedTemplate = createTestTemplate('template-1', 'used-template', 100, true)
-      mockQueryTemplateRepository.findById = mock(async () => usedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => usedTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',
@@ -494,7 +494,7 @@ describe('DeleteQueryTemplate', () => {
 
     it('should handle deletion without force flag (undefined)', async () => {
       const unusedTemplate = createTestTemplate('template-1', 'unused-template', 0, false)
-      mockQueryTemplateRepository.findById = mock(async () => unusedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => unusedTemplate)
 
       const request: DeleteQueryTemplateRequest = {
         id: 'template-1',

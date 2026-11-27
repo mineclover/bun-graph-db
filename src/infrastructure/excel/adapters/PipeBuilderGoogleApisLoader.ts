@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs'
+import { readFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -115,7 +116,7 @@ export async function loadPipeBuilderGoogleApis(workspacePath: string) {
 export async function loadServiceAccountKeyFile(
   filePath: string,
 ): Promise<Required<Pick<ServiceAccountKeyFile, 'client_email' | 'private_key'>>> {
-  const raw = await Bun.file(filePath).text()
+  const raw = await readFile(filePath, 'utf8')
   const key = JSON.parse(raw) as ServiceAccountKeyFile
 
   if (!key.client_email || !key.private_key) {
@@ -136,7 +137,7 @@ export async function loadOAuthTokenFile(
   Required<Pick<OAuthTokenBundle, 'clientId' | 'clientSecret' | 'redirectUri'>> &
     Pick<OAuthTokenBundle, 'accessToken' | 'refreshToken'>
 > {
-  const raw = await Bun.file(filePath).text()
+  const raw = await readFile(filePath, 'utf8')
   const token = JSON.parse(raw) as OAuthTokenBundle
 
   if (!token.clientId || !token.clientSecret || !token.redirectUri) {

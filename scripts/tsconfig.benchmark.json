@@ -1,7 +1,7 @@
 {
 	"extends": "../tsconfig.json",
 	"compilerOptions": {
-		"types": ["bun", "node"]
+		"types": ["node"]
 	},
 	"include": [
 		"benchmark-hotpaths.ts",

@@ -1,13 +1,13 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 /**
  * Database Initialization Script
  *
  * Applies schema.sql to the SQLite database
  */
 
-import { Database } from 'bun:sqlite'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
+import { Database } from '../src/infrastructure/database/sqlite/SqliteAdapter.js'
 
 const DB_PATH = './data/bun-graph-db.sqlite'
 const SCHEMA_PATH = './scripts/database/schema.sql'

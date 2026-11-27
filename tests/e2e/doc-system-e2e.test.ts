@@ -3,7 +3,7 @@
  * End-to-end tests with complete isolation and realistic data
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { type IsolatedTestContext, setupE2ETest } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'doc-system-e2e'

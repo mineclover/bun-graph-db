@@ -2,24 +2,28 @@
 docType: reference
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-10-31"
+lastVerified: "2026-11-27"
 ---
 
 # Bun Graph DB MCP 참조
 
-루트 MCP 서버는 `/mcp`, 테이블 범위 MCP 서버는 `/sub/:tableId/mcp`에서 JSON-RPC 2.0 over HTTP로 제공된다. 공개 도구의 이름, 입력 JSON Schema, `read`·`write` 성격, 테이블 범위는 [`McpToolRegistry`](../../src/application/services/McpToolRegistry.ts)의 단일 계약이 기준이다.
+루트 MCP 서버는 `/mcp`, 테이블 범위 MCP 서버는 `/sub/:tableId/mcp`에서 JSON-RPC 2.0 over HTTP로 제공된다. 공개 도구의 이름, 입력·출력 JSON Schema, `ToolAnnotations`, `read`·`write` 성격, 테이블 범위는 [`McpToolRegistry`](../../src/application/services/McpToolRegistry.ts)의 단일 계약이 기준이다.
 
 운영 모델과 권한 경계는 [아키텍처 개요](../architecture/overview.md), 완료 조건은 [운영 준비도 명세](../../specs/008-production-readiness/spec.md)를 따른다.
 
 ## 지원 프로토콜
 
-| 프로토콜 버전 | 요청 모델 |
-| --- | --- |
-| `2026-07-28` | 요청별 메타데이터를 사용하는 stateless 경로 |
-| `2025-06-18` | initialize 기반 호환 경로 |
-| `2024-11-05` | initialize 기반 레거시 호환 경로 |
+| 프로토콜 버전 | 요청 모델 | 주요 규약 |
+| --- | --- | --- |
+| `2026-07-28` | 요청별 메타데이터를 사용하는 stateless 기본 경로 | `server/discover`, `ping`, `202 Accepted` 알림, `structuredContent`, `isError` 도구 검증 오류, SEP-2243 `Mcp-Name` Base64 sentinel, SEP-414 추적 메타 통과 |
+| `2025-11-25` | initialize 기반 LTS 호환 경로 | `ping`, `202 Accepted` 알림, `structuredContent`, `isError` 도구 검증 오류, JSON Schema 2020-12 출력 스키마 |
+| `2025-06-18` | initialize 기반 호환 경로 | 기존 `-32602` 스키마 오류 및 `200` 빈 알림 호환 |
+| `2025-03-26` | initialize 기반 호환 경로 | HTTP Streamable 초기 호환 |
+| `2024-11-05` | initialize 기반 레거시 호환 경로 | 초기 MCP 호환 |
 
-`2026-07-28` 요청은 `MCP-Protocol-Version` 및 `Mcp-Method` 헤더와 `params._meta`의 프로토콜 정보가 일치해야 한다. `tools/call`은 `Mcp-Name` 헤더도 도구 이름과 일치해야 한다.
+`2026-07-28` 요청은 `MCP-Protocol-Version`, `Mcp-Method` 헤더(RFC 9110 OWS 트림)와 `params._meta`의 프로토콜 정보가 일치해야 하며, `tools/call`은 `Mcp-Name` 헤더(`=?base64?...?=` Web Standard UTF-8 디코딩 지원)도 도구 이름과 일치해야 한다. 루트(`/mcp`)와 테이블(`/sub/:tableId/mcp`) 모두 동일하게 `Origin` 검증(로컬 루프백 + `BUN_GRAPH_DB_ALLOWED_ORIGINS` -> 불일치 시 `403`), 미지원 HTTP 메서드 `405 Method Not Allowed` (`Allow: POST, GET`), 비-JSON `Content-Type` POST `415 Unsupported Media Type`, JSON-RPC 배치 배열 `400` (`-32600 Invalid Request`) 규칙을 적용한다. 또한 `McpHttpServer`·`TableMcpServer`는 독립 실행 서버(`index.ts`)·`PortableBootstrap`·`CloudflareSingleNodeWorker` 모두에서 `aiMemoryService`·`iaService` 포함 동일한 경로·권한 경계로 제공된다.
+
+모든 `tools/list` 항목에는 `annotations` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`)가 포함되며, 스키마 계약 도구(`healthCheck`, `get-root-openapi-projection`, `get-openapi-projection-{tableId}`)는 JSON Schema 2020-12 `outputSchema`를 선언한다. `tools/call` 결과는 기존 `content`와 함께 파싱된 JSON 객체 `structuredContent`(SEP-2106)를 병행 반환한다.
 
 ## 인증과 권한
 
@@ -40,7 +44,7 @@ export BUN_GRAPH_DB_INTERNAL_BRIDGE_TOKEN='at-least-32-characters-of-random-secr
 ## 최신 클라이언트 요청 예시
 
 ```bash
-curl -X POST http://localhost:4000/mcp \
+curl -X POST http://localhost:4141/mcp \
   -H 'Content-Type: application/json' \
   -H 'MCP-Protocol-Version: 2026-07-28' \
   -H 'Mcp-Method: tools/list' \
@@ -51,7 +55,8 @@ curl -X POST http://localhost:4000/mcp \
     "params": {
       "_meta": {
         "io.modelcontextprotocol/protocolVersion": "2026-07-28",
-        "io.modelcontextprotocol/clientCapabilities": {}
+        "io.modelcontextprotocol/clientCapabilities": {},
+        "traceparent": "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
       }
     }
   }'
@@ -62,8 +67,8 @@ curl -X POST http://localhost:4000/mcp \
 ## 검증 명령
 
 ```bash
-bun test tests/unit/mcp-modern-protocol.test.ts tests/unit/mcp-tool-contract.test.ts tests/unit/mcp-internal-bridge.test.ts
-bun run typecheck
+pnpm exec vitest run tests/unit/mcp-modern-protocol.test.ts tests/unit/mcp-tool-contract.test.ts tests/unit/mcp-internal-bridge.test.ts
+pnpm run typecheck
 ```
 
 과거 프록시 비율·고정 도구 수·성능 수치는 현재 계약의 일부가 아니므로 이 참조 문서에서 다루지 않는다. 새 도구는 GraphQL 구현, 단일 MCP 계약, 권한 메타데이터, 계약 테스트를 같은 변경에서 갱신해야 한다.

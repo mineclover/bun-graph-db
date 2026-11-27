@@ -4,6 +4,7 @@ import type { IRelationTypeRepository } from '@/domain/repositories/IRelationTyp
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
+import { chunkValues, getMaxBindParams } from './SqlitePort.js'
 
 interface RelationTypeRow {
   id: number
@@ -118,11 +119,15 @@ export class SqliteRelationTypeRepository
   async deleteMany(ids: RelationTypeId[]): Promise<void> {
     if (ids.length === 0) return
 
-    const placeholders = ids.map(() => '?').join(', ')
-    const query = `DELETE FROM relation_types WHERE id IN (${placeholders})`
-
     try {
-      this.db.run(query, ids)
+      const chunks = chunkValues(ids, getMaxBindParams(this.db))
+      this.db.transaction(() => {
+        for (const chunk of chunks) {
+          const placeholders = chunk.map(() => '?').join(', ')
+          const query = `DELETE FROM relation_types WHERE id IN (${placeholders})`
+          this.db.run(query, chunk)
+        }
+      })()
     } catch (error) {
       throw new DatabaseException(`Failed to delete multiple relation types: ${error}`)
     }

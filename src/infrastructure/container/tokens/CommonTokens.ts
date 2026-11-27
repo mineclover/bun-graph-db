@@ -13,8 +13,10 @@ export const CommonTokens = {
   SEARCH_QUERY_PARSER: Symbol.for('SearchQueryParser'),
   TABLE_SCHEMA_PROJECTION_SERVICE: Symbol.for('TableSchemaProjectionService'),
   NODE_ATTRIBUTE_SCHEMA_GATE: Symbol.for('NodeAttributeSchemaGate'),
+  TABLE_SCHEMA_LIFECYCLE_ASPECT: Symbol.for('TableSchemaLifecycleAspect'),
 
   // Domain services
+  EMBEDDING_PROVIDER: Symbol.for('EmbeddingProvider'),
   JSON_EXPORT_SERVICE: Symbol.for('JsonExportService'),
   JSONL_BACKUP_SERVICE: Symbol.for('JsonlBackupService'),
   SQLITE_BACKUP_SERVICE: Symbol.for('SQLiteBackupService'),

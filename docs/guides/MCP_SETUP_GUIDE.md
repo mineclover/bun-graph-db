@@ -1,9 +1,9 @@
 # MCP Server Setup Guide
 ## Claude AI Integration with Bun Graph Database
 
-**Version**: 1.0.0
-**Last Updated**: 2025-11-23
-**MCP Protocol**: JSON-RPC 2.0
+**Version**: 2.0.0
+**Last Updated**: 2026-11-27
+**MCP Protocol**: JSON-RPC 2.0 (`2026-07-28` + `2025-11-25` LTS)
 
 ---
 
@@ -46,7 +46,7 @@ Claude: [MCP를 통해 searchNodes 쿼리 자동 실행]
 
 1. **Bun Graph Database 서버 실행 중**
    ```bash
-   bun run dev
+   pnpm run dev
    # Server: http://localhost:4141/graphql
    # MCP: http://localhost:4141/mcp
    ```
@@ -335,14 +335,14 @@ Error: Cannot connect to MCP server at http://localhost:4141/mcp
 **해결 방법**:
 ```bash
 # 1. 서버 실행 확인
-ps aux | grep bun
+ps aux | grep tsx
 
 # 2. 포트 확인
 lsof -i :4141
 
 # 3. 서버 재시작
-pkill -f "bun.*dev"
-bun run dev
+pkill -f "tsx watch"
+pnpm run dev
 
 # 4. MCP 엔드포인트 테스트
 curl http://localhost:4141/mcp
@@ -590,7 +590,7 @@ const allowedTools = [
 ---
 
 **문서 버전**: 1.0.0
-**최종 업데이트**: 2025-11-23
+**최종 업데이트**: 2026-11-27
 **작성자**: Bun Graph DB Team
 
 **피드백**: GitHub Issues에 문의사항을 남겨주세요.

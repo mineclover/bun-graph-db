@@ -4,6 +4,7 @@ import type { ITableRepository } from '@/domain/repositories/ITableRepository.js
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
+import { chunkValues, getMaxBindParams } from './SqlitePort.js'
 
 type SqliteParams = Array<string | number | boolean | null>
 
@@ -244,11 +245,15 @@ export class SqliteTableRepository extends BaseSqliteRepository<Table, TableId> 
   async deleteMany(ids: string[]): Promise<void> {
     if (ids.length === 0) return
 
-    const placeholders = ids.map(() => '?').join(', ')
-    const query = `DELETE FROM tables WHERE id IN (${placeholders})`
-
     try {
-      this.db.run(query, ids)
+      const chunks = chunkValues(ids, getMaxBindParams(this.db))
+      this.db.transaction(() => {
+        for (const chunk of chunks) {
+          const placeholders = chunk.map(() => '?').join(', ')
+          const query = `DELETE FROM tables WHERE id IN (${placeholders})`
+          this.db.run(query, chunk)
+        }
+      })()
     } catch (error) {
       throw new DatabaseException(`Failed to delete multiple tables: ${error}`)
     }

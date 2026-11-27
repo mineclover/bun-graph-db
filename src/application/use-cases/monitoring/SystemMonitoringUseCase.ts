@@ -54,12 +54,20 @@ export class SystemMonitoringUseCase {
   constructor(private logger: ILogger) {}
 
   async getSystemStats(): Promise<SystemStats> {
-    const memoryUsage = process.memoryUsage()
-    const cpuUsage = process.cpuUsage()
+    const hasProcess = typeof process !== 'undefined'
+    const memoryUsage: NodeJS.MemoryUsage =
+      hasProcess && typeof process.memoryUsage === 'function'
+        ? process.memoryUsage()
+        : { rss: 0, heapTotal: 0, heapUsed: 0, external: 0, arrayBuffers: 0 }
+    const cpuUsage: NodeJS.CpuUsage =
+      hasProcess && typeof process.cpuUsage === 'function'
+        ? process.cpuUsage()
+        : { user: 0, system: 0 }
+    const uptimeSeconds = hasProcess && typeof process.uptime === 'function' ? process.uptime() : 0
 
     // Calculate memory statistics
-    const totalMemory = this.getTotalSystemMemory()
-    const freeMemory = this.getFreeSystemMemory()
+    const totalMemory = await this.getTotalSystemMemory()
+    const freeMemory = this.getFreeSystemMemory(memoryUsage, totalMemory)
     const usedMemory = totalMemory - freeMemory
     const memoryPercentage = (usedMemory / totalMemory) * 100
 
@@ -77,10 +85,10 @@ export class SystemMonitoringUseCase {
         },
       },
       process: {
-        pid: process.pid,
-        cpu: this.calculateCpuPercentage(cpuUsage),
-        version: process.version,
-        platform: process.platform,
+        pid: hasProcess && typeof process.pid === 'number' ? process.pid : 0,
+        cpu: this.calculateCpuPercentage(cpuUsage, uptimeSeconds),
+        version: hasProcess && typeof process.version === 'string' ? process.version : 'web',
+        platform: hasProcess && typeof process.platform === 'string' ? process.platform : 'browser',
         memoryDetails: this.getProcessMemoryDetails(memoryUsage, memoryPercentage),
       },
       database: {
@@ -89,7 +97,7 @@ export class SystemMonitoringUseCase {
         averageQueryTime: this.queryCount > 0 ? this.totalQueryTime / this.queryCount : 0,
       },
       timestamp: new Date(),
-      uptime: Math.round(process.uptime()),
+      uptime: Math.round(uptimeSeconds),
     }
 
     this.logger.debug('System stats collected', { stats: JSON.stringify(stats) })
@@ -111,29 +119,26 @@ export class SystemMonitoringUseCase {
     this.totalQueryTime = 0
   }
 
-  private getTotalSystemMemory(): number {
-    // Bun-specific memory detection
-    if (typeof Bun !== 'undefined' && 'allocUnsafe' in Bun) {
-      return 4 * 1024 * 1024 * 1024 // 4GB
+  private async getTotalSystemMemory(): Promise<number> {
+    try {
+      const os = await import('node:os')
+      return os.totalmem() || 4 * 1024 * 1024 * 1024
+    } catch {
+      return 4 * 1024 * 1024 * 1024
     }
-
-    // Default fallback (4GB)
-    return 4 * 1024 * 1024 * 1024
   }
 
-  private getFreeSystemMemory(): number {
-    const memoryUsage = process.memoryUsage()
-    const totalMemory = this.getTotalSystemMemory()
+  private getFreeSystemMemory(memoryUsage: NodeJS.MemoryUsage, totalMemory: number): number {
     const usedByProcess = memoryUsage.rss
 
     // Estimate free memory (this is approximate)
     return Math.max(totalMemory - usedByProcess, memoryUsage.heapTotal - memoryUsage.heapUsed)
   }
 
-  private calculateCpuPercentage(cpuUsage: NodeJS.CpuUsage): number {
+  private calculateCpuPercentage(cpuUsage: NodeJS.CpuUsage, uptimeSeconds: number): number {
     // Simple CPU usage calculation
     const totalCpu = cpuUsage.user + cpuUsage.system
-    const totalTime = process.uptime() * 1000000 // Convert to microseconds
+    const totalTime = uptimeSeconds * 1000000 // Convert to microseconds
 
     if (totalTime === 0) return 0
 

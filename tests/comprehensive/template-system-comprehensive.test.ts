@@ -5,7 +5,7 @@
  * Coverage: create, query, execute, update, import/export, table scoping, concurrency.
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'template-system-comprehensive'
@@ -527,7 +527,7 @@ describe('Comprehensive Template System Test Suite', () => {
 
     expect(importResult.errors).toBeUndefined()
     expect(importResult.data.importTemplate.success).toBe(true)
-    expect(importResult.data.importTemplate.template.identifier).toStartWith(`${prefix}-`)
+    expect(importResult.data.importTemplate.template.identifier.startsWith(`${prefix}-`)).toBe(true)
   })
 
   test('should overwrite an existing template through import', async () => {

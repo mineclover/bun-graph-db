@@ -1,5 +1,7 @@
 # Bun Graph DB - Architecture Overview
 
+> 💡 **정본 안내**: 현재 Node.js 26(`node:sqlite`) 기준 아키텍처, 보안 경계, Migration `v1..v14`, MCP/검색 동작의 정본 설명은 [docs/architecture/overview.md](./overview.md)를 기준으로 확인하세요.
+
 ## 🎯 Project Vision
 
 Bun Graph DB는 **SQLite 기반의 확장 가능한 그래프 데이터베이스 시스템**으로, 명확한 계층 구조와 관심사 분리를 통해 유지보수가 용이하고 확장 가능한 아키텍처를 제공합니다.
@@ -150,14 +152,14 @@ CREATE INDEX idx_nodes_table_id ON nodes(table_id);
 
 ### 1. 환경 설정
 ```bash
-# 의존성 설치
-bun install
+# 의존성 설치 (Node.js >= 26.0.0, pnpm 12.21.0)
+pnpm install
 
 # 개발 서버 시작
-bun run dev
+pnpm run dev
 
 # GraphQL Playground 접속
-open http://localhost:4000/graphql
+open http://localhost:4141/graphql
 ```
 
 ### 2. 첫 번째 템플릿 생성

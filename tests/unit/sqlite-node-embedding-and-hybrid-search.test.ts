@@ -1,5 +1,5 @@
-import { Database } from 'bun:sqlite'
-import { afterEach, beforeEach, describe, expect, test } from 'bun:test'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -29,7 +29,7 @@ import type { NodeMutations } from '@/presentation/graphql/mutations/NodeMutatio
 import type { NodeQueries } from '@/presentation/graphql/queries/NodeQueries.js'
 
 const BASE_SCHEMA_SQL = readFileSync(
-  resolve(import.meta.dir, '../../scripts/database/schema.sql'),
+  resolve(import.meta.dirname, '../../scripts/database/schema.sql'),
   'utf8',
 )
 

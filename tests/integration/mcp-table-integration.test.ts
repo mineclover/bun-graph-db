@@ -7,7 +7,7 @@
  * Sequential: Integration testing after complete implementation
  */
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { startServerForSuite, stopServerForSuite } from '../fixtures/test-graphql-server'
 
 let BASE_URL = ''
@@ -129,7 +129,8 @@ describe('MCP Table Integration Tests', () => {
       expect(serverInfo).toMatchObject({
         name: expect.stringContaining(`Table ${testTableId}`),
         version: '1.0.0',
-        protocolVersion: '2025-06-18',
+        protocolVersion: '2026-07-28',
+        supportedVersions: expect.arrayContaining(['2026-07-28', '2025-11-25']),
         capabilities: {
           tools: {},
           logging: {},

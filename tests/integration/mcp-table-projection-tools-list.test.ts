@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { validateOpenApiProjection } from "@oa-sdk/openapi-projection-contract";
-import type { Database } from "bun:sqlite";
+import type { Database } from "../../src/infrastructure/database/sqlite/SqliteAdapter.js";
 import { TableSchemaProjectionService } from "../../src/application/services/TableSchemaProjectionService";
 import { projectTableSchema } from "../../src/core/schema/TableSchemaProjection";
 import type { IAttributeRepository } from "../../src/domain/repositories/IAttributeRepository";

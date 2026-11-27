@@ -9,6 +9,7 @@ import type {
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
+import { chunkValues, getMaxBindParams } from './SqlitePort.js'
 
 type SqliteParams = Array<string | number | boolean | null>
 
@@ -18,7 +19,7 @@ interface DocRow {
   category: string
   version: number
   content: string
-  is_active: boolean
+  is_active: boolean | number
   created_at: string
   updated_at: string
 }
@@ -359,17 +360,29 @@ export class SqliteDocRepository extends BaseSqliteRepository<Doc, DocId> implem
   async findByTableIds(tableIds: TableId[]): Promise<Doc[]> {
     if (tableIds.length === 0) return []
 
-    const placeholders = tableIds.map(() => '?').join(',')
-    const query = `
-      SELECT id, table_id, category, version, content, is_active, created_at, updated_at
-      FROM docs
-      WHERE table_id IN (${placeholders})
-      ORDER BY table_id, category, version DESC
-    `
-
     try {
-      const rows = this.db.query<DocRow, string[]>(query).all(...tableIds)
-      return rows.map((row) => this.mapRowToEntity(row))
+      const chunks = chunkValues(tableIds, getMaxBindParams(this.db))
+      const collectedRows: DocRow[] = []
+      for (const chunk of chunks) {
+        const placeholders = chunk.map(() => '?').join(',')
+        const query = `
+          SELECT id, table_id, category, version, content, is_active, created_at, updated_at
+          FROM docs
+          WHERE table_id IN (${placeholders})
+          ORDER BY table_id, category, version DESC
+        `
+        const rows = this.db.query<DocRow, string[]>(query).all(...chunk)
+        collectedRows.push(...rows)
+      }
+      if (chunks.length > 1) {
+        collectedRows.sort(
+          (a, b) =>
+            a.table_id - b.table_id ||
+            a.category.localeCompare(b.category) ||
+            b.version - a.version,
+        )
+      }
+      return collectedRows.map((row) => this.mapRowToEntity(row))
     } catch (error) {
       throw new DatabaseException(`Failed to find docs by table ids: ${error}`)
     }

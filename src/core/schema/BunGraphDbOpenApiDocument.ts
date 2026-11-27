@@ -1,3 +1,5 @@
+import { BUN_GRAPH_DB_API_VERSION } from '@/core/contracts/RestRouteContract.js'
+
 export type OpenApiReference = {
 	$ref: string;
 };
@@ -86,7 +88,7 @@ export function buildBunGraphDbOpenApiDocument(): BunGraphDbOpenApiDocument {
 		openapi: "3.2.0",
 		info: {
 			title: "bun-graph-db API",
-			version: "1.0.0",
+			version: BUN_GRAPH_DB_API_VERSION,
 			description:
 				"Stable REST and MCP JSON-RPC API surface for bun-graph-db. Runtime table schemas are exported separately through table OpenAPI projection profiles.",
 		},

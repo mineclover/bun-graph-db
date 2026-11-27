@@ -6,7 +6,7 @@
  * Scenarios: Single operations, batch operations, edge cases
  */
 
-import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { type IsolatedTestContext, setupIntegrationTest } from '../fixtures/test-isolation-helpers'
 
 // Typed interfaces for GraphQL responses

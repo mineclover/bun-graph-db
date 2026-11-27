@@ -1,4 +1,4 @@
-import type { Database } from 'bun:sqlite'
+import { chunkValues, getMaxBindParams, type ISqliteDatabase } from './SqlitePort.js'
 import type { PaginatedResult, PaginationOptions } from '@/core/types/CommonTypes.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 
@@ -10,7 +10,7 @@ import { DatabaseException } from '@/shared/exceptions/DomainException.js'
  * @template TId - Entity ID type (must extend string)
  */
 export abstract class BaseSqliteRepository<TEntity, TId extends string> {
-  constructor(protected readonly db: Database) {}
+  constructor(protected readonly db: ISqliteDatabase) {}
 
   /**
    * Table name in the database
@@ -161,12 +161,18 @@ export abstract class BaseSqliteRepository<TEntity, TId extends string> {
   async findByIds(ids: TId[]): Promise<TEntity[]> {
     if (ids.length === 0) return []
 
-    const placeholders = ids.map(() => '?').join(',')
-    const query = `SELECT * FROM ${this.tableName} WHERE ${this.idField} IN (${placeholders})`
-
     try {
-      const rows = this.db.query<unknown, string[]>(query).all(...ids)
-      return rows.map((row) => this.mapRowToEntity(row))
+      const chunks = chunkValues(ids, getMaxBindParams(this.db))
+      const entities: TEntity[] = []
+      for (const chunk of chunks) {
+        const placeholders = chunk.map(() => '?').join(',')
+        const query = `SELECT * FROM ${this.tableName} WHERE ${this.idField} IN (${placeholders})`
+        const rows = this.db.query<unknown, string[]>(query).all(...chunk)
+        for (const row of rows) {
+          entities.push(this.mapRowToEntity(row))
+        }
+      }
+      return entities
     } catch (error) {
       throw new DatabaseException(`Failed to find ${this.tableName} by ids: ${error}`)
     }

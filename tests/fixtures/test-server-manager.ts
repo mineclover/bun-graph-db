@@ -9,6 +9,7 @@ import { createServer } from 'node:net'
 import { createContainer } from '../../src/infrastructure/container/ContainerBootstrap'
 import { McpHttpServer } from '../../src/mcp/http-server/McpHttpServer'
 import { GraphQLSchemaBuilder } from '../../src/presentation/graphql/GraphQLSchemaBuilder'
+import { startFetchHttpServer } from '../../src/presentation/http/NodeHttpServer'
 import { createTestEnvironment, type TestEnvironment } from './test-database-factory'
 
 export interface TestServerInstance {
@@ -86,7 +87,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestServer
   }
 
   // Start server
-  const server = Bun.serve({
+  const server = await startFetchHttpServer({
     fetch: requestHandler,
     port,
     hostname: '127.0.0.1',
@@ -105,7 +106,7 @@ export async function startServerForSuite(suiteName: string): Promise<TestServer
     server: yoga,
     mcpServer,
     cleanup: async () => {
-      server.stop()
+      await server.stop()
       await testEnvironment.cleanup()
       serverInstances.delete(suiteName)
       reservedPorts.delete(port)

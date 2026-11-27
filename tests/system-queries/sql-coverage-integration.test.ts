@@ -5,7 +5,7 @@
  * through GraphQL API operations
  */
 
-import { afterAll, beforeAll, describe, expect, it } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { join } from 'node:path'
 import { createSQLCoverageFramework } from './sql-coverage-test-framework.js'
 

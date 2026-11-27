@@ -4,7 +4,7 @@
  * Tests for database backup and restore functionality
  */
 
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { ILogger } from '@/application/ports/ILogger.js'
@@ -13,25 +13,25 @@ import { SQLiteBackupService } from '@/domain/services/SQLiteBackupService.js'
 
 // Mock logger
 const mockLogger: ILogger = {
-  debug: mock(() => {}),
-  info: mock(() => {}),
-  warn: mock(() => {}),
-  error: mock(() => {}),
+  debug: vi.fn(() => {}),
+  info: vi.fn(() => {}),
+  warn: vi.fn(() => {}),
+  error: vi.fn(() => {}),
 }
 
 // Mock database connection - VACUUM INTO throws to trigger file copy fallback
 const mockDb: IDatabaseConnection = {
-  query: mock(async () => []),
-  queryFirst: mock(async () => null),
-  execute: mock(async (sql: string) => {
+  query: vi.fn(async () => []),
+  queryFirst: vi.fn(async () => null),
+  execute: vi.fn(async (sql: string) => {
     if (sql.includes('VACUUM INTO')) {
       throw new Error('VACUUM INTO not supported in mock')
     }
     return { changes: 0 }
   }),
-  transaction: mock(async (fn) => fn({} as any)),
-  isHealthy: mock(async () => true),
-  close: mock(async () => {}),
+  transaction: vi.fn(async (fn) => fn({} as any)),
+  isHealthy: vi.fn(async () => true),
+  close: vi.fn(async () => {}),
   getConnectionInfo: () => ({
     provider: 'bun-sqlite',
     capabilities: [],

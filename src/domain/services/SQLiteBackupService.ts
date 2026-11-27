@@ -7,8 +7,10 @@
 
 import { createHash } from 'node:crypto'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, unlinkSync } from 'node:fs'
+import { writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { gunzipSync, gzipSync } from 'bun'
+import { gunzipSync, gzipSync } from 'node:zlib'
+import { Database } from '@/infrastructure/database/sqlite/SqliteAdapter.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { getDatabasePath } from '@/config/database.js'
 import type { IDatabaseConnection } from '@/core/database/interfaces/IDatabaseConnection.js'
@@ -62,7 +64,11 @@ export class SQLiteBackupService {
 
       // Perform backup using VACUUM INTO (creates clean copy)
       try {
-        await this.db.execute(`VACUUM INTO '${outputPath}'`)
+        if (outputPath.includes('\0')) {
+          throw new Error('Invalid backup output path: NUL byte is not allowed')
+        }
+        const escapedOutputPath = outputPath.replaceAll("'", "''")
+        await this.db.execute(`VACUUM INTO '${escapedOutputPath}'`)
       } catch (vacuumError) {
         // Fallback to file copy if VACUUM INTO fails
         warnings.push('VACUUM INTO failed, using file copy method')
@@ -474,7 +480,7 @@ export class SQLiteBackupService {
     const compressed = gzipSync(fileData)
     const compressedPath = `${filePath}.gz`
 
-    Bun.write(compressedPath, compressed)
+    await writeFile(compressedPath, compressed)
 
     // Delete original uncompressed file
     unlinkSync(filePath)
@@ -487,7 +493,7 @@ export class SQLiteBackupService {
     const decompressed = gunzipSync(compressedData)
     const decompressedPath = compressedPath.replace('.gz', '')
 
-    Bun.write(decompressedPath, decompressed)
+    await writeFile(decompressedPath, decompressed)
 
     return decompressedPath
   }
@@ -502,7 +508,6 @@ export class SQLiteBackupService {
       }
 
       // Try to open and query the backup database
-      const Database = require('bun:sqlite').Database
       const testDb = new Database(testPath, { readonly: true })
 
       try {
@@ -511,7 +516,7 @@ export class SQLiteBackupService {
           name: string
         }>
 
-        const requiredTables = ['tables', 'table_nodes', 'attributes']
+        const requiredTables = ['tables', 'nodes', 'attributes']
         const hasRequiredTables = requiredTables.every((table) => tables.some((t) => t.name === table))
 
         testDb.close()
@@ -569,7 +574,7 @@ export class SQLiteBackupService {
       const successCount = metrics.totalBackups - metrics.failedBackups.length
       metrics.successRate = (successCount / metrics.totalBackups) * 100
 
-      Bun.write(this.metricsPath, JSON.stringify(metrics, null, 2))
+      await writeFile(this.metricsPath, JSON.stringify(metrics, null, 2))
     } catch (error) {
       this.logger.warn('Failed to update backup metrics', toErrorMeta(error))
     }

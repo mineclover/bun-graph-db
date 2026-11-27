@@ -8,7 +8,7 @@
  * of the MCP-to-REST proxy architecture
  */
 
-import { beforeEach, describe, expect, mock, test } from 'bun:test'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type { Request, Response } from 'express'
 import { AttributeApiController } from '../../src/presentation/http/controllers/AttributeApiController'
 import { projectTableSchema } from '../../src/core/schema/TableSchemaProjection'
@@ -17,14 +17,14 @@ import { GraphDbApiController } from '../../src/presentation/http/controllers/Gr
 
 // Mock logger for testing
 const mockLogger = {
-  debug: mock(() => {}),
-  info: mock(() => {}),
-  warn: mock(() => {}),
-  error: mock(() => {}),
+  debug: vi.fn(() => {}),
+  info: vi.fn(() => {}),
+  warn: vi.fn(() => {}),
+  error: vi.fn(() => {}),
 }
 
 // Mock global fetch for GraphQL queries
-global.fetch = mock(() =>
+globalThis.fetch = vi.fn(() =>
   Promise.resolve({
     ok: true,
     json: () =>
@@ -63,12 +63,12 @@ global.fetch = mock(() =>
         },
       }),
   }),
-)
+) as unknown as typeof fetch
 
 // Mock node:fs/promises for file operations
-mock.module('node:fs/promises', () => ({
-  mkdir: mock(() => Promise.resolve()),
-  writeFile: mock(() => Promise.resolve()),
+vi.mock('node:fs/promises', () => ({
+  mkdir: vi.fn(() => Promise.resolve()),
+  writeFile: vi.fn(() => Promise.resolve()),
 }))
 
 // Mock Express Request/Response objects
@@ -87,11 +87,11 @@ function createMockRequest(overrides: Partial<Request> = {}): Request {
 
 function createMockResponse() {
   const res = {
-    status: mock((_code: number) => res),
-    type: mock((_contentType: string) => res),
-    setHeader: mock((_name: string, _value: string) => res),
-    json: mock((_data: any) => {}),
-    send: mock((_data: any) => {}),
+    status: vi.fn((_code: number) => res),
+    type: vi.fn((_contentType: string) => res),
+    setHeader: vi.fn((_name: string, _value: string) => res),
+    json: vi.fn((_data: any) => {}),
+    send: vi.fn((_data: any) => {}),
   } as unknown as Response
 
   return res
@@ -356,7 +356,7 @@ describe('GraphDbApiController Unit Tests', () => {
 
 // Mock dependencies for AttributeApiController
 const mockCreateAttributeUseCase = {
-  execute: mock(() =>
+  execute: vi.fn(() =>
     Promise.resolve({
       attribute: {
         id: 'attr-123',
@@ -370,22 +370,22 @@ const mockCreateAttributeUseCase = {
 }
 
 const mockAttributeRepository = {
-  findById: mock(() => Promise.resolve(null)),
-  findByTableIdAndIdentifier: mock(() => Promise.resolve(null)),
-  findByTableId: mock(() => Promise.resolve({ nodes: [], totalCount: 0 })),
-  save: mock(() => Promise.resolve()),
-  update: mock(() => Promise.resolve()),
+  findById: vi.fn(() => Promise.resolve(null)),
+  findByTableIdAndIdentifier: vi.fn(() => Promise.resolve(null)),
+  findByTableId: vi.fn(() => Promise.resolve({ nodes: [], totalCount: 0 })),
+  save: vi.fn(() => Promise.resolve()),
+  update: vi.fn(() => Promise.resolve()),
 }
 
 const mockNodeAttributeRepository = {
-  setNodeAttribute: mock((nodeId: string, attributeId: string, value: string) =>
+  setNodeAttribute: vi.fn((nodeId: string, attributeId: string, value: string) =>
     Promise.resolve({
       getNodeId: () => nodeId || 'node-123',
       getAttributeId: () => attributeId || 'attr-123',
       getValue: () => value || 'test-value',
     }),
   ),
-  findByNodeId: mock(() =>
+  findByNodeId: vi.fn(() =>
     Promise.resolve([
       {
         getId: () => 'nodeattr-123',
@@ -559,7 +559,7 @@ describe('AttributeApiController Unit Tests', () => {
 
 // Mock dependencies for GraphApiController
 const mockGetTableDocsUseCase = {
-  execute: mock(() =>
+  execute: vi.fn(() =>
     Promise.resolve({
       tableId: 'table-123',
       tableDocs: {
@@ -576,7 +576,7 @@ const mockGetTableDocsUseCase = {
 }
 
 const mockSearchNodesUseCase = {
-  execute: mock(() =>
+  execute: vi.fn(() =>
     Promise.resolve({
       nodes: [],
       totalCount: 0,
@@ -585,7 +585,7 @@ const mockSearchNodesUseCase = {
 }
 
 const mockSearchRelatedNodesUseCase = {
-  execute: mock(() =>
+  execute: vi.fn(() =>
     Promise.resolve({
       nodes: [
         {
@@ -610,7 +610,7 @@ const mockSearchRelatedNodesUseCase = {
 }
 
 const mockTableRepository = {
-  findAll: mock(() =>
+  findAll: vi.fn(() =>
     Promise.resolve({
       data: [
         {
@@ -625,11 +625,11 @@ const mockTableRepository = {
       hasMore: false,
     }),
   ),
-  findById: mock(() => Promise.resolve(null)),
+  findById: vi.fn(() => Promise.resolve(null)),
 }
 
 const mockNodeRelationRepository = {
-  findShortestPath: mock(() =>
+  findShortestPath: vi.fn(() =>
     Promise.resolve([
       {
         id: 'node-source',
@@ -643,11 +643,11 @@ const mockNodeRelationRepository = {
       },
     ]),
   ),
-  findConnectedNodes: mock(() => Promise.resolve([])),
+  findConnectedNodes: vi.fn(() => Promise.resolve([])),
 }
 
 const mockTableSchemaProjectionService = {
-  project: mock(async () => projectTableSchema({
+  project: vi.fn(async () => projectTableSchema({
     table: {
       id: 'table-123',
       identifier: 'test_table',

@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'bun:test'
-import { Database } from 'bun:sqlite'
+import { describe, expect, test } from 'vitest'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import {
   applyDatabaseMigrations,
   createDatabaseMigrations,
@@ -59,7 +59,7 @@ describe('DatabaseMigrationRunner', () => {
     const appliedVersions = database.query<{ version: number }, []>('SELECT version FROM schema_migrations ORDER BY version').all()
     const jobColumns = database.query<{ name: string }, []>('PRAGMA table_info(tabular_sync_jobs)').all()
 
-    expect(appliedVersions.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+    expect(appliedVersions.map((migration) => migration.version)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
     expect(jobColumns.some((column) => column.name === 'revision')).toBe(true)
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_search_fts'").get()).toBeTruthy()
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'node_attribute_search_fts'").get()).toBeTruthy()
@@ -67,6 +67,9 @@ describe('DatabaseMigrationRunner', () => {
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_node_embeddings_table_dim'").get()).toBeTruthy()
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_node_attributes_attr_value_node'").get()).toBeTruthy()
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_node_attributes_attr_num_node'").get()).toBeTruthy()
+    expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_node_attributes_node'").get()).toBeNull()
+    expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_node_attributes_attr'").get()).toBeNull()
+    expect(database.query("SELECT name FROM sqlite_master WHERE type = 'trigger' AND name = 'node_embeddings_rev_update_old_table'").get()).toBeTruthy()
     expect(database.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_nodes_table_created_id'").get()).toBeTruthy()
     const updatedAtColumn = database
       .query<{ name: string; notnull: number; dflt_value: string | null }, []>('PRAGMA table_info(template_executions)')
@@ -247,6 +250,15 @@ describe('DatabaseMigrationRunner', () => {
         .query<{ value_num: number | null }, []>('SELECT value_num FROM node_attributes WHERE id = 4')
         .get()?.value_num,
     ).toBe(999)
+
+    // Evolve integer -> string -> update clears value_num back to NULL
+    database.query("UPDATE attribute_types SET json_type = 'string' WHERE id = 4").run()
+    database.query("UPDATE node_attributes SET value = 'text-only' WHERE id = 4").run()
+    expect(
+      database
+        .query<{ value_num: number | null }, []>('SELECT value_num FROM node_attributes WHERE id = 4')
+        .get()?.value_num,
+    ).toBeNull()
 
     database.close()
   })

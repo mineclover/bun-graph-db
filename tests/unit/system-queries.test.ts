@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Logger } from '../../src/application/services/system-queries'
 import { SystemQueries } from '../../src/application/services/system-queries'
 
@@ -11,24 +11,24 @@ describe('SystemQueries', () => {
     // Mock database with proper method structure
     mockDb = {
       filename: './test.db',
-      prepare: mock((query: string) => {
+      prepare: vi.fn((query: string) => {
         // Return different mock results based on the query
         if (query.includes("SELECT name FROM sqlite_master WHERE type='table'")) {
           return {
-            all: mock(() => [{ name: 'test_table' }, { name: 'another_table' }]),
+            all: vi.fn(() => [{ name: 'test_table' }, { name: 'another_table' }]),
           }
         } else if (query.includes("SELECT name FROM sqlite_master WHERE type='index'")) {
           return {
-            all: mock(() => [{ name: 'test_index' }, { name: 'another_index' }]),
+            all: vi.fn(() => [{ name: 'test_index' }, { name: 'another_index' }]),
           }
         } else if (query.includes('SELECT COUNT(*)')) {
           return {
-            get: mock(() => ({ count: 42 })),
+            get: vi.fn(() => ({ count: 42 })),
           }
         } else {
           return {
-            all: mock(() => []),
-            get: mock(() => ({ count: 0 })),
+            all: vi.fn(() => []),
+            get: vi.fn(() => ({ count: 0 })),
           }
         }
       }),
@@ -36,8 +36,8 @@ describe('SystemQueries', () => {
 
     // Mock logger
     mockLogger = {
-      log: mock(() => {}),
-      error: mock(() => {}),
+      log: vi.fn(() => {}),
+      error: vi.fn(() => {}),
     }
 
     systemQueries = new SystemQueries(mockDb)
@@ -120,7 +120,7 @@ describe('SystemQueries', () => {
   describe('getDatabaseStats', () => {
     it('should return database statistics when DB is available', async () => {
       // Configure mock database to return sample data
-      mockDb.prepare = mock((query: string) => {
+      mockDb.prepare = vi.fn((query: string) => {
         if (query.includes("SELECT name FROM sqlite_master WHERE type='table'")) {
           return { all: () => [{ name: 'users' }, { name: 'posts' }] }
         }
@@ -167,7 +167,7 @@ describe('SystemQueries', () => {
     })
 
     it('should handle database query errors', async () => {
-      mockDb.prepare = mock(() => {
+      mockDb.prepare = vi.fn(() => {
         throw new Error('Database error')
       })
 
@@ -380,10 +380,10 @@ describe('SystemQueries', () => {
 
     it('should handle logger errors silently', () => {
       const failingLogger = {
-        log: mock(() => {
+        log: vi.fn(() => {
           throw new Error('Logger failed')
         }),
-        error: mock(() => {
+        error: vi.fn(() => {
           throw new Error('Logger failed')
         }),
       }
@@ -397,13 +397,13 @@ describe('SystemQueries', () => {
   describe('error fallback methods', () => {
     it('should use default stats when systemStats fails completely', async () => {
       // Mock process methods to throw errors
-      spyOn(process, 'cpuUsage').mockImplementation(() => {
+      vi.spyOn(process, 'cpuUsage').mockImplementation(() => {
         throw new Error('CPU error')
       })
-      spyOn(process, 'memoryUsage').mockImplementation(() => {
+      vi.spyOn(process, 'memoryUsage').mockImplementation(() => {
         throw new Error('Memory error')
       })
-      spyOn(process, 'uptime').mockImplementation(() => {
+      vi.spyOn(process, 'uptime').mockImplementation(() => {
         throw new Error('Uptime error')
       })
 
@@ -422,7 +422,7 @@ describe('SystemQueries', () => {
       freshSystemQueries.setLogger(mockLogger)
 
       // Mock the private getMemoryUsage method to throw error
-      spyOn(freshSystemQueries as any, 'getMemoryUsage').mockImplementation(() => {
+      vi.spyOn(freshSystemQueries as any, 'getMemoryUsage').mockImplementation(() => {
         throw new Error('Memory error')
       })
 
@@ -436,7 +436,7 @@ describe('SystemQueries', () => {
     })
 
     it('should use default stats when healthCheck fails completely', async () => {
-      spyOn(systemQueries, 'memoryStats').mockRejectedValue(new Error('Stats unavailable'))
+      vi.spyOn(systemQueries, 'memoryStats').mockRejectedValue(new Error('Stats unavailable'))
 
       const result = await systemQueries.healthCheck()
 
@@ -462,7 +462,7 @@ describe('SystemQueries', () => {
     })
 
     it('should handle database preparation errors gracefully', async () => {
-      mockDb.prepare = mock(() => {
+      mockDb.prepare = vi.fn(() => {
         throw new Error('SQL syntax error')
       })
 
@@ -475,7 +475,7 @@ describe('SystemQueries', () => {
     })
 
     it('should handle row counting errors per table', async () => {
-      mockDb.prepare = mock((query: string) => {
+      mockDb.prepare = vi.fn((query: string) => {
         if (query.includes("SELECT name FROM sqlite_master WHERE type='table'")) {
           return { all: () => [{ name: 'users' }, { name: 'bad_table' }] }
         }

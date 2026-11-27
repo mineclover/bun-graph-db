@@ -7,14 +7,18 @@ import type {
   TableId,
 } from '@/core/types/CommonTypes.js'
 import { NodeRelation } from '@/domain/entities/NodeRelation.js'
-import type { INodeRelationRepository } from '@/domain/repositories/INodeRelationRepository.js'
 import type {
   GraphTraversalDirection,
+  INodeRelationRepository,
+  NodeEdgeTargetAdjacency,
   NodeRelationAdjacency,
+  NodeRelationKeysetCursor,
+  NodeRelationKeysetPage,
 } from '@/domain/repositories/INodeRelationRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
+import { chunkValues, getMaxBindParams } from './SqlitePort.js'
 
 interface NodeRelationRow {
   id: number
@@ -26,6 +30,7 @@ interface NodeRelationRow {
   relation_type_id: number
   properties: string | null
   strength: number
+  confidence?: number
   created_at: string
   updated_at: string
 }
@@ -34,8 +39,28 @@ export class SqliteNodeRelationRepository
   extends BaseSqliteRepository<NodeRelation, NodeRelationId>
   implements INodeRelationRepository
 {
+  private confidenceColumnPresent: boolean | null = null
+
   protected get tableName(): string {
     return 'node_relations'
+  }
+
+  private hasConfidenceColumn(): boolean {
+    if (this.confidenceColumnPresent === null) {
+      const columns = this.db.query<{ name: string }, []>('PRAGMA table_info(node_relations)').all()
+      this.confidenceColumnPresent = columns.some((column) => column.name === 'confidence')
+    }
+    return this.confidenceColumnPresent
+  }
+
+  private selectColumnsSql(): string {
+    return this.hasConfidenceColumn()
+      ? `id, table_id, source_node_id, source_external_id,
+         target_node_id, target_external_id, relation_type_id,
+         properties, strength, confidence, created_at, updated_at`
+      : `id, table_id, source_node_id, source_external_id,
+         target_node_id, target_external_id, relation_type_id,
+         properties, strength, created_at, updated_at`
   }
 
   // Note: This repository doesn't use 'identifier' field
@@ -45,28 +70,53 @@ export class SqliteNodeRelationRepository
     const data = nodeRelation.toDatabase()
 
     if (!data.id) {
-      const query = `
-        INSERT INTO node_relations (
-          table_id, source_node_id, source_external_id, 
-          target_node_id, target_external_id, relation_type_id, 
-          properties, strength, created_at, updated_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `
+      const includeConfidence = this.hasConfidenceColumn()
+      const query = includeConfidence
+        ? `
+          INSERT INTO node_relations (
+            table_id, source_node_id, source_external_id, 
+            target_node_id, target_external_id, relation_type_id, 
+            properties, strength, confidence, created_at, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
+        : `
+          INSERT INTO node_relations (
+            table_id, source_node_id, source_external_id, 
+            target_node_id, target_external_id, relation_type_id, 
+            properties, strength, created_at, updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `
 
       try {
-        const result = this.db.run(query, [
-          data.table_id,
-          data.source_node_id,
-          data.source_external_id,
-          data.target_node_id,
-          data.target_external_id,
-          data.relation_type_id,
-          data.properties,
-          data.strength,
-          data.created_at,
-          data.updated_at,
-        ])
+        const params = includeConfidence
+          ? [
+              data.table_id,
+              data.source_node_id,
+              data.source_external_id,
+              data.target_node_id,
+              data.target_external_id,
+              data.relation_type_id,
+              data.properties,
+              data.strength,
+              data.confidence,
+              data.created_at,
+              data.updated_at,
+            ]
+          : [
+              data.table_id,
+              data.source_node_id,
+              data.source_external_id,
+              data.target_node_id,
+              data.target_external_id,
+              data.relation_type_id,
+              data.properties,
+              data.strength,
+              data.created_at,
+              data.updated_at,
+            ]
+        const result = this.db.run(query, params)
 
         debugDatabase('node relation created', () => ({ id: result.lastInsertRowid }))
       } catch (error) {
@@ -84,9 +134,7 @@ export class SqliteNodeRelationRepository
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE table_id = ?
       ORDER BY created_at DESC
@@ -120,9 +168,7 @@ export class SqliteNodeRelationRepository
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE source_node_id = ?
       ORDER BY created_at DESC
@@ -156,9 +202,7 @@ export class SqliteNodeRelationRepository
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE target_node_id = ?
       ORDER BY created_at DESC
@@ -191,9 +235,7 @@ export class SqliteNodeRelationRepository
     tableId: TableId,
   ): Promise<NodeRelation | null> {
     const query = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE source_external_id = ? AND target_external_id = ? AND table_id = ?
     `
@@ -216,9 +258,7 @@ export class SqliteNodeRelationRepository
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE source_external_id = ? AND table_id = ?
       ORDER BY created_at DESC
@@ -255,9 +295,7 @@ export class SqliteNodeRelationRepository
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE target_external_id = ? AND table_id = ?
       ORDER BY created_at DESC
@@ -293,9 +331,7 @@ export class SqliteNodeRelationRepository
     const { limit = 10, offset = 0 } = options
 
     const dataQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE relation_type_id = ?
       ORDER BY created_at DESC
@@ -334,9 +370,7 @@ export class SqliteNodeRelationRepository
     const { limit = 100, offset = 0 } = options
 
     const outgoingQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE source_node_id = ?
       ORDER BY created_at DESC
@@ -344,9 +378,7 @@ export class SqliteNodeRelationRepository
     `
 
     const incomingQuery = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE target_node_id = ?
       ORDER BY created_at DESC
@@ -372,28 +404,52 @@ export class SqliteNodeRelationRepository
 
   async update(nodeRelation: NodeRelation): Promise<void> {
     const data = nodeRelation.toDatabase()
+    const includeConfidence = this.hasConfidenceColumn()
 
-    const query = `
-      UPDATE node_relations 
-      SET table_id = ?, source_node_id = ?, source_external_id = ?, 
-          target_node_id = ?, target_external_id = ?, relation_type_id = ?, 
-          properties = ?, strength = ?, updated_at = ?
-      WHERE id = ?
-    `
+    const query = includeConfidence
+      ? `
+        UPDATE node_relations 
+        SET table_id = ?, source_node_id = ?, source_external_id = ?, 
+            target_node_id = ?, target_external_id = ?, relation_type_id = ?, 
+            properties = ?, strength = ?, confidence = ?, updated_at = ?
+        WHERE id = ?
+      `
+      : `
+        UPDATE node_relations 
+        SET table_id = ?, source_node_id = ?, source_external_id = ?, 
+            target_node_id = ?, target_external_id = ?, relation_type_id = ?, 
+            properties = ?, strength = ?, updated_at = ?
+        WHERE id = ?
+      `
 
     try {
-      const result = this.db.run(query, [
-        data.table_id,
-        data.source_node_id,
-        data.source_external_id,
-        data.target_node_id,
-        data.target_external_id,
-        data.relation_type_id,
-        data.properties,
-        data.strength,
-        data.updated_at,
-        data.id,
-      ])
+      const params = includeConfidence
+        ? [
+            data.table_id,
+            data.source_node_id,
+            data.source_external_id,
+            data.target_node_id,
+            data.target_external_id,
+            data.relation_type_id,
+            data.properties,
+            data.strength,
+            data.confidence,
+            data.updated_at,
+            data.id,
+          ]
+        : [
+            data.table_id,
+            data.source_node_id,
+            data.source_external_id,
+            data.target_node_id,
+            data.target_external_id,
+            data.relation_type_id,
+            data.properties,
+            data.strength,
+            data.updated_at,
+            data.id,
+          ]
+      const result = this.db.run(query, params)
 
       if (result.changes === 0) {
         throw new DatabaseException(`NodeRelation with id ${data.id} not found for update`)
@@ -491,9 +547,7 @@ export class SqliteNodeRelationRepository
   // Simple array-returning overloads for graph traversal
   async findBySourceNodeId(sourceNodeId: NodeId): Promise<NodeRelation[]> {
     const query = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE source_node_id = ?
       ORDER BY created_at DESC
@@ -509,9 +563,7 @@ export class SqliteNodeRelationRepository
 
   async findByTargetNodeId(targetNodeId: NodeId): Promise<NodeRelation[]> {
     const query = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE target_node_id = ?
       ORDER BY created_at DESC
@@ -534,42 +586,65 @@ export class SqliteNodeRelationRepository
     if (nodeIds.length === 0) return adjacency
     if (relationTypeIds !== undefined && relationTypeIds.length === 0) return adjacency
 
-    const placeholders = nodeIds.map(() => '?').join(',')
-    const directionPredicate = direction === 'OUTGOING'
-      ? `source_node_id IN (${placeholders})`
-      : direction === 'INCOMING'
-        ? `target_node_id IN (${placeholders})`
-        : `(source_node_id IN (${placeholders}) OR target_node_id IN (${placeholders}))`
-    const typeFilterPredicate =
-      relationTypeIds && relationTypeIds.length > 0
-        ? ` AND relation_type_id IN (${relationTypeIds.map(() => '?').join(',')})`
-        : ''
-    const query = `
-      SELECT id, table_id, source_node_id, source_external_id,
-             target_node_id, target_external_id, relation_type_id,
-             properties, strength, created_at, updated_at
-      FROM node_relations
-      WHERE ${directionPredicate}${typeFilterPredicate}
-      ORDER BY created_at DESC, id DESC
-    `
+    const hasTypeFilter = Boolean(relationTypeIds && relationTypeIds.length > 0)
+    const typeIds = hasTypeFilter ? (relationTypeIds ?? []) : []
+    const typeFilterPredicate = hasTypeFilter
+      ? ` AND relation_type_id IN (${typeIds.map(() => '?').join(',')})`
+      : ''
+
+    const legsMultiplier = direction === 'BOTH' ? 2 : 1
+    const maxNodeChunkSize = Math.max(
+      1,
+      Math.floor((getMaxBindParams(this.db) - legsMultiplier * typeIds.length) / legsMultiplier),
+    )
+    const selectColumns = this.selectColumnsSql()
 
     try {
-      const baseParams = direction === 'BOTH' ? [...nodeIds, ...nodeIds] : [...nodeIds]
-      const params =
-        relationTypeIds && relationTypeIds.length > 0
-          ? [...baseParams, ...relationTypeIds]
-          : baseParams
-      const rows = this.db.query<NodeRelationRow, string[]>(query).all(...params)
-      const nodeIdSet = new Set(nodeIds)
-      for (const row of rows) {
-        const relation = this.mapRowToEntity(row)
-        const sourceNodeId = row.source_node_id === null ? null : String(row.source_node_id)
-        const targetNodeId = row.target_node_id === null ? null : String(row.target_node_id)
-        if ((direction === 'OUTGOING' || direction === 'BOTH') && sourceNodeId !== null && nodeIdSet.has(sourceNodeId)) {
-          adjacency.get(sourceNodeId)?.push(relation)
-        }
-        if ((direction === 'INCOMING' || direction === 'BOTH') && targetNodeId !== null && nodeIdSet.has(targetNodeId) && (direction === 'INCOMING' || targetNodeId !== sourceNodeId)) {
-          adjacency.get(targetNodeId)?.push(relation)
+      const chunks = chunkValues(nodeIds, maxNodeChunkSize)
+      for (const chunk of chunks) {
+        const placeholders = chunk.map(() => '?').join(',')
+        const query =
+          direction === 'BOTH'
+            ? `
+              SELECT ${selectColumns}
+              FROM node_relations
+              WHERE source_node_id IN (${placeholders})${typeFilterPredicate}
+              UNION
+              SELECT ${selectColumns}
+              FROM node_relations
+              WHERE target_node_id IN (${placeholders})${typeFilterPredicate}
+              ORDER BY created_at DESC, id DESC
+            `
+            : `
+              SELECT ${selectColumns}
+              FROM node_relations
+              WHERE ${direction === 'OUTGOING' ? 'source_node_id' : 'target_node_id'} IN (${placeholders})${typeFilterPredicate}
+              ORDER BY created_at DESC, id DESC
+            `
+
+        const legParams = hasTypeFilter ? [...chunk, ...typeIds] : [...chunk]
+        const params = direction === 'BOTH' ? [...legParams, ...legParams] : legParams
+        const rows = this.db.query<NodeRelationRow, string[]>(query).all(...params)
+        const chunkSet = new Set(chunk)
+        for (const row of rows) {
+          const relation = this.mapRowToEntity(row)
+          const sourceNodeId = row.source_node_id === null ? null : String(row.source_node_id)
+          const targetNodeId = row.target_node_id === null ? null : String(row.target_node_id)
+          if (
+            (direction === 'OUTGOING' || direction === 'BOTH') &&
+            sourceNodeId !== null &&
+            chunkSet.has(sourceNodeId)
+          ) {
+            adjacency.get(sourceNodeId)?.push(relation)
+          }
+          if (
+            (direction === 'INCOMING' || direction === 'BOTH') &&
+            targetNodeId !== null &&
+            chunkSet.has(targetNodeId) &&
+            (direction === 'INCOMING' || targetNodeId !== sourceNodeId)
+          ) {
+            adjacency.get(targetNodeId)?.push(relation)
+          }
         }
       }
       return adjacency
@@ -578,14 +653,92 @@ export class SqliteNodeRelationRepository
     }
   }
 
+  async findAdjacentEdgeTargetsByNodeIds(
+    nodeIds: readonly NodeId[],
+    direction: GraphTraversalDirection,
+    relationTypeIds?: readonly RelationTypeId[],
+  ): Promise<NodeEdgeTargetAdjacency> {
+    const adjacency = new Map<NodeId, NodeId[]>(nodeIds.map((nodeId) => [nodeId, []]))
+    if (nodeIds.length === 0) return adjacency
+    if (relationTypeIds !== undefined && relationTypeIds.length === 0) return adjacency
+
+    const hasTypeFilter = Boolean(relationTypeIds && relationTypeIds.length > 0)
+    const typeIds = hasTypeFilter ? (relationTypeIds ?? []) : []
+    const typeFilterPredicate = hasTypeFilter
+      ? ` AND relation_type_id IN (${typeIds.map(() => '?').join(',')})`
+      : ''
+
+    const legsMultiplier = direction === 'BOTH' ? 2 : 1
+    const maxNodeChunkSize = Math.max(
+      1,
+      Math.floor((getMaxBindParams(this.db) - legsMultiplier * typeIds.length) / legsMultiplier),
+    )
+
+    try {
+      const chunks = chunkValues(nodeIds, maxNodeChunkSize)
+      for (const chunk of chunks) {
+        const placeholders = chunk.map(() => '?').join(',')
+        const query =
+          direction === 'BOTH'
+            ? `
+              SELECT CAST(source_node_id AS TEXT) AS source_node_id,
+                     CAST(target_node_id AS TEXT) AS target_node_id
+              FROM node_relations
+              WHERE source_node_id IN (${placeholders})${typeFilterPredicate}
+              UNION
+              SELECT CAST(source_node_id AS TEXT) AS source_node_id,
+                     CAST(target_node_id AS TEXT) AS target_node_id
+              FROM node_relations
+              WHERE target_node_id IN (${placeholders})${typeFilterPredicate}
+            `
+            : `
+              SELECT CAST(source_node_id AS TEXT) AS source_node_id,
+                     CAST(target_node_id AS TEXT) AS target_node_id
+              FROM node_relations
+              WHERE ${direction === 'OUTGOING' ? 'source_node_id' : 'target_node_id'} IN (${placeholders})${typeFilterPredicate}
+              ORDER BY created_at DESC, id DESC
+            `
+
+        const legParams = hasTypeFilter ? [...chunk, ...typeIds] : [...chunk]
+        const params = direction === 'BOTH' ? [...legParams, ...legParams] : legParams
+        const rows = this.db
+          .query<{ source_node_id: string | null; target_node_id: string | null }, string[]>(query)
+          .all(...params)
+        const chunkSet = new Set(chunk)
+        for (const row of rows) {
+          const sourceNodeId = row.source_node_id
+          const targetNodeId = row.target_node_id
+          if (
+            (direction === 'OUTGOING' || direction === 'BOTH') &&
+            sourceNodeId !== null &&
+            targetNodeId !== null &&
+            chunkSet.has(sourceNodeId)
+          ) {
+            adjacency.get(sourceNodeId)?.push(targetNodeId)
+          }
+          if (
+            (direction === 'INCOMING' || direction === 'BOTH') &&
+            sourceNodeId !== null &&
+            targetNodeId !== null &&
+            chunkSet.has(targetNodeId) &&
+            (direction === 'INCOMING' || targetNodeId !== sourceNodeId)
+          ) {
+            adjacency.get(targetNodeId)?.push(sourceNodeId)
+          }
+        }
+      }
+      return adjacency
+    } catch (error) {
+      throw new DatabaseException(`Failed to find adjacent edge targets: ${error}`)
+    }
+  }
+
   async findBySourceNodeIdAndRelationType(
     sourceNodeId: NodeId,
     relationTypeId: RelationTypeId,
   ): Promise<NodeRelation[]> {
     const query = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE source_node_id = ? AND relation_type_id = ?
       ORDER BY created_at DESC
@@ -604,9 +757,7 @@ export class SqliteNodeRelationRepository
     relationTypeId: RelationTypeId,
   ): Promise<NodeRelation[]> {
     const query = `
-      SELECT id, table_id, source_node_id, source_external_id, 
-             target_node_id, target_external_id, relation_type_id, 
-             properties, strength, created_at, updated_at
+      SELECT ${this.selectColumnsSql()}
       FROM node_relations
       WHERE target_node_id = ? AND relation_type_id = ?
       ORDER BY created_at DESC
@@ -644,6 +795,50 @@ export class SqliteNodeRelationRepository
 
   // findAll() - inherited from BaseSqliteRepository
 
+  async findAllKeyset(
+    limit: number,
+    cursor?: NodeRelationKeysetCursor,
+  ): Promise<NodeRelationKeysetPage> {
+    try {
+      const safeLimit = Math.max(1, limit)
+      const rows = cursor
+        ? this.db
+            .query<NodeRelationRow, [string, string, number | string, number]>(`
+              SELECT ${this.selectColumnsSql()}
+              FROM node_relations
+              WHERE (created_at < ? OR (created_at = ? AND id > ?))
+              ORDER BY created_at DESC, id ASC
+              LIMIT ?
+            `)
+            .all(
+              cursor.createdAt,
+              cursor.createdAt,
+              Number.isSafeInteger(Number(cursor.id)) ? Number(cursor.id) : cursor.id,
+              safeLimit,
+            )
+        : this.db
+            .query<NodeRelationRow, [number]>(`
+              SELECT ${this.selectColumnsSql()}
+              FROM node_relations
+              ORDER BY created_at DESC, id ASC
+              LIMIT ?
+            `)
+            .all(safeLimit)
+
+      const relations = rows.map((row) => this.mapRowToEntity(row))
+      const lastRow = rows.at(-1)
+      return {
+        relations,
+        nextCursor:
+          lastRow && rows.length >= safeLimit
+            ? { createdAt: lastRow.created_at, id: String(lastRow.id) }
+            : null,
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to find node relations keyset: ${error}`)
+    }
+  }
+
   protected mapRowToEntity(row: NodeRelationRow): NodeRelation {
     return NodeRelation.fromDatabase(
       row.id.toString(),
@@ -657,6 +852,7 @@ export class SqliteNodeRelationRepository
       row.strength,
       new Date(row.created_at),
       new Date(row.updated_at),
+      row.confidence ?? 1,
     )
   }
 }

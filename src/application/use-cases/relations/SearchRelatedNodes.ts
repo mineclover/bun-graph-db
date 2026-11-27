@@ -74,6 +74,7 @@ export interface IGraphRepository {
     nodeId: string,
     direction: RelationDirection,
     relationTypes?: string[],
+    maxDepth?: number,
   ): Promise<
     Array<{
       nodeId: string
@@ -111,6 +112,7 @@ export class SearchRelatedNodesUseCase {
     try {
       // Build graph query
       const graphQuery: GraphQuery = {
+        ...(input.sourceNodeIds && input.sourceNodeIds.length > 0 ? { sourceNodeIds: input.sourceNodeIds } : {}),
         nodeFilters: input.nodeFilters,
         relationFilters: input.relationFilters,
         pathQueries: input.pathQueries,
@@ -192,6 +194,7 @@ export class SearchRelatedNodesUseCase {
     nodeId: string,
     direction: RelationDirection = RelationDirection.INCOMING,
     relationTypes?: string[],
+    maxDepth?: number,
   ): Promise<
     Array<{
       nodeId: string
@@ -214,7 +217,15 @@ export class SearchRelatedNodesUseCase {
     }
 
     try {
-      return await this.graphRepository.getDependencyChain(tableId as TableId, nodeId, direction, relationTypes)
+      return maxDepth !== undefined
+        ? await this.graphRepository.getDependencyChain(
+            tableId as TableId,
+            nodeId,
+            direction,
+            relationTypes,
+            maxDepth,
+          )
+        : await this.graphRepository.getDependencyChain(tableId as TableId, nodeId, direction, relationTypes)
     } catch (error) {
       this.logger.error('Failed to get dependencies', {
         tableId,

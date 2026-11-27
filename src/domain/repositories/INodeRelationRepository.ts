@@ -11,6 +11,17 @@ import type { NodeRelation } from '@/domain/entities/NodeRelation.js'
 export type GraphTraversalDirection = 'OUTGOING' | 'INCOMING' | 'BOTH'
 
 export type NodeRelationAdjacency = ReadonlyMap<NodeId, NodeRelation[]>
+export type NodeEdgeTargetAdjacency = ReadonlyMap<NodeId, NodeId[]>
+
+export interface NodeRelationKeysetCursor {
+  createdAt: string
+  id: string
+}
+
+export interface NodeRelationKeysetPage {
+  relations: NodeRelation[]
+  nextCursor: NodeRelationKeysetCursor | null
+}
 
 export interface INodeRelationRepository {
   save(nodeRelation: NodeRelation): Promise<void>
@@ -62,9 +73,16 @@ export interface INodeRelationRepository {
     direction: GraphTraversalDirection,
     relationTypeIds?: readonly RelationTypeId[],
   ): Promise<NodeRelationAdjacency>
+  /** Optional lightweight adjacency read returning only neighbor IDs without hydrating full entities. */
+  findAdjacentEdgeTargetsByNodeIds?(
+    nodeIds: readonly NodeId[],
+    direction: GraphTraversalDirection,
+    relationTypeIds?: readonly RelationTypeId[],
+  ): Promise<NodeEdgeTargetAdjacency>
   findBySourceNodeIdAndRelationType(sourceNodeId: NodeId, relationTypeId: RelationTypeId): Promise<NodeRelation[]>
   findByTargetNodeIdAndRelationType(targetNodeId: NodeId, relationTypeId: RelationTypeId): Promise<NodeRelation[]>
   countBySourceNodeId(sourceNodeId: NodeId): Promise<number>
   countByTargetNodeId(targetNodeId: NodeId): Promise<number>
   findAll(options?: PaginationOptions): Promise<PaginatedResult<NodeRelation>>
+  findAllKeyset?(limit: number, cursor?: NodeRelationKeysetCursor): Promise<NodeRelationKeysetPage>
 }

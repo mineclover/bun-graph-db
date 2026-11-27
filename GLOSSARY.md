@@ -243,6 +243,31 @@
 
 ---
 
+---
+
+## 최신 아키텍처 & 확장 개념 (2026)
+
+### 계층 구조 (Hierarchy — Tree / DAG)
+**정의**: `parentOf` 관계를 통해 상하위 트리(단일 부모) 또는 방향성 비순환 그래프(DAG, 다중 부모)를 표현하는 기능
+**기능**: 조상(`getAncestors`), 후손(`getDescendants`), 서브트리(`getSubtree`), 최소 공통 조상(`getLowestCommonAncestor`), 사이클 가드 기반 안전 이동(`moveHierarchyNode`)
+
+### 4-신호 하이브리드 검색 (4-Signal Hybrid Search)
+**정의**: FTS5 전문 검색, 정규화된 숫자형(`value_num`) 속성 필터, 영속 `Float32` 벡터 코사인 유사도, N-홉 그래프 근접도를 역순위 융합(RRF)으로 통합하는 검색 기능
+
+### 스키마 게이트 (SchemaGate & OpenAPI 3.2 Projection)
+**정의**: 테이블별 속성과 타입 규칙을 JSON Schema 2020-12로 투영해 쓰기 시점(`NodeAttributeSchemaGate`)에 자동 검증·정규화하고 OpenAPI 3.2 계약으로 내보내는 메커니즘
+
+### 포터블 단일 노드 (Portable Single Node / Cloudflare DO SQLite)
+**정의**: Node 26 `node:sqlite`와 Cloudflare Durable Objects SQLite 제약(금지 PRAGMA, 100개 바인딩 한계)을 동일 코드베이스로 지원하는 경량 단일 노드 실행 구조 (`PortableBootstrap`, `CloudflareSingleNodeWorker`)
+
+### 최신 AI 통신 규격 (MCP `2026-07-28` / `2025-11-25` LTS)
+**정의**: `/mcp` 및 `/sub/:tableId/mcp` 엔드포인트에서 프로토콜 버전 협상, `ToolAnnotations` 힌트, JSON Schema 2020-12 `outputSchema`, 구조화된 결과(`structuredContent`)를 제공하는 AI 도구 인터페이스
+
+### 골든 테스트 데이터셋 (Golden Test Dataset)
+**정의**: 3개 표준 테이블과 2개 템플릿을 기반으로 10대 핵심 기능군의 기대 결과를 고정해 Node 26·Cloudflare DO SQLite·JSONL 복원 간 일관성을 검증하는 회귀 테스트 기준 세트 (`pnpm run test:golden`)
+
+---
+
 **용어 추가 제안**: 이 용어집에 없는 용어가 필요하면 먼저 용어집에 추가한 후 문서에서 사용하세요.
 
-**마지막 업데이트**: 2025-11-25
+**마지막 업데이트**: 2026-11-27

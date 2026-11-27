@@ -9,7 +9,7 @@
  * - Variable extraction
  */
 
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'vitest'
 import { calculateComplexityScore, extractOperationInfo, validateQuerySyntax } from '@/core/utils/GraphQLParser.js'
 import { errorTestCases, sampleQueries } from '../fixtures/sample-queries.js'
 import { testTemplates } from '../fixtures/test-templates.js'

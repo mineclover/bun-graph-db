@@ -1,11 +1,12 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
+import { spawn } from "node:child_process";
 import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { parse } from "yaml";
 
-const PROJECT_ROOT = resolve(import.meta.dir, "..");
+const PROJECT_ROOT = resolve(import.meta.dirname, "..");
 
 interface CodegenConfig {
 	overwrite?: boolean;
@@ -33,6 +34,37 @@ function absoluteConfigPath(value: unknown): unknown {
 		return value.map(absoluteConfigPath);
 	}
 	return value;
+}
+
+function runCodegen(configPath: string): Promise<{
+	stdout: string;
+	stderr: string;
+	exitCode: number | null;
+}> {
+	return new Promise((resolveRun, rejectRun) => {
+		const child = spawn(
+			"pnpm",
+			["exec", "graphql-codegen", "--config", configPath],
+			{
+				cwd: PROJECT_ROOT,
+				stdio: ["ignore", "pipe", "pipe"],
+			},
+		);
+		let stdout = "";
+		let stderr = "";
+		child.stdout?.setEncoding("utf8");
+		child.stderr?.setEncoding("utf8");
+		child.stdout?.on("data", (chunk: string) => {
+			stdout += chunk;
+		});
+		child.stderr?.on("data", (chunk: string) => {
+			stderr += chunk;
+		});
+		child.once("error", rejectRun);
+		child.once("close", (exitCode) => {
+			resolveRun({ stdout, stderr, exitCode });
+		});
+	});
 }
 
 const temporaryRoot = await mkdtemp(join(tmpdir(), "bun-graph-db-codegen-"));
@@ -92,19 +124,7 @@ try {
 		),
 	);
 
-	const child = Bun.spawn(
-		["bun", "run", "graphql-codegen", "--config", temporaryConfigPath],
-		{
-			cwd: PROJECT_ROOT,
-			stdout: "pipe",
-			stderr: "pipe",
-		},
-	);
-	const [stdout, stderr, exitCode] = await Promise.all([
-		new Response(child.stdout).text(),
-		new Response(child.stderr).text(),
-		child.exited,
-	]);
+	const { stdout, stderr, exitCode } = await runCodegen(temporaryConfigPath);
 
 	if (stdout.trim() !== "") {
 		console.log(stdout.trim());

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { GraphQLInt, GraphQLList, GraphQLObjectType, GraphQLSchema, GraphQLString } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'
@@ -16,10 +16,10 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Create a simple test GraphQL schema
@@ -62,7 +62,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
 
     // Mock ExecuteQueryTemplateUseCase
     mockExecuteQueryTemplateUseCase = {
-      execute: mock(async () => ({
+      execute: vi.fn(async () => ({
         queryText: 'query { users { id name } }',
         processedVariables: {},
         metadata: {
@@ -98,7 +98,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'nonexistent-template',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => {
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => {
         throw new Error('Template not found')
       })
 
@@ -117,7 +117,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'valid-query',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { users { id name } }',
         processedVariables: {},
         metadata: {
@@ -140,7 +140,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'invalid-query',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { invalid syntax }}',
         processedVariables: {},
         metadata: {
@@ -168,7 +168,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'users-query',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { users { id name age } }',
         processedVariables: {},
         metadata: {
@@ -195,7 +195,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'partial-query',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { users { id name } }',
         processedVariables: {},
         metadata: {
@@ -220,7 +220,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         variables: { id: '123' },
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query GetUser($id: String) { user(id: $id) { id name } }',
         processedVariables: { id: '123' },
         metadata: {
@@ -251,7 +251,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         context: { userId: 'user-123', permissions: ['read'] },
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { users { id } }',
         processedVariables: {},
         metadata: {
@@ -303,7 +303,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'metadata-query',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { users { id } }',
         processedVariables: {},
         metadata: {
@@ -328,7 +328,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'failing-query',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { invalid',
         processedVariables: {},
         metadata: {
@@ -354,7 +354,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'prep-fail',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => {
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => {
         throw new Error('Template preparation failed')
       })
 
@@ -373,7 +373,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'general-fail',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => {
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => {
         throw new Error('Unexpected error')
       })
 
@@ -410,7 +410,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'error-logged',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { invalid syntax',
         processedVariables: {},
         metadata: {
@@ -455,7 +455,7 @@ describe('ExecuteTemplateWithGraphQLUseCase', () => {
         templateIdentifier: 'detailed-error',
       }
 
-      mockExecuteQueryTemplateUseCase.execute = mock(async () => ({
+      mockExecuteQueryTemplateUseCase.execute = vi.fn(async () => ({
         queryText: 'query { invalid',
         processedVariables: {},
         metadata: {

@@ -3,7 +3,7 @@
 	"compilerOptions": {
 		"allowJs": false,
 		"noEmit": true,
-		"types": ["bun"]
+		"types": ["node"]
 	},
 	// Blocking TypeScript 7 coverage for the green projection/CI boundary, not all legacy tests.
 	// The base config still includes index.ts and src/**/*.ts; explicit files add boundary scripts/tests.

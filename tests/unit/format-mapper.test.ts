@@ -4,7 +4,7 @@
  * Tests for the FormatMapperService that transforms between Flat JSON and custom formats
  */
 
-import { describe, expect, it } from 'bun:test'
+import { describe, expect, it } from 'vitest'
 import type {
   FormatMappingTemplate,
   NodeLevelMapping,

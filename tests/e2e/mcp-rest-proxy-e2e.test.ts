@@ -10,7 +10,7 @@
  * - Error scenarios and recovery
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { startServerForSuite, stopServerForSuite } from '../fixtures/test-graphql-server'
 import { getExpectedRootMcpToolCount } from '../fixtures/mcp-tool-registry'
 

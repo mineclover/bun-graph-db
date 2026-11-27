@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   UpdateQueryTemplate,
@@ -49,29 +49,29 @@ describe('UpdateQueryTemplate', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repository
     const repositoryMock = {
-      create: mock(async (template) => template),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], total: 0, hasMore: false })),
-      update: mock(async () => createTestTemplate()),
-      deleteById: mock(async () => true),
-      search: mock(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
-      searchByQueryName: mock(async () => []),
-      searchByOperationType: mock(async () => []),
-      findByApplicableTable: mock(async () => []),
-      findTemplatesWithTableDependencies: mock(async () => []),
-      incrementUsage: mock(async () => {}),
-      updateExecutionStats: mock(async () => {}),
-      findPopular: mock(async () => []),
-      updateStatus: mock(async () => createTestTemplate()),
+      create: vi.fn(async (template) => template),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      findAll: vi.fn(async () => ({ data: [], total: 0, hasMore: false })),
+      update: vi.fn(async () => createTestTemplate()),
+      deleteById: vi.fn(async () => true),
+      search: vi.fn(async () => ({ items: [], total: 0, hasNextPage: false, hasPreviousPage: false })),
+      searchByQueryName: vi.fn(async () => []),
+      searchByOperationType: vi.fn(async () => []),
+      findByApplicableTable: vi.fn(async () => []),
+      findTemplatesWithTableDependencies: vi.fn(async () => []),
+      incrementUsage: vi.fn(async () => {}),
+      updateExecutionStats: vi.fn(async () => {}),
+      findPopular: vi.fn(async () => []),
+      updateStatus: vi.fn(async () => createTestTemplate()),
     } satisfies IQueryTemplateRepository
 
     mockQueryTemplateRepository = repositoryMock
@@ -132,7 +132,7 @@ describe('UpdateQueryTemplate', () => {
 
     it('should throw ValidationException when complexityScore is less than 1', async () => {
       const existingTemplate = createTestTemplate()
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -145,7 +145,7 @@ describe('UpdateQueryTemplate', () => {
 
     it('should throw ValidationException when complexityScore is greater than 10', async () => {
       const existingTemplate = createTestTemplate()
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -158,7 +158,7 @@ describe('UpdateQueryTemplate', () => {
 
     it('should throw ValidationException when tags array is empty', async () => {
       const existingTemplate = createTestTemplate()
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -171,7 +171,7 @@ describe('UpdateQueryTemplate', () => {
 
     it('should throw ValidationException when tags contain empty strings', async () => {
       const existingTemplate = createTestTemplate()
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -185,7 +185,7 @@ describe('UpdateQueryTemplate', () => {
 
   describe('Resource Validation', () => {
     it('should return error response when template does not exist', async () => {
-      mockQueryTemplateRepository.findById = mock(async () => null)
+      mockQueryTemplateRepository.findById = vi.fn(async () => null)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'nonexistent-template',
@@ -207,8 +207,8 @@ describe('UpdateQueryTemplate', () => {
       const existingTemplate = createTestTemplate('template-1', 'test-template', 'Original Name')
       const updatedTemplate = createTestTemplate('template-1', 'test-template', 'Updated Name')
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
-      mockQueryTemplateRepository.update = mock(async () => updatedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
+      mockQueryTemplateRepository.update = vi.fn(async () => updatedTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -231,7 +231,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update description only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -252,7 +252,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update queryText only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -273,7 +273,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update inputSchema only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -299,7 +299,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update defaultVariables only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -320,7 +320,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update applicableTables only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -341,7 +341,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update templateType only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -362,7 +362,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update complexityScore only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -383,7 +383,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update version only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -404,7 +404,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update isActive only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -425,7 +425,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update tags only', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -446,7 +446,7 @@ describe('UpdateQueryTemplate', () => {
     it('should update multiple fields together', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -474,9 +474,9 @@ describe('UpdateQueryTemplate', () => {
   describe('Validation Logic', () => {
     it('should return error when default variables do not match schema', async () => {
       const existingTemplate = createTestTemplate()
-      existingTemplate.validateVariables = mock(() => false)
+      existingTemplate.validateVariables = vi.fn(() => false)
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -504,8 +504,8 @@ describe('UpdateQueryTemplate', () => {
     it('should return error response when update fails', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
-      mockQueryTemplateRepository.update = mock(async () => null)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
+      mockQueryTemplateRepository.update = vi.fn(async () => null)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -524,8 +524,8 @@ describe('UpdateQueryTemplate', () => {
     it('should log errors and throw ValidationException on repository failure', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
-      mockQueryTemplateRepository.update = mock(async () => {
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
+      mockQueryTemplateRepository.update = vi.fn(async () => {
         throw new Error('Database connection failed')
       })
 
@@ -545,8 +545,8 @@ describe('UpdateQueryTemplate', () => {
       const existingTemplate = createTestTemplate('template-123', 'test-identifier')
       const updatedTemplate = createTestTemplate('template-123', 'test-identifier', 'Updated Name')
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
-      mockQueryTemplateRepository.update = mock(async () => updatedTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
+      mockQueryTemplateRepository.update = vi.fn(async () => updatedTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-123',
@@ -575,7 +575,7 @@ describe('UpdateQueryTemplate', () => {
     it('should handle update with no fields changed', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       const request: UpdateQueryTemplateRequest = {
         id: 'template-1',
@@ -590,7 +590,7 @@ describe('UpdateQueryTemplate', () => {
     it('should handle sequential updates', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       // First update
       const request1: UpdateQueryTemplateRequest = {
@@ -622,7 +622,7 @@ describe('UpdateQueryTemplate', () => {
     it('should handle valid complexity scores at boundaries', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       // Minimum valid score
       const request1: UpdateQueryTemplateRequest = {
@@ -644,7 +644,7 @@ describe('UpdateQueryTemplate', () => {
     it('should handle all valid template types', async () => {
       const existingTemplate = createTestTemplate()
 
-      mockQueryTemplateRepository.findById = mock(async () => existingTemplate)
+      mockQueryTemplateRepository.findById = vi.fn(async () => existingTemplate)
 
       // Query type
       const request1: UpdateQueryTemplateRequest = {

@@ -116,9 +116,10 @@ export interface MutationCreateAttributeArgs {
   input: {
     tableId: string
     identifier: string
-    name: string
+    name?: string
     attributeTypeId: string
     description?: string
+    isRequired?: boolean
   }
   [key: string]: unknown
 }
@@ -150,6 +151,7 @@ export interface MutationUpdateAttributeArgs {
   input: {
     name?: string
     description?: string
+    isRequired?: boolean
   }
   [key: string]: unknown
 }
@@ -479,6 +481,7 @@ export interface CreateRelationArgs {
     relationshipType?: string
     properties?: Record<string, unknown>
     strength?: number
+    confidence?: number
   }
 }
 

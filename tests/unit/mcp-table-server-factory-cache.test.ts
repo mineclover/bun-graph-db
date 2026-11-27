@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { describe, expect, test, vi } from 'vitest'
 import { TableSchemaProjectionService } from '../../src/application/services/TableSchemaProjectionService'
 import {
   refreshMcpCacheForTableSchema,
@@ -15,7 +15,7 @@ type FakeTableServer = {
 function fakeTableServer(): FakeTableServer {
   let closed = false
   return {
-    close: mock(async () => {
+    close: vi.fn(async () => {
       closed = true
     }),
     getTableToolsCount: () => 1,
@@ -55,7 +55,7 @@ describe('TableMcpServerFactory table schema cache invalidation', () => {
     })
     servers.set('table_b', unchangedServer)
 
-    const refreshServerForTable = mock(async (tableId: string) => {
+    const refreshServerForTable = vi.fn(async (tableId: string) => {
       const refreshedServer = {
         tableId,
         isTableInitialized: () => true,
@@ -81,7 +81,7 @@ describe('TableMcpServerFactory table schema cache invalidation', () => {
       'http://factory-cache.test/graphql',
       'http://factory-cache.test/api',
     )
-    const refreshServerForTable = mock(async () => null)
+    const refreshServerForTable = vi.fn(async () => null)
     factory.refreshServerForTable =
       refreshServerForTable as typeof factory.refreshServerForTable
 
@@ -101,7 +101,7 @@ describe('TableMcpServerFactory table schema cache invalidation', () => {
     )
     const state = internals(factory)
     const server = fakeTableServer()
-    const validateTable = mock(async () => ({ exists: true }))
+    const validateTable = vi.fn(async () => ({ exists: true }))
     state.servers.set('table_a', server)
     state.validateTable = validateTable
 
@@ -126,8 +126,8 @@ describe('TableMcpServerFactory table schema cache invalidation', () => {
     )
     const state = internals(factory)
     const server = fakeTableServer()
-    const validateTable = mock(async () => ({ exists: true }))
-    const createServer = mock(async () => fakeTableServer())
+    const validateTable = vi.fn(async () => ({ exists: true }))
+    const createServer = vi.fn(async () => fakeTableServer())
     state.servers.set('table_a', server)
     state.serverMetadata.set('table_a', { lastValidatedAt: 0 })
     state.validateTable = validateTable
@@ -153,11 +153,11 @@ describe('TableMcpServerFactory table schema cache invalidation', () => {
     const validationGate = new Promise<void>((resolve) => {
       releaseValidation = resolve
     })
-    const validateTable = mock(async () => {
+    const validateTable = vi.fn(async () => {
       await validationGate
       return { exists: true }
     })
-    const createServer = mock(async () => server)
+    const createServer = vi.fn(async () => server)
     state.validateTable = validateTable
     state.createServerForTable = createServer
 
@@ -184,8 +184,8 @@ describe('TableMcpServerFactory table schema cache invalidation', () => {
     )
     const state = internals(factory)
     const created = new Map<string, FakeTableServer>()
-    state.validateTable = mock(async () => ({ exists: true }))
-    state.createServerForTable = mock(async (tableId: string) => {
+    state.validateTable = vi.fn(async () => ({ exists: true }))
+    state.createServerForTable = vi.fn(async (tableId: string) => {
       const server = fakeTableServer()
       created.set(tableId, server)
       return server
@@ -214,11 +214,11 @@ describe('TableMcpServerFactory table schema cache invalidation', () => {
     const creationGate = new Promise<void>((resolve) => {
       releaseCreation = resolve
     })
-    const createServer = mock(async () => {
+    const createServer = vi.fn(async () => {
       await creationGate
       return server
     })
-    state.validateTable = mock(async () => ({ exists: true }))
+    state.validateTable = vi.fn(async () => ({ exists: true }))
     state.createServerForTable = createServer
 
     const pending = factory.getServerForTable('table_a')
@@ -242,11 +242,11 @@ describe('TableMcpServerFactory table schema cache invalidation', () => {
     const creationGate = new Promise<void>((resolve) => {
       releaseCreation = resolve
     })
-    const createServer = mock(async () => {
+    const createServer = vi.fn(async () => {
       await creationGate
       return server
     })
-    state.validateTable = mock(async () => ({ exists: true }))
+    state.validateTable = vi.fn(async () => ({ exists: true }))
     state.createServerForTable = createServer
 
     const pending = factory.getServerForTable('table_a')

@@ -6,13 +6,13 @@
 
 ### 1. 개발 서버 시작
 ```bash
-bun run dev
+pnpm run dev
 # 또는 특정 포트
-GRAPHQL_PORT=4001 bun run dev
+pnpm run dev --port 4200
 ```
 
 ### 2. GraphQL Playground 접속
-브라우저에서 [http://localhost:4000/playground](http://localhost:4000/playground) 접속
+브라우저에서 [http://localhost:4141/graphql](http://localhost:4141/graphql) 접속
 
 ### 3. 쿼리 복사 & 붙여넣기
 이 디렉토리의 `.graphql` 파일들을 복사하여 Playground에서 바로 실행하세요.

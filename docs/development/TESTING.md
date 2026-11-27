@@ -12,36 +12,33 @@ Our testing approach ensures complete isolation between test suites, enabling:
 
 ## 🚀 Quick Start
 
+> 💡 **현재 Vitest 5 레인 기준**: 전체 테스트 스위트는 `pnpm run test` (`scripts/test-lanes.ts`, `parallel-safe` / `serial-only` / `e2e` / `stress` 4개 레인)로 실행하며, 레인 분류 감사는 `pnpm run test:lanes:audit`로 검증합니다. 아래 `test:unit`, `test:integration` 등은 레거시 격리 러너 호환 스크립트입니다.
+
 ### Run All Tests (Recommended)
 ```bash
-npm run test:all:isolated
+pnpm run test
+pnpm run test:lanes:audit
 ```
 
 ### Run by Category
 ```bash
-# Fast unit tests with parallel execution
-npm run test:unit:parallel
+# Fast unit lane (parallel-safe)
+pnpm run test:parallel-safe
+
+# Direct Vitest run
+pnpm run test:direct
 
 # Integration tests with isolated GraphQL servers
-npm run test:integration
+pnpm run test:integration
 
-# Full end-to-end tests
-npm run test:e2e
-
-# Legacy tests (requires running server)
-npm run test:legacy
+# Full end-to-end lane
+pnpm run test:e2e
 ```
 
 ### Cleanup Test Environment
 ```bash
-# Normal cleanup
-npm run test:cleanup
-
-# Force cleanup with detailed output
-npm run test:cleanup:force
-
-# See what would be cleaned
-npm run test:cleanup:dry
+# Clean leftover temporary test SQLite files
+rm -rf /tmp/bun-graph-db-tests
 ```
 
 ## 📋 Test Categories
@@ -294,7 +291,7 @@ NODE_OPTIONS="--expose-gc" npm run test:unit
 
 2. **Run single test with debug**:
    ```bash
-   DEBUG=test:* bun test tests/integration/specific-test.test.ts
+   DEBUG=test:* pnpm exec vitest run tests/integration/specific-test.test.ts
    ```
 
 3. **Inspect database state**:
@@ -306,22 +303,22 @@ NODE_OPTIONS="--expose-gc" npm run test:unit
 
 ## 🔧 Migration Tools & CLI
 
-The project includes sophisticated migration tools for converting legacy tests to the isolated testing strategy:
+The project includes migration tooling for converting legacy tests to the isolated testing strategy:
 
 ### MigrationService CLI
 
 ```bash
 # Analyze migration feasibility
-bun run src/migration-tools/cli/migration-cli.ts analyze tests/legacy/old-test.test.ts
+node --import tsx src/migration-tools/cli/migration-cli.ts analyze tests/legacy/old-test.test.ts
 
 # Execute migration with options
-bun run src/migration-tools/cli/migration-cli.ts execute tests/legacy/old-test.test.ts --backup --performance-monitoring
+node --import tsx src/migration-tools/cli/migration-cli.ts execute tests/legacy/old-test.test.ts --backup --performance-monitoring
 
 # Validate migrated test
-bun run src/migration-tools/cli/migration-cli.ts validate tests/migrated/new-test.test.ts --strict
+node --import tsx src/migration-tools/cli/migration-cli.ts validate tests/migrated/new-test.test.ts --strict
 
 # Generate migration report
-bun run src/migration-tools/cli/migration-cli.ts report --format json
+node --import tsx src/migration-tools/cli/migration-cli.ts report --format json
 ```
 
 ### Migration Features
@@ -367,7 +364,7 @@ npm run test:e2e
 #### Unit Test Example
 ```typescript
 // tests/unit/template-creation-isolated.test.ts
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import { TestIsolationHelpers, type IsolatedTestContext } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'template-creation-isolated'
@@ -407,7 +404,7 @@ describe('Template Creation - Isolated Unit Tests', () => {
 #### Integration Test Example
 ```typescript
 // tests/integration/doc-system-isolated.test.ts
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import { TestIsolationHelpers, type IsolatedTestContext } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'doc-system-isolated'
@@ -452,7 +449,7 @@ describe('Doc System - Integration Tests', () => {
 #### E2E Test Example
 ```typescript
 // tests/e2e/doc-system-e2e.test.ts
-import { describe, test, expect, beforeAll, afterAll } from 'bun:test'
+import { describe, test, expect, beforeAll, afterAll } from 'vitest'
 import { TestIsolationHelpers, type IsolatedTestContext } from '../fixtures/test-isolation-helpers'
 
 const SUITE_NAME = 'doc-system-e2e'
@@ -577,24 +574,22 @@ describe('Doc System - E2E Tests', () => {
 ## 📚 Resources
 
 ### Documentation
-- [Test Isolation Strategy Documentation](./docs/TEST_ISOLATION_STRATEGY.md)
-- [CI/CD Configuration](./.github/workflows/test-isolation.yml)
+- [Architecture Overview](../architecture/overview.md)
+- [CI/CD Configuration](../../.github/workflows/test-isolation.yml)
 
 ### Core APIs
-- [TestIsolationHelpers API](./tests/fixtures/test-isolation-helpers.ts)
-- [Test Database Factory](./tests/fixtures/test-database-factory.ts)
-- [GraphQL Test Server Manager](./tests/fixtures/test-graphql-server.ts)
+- [TestIsolationHelpers API](../../tests/fixtures/test-isolation-helpers.ts)
+- [Test Database Factory](../../tests/fixtures/test-database-factory.ts)
+- [GraphQL Test Server Manager](../../tests/fixtures/test-graphql-server.ts)
 
 ### Example Tests
-- [Unit Test Example](./tests/template-indexing/template-creation.file-based-2025-09-17T19-09-39-484Z.test.ts) - Fast file-based database tests (45/45 tests ✅)
-- [Integration Test Example](./tests/doc-system-isolated.test.ts) - GraphQL API with isolated server and schema fixes
-- [Performance Test Example](./tests/template-indexing/performance-tracking.file-based-2025-09-17T19-06-19-946Z.test.ts) - Template performance with proper tolerance adjustments
-- [Query Indexing Test](./tests/template-indexing/query-name-indexing.file-based-2025-09-17T19-09-12-913Z.test.ts) - Query indexing with extended schema
-- [System Queries Isolated](./tests/system-queries-isolated.test.ts) - Unit test with database isolation
+- [Unit Test Example](../../tests/unit/mcp-modern-protocol.test.ts) - MCP `2026-07-28` / `2025-11-25` unit suite
+- [DO SQLite Portability Test](../../tests/unit/cloudflare-do-sqlite-portability.test.ts) - Strict Cloudflare DO SQLite mock & single-node worker test
+- [Use Cases & Hierarchy Test](../../tests/unit/use-case-scenarios-and-hierarchy.test.ts) - 6대 시나리오 및 계층 구조 검증
 
 ### Utilities
-- [Test Cleanup Script](./scripts/test-cleanup.ts)
-- [Enhanced Test Runner](./tests/test-runner.ts)
+- [Lane Runner](../../scripts/test-lanes.ts)
+- [Enhanced Test Runner](../../tests/test-runner.ts)
 
 ## 🎯 Migration Checklist
 

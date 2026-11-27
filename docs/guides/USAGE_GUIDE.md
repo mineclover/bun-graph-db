@@ -22,7 +22,7 @@ npm run template:validate
 ### 4. Import Templates to Server
 ```bash
 # Start server first
-bun run dev
+pnpm run dev
 
 # In another terminal, import templates
 npm run template:import
@@ -139,7 +139,7 @@ npm run template:import
 #### Method 1: Bulk Import (Recommended)
 ```bash
 # Start server
-bun run dev
+pnpm run dev
 
 # Import all templates
 npm run template:import

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'bun:test'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { CachedSortEngine } from '../../src/application/services/sorting/CachedSortEngine'
 import { type CacheEntryMetadata, SortResultCache } from '../../src/application/services/sorting/SortResultCache'
 import {

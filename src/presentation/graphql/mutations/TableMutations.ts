@@ -1,3 +1,4 @@
+import { TableSchemaLifecycleAspect } from '@/application/aspects/TableSchemaLifecycleAspect.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import type { TableDto } from '@/application/dtos/TableDto.js'
 import type { CreateTableUseCase } from '@/application/use-cases/tables/CreateTable.js'
@@ -11,12 +12,12 @@ import type {
 } from '@/core/types/GraphQLTypes.js'
 import type { ITableRepository } from '@/domain/repositories/ITableRepository.js'
 import type { BestEffortTabularSyncHook } from '@/application/services/BestEffortTabularSyncHook.js'
-import { removeMcpCacheForTableSchema } from '@/presentation/mcp/factory/TableMcpServerFactory.js'
 import { toErrorMeta } from '@/presentation/http/utils/errorHelpers.js'
 import { BaseResolver } from '../base/BaseResolver.js'
 
 export class TableMutations extends BaseResolver {
   protected logger: ILogger
+  private readonly lifecycle: TableSchemaLifecycleAspect
 
   constructor(
     private readonly createTableUseCase: CreateTableUseCase,
@@ -24,9 +25,16 @@ export class TableMutations extends BaseResolver {
     private readonly tableRepository: ITableRepository,
     logger: ILogger,
     private readonly tabularSyncHook?: BestEffortTabularSyncHook,
+    schemaLifecycle?: TableSchemaLifecycleAspect,
   ) {
     super()
     this.logger = logger
+    this.lifecycle =
+      schemaLifecycle ??
+      new TableSchemaLifecycleAspect({
+        logger: this.logger,
+        tabularSyncHook: this.tabularSyncHook,
+      })
   }
 
   private getErrorCode(error: unknown, fallback: string): string {
@@ -199,19 +207,7 @@ export class TableMutations extends BaseResolver {
         cascadeDelete: args.cascadeDelete,
       })
 
-      this.tabularSyncHook?.notifyClearByIdentifier(existingTable.identifier)
-      const cacheResult = removeMcpCacheForTableSchema([
-        args.id,
-        existingTable.identifier,
-      ])
-      if (cacheResult.removed.length > 0) {
-        this.logger.info(
-          'Removed table-scoped MCP schema cache after table deletion',
-          {
-            removed: cacheResult.removed,
-          },
-        )
-      }
+      this.lifecycle.onTableDeleted(args.id, existingTable.identifier, 'deleteTable')
 
       this.logger.info('Table deletion completed successfully', {
         id: args.id,
@@ -314,10 +310,11 @@ export class TableMutations extends BaseResolver {
           force: true,
         })
         if (existingTable) {
-          this.tabularSyncHook?.notifyClearByIdentifier(
+          this.lifecycle.onTableDeleted(
+            tableId,
             existingTable.identifier,
+            'batchDeleteTables',
           )
-          removeMcpCacheForTableSchema([tableId, existingTable.identifier])
         }
         deletedCount++
       } catch (error) {

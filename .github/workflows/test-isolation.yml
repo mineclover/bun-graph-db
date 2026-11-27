@@ -1,4 +1,4 @@
-name: Bun Validation Lanes
+name: Node 26 Validation Lanes
 
 on:
   push:
@@ -10,11 +10,12 @@ on:
     - cron: "23 18 * * 1"
 
 concurrency:
-  group: bun-validation-${{ github.workflow }}-${{ github.ref }}
+  group: node-validation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  BUN_VERSION: "1.3.9"
+  NODE_VERSION: "26"
+  PNPM_VERSION: "12.21.0"
   # Temporary authority for the local file: dependency. Replace this checkout
   # boundary with an exact package version once the contract is published.
   OA_SDK_CONTRACT_REF: "a8e9a60434365fc8e98be12996d671b855b1e4d6"
@@ -45,10 +46,17 @@ jobs:
         with:
           path: oa-sdk/references/bun-graph-db
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: oa-sdk/references/bun-graph-db/pnpm-lock.yaml
 
       - name: Verify intentional parent-layout dependency
         run: |
@@ -59,13 +67,13 @@ jobs:
           fi
 
       - name: Install locked dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build local projection contract
-        run: PATH="$PWD/node_modules/.bin:$PATH" bun run --cwd ../../packages/openapi-projection-contract build
+        run: PATH="$PWD/node_modules/.bin:$PATH" pnpm --dir ../../packages/openapi-projection-contract run build
 
       - name: Run static gate
-        run: bun run check:static
+        run: pnpm run check:static
 
   lane-audit:
     name: Lane ownership audit
@@ -86,10 +94,17 @@ jobs:
         with:
           path: oa-sdk/references/bun-graph-db
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: oa-sdk/references/bun-graph-db/pnpm-lock.yaml
 
       - name: Verify intentional parent-layout dependency
         run: |
@@ -100,10 +115,10 @@ jobs:
           fi
 
       - name: Install locked dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Audit every test file has one lane
-        run: bun run test:lanes:audit
+        run: pnpm run test:lanes:audit
 
   unit-tests:
     name: Parallel-safe tests
@@ -125,10 +140,17 @@ jobs:
         with:
           path: oa-sdk/references/bun-graph-db
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: oa-sdk/references/bun-graph-db/pnpm-lock.yaml
 
       - name: Verify intentional parent-layout dependency
         run: |
@@ -139,13 +161,13 @@ jobs:
           fi
 
       - name: Install locked dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build local projection contract
-        run: PATH="$PWD/node_modules/.bin:$PATH" bun run --cwd ../../packages/openapi-projection-contract build
+        run: PATH="$PWD/node_modules/.bin:$PATH" pnpm --dir ../../packages/openapi-projection-contract run build
 
       - name: Run parallel-safe lane
-        run: bun run test:parallel-safe
+        run: pnpm run test:parallel-safe
 
   serial-tests:
     name: Serial tests
@@ -167,10 +189,17 @@ jobs:
         with:
           path: oa-sdk/references/bun-graph-db
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: oa-sdk/references/bun-graph-db/pnpm-lock.yaml
 
       - name: Verify intentional parent-layout dependency
         run: |
@@ -181,13 +210,13 @@ jobs:
           fi
 
       - name: Install locked dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build local projection contract
-        run: PATH="$PWD/node_modules/.bin:$PATH" bun run --cwd ../../packages/openapi-projection-contract build
+        run: PATH="$PWD/node_modules/.bin:$PATH" pnpm --dir ../../packages/openapi-projection-contract run build
 
       - name: Run serial-only lane
-        run: bun run test:serial-only
+        run: pnpm run test:serial-only
 
   projection-contract:
     name: Projection artifact contract
@@ -209,10 +238,17 @@ jobs:
         with:
           path: oa-sdk/references/bun-graph-db
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: oa-sdk/references/bun-graph-db/pnpm-lock.yaml
 
       - name: Verify intentional parent-layout dependency
         run: |
@@ -223,20 +259,20 @@ jobs:
           fi
 
       - name: Install locked dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build local projection contract
-        run: PATH="$PWD/node_modules/.bin:$PATH" bun run --cwd ../../packages/openapi-projection-contract build
+        run: PATH="$PWD/node_modules/.bin:$PATH" pnpm --dir ../../packages/openapi-projection-contract run build
 
       - name: Test projection artifact contract
-        run: bun run projection:check
+        run: pnpm run projection:check
 
       - name: Verify deterministic projection export
         run: |
           first="$RUNNER_TEMP/oa-sdk-projection-first"
           second="$RUNNER_TEMP/oa-sdk-projection-second"
-          bun run projection:export --out "$first"
-          bun run projection:export --out "$second"
+          pnpm run projection:export -- --out "$first"
+          pnpm run projection:export -- --out "$second"
           diff -ru "$first" "$second"
 
       - name: Upload deterministic projection evidence
@@ -267,10 +303,17 @@ jobs:
         with:
           path: oa-sdk/references/bun-graph-db
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: oa-sdk/references/bun-graph-db/pnpm-lock.yaml
 
       - name: Verify intentional parent-layout dependency
         run: |
@@ -281,13 +324,13 @@ jobs:
           fi
 
       - name: Install locked dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build local projection contract
-        run: PATH="$PWD/node_modules/.bin:$PATH" bun run --cwd ../../packages/openapi-projection-contract build
+        run: PATH="$PWD/node_modules/.bin:$PATH" pnpm --dir ../../packages/openapi-projection-contract run build
 
       - name: Run end-to-end lane
-        run: bun run test:e2e
+        run: pnpm run test:e2e
 
   stress-tests:
     name: Scheduled stress tests
@@ -310,10 +353,17 @@ jobs:
         with:
           path: oa-sdk/references/bun-graph-db
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
-          bun-version: ${{ env.BUN_VERSION }}
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: oa-sdk/references/bun-graph-db/pnpm-lock.yaml
 
       - name: Verify intentional parent-layout dependency
         run: |
@@ -324,18 +374,18 @@ jobs:
           fi
 
       - name: Install locked dependencies
-        run: bun install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build local projection contract
-        run: PATH="$PWD/node_modules/.bin:$PATH" bun run --cwd ../../packages/openapi-projection-contract build
+        run: PATH="$PWD/node_modules/.bin:$PATH" pnpm --dir ../../packages/openapi-projection-contract run build
 
       - name: Run stress lane
-        run: bun run test:stress
+        run: pnpm run test:stress
 
       - name: Capture advisory hot-path benchmark
         if: always()
         continue-on-error: true
-        run: bun run benchmark:hotpaths --output "$RUNNER_TEMP/bun-graph-db-hotpaths.json"
+        run: pnpm run benchmark:hotpaths -- --output "$RUNNER_TEMP/bun-graph-db-hotpaths.json"
 
       - name: Upload hot-path benchmark evidence
         if: always()
@@ -365,7 +415,7 @@ jobs:
           STRESS_RESULT: ${{ needs.stress-tests.result }}
         run: |
           {
-            echo "## Bun validation lanes"
+            echo "## Node 26 validation lanes"
             echo
             echo "| Lane | Result |"
             echo "| --- | --- |"

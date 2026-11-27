@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import type { ILogger } from '../../src/application/ports/ILogger'
 import { AutoPersistenceService } from '../../src/domain/services/AutoPersistenceService'
 
@@ -117,7 +117,7 @@ function successfulExport() {
 async function waitFor(predicate: () => boolean): Promise<void> {
   for (let attempts = 0; attempts < 100; attempts++) {
     if (predicate()) return
-    await Bun.sleep(1)
+    await new Promise((resolve) => setTimeout(resolve, 1))
   }
   throw new Error('Timed out waiting for persistence state')
 }

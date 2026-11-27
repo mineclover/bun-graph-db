@@ -2,7 +2,7 @@
  * Performance Monitor Unit Tests
  */
 
-import { beforeEach, describe, expect, mock, test } from 'bun:test'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import { getPerformanceMonitor, PerformanceMonitor, resetPerformanceMonitor } from '@/core/utils/PerformanceMonitor.js'
 
 describe('PerformanceMonitor', () => {
@@ -303,7 +303,7 @@ describe('PerformanceMonitor', () => {
     })
 
     test('should call onSlowOperation callback', async () => {
-      const slowCallback = mock(() => {})
+      const slowCallback = vi.fn(() => {})
       const callbackMonitor = new PerformanceMonitor({
         slowThresholdMs: 30,
         onSlowOperation: slowCallback,

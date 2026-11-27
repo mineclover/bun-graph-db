@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import {
   type IGraphRepository,
@@ -23,69 +23,69 @@ describe('SearchRelatedNodesUseCase', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repositories
     mockNodeRepository = {
-      save: mock(async (node) => node),
-      findById: mock(async () => null),
-      findByTableId: mock(async () => ({ data: [], metadata: {} })),
-      findByTableIdAndContent: mock(async () => null),
-      delete: mock(async () => {}),
-      deleteByTableId: mock(async () => {}),
-      countByTableId: mock(async () => 0),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      exists: mock(async () => false),
-      count: mock(async () => 0),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      update: mock(async () => createTestNode()),
+      save: vi.fn(async (node) => node),
+      findById: vi.fn(async () => null),
+      findByTableId: vi.fn(async () => ({ data: [], metadata: {} })),
+      findByTableIdAndContent: vi.fn(async () => null),
+      delete: vi.fn(async () => {}),
+      deleteByTableId: vi.fn(async () => {}),
+      countByTableId: vi.fn(async () => 0),
+      findAll: vi.fn(async () => ({ data: [], metadata: {} })),
+      exists: vi.fn(async () => false),
+      count: vi.fn(async () => 0),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      update: vi.fn(async () => createTestNode()),
     } as unknown as INodeRepository
 
     mockRelationRepository = {
-      save: mock(async (relation) => relation),
-      findById: mock(async () => null),
-      findByExternalIds: mock(async () => null),
-      findBySourceNodeIdAndRelationType: mock(async () => []),
-      findByTargetNodeIdAndRelationType: mock(async () => []),
-      exists: mock(async () => false),
-      update: mock(async () => {}),
-      delete: mock(async () => {}),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      deleteByTableId: mock(async () => {}),
-      count: mock(async () => 0),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      deleteMany: mock(async () => {}),
+      save: vi.fn(async (relation) => relation),
+      findById: vi.fn(async () => null),
+      findByExternalIds: vi.fn(async () => null),
+      findBySourceNodeIdAndRelationType: vi.fn(async () => []),
+      findByTargetNodeIdAndRelationType: vi.fn(async () => []),
+      exists: vi.fn(async () => false),
+      update: vi.fn(async () => {}),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => ({ data: [], metadata: {} })),
+      deleteByTableId: vi.fn(async () => {}),
+      count: vi.fn(async () => 0),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      deleteMany: vi.fn(async () => {}),
     } as unknown as INodeRelationRepository
 
     mockGraphRepository = {
-      searchRelatedNodes: mock(async () => ({
+      searchRelatedNodes: vi.fn(async () => ({
         data: [],
         total: 0,
         hasMore: false,
         hasNextPage: false,
         hasPreviousPage: false,
       })),
-      findPathsBetweenNodes: mock(async () => []),
-      getDependencyChain: mock(async () => []),
+      findPathsBetweenNodes: vi.fn(async () => []),
+      getDependencyChain: vi.fn(async () => []),
     }
 
     mockTableRepository = {
-      save: mock(async (table) => table),
-      findById: mock(async () => createTestTable('table-1', 'test-table')),
-      findByIdentifier: mock(async () => null),
-      findAll: mock(async () => ({ data: [], metadata: {} })),
-      delete: mock(async () => {}),
-      exists: mock(async () => false),
-      count: mock(async () => 0),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      update: mock(async () => createTestTable()),
+      save: vi.fn(async (table) => table),
+      findById: vi.fn(async () => createTestTable('table-1', 'test-table')),
+      findByIdentifier: vi.fn(async () => null),
+      findAll: vi.fn(async () => ({ data: [], metadata: {} })),
+      delete: vi.fn(async () => {}),
+      exists: vi.fn(async () => false),
+      count: vi.fn(async () => 0),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      update: vi.fn(async () => createTestTable()),
     } as unknown as ITableRepository
 
     useCase = new SearchRelatedNodesUseCase(
@@ -160,7 +160,7 @@ describe('SearchRelatedNodesUseCase', () => {
         tableId: 'nonexistent-table',
       }
 
-      mockTableRepository.findById = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
       await expect(useCase.execute(input)).rejects.toThrow("Table with id 'nonexistent-table' not found")
@@ -175,7 +175,7 @@ describe('SearchRelatedNodesUseCase', () => {
 
       const node = createTestNode('node-1', 'table-1', 'Test Node')
 
-      mockGraphRepository.searchRelatedNodes = mock(async () => ({
+      mockGraphRepository.searchRelatedNodes = vi.fn(async () => ({
         data: [{ node, attributes: {} }],
         total: 1,
         hasMore: false,
@@ -201,7 +201,7 @@ describe('SearchRelatedNodesUseCase', () => {
 
       const node = createTestNode('node-1', 'table-1', 'Filtered Node')
 
-      mockGraphRepository.searchRelatedNodes = mock(async (_tableId, graphQuery) => {
+      mockGraphRepository.searchRelatedNodes = vi.fn(async (_tableId, graphQuery) => {
         expect(graphQuery.nodeFilters).toEqual({ type: 'user', status: 'active' })
         return {
           data: [{ node, attributes: {} }],
@@ -230,7 +230,7 @@ describe('SearchRelatedNodesUseCase', () => {
         ],
       }
 
-      mockGraphRepository.searchRelatedNodes = mock(async (_tableId, graphQuery) => {
+      mockGraphRepository.searchRelatedNodes = vi.fn(async (_tableId, graphQuery) => {
         expect(graphQuery.relationFilters).toBeDefined()
         expect(graphQuery.relationFilters?.[0].relationTypeIds).toEqual(['rel-type-1'])
         return {
@@ -255,7 +255,7 @@ describe('SearchRelatedNodesUseCase', () => {
         offset: 100,
       }
 
-      mockGraphRepository.searchRelatedNodes = mock(async (_tableId, graphQuery) => {
+      mockGraphRepository.searchRelatedNodes = vi.fn(async (_tableId, graphQuery) => {
         expect(graphQuery.limit).toBe(50)
         expect(graphQuery.offset).toBe(100)
         return {
@@ -293,7 +293,7 @@ describe('SearchRelatedNodesUseCase', () => {
 
       const node = createTestNode('node-1', 'table-1', 'Test Node')
 
-      mockGraphRepository.searchRelatedNodes = mock(async () => ({
+      mockGraphRepository.searchRelatedNodes = vi.fn(async () => ({
         data: [
           {
             node,
@@ -302,7 +302,7 @@ describe('SearchRelatedNodesUseCase', () => {
             targetNodeId: 'node-2',
             relationTypeId: 'rel-type-1',
             properties: { weight: 10 },
-            strength: 80,
+            strength: 4,
           },
         ],
         total: 1,
@@ -319,7 +319,7 @@ describe('SearchRelatedNodesUseCase', () => {
       expect(result.relations[0].targetNodeId).toBe('node-2')
       expect(result.relations[0].relationTypeId).toBe('rel-type-1')
       expect(result.relations[0].properties).toEqual({ weight: 10 })
-      expect(result.relations[0].strength).toBe(80)
+      expect(result.relations[0].strength).toBe(4)
     })
   })
 
@@ -336,7 +336,7 @@ describe('SearchRelatedNodesUseCase', () => {
         ],
       }
 
-      mockGraphRepository.searchRelatedNodes = mock(async () => ({
+      mockGraphRepository.searchRelatedNodes = vi.fn(async () => ({
         data: [],
         total: 0,
         hasMore: false,
@@ -344,7 +344,7 @@ describe('SearchRelatedNodesUseCase', () => {
         hasPreviousPage: false,
       }))
 
-      mockGraphRepository.findPathsBetweenNodes = mock(async () => [
+      mockGraphRepository.findPathsBetweenNodes = vi.fn(async () => [
         {
           startNodeId: 'node-1',
           endNodeId: 'node-3',
@@ -383,7 +383,7 @@ describe('SearchRelatedNodesUseCase', () => {
         ],
       }
 
-      mockGraphRepository.findPathsBetweenNodes = mock(
+      mockGraphRepository.findPathsBetweenNodes = vi.fn(
         async (_tableId, _startIds, _endIds, _maxDepth, relationTypes) => {
           expect(relationTypes).toEqual(['depends-on', 'requires'])
           return []
@@ -404,7 +404,7 @@ describe('SearchRelatedNodesUseCase', () => {
 
       const searchError = new Error('Graph database connection failed')
 
-      mockGraphRepository.searchRelatedNodes = mock(async () => {
+      mockGraphRepository.searchRelatedNodes = vi.fn(async () => {
         throw searchError
       })
 
@@ -430,7 +430,7 @@ describe('SearchRelatedNodesUseCase', () => {
     })
 
     it('should throw NotFoundException when table does not exist', async () => {
-      mockTableRepository.findById = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.getDependencies('nonexistent-table', 'node-1')).rejects.toThrow(NotFoundException)
       await expect(useCase.getDependencies('nonexistent-table', 'node-1')).rejects.toThrow(
@@ -441,7 +441,7 @@ describe('SearchRelatedNodesUseCase', () => {
 
   describe('getDependencies() - Successful Retrieval', () => {
     it('should get incoming dependencies', async () => {
-      mockGraphRepository.getDependencyChain = mock(async (_tableId, _nodeId, direction) => {
+      mockGraphRepository.getDependencyChain = vi.fn(async (_tableId, _nodeId, direction) => {
         expect(direction).toBe(RelationDirection.INCOMING)
         return [
           { nodeId: 'node-1', level: 0, relationPath: [] },
@@ -459,7 +459,7 @@ describe('SearchRelatedNodesUseCase', () => {
     })
 
     it('should get outgoing dependencies', async () => {
-      mockGraphRepository.getDependencyChain = mock(async (_tableId, _nodeId, direction) => {
+      mockGraphRepository.getDependencyChain = vi.fn(async (_tableId, _nodeId, direction) => {
         expect(direction).toBe(RelationDirection.OUTGOING)
         return [
           { nodeId: 'node-1', level: 0, relationPath: [] },
@@ -475,7 +475,7 @@ describe('SearchRelatedNodesUseCase', () => {
     })
 
     it('should get dependencies with relationTypes filter', async () => {
-      mockGraphRepository.getDependencyChain = mock(async (_tableId, _nodeId, _direction, relationTypes) => {
+      mockGraphRepository.getDependencyChain = vi.fn(async (_tableId, _nodeId, _direction, relationTypes) => {
         expect(relationTypes).toEqual(['depends-on', 'requires'])
         return []
       })
@@ -495,7 +495,7 @@ describe('SearchRelatedNodesUseCase', () => {
     it('should log errors and rethrow when dependency retrieval fails', async () => {
       const depError = new Error('Dependency chain query failed')
 
-      mockGraphRepository.getDependencyChain = mock(async () => {
+      mockGraphRepository.getDependencyChain = vi.fn(async () => {
         throw depError
       })
 

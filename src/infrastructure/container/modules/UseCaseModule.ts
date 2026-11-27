@@ -6,6 +6,7 @@ import { CreateDocUseCase } from '@/application/use-cases/docs/CreateDoc.js'
 import { DeleteDocUseCase } from '@/application/use-cases/docs/DeleteDoc.js'
 import { UpdateDocUseCase } from '@/application/use-cases/docs/UpdateDoc.js'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type { IEmbeddingProvider } from '@/domain/ports/IEmbeddingProvider.js'
 import { SchemaExportUseCase } from '@/application/use-cases/export/SchemaExportUseCase.js'
 import { TableNodesExportUseCase } from '@/application/use-cases/export/TableNodesExportUseCase.js'
 import { SchemaImportUseCase } from '@/application/use-cases/import/SchemaImportUseCase.js'
@@ -324,6 +325,9 @@ export function registerUseCaseModule(container: DIContainer): void {
         c,
         RepositoryTokens.TABLE_REPOSITORY,
       )
+      const embeddingProvider = c.isRegistered(CommonTokens.EMBEDDING_PROVIDER)
+        ? await resolveAs<IEmbeddingProvider>(c, CommonTokens.EMBEDDING_PROVIDER)
+        : undefined
       return new HybridSearchNodesUseCase(
         nodeRepository,
         nodeSearchRepository,
@@ -333,6 +337,8 @@ export function registerUseCaseModule(container: DIContainer): void {
         attributeRepository,
         tableRepository,
         simpleLogger,
+        undefined,
+        embeddingProvider,
       )
     },
     [

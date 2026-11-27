@@ -3,7 +3,7 @@
  * Provides isolated database setup for testing environments
  */
 
-import { Database } from 'bun:sqlite'
+import { Database } from '../../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 

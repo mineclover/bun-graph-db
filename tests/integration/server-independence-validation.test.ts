@@ -3,7 +3,7 @@
  * 핵심 기능 동작 확인 - REST API 기반
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import {
   createIntegrationConfig,
   type UnifiedTestEnvironment,

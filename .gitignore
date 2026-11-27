@@ -1,4 +1,4 @@
-# dependencies (bun install)
+# dependencies (pnpm install)
 node_modules
 
 # output
@@ -54,6 +54,7 @@ cleanup-plan-*.json
 *.sqlite-journal
 *.sqlite-shm
 *.sqlite-wal
+file-based-db*
 
 # Generated and temporary directories
 tmp/

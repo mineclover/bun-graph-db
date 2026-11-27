@@ -3,7 +3,7 @@
  * 통합 테스트 프레임워크 - API 커버리지 100% 달성을 위한 종합 테스트 시스템
  */
 
-import { Database } from 'bun:sqlite'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { join } from 'node:path'
 
 // =============================================================================

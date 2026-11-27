@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { type CreateRelationInput, CreateRelationUseCase } from '@/application/use-cases/relations/CreateRelation.js'
 import type { Node } from '@/domain/entities/Node.js'
@@ -33,85 +33,85 @@ describe('CreateRelationUseCase', () => {
   beforeEach(() => {
     // Mock logger
     mockLogger = {
-      info: mock(() => {}),
-      warn: mock(() => {}),
-      error: mock(() => {}),
-      debug: mock(() => {}),
+      info: vi.fn(() => {}),
+      warn: vi.fn(() => {}),
+      error: vi.fn(() => {}),
+      debug: vi.fn(() => {}),
     }
 
     // Mock repositories
     mockNodeRelationRepository = {
-      save: mock(async (relation: NodeRelation) => relation),
-      findById: mock(async () => null),
-      findByTableId: mock(async () => emptyPage<NodeRelation>()),
-      findBySourceNodeIdPaginated: mock(async () => emptyPage<NodeRelation>()),
-      findByTargetNodeIdPaginated: mock(async () => emptyPage<NodeRelation>()),
-      findByExternalIds: mock(async () => null),
-      findBySourceExternalId: mock(async () => emptyPage<NodeRelation>()),
-      findByTargetExternalId: mock(async () => emptyPage<NodeRelation>()),
-      findByRelationType: mock(async () => emptyPage<NodeRelation>()),
-      findByNodeId: mock(async () => ({ incoming: [], outgoing: [] })),
-      findBySourceNodeIdAndRelationType: mock(async () => []),
-      findByTargetNodeIdAndRelationType: mock(async () => []),
-      findBySourceNodeId: mock(async () => []),
-      findByTargetNodeId: mock(async () => []),
-      exists: mock(async () => false),
-      update: mock(async (relation: NodeRelation) => relation),
-      delete: mock(async () => {}),
-      deleteByTableId: mock(async () => {}),
-      deleteBySourceNodeId: mock(async () => {}),
-      deleteByTargetNodeId: mock(async () => {}),
-      count: mock(async () => 0),
-      countBySourceNodeId: mock(async () => 0),
-      countByTargetNodeId: mock(async () => 0),
-      findAll: mock(async () => emptyPage<NodeRelation>()),
+      save: vi.fn(async (relation: NodeRelation) => relation),
+      findById: vi.fn(async () => null),
+      findByTableId: vi.fn(async () => emptyPage<NodeRelation>()),
+      findBySourceNodeIdPaginated: vi.fn(async () => emptyPage<NodeRelation>()),
+      findByTargetNodeIdPaginated: vi.fn(async () => emptyPage<NodeRelation>()),
+      findByExternalIds: vi.fn(async () => null),
+      findBySourceExternalId: vi.fn(async () => emptyPage<NodeRelation>()),
+      findByTargetExternalId: vi.fn(async () => emptyPage<NodeRelation>()),
+      findByRelationType: vi.fn(async () => emptyPage<NodeRelation>()),
+      findByNodeId: vi.fn(async () => ({ incoming: [], outgoing: [] })),
+      findBySourceNodeIdAndRelationType: vi.fn(async () => []),
+      findByTargetNodeIdAndRelationType: vi.fn(async () => []),
+      findBySourceNodeId: vi.fn(async () => []),
+      findByTargetNodeId: vi.fn(async () => []),
+      exists: vi.fn(async () => false),
+      update: vi.fn(async (relation: NodeRelation) => relation),
+      delete: vi.fn(async () => {}),
+      deleteByTableId: vi.fn(async () => {}),
+      deleteBySourceNodeId: vi.fn(async () => {}),
+      deleteByTargetNodeId: vi.fn(async () => {}),
+      count: vi.fn(async () => 0),
+      countBySourceNodeId: vi.fn(async () => 0),
+      countByTargetNodeId: vi.fn(async () => 0),
+      findAll: vi.fn(async () => emptyPage<NodeRelation>()),
     } as unknown as INodeRelationRepository
 
     mockRelationTypeRepository = {
-      save: mock(async (relationType: RelationType) => relationType),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      update: mock(async (relationType: RelationType) => relationType),
-      delete: mock(async () => {}),
-      findAll: mock(async () => emptyPage<RelationType>()),
-      count: mock(async () => 0),
-      exists: mock(async () => false),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      deleteMany: mock(async () => {}),
+      save: vi.fn(async (relationType: RelationType) => relationType),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      update: vi.fn(async (relationType: RelationType) => relationType),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => emptyPage<RelationType>()),
+      count: vi.fn(async () => 0),
+      exists: vi.fn(async () => false),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      deleteMany: vi.fn(async () => {}),
     } as unknown as IRelationTypeRepository
 
     mockNodeRepository = {
-      save: mock(async (node: Node) => node),
-      findById: mock(async () => null),
-      findByTableIdAndContent: mock(async () => null),
-      findByTableId: mock(async () => emptyPage<Node>()),
-      update: mock(async (node: Node) => node),
-      delete: mock(async () => {}),
-      findAll: mock(async () => emptyPage<Node>()),
-      deleteByTableId: mock(async () => {}),
-      exists: mock(async () => false),
-      count: mock(async () => 0),
-      countByTableId: mock(async () => 0),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      existsByTableIdAndContent: mock(async () => false),
-      executeRawQuery: mock(async () => []),
-      searchByContent: mock(async () => emptyPage<Node>()),
+      save: vi.fn(async (node: Node) => node),
+      findById: vi.fn(async () => null),
+      findByTableIdAndContent: vi.fn(async () => null),
+      findByTableId: vi.fn(async () => emptyPage<Node>()),
+      update: vi.fn(async (node: Node) => node),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => emptyPage<Node>()),
+      deleteByTableId: vi.fn(async () => {}),
+      exists: vi.fn(async () => false),
+      count: vi.fn(async () => 0),
+      countByTableId: vi.fn(async () => 0),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      existsByTableIdAndContent: vi.fn(async () => false),
+      executeRawQuery: vi.fn(async () => []),
+      searchByContent: vi.fn(async () => emptyPage<Node>()),
     } as unknown as INodeRepository
 
     mockTableRepository = {
-      save: mock(async (table: Table) => table),
-      findById: mock(async () => null),
-      findByIdentifier: mock(async () => null),
-      update: mock(async (table: Table) => table),
-      delete: mock(async () => {}),
-      findAll: mock(async () => emptyPage<Table>()),
-      count: mock(async () => 0),
-      exists: mock(async () => false),
-      saveMany: mock(async () => {}),
-      findByIds: mock(async () => []),
-      deleteMany: mock(async () => {}),
+      save: vi.fn(async (table: Table) => table),
+      findById: vi.fn(async () => null),
+      findByIdentifier: vi.fn(async () => null),
+      update: vi.fn(async (table: Table) => table),
+      delete: vi.fn(async () => {}),
+      findAll: vi.fn(async () => emptyPage<Table>()),
+      count: vi.fn(async () => 0),
+      exists: vi.fn(async () => false),
+      saveMany: vi.fn(async () => {}),
+      findByIds: vi.fn(async () => []),
+      deleteMany: vi.fn(async () => {}),
     } as unknown as ITableRepository
 
     useCase = new CreateRelationUseCase(
@@ -180,11 +180,11 @@ describe('CreateRelationUseCase', () => {
         sourceNodeId: 'node-1',
         targetNodeId: 'node-2',
         relationTypeId: 'rel-type-1',
-        strength: 50.5,
+        strength: 2.5,
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 100')
+      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 4')
     })
 
     it('should throw ValidationException when strength is negative', async () => {
@@ -197,20 +197,20 @@ describe('CreateRelationUseCase', () => {
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 100')
+      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 4')
     })
 
-    it('should throw ValidationException when strength is greater than 100', async () => {
+    it('should throw ValidationException when strength is greater than 4', async () => {
       const input: CreateRelationInput = {
         tableId: 'table-1',
         sourceNodeId: 'node-1',
         targetNodeId: 'node-2',
         relationTypeId: 'rel-type-1',
-        strength: 101,
+        strength: 5,
       }
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
-      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 100')
+      await expect(useCase.execute(input)).rejects.toThrow('Strength must be an integer between 0 and 4')
     })
   })
 
@@ -223,7 +223,7 @@ describe('CreateRelationUseCase', () => {
         relationTypeId: 'rel-type-1',
       }
 
-      mockTableRepository.findById = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
       await expect(useCase.execute(input)).rejects.toThrow("Table with id 'non-existent-table' not found")
@@ -239,8 +239,8 @@ describe('CreateRelationUseCase', () => {
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
       await expect(useCase.execute(input)).rejects.toThrow("RelationType with id 'non-existent-rel-type' not found")
@@ -260,9 +260,9 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findById = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findById = vi.fn(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(NotFoundException)
       await expect(useCase.execute(input)).rejects.toThrow("Source node with id 'non-existent-node' not found")
@@ -282,9 +282,9 @@ describe('CreateRelationUseCase', () => {
 
       const sourceNode = createTestNode('node-1', 'table-1', 'Source Node')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(null)
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findById = vi.fn().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(null)
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(NotFoundException)
@@ -305,9 +305,9 @@ describe('CreateRelationUseCase', () => {
 
       const node = createTestNode('node-1', 'table-1', 'Test Node')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findById = mock(async () => node)
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findById = vi.fn(async () => node)
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
       await expect(useCase.execute(input)).rejects.toThrow('Source and target cannot be the same')
@@ -325,9 +325,9 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findByTableIdAndContent = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findByTableIdAndContent = vi.fn(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow(ValidationException)
       await expect(useCase.execute(input)).rejects.toThrow('Source and target cannot be the same')
@@ -361,10 +361,10 @@ describe('CreateRelationUseCase', () => {
         'rel-type-1',
       )
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
-      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [existingRelation])
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findById = vi.fn().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
+      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = vi.fn(async () => [existingRelation])
 
       const promise = useCase.execute(input)
       await expect(promise).rejects.toThrow(ConflictException)
@@ -385,10 +385,10 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findByTableIdAndContent = mock(async () => null)
-      mockNodeRelationRepository.exists = mock(async () => true)
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findByTableIdAndContent = vi.fn(async () => null)
+      mockNodeRelationRepository.exists = vi.fn(async () => true)
 
       await expect(useCase.execute(input)).rejects.toThrow(ConflictException)
       await expect(useCase.execute(input)).rejects.toThrow(
@@ -404,7 +404,7 @@ describe('CreateRelationUseCase', () => {
         sourceNodeId: 'node-1',
         targetNodeId: 'node-2',
         relationTypeId: 'rel-type-1',
-        strength: 80,
+        strength: 4,
       }
 
       const table = createTestTable('table-1', 'test-table', 'Test Table')
@@ -415,11 +415,11 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
-      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
-      mockNodeRelationRepository.findByExternalIds = mock(async () =>
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findById = vi.fn().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
+      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = vi.fn(async () => [])
+      mockNodeRelationRepository.findByExternalIds = vi.fn(async () =>
         createTestNodeRelation(
           'relation-1',
           'table-1',
@@ -429,7 +429,7 @@ describe('CreateRelationUseCase', () => {
           'internal',
           'rel-type-1',
           null,
-          80,
+          4,
         ),
       )
 
@@ -439,7 +439,7 @@ describe('CreateRelationUseCase', () => {
       expect(result.relation.id).toBe('relation-1')
       expect(result.relation.sourceNodeId).toBe('node-1')
       expect(result.relation.targetNodeId).toBe('node-2')
-      expect(result.relation.strength).toBe(80)
+      expect(result.relation.strength).toBe(4)
       expect(mockNodeRelationRepository.save).toHaveBeenCalled()
     })
 
@@ -456,11 +456,11 @@ describe('CreateRelationUseCase', () => {
 
       const relationType = createTestRelationType('rel-type-1', 'depends-on', 'Depends On')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findByTableIdAndContent = mock(async () => null)
-      mockNodeRelationRepository.exists = mock(async () => false)
-      mockNodeRelationRepository.findByExternalIds = mock(async () =>
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findByTableIdAndContent = vi.fn(async () => null)
+      mockNodeRelationRepository.exists = vi.fn(async () => false)
+      mockNodeRelationRepository.findByExternalIds = vi.fn(async () =>
         createTestNodeRelation(
           'relation-1',
           'table-1',
@@ -498,13 +498,13 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node Content')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findByTableIdAndContent = mock()
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findByTableIdAndContent = vi.fn()
         .mockResolvedValueOnce(sourceNode)
         .mockResolvedValueOnce(targetNode)
-      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
-      mockNodeRelationRepository.findByExternalIds = mock(async () =>
+      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = vi.fn(async () => [])
+      mockNodeRelationRepository.findByExternalIds = vi.fn(async () =>
         createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1'),
       )
 
@@ -537,11 +537,11 @@ describe('CreateRelationUseCase', () => {
 
       const saveError = new Error('Database connection failed')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
-      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
-      mockNodeRelationRepository.save = mock(async () => {
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findById = vi.fn().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
+      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = vi.fn(async () => [])
+      mockNodeRelationRepository.save = vi.fn(async () => {
         throw saveError
       })
 
@@ -571,11 +571,11 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
-      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
-      mockNodeRelationRepository.findByExternalIds = mock(async () => null)
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findById = vi.fn().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
+      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = vi.fn(async () => [])
+      mockNodeRelationRepository.findByExternalIds = vi.fn(async () => null)
 
       await expect(useCase.execute(input)).rejects.toThrow('Failed to retrieve saved node relation')
     })
@@ -598,11 +598,11 @@ describe('CreateRelationUseCase', () => {
 
       const targetNode = createTestNode('node-2', 'table-1', 'Target Node')
 
-      mockTableRepository.findById = mock(async () => table)
-      mockRelationTypeRepository.findById = mock(async () => relationType)
-      mockNodeRepository.findById = mock().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
-      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = mock(async () => [])
-      mockNodeRelationRepository.findByExternalIds = mock(async () =>
+      mockTableRepository.findById = vi.fn(async () => table)
+      mockRelationTypeRepository.findById = vi.fn(async () => relationType)
+      mockNodeRepository.findById = vi.fn().mockResolvedValueOnce(sourceNode).mockResolvedValueOnce(targetNode)
+      mockNodeRelationRepository.findBySourceNodeIdAndRelationType = vi.fn(async () => [])
+      mockNodeRelationRepository.findByExternalIds = vi.fn(async () =>
         createTestNodeRelation('relation-1', 'table-1', 'node-1', 'internal', 'node-2', 'internal', 'rel-type-1'),
       )
 

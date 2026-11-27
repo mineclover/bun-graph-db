@@ -1,4 +1,4 @@
-import type { Database } from 'bun:sqlite'
+import type { ISqliteDatabase } from '@/infrastructure/database/sqlite/SqlitePort.js'
 
 export type TabularSyncJobMode = 'sync' | 'clear'
 export type TabularSyncJobStatus =
@@ -97,7 +97,7 @@ export interface TabularSyncAggregateMetrics {
 }
 
 export class TabularSyncEventStore {
-  constructor(private readonly db: Database) {}
+  constructor(private readonly db: ISqliteDatabase) {}
 
   /**
    * Creates or refreshes the one pending delivery for a table.  A revision is

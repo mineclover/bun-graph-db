@@ -63,18 +63,18 @@ Welcome to Bun Graph Database user documentation!
 ### 5-Minute Setup
 
 ```bash
-# 1. Install Bun (if not installed)
-curl -fsSL https://bun.sh/install | bash
+# 1. Requires Node.js >= 26.0.0 and pnpm 12.21.0
+node -v && pnpm -v
 
 # 2. Clone repository
 git clone https://github.com/your-username/bun-graph-db.git
 cd bun-graph-db
 
 # 3. Install dependencies
-bun install
+pnpm install
 
 # 4. Start server
-bun run dev
+pnpm run dev
 
 # 5. Open browser
 # Visit: http://localhost:4141/graphql
@@ -104,7 +104,8 @@ query {
 ### Advanced Topics
 - **[Template System Guide](../templates/template-system-guide.md)** - Template creation and usage
 - **[MCP Integration](../mcp/)** - Model Context Protocol setup
-- **[Test Coverage Report](../../claudedocs/test-coverage-report.md)** - System test status
+- **[Testing Strategy](../development/TESTING.md)** - Vitest 5 test lanes and verification
+- **[Golden Test Dataset](../development/GOLDEN_DATASET.md)** - Core cross-runtime golden regression suite
 
 ### Development Guides
 - **[Development Environment](../development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)** - Setup for contributors
@@ -347,7 +348,7 @@ Found an error or want to improve the guides?
 ---
 
 **Document Version**: 1.0.0
-**Last Updated**: 2025-11-23
+**Last Updated**: 2026-11-27
 **Maintained by**: Bun Graph DB Team
 
 **Feedback**: Please submit feedback via [GitHub Issues](https://github.com/your-username/bun-graph-db/issues)

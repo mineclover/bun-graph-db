@@ -1,5 +1,6 @@
-import { Database } from "bun:sqlite";
-import { afterEach, describe, expect, test } from "bun:test";
+import { readFile } from "node:fs/promises";
+import { afterEach, describe, expect, test } from "vitest";
+import { Database } from "../../src/infrastructure/database/sqlite/SqliteAdapter.js";
 import { SqliteNodeSearchRepository } from "../../src/infrastructure/database/sqlite/SqliteNodeSearchRepository";
 
 const databases: Database[] = [];
@@ -64,7 +65,7 @@ describe("SqliteNodeSearchRepository full-text search", () => {
 		expect(result.data.map((item) => item.node.getId())).toEqual([
 			"alpha-match",
 		]);
-		expect(result.data[0]?.relevanceScore).toBeNumber();
+		expect(typeof result.data[0]?.relevanceScore).toBe("number");
 	});
 
 	test("matches numeric table ids stored in the affinity-free FTS table", async () => {
@@ -101,7 +102,7 @@ describe("SqliteNodeSearchRepository full-text search", () => {
 
 		expect(result.total).toBe(1);
 		expect(result.data.map((item) => item.node.getId())).toEqual(["1"]);
-		expect(result.data[0]?.relevanceScore).toBeNumber();
+		expect(typeof result.data[0]?.relevanceScore).toBe("number");
 	});
 
 	test("paginates node ids before fetching complete attribute sets", async () => {
@@ -431,9 +432,9 @@ describe("SqliteNodeSearchRepository full-text search", () => {
 				?.relevanceScore,
 		).toBeUndefined();
 		expect(
-			result.data.find((item) => item.node.getId() === "fts-match")
+			typeof result.data.find((item) => item.node.getId() === "fts-match")
 				?.relevanceScore,
-		).toBeNumber();
+		).toBe("number");
 	});
 
 	test("uses node_attribute_search_fts and idx_node_attributes_attr_num_node without full-table LIKE scans on migrated schemas", async () => {
@@ -442,9 +443,10 @@ describe("SqliteNodeSearchRepository full-text search", () => {
 		const { applyDatabaseMigrations, createDatabaseMigrations } = await import(
 			"../../src/infrastructure/database/sqlite/DatabaseMigrationRunner"
 		);
-		const baseSchema = await Bun.file(
+		const baseSchema = await readFile(
 			new URL("../../scripts/database/schema.sql", import.meta.url),
-		).text();
+			"utf8",
+		);
 		applyDatabaseMigrations(db, createDatabaseMigrations(baseSchema));
 
 		db.exec(`
@@ -502,7 +504,7 @@ describe("SqliteNodeSearchRepository full-text search", () => {
 		const result = await repository.searchNodes("1", query, available);
 		expect(result.total).toBe(2);
 		expect(result.data.map((entry) => entry.node.getId())).toEqual(["1", "3"]);
-		expect(result.data[0]?.relevanceScore).toBeNumber();
+		expect(typeof result.data[0]?.relevanceScore).toBe("number");
 
 		const introspection = repository as unknown as {
 			buildNodeQuery(

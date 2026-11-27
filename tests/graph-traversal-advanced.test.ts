@@ -3,7 +3,7 @@
  * Comprehensive tests for graph traversal algorithms and advanced search functionality
  */
 
-import { afterAll, beforeAll, describe, expect, test } from 'bun:test'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { createRequestHelper, startServerForSuite, stopServerForSuite } from './fixtures/test-graphql-server'
 
 const SUITE_NAME = 'graph-traversal-advanced'

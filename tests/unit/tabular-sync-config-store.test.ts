@@ -1,5 +1,5 @@
-import { describe, expect, test } from 'bun:test'
-import { Database } from 'bun:sqlite'
+import { describe, expect, test } from 'vitest'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { TabularSyncConfigStore } from '@/infrastructure/excel/TabularSyncConfigStore.js'
 
 function createStore() {

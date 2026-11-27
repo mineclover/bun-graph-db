@@ -15,9 +15,11 @@ export class NodeRelation {
     private readonly strength: number,
     private readonly createdAt: Date,
     private readonly updatedAt: Date,
+    private readonly confidence: number = 1,
   ) {
     this.validateExternalIds(sourceExternalId, targetExternalId)
     this.validateStrength(strength)
+    this.validateConfidence(confidence)
   }
 
   static create(
@@ -29,6 +31,7 @@ export class NodeRelation {
     relationTypeId: RelationTypeId,
     properties?: Record<string, SafeJsonValue> | null,
     strength?: number,
+    confidence?: number,
   ): NodeRelation {
     return new NodeRelation(
       '' as NodeRelationId,
@@ -42,6 +45,7 @@ export class NodeRelation {
       strength ?? 1, // Default strength: 1=auto_generated (valid range: 0-4)
       new Date(),
       new Date(),
+      confidence ?? 1, // Default confidence: 1=auto_generated (valid range: 0-4)
     )
   }
 
@@ -57,6 +61,7 @@ export class NodeRelation {
     strength: number,
     createdAt: Date,
     updatedAt: Date,
+    confidence: number = 1,
   ): NodeRelation {
     let parsedProperties: Record<string, SafeJsonValue> | null = null
     if (properties) {
@@ -80,6 +85,7 @@ export class NodeRelation {
       strength,
       createdAt,
       updatedAt,
+      confidence,
     )
   }
 
@@ -104,8 +110,18 @@ export class NodeRelation {
       throw new DomainException('Strength must be an integer')
     }
 
-    if (strength < 0 || strength > 100) {
-      throw new DomainException('Strength must be between 0 and 100')
+    if (strength < 0 || strength > 4) {
+      throw new DomainException('Strength must be between 0 and 4')
+    }
+  }
+
+  private validateConfidence(confidence: number): void {
+    if (!Number.isInteger(confidence)) {
+      throw new DomainException('Confidence must be an integer')
+    }
+
+    if (confidence < 0 || confidence > 4) {
+      throw new DomainException('Confidence must be between 0 and 4')
     }
   }
 
@@ -123,6 +139,7 @@ export class NodeRelation {
       this.strength,
       this.createdAt,
       new Date(),
+      this.confidence,
     )
   }
 
@@ -140,6 +157,42 @@ export class NodeRelation {
       strength,
       this.createdAt,
       new Date(),
+      this.confidence,
+    )
+  }
+
+  updateConfidence(confidence: number): NodeRelation {
+    this.validateConfidence(confidence)
+    return new NodeRelation(
+      this.id,
+      this.tableId,
+      this.sourceNodeId,
+      this.sourceExternalId,
+      this.targetNodeId,
+      this.targetExternalId,
+      this.relationTypeId,
+      this.properties,
+      this.strength,
+      this.createdAt,
+      new Date(),
+      confidence,
+    )
+  }
+
+  updateRelationType(relationTypeId: RelationTypeId): NodeRelation {
+    return new NodeRelation(
+      this.id,
+      this.tableId,
+      this.sourceNodeId,
+      this.sourceExternalId,
+      this.targetNodeId,
+      this.targetExternalId,
+      relationTypeId,
+      this.properties,
+      this.strength,
+      this.createdAt,
+      new Date(),
+      this.confidence,
     )
   }
 
@@ -156,6 +209,7 @@ export class NodeRelation {
       this.strength,
       this.createdAt,
       new Date(),
+      this.confidence,
     )
   }
 
@@ -196,6 +250,10 @@ export class NodeRelation {
     return this.strength
   }
 
+  getConfidence(): number {
+    return this.confidence
+  }
+
   getCreatedAt(): Date {
     return this.createdAt
   }
@@ -234,6 +292,7 @@ export class NodeRelation {
     relation_type_id: string
     properties: string | null
     strength: number
+    confidence: number
     created_at: string
     updated_at: string
   } {
@@ -247,6 +306,7 @@ export class NodeRelation {
       relation_type_id: this.relationTypeId as string,
       properties: this.properties ? JSON.stringify(this.properties) : null,
       strength: this.strength,
+      confidence: this.confidence,
       created_at: this.createdAt.toISOString(),
       updated_at: this.updatedAt.toISOString(),
     }

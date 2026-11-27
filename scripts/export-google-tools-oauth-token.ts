@@ -1,4 +1,5 @@
-import { Database } from 'bun:sqlite'
+import { readFile, writeFile } from 'node:fs/promises'
+import { Database } from '../src/infrastructure/database/sqlite/SqliteAdapter.js'
 
 function requireEnv(name: string): string {
   const value = process.env[name]
@@ -32,7 +33,7 @@ async function main() {
     throw new Error(`No OAuth token found in '${dbPath}'.`)
   }
 
-  const payload = JSON.parse(await Bun.file(clientFile).text()) as {
+  const payload = JSON.parse(await readFile(clientFile, 'utf8')) as {
     web?: {
       client_id?: string
       client_secret?: string
@@ -55,7 +56,7 @@ async function main() {
     refreshToken: token.refresh_token || undefined,
   }
 
-  await Bun.write(outputFile, JSON.stringify(tokenBundle, null, 2))
+  await writeFile(outputFile, JSON.stringify(tokenBundle, null, 2), 'utf8')
   console.log(
     JSON.stringify(
       {

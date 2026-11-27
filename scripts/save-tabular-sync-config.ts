@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import { createContainer, resetContainer } from '@/infrastructure/container/ContainerBootstrap.js'
 import { CommonTokens } from '@/infrastructure/container/tokens/index.js'
 
@@ -14,7 +15,7 @@ async function main() {
   const configKey = process.env.TABULAR_SYNC_CONFIG_KEY || 'default'
   const active = process.env.TABULAR_SYNC_CONFIG_ACTIVE !== 'false'
 
-  const config = JSON.parse(await Bun.file(configFile).text())
+  const config = JSON.parse(await readFile(configFile, 'utf8'))
 
   resetContainer()
   const container = await createContainer()

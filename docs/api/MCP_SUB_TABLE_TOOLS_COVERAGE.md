@@ -6,7 +6,7 @@ The Bun Graph DB project implements a comprehensive MCP (Model Context Protocol)
 
 **Endpoint**: `http://localhost:4141/sub/:tableId/mcp`
 **Protocol**: JSON-RPC 2.0
-**MCP Version**: 2025-06-18
+**MCP Version**: 2026-07-28 (compatible with 2025-11-25 LTS, 2025-06-18, 2025-03-26, 2024-11-05)
 
 ## 📈 Tool Coverage Summary
 

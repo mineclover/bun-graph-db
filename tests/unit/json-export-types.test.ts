@@ -4,7 +4,7 @@
  * Tests for type guards and patch types validation
  */
 
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import {
   type FlatJsonExport,
   type FlatJsonPatchRequest,

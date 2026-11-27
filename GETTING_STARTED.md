@@ -4,7 +4,7 @@
 
 > 💡 **용어가 궁금하신가요?** [용어집(GLOSSARY.md)](GLOSSARY.md)에서 모든 용어를 자세히 설명합니다.
 
-> ✅ **2026-03-30 검증 스냅샷**: 서버 기동, 헬스체크, `createTable`, `createNode`, `searchNodes`, MCP `initialize`, 그리고 `bun run test`까지 다시 검증되었습니다. 자세한 내용은 [docs/development/SYSTEM_EVALUATION_2026-03-30.md](docs/development/SYSTEM_EVALUATION_2026-03-30.md)를 참고하세요.
+> ✅ **2026-11-27 검증 스냅샷**: Node.js `>=26.0.0`(`node:sqlite`) + pnpm `12.21.0` 환경에서 서버 기동, 헬스체크(`/health`, `/api/health`), `createTable`, `createNode`, `searchNodes`, 계층 구조(`getSubtree`/`moveHierarchyNode`), MCP `2026-07-28`/`2025-11-25` LTS, Cloudflare DO SQLite Phase 1(`PortableBootstrap`), JSONL 백업·복원, 4-신호 하이브리드 검색, `pnpm run check:static` 및 `pnpm run test`까지 검증되었습니다. 초기 평가 이력은 [docs/development/SYSTEM_EVALUATION_2026-03-30.md](docs/development/SYSTEM_EVALUATION_2026-03-30.md)를, 운영 절차는 [docs/guides/OPERATIONS_GUIDE.md](docs/guides/OPERATIONS_GUIDE.md)를 참고하세요.
 
 ---
 
@@ -89,12 +89,12 @@ mutation {
 
 ### 1단계: 서버 시작 (30초)
 ```bash
-# 설치 (처음 한 번만)
-bun install
-bun run scripts/init-database.ts
+# 설치 (처음 한 번만, 요구 런타임: Node.js >= 26.0.0, pnpm 12.21.0)
+pnpm install
+node --import tsx scripts/init-database.ts
 
 # 서버 시작
-bun run dev
+pnpm run dev
 ```
 
 브라우저에서 `http://localhost:4141/graphql` 열기 ✅
@@ -234,8 +234,8 @@ query {
 
 ### 1. 강력한 검색
 ```graphql
-# 텍스트 검색
-searchNodes(filter: { search: "관계" })
+# 텍스트 검색 (tableId 필수)
+searchNodes(filter: { tableId: "1", search: "관계" })
 
 # 여러 조건 검색
 searchNodes(filter: {
@@ -248,7 +248,7 @@ searchNodes(filter: {
 ```graphql
 # 연결된 모든 노드 찾기 (2단계까지)
 node(id: "1") {
-  connectedNodes(depth: 2, direction: BOTH) {
+  connectedNodes(depth: 2, direction: "BOTH") {
     id content
   }
 }
@@ -257,7 +257,7 @@ node(id: "1") {
 node(id: "1") {
   neighborsByRelationType(
     relationTypes: ["references"]
-    direction: OUTGOING
+    direction: "OUTGOING"
   ) {
     id content
   }
@@ -271,7 +271,7 @@ mutation {
   createTemplate(input: {
     identifier: "search_by_keyword"
     name: "키워드로 검색"
-    query: "query Search($keyword: String!) { searchNodes(filter: { search: $keyword }) { nodes { content } } }"
+    query: "query Search($tableId: ID!, $keyword: String!) { searchNodes(filter: { tableId: $tableId, search: $keyword }) { nodes { id content } totalCount } }"
   }) { success template { id } }
 }
 
@@ -279,7 +279,7 @@ mutation {
 mutation {
   executeTemplateWithGraphQL(
     templateIdentifier: "search_by_keyword"
-    variables: { keyword: "관계" }
+    variables: { tableId: "1", keyword: "관계" }
   ) { success data }
 }
 ```
@@ -342,8 +342,12 @@ claude mcp add --transport http notes http://localhost:4141/sub/1/mcp
 4. **[AI 통합 가이드](docs/guides/MCP_SETUP_GUIDE.md)** - Claude 연동
 5. **[시스템 구조](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - 전체 설계
 
-### 실전 예제
-- **[사용 사례 테스트](claudedocs/USE_CASE_TEST_RESULTS.md)** - 실제 시나리오 26개
+### 실전 예제 & 핵심 기준
+- **[실전 활용 정의 및 6대 시나리오](docs/guides/USE_CASES_AND_CAPABILITIES.md)** - 지식 그래프·계층 구조·스펙 계보·스키마 카탈로그·표 동기화·백업
+- **[Web Embedded · EmbeddingGemma-2 · IA · AI Memory](docs/guides/EMBEDDED_WEB_AND_AI_MEMORY.md)** - 브라우저 WASM 임베딩·정보구조화·에이전트 장기 메모리
+- **[핵심 기능 골든 테스트 데이터셋](docs/development/GOLDEN_DATASET.md)** - `pnpm run test:golden` 기반 10대 기능군 교차 런타임 검증 기준
+- **[Cloudflare 단일 노드 아키텍처](docs/architecture/cloudflare-single-node.md)** - Durable Object SQLite Phase 1 검토
+- **[MCP 프로토콜 참조](docs/mcp/README.md)** - `2026-07-28` / `2025-11-25` LTS 연동 규격
 - **[개발 가이드](docs/development/DEVELOPMENT_ENVIRONMENT_GUIDE.md)** - 개발 환경
 
 ---
@@ -357,8 +361,8 @@ claude mcp add --transport http notes http://localhost:4141/sub/1/mcp
 
 **3줄 시작**:
 ```bash
-bun install && bun run scripts/init-database.ts
-bun run dev
+pnpm install && node --import tsx scripts/init-database.ts
+pnpm run dev
 # http://localhost:4141/graphql 열기
 ```
 
@@ -370,4 +374,4 @@ bun run dev
 ---
 
 **라이선스**: MIT
-**문서 업데이트**: 2025-11-25
+**문서 업데이트**: 2026-11-27

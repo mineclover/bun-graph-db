@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto'
 import {
   attachOpenApiProjectionExtensions,
   type OpenApiProjectionDocumentWithExtensions,
@@ -8,6 +7,7 @@ import {
   type SchemaSourceCoordinate,
   type SchemaTypeTarget,
 } from '@oa-sdk/openapi-projection-contract'
+import { sha256Hex } from '@/shared/utils/portableHash.js'
 
 export const ROOT_MCP_TOOL_CONTRACTS_EXTENSION = 'x-mcp-tool-contracts'
 
@@ -217,7 +217,7 @@ function copyJsonCompatible(
 }
 
 function computeRootMcpToolProjectionVersionHash(input: unknown): string {
-  return `sha256:${createHash('sha256').update(stableStringify(input)).digest('hex')}`
+  return `sha256:${sha256Hex(stableStringify(input))}`
 }
 
 function stableStringify(value: unknown): string {
@@ -257,7 +257,7 @@ function toPascalCase(value: string): string {
 }
 
 function shortHash(value: string): string {
-  return createHash('sha256').update(value).digest('hex').slice(0, 8)
+  return sha256Hex(value).slice(0, 8)
 }
 
 function componentSchemaRef(name: string): string {

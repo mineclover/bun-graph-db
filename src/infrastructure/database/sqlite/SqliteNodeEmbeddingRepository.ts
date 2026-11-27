@@ -1,4 +1,5 @@
-import type { Database, Statement } from 'bun:sqlite'
+import type { Statement } from './SqliteAdapter.js'
+import type { ISqliteDatabase } from './SqlitePort.js'
 import type { NodeId, TableId } from '@/core/types/CommonTypes.js'
 import type {
   INodeEmbeddingRepository,
@@ -20,6 +21,13 @@ import {
 } from '@/shared/exceptions/DomainException.js'
 
 export const MAX_EMBEDDING_DIMENSION = 8_192
+const DEFAULT_MAX_CACHED_TABLES = 64
+const DEFAULT_MAX_CACHE_BYTES = 128 * 1024 * 1024
+
+export interface SqliteNodeEmbeddingRepositoryOptions {
+  maxCachedTables?: number
+  maxCacheBytes?: number
+}
 
 interface EmbeddingLocation {
   bucketKey: string
@@ -28,15 +36,15 @@ interface EmbeddingLocation {
 
 /**
  * Contiguous Float32Array slab grouped by `(dimension, model)` with swap-remove
- * compaction so cosine scans run sequentially over dense typed arrays without
- * per-node object chasing or branch checks inside the hot loop.
+ * compaction and unit-normalized vectors so cosine scans run sequentially over
+ * dense typed arrays as pure dot products without per-candidate normalization.
  */
 class Float32ModelSlabBucket {
   readonly dimension: number
   readonly model: string
   nodeIds: string[] = []
   slab: Float32Array
-  invNorms: Float64Array
+  hasSignal: Uint8Array
   private capacity: number
   count = 0
 
@@ -45,7 +53,11 @@ class Float32ModelSlabBucket {
     this.model = model
     this.capacity = Math.max(4, initialCapacity)
     this.slab = new Float32Array(this.capacity * dimension)
-    this.invNorms = new Float64Array(this.capacity)
+    this.hasSignal = new Uint8Array(this.capacity)
+  }
+
+  get byteLength(): number {
+    return this.slab.byteLength + this.hasSignal.byteLength + this.capacity * 64
   }
 
   append(nodeId: string, vector: Float32Array, norm: number): number {
@@ -55,14 +67,12 @@ class Float32ModelSlabBucket {
     const slot = this.count
     this.count += 1
     this.nodeIds[slot] = nodeId
-    this.slab.set(vector, slot * this.dimension)
-    this.invNorms[slot] = norm > 0 ? 1 / norm : 0
+    this.writeNormalized(slot, vector, norm)
     return slot
   }
 
   overwrite(slot: number, vector: Float32Array, norm: number): void {
-    this.slab.set(vector, slot * this.dimension)
-    this.invNorms[slot] = norm > 0 ? 1 / norm : 0
+    this.writeNormalized(slot, vector, norm)
   }
 
   swapRemove(slot: number): string | null {
@@ -75,7 +85,7 @@ class Float32ModelSlabBucket {
         last * this.dimension,
         (last + 1) * this.dimension,
       )
-      this.invNorms[slot] = this.invNorms[last] as number
+      this.hasSignal[slot] = this.hasSignal[last] as number
       this.nodeIds[slot] = movedNodeId
     }
     this.nodeIds.pop()
@@ -83,14 +93,28 @@ class Float32ModelSlabBucket {
     return movedNodeId
   }
 
+  private writeNormalized(slot: number, vector: Float32Array, norm: number): void {
+    const offset = slot * this.dimension
+    if (norm > 0) {
+      const invNorm = 1 / norm
+      for (let i = 0; i < this.dimension; i += 1) {
+        this.slab[offset + i] = (vector[i] as number) * invNorm
+      }
+      this.hasSignal[slot] = 1
+    } else {
+      this.slab.fill(0, offset, offset + this.dimension)
+      this.hasSignal[slot] = 0
+    }
+  }
+
   private grow(): void {
     const nextCapacity = this.capacity * 2
     const nextSlab = new Float32Array(nextCapacity * this.dimension)
     nextSlab.set(this.slab)
-    const nextInvNorms = new Float64Array(nextCapacity)
-    nextInvNorms.set(this.invNorms)
+    const nextHasSignal = new Uint8Array(nextCapacity)
+    nextHasSignal.set(this.hasSignal)
     this.slab = nextSlab
-    this.invNorms = nextInvNorms
+    this.hasSignal = nextHasSignal
     this.capacity = nextCapacity
   }
 }
@@ -98,6 +122,7 @@ class Float32ModelSlabBucket {
 interface TableEmbeddingCache {
   revision: number
   totalVectors: number
+  byteSize: number
   buckets: Map<string, Float32ModelSlabBucket>
   locations: Map<string, EmbeddingLocation>
 }
@@ -120,6 +145,9 @@ interface PersistedTimestampRow {
 
 export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
   private readonly tableCaches = new Map<string, TableEmbeddingCache>()
+  private readonly maxCachedTables: number
+  private readonly maxCacheBytes: number
+  private totalCacheBytes = 0
   private hasRevisionTableVerified = false
 
   private selectNodeTableStmt: Statement<{ id: string; table_id: string }, [string]> | null = null
@@ -143,7 +171,20 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
   > | null = null
   private readRevisionStmt: Statement<{ revision: number }, [string]> | null = null
 
-  constructor(private readonly db: Database) {}
+  constructor(
+    private readonly db: ISqliteDatabase,
+    options: SqliteNodeEmbeddingRepositoryOptions = {},
+  ) {
+    this.maxCachedTables = Math.max(1, options.maxCachedTables ?? DEFAULT_MAX_CACHED_TABLES)
+    this.maxCacheBytes = Math.max(1024, options.maxCacheBytes ?? DEFAULT_MAX_CACHE_BYTES)
+  }
+
+  getCacheStats(): { tableCount: number; totalBytes: number } {
+    return {
+      tableCount: this.tableCaches.size,
+      totalBytes: this.totalCacheBytes,
+    }
+  }
 
   async upsert(input: UpsertNodeEmbeddingInput): Promise<NodeEmbeddingRecord> {
     const nodeId = String(input.nodeId ?? '').trim()
@@ -431,7 +472,13 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
     const queryFloat32 = Float32Array.from(options.queryVector)
     const queryDim = queryFloat32.length
     const queryNorm = computeFloat32Norm(queryFloat32)
-    const queryInvNorm = queryNorm > 0 ? 1 / queryNorm : 0
+    const hasQuerySignal = queryNorm > 0
+    if (hasQuerySignal) {
+      const invNorm = 1 / queryNorm
+      for (let i = 0; i < queryDim; i += 1) {
+        queryFloat32[i] = (queryFloat32[i] as number) * invNorm
+      }
+    }
 
     if (options.restrictToNodeIds && options.restrictToNodeIds.size === 0) {
       return {
@@ -477,19 +524,17 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
           continue
         }
         scanned += 1
-        const targetInvNorm = bucket.invNorms[location.slot] as number
+        const targetSignal = bucket.hasSignal[location.slot] as number
         const rawScore =
-          queryInvNorm === 0 || targetInvNorm === 0
+          !hasQuerySignal || targetSignal === 0
             ? 0
             : dotProductFloat32Slab(
                 queryFloat32,
                 bucket.slab,
                 location.slot * queryDim,
                 queryDim,
-              ) *
-              queryInvNorm *
-              targetInvNorm
-        const score = rawScore > 1 ? 1 : rawScore < -1 ? -1 : rawScore
+              )
+        const score = Math.min(1, Math.max(-1, rawScore))
         if (score >= minScore) {
           collector.offer(candidateId, score, bucket.model)
         }
@@ -513,7 +558,7 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
         }
 
         const slab = bucket.slab
-        const invNorms = bucket.invNorms
+        const hasSignal = bucket.hasSignal
         const ids = bucket.nodeIds
         const model = bucket.model
         const count = bucket.count
@@ -523,19 +568,16 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
             const nodeId = ids[slot] as string
             if (!restrictSet.has(nodeId)) continue
             scanned += 1
-            const targetInvNorm = invNorms[slot] as number
             const rawScore =
-              queryInvNorm === 0 || targetInvNorm === 0
+              !hasQuerySignal || (hasSignal[slot] as number) === 0
                 ? 0
-                : dotProductFloat32Slab(queryFloat32, slab, slot * queryDim, queryDim) *
-                  queryInvNorm *
-                  targetInvNorm
-            const score = rawScore > 1 ? 1 : rawScore < -1 ? -1 : rawScore
+                : dotProductFloat32Slab(queryFloat32, slab, slot * queryDim, queryDim)
+            const score = Math.min(1, Math.max(-1, rawScore))
             if (score >= minScore) {
               collector.offer(nodeId, score, model)
             }
           }
-        } else if (queryInvNorm === 0) {
+        } else if (!hasQuerySignal) {
           scanned += count
           if (0 >= minScore) {
             for (let slot = 0; slot < count; slot += 1) {
@@ -545,14 +587,11 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
         } else {
           scanned += count
           for (let slot = 0; slot < count; slot += 1) {
-            const targetInvNorm = invNorms[slot] as number
             const rawScore =
-              targetInvNorm === 0
+              (hasSignal[slot] as number) === 0
                 ? 0
-                : dotProductFloat32Slab(queryFloat32, slab, slot * queryDim, queryDim) *
-                  queryInvNorm *
-                  targetInvNorm
-            const score = rawScore > 1 ? 1 : rawScore < -1 ? -1 : rawScore
+                : dotProductFloat32Slab(queryFloat32, slab, slot * queryDim, queryDim)
+            const score = Math.min(1, Math.max(-1, rawScore))
             if (score >= minScore) {
               collector.offer(ids[slot] as string, score, model)
             }
@@ -583,16 +622,28 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
   invalidateCache(tableId?: TableId): void {
     if (tableId === undefined) {
       this.tableCaches.clear()
+      this.totalCacheBytes = 0
       return
     }
-    this.tableCaches.delete(String(tableId).trim())
+    const key = String(tableId).trim()
+    const existing = this.tableCaches.get(key)
+    if (existing) {
+      this.totalCacheBytes = Math.max(0, this.totalCacheBytes - existing.byteSize)
+      this.tableCaches.delete(key)
+    }
   }
 
   private ensureTableCache(tableId: string): TableEmbeddingCache {
     const currentRevision = this.readTableRevision(tableId)
     const existing = this.tableCaches.get(tableId)
     if (existing && existing.revision === currentRevision) {
+      this.tableCaches.delete(tableId)
+      this.tableCaches.set(tableId, existing)
       return existing
+    }
+    if (existing) {
+      this.totalCacheBytes = Math.max(0, this.totalCacheBytes - existing.byteSize)
+      this.tableCaches.delete(tableId)
     }
 
     const rows = this.getLoadTableEmbeddingsStmt().all(tableId)
@@ -626,11 +677,35 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
     const loaded: TableEmbeddingCache = {
       revision: currentRevision,
       totalVectors: locations.size,
+      byteSize: calculateCacheByteSize(buckets),
       buckets,
       locations,
     }
     this.tableCaches.set(tableId, loaded)
+    this.totalCacheBytes += loaded.byteSize
+    this.evictCachesIfNeeded(tableId)
     return loaded
+  }
+
+  private evictCachesIfNeeded(protectedTableId?: string): void {
+    while (
+      this.tableCaches.size > 1 &&
+      (this.tableCaches.size > this.maxCachedTables || this.totalCacheBytes > this.maxCacheBytes)
+    ) {
+      let evictedKey: string | undefined
+      for (const candidateKey of this.tableCaches.keys()) {
+        if (candidateKey !== protectedTableId) {
+          evictedKey = candidateKey
+          break
+        }
+      }
+      if (!evictedKey) break
+      const evicted = this.tableCaches.get(evictedKey)
+      if (evicted) {
+        this.totalCacheBytes = Math.max(0, this.totalCacheBytes - evicted.byteSize)
+      }
+      this.tableCaches.delete(evictedKey)
+    }
   }
 
   private applyCacheUpsert(
@@ -640,6 +715,7 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
     norm: number,
     model: string,
   ): void {
+    const previousBytes = cache.byteSize
     const nextBucketKey = makeBucketKey(vector.length, model)
     const existingLocation = cache.locations.get(nodeId)
 
@@ -648,12 +724,16 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
         const sameBucket = cache.buckets.get(nextBucketKey)
         if (sameBucket) {
           sameBucket.overwrite(existingLocation.slot, vector, norm)
+          cache.byteSize = calculateCacheByteSize(cache.buckets)
+          this.totalCacheBytes = Math.max(0, this.totalCacheBytes - previousBytes + cache.byteSize)
+          this.evictCachesIfNeeded()
           return
         }
       }
       this.applyCacheDelete(cache, nodeId)
     }
 
+    const refreshedPrevBytes = cache.byteSize
     let targetBucket = cache.buckets.get(nextBucketKey)
     if (!targetBucket) {
       targetBucket = new Float32ModelSlabBucket(vector.length, model)
@@ -662,11 +742,15 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
     const slot = targetBucket.append(nodeId, vector, norm)
     cache.locations.set(nodeId, { bucketKey: nextBucketKey, slot })
     cache.totalVectors = cache.locations.size
+    cache.byteSize = calculateCacheByteSize(cache.buckets)
+    this.totalCacheBytes = Math.max(0, this.totalCacheBytes - refreshedPrevBytes + cache.byteSize)
+    this.evictCachesIfNeeded()
   }
 
   private applyCacheDelete(cache: TableEmbeddingCache, nodeId: string): void {
     const existingLocation = cache.locations.get(nodeId)
     if (!existingLocation) return
+    const previousBytes = cache.byteSize
 
     const bucket = cache.buckets.get(existingLocation.bucketKey)
     if (bucket) {
@@ -683,6 +767,8 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
     }
     cache.locations.delete(nodeId)
     cache.totalVectors = cache.locations.size
+    cache.byteSize = calculateCacheByteSize(cache.buckets)
+    this.totalCacheBytes = Math.max(0, this.totalCacheBytes - previousBytes + cache.byteSize)
   }
 
   private readTableRevision(tableId: string): number {
@@ -797,7 +883,6 @@ export class SqliteNodeEmbeddingRepository implements INodeEmbeddingRepository {
               ne.vector_blob AS vector_blob,
               ne.norm AS norm
        FROM node_embeddings ne
-       JOIN nodes n ON n.id = ne.node_id
        WHERE ne.table_id = ?`,
     )
     return this.loadTableEmbeddingsStmt
@@ -830,6 +915,14 @@ export function validateEmbeddingVector(vector: readonly number[]): void {
 
 function makeBucketKey(dimension: number, model: string): string {
   return `${dimension}:${model}`
+}
+
+function calculateCacheByteSize(buckets: ReadonlyMap<string, Float32ModelSlabBucket>): number {
+  let bytes = 0
+  for (const bucket of buckets.values()) {
+    bytes += bucket.byteLength
+  }
+  return bytes
 }
 
 /**

@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { TabularSyncTargetRegistry } from '@/infrastructure/excel/TabularSyncTargetRegistry.js'
 
 describe('TabularSyncTargetRegistry', () => {

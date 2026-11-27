@@ -7,7 +7,7 @@
  * Parallel: Can run with tasks 1-2
  */
 
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { startServerForSuite, stopServerForSuite } from '../fixtures/test-graphql-server'
 
 describe('MCP Route Contract Tests', () => {

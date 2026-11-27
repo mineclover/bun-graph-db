@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   CreateQueryTemplate,
   type CreateQueryTemplateRequest,
@@ -22,22 +22,22 @@ function createQueryTemplateSearchResult(): QueryTemplateSearchResult {
 
 function createQueryTemplateRepositoryMock(): QueryTemplateRepositoryMock {
   return {
-    findById: mock(async (_id: string) => null),
-    findByIdentifier: mock(async (_identifier: string) => null),
-    search: mock(async (_criteria: unknown) => createQueryTemplateSearchResult()),
-    searchByQueryName: mock(async (_queryName: string) => []),
-    searchByOperationType: mock(async (_operationType: string) => []),
-    findByApplicableTable: mock(async (_tableName: string, _includeUniversal?: boolean) => []),
-    findTemplatesWithTableDependencies: mock(async () => []),
-    create: mock(async (template: QueryTemplate) => template),
-    update: mock(async (_id: string, _updates: unknown) => {
+    findById: vi.fn(async (_id: string) => null),
+    findByIdentifier: vi.fn(async (_identifier: string) => null),
+    search: vi.fn(async (_criteria: unknown) => createQueryTemplateSearchResult()),
+    searchByQueryName: vi.fn(async (_queryName: string) => []),
+    searchByOperationType: vi.fn(async (_operationType: string) => []),
+    findByApplicableTable: vi.fn(async (_tableName: string, _includeUniversal?: boolean) => []),
+    findTemplatesWithTableDependencies: vi.fn(async () => []),
+    create: vi.fn(async (template: QueryTemplate) => template),
+    update: vi.fn(async (_id: string, _updates: unknown) => {
       throw new Error('update should not be called in this test suite')
     }),
-    deleteById: mock(async (_id: string) => false),
-    incrementUsage: mock(async (_id: string) => {}),
-    updateExecutionStats: mock(async (_id: string, _executionTimeMs: number) => {}),
-    findPopular: mock(async (_limit?: number) => []),
-    updateStatus: mock(async (_id: string, _isActive: boolean) => {
+    deleteById: vi.fn(async (_id: string) => false),
+    incrementUsage: vi.fn(async (_id: string) => {}),
+    updateExecutionStats: vi.fn(async (_id: string, _executionTimeMs: number) => {}),
+    findPopular: vi.fn(async (_limit?: number) => []),
+    updateStatus: vi.fn(async (_id: string, _isActive: boolean) => {
       throw new Error('updateStatus should not be called in this test suite')
     }),
   } satisfies QueryTemplateRepositoryMock
@@ -385,7 +385,7 @@ describe('CreateQueryTemplate', () => {
 
       const saveError = new Error('Database connection failed')
 
-      mockQueryTemplateRepository.create = mock(async () => {
+      mockQueryTemplateRepository.create = vi.fn(async () => {
         throw saveError
       })
 

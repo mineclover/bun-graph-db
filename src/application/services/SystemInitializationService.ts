@@ -3,7 +3,7 @@
  * Comprehensive tool for initializing and resetting the development environment
  */
 
-import type { Database } from 'bun:sqlite'
+import type { Database } from '@/infrastructure/database/sqlite/SqliteAdapter.js'
 import type { DIContainer } from '../../infrastructure/container/DIContainer'
 import { DatabaseTokens } from '../../infrastructure/container/tokens/DatabaseTokens'
 import { ConsoleLogger } from '../../infrastructure/logging/ConsoleLogger'

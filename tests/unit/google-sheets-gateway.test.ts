@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from 'bun:test'
+import { describe, expect, test, vi } from 'vitest'
 import type { ResolvedSyncTargetSelection } from '@/infrastructure/excel/TabularSyncTargetRegistry.js'
 import type { GoogleSheetsPatchCapableAdapter } from '@/infrastructure/excel/adapters/GoogleSheetsAdapter.js'
 import { GoogleSheetsGateway } from '@/infrastructure/excel/gateways/GoogleSheetsGateway.js'
@@ -88,9 +88,9 @@ function plan(
 
 function adapter(values: Array<Array<string | number | boolean | null>>) {
   return {
-    readSheet: mock(async () => ({ values })),
-    replaceSheet: mock(async () => undefined),
-    patchSheet: mock(async () => true),
+    readSheet: vi.fn(async () => ({ values })),
+    replaceSheet: vi.fn(async () => undefined),
+    patchSheet: vi.fn(async () => true),
   } satisfies GoogleSheetsPatchCapableAdapter
 }
 

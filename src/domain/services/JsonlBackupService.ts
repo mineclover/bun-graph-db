@@ -460,14 +460,24 @@ export class JsonlBackupService {
     let lineCount = 0
     let sizeBytes = 0
     let offset = 0
+    let cursor: { createdAt: string; id: string } | undefined
     const pageSize = 500
+    const useKeyset = typeof this.nodeRepository.findByTableIdKeyset === 'function'
     let fileClosed = false
     let published = false
 
     try {
       while (true) {
-        const page = await this.nodeRepository.findByTableId(table.id, { limit: pageSize, offset })
-        const nodes = page.data ?? page.nodes ?? page.items ?? []
+        let nodes: Node[]
+        if (useKeyset && this.nodeRepository.findByTableIdKeyset) {
+          const page = await this.nodeRepository.findByTableIdKeyset(table.id, pageSize, cursor)
+          nodes = page.nodes
+          cursor = page.nextCursor ?? undefined
+        } else {
+          const page = await this.nodeRepository.findByTableId(table.id, { limit: pageSize, offset })
+          nodes = page.data ?? page.nodes ?? page.items ?? []
+          offset += nodes.length
+        }
         if (nodes.length === 0) break
 
         const nodeAttributes = await this.nodeAttributeRepository.findByNodeIds(nodes.map((node) => node.getId()))
@@ -497,8 +507,7 @@ export class JsonlBackupService {
         await file.write(chunk)
         lineCount += lines.length
         sizeBytes += Buffer.byteLength(chunk, 'utf-8')
-        offset += nodes.length
-        if (nodes.length < pageSize) break
+        if (nodes.length < pageSize || (useKeyset && !cursor)) break
       }
       await file.close()
       fileClosed = true
@@ -558,14 +567,24 @@ export class JsonlBackupService {
     let lineCount = 0
     let sizeBytes = 0
     let offset = 0
+    let cursor: { createdAt: string; id: string } | undefined
     const pageSize = 1000
+    const useKeyset = typeof this.nodeRelationRepository.findAllKeyset === 'function'
     let fileClosed = false
     let published = false
 
     try {
       while (true) {
-        const page = await this.nodeRelationRepository.findAll({ limit: pageSize, offset })
-        const relations = page.data ?? page.nodes ?? page.items ?? []
+        let relations: NodeRelation[]
+        if (useKeyset && this.nodeRelationRepository.findAllKeyset) {
+          const page = await this.nodeRelationRepository.findAllKeyset(pageSize, cursor)
+          relations = page.relations
+          cursor = page.nextCursor ?? undefined
+        } else {
+          const page = await this.nodeRelationRepository.findAll({ limit: pageSize, offset })
+          relations = page.data ?? page.nodes ?? page.items ?? []
+          offset += relations.length
+        }
         if (relations.length === 0) break
         const lines = relations.map((relation) => {
           const entry: JsonlRelationEntry = {
@@ -584,8 +603,7 @@ export class JsonlBackupService {
         await file.write(chunk)
         lineCount += lines.length
         sizeBytes += Buffer.byteLength(chunk, 'utf-8')
-        offset += relations.length
-        if (relations.length < pageSize) break
+        if (relations.length < pageSize || (useKeyset && !cursor)) break
       }
       await file.close()
       fileClosed = true

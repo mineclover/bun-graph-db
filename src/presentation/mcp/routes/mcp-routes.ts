@@ -11,6 +11,15 @@ import type { ILogger } from '../../../application/ports/ILogger'
 import type { McpToolAudience } from '../../../application/services/McpToolRegistry'
 import type { TableSchemaProjectionService } from '../../../application/services/TableSchemaProjectionService'
 import type { FetchLike } from '../../../models/GraphQLOperation.js'
+import {
+  MODERN_MCP_PROTOCOL_VERSION,
+  SUPPORTED_MCP_PROTOCOL_VERSIONS,
+  isModernProtocolVersion,
+  isSupportedProtocolVersion,
+  isValidMcpOrigin,
+  normalizeHeaderOws,
+  validateJsonRpcBatch,
+} from '../../../mcp/http-server/modern-protocol.js'
 import type {
   TableMcpJsonRpcRequest,
   TableMcpServer,
@@ -77,13 +86,46 @@ export class McpRoutes {
     try {
       // Validate HTTP method
       if (request.method !== 'POST' && request.method !== 'GET') {
-        return this.createErrorResponse(null, 405, 'Method Not Allowed', 'Only POST and GET methods are supported')
+        const methodResponse = this.createErrorResponse(
+          null,
+          405,
+          'Method Not Allowed',
+          'Only POST and GET methods are supported',
+        )
+        const headers = new Headers(methodResponse.headers)
+        headers.set('Allow', 'POST, GET')
+        return new Response(methodResponse.body, {
+          status: methodResponse.status,
+          headers,
+        })
+      }
+
+      // Validate Origin header for security (DNS rebinding protection)
+      const origin = request.headers.get('Origin')
+      if (origin && !isValidMcpOrigin(origin)) {
+        return new Response(
+          JSON.stringify({
+            error: 'Invalid origin',
+          }),
+          {
+            status: 403,
+            headers: { 'Content-Type': 'application/json' },
+          },
+        )
       }
 
       // Validate table ID format
       const tableValidation = this.validateTableId(tableId)
       if (!tableValidation.valid) {
         return this.createErrorResponse(null, 400, 'Invalid table ID', tableValidation.error)
+      }
+
+      // Enforce JSON Content-Type before table lookup on POST requests
+      if (request.method === 'POST') {
+        const contentType = request.headers.get('Content-Type')
+        if (!contentType?.toLowerCase().includes('application/json')) {
+          return this.createErrorResponse(null, 415, 'Unsupported Media Type', 'Content-Type must be application/json')
+        }
       }
 
       // Get or create MCP server for this table
@@ -120,10 +162,18 @@ export class McpRoutes {
    */
   private handleGetRequest(mcpServer: TableMcpServer, tableId: string): Response {
     const serverInfo = {
-      name: `Bun Graph DB MCP Server - Table ${tableId}`,
+      name: `Bun Graph Database - Table ${tableId} MCP`,
       version: '1.0.0',
-      protocolVersion: '2025-06-18',
+      protocolVersion: MODERN_MCP_PROTOCOL_VERSION,
+      supportedVersions: [...SUPPORTED_MCP_PROTOCOL_VERSIONS],
       capabilities: {
+        tools: {},
+        logging: {},
+      },
+      modernCapabilities: {
+        tools: {},
+      },
+      legacyCapabilities: {
         tools: {},
         logging: {},
       },
@@ -137,6 +187,7 @@ export class McpRoutes {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
+        'MCP-Protocol-Version': MODERN_MCP_PROTOCOL_VERSION,
       },
     })
   }
@@ -151,10 +202,19 @@ export class McpRoutes {
     audience?: McpToolAudience,
   ): Promise<Response> {
     try {
+      // Validate protocol version header if present
+      const headerVersion = normalizeHeaderOws(request.headers.get('MCP-Protocol-Version'))
+      if (headerVersion && !isSupportedProtocolVersion(headerVersion) && !isModernProtocolVersion(headerVersion)) {
+        return this.createErrorResponse(null, -32022, 'Unsupported protocol version', {
+          requested: headerVersion,
+          supported: [...SUPPORTED_MCP_PROTOCOL_VERSIONS],
+        })
+      }
+
       // Validate Content-Type
       const contentType = request.headers.get('Content-Type')
-      if (!contentType?.includes('application/json')) {
-        return this.createErrorResponse(null, 400, 'Invalid Content-Type', 'Content-Type must be application/json')
+      if (!contentType?.toLowerCase().includes('application/json')) {
+        return this.createErrorResponse(null, 415, 'Unsupported Media Type', 'Content-Type must be application/json')
       }
 
       // Parse request body
@@ -163,15 +223,22 @@ export class McpRoutes {
         return this.createErrorResponse(null, 400, 'Empty request body', 'JSON-RPC request body is required')
       }
 
-      let jsonRpcRequest: JsonRpcRequest
+      let parsedBody: unknown
       try {
-        jsonRpcRequest = JSON.parse(body) as JsonRpcRequest
+        parsedBody = JSON.parse(body)
       } catch (_parseError) {
         return this.createErrorResponse(null, -32700, 'Parse error', 'Invalid JSON in request body')
       }
 
+      const batchError = validateJsonRpcBatch(parsedBody)
+      if (batchError) {
+        return this.createErrorResponse(null, batchError.code, batchError.message, batchError.data)
+      }
+
+      const jsonRpcRequest = parsedBody as JsonRpcRequest
+
       // Validate JSON-RPC format
-      if (jsonRpcRequest?.jsonrpc !== '2.0') {
+      if (!jsonRpcRequest || typeof jsonRpcRequest !== 'object' || jsonRpcRequest.jsonrpc !== '2.0') {
         return this.createErrorResponse(
           jsonRpcRequest?.id || null,
           -32600,
@@ -279,6 +346,7 @@ export class McpRoutes {
       case 400:
       case 404:
       case 405:
+      case 415:
         status = code
         break
       default:
@@ -373,7 +441,7 @@ export function createMcpRoutes(config: McpRouteConfig): McpRoutes {
 }
 
 /**
- * Middleware for handling table MCP requests in Bun server
+ * Middleware for handling table MCP requests in Web Fetch HTTP servers
  */
 export interface TableMcpMiddleware {
   (request: Request, audience?: McpToolAudience): Promise<Response | null>

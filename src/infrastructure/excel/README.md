@@ -123,7 +123,7 @@ For direct consumption of an already-authenticated `google-tools` server:
 TABULAR_TARGET_TRANSPORT=google-tools-http \
 GOOGLE_TOOLS_BASE_URL=http://localhost:5678 \
 GOOGLE_SHEETS_SPREADSHEET_ID=... \
-bun run scripts/smoke-google-sheets-tabular-sync.ts
+node --import tsx scripts/smoke-google-sheets-tabular-sync.ts
 ```
 
 If `GOOGLE_SHEETS_SPREADSHEET_ID` is omitted, the smoke script will try to create a new spreadsheet automatically using the provided service account key.
@@ -138,7 +138,7 @@ To check which spreadsheets are already accessible to the service account:
 
 ```bash
 GOOGLE_CREDENTIALS_FILE=/abs/path/service-account.json \
-bun run scripts/list-google-sheets-service-account.ts
+node --import tsx scripts/list-google-sheets-service-account.ts
 ```
 
 Note:
@@ -152,7 +152,7 @@ OAuth flow helpers:
 ```bash
 GOOGLE_OAUTH_CLIENT_FILE=/abs/path/client_secret.json \
 GOOGLE_REDIRECT_URI=http://localhost:5678/rest/oauth2-credential/callback \
-bun run scripts/google-oauth-generate-url.ts
+node --import tsx scripts/google-oauth-generate-url.ts
 ```
 
 2. exchange code into token bundle
@@ -161,26 +161,26 @@ GOOGLE_OAUTH_CLIENT_FILE=/abs/path/client_secret.json \
 GOOGLE_REDIRECT_URI=http://localhost:5678/rest/oauth2-credential/callback \
 GOOGLE_OAUTH_CODE=... \
 GOOGLE_OAUTH_TOKEN_FILE=/abs/path/google-oauth-token.json \
-bun run scripts/google-oauth-exchange-code.ts
+node --import tsx scripts/google-oauth-exchange-code.ts
 ```
 
 3. run smoke with OAuth
 ```bash
 GOOGLE_OAUTH_TOKEN_FILE=/abs/path/google-oauth-token.json \
 GOOGLE_SHEETS_SPREADSHEET_ID=... \
-bun run scripts/smoke-google-sheets-tabular-sync.ts
+node --import tsx scripts/smoke-google-sheets-tabular-sync.ts
 ```
 
 End-to-end interaction checks:
 
 ```bash
 GOOGLE_OAUTH_TOKEN_FILE=/abs/path/google-oauth-token.json \
-bun run scripts/test-bun-graph-db-google-sheets-interaction.ts
+node --import tsx scripts/test-bun-graph-db-google-sheets-interaction.ts
 ```
 
 ```bash
 GOOGLE_OAUTH_TOKEN_FILE=/abs/path/google-oauth-token.json \
-bun run scripts/test-graphql-tabular-sync-hook.ts
+node --import tsx scripts/test-graphql-tabular-sync-hook.ts
 ```
 
 DB-backed config helpers:
@@ -189,21 +189,21 @@ DB-backed config helpers:
 TABULAR_SYNC_CONFIG_INPUT_FILE=/abs/path/tabular-sync.json \
 TABULAR_SYNC_CONFIG_KEY=primary \
 TABULAR_SYNC_CONFIG_ACTIVE=true \
-bun run scripts/save-tabular-sync-config.ts
+node --import tsx scripts/save-tabular-sync-config.ts
 ```
 
 ```bash
-bun run scripts/list-tabular-sync-configs.ts
-```
-
-```bash
-TABULAR_SYNC_CONFIG_KEY=primary \
-bun run scripts/get-tabular-sync-config.ts
+node --import tsx scripts/list-tabular-sync-configs.ts
 ```
 
 ```bash
 TABULAR_SYNC_CONFIG_KEY=primary \
-bun run scripts/activate-tabular-sync-config.ts
+node --import tsx scripts/get-tabular-sync-config.ts
+```
+
+```bash
+TABULAR_SYNC_CONFIG_KEY=primary \
+node --import tsx scripts/activate-tabular-sync-config.ts
 ```
 
 HTTP admin endpoints:

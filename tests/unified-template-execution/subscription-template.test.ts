@@ -3,7 +3,7 @@
  * Tests the new subscription-based template execution system
  */
 
-import { beforeAll, describe, expect, test } from 'bun:test'
+import { beforeAll, describe, expect, test } from 'vitest'
 import { buildSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
 import { ExecuteQueryTemplateUseCase } from '@/application/use-cases/query-templates/ExecuteQueryTemplate.js'

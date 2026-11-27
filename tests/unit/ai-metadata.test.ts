@@ -8,8 +8,19 @@
  * - GraphQL integration
  */
 
-import { beforeEach, describe, expect, it, mock, spyOn } from 'bun:test'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import * as AttributeDto from '../../src/application/dtos/AttributeDto'
+import * as TableDto from '../../src/application/dtos/TableDto'
 import type { ILogger } from '../../src/application/ports/ILogger'
+
+vi.mock('../../src/application/dtos/AttributeDto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/application/dtos/AttributeDto')>()
+  return { ...actual, fromEntities: vi.fn(actual.fromEntities) }
+})
+vi.mock('../../src/application/dtos/TableDto', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../src/application/dtos/TableDto')>()
+  return { ...actual, fromEntity: vi.fn(actual.fromEntity) }
+})
 import { GetTableDocsUseCase } from '../../src/application/use-cases/tables/GetTableDocs'
 import type { IAttributeRepository } from '../../src/domain/repositories/IAttributeRepository'
 import type { IAttributeTypeRepository } from '../../src/domain/repositories/IAttributeTypeRepository'
@@ -131,89 +142,89 @@ describe('AIMetadata Unit Tests', () => {
   beforeEach(() => {
     // Mock repositories
     mockTableRepository = {
-      findById: mock(),
-      findAll: mock(),
-      create: mock(),
-      update: mock(),
-      delete: mock(),
-      findByIdentifier: mock(),
-      search: mock(),
-      count: mock(),
+      findById: vi.fn(),
+      findAll: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findByIdentifier: vi.fn(),
+      search: vi.fn(),
+      count: vi.fn(),
     }
 
     mockAttributeRepository = {
-      findById: mock(),
-      findByTableId: mock(),
-      create: mock(),
-      update: mock(),
-      delete: mock(),
-      findAll: mock(),
-      search: mock(),
-      count: mock(),
-      countByTableId: mock(),
+      findById: vi.fn(),
+      findByTableId: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findAll: vi.fn(),
+      search: vi.fn(),
+      count: vi.fn(),
+      countByTableId: vi.fn(),
     }
 
     mockAttributeTypeRepository = {
-      findById: mock(),
-      findAll: mock(),
-      create: mock(),
-      update: mock(),
-      delete: mock(),
-      findByDataType: mock(),
-      search: mock(),
-      count: mock(),
+      findById: vi.fn(),
+      findAll: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findByDataType: vi.fn(),
+      search: vi.fn(),
+      count: vi.fn(),
     }
 
     mockNodeRepository = {
-      findById: mock(),
-      findByTableId: mock(),
-      create: mock(),
-      update: mock(),
-      delete: mock(),
-      findAll: mock(),
-      search: mock(),
-      count: mock(),
-      countByTableId: mock(),
+      findById: vi.fn(),
+      findByTableId: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findAll: vi.fn(),
+      search: vi.fn(),
+      count: vi.fn(),
+      countByTableId: vi.fn(),
     }
 
     mockQueryTemplateRepository = {
-      findById: mock(),
-      findAll: mock(),
-      create: mock(),
-      update: mock(),
-      delete: mock(),
-      findByIdentifier: mock(),
-      search: mock(),
-      count: mock(),
-      findByApplicableTable: mock(),
+      findById: vi.fn(),
+      findAll: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      findByIdentifier: vi.fn(),
+      search: vi.fn(),
+      count: vi.fn(),
+      findByApplicableTable: vi.fn(),
     }
 
     mockRelationTypeRepository = {
-      findById: mock(),
-      findAll: mock(),
-      create: mock(),
-      update: mock(),
-      delete: mock(),
-      search: mock(),
-      count: mock(),
+      findById: vi.fn(),
+      findAll: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      search: vi.fn(),
+      count: vi.fn(),
     }
 
     mockDocRepository = {
-      findById: mock(),
-      findAll: mock(),
-      create: mock(),
-      update: mock(),
-      delete: mock(),
-      search: mock(),
-      count: mock(),
-      findByTableIds: mock(),
+      findById: vi.fn(),
+      findAll: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+      search: vi.fn(),
+      count: vi.fn(),
+      findByTableIds: vi.fn(),
     }
 
     mockLogger = {
-      info: mock(),
-      error: mock(),
-      warn: mock(),
-      debug: mock(),
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+      debug: vi.fn(),
     }
 
     getTableDocsUseCase = new GetTableDocsUseCase(
@@ -238,8 +249,7 @@ describe('AIMetadata Unit Tests', () => {
     })
 
     // Mock AttributeDto.fromEntities static method
-    const _originalFromEntities = require('../../src/application/dtos/AttributeDto').fromEntities
-    spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation((attributes) => {
+    vi.mocked(AttributeDto.fromEntities).mockImplementation((attributes) => {
       return attributes.map((attr: any) =>
         createMockAttributeDto(
           attr.getId(),
@@ -251,7 +261,7 @@ describe('AIMetadata Unit Tests', () => {
     })
 
     // Mock TableDto.fromEntity static method
-    spyOn(require('../../src/application/dtos/TableDto'), 'fromEntity').mockImplementation((table) => ({
+    vi.mocked(TableDto.fromEntity).mockImplementation((table) => ({
       id: table.id,
       identifier: table.identifier,
       description: table.description,
@@ -334,7 +344,7 @@ describe('AIMetadata Unit Tests', () => {
       ]
 
       // Override the AttributeDto mock to return specific attribute types
-      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation((attributes) => {
+      vi.mocked(AttributeDto.fromEntities).mockImplementation((attributes) => {
         return attributes.map((attr: any, index: number) => {
           const dataTypes = ['string', 'number', 'string']
           return createMockAttributeDto(
@@ -599,7 +609,7 @@ describe('AIMetadata Unit Tests', () => {
       ]
 
       // Override AttributeDto mock for this test
-      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation((_attributes) => {
+      vi.mocked(AttributeDto.fromEntities).mockImplementation((_attributes) => {
         return [
           createMockAttributeDto('attr-1', 'valid_field', createMockAttributeTypeDto('text', 'string'), 'Valid field'),
           createMockAttributeDto(
@@ -650,7 +660,7 @@ describe('AIMetadata Unit Tests', () => {
       ]
 
       // Override AttributeDto mock for this test
-      spyOn(require('../../src/application/dtos/AttributeDto'), 'fromEntities').mockImplementation((_attributes) => {
+      vi.mocked(AttributeDto.fromEntities).mockImplementation((_attributes) => {
         return [
           createMockAttributeDto('attr-1', 'user_name', createMockAttributeTypeDto('text', 'string'), 'User name'),
           createMockAttributeDto(

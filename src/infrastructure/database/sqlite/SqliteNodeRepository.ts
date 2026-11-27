@@ -1,7 +1,17 @@
-import type { SQLQueryBindings } from 'bun:sqlite'
-import type { NodeId, PaginatedResult, PaginationOptions, TableId } from '@/core/types/CommonTypes.js'
+import type { SQLQueryBindings } from './SqliteAdapter.js'
+import { getMaxBindParams } from './SqlitePort.js'
+import type {
+  NodeId,
+  PaginatedResult,
+  PaginationOptions,
+  TableId,
+} from '@/core/types/CommonTypes.js'
 import { Node } from '@/domain/entities/Node.js'
-import type { INodeRepository } from '@/domain/repositories/INodeRepository.js'
+import type {
+  INodeRepository,
+  NodeKeysetCursor,
+  NodeKeysetPage,
+} from '@/domain/repositories/INodeRepository.js'
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { stringifySafeJson, type SafeJsonValue } from '@/shared/utils/safeJson.js'
@@ -125,6 +135,79 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
       }
     } catch (error) {
       throw new DatabaseException(`Failed to find nodes by table id: ${error}`)
+    }
+  }
+
+  async findByTableIdKeyset(
+    tableId: TableId,
+    limit: number,
+    cursor?: NodeKeysetCursor,
+  ): Promise<NodeKeysetPage> {
+    try {
+      const safeLimit = Math.max(1, limit)
+      const rows = cursor
+        ? this.db
+            .query<NodeRow, [string, string, string, number | string, number]>(`
+              SELECT id, table_id, content, title, description, metadata, created_at, updated_at
+              FROM nodes
+              WHERE table_id = ?
+                AND (created_at < ? OR (created_at = ? AND id > ?))
+              ORDER BY created_at DESC, id ASC
+              LIMIT ?
+            `)
+            .all(
+              tableId,
+              cursor.createdAt,
+              cursor.createdAt,
+              Number.isSafeInteger(Number(cursor.id)) ? Number(cursor.id) : cursor.id,
+              safeLimit,
+            )
+        : this.db
+            .query<NodeRow, [string, number]>(`
+              SELECT id, table_id, content, title, description, metadata, created_at, updated_at
+              FROM nodes
+              WHERE table_id = ?
+              ORDER BY created_at DESC, id ASC
+              LIMIT ?
+            `)
+            .all(tableId, safeLimit)
+
+      const nodes = rows.map((row) => this.mapRowToEntity(row))
+      const lastRow = rows.at(-1)
+      return {
+        nodes,
+        nextCursor:
+          lastRow && rows.length >= safeLimit
+            ? { createdAt: lastRow.created_at, id: String(lastRow.id) }
+            : null,
+      }
+    } catch (error) {
+      throw new DatabaseException(`Failed to find nodes by table id keyset: ${error}`)
+    }
+  }
+
+  async findExistingIds(ids: readonly NodeId[]): Promise<Set<NodeId>> {
+    const existing = new Set<NodeId>()
+    if (ids.length === 0) return existing
+
+    const uniqueIds = [...new Set(ids)]
+    const chunkSize = getMaxBindParams(this.db)
+    try {
+      for (let index = 0; index < uniqueIds.length; index += chunkSize) {
+        const chunk = uniqueIds.slice(index, index + chunkSize)
+        const placeholders = chunk.map(() => '?').join(',')
+        const rows = this.db
+          .query<{ id: string }, string[]>(
+            `SELECT CAST(id AS TEXT) AS id FROM nodes WHERE id IN (${placeholders})`,
+          )
+          .all(...chunk)
+        for (const row of rows) {
+          existing.add(row.id)
+        }
+      }
+      return existing
+    } catch (error) {
+      throw new DatabaseException(`Failed to check existing node IDs: ${error}`)
     }
   }
 
@@ -292,13 +375,8 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
     updates: { content?: string; title?: string | null; description?: string | null; metadata?: SafeJsonValue },
   ): Promise<Node> {
     try {
-      const existingNode = await this.findById(id)
-      if (!existingNode) {
-        throw new DatabaseException(`Node with id ${id} not found`)
-      }
-
-      const updateFields = []
-      const updateValues = []
+      const updateFields: string[] = []
+      const updateValues: SQLQueryBindings[] = []
 
       if (updates.content !== undefined) {
         updateFields.push('content = ?')
@@ -318,28 +396,31 @@ export class SqliteNodeRepository extends BaseSqliteRepository<Node, NodeId> imp
       }
 
       if (updateFields.length === 0) {
+        const existingNode = await this.findById(id)
+        if (!existingNode) {
+          throw new DatabaseException(`Node with id ${id} not found`)
+        }
         return existingNode
       }
 
       updateFields.push('updated_at = ?')
-      updateValues.push(new Date().toISOString())
-      updateValues.push(id)
+      updateValues.push(new Date().toISOString(), id)
 
       const query = `
-        UPDATE nodes 
+        UPDATE nodes
         SET ${updateFields.join(', ')}
         WHERE id = ?
+        RETURNING id, table_id, content, title, description, metadata, created_at, updated_at
       `
 
-      this.db.run(query, updateValues)
-
-      const updatedNode = await this.findById(id)
-      if (!updatedNode) {
-        throw new DatabaseException(`Failed to retrieve updated node with id ${id}`)
+      const updatedRow = this.db.query<NodeRow, SQLQueryBindings[]>(query).get(...updateValues)
+      if (!updatedRow) {
+        throw new DatabaseException(`Node with id ${id} not found`)
       }
 
-      return updatedNode
+      return this.mapRowToEntity(updatedRow)
     } catch (error) {
+      if (error instanceof DatabaseException) throw error
       throw new DatabaseException(`Failed to update node: ${error}`)
     }
   }

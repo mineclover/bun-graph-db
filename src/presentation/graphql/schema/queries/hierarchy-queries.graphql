@@ -1,0 +1,143 @@
+# First-class Hierarchy (Tree / DAG) queries & safe re-parenting mutations
+# Convention: parentOf edges flow source_node_id (parent) -> target_node_id (child)
+
+enum HierarchyMode {
+  TREE
+  DAG
+}
+
+extend type Query {
+  "Get ancestor chain from root down to parent of target node"
+  getAncestors(
+    nodeId: ID!
+    relationTypeId: ID = "parentOf"
+    maxDepth: Int = 32
+  ): AncestorChainResult!
+
+  "Get descendant entries beneath a node using bounded BFS"
+  getDescendants(
+    nodeId: ID!
+    relationTypeId: ID = "parentOf"
+    maxDepth: Int = 10
+  ): DescendantsResult!
+
+  "Get complete subtree rooted at rootNodeId including traversed edges"
+  getSubtree(
+    rootNodeId: ID!
+    relationTypeId: ID = "parentOf"
+    maxDepth: Int = 6
+  ): SubtreeResult!
+
+  "Get hierarchy root nodes within a table (in-degree == 0)"
+  getHierarchyRoots(
+    tableId: ID!
+    relationTypeId: ID = "parentOf"
+    includeIsolated: Boolean = false
+  ): [TableNode!]!
+
+  "Get hierarchy leaf nodes within a table (out-degree == 0)"
+  getHierarchyLeaves(
+    tableId: ID!
+    relationTypeId: ID = "parentOf"
+    includeIsolated: Boolean = false
+  ): [TableNode!]!
+
+  "Find the lowest common ancestor (minimum combined upward distance) of two nodes"
+  getLowestCommonAncestor(
+    nodeIdA: ID!
+    nodeIdB: ID!
+    relationTypeId: ID = "parentOf"
+    maxDepth: Int = 32
+  ): LowestCommonAncestorResult!
+
+  "Validate whether a table's hierarchy conforms to TREE (no cycles, single parent) or DAG (no cycles)"
+  validateHierarchy(
+    tableId: ID!
+    relationTypeId: ID = "parentOf"
+    mode: HierarchyMode = TREE
+  ): HierarchyValidationResult!
+}
+
+extend type Mutation {
+  "Safely re-parent a node (or promote it to root when newParentId is null) with cycle guard"
+  moveHierarchyNode(input: MoveHierarchyNodeInput!): MoveHierarchyNodePayload!
+}
+
+type HierarchyEntry {
+  node: TableNode!
+  parentId: ID
+  depth: Int!
+  pathIds: [ID!]!
+  childIds: [ID!]!
+  childCount: Int!
+  isLeaf: Boolean!
+}
+
+type AncestorChainResult {
+  node: TableNode!
+  ancestors: [HierarchyEntry!]!
+  pathIds: [ID!]!
+  rootNode: TableNode
+  depth: Int!
+  isRoot: Boolean!
+  hasCycle: Boolean!
+}
+
+type DescendantsResult {
+  rootNode: TableNode!
+  entries: [HierarchyEntry!]!
+  totalCount: Int!
+  maxDepthReached: Int!
+  leafCount: Int!
+  hasCycle: Boolean!
+}
+
+type SubtreeResult {
+  rootNode: TableNode!
+  entries: [HierarchyEntry!]!
+  edges: [NodeRelation!]!
+  totalNodes: Int!
+  maxDepthReached: Int!
+  leafCount: Int!
+  hasCycle: Boolean!
+}
+
+type LowestCommonAncestorResult {
+  found: Boolean!
+  ancestor: TableNode
+  distanceFromA: Int
+  distanceFromB: Int
+  pathFromA: [ID!]!
+  pathFromB: [ID!]!
+}
+
+type HierarchyValidationResult {
+  tableId: ID!
+  relationTypeIdentifier: String!
+  mode: HierarchyMode!
+  valid: Boolean!
+  totalNodes: Int!
+  totalEdges: Int!
+  rootCount: Int!
+  leafCount: Int!
+  isolatedCount: Int!
+  maxDepth: Int!
+  cycleNodeIds: [ID!]!
+  multiParentNodeIds: [ID!]!
+}
+
+input MoveHierarchyNodeInput {
+  nodeId: ID!
+  newParentId: ID
+  relationTypeId: ID = "parentOf"
+}
+
+type MoveHierarchyNodePayload implements OperationResult {
+  success: Boolean!
+  node: TableNode
+  previousParentIds: [ID!]!
+  newParentId: ID
+  relation: NodeRelation
+  ancestors: [HierarchyEntry!]!
+  errors: [Error!]!
+}

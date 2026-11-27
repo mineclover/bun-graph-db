@@ -5,6 +5,7 @@
  * Based On: data-model.md GraphQLOperation specification
  */
 
+import { DEFAULT_PORTS } from '@/core/config/PortConfiguration.js'
 import type { GraphQLExecutionResult, GraphQLVariables } from '@/core/types/GraphQLTypes.js'
 import { type OperationDefinitionNode, parse } from 'graphql'
 
@@ -182,7 +183,7 @@ export class GraphQLOperationExecutor {
   private fetchImpl: FetchLike
 
   constructor(
-    endpoint: string = 'http://localhost:4000/graphql',
+    endpoint: string = `http://localhost:${DEFAULT_PORTS.development}/graphql`,
     internalBridgeToken?: string,
     fetchImpl: FetchLike = fetch,
   ) {

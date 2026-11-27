@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import {
   createGoogleSheetsPipeBuilderConfig,
   createGoogleSpreadsheet,
@@ -66,11 +67,11 @@ async function main() {
         ),
       )
     } catch (error) {
-      const details = JSON.parse(
-        await Bun.file(serviceAccountKeyFile).text(),
-      ) as {
-        client_email?: string
-      }
+      const details = serviceAccountKeyFile
+        ? (JSON.parse(await readFile(serviceAccountKeyFile, 'utf8')) as {
+            client_email?: string
+          })
+        : {}
 
       const message = error instanceof Error ? error.message : String(error)
       throw new Error(

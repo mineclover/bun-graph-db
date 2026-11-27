@@ -15,6 +15,7 @@ import type {
 import { DatabaseException } from '@/shared/exceptions/DomainException.js'
 import { debugDatabase } from '@/shared/utils/debugLog.js'
 import { BaseSqliteRepository } from './BaseSqliteRepository.js'
+import { chunkValues, getMaxBindParams } from './SqlitePort.js'
 
 interface AttributeRow {
   id: number
@@ -23,7 +24,7 @@ interface AttributeRow {
   name: string | null
   attribute_type_id: number
   description: string | null
-  is_required: boolean
+  is_required: boolean | number
   metadata: string | null
   created_at: string
   updated_at: string
@@ -157,7 +158,8 @@ export class SqliteAttributeRepository
 
   async findAttributeTypeInfoByTableId(tableId: TableId): Promise<TableAttributeTypeSummary[]> {
     const query = `
-      SELECT a.identifier AS identifier,
+      SELECT CAST(a.id AS TEXT) AS id,
+             a.identifier AS identifier,
              COALESCE(at.identifier, 'string') AS type_identifier,
              COALESCE(at.json_type, 'string') AS json_type,
              at.format AS format
@@ -171,6 +173,7 @@ export class SqliteAttributeRepository
       const rows = this.db
         .query<
           {
+            id: string
             identifier: string
             type_identifier: string
             json_type: string
@@ -181,6 +184,7 @@ export class SqliteAttributeRepository
         .all(tableId)
 
       return rows.map((row) => ({
+        id: row.id,
         identifier: row.identifier,
         typeIdentifier: row.type_identifier,
         jsonType: row.json_type,
@@ -275,7 +279,7 @@ export class SqliteAttributeRepository
     `
 
     try {
-      const stmt = this.db.prepare(query)
+      const stmt = this.db.query(query)
 
       this.db.transaction(() => {
         for (const attribute of attributes) {
@@ -356,7 +360,7 @@ export class SqliteAttributeRepository
       row.name,
       row.attribute_type_id.toString(),
       row.description,
-      row.is_required,
+      Boolean(row.is_required),
       row.metadata,
       new Date(row.created_at),
       new Date(row.updated_at),
@@ -384,11 +388,11 @@ export class SqliteAttributeRepository
       existing.getId(),
       existing.getTableId(),
       updates.identifier ?? existing.getIdentifier(),
-      existing.getName(), // name parameter
+      updates.name !== undefined ? updates.name : existing.getName(),
       existing.getAttributeTypeId(),
       updates.description ?? existing.getDescription(),
       updates.isRequired ?? existing.getIsRequired(),
-      existing.getMetadata(), // No update available for this
+      updates.metadata !== undefined ? updates.metadata : existing.getMetadata(),
       existing.getCreatedAt(),
       existing.getUpdatedAt(),
     )
@@ -396,13 +400,14 @@ export class SqliteAttributeRepository
     const data = updatedAttribute.toDatabase()
     const query = `
       UPDATE attributes
-      SET identifier = ?, attribute_type_id = ?, description = ?, is_required = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
+      SET identifier = ?, name = ?, attribute_type_id = ?, description = ?, is_required = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `
 
     try {
       const result = this.db.run(query, [
         data.identifier,
+        data.name,
         data.attribute_type_id,
         data.description,
         data.is_required,
@@ -469,11 +474,15 @@ export class SqliteAttributeRepository
   async deleteMany(ids: AttributeId[]): Promise<void> {
     if (ids.length === 0) return
 
-    const placeholders = ids.map(() => '?').join(', ')
-    const query = `DELETE FROM attributes WHERE id IN (${placeholders})`
-
     try {
-      this.db.run(query, ids)
+      const chunks = chunkValues(ids, getMaxBindParams(this.db))
+      this.db.transaction(() => {
+        for (const chunk of chunks) {
+          const placeholders = chunk.map(() => '?').join(', ')
+          const query = `DELETE FROM attributes WHERE id IN (${placeholders})`
+          this.db.run(query, chunk)
+        }
+      })()
     } catch (error) {
       throw new DatabaseException(`Failed to delete multiple attributes: ${error}`)
     }

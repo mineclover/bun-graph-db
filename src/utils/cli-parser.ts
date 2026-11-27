@@ -1,3 +1,5 @@
+import { getSqliteVersion } from '@/infrastructure/database/sqlite/SqliteAdapter.js'
+
 /**
  * CLI Argument Parser
  *
@@ -135,7 +137,7 @@ export function printHelp(): void {
   console.log(`
 🚀 Bun Graph DB Server
 
-Usage: bun index.ts [options]
+Usage: pnpm start [options]
 
 Options:
   -p, --port <number>         Port number (default: 4141)
@@ -154,20 +156,20 @@ Environment Variables:
   CORS_ORIGIN                 CORS origins (comma-separated)
 
 Examples:
-  bun index.ts                              # Start with default settings (port 4141)
-  bun index.ts --port 3000                  # Start on port 3000 (unified port)
-  bun index.ts --host 127.0.0.1 -p 8080     # Custom host and port
-  bun index.ts --env production              # Production environment
-  bun index.ts --port=5000                   # Alternative syntax
-  bun index.ts -d /tmp/demo.sqlite           # Custom database path
-  bun index.ts --database-path=./custom.db   # Alternative database path syntax
+  pnpm start                                # Start with default settings (port 4141)
+  pnpm start -- --port 3000                 # Start on port 3000 (unified port)
+  node dist/index.js --host 127.0.0.1 -p 8080 # Custom host and port
+  node dist/index.js --env production       # Production environment
+  node dist/index.js --port=5000            # Alternative syntax
+  node dist/index.js -d /tmp/demo.sqlite    # Custom database path
+  node dist/index.js --database-path=./custom.db # Alternative database path syntax
 `)
 }
 
 export function printVersion(): void {
   console.log('Bun Graph DB Server v1.0.0')
-  console.log(`Bun: ${Bun.version}`)
   console.log(`Node: ${process.version}`)
+  console.log(`SQLite: ${getSqliteVersion()}`)
   console.log(`Platform: ${process.platform} ${process.arch}`)
 }
 

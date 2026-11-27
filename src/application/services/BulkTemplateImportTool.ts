@@ -5,8 +5,6 @@
  * Enables rapid population of templates from exported JSON files
  */
 
-import { readdir, readFile, stat } from 'node:fs/promises'
-import { join } from 'node:path'
 import type { RestApiClient } from './RestApiClient.js'
 
 export interface BulkImportOptions {
@@ -124,6 +122,8 @@ export class BulkTemplateImportTool {
    */
   private async discoverTemplateFiles(): Promise<string[]> {
     try {
+      const { readdir, stat } = await import('node:fs/promises')
+      const { join } = await import('node:path')
       const templatesPath = join(process.cwd(), this.templatesDir)
 
       // Check if directory exists
@@ -163,6 +163,7 @@ export class BulkTemplateImportTool {
       console.log(`📝 Processing: ${identifier}`)
 
       // Read and parse the template file
+      const { readFile } = await import('node:fs/promises')
       const fileContent = await readFile(filePath, 'utf-8')
       let templateData: {
         template?: {
@@ -270,6 +271,7 @@ export class BulkTemplateImportTool {
     }>
   > {
     const templateFiles = await this.discoverTemplateFiles()
+    const { readFile } = await import('node:fs/promises')
     const templates = []
 
     for (const filePath of templateFiles) {

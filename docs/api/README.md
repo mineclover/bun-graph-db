@@ -48,7 +48,7 @@ bun-graph-db GraphQL API의 쿼리, 뮤테이션, 구독에 대한 종합 가이
 
 ### GraphQL Playground 접속
 ```
-http://localhost:4000/graphql
+http://localhost:4141/graphql
 ```
 
 ### 기본 헬스체크
@@ -302,7 +302,7 @@ QueryTemplate M:N Table (via applicableTables)
 ## 📞 지원 및 문의
 
 - **API 문서**: 각 인덱스 파일 참조
-- **스키마 확인**: `http://localhost:4000/schema`
-- **실시간 테스트**: `http://localhost:4000/graphql`
+- **스키마 확인**: `http://localhost:4141/schema`
+- **실시간 테스트**: `http://localhost:4141/graphql`
 
-*최종 업데이트: 2025-11-27*
+*최종 업데이트: 2026-11-27*

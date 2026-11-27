@@ -1,5 +1,13 @@
 import type { GraphQLSchema } from 'graphql'
 import type { ILogger } from '@/application/ports/ILogger.js'
+import type {
+  ExecutionHistoryFilterInput,
+  RecommendationContextInput,
+  TemplatePerformanceAnalyticsService,
+  TemplatePerformanceFilterInput,
+  TimeGranularityKind,
+  TimeRangeInput,
+} from '@/application/services/TemplatePerformanceAnalyticsService.js'
 import type { GraphQLContext, GraphQLParent } from '@/core/types/GraphQLTypes.js'
 import type { QueryTemplate } from '@/domain/entities/QueryTemplate.js'
 import type { IQueryTemplateRepository } from '@/domain/repositories/IQueryTemplateRepository.js'
@@ -13,6 +21,7 @@ export class TemplateQueries extends BaseResolver {
     private readonly queryTemplateRepository: IQueryTemplateRepository,
     logger: ILogger,
     private schema?: GraphQLSchema,
+    private readonly performanceService?: TemplatePerformanceAnalyticsService,
   ) {
     super()
     this.logger = logger
@@ -271,5 +280,137 @@ export class TemplateQueries extends BaseResolver {
       'validateData',
       { dataType: typeof args.input?.data, schemaType: typeof args.input?.schema },
     )
+  }
+
+  async templatePerformanceAnalytics(
+    _: GraphQLParent,
+    args: { filter?: TemplatePerformanceFilterInput; timeRange?: TimeRangeInput },
+    _context?: GraphQLContext,
+  ) {
+    return this.handleQuery(
+      async () =>
+        await this.requirePerformanceService().getTemplatePerformanceAnalytics(
+          args.filter ?? {},
+          args.timeRange,
+        ),
+      'templatePerformanceAnalytics',
+      args as Record<string, unknown>,
+    )
+  }
+
+  async getHotQueries(
+    _: GraphQLParent,
+    args: { limit?: number; performanceThreshold?: number; usageThreshold?: number },
+    _context?: GraphQLContext,
+  ) {
+    return this.handleQuery(
+      async () =>
+        await this.requirePerformanceService().getHotQueries(
+          args.limit ?? 10,
+          args.performanceThreshold ?? 150,
+          args.usageThreshold ?? 100,
+        ),
+      'getHotQueries',
+      args as Record<string, unknown>,
+    )
+  }
+
+  async getTemplateExecutionHistory(
+    _: GraphQLParent,
+    args: {
+      templateId: string
+      pagination?: { limit?: number; offset?: number }
+      filter?: ExecutionHistoryFilterInput
+    },
+    _context?: GraphQLContext,
+  ) {
+    this.validateArgs(
+      args,
+      [
+        BaseResolver.validationRules.required('templateId', 'Template ID'),
+        BaseResolver.validationRules.nonEmpty('templateId', 'Template ID'),
+      ],
+      'getTemplateExecutionHistory',
+    )
+
+    return this.handleQuery(
+      async () =>
+        await this.requirePerformanceService().getTemplateExecutionHistory(
+          args.templateId,
+          args.pagination ?? {},
+          args.filter ?? {},
+        ),
+      'getTemplateExecutionHistory',
+      args as Record<string, unknown>,
+    )
+  }
+
+  async getTemplatePerformanceTrends(
+    _: GraphQLParent,
+    args: { templateIds?: string[]; timeRange: TimeRangeInput; granularity?: TimeGranularityKind },
+    _context?: GraphQLContext,
+  ) {
+    this.validateArgs(
+      args,
+      [BaseResolver.validationRules.required('timeRange', 'Time Range')],
+      'getTemplatePerformanceTrends',
+    )
+
+    return this.handleQuery(
+      async () =>
+        await this.requirePerformanceService().getTemplatePerformanceTrends(
+          args.templateIds,
+          args.timeRange,
+          args.granularity ?? 'HOUR',
+        ),
+      'getTemplatePerformanceTrends',
+      args as Record<string, unknown>,
+    )
+  }
+
+  async getSlowQueries(
+    _: GraphQLParent,
+    args: { threshold?: number; limit?: number; timeRange?: TimeRangeInput },
+    _context?: GraphQLContext,
+  ) {
+    return this.handleQuery(
+      async () =>
+        await this.requirePerformanceService().getSlowQueries(
+          args.threshold ?? 500,
+          args.limit ?? 20,
+          args.timeRange,
+        ),
+      'getSlowQueries',
+      args as Record<string, unknown>,
+    )
+  }
+
+  async getTemplateRecommendations(
+    _: GraphQLParent,
+    args: { context: RecommendationContextInput; limit?: number },
+    _context?: GraphQLContext,
+  ) {
+    this.validateArgs(
+      args,
+      [BaseResolver.validationRules.required('context', 'Recommendation Context')],
+      'getTemplateRecommendations',
+    )
+
+    return this.handleQuery(
+      async () =>
+        await this.requirePerformanceService().getTemplateRecommendations(
+          args.context ?? {},
+          args.limit ?? 5,
+        ),
+      'getTemplateRecommendations',
+      args as Record<string, unknown>,
+    )
+  }
+
+  private requirePerformanceService(): TemplatePerformanceAnalyticsService {
+    if (!this.performanceService) {
+      throw new Error('TemplatePerformanceAnalyticsService is not configured')
+    }
+    return this.performanceService
   }
 }

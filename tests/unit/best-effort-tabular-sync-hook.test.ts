@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, mock, test } from 'bun:test'
-import { Database } from 'bun:sqlite'
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
+import { Database } from '../../src/infrastructure/database/sqlite/SqliteAdapter.js'
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -9,10 +9,10 @@ import { TabularSyncEventStore } from '@/infrastructure/excel/TabularSyncEventSt
 
 function createLogger() {
   return {
-    info: mock(() => {}),
-    warn: mock(() => {}),
-    error: mock(() => {}),
-    debug: mock(() => {}),
+    info: vi.fn(() => {}),
+    warn: vi.fn(() => {}),
+    error: vi.fn(() => {}),
+    debug: vi.fn(() => {}),
   }
 }
 
@@ -87,7 +87,7 @@ describe('BestEffortTabularSyncHook', () => {
     )
 
     const tableRepository = {
-      findById: mock(async (id: string) =>
+      findById: vi.fn(async (id: string) =>
         id === '1'
           ? {
               id: '1',
@@ -172,7 +172,7 @@ describe('BestEffortTabularSyncHook', () => {
 
     const hook = new BestEffortTabularSyncHook(
       {
-        findById: mock(async () => null),
+        findById: vi.fn(async () => null),
       } as never,
       {} as never,
       {} as never,
@@ -264,7 +264,7 @@ describe('BestEffortTabularSyncHook', () => {
       undefined,
       new TabularSyncEventStore(db),
     )
-    const syncByIdentifier = mock(async () => ({ success: true }))
+    const syncByIdentifier = vi.fn(async () => ({ success: true }))
     ;(hook as unknown as { bridge: { syncByIdentifier: typeof syncByIdentifier } }).bridge = {
       syncByIdentifier,
     }
@@ -316,7 +316,7 @@ describe('BestEffortTabularSyncHook', () => {
     const started: string[] = []
     let active = 0
     let peak = 0
-    const syncByIdentifier = mock(async (tableIdentifier: string) => {
+    const syncByIdentifier = vi.fn(async (tableIdentifier: string) => {
       started.push(tableIdentifier)
       active++
       peak = Math.max(peak, active)
@@ -390,7 +390,7 @@ describe('BestEffortTabularSyncHook', () => {
     const calls: Array<{ dirtyNodeIds: readonly string[]; revision?: number }> = []
     let active = 0
     let peak = 0
-    const syncDirtyByIdentifier = mock(
+    const syncDirtyByIdentifier = vi.fn(
       async (
         _tableIdentifier: string,
         dirtyNodeIds: readonly string[],
@@ -408,9 +408,9 @@ describe('BestEffortTabularSyncHook', () => {
     )
     ;(hook as unknown as { bridge: unknown }).bridge = {
       supportsIdentifier: () => true,
-      syncByIdentifier: mock(async () => ({ synced: true })),
+      syncByIdentifier: vi.fn(async () => ({ synced: true })),
       syncDirtyByIdentifier,
-      clearByIdentifier: mock(async () => ({ synced: true })),
+      clearByIdentifier: vi.fn(async () => ({ synced: true })),
     }
 
     hook.notifyByIdentifier('users', 'node-1')
@@ -444,7 +444,7 @@ describe('BestEffortTabularSyncHook', () => {
     )
     const db = new Database(':memory:')
     createDurableTables(db)
-    const tableRepository = { findByIdentifier: mock(async () => null) }
+    const tableRepository = { findByIdentifier: vi.fn(async () => null) }
     const hook = new BestEffortTabularSyncHook(
       tableRepository as never,
       {} as never,
@@ -498,12 +498,12 @@ describe('BestEffortTabularSyncHook', () => {
     let started = false
     ;(hook as unknown as { bridge: unknown }).bridge = {
       supportsIdentifier: () => true,
-      syncByIdentifier: mock(async () => {
+      syncByIdentifier: vi.fn(async () => {
         started = true
         await gate
         return { synced: true }
       }),
-      clearByIdentifier: mock(async () => ({ synced: true })),
+      clearByIdentifier: vi.fn(async () => ({ synced: true })),
     }
 
     hook.notifyByIdentifier('users')
@@ -551,10 +551,10 @@ describe('BestEffortTabularSyncHook', () => {
     )
     ;(hook as unknown as { bridge: unknown }).bridge = {
       supportsIdentifier: () => true,
-      syncByIdentifier: mock(async () => {
+      syncByIdentifier: vi.fn(async () => {
         throw new Error('quota exhausted')
       }),
-      clearByIdentifier: mock(async () => ({ synced: true })),
+      clearByIdentifier: vi.fn(async () => ({ synced: true })),
     }
 
     expect(await hook.syncByIdentifier('users')).toBe(false)

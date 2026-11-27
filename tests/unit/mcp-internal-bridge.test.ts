@@ -1,7 +1,8 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, test } from 'vitest'
 import { RestApiClient } from '../../src/application/services/RestApiClient'
 import { GraphQLOperationExecutor, type FetchLike } from '../../src/models/GraphQLOperation'
 import { McpToolController } from '../../src/presentation/http/controllers/McpToolController'
+import { startFetchHttpServer } from '../../src/presentation/http/NodeHttpServer'
 import { TableMcpServer } from '../../src/presentation/mcp/factory/TableMcpServer'
 
 const noopLogger = {
@@ -14,7 +15,7 @@ const noopLogger = {
 describe('MCP internal loopback & in-process bridge credential', () => {
   test('propagates the configured bearer credential to local GraphQL and REST calls', async () => {
     const receivedAuthorization: string[] = []
-    const localServer = Bun.serve({
+    const localServer = await startFetchHttpServer({
       hostname: '127.0.0.1',
       port: 0,
       fetch(request) {
@@ -39,7 +40,7 @@ describe('MCP internal loopback & in-process bridge credential', () => {
 
       expect(receivedAuthorization).toEqual([`Bearer ${token}`, `Bearer ${token}`])
     } finally {
-      localServer.stop(true)
+      await localServer.stop(true)
     }
   })
 
