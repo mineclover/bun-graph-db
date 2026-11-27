@@ -286,4 +286,32 @@ describe("MCP Stdio Transport & Product CLI", () => {
 			rmSync(tmpDir, { recursive: true, force: true });
 		}
 	});
+
+	test("keeps stdout pure JSON-RPC and restores console when stdio logger intercepts startup logs", async () => {
+		const originalConsoleLog = console.log;
+		const capturedLogs: string[] = [];
+		const input = new PassThrough();
+		const server = await startMcpStdioServer({
+			databasePath: ":memory:",
+			input,
+			output: process.stdout,
+			logger: (line) => capturedLogs.push(line),
+		});
+
+		try {
+			expect(
+				capturedLogs.some((line) =>
+					line.includes("Enhanced AI metadata system initialized"),
+				),
+			).toBe(true);
+			console.log("smoke-stdio-log-intercept");
+			expect(
+				capturedLogs.some((line) => line.includes("smoke-stdio-log-intercept")),
+			).toBe(true);
+		} finally {
+			await server.close();
+		}
+
+		expect(console.log).toBe(originalConsoleLog);
+	});
 });

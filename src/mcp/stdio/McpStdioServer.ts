@@ -3,6 +3,7 @@ import {
 	getPresetBlueprint,
 	type PresetBlueprintName,
 } from "@/application/blueprints/PresetBlueprints.js";
+import type { ILogger } from "@/application/ports/ILogger.js";
 import type { IEmbeddingProvider } from "@/domain/ports/IEmbeddingProvider.js";
 import {
 	createPortableGraphNode,
@@ -112,35 +113,110 @@ export interface McpStdioServerHandle {
 	close(): Promise<void>;
 }
 
+function createStderrLogger(logLine: (line: string) => void): ILogger {
+	const write = (
+		level: string,
+		message: string,
+		meta?: Record<string, unknown>,
+	) => {
+		const metaSuffix =
+			meta && Object.keys(meta).length > 0 ? ` ${JSON.stringify(meta)}` : "";
+		logLine(`[${level}] ${message}${metaSuffix}`);
+	};
+	return {
+		debug: (message, meta) => write("DEBUG", message, meta),
+		info: (message, meta) => write("INFO", message, meta),
+		warn: (message, meta) => write("WARN", message, meta),
+		error: (message, meta) => write("ERROR", message, meta),
+	};
+}
+
+function formatConsoleArgs(args: readonly unknown[]): string {
+	return args
+		.map((arg) => {
+			if (typeof arg === "string") return arg;
+			try {
+				return JSON.stringify(arg);
+			} catch {
+				return String(arg);
+			}
+		})
+		.join(" ");
+}
+
 export async function startMcpStdioServer(
 	options: McpStdioServerOptions = {},
 ): Promise<McpStdioServerHandle> {
+	const logLine =
+		options.logger ?? ((line: string) => process.stderr.write(`${line}\n`));
+	const outputStream = options.output ?? process.stdout;
+	const stderrLogger = createStderrLogger(logLine);
+
+	let restoreConsole: (() => void) | undefined;
+	if (outputStream === process.stdout) {
+		const originalLog = console.log;
+		const originalInfo = console.info;
+		const originalDebug = console.debug;
+		const originalWarn = console.warn;
+		const redirect =
+			(level: string) =>
+			(...args: unknown[]) => {
+				logLine(`[${level}] ${formatConsoleArgs(args)}`);
+			};
+		console.log = redirect("INFO");
+		console.info = redirect("INFO");
+		console.debug = redirect("DEBUG");
+		console.warn = redirect("WARN");
+		restoreConsole = () => {
+			console.log = originalLog;
+			console.info = originalInfo;
+			console.debug = originalDebug;
+			console.warn = originalWarn;
+		};
+	}
+
 	const databasePath = options.databasePath?.trim() || ":memory:";
 	const db = new SqliteDatabase(databasePath);
-	const node = await createPortableGraphNode(db, {
-		databaseLabel: databasePath,
-		runMigrations: true,
-		embeddingProvider: options.embeddingProvider,
-	});
+	let node: PortableGraphNode;
+	try {
+		node = await createPortableGraphNode(db, {
+			databaseLabel: databasePath,
+			runMigrations: true,
+			embeddingProvider: options.embeddingProvider,
+			logger: stderrLogger,
+		});
 
-	if (options.preset) {
-		await node.ia.applyBlueprint(getPresetBlueprint(options.preset));
+		if (options.preset) {
+			await node.ia.applyBlueprint(getPresetBlueprint(options.preset));
+		}
+	} catch (error) {
+		restoreConsole?.();
+		db.close();
+		throw error;
 	}
 
 	const endpoint = options.tableId
 		? `http://localhost/sub/${encodeURIComponent(options.tableId)}/mcp`
 		: "http://localhost/mcp";
 	let activeProtocolVersion: string | undefined;
+	let cleanedUp = false;
 
 	const cleanup = async (): Promise<void> => {
-		await node.dispose();
-		db.close();
+		if (cleanedUp) return;
+		cleanedUp = true;
+		try {
+			await node.dispose();
+			db.close();
+		} finally {
+			restoreConsole?.();
+		}
 	};
 
 	const transport = createMcpStdioTransport({
 		input: options.input ?? process.stdin,
-		output: options.output ?? process.stdout,
-		logger: options.logger ?? ((line) => process.stderr.write(`${line}\n`)),
+		output: outputStream,
+		logger: logLine,
+		onClose: cleanup,
 		handleMessage: async (rawLine: string) => {
 			let parsed: {
 				id?: unknown;

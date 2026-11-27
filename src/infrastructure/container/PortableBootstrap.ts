@@ -1,5 +1,6 @@
 import { type ExecutionResult, type GraphQLSchema, graphql } from "graphql";
 import { createYoga } from "graphql-yoga";
+import type { ILogger } from "@/application/ports/ILogger.js";
 import {
 	type AccessControl,
 	type AccessPrincipal,
@@ -48,6 +49,7 @@ export interface PortableGraphNodeOptions {
 	graphqlEndpoint?: string;
 	accessControl?: AccessControl;
 	internalBridgeToken?: string;
+	logger?: ILogger;
 }
 
 export interface PortableGraphNode {
@@ -88,6 +90,10 @@ export async function createPortableGraphNode(
 
 	const container = new DIContainer();
 	registerCoreModule(container);
+	if (options.logger) {
+		const customLogger = options.logger;
+		container.registerSingleton(CommonTokens.LOGGER, () => customLogger, []);
+	}
 	container.registerSingleton(DatabaseTokens.DATABASE_CONFIG, async () => ({
 		url: databaseLabel,
 		type: "sqlite" as const,
@@ -117,6 +123,7 @@ export async function createPortableGraphNode(
 		maskedErrors: false,
 		graphiql: false,
 		landingPage: false,
+		...(options.logger ? { logging: false } : {}),
 	});
 
 	const metrics = new MetricsRegistry();
