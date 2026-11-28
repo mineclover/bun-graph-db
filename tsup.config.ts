@@ -52,6 +52,17 @@ export default defineConfig([
 		],
 	},
 	{
+		entry: { index: "src/presentation/ui/index.ts" },
+		format: ["esm"],
+		outDir: "./dist/ui",
+		clean: false,
+		splitting: false,
+		platform: "browser",
+		target: "es2022",
+		skipNodeModulesBundle: true,
+		removeNodeProtocol: false,
+	},
+	{
 		entry: { index: "src/mcp/stdio/McpStdioServer.ts" },
 		format: ["esm"],
 		outDir: "./dist/mcp-stdio",

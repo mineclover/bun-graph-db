@@ -574,9 +574,9 @@ export class GraphApiController {
 
   private toRelationSearchResult(result: PaginatedResult<NodeRelation>): RelationSearchResult {
     return {
-      data: result.data ?? [],
-      total: result.total ?? 0,
-      hasMore: result.hasMore ?? false,
+      data: result.data ?? result.nodes ?? [],
+      total: result.total ?? result.totalCount ?? 0,
+      hasMore: result.hasMore ?? result.hasNextPage ?? false,
     }
   }
 

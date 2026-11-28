@@ -31,6 +31,10 @@ const FACADES: readonly FacadeEntry[] = [
 		targetFromOutDir: "../types/src/embedded.js",
 	},
 	{
+		outFile: "dist/ui/index.d.ts",
+		targetFromOutDir: "../types/src/presentation/ui/index.js",
+	},
+	{
 		outFile: "dist/mcp-stdio/index.d.ts",
 		targetFromOutDir: "../types/src/mcp/stdio/McpStdioServer.js",
 	},

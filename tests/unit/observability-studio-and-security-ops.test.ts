@@ -151,6 +151,8 @@ describe("Security Operations, Metrics Registry & Web Studio Inspector", () => {
 			const html = await studioRes.text();
 			expect(html).toContain("Bun Graph DB Studio");
 			expect(html).toContain("/studio.css");
+			expect(html).toContain("/studio.js");
+			expect(html).toContain("<graph-memory-workspace");
 
 			const studioCssRes = await node.fetch(
 				new Request("http://localhost/studio.css"),
@@ -159,6 +161,16 @@ describe("Security Operations, Metrics Registry & Web Studio Inspector", () => {
 			expect(studioCssRes.headers.get("Content-Type")).toContain("text/css");
 			const studioCss = await studioCssRes.text();
 			expect(studioCss).toContain("--panel");
+
+			const studioJsRes = await node.fetch(
+				new Request("http://localhost/studio.js"),
+			);
+			expect(studioJsRes.status).toBe(200);
+			expect(studioJsRes.headers.get("Content-Type")).toContain(
+				"text/javascript",
+			);
+			const studioJs = await studioJsRes.text();
+			expect(studioJs).toContain("graph-memory-workspace");
 
 			// Reader cannot access /metrics or /api/audit-log
 			const readerMetrics = await node.fetch(

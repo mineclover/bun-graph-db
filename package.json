@@ -34,6 +34,10 @@
 			"types": "./dist/embedded/index.d.ts",
 			"import": "./dist/embedded/index.js"
 		},
+		"./ui": {
+			"types": "./dist/ui/index.d.ts",
+			"import": "./dist/ui/index.js"
+		},
 		"./mcp-stdio": {
 			"types": "./dist/mcp-stdio/index.d.ts",
 			"import": "./dist/mcp-stdio/index.js"
@@ -90,6 +94,7 @@
 		"export:fixed": "node --import tsx scripts/export-all-templates-fixed.ts",
 		"projection:export": "node --import tsx scripts/export-oa-sdk-projection-artifacts.ts",
 		"projection:check": "vitest run tests/contract/oa-sdk-projection-artifacts.test.ts",
+		"check:mcp-spec": "vitest run tests/unit/mcp-spec-conformance.test.ts",
 		"benchmark:hotpaths": "node --import tsx scripts/benchmark-hotpaths.ts",
 		"benchmark:hotpaths:ci": "node --import tsx scripts/benchmark-hotpaths.ts --profile ci",
 		"benchmark:vector-storage": "node --import tsx scripts/benchmark-vector-storage.ts",
@@ -98,7 +103,7 @@
 		"check:embedded": "node --import tsx scripts/generate-embedded-assets.ts --check",
 		"ci:versions": "node --import tsx scripts/ci-versions.ts",
 		"lint": "biome lint .",
-		"check:biome": "biome lint index.ts src tests/unit/schema && biome lint --error-on-warnings scripts/ci-versions.ts scripts/check-docs.ts scripts/generate-embedded-assets.ts scripts/emit-dts.ts scripts/check-release-artifacts.ts tests/unit/check-docs.test.ts tests/unit/access-control.test.ts tests/unit/breadth-first-search.test.ts tests/unit/strongly-connected-components.test.ts tests/unit/page-rank.test.ts tests/unit/weighted-shortest-path.test.ts tests/unit/graph-traversal-p0-p2.test.ts tests/unit/use-case-scenarios-and-hierarchy.test.ts tests/unit/analytics-and-custom-sort-queries.test.ts tests/unit/cloudflare-do-sqlite-portability.test.ts tests/unit/exact-vector-index.test.ts tests/unit/node-field-resolvers-graph-traversal.test.ts tests/unit/engine-optimizations-p0-p2.test.ts tests/unit/node26-runtime-and-optimizations.test.ts tests/unit/embedding-gemma2-provider.test.ts tests/unit/web-embedded-and-use-cases.test.ts tests/unit/information-architecture-structured.test.ts tests/unit/core-api-polishing.test.ts tests/unit/ssot-and-aop-architecture.test.ts tests/unit/headless-core-sdk.test.ts tests/unit/mcp-stdio-and-cli.test.ts tests/unit/observability-studio-and-security-ops.test.ts tests/fixtures/golden/golden-loader.ts tests/unit/golden-dataset.test.ts tests/unit/bun-api-router.test.ts src/core-sdk.ts src/core/HeadlessGraphDb.ts src/embedded.ts src/cli/index.ts src/mcp/stdio/McpStdioServer.ts src/application/security/SecurityAuditLog.ts src/presentation/http/StandaloneServer.ts src/presentation/http/observability/MetricsRegistry.ts src/presentation/http/observability/OpsRoutes.ts src/presentation/studio/StudioHtml.ts deploy/cloudflare/worker.ts src/domain/value-objects/ColumnConfig.ts src/core/contracts/RestRouteContract.ts src/application/aspects/TableSchemaLifecycleAspect.ts src/presentation/http/aspects/HttpExecutionPipeline.ts src/infrastructure/container/RuntimeSurfaceFactory.ts src/presentation/http/controllers/GraphDbApiController.ts src/presentation/http/controllers/AttributeApiController.ts src/presentation/http/controllers/GraphApiController.ts src/shared/utils/portableHash.ts src/domain/ports/IEmbeddingProvider.ts src/infrastructure/database/sqlite/WebSqliteAdapter.ts src/infrastructure/database/sqlite/IndexedDbSnapshotStorage.ts src/infrastructure/embeddings/EmbeddingGemma2Provider.ts src/application/use-cases/nodes/EmbedNodes.ts src/application/services/InformationArchitectureTypes.ts src/application/services/InformationArchitectureService.ts src/application/services/ia/IaSharedHelpers.ts src/application/services/ia/IaBlueprintManager.ts src/application/services/ia/IaQueryEngine.ts src/application/services/ia/IaArchitectureAuditor.ts src/application/blueprints/PresetBlueprints.ts src/application/services/AiMemoryService.ts src/presentation/web/EmbeddedWebGraphDb.ts src/presentation/http/routes/BunApiRouter.ts src/presentation/http/routes/ApiEndpointMapping.ts src/mcp/http-server/modern-protocol.ts src/presentation/cloudflare/CloudflareSingleNodeWorker.ts src/infrastructure/container/PortableBootstrap.ts src/infrastructure/database/sqlite/SqlitePort.ts src/infrastructure/database/sqlite/DoSqliteAdapter.ts src/infrastructure/database/sqlite/SqliteAdapter.ts src/domain/ports/ISnapshotStoragePort.ts tests/unit/mcp-modern-protocol.test.ts scripts/check-codegen.ts scripts/test-lanes.ts scripts/export-oa-sdk-projection-artifacts.ts scripts/benchmark-hotpaths.ts scripts/benchmark-vector-storage.ts scripts/fixtures/oa-sdk-projection-fixture.ts tests/unit/benchmark-hotpaths.test.ts tests/unit/test-lanes-script.test.ts tests/contract/oa-sdk-projection-artifacts.test.ts package.json tsconfig.contract.json tsconfig.dts.json scripts/tsconfig.benchmark.json vitest.config.ts tsup.config.ts",
+		"check:biome": "biome lint index.ts src tests/unit/schema && biome lint --error-on-warnings scripts/ci-versions.ts scripts/check-docs.ts scripts/generate-embedded-assets.ts scripts/emit-dts.ts scripts/check-release-artifacts.ts tests/unit/check-docs.test.ts tests/unit/access-control.test.ts tests/unit/breadth-first-search.test.ts tests/unit/strongly-connected-components.test.ts tests/unit/page-rank.test.ts tests/unit/weighted-shortest-path.test.ts tests/unit/graph-traversal-p0-p2.test.ts tests/unit/use-case-scenarios-and-hierarchy.test.ts tests/unit/analytics-and-custom-sort-queries.test.ts tests/unit/cloudflare-do-sqlite-portability.test.ts tests/unit/exact-vector-index.test.ts tests/unit/node-field-resolvers-graph-traversal.test.ts tests/unit/engine-optimizations-p0-p2.test.ts tests/unit/node26-runtime-and-optimizations.test.ts tests/unit/embedding-gemma2-provider.test.ts tests/unit/web-embedded-and-use-cases.test.ts tests/unit/information-architecture-structured.test.ts tests/unit/core-api-polishing.test.ts tests/unit/ssot-and-aop-architecture.test.ts tests/unit/headless-core-sdk.test.ts tests/unit/mcp-stdio-and-cli.test.ts tests/unit/observability-studio-and-security-ops.test.ts tests/fixtures/golden/golden-loader.ts tests/unit/golden-dataset.test.ts tests/unit/bun-api-router.test.ts src/core-sdk.ts src/core/HeadlessGraphDb.ts src/embedded.ts src/cli/index.ts src/mcp/stdio/McpStdioServer.ts src/application/security/SecurityAuditLog.ts src/presentation/http/StandaloneServer.ts src/presentation/http/observability/MetricsRegistry.ts src/presentation/http/observability/OpsRoutes.ts src/presentation/studio/StudioHtml.ts deploy/cloudflare/worker.ts src/domain/value-objects/ColumnConfig.ts src/core/contracts/RestRouteContract.ts src/application/aspects/TableSchemaLifecycleAspect.ts src/presentation/http/aspects/HttpExecutionPipeline.ts src/infrastructure/container/RuntimeSurfaceFactory.ts src/presentation/http/controllers/GraphDbApiController.ts src/presentation/http/controllers/AttributeApiController.ts src/presentation/http/controllers/GraphApiController.ts src/shared/utils/portableHash.ts src/domain/ports/IEmbeddingProvider.ts src/infrastructure/database/sqlite/WebSqliteAdapter.ts src/infrastructure/database/sqlite/IndexedDbSnapshotStorage.ts src/infrastructure/embeddings/EmbeddingGemma2Provider.ts src/application/use-cases/nodes/EmbedNodes.ts src/application/services/InformationArchitectureTypes.ts src/application/services/InformationArchitectureService.ts src/application/services/ia/IaSharedHelpers.ts src/application/services/ia/IaBlueprintManager.ts src/application/services/ia/IaQueryEngine.ts src/application/services/ia/IaArchitectureAuditor.ts src/application/blueprints/PresetBlueprints.ts src/application/services/AiMemoryService.ts src/presentation/web/EmbeddedWebGraphDb.ts src/presentation/http/routes/BunApiRouter.ts src/presentation/http/routes/ApiEndpointMapping.ts src/mcp/http-server/modern-protocol.ts src/presentation/cloudflare/CloudflareSingleNodeWorker.ts src/infrastructure/container/PortableBootstrap.ts src/infrastructure/database/sqlite/SqlitePort.ts src/infrastructure/database/sqlite/DoSqliteAdapter.ts src/infrastructure/database/sqlite/SqliteAdapter.ts src/domain/ports/ISnapshotStoragePort.ts tests/unit/mcp-modern-protocol.test.ts scripts/check-codegen.ts scripts/test-lanes.ts scripts/export-oa-sdk-projection-artifacts.ts scripts/benchmark-hotpaths.ts scripts/benchmark-vector-storage.ts scripts/fixtures/oa-sdk-projection-fixture.ts tests/unit/benchmark-hotpaths.test.ts tests/unit/test-lanes-script.test.ts tests/contract/oa-sdk-projection-artifacts.test.ts package.json tsconfig.contract.json tsconfig.dts.json scripts/tsconfig.benchmark.json vitest.config.ts tsup.config.ts tests/unit/mcp-spec-conformance.test.ts tests/unit/platform-ui-architecture.test.ts src/presentation/ui/contracts.ts src/presentation/ui/clients/sharedHelpers.ts src/presentation/ui/clients/LocalHeadlessClient.ts src/presentation/ui/clients/RemoteHttpClient.ts src/presentation/ui/authoring/FieldEditorRegistry.ts src/presentation/ui/authoring/AuthoringController.ts src/presentation/ui/views/TableViewPlugin.ts src/presentation/ui/views/OutlineViewPlugin.ts src/presentation/ui/views/BoardViewPlugin.ts src/presentation/ui/views/GraphViewPlugin.ts src/presentation/ui/views/TimelineViewPlugin.ts src/presentation/ui/views/AuditViewPlugin.ts src/presentation/ui/views/ViewRegistry.ts src/presentation/ui/components/RightInspectorDrawer.ts src/presentation/ui/components/QuickCaptureDialog.ts src/presentation/ui/GraphPlatformWorkspace.ts src/presentation/ui/GraphMemoryWorkspaceElement.ts src/presentation/ui/index.ts src/presentation/ui/studio-entry.ts",
 		"format": "biome format --write .",
 		"format:check": "biome format .",
 		"check": "pnpm run check:static",
@@ -116,6 +121,8 @@
 		"@graphql-codegen/introspection": "^7.0.0",
 		"@graphql-codegen/typescript": "^7.0.1",
 		"@graphql-codegen/typescript-operations": "^7.0.3",
+		"@graphql-tools/load-files": "^8.0.10",
+		"@modelcontextprotocol/server": "^2.4.0",
 		"@oa-sdk/openapi-projection-contract": "file:../../packages/openapi-projection-contract",
 		"@types/express": "^5.0.6",
 		"@types/json-schema": "^7.0.15",
@@ -127,20 +134,16 @@
 		"vitest": "^5.1.2"
 	},
 	"dependencies": {
-		"@graphql-tools/load-files": "^8.0.10",
 		"@graphql-tools/merge": "^10.0.10",
 		"@graphql-tools/schema": "^11.0.10",
 		"@graphql-tools/utils": "^13.2.3",
-		"@modelcontextprotocol/server": "^2.4.0",
 		"@whatwg-node/server": "^0.13.3",
 		"ajv": "^8.20.0",
 		"graphql": "17.1.0",
-		"graphql-request": "^7.4.0",
 		"graphql-scalars": "^2.0.1",
 		"graphql-yoga": "^6.1.1",
 		"ws": "^8.23.0",
 		"xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz",
-		"yaml": "^2.9.1",
-		"zod": "^4.6.7"
+		"yaml": "^2.9.1"
 	}
 }

@@ -227,6 +227,36 @@ function main(): void {
 		);
 	}
 
+	const uiGraph = walkBundleGraph("dist/ui/index.js");
+	if (uiGraph.filesWalked === 0) {
+		failures.push("dist/ui/index.js does not exist");
+	}
+	if (uiGraph.nodeImports.length > 0) {
+		failures.push(
+			`dist/ui/index.js must have 0 node:* imports: ${uiGraph.nodeImports.join(", ")}`,
+		);
+	}
+	if (uiGraph.externalImports.length > 0) {
+		failures.push(
+			`dist/ui/index.js must have 0 external npm imports: ${uiGraph.externalImports.join(", ")}`,
+		);
+	}
+	const uiBundlePath = resolve(PROJECT_ROOT, "dist/ui/index.js");
+	if (existsSync(uiBundlePath)) {
+		const uiCode = readFileSync(uiBundlePath, "utf8");
+		const unguardedUiProcessLines: number[] = [];
+		for (const [idx, line] of uiCode.split(/\r?\n/).entries()) {
+			if (/\bprocess\.env\b/.test(line) && !line.includes("typeof process")) {
+				unguardedUiProcessLines.push(idx + 1);
+			}
+		}
+		if (unguardedUiProcessLines.length > 0) {
+			failures.push(
+				`dist/ui/index.js has unguarded process.env references at line(s): ${unguardedUiProcessLines.join(", ")}`,
+			);
+		}
+	}
+
 	if (failures.length > 0) {
 		throw new Error(
 			`Release artifact check failed:\n- ${failures.join("\n- ")}`,
@@ -237,6 +267,7 @@ function main(): void {
 	const embeddedBytes = statSync(
 		resolve(PROJECT_ROOT, "dist/embedded/index.js"),
 	).size;
+	const uiBytes = statSync(resolve(PROJECT_ROOT, "dist/ui/index.js")).size;
 
 	if (emitManifestPath) {
 		const outPath = resolve(PROJECT_ROOT, emitManifestPath);
@@ -265,6 +296,12 @@ function main(): void {
 					filesWalked: embeddedGraph.filesWalked,
 					nodeImports: embeddedGraph.nodeImports,
 					externalImports: embeddedGraph.externalImports,
+				},
+				uiBundle: {
+					bytes: uiBytes,
+					filesWalked: uiGraph.filesWalked,
+					nodeImports: uiGraph.nodeImports,
+					externalImports: uiGraph.externalImports,
 				},
 			},
 			null,

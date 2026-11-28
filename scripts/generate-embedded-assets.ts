@@ -2,11 +2,15 @@ import { createHash } from "node:crypto";
 import {
 	existsSync,
 	mkdirSync,
+	mkdtempSync,
 	readdirSync,
 	readFileSync,
+	rmSync,
 	writeFileSync,
 } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, relative, resolve } from "node:path";
+import { build as tsupBuild } from "tsup";
 
 interface EmbeddedDocument {
 	path: string;
@@ -16,7 +20,13 @@ interface EmbeddedDocument {
 const repoRoot = resolve(import.meta.dirname, "..");
 const schemaSqlPath = resolve(repoRoot, "scripts/database/schema.sql");
 const graphqlSchemaRoot = resolve(repoRoot, "src/presentation/graphql/schema");
-const studioCssPath = resolve(repoRoot, "src/presentation/studio/studio.css");
+const uiStylesDir = resolve(repoRoot, "src/presentation/ui/styles");
+const uiCssLayerPaths = [
+	resolve(uiStylesDir, "tokens.css"),
+	resolve(uiStylesDir, "primitives.css"),
+	resolve(uiStylesDir, "views.css"),
+] as const;
+const studioEntryPath = resolve(repoRoot, "src/presentation/ui/studio-entry.ts");
 const outputFilePath = resolve(repoRoot, "src/generated/embedded-assets.ts");
 
 function collectGraphqlFiles(dir: string): string[] {
@@ -35,9 +45,36 @@ function collectGraphqlFiles(dir: string): string[] {
 	return collected.sort((a, b) => a.localeCompare(b));
 }
 
-function generateEmbeddedAssetsSource(): string {
+async function bundleStudioClientJs(): Promise<string> {
+	const outDir = mkdtempSync(resolve(tmpdir(), "bun-graph-db-studio-"));
+	try {
+		await tsupBuild({
+			config: false,
+			entry: { "studio-entry": studioEntryPath },
+			outDir,
+			format: ["esm"],
+			platform: "browser",
+			target: "es2022",
+			splitting: false,
+			bundle: true,
+			dts: false,
+			sourcemap: false,
+			minify: false,
+			silent: true,
+			clean: true,
+		});
+		return readFileSync(resolve(outDir, "studio-entry.js"), "utf-8");
+	} finally {
+		rmSync(outDir, { recursive: true, force: true });
+	}
+}
+
+async function generateEmbeddedAssetsSource(): Promise<string> {
 	const initialSchemaSql = readFileSync(schemaSqlPath, "utf-8");
-	const studioCss = readFileSync(studioCssPath, "utf-8");
+	const studioCss = uiCssLayerPaths
+		.map((filePath) => readFileSync(filePath, "utf-8"))
+		.join("\n");
+	const studioJs = await bundleStudioClientJs();
 	const schemaFiles = collectGraphqlFiles(graphqlSchemaRoot);
 	const documents: EmbeddedDocument[] = schemaFiles.map((filePath) => ({
 		path: relative(repoRoot, filePath).replace(/\\/g, "/"),
@@ -48,6 +85,8 @@ function generateEmbeddedAssetsSource(): string {
 	hasher.update(initialSchemaSql);
 	hasher.update("\n---STUDIO_CSS---\n");
 	hasher.update(studioCss);
+	hasher.update("\n---STUDIO_JS---\n");
+	hasher.update(studioJs);
 	for (const doc of documents) {
 		hasher.update("\n---GRAPHQL---\n");
 		hasher.update(doc.path);
@@ -77,6 +116,9 @@ function generateEmbeddedAssetsSource(): string {
 		"",
 		`export const EMBEDDED_STUDIO_CSS = ${JSON.stringify(studioCss)}`,
 		"",
+		"// biome-ignore lint/suspicious/noTemplateCurlyInString: Auto-generated bundled Studio JS string",
+		`export const EMBEDDED_STUDIO_JS = ${JSON.stringify(studioJs)}`,
+		"",
 		"export const EMBEDDED_GRAPHQL_SDL_DOCUMENTS: readonly EmbeddedGraphqlSdlDocument[] = [",
 		docsLiteral,
 		"]",
@@ -85,7 +127,7 @@ function generateEmbeddedAssetsSource(): string {
 }
 
 const isCheckMode = process.argv.includes("--check");
-const generatedSource = generateEmbeddedAssetsSource();
+const generatedSource = await generateEmbeddedAssetsSource();
 
 if (isCheckMode) {
 	if (!existsSync(outputFilePath)) {

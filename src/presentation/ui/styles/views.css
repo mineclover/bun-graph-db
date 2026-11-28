@@ -1,0 +1,239 @@
+/* Outline View */
+.outline-tree {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+}
+
+.outline-node {
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	padding: 0.5rem 0.65rem;
+	background: var(--panel-alt);
+}
+
+.outline-node.is-drop-target {
+	border-color: var(--accent);
+	background: var(--accent-soft);
+}
+
+.outline-node__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.outline-node__children {
+	margin-top: 0.45rem;
+	padding-inline-start: 1.15rem;
+	border-inline-start: 2px solid var(--border);
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+/* Kanban Board View */
+.board-controls {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	margin-bottom: 0.75rem;
+}
+
+.board-lanes {
+	display: grid;
+	grid-auto-flow: column;
+	grid-auto-columns: minmax(250px, 1fr);
+	gap: 0.75rem;
+	overflow-x: auto;
+	scroll-snap-type: x proximity;
+	padding-bottom: 0.5rem;
+}
+
+.board-lane {
+	background: var(--panel-alt);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	padding: 0.65rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.55rem;
+	min-block-size: 240px;
+	scroll-snap-align: start;
+}
+
+.board-lane.is-drag-over {
+	border-color: var(--accent);
+	background: var(--accent-soft);
+}
+
+.board-lane__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.4rem;
+	font-weight: 700;
+	font-size: 0.85rem;
+}
+
+.board-card {
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	padding: 0.6rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	cursor: grab;
+}
+
+.board-card.is-selected {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 1px var(--accent);
+}
+
+/* Graph Impact Map View */
+.graph-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.6rem;
+	margin-bottom: 0.75rem;
+}
+
+.graph-canvas-wrap {
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	background: var(--panel-alt);
+	overflow: auto;
+	min-block-size: 360px;
+	max-block-size: 540px;
+}
+
+.graph-svg {
+	display: block;
+	inline-size: 100%;
+	min-inline-size: 620px;
+	block-size: 380px;
+}
+
+.graph-edge {
+	stroke: var(--muted);
+	stroke-opacity: 0.45;
+	fill: none;
+}
+
+.graph-edge.is-impact {
+	stroke: var(--accent);
+	stroke-opacity: 1;
+}
+
+.graph-node {
+	cursor: pointer;
+}
+
+.graph-node circle {
+	fill: var(--panel);
+	stroke: var(--accent);
+	stroke-width: 2;
+}
+
+.graph-node.is-impact circle {
+	fill: var(--accent-soft);
+	stroke: var(--accent);
+	stroke-width: 3;
+}
+
+.graph-node.is-dimmed {
+	opacity: 0.35;
+}
+
+.graph-node text {
+	fill: var(--text);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+/* AI Memory Timeline & 5-Signal Bars */
+.timeline-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+}
+
+.timeline-card {
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	background: var(--panel-alt);
+	padding: 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.timeline-card__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.45rem;
+}
+
+.signal-bars {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 0.4rem;
+}
+
+.signal-bar {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	font-size: 0.72rem;
+}
+
+.signal-bar progress {
+	inline-size: 100%;
+	block-size: 6px;
+}
+
+/* Audit & Ops View */
+.audit-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 0.75rem;
+	margin-bottom: 0.85rem;
+}
+
+.audit-card {
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	background: var(--panel-alt);
+	padding: 0.75rem;
+}
+
+.relation-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+}
+
+.relation-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.4rem;
+	padding: 0.35rem 0.5rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	background: var(--panel-alt);
+	font-size: 0.78rem;
+}

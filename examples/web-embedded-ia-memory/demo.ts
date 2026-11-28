@@ -242,6 +242,33 @@ if (argv.includes("--serve")) {
 	const demoHtmlPath = resolve(import.meta.dirname, "index.html");
 	const demoCssPath = resolve(import.meta.dirname, "styles.css");
 	const distCoreDir = resolve(repoRoot, "dist/core");
+	const distUiDir = resolve(repoRoot, "dist/ui");
+	const uiStylesDir = resolve(repoRoot, "src/presentation/ui/styles");
+
+	const serveStaticFromDir = async (
+		baseDir: string,
+		prefix: string,
+		urlPath: string,
+		res: import("node:http").ServerResponse,
+	): Promise<boolean> => {
+		if (!urlPath.startsWith(prefix)) return false;
+		const rel = normalize(urlPath.slice(prefix.length)).replace(
+			/^(\.\.[/\\])+/,
+			"",
+		);
+		const target = resolve(baseDir, rel);
+		if (!target.startsWith(baseDir)) {
+			res.writeHead(403).end("Forbidden");
+			return true;
+		}
+		const body = await readFile(target);
+		const ext = extname(target);
+		res.writeHead(200, {
+			"Content-Type": MIME_TYPES[ext] ?? "application/octet-stream",
+		});
+		res.end(body);
+		return true;
+	};
 
 	const server = createServer(async (req, res) => {
 		const urlPath = (req.url ?? "/").split("?")[0] ?? "/";
@@ -258,22 +285,13 @@ if (argv.includes("--serve")) {
 				res.end(css);
 				return;
 			}
-			if (urlPath.startsWith("/dist/core/")) {
-				const rel = normalize(urlPath.slice("/dist/core/".length)).replace(
-					/^(\.\.[/\\])+/,
-					"",
-				);
-				const target = resolve(distCoreDir, rel);
-				if (!target.startsWith(distCoreDir)) {
-					res.writeHead(403).end("Forbidden");
-					return;
-				}
-				const body = await readFile(target);
-				const ext = extname(target);
-				res.writeHead(200, {
-					"Content-Type": MIME_TYPES[ext] ?? "application/octet-stream",
-				});
-				res.end(body);
+			if (await serveStaticFromDir(distCoreDir, "/dist/core/", urlPath, res)) {
+				return;
+			}
+			if (await serveStaticFromDir(distUiDir, "/dist/ui/", urlPath, res)) {
+				return;
+			}
+			if (await serveStaticFromDir(uiStylesDir, "/ui-styles/", urlPath, res)) {
 				return;
 			}
 			res.writeHead(404).end("Not Found");

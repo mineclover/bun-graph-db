@@ -2,7 +2,7 @@
 docType: reference
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-11-27"
+lastVerified: "2026-11-28"
 ---
 
 # Bun Graph DB MCP 참조
@@ -64,10 +64,16 @@ curl -X POST http://localhost:4141/mcp \
 
 인증된 서버에는 위 요청에 `-H 'Authorization: Bearer <token>'`을 추가한다. 반환된 도구 목록은 호출 주체의 역할과 테이블 범위에 따라 달라질 수 있다.
 
+## Stdio 트랜스포트 및 공식 SDK 스펙 적합성 검증
+
+- **Stdio MCP (`bun-graph-db/mcp-stdio`)**: `pnpm run mcp:stdio` 또는 `npx graph-memory mcp --database-path ./data/graph-memory.sqlite`로 Claude Desktop·Cursor용 line-delimited JSON-RPC 2.0 서버를 실행합니다(`--table <id>`로 단일 테이블 격리 가능). 내부 로그는 `stderr`로 우회해 `stdout` JSON-RPC 스트림을 순수하게 유지하며, `stdin` EOF 시 정상 종료합니다.
+- **공식 MCP SDK 적합성 검증 (`pnpm run check:mcp-spec`)**: 자체 경량 엔진(HTTP/Stdio/Cloudflare DO 공용)은 `@modelcontextprotocol/server`를 `devDependency`로 참조하는 [mcp-spec-conformance.test.ts](../../tests/unit/mcp-spec-conformance.test.ts)에서 프로토콜 버전/메타 키, 루트 `/mcp` LTS(`2025-11-25`) & Modern(`2026-07-28`), 테이블 Sub-MCP(`/sub/:tableId/mcp`) 응답을 공식 `specTypeSchemas`로 상시 검증합니다.
+
 ## 검증 명령
 
 ```bash
-pnpm exec vitest run tests/unit/mcp-modern-protocol.test.ts tests/unit/mcp-tool-contract.test.ts tests/unit/mcp-internal-bridge.test.ts
+pnpm run check:mcp-spec
+pnpm exec vitest run tests/unit/mcp-modern-protocol.test.ts tests/unit/mcp-stdio-and-cli.test.ts tests/unit/mcp-tool-contract.test.ts tests/unit/mcp-internal-bridge.test.ts
 pnpm run typecheck
 ```
 

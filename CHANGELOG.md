@@ -5,6 +5,22 @@ All notable changes to bun-graph-db are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **4-Layer Platform UI Workspace (`bun-graph-db/ui`, `<graph-memory-workspace>`)**: Added runtime-neutral UI contracts (`src/presentation/ui/contracts.ts`), unified `LocalHeadlessClient` & `RemoteHttpClient` adapters, schema-driven `FieldEditorRegistry` + `validateRowDraft` + `AuthoringCommandStack` (Undo/Redo), 6 visualization plugins (`TableViewPlugin`, `OutlineViewPlugin`, `BoardViewPlugin`, `GraphViewPlugin` with PageRank/Tarjan SCC/impact map, `TimelineViewPlugin` with 5-signal score bars, `AuditViewPlugin`), `RightInspectorDrawer` (Markdown + Typed Attrs + Relation Composer), `QuickCaptureDialog` (`+ New` / `Cmd+K`), `ui_views` Saved Views persistence, shared CSS layers (`tokens.css`, `primitives.css`, `views.css`), and unified `/studio` (`/studio.css`, `/studio.js`) + `examples/web-embedded-ia-memory/` UI onto `<graph-memory-workspace>`
+- **Official MCP SDK Spec Conformance Gate (`pnpm run check:mcp-spec`)**: Added `tests/unit/mcp-spec-conformance.test.ts` validating root `/mcp` (`2025-11-25` LTS & `2026-07-28` Modern) and table `/sub/:tableId/mcp` envelopes against `@modelcontextprotocol/server` `specTypeSchemas`
+- **4 Runnable Product Role Demos**: Added `pnpm run demo:mcp`, `demo:spec`, `demo:web`, `demo:cf`, and `demo:all` under `examples/` covering MCP AI memory, Spec Lineage/OpenAPI graph, Browser WASM offline workspace, and Cloudflare DO Worker
+
+### Changed
+- **Dependency & Entrypoint Cleanup**: Moved `@modelcontextprotocol/server` and `@graphql-tools/load-files` to `devDependencies`, removed unused `graphql-request` and `zod` from `dependencies`, and deduplicated `src/embedded.ts` via `export * from "@/core-sdk.js"`
+- **Deterministic Embedded Studio Asset Generation**: Updated `scripts/generate-embedded-assets.ts` to emit `EMBEDDED_STUDIO_CSS` from the shared UI CSS layers and `EMBEDDED_STUDIO_JS` from `studio-entry.ts` with `tsupBuild({ config: false })`
+
+### Fixed
+- **Browser Core Compatibility**: Guarded `process.env` reads in `debugLog.ts` and `SqlitePragmas.ts`, added `supportsFts5()` fallback in `DatabaseMigrationRunner.ts` for stock `sql.js` WASM without FTS5, and fixed IndexedDB snapshot byte reading (`obj.data`) in `examples/web-embedded-ia-memory/index.html`
+- **Relation Search & Saved View Metadata Persistence**: Fixed `GraphApiController.toRelationSearchResult` to fall back to `result.nodes` / `totalCount` / `hasNextPage` when repositories return `nodes`, and persisted `SavedViewConfig` cleanly in sanitized `node.metadata` (`savedView`)
+- **Stdio MCP Protocol Purity**: Kept `stdout` purely line-delimited JSON-RPC 2.0 by routing bootstrap logs to `stderr`, negotiating legacy `2025-11-25` vs `2026-07-28` headers cleanly, and shutting down cleanly on `stdin` EOF
+
 ## [1.0.0] - 2026-11-27
 
 ### Added

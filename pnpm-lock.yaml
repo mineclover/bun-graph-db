@@ -175,9 +175,6 @@ importers:
 
   .:
     dependencies:
-      '@graphql-tools/load-files':
-        specifier: ^8.0.10
-        version: 8.0.10(graphql@17.1.0)
       '@graphql-tools/merge':
         specifier: ^10.0.10
         version: 10.0.10(graphql@17.1.0)
@@ -187,9 +184,6 @@ importers:
       '@graphql-tools/utils':
         specifier: ^13.2.3
         version: 13.2.3(graphql@17.1.0)
-      '@modelcontextprotocol/server':
-        specifier: ^2.4.0
-        version: 2.4.0
       '@whatwg-node/server':
         specifier: ^0.13.3
         version: 0.13.3
@@ -199,9 +193,6 @@ importers:
       graphql:
         specifier: 17.1.0
         version: 17.1.0
-      graphql-request:
-        specifier: ^7.4.0
-        version: 7.4.0(graphql@17.1.0)
       graphql-scalars:
         specifier: ^2.0.1
         version: 2.0.1(graphql@17.1.0)
@@ -217,9 +208,6 @@ importers:
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
     devDependencies:
       '@biomejs/biome':
         specifier: 2.6.9
@@ -236,6 +224,12 @@ importers:
       '@graphql-codegen/typescript-operations':
         specifier: ^7.0.3
         version: 7.0.3(graphql@17.1.0)
+      '@graphql-tools/load-files':
+        specifier: ^8.0.10
+        version: 8.0.10(graphql@17.1.0)
+      '@modelcontextprotocol/server':
+        specifier: ^2.4.0
+        version: 2.4.0
       '@oa-sdk/openapi-projection-contract':
         specifier: file:../../packages/openapi-projection-contract
         version: file:../../packages/openapi-projection-contract
@@ -675,16 +669,6 @@ packages:
     engines: {node: '>=22.18.0'}
     peerDependencies:
       graphql: ^16.0.0 || ^17.0.0
-
-  '@graphql-codegen/typescript-operations@7.0.2':
-    resolution: {integrity: sha512-CRzhX6pa6Wwc0qhYKFroqvjxxKxSVZJO6OJTmvwu/ZwJZ92q49eVjgv9GE7U7/sUMWDt/P3TbMOXddveqWAEpQ==}
-    engines: {node: '>=22.18.0'}
-    peerDependencies:
-      graphql: ^16.0.0 || ^17.0.0
-      graphql-sock: ^1.0.0
-    peerDependenciesMeta:
-      graphql-sock:
-        optional: true
 
   '@graphql-codegen/typescript-operations@7.0.3':
     resolution: {integrity: sha512-V7q39rKqDCtfijBOJCEu64T4yX+OhTDzUUkRehv0TYYrfZnoiFs+B/qYM1qG1ciyG7cxHmpk8C/o/ygAr3TZEw==}
@@ -1838,11 +1822,6 @@ packages:
       cosmiconfig-toml-loader:
         optional: true
 
-  graphql-request@7.4.0:
-    resolution: {integrity: sha512-xfr+zFb/QYbs4l4ty0dltqiXIp07U6sl+tOKAb0t50/EnQek6CVVBLjETXi+FghElytvgaAWtIOt3EV7zLzIAQ==}
-    peerDependencies:
-      graphql: 14 - 16
-
   graphql-scalars@2.0.1:
     resolution: {integrity: sha512-/BkY0J5/1L9e+mTfCTzmpV78mNh95ZpiJWfAkaIYHE5B7hrvgRpB5//rXVTFD1aaKGcRUCHj/vpNcgtrenwZNA==}
     engines: {node: '>=10'}
@@ -2954,7 +2933,7 @@ snapshots:
       '@graphql-codegen/plugin-helpers': 8.0.0(graphql@17.1.0)
       '@graphql-codegen/typed-document-node': 8.0.0(graphql@17.1.0)
       '@graphql-codegen/typescript': 7.0.1(graphql@17.1.0)
-      '@graphql-codegen/typescript-operations': 7.0.2(graphql@17.1.0)
+      '@graphql-codegen/typescript-operations': 7.0.3(graphql@17.1.0)
       '@graphql-codegen/visitor-plugin-common': 8.0.2(graphql@17.1.0)
       '@graphql-tools/documents': 2.0.0(graphql@17.1.0)
       '@graphql-tools/utils': 13.2.3(graphql@17.1.0)
@@ -3007,15 +2986,6 @@ snapshots:
       '@graphql-codegen/visitor-plugin-common': 8.0.2(graphql@17.1.0)
       auto-bind: 5.0.1
       change-case-all: 2.2.0
-      graphql: 17.1.0
-      tslib: 2.9.1
-
-  '@graphql-codegen/typescript-operations@7.0.2(graphql@17.1.0)':
-    dependencies:
-      '@graphql-codegen/plugin-helpers': 8.0.0(graphql@17.1.0)
-      '@graphql-codegen/schema-ast': 7.0.0(graphql@17.1.0)
-      '@graphql-codegen/visitor-plugin-common': 8.0.2(graphql@17.1.0)
-      auto-bind: 5.0.1
       graphql: 17.1.0
       tslib: 2.9.1
 
@@ -4069,11 +4039,6 @@ snapshots:
       - crossws
       - typescript
       - utf-8-validate
-
-  graphql-request@7.4.0(graphql@17.1.0):
-    dependencies:
-      '@graphql-typed-document-node/core': 3.2.0(graphql@17.1.0)
-      graphql: 17.1.0
 
   graphql-scalars@2.0.1(graphql@17.1.0):
     dependencies:

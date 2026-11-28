@@ -2,7 +2,7 @@
 docType: navigation
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-11-27"
+lastVerified: "2026-11-28"
 ---
 
 # Bun Graph DB 문서
@@ -11,6 +11,7 @@ lastVerified: "2026-11-27"
 
 ## 운영과 개발
 
+- [플랫폼 UI · 작성/시각화 워크스페이스 가이드 (`bun-graph-db/ui`)](./guides/PLATFORM_UI_AND_WORKSPACE.md)
 - [운영 및 관리 가이드](./guides/OPERATIONS_GUIDE.md)
 - [실전 활용 정의 및 기능 성숙도 매트릭스](./guides/USE_CASES_AND_CAPABILITIES.md)
 - [Web Embedded · EmbeddingGemma-2 · IA · AI Memory 가이드](./guides/EMBEDDED_WEB_AND_AI_MEMORY.md)

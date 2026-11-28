@@ -10,7 +10,7 @@
 [![Quality Gates](https://img.shields.io/badge/Build%20%2B%20Typecheck%20%2B%20Lint-Passing-brightgreen)](./docs/README.md)
 [![Test Status](https://img.shields.io/badge/pnpm%20run%20test-Passing-brightgreen)](./docs/development/TESTING.md)
 [![Documentation](https://img.shields.io/badge/Docs-Complete-blue)](./docs/README.md)
-[![Last Updated](https://img.shields.io/badge/Updated-2026--11--27-blue)](#)
+[![Last Updated](https://img.shields.io/badge/Updated-2026--11--28-blue)](#)
 
 ## ⚡ 빠른 시작
 
@@ -32,7 +32,7 @@ curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
 ```
 
 **접속 주소:**
-- Web Studio / Inspector UI: `http://localhost:4141/studio`
+- Web Studio / 플랫폼 UI: `http://localhost:4141/studio` (`/studio.css`, `/studio.js`)
 - 메인 GraphQL 인터페이스: `http://localhost:4141/graphql`
 - AI 전역 MCP: `http://localhost:4141/mcp` (테이블 격리: `/sub/:tableId/mcp`)
 - 운영 관측 지표(admin): `http://localhost:4141/metrics`, `http://localhost:4141/api/audit-log`
@@ -40,20 +40,35 @@ curl -X POST http://localhost:4141/graphql -H "Content-Type: application/json" \
 ### 📦 패키지 엔트리포인트 (`.js` + `.d.ts`)
 
 - `bun-graph-db/core` — 그래프·IA·5-신호 AI 메모리·Typed EAV 전용 **제로-의존(Zero External Deps, Zero `node:*`)** 헤드리스 SDK (`createHeadlessGraphDb`, `IndexedDbSnapshotStorage`)
+- `bun-graph-db/ui` — 제로-프레임워크 작성·시각화 플랫폼 UI 및 `<graph-memory-workspace>` Web Component (6대 뷰 `table`/`outline`/`board`/`graph`/`timeline`/`audit`, `createLocalHeadlessClient`/`createRemoteHttpClient`, `PLATFORM_UI_CSS`, [플랫폼 UI 가이드](docs/guides/PLATFORM_UI_AND_WORKSPACE.md))
 - `bun-graph-db/embedded` — Browser WASM (`sql.js`/`sqlite-wasm`) 및 Cloudflare DO 풀스택 임베디드 (`createEmbeddedWebGraphDb`, `createPortableGraphNode`)
 - `bun-graph-db/mcp-stdio` — Claude/Cursor용 line-delimited JSON-RPC 2.0 Stdio MCP (`startMcpStdioServer`)
 - `bun-graph-db/cli` (`graph-memory` / `bun-graph-db` 바이너리) — `init`, `inspect`, `mcp`, `serve`, `backup`, `restore`
 - `bun-graph-db` — 풀스택 Node.js 26 standalone 서버
 
+### 🎯 4대 실전 역할 & 실행 데모
+
+```bash
+pnpm run demo:all   # 4개 역할 데모 일괄 검증
+```
+
+| 역할 | 데모 / 실행 명령 | 핵심 구성 |
+| --- | --- | --- |
+| **1. MCP AI Agent Memory (Stdio / CLI)** | `pnpm run demo:mcp` | [examples/mcp-ai-memory/](examples/mcp-ai-memory/README.md) · `graph-memory mcp` · 5-신호 기억 회상/통합 |
+| **2. 스펙 계보 & OpenAPI 투영 그래프** | `pnpm run demo:spec` | [examples/spec-lineage-openapi/](examples/spec-lineage-openapi/README.md) · `product-spec` · 의존성 체인·PageRank·SCC |
+| **3. 브라우저 오프라인 플랫폼 (`./core` + `./ui`)** | `pnpm run demo:web` (`--serve --port 8413`) | [examples/web-embedded-ia-memory/](examples/web-embedded-ia-memory/README.md) · `sql.js` + `<graph-memory-workspace>` + IndexedDB |
+| **4. Cloudflare Durable Object Worker** | `pnpm run demo:cf` | [examples/cloudflare-do-worker/](examples/cloudflare-do-worker/README.md) · `CloudflareSingleNodeWorker` + `DoSqliteDatabase` |
+
 ## 📌 검증 스냅샷
 
-2026-11-27 기준으로 다음 품질·성능·계약 게이트가 Node.js v26.13.1 + pnpm 12.21.0 환경에서 모두 통과합니다.
+2026-11-28 기준으로 다음 품질·성능·계약 게이트가 Node.js v26.13.1 + pnpm 12.21.0 환경에서 모두 통과합니다.
 
 - `pnpm run check:static` (`check:embedded` + `check:docs` + `ci:versions` + `check:biome` + `typecheck` + `typecheck:contract` + `typecheck:benchmark` + `check:codegen` + `build` + `.d.ts` 생성) 통과
-- `pnpm run release:check` (`dist/core/index.js` 외부 의존성 0개·`node:*` 0개, `dist/embedded/index.js` `node:*` 0개, 전체 exports/bin/`.d.ts` 계약) 통과
+- `pnpm run release:check` (`dist/core/index.js`·`dist/ui/index.js` 외부 의존성 0개·`node:*` 0개·비보호 `process.env` 0개, `dist/embedded/index.js` `node:*` 0개, 전체 exports/bin/`.d.ts` 계약) 통과
+- `pnpm run check:mcp-spec` (`@modelcontextprotocol/server` 공식 스키마 기반 LTS `2025-11-25` & Modern `2026-07-28` + `/sub/:tableId/mcp` 적합성 검증) 통과
 - `pnpm run test:golden` (핵심 10대 기능군 골든 데이터셋 3-런타임 교차 검증) 통과 ([GOLDEN_DATASET.md](docs/development/GOLDEN_DATASET.md))
-- `pnpm run test:lanes:audit` 및 `pnpm run test` (Vitest 5 기반 4개 레인 전체 140개 테스트 파일) 통과
-- Web Embedded (`bun-graph-db/core` + `IndexedDbSnapshotStorage` + `sql.js`/`sqlite-wasm`), 제로-임베딩 우선 정보구조화(IA 블루프린트 수명주기·교차 분류 쿼리·다중 홉 경로·감사·`ia-*` MCP 8종), 5-신호 AI Agent Memory, 선택적 `google/embeddinggemma-2` 검증 ([EMBEDDED_WEB_AND_AI_MEMORY.md](docs/guides/EMBEDDED_WEB_AND_AI_MEMORY.md))
+- `pnpm run test:lanes:audit` 및 `pnpm run test` (Vitest 5 기반 4개 레인 전체 142개 테스트 파일) 통과
+- 플랫폼 UI (`bun-graph-db/ui` · `<graph-memory-workspace>`, 6대 뷰, `LocalHeadlessClient`/`RemoteHttpClient`, Saved Views `ui_views`), Web Embedded (`bun-graph-db/core` + `IndexedDbSnapshotStorage` + `sql.js`/`sqlite-wasm`), 제로-임베딩 우선 IA, 5-신호 AI Agent Memory 검증 ([PLATFORM_UI_AND_WORKSPACE.md](docs/guides/PLATFORM_UI_AND_WORKSPACE.md), [EMBEDDED_WEB_AND_AI_MEMORY.md](docs/guides/EMBEDDED_WEB_AND_AI_MEMORY.md))
 - `pnpm run projection:check` (`oa-sdk` OpenAPI 3.2 스키마 투영 계약) 통과
 - `pnpm run benchmark:hotpaths:ci` 및 `pnpm run benchmark:vector-storage` 통과
 - 배포 템플릿: [Dockerfile](Dockerfile), [deploy/cloudflare/wrangler.jsonc](deploy/cloudflare/wrangler.jsonc), [examples/](examples/web-embedded-ia-memory/README.md) 3종 스타터 제공
@@ -154,6 +169,8 @@ tests/
 - **[AI 통합 설정](docs/guides/MCP_SETUP_GUIDE.md)** - Claude 연동
 
 ### 개발자 및 운영자용
+- **[플랫폼 UI · 작성/시각화 워크스페이스 가이드 (`bun-graph-db/ui`)](docs/guides/PLATFORM_UI_AND_WORKSPACE.md)** - `<graph-memory-workspace>`, 6대 뷰 플러그인, `FieldEditorRegistry`, Saved Views, CSS 토큰 커스터마이징
+- **[Web Embedded · IA · AI Memory 가이드](docs/guides/EMBEDDED_WEB_AND_AI_MEMORY.md)** - `bun-graph-db/core`·`bun-graph-db/embedded`, IndexedDB, `google/embeddinggemma-2`, 5-신호 메모리
 - **[운영 및 관리 가이드](docs/guides/OPERATIONS_GUIDE.md)** - 기동, 역할·테이블 권한, 마이그레이션, 하이브리드 검색, JSONL 재해 복구, 품질 게이트
 - **[실전 활용 정의 및 기능 성숙도 매트릭스](docs/guides/USE_CASES_AND_CAPABILITIES.md)** - 6대 활용 시나리오, 계층 구조(Tree/DAG) 가이드, SDL 연결 현황
 - **[아키텍처 개요](docs/architecture/overview.md)** - 모듈형 모놀리스 계층과 운영 경계

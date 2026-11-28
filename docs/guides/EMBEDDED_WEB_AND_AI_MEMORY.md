@@ -2,10 +2,12 @@
 docType: reference
 sourceLocale: ko
 canonical: true
-lastVerified: "2026-11-27"
+lastVerified: "2026-11-28"
 owner: "Bun Graph DB maintainers"
 sources:
+  - src/core-sdk.ts
   - src/embedded.ts
+  - src/presentation/ui/index.ts
   - src/presentation/web/EmbeddedWebGraphDb.ts
   - src/infrastructure/database/sqlite/WebSqliteAdapter.ts
   - src/infrastructure/embeddings/EmbeddingGemma2Provider.ts
@@ -21,6 +23,7 @@ tests:
   - tests/unit/information-architecture-structured.test.ts
   - tests/unit/headless-core-sdk.test.ts
   - tests/unit/mcp-stdio-and-cli.test.ts
+  - tests/unit/platform-ui-architecture.test.ts
 ---
 
 # Web Embedded Runtime · `google/embeddinggemma-2` · 정보구조화(IA) · AI Agent Memory 가이드
@@ -99,11 +102,13 @@ Google `google/embeddinggemma-2` (및 브라우저용 `onnx-community/embeddingg
 
 ---
 
-## 5. 제로-의존 Headless Core (`bun-graph-db/core`) · IndexedDB · Stdio MCP · CLI
+## 5. 제로-의존 Headless Core (`bun-graph-db/core`) · 플랫폼 UI (`bun-graph-db/ui`) · IndexedDB · Stdio MCP · CLI
 
 - **초경량 Headless Core SDK ([src/core-sdk.ts](../../src/core-sdk.ts), [HeadlessGraphDb.ts](../../src/core/HeadlessGraphDb.ts))**: `graphql`, `graphql-yoga`, `ajv`, `node:*` 의존성 **0개**로 `createHeadlessGraphDb`와 IA·5-신호 AI Memory·그래프 탐색을 번들합니다(`examples/web-embedded-ia-memory/` 참조).
+- **FTS5 비포함 WASM 호환**: `sql.js` 표준 빌드처럼 `ENABLE_FTS5`가 꺼진 SQLite 런타임에서는 `supportsFts5()`가 이를 자동 감지해 FTS5 가상 테이블 생성을 건너뛰고 `SqliteNodeSearchRepository`의 SQL `LIKE` 경로로 투명하게 폴백합니다.
+- **제로-프레임워크 플랫폼 UI ([PLATFORM_UI_AND_WORKSPACE.md](./PLATFORM_UI_AND_WORKSPACE.md))**: `<graph-memory-workspace mode="local-headless">` Web Component(`bun-graph-db/ui`)를 `createHeadlessGraphDb`에 연결하면 브라우저 안에서 6대 뷰(`table`/`outline`/`board`/`graph`/`timeline`/`audit`), 인라인 편집, Right Inspector Drawer, Saved Views(`ui_views`), IndexedDB 스냅샷 저장·복원을 즉시 사용할 수 있습니다.
 - **IndexedDB 스냅샷 저장소 ([IndexedDbSnapshotStorage.ts](../../src/infrastructure/database/sqlite/IndexedDbSnapshotStorage.ts))**: 브라우저 `IDBFactory` 기반 `ISnapshotStoragePort` 구현으로 WASM SQLite 바이트 스냅샷(`putSnapshot`/`getSnapshot`/`listSnapshots`/`deleteSnapshot`)을 페이지 새로고침 간 영속화합니다.
 - **MCP Stdio 서버 ([McpStdioServer.ts](../../src/mcp/stdio/McpStdioServer.ts)) & 통합 CLI ([src/cli/index.ts](../../src/cli/index.ts))**:
   - `npx graph-memory init --database-path ./data/graph-memory.sqlite --preset knowledge`
-  - `npx graph-memory mcp --database-path ./data/graph-memory.sqlite` (Claude Desktop / Cursor용 stdio JSON-RPC 2.0, `--table <id>` 스코프 격리 지원, `examples/mcp-ai-memory/` 참조)
+  - `npx graph-memory mcp --database-path ./data/graph-memory.sqlite` (Claude Desktop / Cursor용 stdio JSON-RPC 2.0, `stdout` 순수 프로토콜 유지 및 `--table <id>` 스코프 격리 지원, `examples/mcp-ai-memory/` 참조)
   - `npx graph-memory inspect --json`, `backup`, `restore`, `serve`

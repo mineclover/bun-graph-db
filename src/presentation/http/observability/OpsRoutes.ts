@@ -3,6 +3,7 @@ import { BUN_GRAPH_DB_API_VERSION } from "@/core/contracts/RestRouteContract.js"
 import {
 	renderStudioCss,
 	renderStudioHtml,
+	renderStudioJs,
 } from "@/presentation/studio/StudioHtml.js";
 import {
 	classifyHttpSurface,
@@ -41,6 +42,15 @@ export function handleOpsOrStudioRoute(
 		return new Response(renderStudioCss(), {
 			headers: {
 				"Content-Type": "text/css; charset=utf-8",
+				"Cache-Control": "no-cache",
+			},
+		});
+	}
+
+	if (url.pathname === "/studio.js") {
+		return new Response(renderStudioJs(), {
+			headers: {
+				"Content-Type": "text/javascript; charset=utf-8",
 				"Cache-Control": "no-cache",
 			},
 		});
